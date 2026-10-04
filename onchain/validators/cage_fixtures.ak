@@ -43,7 +43,7 @@ pub const testProcessTime = 10_000
 
 pub const testRetractTime = 10_000
 
-/// The four policies the eight-field `State` pins (#157 C7). The active
+/// The four policies the eight-field `State` pins (#157 state-datum-fields). The active
 /// policy keeps the 0xaa bytes the representative policy had, so the
 /// preservation rows that used 0xbb for the altered case still read the
 /// same way; the application, absent and terminal policies are the three
@@ -60,7 +60,7 @@ pub const testAbsentPolicy =
 pub const testTerminalPolicy =
   #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
 
-/// The destination of a request that names none (#157 D-DEST): the
+/// The destination of a request that names none (#157 request-destination-binding): the
 /// requests in this module exercise the cage's non-registry paths —
 /// minting, contribute, retract, sweep, rejection — none of which moves
 /// a token to a destination. The registry-mode rows build their own.
@@ -146,7 +146,7 @@ pub const stateDatum = Some(rawStateDatum)
 // Test constants: a Request that inserts key "42" (edge 1, value `0x01`)
 /// Registry-mode shape for this module's shared fold fixture (#157):
 /// the request books `"42"` at edge 1 — so the fixture describes
-/// a real edge of C2 instead of the pre-#157 "any bytes" registry. Every
+/// a real edge of seven-admitted-edges instead of the pre-#157 "any bytes" registry. Every
 /// `Modify` row below therefore refuses for ITS OWN reason rather than
 /// at the leaf codec.
 pub const legacyKey: ByteArray = "42"
@@ -183,7 +183,7 @@ pub const legacyRoot = mpf.root(mpf.insert(mpf.empty, legacyKey, #"01", []))
 
 /// The delivery output for the fee fixture: its request carries 2 ADA
 /// against a 500_000 tip, so the deposit the fold returns is the
-/// difference — 2_000_000 less the 500_000 `testFee` (#157 T6).
+/// difference — 2_000_000 less the 500_000 `testFee` (#157 request-deposit-returned).
 /// The zero-tip variant: the whole 2 ADA rides back to the destination.
 pub const zfDelivery =
   Output {

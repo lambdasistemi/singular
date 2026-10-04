@@ -1,26 +1,66 @@
 {
   "model-binding": [
     {
-      "text": "The Lean model is unchanged. A fold of one request equals a single step, the windows follow the request phase, and the chain's exclusive upper bound is why the built bound may equal the deadline slot.",
-      "pause": 350
+      "text": "Model binding.",
+      "pause": 500
+    },
+    {
+      "text": "The Lean model is unchanged. The code carries the lean/ tree last changed by 53ad27ff (#344, which added the batch questions and changed no law). The transitions used here are the model's as they stand:",
+      "pause": 400
+    },
+    {
+      "text": "a booking;",
+      "pause": 300
+    },
+    {
+      "text": "a fold of one request, which the model states equals a single step (fold_batch_of_one_is_step);",
+      "pause": 300
+    },
+    {
+      "text": "an owner's retract in its window;",
+      "pause": 300
+    },
+    {
+      "text": "a reject (#320).",
+      "pause": 300
+    },
+    {
+      "text": "The processing and retract windows follow requestPhase. On chain, the fold's window check is interval.is_entirely_before with an exclusive upper bound. That is why the client compares the built bound with the deadline slot as \"at most\".",
+      "pause": 400
+    },
+    {
+      "text": "This change decides which process and which wallet performs each transition. It does not change the transitions.",
+      "pause": 400
     }
   ],
   "decisions": [
     {
-      "text": "The combined form stays only on request. The fold reads an insertion's envelope from a hash-keyed store in the registry directory. A fold takes one request. Time is the deadline's authority and a slot is never estimated. A fast guard is followed by a check of the built bound. Reject and reclaim judge their windows on the node's own view, and refunds are bound to node reads.",
-      "pause": 350
+      "text": "Decisions.",
+      "pause": 500
     }
   ],
   "slices": [
     {
-      "text": "Booking and fold come first, then reject, then reclaim, then a recovery control for a fold by another wallet. Each is one reviewed change in its own pull request.",
-      "pause": 350
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice is one change, reviewed at each step by an independent auditor, and pushed in its own pull request.",
+      "pause": 400
     }
   ],
   "verification": [
     {
-      "text": "Each slice's pull request runs its own evidence: the fold first, then reject, reclaim and the cross-wallet recovery control, alongside the flags check and the full lint and documentation checks. A slice claims only what it runs.",
-      "pause": 350
+      "text": "Verification.",
+      "pause": 500
+    },
+    {
+      "text": "These continuous-integration jobs run on the exact head of each pull request. Each slice adds its own evidence to them. A slice claims only what its own pull request runs.",
+      "pause": 400
+    },
+    {
+      "text": "Every slice also runs nix run --quiet .#cli-flags-check (documented flags equal --help) and nix develop --quiet -c just ci (lint, format and the documentation checks).",
+      "pause": 400
     }
   ],
   "_source": {

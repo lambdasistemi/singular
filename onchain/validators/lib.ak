@@ -272,7 +272,7 @@ pub fn extractTokenFromInputs(what: OutputReference, inputs: List<Input>) {
 // library. `state.ak` is the only caller that turns a `None` here into a
 // traced refusal.
 
-/// The Absent leaf byte (#157 D-CODEC).
+/// The Absent leaf byte (#157 three-state-leaf-codec).
 pub const leafAbsent: ByteArray = #"00"
 
 /// The Active leaf byte.
@@ -281,10 +281,10 @@ pub const leafActive: ByteArray = #"01"
 /// The Terminal leaf byte.
 pub const leafTerminal: ByteArray = #"02"
 
-/// The C2 row index of each admitted edge. The six tree edges are `0..5`
-/// in the order D-APPROVAL fixes (`0` insertAbsent … `5` deleteActive),
+/// The seven-admitted-edges row index of each admitted edge. The six tree edges are `0..5`
+/// in the order approval-asset-binding fixes (`0` insertAbsent … `5` deleteActive),
 /// so the edge byte of an approval name is this index; the read is `6`
-/// and never appears in an approval, because a read needs none (C4).
+/// and never appears in an approval, because a read needs none (tree-edge-admission-by-approval).
 pub const edgeInsertAbsent: Int = 0
 
 pub const edgeInsertActive: Int = 1
@@ -308,12 +308,12 @@ pub const kindTerminal: Int = 2
 
 // #183 slice b: requests carry an edge index, not value bytes. The leaf
 // bytes above are what each edge's trie move reads and writes, and the
-// seven C2 rows (table in `types.ak`) are named by the request's own tag,
+// seven seven-admitted-edges rows (table in `types.ak`) are named by the request's own tag,
 // admitted `0..6` by the fold before approval. Nothing derives an edge
 // from bytes any more, so `decodeState`, `statedBefore` and `edgeOf`
 // retire with the `Operation` wire.
 
-/// The token column of C2, read off the edge and nothing else (#157 C5):
+/// The token column of seven-admitted-edges, read off the edge and nothing else (#157 mint-matches-edge-deltas):
 /// `(kind, quantity)` pairs the fold sums per key and the mint must then
 /// equal exactly. An unknown edge moves nothing.
 pub fn deltaOf(edge: Int) -> List<(Int, Int)> {
@@ -336,10 +336,10 @@ pub fn deltaOf(edge: Int) -> List<(Int, Int)> {
   }
 }
 
-/// The approval binding (#157 D-APPROVAL):
+/// The approval binding (#157 approval-asset-binding):
 /// `blake2b_256(edge ‖ key ‖ owner ‖ destination)`, where `edge` is one
-/// byte (the C2 row index), `key` the registry key, `owner` the request
-/// owner's credential bytes and `destination` the D-DEST bytes — its
+/// byte (the seven-admitted-edges row index), `key` the registry key, `owner` the request
+/// owner's credential bytes and `destination` the request-destination-binding bytes — its
 /// address followed by its datum hash, both exactly as the request
 /// carries them.
 ///
@@ -367,7 +367,7 @@ pub fn approvalName(
 }
 
 /// Decode the binary address bytes a request names into the ledger's own
-/// `Address` (#157 D-DEST). Header kinds 6-7 are enterprise addresses
+/// `Address` (#157 request-destination-binding). Header kinds 6-7 are enterprise addresses
 /// (header plus a 28-byte payment hash), kinds 0-3 are base addresses
 /// (header, 28-byte payment hash, 28-byte stake hash); everything else —
 /// pointer addresses, reward addresses, a wrong length — is refused.
@@ -424,7 +424,7 @@ fn credentialOf(isKey: Bool, hash: ByteArray) -> Credential {
 }
 
 /// Does this output sit at the destination the request named, carrying
-/// the inline datum it named (#157 D-DEST)? Address equality is over the
+/// the inline datum it named (#157 request-destination-binding)? Address equality is over the
 /// whole address, payment and stake credential alike; datum equality is
 /// over the BLAKE2b-256 of the serialised inline datum, with an empty
 /// hash meaning the output must carry no datum at all.
@@ -457,7 +457,7 @@ pub fn datumMatches(datumHash: ByteArray, datum: Datum) -> Bool {
 }
 
 /// Does an output pay this destination address at all, whatever it
-/// carries? The refund leg of custody (#157 C6, R-ADA) binds the address
+/// carries? The refund leg of custody (#157 token-destinations-and-refunds, custody-lovelace-refund) binds the address
 /// and the lovelace, never the datum.
 pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
   when decodeAddress(address) is {

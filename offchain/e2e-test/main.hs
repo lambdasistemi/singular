@@ -13,7 +13,7 @@ import Singular.Registry.E2E.NodeSpec qualified
 import Singular.Registry.E2E.OpenBootSpec qualified
 import Singular.Registry.E2E.UpdateTerminalSpec qualified
 
--- | Run all E2E test specs.
+-- | Run all end-to-end test specs.
 main :: IO ()
 main = do
     blueprint <- resolveBlueprint

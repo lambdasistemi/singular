@@ -1,19 +1,37 @@
 {
+  "functions": [
+    {
+      "text": "Functions.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #106 merged at f558d0e8fc916eef494fffcef09cfe2ac5582b8e.",
+      "pause": 400
+    }
+  ],
   "deployment-commands": [
     {
-      "text": "Deploy once with no second run, verify a node against the manifest, and attach all three journeys with exact spellings and an explicit duplicate refusal.",
+      "text": "Deployment commands.",
+      "pause": 500
+    },
+    {
+      "text": "No bodies here.",
       "pause": 400
     }
   ],
   "library-behaviour": [
     {
-      "text": "Token derivation from the seed, identity comparison that rejects substitutions, hash-resolved references, quantity-one state location, pre-funding mirror check, tip-anchored retract, and polled confirmations.",
-      "pause": 400
+      "text": "Library behaviour.",
+      "pause": 500
     }
   ],
   "attach-gate": [
     {
-      "text": "Deploy once on a shared devnet, count, run all attached journeys, repeat the spelling for the refusal, then require both counters to rise on a fresh register.",
+      "text": "Attach gate.",
+      "pause": 500
+    },
+    {
+      "text": "Deploy once on a shared devnet; count; run all three attached journeys; repeat the explicit spelling for the duplicate refusal; run one fresh register without the manifest and require both counters to increase.",
       "pause": 400
     }
   ],

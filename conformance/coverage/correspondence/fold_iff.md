@@ -1,6 +1,6 @@
 # Correspondence: `fold_iff` — Lean ⇄ acceptance story, under load
 
-The second representative page (issue #80; NOTE-004/005). The first page
+The second representative page (issue #80; operator note (NOTE-004)/005). The first page
 (`naming_occupied_key_refuses_duplicate.md`) shows the notation at its simplest; this one
 renders the format **under load**: a universally quantified `Given`, both directions of an
 `↔`, five conjuncts, two of them conditional. Source reading: the epic-18 owner's derivation
@@ -123,7 +123,7 @@ explicitly present, the conditionals in firing (4) and silent (5) form.
       implies no such result — every other precondition must be present.
     And the consumer side of this exact case is HELD, not established:
       empty folds on the imported partition were the consumer restriction
-      held under Q-002 (CG11). **That ruling has since been given: empty
+      held under operator question (Q-002) (empty-fold). **That ruling has since been given: empty
       processing batches are to be rejected** (approved 2026-09-12). The
       equation below remains an exact reading of the **pinned pre-revision**
       contract at `012e404`; the approved nonempty revision is **pending
@@ -157,18 +157,18 @@ maps every moved declaration's owner.
 
 | clause | implementation boundary | status |
 |---|---|---|
-| per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (now `onchain/validators/registry/fold.ak`; `state.ak:71` at the pinned revision), driven per input by `validModify` (now `onchain/validators/registry/modify.ak`; `state.ak:162`) | partially exercised by merged CG rows |
-| frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (now `onchain/validators/registry/modify.ak`; `state.ak:162-196` at the pinned revision) | partially exercised by merged CG rows |
+| per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (now `onchain/validators/registry/fold.ak`; `state.ak:71` at the pinned revision), driven per input by `validModify` (now `onchain/validators/registry/modify.ak`; `state.ak:162`) | partially exercised by merged registry-operations rows |
+| frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (now `onchain/validators/registry/modify.ak`; `state.ak:162-196` at the pinned revision) | partially exercised by merged registry-operations rows |
 | 2 | `foldItems` sequencing vs the on-chain fold | exercised for single-item folds; multi-item sequencing not isolated |
-| **converse: nothing else required** | `state.ak` dispatches `Modify(actions) -> validModify(…)` with **no ownership check**; the site carries the comment *"Permissionless fold (issue #79, Defect 1): Modify must NOT require the owner"* | **repaired and landed**; confirmed by execution — CG20 `accepted`, verdict `agrees-with-model`, tx `4142f7d6…`. Historically **REFUSED** pre-#79 — both halves by execution |
+| **converse: nothing else required** | `state.ak` dispatches `Modify(actions) -> validModify(…)` with **no ownership check**; the site carries the comment *"Permissionless fold (issue #79, Defect 1): Modify must NOT require the owner"* | **repaired and landed**; confirmed by execution — historical-permissionless-fold `accepted`, verdict `agrees-with-model`, tx `4142f7d6…`. Historically **REFUSED** pre-#79 — both halves by execution |
 
 Empty-fold note, read directly: the fold accumulates over `inputs` carrying
 actions as state and discards the tail (`let (expectedNewRoot, _, …)` at
 `state.ak:185`), so with no matching request input the recomputed root is
 the starting root and an empty `Modify` validates. That is the mechanism
-behind CG11's observed acceptance, and what cardano-keri's audit described.
+behind empty-fold's observed acceptance, and what cardano-keri's audit described.
 
-Verification notes for this table (renderer's, per NOTE-004's "tell me where you disagree").
+Verification notes for this table (renderer's, per operator note (NOTE-004)'s "tell me where you disagree").
 Pins below bind to **two different commits, and the distinction matters**:
 **historical** facts (the pre-#79 owner gate, the zero-side exhibit's reading of the pre-revision
 contract) were read at worktree base `012e404`; **current** facts (the post-#79 `Modify` dispatch)
@@ -184,12 +184,12 @@ not the movable `main` label. Each statement below says which it is.
 
   **Historical, and kept as history:** before that repair a witness set satisfying all five clauses
   existed whose fold the compiled validator refused (owner unsigned) — an implementation defect per
-  epic 17's `A-002`. Our own runner supplied the owner signature on every fold, which is why no row
+  epic 17's `operator answer (A-002)`. Our own runner supplied the owner signature on every fold, which is why no row
   observed it: recorded, not defended. The design was never in doubt — this theorem's sufficiency
   direction and `specs/protocol/spec.md:117` ("no native owner, privileged requester or privileged
   folder gate") both state permissionlessness.
 
-  **Confirmed by execution, both halves:** regression row **CG20 failed pre-#79 and is `accepted`
+  **Confirmed by execution, both halves:** regression row **historical-permissionless-fold failed pre-#79 and is `accepted`
   post-#79**, verdict `agrees-with-model`, tx `4142f7d6…`, candidate `1d98d51a`, `dirty:false`.
   The contradiction is closed. **The coverage debt is not**: this page still renders an obligation
   that is unmapped and insufficient-layer. Producer acceptance is **outstanding** — `fe89e68` is now
@@ -212,9 +212,9 @@ not the movable `main` label. Each statement below says which it is.
 
 Whether the registry is permissionless is not undecided: this
 theorem's sufficiency direction and `specs/protocol/spec.md:117` both
-state it, and epic 17's `A-002` identified the owner gate in the
+state it, and epic 17's `operator answer (A-002)` identified the owner gate in the
 compiled validator as an implementation defect assigned to #79. **That
-repair has landed, and CG20 pins the fixed behaviour by execution.**
+repair has landed, and historical-permissionless-fold pins the fixed behaviour by execution.**
 What remains open is the coverage debt around this obligation and final
 producer acceptance (`fe89e68` submitted, superseding `617e434`) — the
 debt and the evidence, never the design question. This page renders the theorem as stated and will not
@@ -236,8 +236,8 @@ be adjusted to fit the code.
     "Witnesses": "Singular.Model.Witnesses"
   },
   "evidence": {
-    "checkId": "none yet — rows CG01-CG05/CG10-12 exercise folds generically but no row is bound to this identity",
-    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per A-002). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — CG20 REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt remains open and producer acceptance is outstanding"
+    "checkId": "none yet — rows insert-key-insert-occupied-key/fold-against-superseded-root-12 exercise folds generically but no row is bound to this identity",
+    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per operator answer (A-002)). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — historical-permissionless-fold REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt remains open and producer acceptance is outstanding"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"
 }

@@ -6,13 +6,13 @@ As an operator, I run the existing journey, insert-active, update-terminal and d
 
 | ID | Observable requirement |
 | --- | --- |
-| R270-01 | Keep the four executable names, `Main.hs` entry paths, argument and environment parsing, and diagnostic/exit behavior. |
-| R270-02 | Keep the journey's ordered narration, including separately narrated booking and folding, its script identity checks, and its positive and refused devnet observations. |
-| R270-03 | Keep insert-active's archive-invoked `--observed` JSON fields, one keyed active token at the requested wallet, duplicate refusal and accepting control. |
-| R270-04 | Keep update-terminal's archive-invoked `--observed` JSON fields, keyed burn from the holder, distinct roots, Terminal leaf, refusals and accepting controls. |
-| R270-05 | Keep deployment's deploy, verify, count and genesis-skey routing; the first non-dash argument selects the verb, and `flagValue` accepts both `--name value` and `--name=value`. Preserve current diagnostics, environment behavior, narration, manifest and ledger effects. |
-| R270-06 | Each entry delegates to explicit command, scenario and scenario-control owners; each moved declaration has one implementation and dependencies remain acyclic. Share only demonstrated common infrastructure. |
-| R270-07 | Contributor documentation explains responsibility, dependency direction, execution and data flows, invariants, compatibility interfaces, callers, evidence limits and change points with diagrams, source/API links, navigation and synchronized speech. |
+| keep-four-executable-names-main-hs-entry | Keep the four executable names, `Main.hs` entry paths, argument and environment parsing, and diagnostic/exit behavior. |
+| keep-journey-s-ordered-narration-including-separately | Keep the journey's ordered narration, including separately narrated booking and folding, its script identity checks, and its positive and refused devnet observations. |
+| keep-insert-active-s-archive-invoked-observed | Keep insert-active's archive-invoked `--observed` JSON fields, one keyed active token at the requested wallet, duplicate refusal and accepting control. |
+| keep-update-terminal-s-archive-invoked-observed | Keep update-terminal's archive-invoked `--observed` JSON fields, keyed burn from the holder, distinct roots, Terminal leaf, refusals and accepting controls. |
+| keep-deployment-s-deploy-verify-count-genesis | Keep deployment's deploy, verify, count and genesis-skey routing; the first non-dash argument selects the verb, and `flagValue` accepts both `--name value` and `--name=value`. Preserve current diagnostics, environment behavior, narration, manifest and ledger effects. |
+| entry-delegates-explicit-command-scenario-scenario-control | Each entry delegates to explicit command, scenario and scenario-control owners; each moved declaration has one implementation and dependencies remain acyclic. Share only demonstrated common infrastructure. |
+| contributor-documentation-explains-responsibility-dependency-direction-execution | Contributor documentation explains responsibility, dependency direction, execution and data flows, invariants, compatibility interfaces, callers, evidence limits and change points with diagrams, source/API links, navigation and synchronized speech. |
 
 ## Authority and evidence
 

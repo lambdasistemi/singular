@@ -6,9 +6,9 @@ open Singular
 open Lean
 
 /-! The naming-lifecycle corpus over the registry-mode model: maintenance and
-recovery with the root untouched (NM2), retirement producing a same-registry
+recovery with the root untouched (local-record-update-preserves-registry), retirement producing a same-registry
 ordinary-validator request followed by separate `updateTerminal` completion
-(NM3), and the consumer binding pinning the eight-field datum and identities. -/
+(retirement-removes-active-witness), and the consumer binding pinning the eight-field datum and identities. -/
 
 def l0 : NamingState := namingInitial
 

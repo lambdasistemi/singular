@@ -1,6 +1,6 @@
 {- |
 Module      : Singular.Registry.E2E.ConfigSpec
-Description : The real E2E entrypoint refuses unusable configuration
+Description : The real end-to-end entrypoint refuses unusable configuration
 License     : Apache-2.0
 
 Child processes execute the same test binary with only a behavioural

@@ -10,7 +10,7 @@ flowchart LR
 ```
 
 1. Build the traced blueprint the run used:
-   `nix build ./conformance#registry-traced-blueprint` (name fixed by R1).
+   `nix build ./conformance#registry-traced-blueprint` (name fixed by traced-build).
 2. In a receipt, pick a step whose `chain.outcome` is `refused`; read its
    model reason and chain-side reason.
 3. Find its rejected transaction id in `replay/index.json`; open

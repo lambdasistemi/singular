@@ -80,7 +80,7 @@ identity starts uncovered); theorem removal (obligation vanished); lying
 - `correspondence/` — two rendered human-correspondence views: a ground instance
   (`naming_occupied_key_refuses_duplicate.md`) and the quantified equivalence under load
   (`fold_iff.md`, whose converse is contradicted by the compiled validator — F-002, held
-  for user ruling Q-002). Review surfaces for the user; not delivered coverage.
+  for user ruling operator question (Q-002)). Review surfaces for the user; not delivered coverage.
 
 ## Limits, stated
 

@@ -6,25 +6,25 @@ Base d92f35bf722120369c386ce09e6c7a40d321182f. Two ordered behavioral slices
 after a planning-only commit.
 No production edits by the ticket owner.
 
-S1 corrects shared custody representation, real validator/library consumers,
-minimal existing consumer adaptations and edge documentation. S2 adds the bound
-conformance row, registration and coverage metadata. S2 is held until the parent
-reports the DSL merge, and remains required for full acceptance. No new
-conformance test-tree additions in S1. Preserve existing edge semantics.
+refund-custody-wire-and-consumers corrects shared custody representation, real validator/library consumers,
+minimal existing consumer adaptations and edge documentation. refund-custody-conformance adds the bound
+conformance row, registration and coverage metadata. refund-custody-conformance is held until the parent
+reports the story language merge, and remains required for full acceptance. No new
+conformance test-tree additions in refund-custody-wire-and-consumers. Preserve existing edge semantics.
 
 Before implementation: model base and source citations are verified; commit
 the six mandate files and open a draft PR after required local checks.
-Freeze Opus's Gate S against the acceptance lines. Missing CI
+Freeze Opus's acceptance checks against the acceptance lines. Missing CI
 coverage is an explicit parent question; an existing Conformance selection and
 verdict assertion may be extended as the ticket's authorized CI change.
 
 The approved Sol owner records RED before production, then GREEN checkpoints
 for each acceptance line and pre-push. It continues work while Opus reads only
 commits and mechanical receipts/decision records. Every checkpoint is forwarded
-immediately; every verdict is REVIEW-APPROVED or REVIEW-BLOCKED with a review
+immediately; every verdict is approved review or blocked review with a review
 field. One repair per checkpoint, second block goes upward. No final audit seat.
 
-T.O. acceptance checks the complete approval trail, exact final tree, task stamp
+ticket owner acceptance checks the complete approval trail, exact final tree, task stamp
 and frozen gate on the final head. Root CI runs from repository root. Snapshot
 command runs from conformance/. Exact-head remote Registry and Conformance are
 separate readiness conditions. No merge or release authority is implied.

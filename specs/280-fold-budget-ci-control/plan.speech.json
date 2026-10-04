@@ -1,54 +1,112 @@
 {
+  "plan-for-the-fold-budget-control": [
+    {
+      "text": "Plan for the fold budget control.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want one recorded control pair from the real CI command, a fixed-fallback mutant failing and the restored candidate passing, retained where a reviewer can check it.",
+      "pause": 400
+    }
+  ],
   "status": [
     {
-      "text": "Planning, the control candidate, the retained pair and every checkpoint review are complete. The ticket owner is accepting the result and running the final gate on the stamped head. Nothing blocks, and publication waits for a separate decision.",
+      "text": "Status.",
       "pause": 500
+    },
+    {
+      "text": "Completed: planning, the control candidate (dfd4ac1), the retained pair (a6172e0) and every checkpoint review. Current: ticket-owner acceptance and the final gate on the stamped head. Blockers: none. Publication is held for a separate decision.",
+      "pause": 400
     }
   ],
   "constitution-check": [
     {
-      "text": "No Lean, corpus or expected result changes, and execution units remain unobservable in the model, so the pair is ledger and harness evidence. No model question arises. The red runs the CI command against a rebuilt runner and observes a node refusal. Earlier evidence is preserved, existing wiring is kept, and no public conformance page changes.",
+      "text": "Constitution check.",
       "pause": 500
     }
   ],
   "delivery": [
     {
-      "text": "After planning is audited, the coder commits the patch, recorder and reader page. The recorder runs the mutant and then the candidate. If the mutant passes, the regression target is repaired and the pair runs again. The records and logs are committed alone, root CI goes green, and the auditor approves each checkpoint before the ticket owner accepts.",
+      "text": "Delivery.",
       "pause": 500
+    },
+    {
+      "text": "Planning: these artifacts, committed by the ticket owner. The online auditor reviews them before any coder work.",
+      "pause": 300
+    },
+    {
+      "text": "Control: the coder commits the mutation patch, the recorder and the reader page. This is the candidate the pair runs against.",
+      "pause": 300
+    },
+    {
+      "text": "Pair: the recorder builds the blueprint once and makes the mutant commit on a detached worktree. It runs the CI command on the mutant, then on the candidate, and writes both records and logs.",
+      "pause": 300
+    },
+    {
+      "text": "Repair, only if the mutant exits 0: the coder repairs the fold budget test target so that a refused honest fold ends it nonzero, commits, and runs the pair again against that candidate.",
+      "pause": 300
+    },
+    {
+      "text": "Retention: the coder commits the records and logs. That commit touches only the retained evidence directory.",
+      "pause": 300
+    },
+    {
+      "text": "Gate: root local CI, plus the Conformance format and lint checks when Haskell changed. Then auditor approval at each checkpoint, and ticket-owner acceptance.",
+      "pause": 300
     }
   ],
   "team-and-authority": [
     {
-      "text": "The operator approved three seats: an Opus ticket owner for planning, gates and acceptance, a Sonnet coder for everything committed as code or evidence, and an online Codex auditor that reviews committed checkpoints through the ticket owner only. Nothing may be pushed, published, merged or released.",
+      "text": "Team and authority.",
       "pause": 500
+    },
+    {
+      "text": "The operator approved this roster on 2026-09-30. The ticket owner is Claude Opus 5.5 at high effort and writes planning, gates and acceptance. The coder is Claude Sonnet 5.5 at high effort and owns the patch, the recorder, any repair, the evidence and their commits. The online auditor is Codex gpt-6.1-sol at high effort. It reviews committed checkpoints through the ticket owner and never talks to the coder. No push, pull request, issue change, merge or release is authorized.",
+      "pause": 400
     }
   ],
   "gate": [
     {
-      "text": "The mutant row must exit nonzero with its four witnesses, and the restored row must exit zero with its own. The identity row compares the patch and the shared bindings. Root CI and the Conformance format and lint checks must exit zero. The fixture's refusal alone, a compile failure or a setup failure never satisfies the mutant row.",
+      "text": "Gate.",
       "pause": 500
+    },
+    {
+      "text": "The first three rows are this ticket's; the rest are the repository's CI commands. The fixture refusal alone, a compile failure or a setup failure never satisfies the mutant row.",
+      "pause": 400
     }
   ],
   "execution-accounting": [
     {
-      "text": "The budget is unlimited, but every invocation is counted from receipts, nested builds included, in an expensive and a cheap tier. A repeated failure is diagnosed before it is retried.",
+      "text": "Execution accounting.",
       "pause": 500
+    },
+    {
+      "text": "The budget is unlimited, but every invocation is counted from receipts. Expensive means Nix builds, devnet runs and the root CI. Cheap means scratch compiles and file checks. The recorder writes one receipt per invocation, nested builds included. An unchanged failure is diagnosed before it is retried.",
+      "pause": 400
     }
   ],
   "stop-conditions": [
     {
-      "text": "The coder stops and asks when the patch would do more than replace the declaration or would weaken a check, when a mutant failure has another cause, when a repair would leave the test target, when a raw log is above five mebibytes, or when a model question appears.",
+      "text": "Stop conditions.",
       "pause": 500
+    },
+    {
+      "text": "The coder stops and files a question when the patch would touch more than the per-purpose declaration, would disable or weaken any check, or when a mutant failure has another cause. It also stops when the repair would leave the test target, when a raw log exceeds 5 MiB, or when a model or constitution question appears. The ticket owner escalates model questions as user stories to the epic owner.",
+      "pause": 400
     }
   ],
   "evidence-limits": [
     {
-      "text": "The pair covers one candidate and one mutant. Later changes are not re-checked until someone re-runs the recorder. It proves nothing in Lean about execution units, and CI on a published head is a later step.",
+      "text": "Evidence limits.",
       "pause": 500
+    },
+    {
+      "text": "The pair shows one candidate's CI command failing on one fixed-fallback mutant and passing when restored. It does not re-check future candidates, so a later change to the target is not controlled until someone re-runs the recorder. It establishes no Lean fact about execution units. The run is local; CI evidence on a published head is a later, separate step.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b6eeac3fc7d24fc261a14111d3b8387aba2ff76c9991ef4b07bc9274a9fb6605"
+    "sha256": "fef38796dc82c49ef84a08b10b706dfa1a78c81ffa1938af093d0e8af8dd67fd"
   }
 }

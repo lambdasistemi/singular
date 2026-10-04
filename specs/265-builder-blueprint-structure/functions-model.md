@@ -13,9 +13,9 @@ flowchart LR
 
 | ID | Existing function family | Signature constraint |
 | --- | --- | --- |
-| F265-1 | Blueprint `loadBlueprint`, `validateData`, `extractScriptHash`, `extractCompiledCode` | Preserve exact public signatures and results. |
-| F265-2 | Blueprint `applyDataParam`, `applyIntParam`, `applyBytesParam`, `applyOutputRef`, `applyPreviousPolicies`, `applyRequestParams`, `loadRegistryCodesFromEnv` | Preserve exact public signatures, parameter order and error values. |
-| F265-3 | All exports of `TxBuilder.Internal`, including `evaluateAndBalance`, `failedWitnessHash`, `evalScriptHash`, `isBudgetFailure` and `walkEdge` | Preserve exact public signatures, observable effects and failure text. |
+| load-blueprint | Blueprint `loadBlueprint`, `validateData`, `extractScriptHash`, `extractCompiledCode` | Preserve exact public signatures and results. |
+| apply-data-param | Blueprint `applyDataParam`, `applyIntParam`, `applyBytesParam`, `applyOutputRef`, `applyPreviousPolicies`, `applyRequestParams`, `loadRegistryCodesFromEnv` | Preserve exact public signatures, parameter order and error values. |
+| evaluate-and-balance | All exports of `TxBuilder.Internal`, including `evaluateAndBalance`, `failedWitnessHash`, `evalScriptHash`, `isBudgetFailure` and `walkEdge` | Preserve exact public signatures, observable effects and failure text. |
 
 The complete function-by-function before/after location map is a delivery
 artifact; this model does not add or change a public signature.

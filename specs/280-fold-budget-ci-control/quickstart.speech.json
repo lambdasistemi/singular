@@ -1,20 +1,46 @@
 {
+  "reproduce-the-fold-budget-control": [
+    {
+      "text": "Reproduce the fold budget control.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer with this repository and Nix, I want one command that repeats the control pair on a candidate I choose.",
+      "pause": 400
+    }
+  ],
   "run-the-pair": [
     {
-      "text": "From a clean checkout, run the recorder with the current commit and a temporary output directory. It builds the blueprint once, runs the CI command on the fixed-fallback mutant, which should fail, then on the candidate, which should pass.",
+      "text": "Run the pair.",
       "pause": 500
+    },
+    {
+      "text": "From a clean checkout of the candidate:",
+      "pause": 400
+    },
+    {
+      "text": "The recorder builds the validator blueprint once. It commits the fixed-fallback patch on a detached worktree and runs nix run --quiet .#conformance-tests in its conformance/ directory, which should fail. It then runs the same command in the candidate's own tree, which should pass. It exits 0 only when both runs behave as required and share their blueprint, genesis, node and command.",
+      "pause": 400
     }
   ],
   "read-the-result": [
     {
-      "text": "The mutant record shows a nonzero exit with its four witnesses, and the restored record shows exit zero with the success line and the book. Each log digest matches its record.",
+      "text": "Read the result.",
       "pause": 500
+    },
+    {
+      "text": "mutant.json should show a nonzero exit. Its witnesses show the appendix suite passing, the fixture's one-below submission refused, the runner's own submission refused for exceeding its declared units, and the regression failing. restored.json should show exit 0 with the regression's success line and the book completing. Each log's digest should match its record.",
+      "pause": 400
     }
   ],
   "check-the-retained-pair": [
     {
-      "text": "The committed records and raw logs come from one run against the candidate they name. Compare each log's digest with its record.",
+      "text": "Check the retained pair.",
       "pause": 500
+    },
+    {
+      "text": "The committed records and raw logs in conformance/review/fold-budget-control/ come from one such run against the candidate named in the records. Compare each log's SHA-256 with the record's log field.",
+      "pause": 400
     }
   ],
   "_source": {

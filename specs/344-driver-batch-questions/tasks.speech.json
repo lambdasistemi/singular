@@ -1,18 +1,40 @@
 {
+  "deliver-the-batch-questions": [
+    {
+      "text": "Deliver the batch questions.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want each slice accepted on reviewed checkpoints and green CI.",
+      "pause": 400
+    }
+  ],
   "implementation": [
     {
-      "text": "Task one makes the driver answer both questions. Task two lets the story language say both batches.",
-      "pause": 350
+      "text": "Implementation.",
+      "pause": 500
+    },
+    {
+      "text": "[x] driver-answers-foldbatch-rejectbatch-through-transport-preservation (driver-answers-both-questions): the driver answers foldBatch and rejectBatch through the transport, with preservation proofs, corpus controls, check_model reconciliation, the translation table and every moved consumer.",
+      "pause": 300
+    },
+    {
+      "text": "[x] story-language-says-multi-request-fold-multi (story-language-says-batch): the story language says a multi-request fold and a multi-request reject; validation, rendering and execution are total and the executor asks the batch question.",
+      "pause": 300
     }
   ],
   "acceptance": [
     {
-      "text": "Each requirement needs approved checkpoints and green continuous integration on the exact pushed head.",
-      "pause": 350
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "Every requirement needs approved checkpoints at an ancestor of the pushed head and exact-head CI.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8292e86b7c28cef5e0839125d571ec2fa8f0c3b8a41f5385cd519146067a2fae"
+    "sha256": "8f90d9c971eb9a217fa10792d85de2a3a95df1ac75e09546c47433ad197be926"
   }
 }

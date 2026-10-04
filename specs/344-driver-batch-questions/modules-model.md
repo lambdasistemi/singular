@@ -9,7 +9,7 @@ flowchart LR
   MO[Singular.Model] -->|Laws, unchanged| DR[Singular.Driver]
   ST[Singular.Statements] -->|Preservation proofs| DR
   DR -->|Surface and answers| TR[DriverTransport]
-  DR -->|Corpus| CK[check_model and constitution table]
+  DR -->|Corpus| consumer-resolution[check_model and constitution table]
   SL[Story language] -->|Batch instructions| EX[Live executor]
   EX -->|Questions| TR
 ```

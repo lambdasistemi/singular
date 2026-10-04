@@ -22,7 +22,7 @@ use types.{Approve, OpenRedeemer}
 ///
 /// What the policy does decide is the **binding**. The asset name is
 /// `lib.approvalName` over the whole scoping tuple — the same function
-/// the cage recomputes at fold time (D-APPROVAL) — so an approval cannot
+/// the cage recomputes at fold time (approval-asset-binding) — so an approval cannot
 /// be pointed at a request it was not minted for. Nothing else about the
 /// transaction is this policy's business: the cage decides how many
 /// tokens move and where they go.

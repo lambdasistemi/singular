@@ -1,36 +1,72 @@
 {
   "strategy": [
     {
-      "text": "Add a naming layer on the generic registry model. Do not rewrite the generic machine or its forty-one statements.",
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Add a naming layer on top of the generic registry model. Do not rewrite the generic machine, and do not edit the forty-one generic theorem statements. Freeze naming registration and initial-state rules, prove them, export a naming corpus, then transcribe that layer into a labelled docs profile.",
       "pause": 400
     }
   ],
   "model-then-simulator": [
     {
-      "text": "The Lean naming layer is the authority. The simulator is derived from it. Naming fixtures are first-class fields, not a packed encoding.",
+      "text": "Model then simulator.",
+      "pause": 500
+    },
+    {
+      "text": "The Lean naming layer is the authority. Simulator behavior is derived from it. The browser must not lead the model.",
+      "pause": 400
+    },
+    {
+      "text": "New Lean modules own naming fixtures, well-formed initial construction, permissionless fold of certified absent-name Insert, authenticated observation, and transition-layer refusal of Delete, name-release and reuse. Generic Output.datum as a single natural number stays the generic profile's application payload. Naming fixtures are first-class fields, not a packed encoding of that natural number.",
       "pause": 400
     }
   ],
   "topology-and-budget": [
     {
-      "text": "One owner slice, glm commit owner, sol auditor, at most two candidates and two auditor launches, ten executions.",
+      "text": "Topology and budget.",
+      "pause": 500
+    },
+    {
+      "text": "One OWNER slice. Commit owner family glm (harness Pi, provider Z.AI, model glm-5.3-flash, effort max). Auditor family codex model gpt-5.6-sol effort high, one fresh seat per candidate, fresh audit worktree. draft=NONE.",
+      "pause": 400
+    },
+    {
+      "text": "At most two submitted candidates and two auditor launch attempts. Ten executions for the campaign: one invocation of a frozen repository recipe counts as one, including internal stages. Setup and transport failures are logged, not charged, and escalate.",
       "pause": 400
     }
   ],
   "file-fence": [
     {
-      "text": "The commit owner may write naming modules, the naming simulator, and the naming docs page. Four documentation files and release metadata are reserved or forbidden.",
+      "text": "File fence.",
+      "pause": 500
+    },
+    {
+      "text": "Writable by the commit owner: new naming Lean modules and their inventory and corpus; simulator naming engine, stories, identity extensions, page and gate wiring; docs/naming-demo.md and its speech companion; tools and Nix wiring needed to run the new inventories without changing generic results; mkdocs.yml only if a new unreserved page must appear in navigation.",
+      "pause": 400
+    },
+    {
+      "text": "Forbidden: generic theorem statements and their debt file's existing forty-one records; README.md; README.speech.json; docs/simulation.md; docs/simulation.speech.json; version.txt; .release-please-manifest.json; CHANGELOG.md; /code/singular; release tags; pull request 2.",
+      "pause": 400
+    },
+    {
+      "text": "If the naming page must be linked from the reserved simulation guide, stop and ask the epic owner. Do not edit the reserved files.",
       "pause": 400
     }
   ],
   "live-preview": [
     {
-      "text": "The existing preview job binds candidate.txt to the pull-request head. A localhost URL is not the preview.",
+      "text": "Live preview.",
+      "pause": 500
+    },
+    {
+      "text": "The existing preview job binds candidate.txt to the pull-request head and runs .#preview-check on live bytes. A localhost URL is not the preview. The served page must say the candidate is unaccepted.",
       "pause": 400
     }
   ],
   "_source": {
-    "file": "specs/20-naming-claims/plan.md",
+    "file": "plan.md",
     "sha256": "c28b8111686129f558bebbd137456ae66aa4f13bb430df186e31d2884141e62a"
   }
 }

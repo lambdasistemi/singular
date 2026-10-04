@@ -34,7 +34,7 @@ let
   # component and, across the flake boundary, by the required conformance
   # jobs (conformance/conformance.cabal depends on singular-registry).
   #
-  # The seven NYA journey surfaces named in the D6 retirement record
+  # The seven Naming Your Assets journey surfaces named in the D6 retirement record
   # (registry.yml:258-269 — li01, li-refusals, lmlc/naming-rows, recovery,
   # retirement with its retained retire-verify exhibit, repair) are
   # classified by CURRENT REQUIRED USE, not compile success (operator note
@@ -83,7 +83,7 @@ let
 
   # Declared and exported, not built here. The seven D6 journeys are
   # retained retired surfaces under #172 (registry.yml:258-269; re-cut owned
-  # by #172 under NYA epic #174); register-rows is NOT D6 and is owned by
+  # by #172 under Naming Your Assets epic #174); register-rows is NOT D6 and is owned by
   # #283; connected-verifier is owned by #282. Every row keeps its Cabal
   # stanza and flake app; the final epic #278 still lints and formats their
   # source. Evidence class per row: "boundary" names an actual carrier-run
@@ -105,19 +105,19 @@ let
       kind = "exe";
       name = "li01";
       issue = "#172";
-      reason = "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
+      reason = "D6-retired Naming Your Assets journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
     }
     {
       kind = "exe";
       name = "li-refusals";
       issue = "#172";
-      reason = "D6-retired NYA journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
+      reason = "D6-retired Naming Your Assets journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "naming-rows";
       issue = "#172";
-      reason = "D6-retired NYA journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
+      reason = "D6-retired Naming Your Assets journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";

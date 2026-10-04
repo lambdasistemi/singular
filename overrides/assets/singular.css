@@ -1,0 +1,193 @@
+/* Keep the reading column and navigation usable on phones as well as desktops. */
+body {
+  padding-top: 1.5rem;
+}
+.container {
+  max-width: 80rem;
+}
+.terminal-mkdocs-main-grid > * {
+  min-width: 0;
+}
+#terminal-mkdocs-main-content {
+  overflow-wrap: anywhere;
+}
+#terminal-mkdocs-main-content table {
+  display: block;
+  overflow-x: auto;
+}
+#terminal-mkdocs-main-content pre {
+  overflow-x: auto;
+}
+#singular-navigation {
+  margin-bottom: 1.5rem;
+}
+#singular-navigation summary {
+  cursor: pointer;
+  padding: 0.75rem 0;
+}
+.terminal-menu ul {
+  gap: 1rem;
+}
+.terminal-menu a {
+  display: inline-block;
+  padding: 0.5rem 0;
+}
+@media (min-width: 70em) {
+  .terminal-mkdocs-main-grid {
+    grid-template-columns: minmax(14rem, 1fr) minmax(0, 3fr);
+  }
+}
+@media (max-width: 30em) {
+  .terminal-nav {
+    align-items: flex-start;
+  }
+  .terminal-menu ul {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* The shared read-aloud controls style themselves from Material's variables;
+   map them onto this theme's so they follow the selected palette. */
+:root {
+  --md-default-bg-color: var(--background-color);
+  --md-default-fg-color: var(--font-color);
+  --md-default-fg-color--lighter: var(--secondary-color);
+}
+
+/* Icon controls: inline drawings in the current text colour, no border or box,
+   with a visible outline for keyboard users. */
+.top-icon,
+.narration-play {
+  color: var(--font-color);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.top-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+}
+:where(.top-icon) svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+.top-icon span {
+  font-size: 0.85rem;
+}
+.narration-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: 0.6rem;
+  padding: 0.15rem;
+  vertical-align: middle;
+}
+:where(.narration-play) svg {
+  width: 100%;
+  height: 100%;
+}
+.top-icon:hover,
+.narration-play:hover {
+  opacity: 0.7;
+}
+.top-icon:focus-visible,
+.narration-play:focus-visible,
+.diagram-links button:focus-visible,
+dialog.diagram-viewer button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+.narration-play[data-state="failed"] {
+  color: var(--error-color);
+}
+/* Diagrams keep their designed text size; a narrow screen scrolls the figure. */
+figure.diagram {
+  overflow-x: auto;
+  margin: 1.2rem 0 0.3rem;
+  padding: 1rem;
+  border: 0;
+  background: var(--background-color);
+}
+figure.diagram svg {
+  display: block;
+  max-width: none;
+  height: auto;
+  margin: 0 auto;
+  cursor: zoom-in;
+}
+.diagram-links {
+  font-size: 0.75rem;
+  margin: 0.3rem 0 1.2rem;
+}
+.diagram-links button {
+  color: var(--primary-color);
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+dialog.diagram-viewer {
+  width: 96vw;
+  max-width: 96vw;
+  height: 92vh;
+  max-height: 92vh;
+  padding: 1rem;
+  color: var(--font-color);
+  background: var(--background-color);
+  border: 0;
+}
+dialog.diagram-viewer::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+dialog.diagram-viewer .diagram-scroll {
+  overflow: auto;
+  height: calc(100% - 3rem);
+}
+dialog.diagram-viewer .diagram-scroll svg {
+  display: block;
+  max-width: none;
+  height: auto;
+  margin: 0 auto;
+}
+dialog.diagram-viewer button {
+  color: var(--primary-color);
+  background: transparent;
+  border: 0;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+/* Edge labels take the page background directly, so a palette change never
+   leaves them one toggle behind the rest of the drawing. The selectors outrank
+   the per-diagram rules Mermaid writes inside each drawing. */
+#diagram-viewer svg .edgeLabel,
+#diagram-viewer svg .edgeLabel p,
+#diagram-viewer svg .labelBkg {
+  background-color: var(--background-color);
+}
+#diagram-viewer svg .edgeLabel rect {
+  fill: var(--background-color);
+}
+#terminal-mkdocs-main-content figure.diagram svg .edgeLabel,
+#terminal-mkdocs-main-content figure.diagram svg .edgeLabel p,
+#terminal-mkdocs-main-content figure.diagram svg .labelBkg {
+  background-color: var(--background-color);
+}
+#terminal-mkdocs-main-content figure.diagram svg .edgeLabel rect {
+  fill: var(--background-color);
+}
+
+.narrating {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0.25rem;
+}

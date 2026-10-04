@@ -196,7 +196,7 @@ conformanceDir =
             (die "CONFORMANCE_DIR unset (path to the conformance package dir)")
             return
 
-{- | Drive one CG05 row with TMPDIR scoped under our marker, so every
+{- | Drive one insert-occupied-key row with TMPDIR scoped under our marker, so every
 session file and node the runner creates is attributable to this run.
 -}
 runStory :: Session -> IO (ExitCode, String, String)
@@ -212,7 +212,7 @@ runStory sess = do
             , confDir ++ "#conformance"
             , "--"
             , "run"
-            , "CG05"
+            , "insert-occupied-key"
             , "--receipts-dir"
             , sessReceipts sess
             ]
@@ -268,7 +268,7 @@ main = do
         defaultMain $
             withResource (acquireSession mode) (releaseSession mode) $ \getSess ->
                 testGroup
-                    "tasty-bdd evaluation: CG05 occupied-key refusal"
+                    "tasty-bdd evaluation: insert-occupied-key occupied-key refusal"
                     [ testBehavior
                         "real boundary: occupied insert refused, script-attributed, control discriminates"
                         $ Given
@@ -309,8 +309,10 @@ main = do
                         $ Then
                             ( \(_code, _out, _err) -> do
                                 sess <- getSess
-                                ok <- doesFileExist (sessReceipts sess </> "receipt-CG05.json")
-                                assertTrue ok "CG05 receipt artifact exists"
+                                ok <-
+                                    doesFileExist
+                                        (sessReceipts sess </> "receipt-insert-occupied-key.json")
+                                assertTrue ok "insert-occupied-key receipt artifact exists"
                             )
                             End
                     ]

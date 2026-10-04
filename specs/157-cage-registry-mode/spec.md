@@ -56,15 +56,15 @@ approval bound, and nothing of naming's runs at fold time.
 
 ## Requirements — the cage (`onchain/validators`)
 
-### C1 — the leaf codec and the operations
+### leaf-codec-and-operations — the leaf codec and the operations
 
 The value of every leaf is exactly one byte: `0x00` Absent, `0x01` Active,
-`0x02` Terminal (#156 D-CODEC). `Operation` keeps its three constructors at
+`0x02` Terminal (#156 three-state-leaf-codec). `Operation` keeps its three constructors at
 their indices and gains a fourth, appended: `Insert(value)` 0, `Delete(value)`
 1, `Update(old, new)` 2, **`Read(value)` 3**. A request whose value bytes are not
 a codec byte is refused before any proof is checked.
 
-### C2 — the seven combinations, and everything else refused
+### seven-admitted-edges — the seven combinations, and everything else refused
 
 | request | before-leaf | after | delta |
 |---|---|---|---|
@@ -85,58 +85,58 @@ against the wrong root — those keep their existing failure. A `Modify` with
 zero consumed requests is refused; a batch of only reads leaves the root
 unchanged and is accepted.
 
-### C3 — the read
+### read-preserves-intermediate-root — the read
 
 `Read(v)` is verified with the existing verifier and no new proof code:
 `mpf.update(root, key, proof, v, v)` must return `root` itself, at the read's
 position in the fold, so the proof is checked against the intermediate root
-there. The leaf is unchanged. Only `v = 0x02` is admitted (C2).
+there. The leaf is unchanged. Only `v = 0x02` is admitted (seven-admitted-edges).
 
-### C4 — admission by approval
+### tree-edge-admission-by-approval — admission by approval
 
 A request whose operation changes the tree — the six tree edges — is folded
 only if its UTxO carries exactly one asset under `state.application_policy`,
 quantity 1, whose asset name equals the **approval binding** of that request
-(D-APPROVAL below). A `Read` request carries none and needs none. The approval
+(approval-asset-binding below). A `Read` request carries none and needs none. The approval
 is not burned by the fold — no application script runs at fold time — and
 leaves with the request's residual value; it certifies nothing else because
 its name binds this key, this edge, this owner and this destination.
 
 This replaces the mandatory consumer withdrawal, the pin equality and
-`consumer.ak`'s R2. It generalises what the application checked at fold for
+`consumer.ak`'s seven-edges-interface. It generalises what the application checked at fold for
 inserts to all six edges, inside the cage.
 
-### C5 — the delta and the mint
+### mint-matches-edge-deltas — the delta and the mint
 
-The cage sums, over the requests it consumed, the token column of C2, per key.
+The cage sums, over the requests it consumed, the token column of seven-admitted-edges, per key.
 The transaction's mint under `active_policy`, `absent_policy` and
 `terminal_policy` must equal that sum exactly — asset by asset, quantity by
 quantity — and nothing else may move under those three policies. The asset
-name under each token policy is the registry key (D-ASSET). A mint that adds,
+name under each token policy is the registry key (token-name-is-registry-key). A mint that adds,
 omits, doubles or renames one asset is refused as one delta mismatch.
 
-### C6 — destinations
+### token-destinations-and-refunds — destinations
 
 For each consumed request the cage requires, per token moved:
 
 - **absent token minted** — exactly one output at the cage's own address
   carrying it, with inline datum `AbsentCustody { key, refund }` where `refund`
-  is the address the request named (D-CUSTODY). No other asset in that output.
+  is the address the request named (absent-custody-datum). No other asset in that output.
 - **absent token consumed** (`Update(0x00,0x01)`, `Delete(0x00)`) — the custody
   UTxO for that key is a spent input; its lovelace is paid to an output at its
-  `refund` address (R-ADA, #156). The cage's own spending path for a custody
+  `refund` address (custody-lovelace-refund, #156). The cage's own spending path for a custody
   UTxO is: spent in a `Modify` that consumes a request for that key with one of
   these two operations, and nothing else.
 - **active or terminal token minted** — exactly one output at the request's
   named destination, with the inline datum whose hash the request names, carrying
-  the token (D-DEST) **and at least the request's value minus the tip**: the
+  the token (request-destination-binding) **and at least the request's value minus the tip**: the
   deposit that rode the request returns to the requester as that output's
-  value. The folder earns the tip and nothing else (want-ledger R4: no folder
+  value. The folder earns the tip and nothing else (the folder value obligation: no folder
   incentive exists in this version, so the deposit is returned). For `Update(0x01,0x02)` the active token must be an input
   and burned; the cage does not care where it came from — the application's
-  custody does (N4).
+  custody does (refund-owner-authorizes-absent-deletion).
 
-### C7 — the state datum
+### state-datum-fields — the state datum
 
 `State` becomes eight fields, in this order, replacing the six:
 
@@ -148,20 +148,20 @@ application_policy, active_policy, absent_policy, terminal_policy
 `consumer_pin` is deleted. `representative_policy` is renamed `active_policy`.
 Genesis (`validateMint`) sets all four policies; every `Modify` preserves all
 eight but `root`. This is the contract change cardano-keri conforms to
-(CS01/CS02/CS08), re-baselined in this ticket (X1 below).
+(blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip), re-baselined in this ticket (compiled-wire-conformance below).
 
-### C8 — request value coverage moves into the cage
+### request-covers-tip — request value coverage moves into the cage
 
-`consumer.ak`'s R1 — every consumed request carries lovelace at least its
+`consumer.ak`'s request tip coverage rule — every consumed request carries lovelace at least its
 stated tip — is a cage check now, beside the existing `tip == state.tip`.
 
-### C9 — retraction
+### owner-retraction — retraction
 
 Reads are retractable by their owner in phase 2, exactly as inserts are.
 Update and delete requests keep today's rule: not retractable (the
 completion-only custody binds them; the stranding gap is #130, out of scope).
 
-### C10 — deletions
+### deletions — deletions
 
 `consumer.ak` and `consumer.tests.ak` are deleted; the `consumerPin` mint-width
 check, the withdrawal requirement, and every builder and fixture that
@@ -170,22 +170,22 @@ unchanged.
 
 ## Requirements — naming (`naming-onchain/validators`)
 
-### N1 — the three token policies
+### controller-authorizes-active-insertion — the three token policies
 
 One parametrised minting script, **`witness(kind, registry)`**, instantiated
 three times (kind `0` absent, `1` active, `2` terminal) to give the three policy
 ids pinned at genesis. Its rule: a mint or burn under this policy is accepted
 only in a transaction that spends the registry's state token with `Modify` —
 co-presence with the cage, which computes how many and where. The terminal
-instance additionally accepts any burn unconditionally (W3: freely burnable).
+instance additionally accepts any burn unconditionally (terminal witnesses: freely burnable).
 `representative.ak` and its `Fold`/`Retire` redeemers are retired; the active
 policy is `witness(1, registry)`.
 
-### N2 — the approval policy: six edges
+### controller-authorizes-absent-to-active-update — the approval policy: six edges
 
 The application script's `mint` purpose certifies edges. Its redeemer becomes
 one constructor, `Approve { edge, key, owner, destination }`, and the asset
-name minted must equal the approval binding (D-APPROVAL). Per R-NM4:
+name minted must equal the approval binding (approval-asset-binding). Per naming-approval-rules:
 
 | edge | certified on |
 |---|---|
@@ -197,18 +197,18 @@ name minted must equal the approval binding (D-APPROVAL). Per R-NM4:
 | `deleteActive` | never — the arm refuses |
 
 `WithdrawApproval` and `InsertApproval` are retired with the claim mechanism
-(N3). Approvals are minted at request creation, one per request.
+(absent-insertion-needs-no-signature). Approvals are minted at request creation, one per request.
 
-### N3 — the record is created by the fold, not by a claim
+### absent-insertion-needs-no-signature — the record is created by the fold, not by a claim
 
 There is no pending claim UTxO, no `Fold`, no `Cancel`. A booking is: the
 controller mints an `insertActive` (or `updateActive`) approval binding the
 record datum, submits the cage request carrying it, and the fold creates the
 record output at the application address with that datum and the active token
-(C6). `ApplicationRedeemer` becomes `Maintain`, `Retire`, `Recover` — a
+(token-destinations-and-refunds). `ApplicationRedeemer` becomes `Maintain`, `Retire`, `Recover` — a
 contract change for the runners' encodings, re-baselined here.
 
-### N4 — retirement and completion
+### refund-owner-authorizes-absent-deletion — retirement and completion
 
 `Retire` changes its controller path: it is authorized by the **committed
 recovery key** (reveal of `next_control_commitment` plus that key's signature,
@@ -216,18 +216,18 @@ the proof `Recover` uses) or by the quorum — never by the current control key
 alone. A thief holding Alice's current key can change where the name pays until
 she recovers; they can no longer end it. The authorized transaction moves the
 active token from the record into completion-only custody, mints the
-`updateTerminal` approval (N2 — the same proof is present) and creates the
+`updateTerminal` approval (controller-authorizes-absent-to-active-update — the same proof is present) and creates the
 completion request carrying it — today's co-created request. Completion is the fold of `Update(0x01, 0x02)`: the custody UTxO is
 spent, its held token is the burn the delta requires, and the record's name is
 `0x02` forever. `retirement_custody.ak` keeps its rules; `over_marker_for` and
 the naming-specific value vocabulary in `naming.ak` are deleted.
 
-### N5 — `maintain` and `recover` never touch the trie
+### active-deletion-never-certified — `maintain` and `recover` never touch the trie
 
 Unchanged in mechanics; the rows that say the registry root is untouched by
 them are kept and re-run.
 
-### N6 — evidence
+### recovery-authorizes-retirement — evidence
 
 Rows in the existing `LM`/`LR`/`LT` style for every refusal above, each with
 a control; every #156 theorem bound to at least one executable check seen to
@@ -236,29 +236,29 @@ the four #154 mutants executed at Aiken level (plan).
 
 ## Requirements — consumers and docs
 
-### X1 — conformance re-baselined
+### compiled-wire-conformance — conformance re-baselined
 
-CS01, CS02 and CS06 are #157's serialization rows, re-cut against the
+blueprint-encoding-round-trip, submitted-datum-byte-round-trip and script-parameter-application are #157's serialization rows, re-cut against the
 eight-field datum, the `Read` operation, the destination field, the
-`AbsentCustody` datum and the new blueprint hashes. CS03, CS04, CS05, CS07 and
-CS08 are re-cut per edge: #173 owns CS04, CS07 and CS08; #177/#179 own CS03
-and CS05 — issue #154 re-cut 2026-09-18; none is stubbed. The
+`AbsentCustody` datum and the new blueprint hashes. update-redeemer-constructor-witnesses, wrong-redeemer-constructor-index, request-and-mint-constructor-witnesses, proof-step-constructor-witnesses and
+state-fields-chain-round-trip are re-cut per edge: #173 owns wrong-redeemer-constructor-index, proof-step-constructor-witnesses and state-fields-chain-round-trip; #177/#179 own update-redeemer-constructor-witnesses
+and request-and-mint-constructor-witnesses — issue #154 re-cut 2026-09-18; none is stubbed. The
 address-derivation rows remain in #157. `docs/consumer-conformance.md` states
-the contract change with the old and new field lists side by side. CG19 is
+the contract change with the old and new field lists side by side. request-value-and-refund-routing is
 re-cut against the interface's routing (no hook): expected refused,
 `held-q002`.
 
-### X3 — the existing journeys are NYA's (amendment of 2026-09-18, epic owner r3)
+### X3 — the existing journeys are Naming Your Assets's (amendment of 2026-09-18, epic owner r3)
 
 The journeys on `main` — `li01`, `li-refusals`, `lmlc`, `recovery`,
 `retirement`, `retire-verify`, `repair` — are consumers of the naming
-application, not of the registry. Their re-cut is #172 under the NYA epic
+application, not of the registry. Their re-cut is #172 under the Naming Your Assets epic
 #174, after #154 closes. In this ticket their CI jobs are retired from the
-required set with a recorded mapping (D6); none is stubbed green. No new
+required set with a recorded mapping (singular-step-refusal-reasons); none is stubbed green. No new
 journey is authored here: `witness-rows` is #158's, against the open
 application (#173).
 
-### X2 — the naming docs
+### published-naming-lifecycle — the naming docs
 
 `docs/naming-lifecycle.md`, `docs/naming-demo.md` and `docs/recovery-retirement.md`
 gain the state table, the seven edges with their tokens, the four laws of the
@@ -271,12 +271,12 @@ Each is derived from the interface or from a #156 ruling; each is a contract
 #158 and #152 consume, so it is reported in the handback for the operator to
 overrule before they do.
 
-### D-APPROVAL — what an approval certifies
+### approval-asset-binding — what an approval certifies
 
 The approval's asset name is
 `blake2b_256(edge ‖ key ‖ owner ‖ destination)` where `edge` is one byte
-(the C2 row index), `key` the registry key, `owner` the request owner's
-credential bytes, and `destination` the D-DEST bytes (empty for edges that
+(the seven-admitted-edges row index), `key` the registry key, `owner` the request owner's
+credential bytes, and `destination` the request-destination-binding bytes (empty for edges that
 mint nothing). One approval certifies one (edge, key, owner, destination);
 the cage recomputes the name from the request and refuses a mismatch. It is
 not burned at fold. Reuse by the same owner for the same edge, key and
@@ -284,9 +284,9 @@ destination is the same authority and is harmless; a different owner, edge or
 destination cannot use it.
 
 **Contract with #156:** the model's `admits` must scope an approval by the same
-tuple. #156's D4 leaves the scope shape to its author; this decision fixes it.
+tuple. #156's singular-admits-config-applicationpolicy leaves the scope shape to its author; this decision fixes it.
 
-### D-DEST — the request names where its token goes
+### request-destination-binding — the request names where its token goes
 
 `Request` gains one field, appended: `destination: (ByteArray, ByteArray)` —
 address bytes and the hash of the inline datum the receiving output must
@@ -299,7 +299,7 @@ Why: the folder is permissionless. Without a bound destination a folder could
 route Alice's representative to itself; without a bound datum it could create
 her record with a controller of its choosing.
 
-Encoding (amendment of 2026-09-17, ticket-157 Q-005): the pair is Aiken's
+Encoding (amendment of 2026-09-17, ticket-157 operator question (Q-005)): the pair is Aiken's
 fixed tuple — on the wire a two-element Plutus `List`, in the blueprint
 `{"dataType":"list","items":[ByteArray, ByteArray]}` with an **array** of item
 schemas. The shared loader `offchain/lib/Singular/Registry/Blueprint.hs` gains
@@ -309,13 +309,13 @@ validates a list of exactly that arity, element by element. The homogeneous
 three-element list, or a two-element list of the wrong types, still fails.
 `Blueprint.hs` is the eighth library file in this ticket's surface.
 
-### D-CUSTODY — the absent token's home
+### absent-custody-datum — the absent token's home
 
 `CageDatum` gains a third constructor, appended: `AbsentCustody { key, refund }`.
-The cage's spending path for it is C6. Lovelace in it is the request's residual
-after the tip, the min-ADA that R-ADA returns.
+The cage's spending path for it is token-destinations-and-refunds. Lovelace in it is the request's residual
+after the tip, the min-ADA that custody-lovelace-refund returns.
 
-### D-ASSET — one asset-name convention
+### token-name-is-registry-key — one asset-name convention
 
 Under each of the three token policies the asset name is the registry key
 bytes. The representative name formula (`representative_name(key)`) is
@@ -324,38 +324,38 @@ replaced by the key itself. #152 binds to `(active_policy, key)` and
 
 ### D-RETRACT — reads are retractable
 
-As C9. Reads are the only new retractable class; the completion-only custody
+As owner-retraction. Reads are the only new retractable class; the completion-only custody
 argument does not apply to them.
 
-### D-TERMINATE — who obtains the terminate approval, and when
+### recovery-authorizes-retirement — who obtains the terminate approval, and when
 
-As N4: in the `Retire` transaction, on the **committed recovery key's** proof or
-the quorum's signatures. Operator adjudication of want-ledger row R1
+As refund-owner-authorizes-absent-deletion: in the `Retire` transaction, on the **committed recovery key's** proof or
+the quorum's signatures. Operator adjudication of the recovery authorization row
 (2026-09-16): a name must not be endable by whoever holds the current control
 key, because a key thief and Alice are indistinguishable there; the recovery
 key is the one thing the thief does not have. `LT01` (controller retirement
 accepts) is therefore **retired as a row**: the current control key alone is
 refused; the committed key accepts; `LT02`/`LT03` stand.
 
-### D-BOOT — where the four pinned policy ids come from at genesis
+### genesis-policy-pins — where the four pinned policy ids come from at genesis
 
-Ruling on ticket-157's Q-002 (2026-09-17). The runner's `CageConfig` carries
+Ruling on ticket-157's operator question (Q-002) (2026-09-17). The runner's `CageConfig` carries
 the four pins the eight-field datum needs — `cfgApplicationPolicy`,
 `cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy` — and `cfgConsumerPin`
 is deleted. None is typed by hand: each is **derived** from the two partitions'
 `script-identity.json` given the registry identity the boot transaction is about
 to create — the application policy is the naming application script's applied
 hash; the three witness policies are `witness(kind, registry)` applied for
-`kind` 0, 1, 2 (N1). The conformance rows CS01/CS02/CS08 assert that the
+`kind` 0, 1, 2 (controller-authorizes-active-insertion). The conformance rows blueprint-encoding-round-trip/submitted-datum-byte-round-trip/state-fields-chain-round-trip assert that the
 derivation round-trips through the boot datum. A placeholder id, or a retained
 removed field, is a contract change and is refused as a finding.
 
-The executable half of X1 stays in #157. The encoding change forces exactly
+The executable half of compiled-wire-conformance stays in #157. The encoding change forces exactly
 seven library files to follow under `-Werror` — `Config.hs`,
 `TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs`, and (amendment of
-2026-09-17, ticket-157 Q-003) `Deployment.hs` and `TxBuilder/Register.hs` —
+2026-09-17, ticket-157 operator question (Q-003)) `Deployment.hs` and `TxBuilder/Register.hs` —
 and those are in this ticket's surface as "what the encodings force to
-compile". The bounded registry journey is adapted in #157; the seven NYA
+compile". The bounded registry journey is adapted in #157; the seven Naming Your Assets
 journeys remain #172's under #174.
 
 The carrier: **`CageParts` carries the four derived identities** —
@@ -363,13 +363,13 @@ The carrier: **`CageParts` carries the four derived identities** —
 computed as above — **and drops the legacy `repPolicy` and `consumerPin`
 fields**; `cageConfigFor` maps them one-to-one onto the four `cfg*` pins. No
 alias of a removed field survives. The consumer-registration builder in
-`TxBuilder/Register.hs`, which constructs the C10 withdrawal, is **deleted**
+`TxBuilder/Register.hs`, which constructs the deletions withdrawal, is **deleted**
 with its public surface: there is no consumer script to register, and a
 function that registers nothing is a trap for the next reader.
 
 ### Known weaknesses, stated so they are read
 
-Adjudicated *wanted, and visible* (want-ledger R2 and R3):
+Adjudicated *wanted, and visible* (want-ledger seven-edges-interface and refused-combinations-as-complement):
 
 - **The quorum is fixed for the life of the name.** No action rewrites
   `retirement_quorum` after booking; a member who is lost or hostile is
@@ -377,11 +377,11 @@ Adjudicated *wanted, and visible* (want-ledger R2 and R3):
 - **The quorum can retire the name while the controller is present.** Nothing
   checks that Alice is gone; a threshold of members ends the name at any time.
 
-The naming docs (X2) state both in the retirement section.
+The naming docs (published-naming-lifecycle) state both in the retirement section.
 
 ## Rejection behavior
 
-Every refusal in C2, C4, C5, C6, N1, N2 and N4 is a distinct trace label,
+Every refusal in seven-admitted-edges, tree-edge-admission-by-approval, mint-matches-edge-deltas, token-destinations-and-refunds, controller-authorizes-active-insertion, controller-authorizes-absent-to-active-update and refund-owner-authorizes-absent-deletion is a distinct trace label,
 observable in a script failure, and has a test row that produces it and a
 control that shows the accepting shape.
 
@@ -397,7 +397,7 @@ contract change.
 
 The runner and the release archive (#158). The escrow (#152). The CLI (#139).
 The completion stranding defect (#130). Upstream MPFS. The Lean model (#156).
-The interface page (#159). The NYA journeys and their CI jobs (#172, epic
+The interface page (#159). The Naming Your Assets journeys and their CI jobs (#172, epic
 #174); retirement completion at the request validator, including the pending
 request's home and token binding in `application.ak` and `naming.ak` against
 the merged Lean (#175).

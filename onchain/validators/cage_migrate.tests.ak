@@ -216,7 +216,7 @@ test migrate_output_must_hold_token() fail {
 // authorization + full field preservation.
 // ============================================================================
 
-/// FR1: an `oldPolicy` absent from the validator's `previousPolicies`
+/// an `oldPolicy` absent from the validator's `previousPolicies`
 /// allowlist is rejected outright, before any predecessor/ownership check.
 test migrate_old_policy_not_allowlisted() fail {
   let unlisted_policy = "unlisted_policy_id"
@@ -237,7 +237,7 @@ test migrate_old_policy_not_allowlisted() fail {
   )
 }
 
-/// FR2: burning the right quantity under the allowlisted policy is not
+/// burning the right quantity under the allowlisted policy is not
 /// enough — migration must actually spend a UTxO carrying that token.
 test migrate_no_predecessor_input() fail {
   mint(
@@ -254,7 +254,7 @@ test migrate_no_predecessor_input() fail {
 }
 
 /// Unsigned migration — refused under the wholesale `Migrating` refusal
-/// (formerly FR3 owner-signature coverage; the branch refuses regardless).
+/// (former owner-signature coverage; the branch refuses regardless).
 test migrate_missing_owner_signature() fail {
   mint(
     Migrating(migrate_redeemer),
@@ -268,7 +268,7 @@ test migrate_missing_owner_signature() fail {
   )
 }
 
-/// FR4: changing `tip` at migration time is also rejected — parameter
+/// changing `tip` at migration time is also rejected — parameter
 /// changes belong to `Modify`, not `Migrating`.
 test migrate_changes_tip() fail {
   let bad_output =

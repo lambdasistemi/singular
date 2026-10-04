@@ -1,6 +1,28 @@
 {
+  "conformance-responsibility-review": [
+    {
+      "text": "Conformance responsibility review.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor finds a focused Conformance responsibility while the executed cases, receipts and published evidence stay the same. This review is bound to issue #276 and the 2026-09-28 compact team ruling.",
+      "pause": 400
+    },
+    {
+      "text": "Base: eb1339db76c6c47abf4978080b7bbd8424348268. Lean: this base's lean/ tree, whose digest is captured in the intake evidence. Constitution: 1.10.1. No Lean or observation edits.",
+      "pause": 400
+    },
+    {
+      "text": "Requirements: inventory and one bounded improvement; identical receipt schemas, row states, generated claims and uncovered rows; same-body declaration/caller mapping; actual test-suite component built and run; same-revision generated Conformance library API; architecture, diagrams, source/API links and speech; exact pushed-head CI, Registry and Conformance green. The runtime brief carries the full acceptance table.",
+      "pause": 400
+    },
+    {
+      "text": "No predicates, outcomes, verdicts, instructions, receipt schemas, bindings or evidence claims change. Any mismatch holds acceptance and is escalated.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "spec.md",
-    "sha256": "11aac305852fea8eb9d93f30a5b2dd8ff4119dda3cc7380a4fdc80cc8227dd67"
+    "sha256": "3ccebebe7a5a6900452acf07e597e548f9c5db2f6cdae129cf4c69a2fc9029f8"
   }
 }

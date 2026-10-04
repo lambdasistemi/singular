@@ -1,30 +1,196 @@
 {
-  "slice-a-registry-mode-model-author-glm-auditor-opus-lean-auditor": [
+  "156-tasks": [
     {
-      "text": "Twenty-six tasks: definitions first, the statements over reachable states, the open application before naming, the refused reads, the deposit and its custody census, naming's six-edge policy, the retirement map, the observation surface the frozen oracle reads, the regenerated corpora and pages, and the four mutants with their controls.",
+      "text": "#156 — tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Two sequential slices in one PR (ruling operator answer (A-001)). Tasks are checked by the ticket owner after each slice's audited candidate is accepted, never by an author.",
       "pause": 400
     }
   ],
-  "slice-b-163-simulator-author-muse-auditor-opus-lean-simulations-auditor": [
+  "slice-a-registry-mode-model-author-glm-auditor-opus-lean-auditor": [
     {
-      "text": "Nine tasks, starting only after the model slice's audit passes: the profiles, the named refusals, replay agreement, the journeys and their limits, the clarity record, the counts, the browser checks and fresh speech.",
+      "text": "Slice A — registry-mode-model (author glm, auditor Opus lean-auditor).",
+      "pause": 500
+    },
+    {
+      "text": "Definitions first, so the model can be reasoned about; the open application proved before naming.",
       "pause": 400
+    },
+    {
+      "text": "[ ] state-leaf-leaf-codec — State, Leaf and the leaf codec (singular-leaf-singular-state, singular-encodestate-singular-decodestate, any-byte-string-that-not-one-three, leaf-byte-string-from-naming-era-decoded).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] value-incarnation-assetscope-reuseidentity-consumerpin-removed-proved — Value, incarnation, assetScope, reuseIdentity, consumerPin removed, proved absent from the elaborated environment, not by a source grep (absence-old-vocabulary).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] seven-edges-their-from-transitions-their-token — the seven edges, their from→to transitions and their token deltas (singular-edge-singular-delta); no free-form update.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] eight-field-configuration-admission-by-approval-under — the eight-field configuration (state-datum-its-fields-enumerated-exactly-eight) and admission by approval under the pinned application policy; the read needs none (singular-admits-config-applicationpolicy).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] read-verified-against-intermediate-root-at-its — Read verified against the intermediate root at its position, leaf unchanged; Read Active and Read Absent refused (singular-read-root-threading).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-atomicity-zero-request-refusal-summed-delta — the fold: atomicity, zero-request refusal, the summed-delta mint check, and every refused combination with its own distinct reason (singular-step-refusal-reasons).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] token-custody-routing-including-absent-token-s — token custody and routing, including the absent token's value on consumption (fold-minting-absent-token-it-completes-absent, retired-custody-value-proposal).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] proved-sorry-free-at-their-bound-identities — tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change proved sorry-free at their bound identities (tree-change-requires-approval … terminal-key-cannot-change).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] four-witness-laws-proved-sorry-free-i — the four witness laws active-witness-unique–witness-kinds-exclude proved sorry-free (active-witness-unique … witness-kinds-exclude).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] edge-inversions-one-per-edge-exposing-guards — edge inversions, one per edge, exposing guards and effects.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-application-as-smallest-instance-promise-instantiated — the open application as the smallest instance; every promise instantiated at it (open-application-law-instances). Proved before naming.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] naming-as-instance-record-utxo-holds-active — naming as an instance: record UTxO holds the active token; maintain and recover leave the root equal; retirement completion is updateTerminal; approval policy per naming-approvals-bind-request; deleteActive never certified (record-binds-active-registration, local-record-update-preserves-registry, naming-approvals-bind-request).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] existing-naming-statements-recovery-rows-re-stated — the existing naming statements and recovery rows re-stated with meaning preserved (retirement-removes-active-witness, recovery-preserves-record-rules).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] corpus-generators-emit-rows-from-new-model — corpus generators emit rows from the new model; corpora and manifests regenerate byte-for-byte.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] tools-check-model-py-opened-new-identities — tools/check_model.py opened to the new identities with its discipline intact.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] compiled-axiom-report-clean-no-sorryax-statements — compiled axiom report clean, no sorryAx, every statements module gated.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] theorems-md-model-ledger-md-mutants-md — docs/theorems.md, docs/model-ledger.md and docs/mutants.md rewritten against the new model, speech restamped.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] four-mutants-break-their-named-law-positive — the four #154 mutants each break their named law, each with a positive control, each classified statement-kill or row-kill, none from a compile failure (mint-second-active-token-for-key–leave-absent-token-outstanding-on-updateactive).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] theorems-md-equals-its-manifest-exactly-total — docs/theorems.md equals its manifest exactly, with the total derived rather than asserted (declarations-match-manifest). The base tree ships 44 manifest declarations against 41 page rows.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] tools-check-model-py-gains-page-against — tools/check_model.py gains the page-against-manifest cross-check, seen to fail before it is trusted (permanent-manifest-page-check), so the gap that survived v0.6.1 cannot recur once this ticket's gate is gone.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] refused-reads-read-active-read-absent-in — the refused reads Read Active and Read Absent are in the refusal set with rows and controls, and refused-combinations-as-complement is stated as the complement of the seven-edges-interface table rather than an enumeration (operator answer (A-002) SPEC 1, 2).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] absent-token-s-custody-datum-carries-insertabsent — the absent token's custody datum carries the insertAbsent refund address; both exits pay there; the custody census holds (custody-lovelace-refund, absent-custody-datum). The control uses an inserter and a consumer that differ.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] naming-s-approval-policy-implements-r-for — naming's approval policy implements naming-approval-rules for all six edges, with the four refusal controls (operator answer (A-002) SPEC 5).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] retirement-map-for-base-generic-declarations-carried — the retirement map for all 44 base generic declarations: carried, renamed to what, or retired why (retirement-map-for-generic-statements).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] statement-quantifies-over-singular-reachable-states-not — every statement quantifies over Singular.Reachable states, not arbitrary State values (operator answer (A-002) SPEC 3).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] singular-oracle-observation-surface-defined-in-terms — the Singular.Oracle.* observation surface, defined in terms of the real model rather than as an independent table, so the frozen oracle (gate leg independent-model-oracle) can evaluate the model at the ticket owner's inputs.",
+      "pause": 300
+    }
+  ],
+  "simulator-slice-163-simulator-author-muse-auditor-opus-lean-simulations-auditor": [
+    {
+      "text": "Simulator slice — #163 simulator (author muse, auditor Opus lean-simulations-auditor).",
+      "pause": 500
+    },
+    {
+      "text": "Starts only after model slice's audit passes and its interface is frozen.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] generic-profile-exposes-seven-edges-read-token — the generic profile exposes the seven edges and the read, with the token movement shown per edge (simulator-exposes-every-edge).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] illegal-combination-refused-by-name-matching-model — every illegal combination refused by name, matching the model's reason (simulator-refuses-illegal-combinations-by-name).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] full-replay-agreement-against-new-corpora-executed — full replay agreement against the new corpora, with an executed/discovered denominator (simulator-replays-all-corpus-rows).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] naming-profile-over-witness-minted-by-folded — the naming profile: the Over witness minted by a folded read and freely burned (terminal-witness-minted-by-read).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] simulation-md-describes-journeys-states-finite-model — docs/simulation.md describes the journeys and states the finite-model limits.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] lean-clarity-md-records-what-new-formal — docs/LEAN-CLARITY.md records what the new formal artifacts did and did not communicate to the transcriber (formal-transcription-experience).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] counts-on-front-page-in-design-md — the counts on the front page and in docs/design.md equal what actually replays (published-counts-match-replay).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] browser-checks-replay-against-new-model — browser checks replay against the new model.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] changed-page-restamped-just-check-presentation-passes — every changed page restamped; just check-presentation passes (speech-matches-page).",
+      "pause": 300
     }
   ],
   "gate-held-not-a-task": [
     {
-      "text": "The gate criteria are not checkboxes. Only the ticket gate, on the combined tree, may claim the repository green.",
+      "text": "Gate-held, not a task.",
+      "pause": 500
+    },
+    {
+      "text": "nix develop --quiet -c just model and nix develop --quiet -c just ci exit 0 are the gates' criteria, not checkboxes. Only the ticket gate, on the combined tree, may claim the repository green — model slice is green on its own gate and red on the simulator by construction, and is never pushed in that state.",
       "pause": 400
     }
   ],
   "forward-repair-after-merge": [
     {
-      "text": "One forward repair task keeps the registry rename rewrite extent aligned with its residual gate for Lean and HTML files, with controls in both directions.",
-      "pause": 400
+      "text": "Forward repair after merge.",
+      "pause": 500
+    },
+    {
+      "text": "[x] keep-registry-rename-rewrite-extent-aligned-its — keep the registry rename rewrite extent aligned with its final residual gate for tracked Lean and HTML files; permanent controls prove both extensions are rewritten and both remain detectable when a residual is seeded.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "9235543b3867ad53339f8ecb169de9732681a49cf496375bf71e75c252c2be68"
+    "sha256": "47bdfe1ea1885d5a3287c4895e0447a539d89f0f0276b81f60241f7629a0eb50"
   }
 }

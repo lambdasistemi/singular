@@ -1,12 +1,30 @@
 {
+  "deployment-record-invariants": [
+    {
+      "text": "Deployment record invariants.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator, I need the manifest and mirror files I already carry to remain readable by the same tools and to identify the same live registry.",
+      "pause": 400
+    }
+  ],
   "values-and-boundaries": [
     {
-      "text": "The table binds the fields and formats of reference scripts, deployments, compiled parts, attached outputs and proof mirrors. An Attached value contains resolved outputs without the stronger live datum checks performed by verification. The retained callers compare a loaded mirror with the chain.",
+      "text": "Values and boundaries.",
       "pause": 500
+    },
+    {
+      "text": "The chain root is an observation of the concrete authenticated map, not an equality to Lean's abstract FNV commitment. No mirror JSON field is a substitute for checking the loaded trie's root against a live state datum. The current check is performed by the retained journey callers and must be described at that actual boundary.",
+      "pause": 400
+    },
+    {
+      "text": "Attached contains resolved outputs without a proof that their state datum agrees with the manifest's active policy or windows. That stronger claim belongs only to verifyDeployment in the current implementation.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "0f0353d8c31df51eca59e3c448cb71970b5482f70bbe6018957d1c39c0c70a17"
+    "sha256": "ddf22705c4cef469533b9ecfd14eb4c88a01df3db9cc22f5fe78555558cad7be"
   }
 }

@@ -1,16 +1,22 @@
 {
-  "completion-sequence": [
+  "node-delivery-tasks": [
     {
-      "text": "The sequence binds the model and gate, extracts focused owners, documents their architecture, then gathers independent audit and CI evidence for a draft pull request.",
-      "pause": 400
+      "text": "Node delivery tasks.",
+      "pause": 500
     },
     {
-      "text": "The diagram shows that plan, code, documentation and audit follow each other as reviewable steps.",
+      "text": "As an integrator, I need a reviewable candidate whose evidence says precisely which old behavior was exercised.",
       "pause": 400
+    }
+  ],
+  "completion-sequence": [
+    {
+      "text": "Completion sequence.",
+      "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "bbec17f58a13ac068fc59feee090f1c9b67a8f46c5b63b3492b4c715d7022467"
+    "sha256": "aa638b0776c537e7a3f1896a6b1c989f932fc672bf6e957d01d22796ba46d6e7"
   }
 }

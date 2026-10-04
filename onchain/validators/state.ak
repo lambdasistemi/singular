@@ -48,27 +48,27 @@
 ////
 //// What a `Modify` must satisfy, and the owner that checks it:
 ////
-//// - **C1/C2 admissibility** — the request's tag is one of the seven C2
+//// - **C1/seven-admitted-edges admissibility** — the request's tag is one of the seven seven-admitted-edges
 ////   edges (`0..6`), admitted before approval and before any proof is
 ////   checked; anything else refuses `edge-inadmissible`. The trie move and
 ////   its leaf bytes come from the edge table, never from request bytes.
 ////   (`registry/fold`)
-//// - **C3 the read** — edge 6 is verified with the existing verifier at its
+//// - **read-preserves-intermediate-root the read** — edge 6 is verified with the existing verifier at its
 ////   own position in the batch, so its proof is checked against the
 ////   intermediate root there. The leaf is unchanged. (`registry/fold`,
 ////   `registry/trie`)
-//// - **C4 admission** — a request whose edge changes the trie is folded only
+//// - **tree-edge-admission-by-approval admission** — a request whose edge changes the trie is folded only
 ////   if its UTxO carries exactly one asset under the pins's
 ////   `application_policy` whose asset name is the approval binding of that
 ////   request. No application script runs at fold time; the cage recomputes
 ////   the name rather than trusting it. A read requires no approval: its
 ////   admission is skipped, and an approval asset it carries is not checked.
 ////   (`registry/fold`)
-//// - **C5 the delta** — the cage sums the token column of C2 over the
+//// - **mint-matches-edge-deltas the delta** — the cage sums the token column of seven-admitted-edges over the
 ////   requests it consumed, per key, and the transaction's mint under the
 ////   three pinned token policies must equal that sum exactly. Nothing else
 ////   may move under them. (`registry/fold` sums, `registry/modify` compares)
-//// - **C6 destinations** — each minted active or terminal token lands in
+//// - **token-destinations-and-refunds destinations** — each minted active or terminal token lands in
 ////   exactly one output, the one its request named, carrying the datum it
 ////   named and at least the request's value minus the tip. An absent token
 ////   lands in the cage's own custody beside the inserter's refund address; a
@@ -77,9 +77,9 @@
 ////   `requestOwner`'s key. Every lovelace obligation of a fold is settled
 ////   once per payee, on the summed lovelace of the outputs paying it (#253).
 ////   (`registry/duty`, `registry/discharge`, `registry/settlement`)
-//// - **C7 the pins** — the seven non-root fields are equal before and after
+//// - **state-datum-fields the pins** — the seven non-root fields are equal before and after
 ////   every fold. (`registry/modify`; genesis sets them)
-//// - **C8 coverage** — every consumed request carries at least its tip.
+//// - **request-covers-tip coverage** — every consumed request carries at least its tip.
 ////   (`registry/fold`)
 ////
 //// Every refusal the `Modify` decision and the custody path name RETURNS
@@ -144,7 +144,7 @@ validator state {
     expect Some(datum) = maybeDatum
     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
     when datum is {
-      // The cage's own custody of an absent token (#157 D-CUSTODY): one
+      // The cage's own custody of an absent token (#157 absent-custody-datum): one
       // spending path and nothing else. The redeemer is not what
       // authorizes it — the shape of the fold around it is.
       AbsentCustody { refund } -> validCustodySpend(refund, input, tx)

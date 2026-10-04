@@ -33,18 +33,18 @@ pub const registryStateHash: ByteArray =
 /// One parametrised minting script, instantiated three times — kind `0`
 /// absent, `1` active, `2` terminal — to give the three policy ids the
 /// registry pins at genesis. Under each of them the asset name is the
-/// registry key itself (D-ASSET); this script never looks at names or
+/// registry key itself (token-name-is-registry-key); this script never looks at names or
 /// quantities, because it does not decide them.
 ///
 /// **Its whole rule is co-presence.** A mint or a burn under this policy
 /// is accepted only in a transaction that spends the registry's state
 /// token with `Modify` — that is, inside a fold. The cage is what
-/// computes how many tokens move and where they go (C5, C6); this policy
+/// computes how many tokens move and where they go (mint-matches-edge-deltas, token-destinations-and-refunds); this policy
 /// only refuses to let anything move when the cage is not there to say
 /// so. Splitting it that way is the point: two scripts cannot disagree
 /// about a quantity neither of them invents twice.
 ///
-/// **The terminal instance is freely burnable** (W3). A terminal witness
+/// **The terminal instance is freely burnable** (terminal-witnesses-plural). A terminal witness
 /// says a name is over, forever; letting its holder destroy their own
 /// copy costs the registry nothing, and the leaf it attests to does not
 /// move. Minting one still needs the fold, because that is where the
@@ -63,7 +63,7 @@ pub const registryStateHash: ByteArray =
 validator witness(kind: Int, registry: ByteArray) {
   mint(_redeemer: Data, policy_id: PolicyId, tx: Transaction) {
     if kind == 2 && pureBurn(policy_id, tx.mint) {
-      // W3: a terminal witness is the holder's to destroy.
+      // terminal-witnesses-plural: a terminal witness is the holder's to destroy.
       True
     } else if foldPresent(registry, tx) {
       True

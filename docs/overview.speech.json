@@ -1,36 +1,58 @@
 {
-  "what-each-layer-owns": [
+  "responsibilities-and-terminology": [
     {
-      "text": "The diagram stacks three layers. The application owns its state and rules: certifying an initial state, deciding legal local changes, and authorizing the release of its NFT into an exact terminal request. Singular owns key state, request validity and custody, and the minting and burning coupled to transitions. MPF owns the authenticated map: absence proofs, existing-value proofs and successive roots across a fold.",
+      "text": "Responsibilities and terminology.",
+      "pause": 500
+    },
+    {
+      "text": "Status. This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal; where the two differ, registry mode is current. How a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of this design.",
       "pause": 400
     },
     {
-      "text": "Singular has no owner, privileged requester or privileged folder. Permissionless submission does not make arbitrary requests valid; applications may add conditions but cannot bypass supply or custody rules.",
+      "text": "Singular maintains unique representative NFTs and the lifecycle of their registry keys. Applications maintain their own state and decide which application transitions are legal. MPF provides the authenticated registry data structure and proof mechanics.",
+      "pause": 400
+    }
+  ],
+  "what-each-layer-owns": [
+    {
+      "text": "What each layer owns.",
+      "pause": 500
+    },
+    {
+      "text": "Singular has no native owner, privileged requester or privileged folder. Permissionless submission does not mean arbitrary requests are valid. Applications can impose their own validation conditions; they cannot authorize bypassing Singular's NFT supply or custody rules.",
       "pause": 400
     }
   ],
   "names-that-must-stay-distinct": [
     {
-      "text": "The table separates registry identity from registry key, the representative NFT from the request token, application certificate from application state, Withdraw from Delete, registry Update from application update, and defines a fold.",
-      "pause": 400
+      "text": "Names that must stay distinct.",
+      "pause": 500
     },
     {
-      "text": "Creating a request, minting an action token and minting a representative are different events. An Update or Delete request moves the representative that already exists.",
+      "text": "Creating a request UTxO, minting an application action token, and minting a representative NFT are different events. A transaction constructing an Update/Delete request moves the representative that already exists; it does not mint a replacement representative.",
       "pause": 400
     }
   ],
   "registry-states": [
     {
-      "text": "The state diagram has three states. Absent becomes Active when an Insert is folded and a representative minted. Active becomes Over when an Update is folded and the representative burned, and no transition leaves Over. Active becomes absent again when a Delete is folded and the representative burned.",
+      "text": "Registry states.",
+      "pause": 500
+    },
+    {
+      "text": "An absent key is available for Insert. Active means its representative NFT is outstanding, either in application custody or in a pending Update/Delete request. It does not mean the application is usable, unpaused or in any particular business state. Over permanently reserves the key with no live representative.",
       "pause": 400
     },
     {
-      "text": "Active means the representative is outstanding, in application custody or in a pending terminal request; it says nothing about the application's business state. Both values are payload-free.",
+      "text": "Both stored values are payload-free. Application history or checkpoints needed for later application behavior must remain authenticated outside these values. No mapping of KERI close, pause or conviction to Singular operations is selected here.",
+      "pause": 400
+    },
+    {
+      "text": "Continue with the lifecycle and certification.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "overview.md",
-    "sha256": "53e2e847aa4c1ad7f4ebd4f8b88ab93fb5a26bfac349ee59f13f35c56337ff29"
+    "sha256": "c15976f77e1308227a1952d6691d0cd4118b7d8a1fa5ec1c630a4d8d7f728642"
   }
 }

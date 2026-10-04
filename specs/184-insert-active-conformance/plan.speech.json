@@ -1,42 +1,84 @@
 {
   "status-and-vertical-cut": [
     {
-      "text": "One implementation task makes the generic conformance session execute CG21 and emit its complete receipt across all required layers.",
+      "text": "Status and vertical cut.",
+      "pause": 500
+    },
+    {
+      "text": "There is one implementation task and one runnable: the generic conformance session executes register-active-key and emits its complete receipt. Fixture, receipt validation, workflow return and final documentation are one vertical; none is a separate layer ticket.",
+      "pause": 400
+    },
+    {
+      "text": "The first docs commit temporarily records the honest pre-run state. The final implementation checkpoint restores an executed claim only after register-active-key runs and the receipt is asserted.",
       "pause": 400
     }
   ],
   "surface-map": [
     {
-      "text": "Lean is read-only. The owned layers are conformance execution, receipt evidence, inventory and CI, and the reader-facing copy.",
-      "pause": 400
+      "text": "Surface map.",
+      "pause": 500
     }
   ],
   "owner-sequence": [
     {
-      "text": "The owner commits RED, then fold, duplicate, keyed-mint sequence, workflow and copy checkpoints while the persistent auditor reviews decisions asynchronously.",
+      "text": "Owner sequence.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner first commits an executable RED bundle for the acceptance lines. It then turns open-registration-fold/registration-transaction-conjuncts, duplicate-key-refusal-control, keyed-mint-distribution-control/proofs-use-latest-committed-root, and runner-receipts-and-workflow-agree/documentation-and-evidence-agree green as committed checkpoints. Each checkpoint carries one decision record for the persistent auditor and the owner continues without waiting.",
+      "pause": 400
+    },
+    {
+      "text": "Five submitted transactions plus two accepting controls are expected from the",
+      "pause": 400
+    }
+  ],
+  "173-handoff-this-is-a-sizing-fact-not-an-implementation-algorithm-each": [
+    {
+      "text": "173 handoff. This is a sizing fact, not an implementation algorithm. Each.",
+      "pause": 500
+    },
+    {
+      "text": "landed fold must advance the committed trie before the next transaction is proved.",
       "pause": 400
     }
   ],
   "gate-and-review": [
     {
-      "text": "Two independent authors map the lines to existing CI commands. The ticket owner freezes their union, and push waits for all checkpoint approvals and one final gate run.",
+      "text": "Gate and review.",
+      "pause": 500
+    },
+    {
+      "text": "Before dispatch, two independent 15-minute gate authors map every acceptance line to the verbatim conformance generic-row CI step or the root nix develop --quiet -c just ci command and cite a real red run per command. The ticket owner synthesizes their union and freezes acceptance checks. A missing CI command is escalated; no bespoke substitute is invented.",
+      "pause": 400
+    },
+    {
+      "text": "The commit owner and mute persistent auditor launch together in distinct panes. The auditor trusts acceptance checks, runs nothing and vets the decisions recorded at RED, each green acceptance checkpoint and pre-push. Push waits for an approval at every checkpoint and one final frozen-gate run on the head.",
       "pause": 400
     }
   ],
   "copies-and-release-boundary": [
     {
-      "text": "Inventory, workflow, receipt schema and tests, consumer page and speech move together. Remote CI gates readiness and the epic owner merges.",
+      "text": "Copies and release boundary.",
+      "pause": 500
+    },
+    {
+      "text": "Copies: rows.json; generic workflow invocation, expected set, accounting and verdict section; receipt schema and tests; consumer page and speech. After the ticket owner's push, remote CI must be green on the exact head before the draft can become ready. The epic owner merges and owns any release action.",
       "pause": 400
     }
   ],
   "budget-and-remainder": [
     {
-      "text": "The owner has four hours and one final Gate S. Only a green coherent vertical can be pushed at the cap.",
+      "text": "Budget and remainder.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner has four hours. One final acceptance checks consists of the full generic rows workflow step and the root CI command. At the cap, only a green coherent vertical may be pushed; incomplete behavior remains unaccepted and is returned for a new cut with its evidence preserved.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "ab688fe302ef640c113d713c0ab36d23e171498471add8fdbe90cc939141110e"
+    "sha256": "fb5608305a08d491cf1e25d4f4352bb28c97e61a87413c5408eefea80593d51f"
   }
 }

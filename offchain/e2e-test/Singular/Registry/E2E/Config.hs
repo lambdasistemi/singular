@@ -2,7 +2,7 @@
 
 {- |
 Module      : Singular.Registry.E2E.Config
-Description : Resolve the E2E blueprint before reporting any examples
+Description : Resolve the end-to-end blueprint before reporting any examples
 License     : Apache-2.0
 
 The suite shares one parsed blueprint. Missing configuration, unreadable

@@ -377,7 +377,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
                     .~ ValidityInterval
                         (maybe SNothing SJust (fsLower fs))
                         (SJust upperSlot)
-        -- #157 C10: no consumer withdrawal rides a fold any more; only a
+        -- #157 removed-consumer-encoding: no consumer withdrawal rides a fold any more; only a
         -- row that asks for its own stake withdrawal carries one.
         withWd =
             body
@@ -489,7 +489,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
                   in  (purpose, (toLedgerData (Contribute stateRef), unitsFor purpose))
                 | (reqIn, _) <- fsReqs fs'
                 ]
-            -- #157 C10: the consumer rewarding purpose is gone; a row that
+            -- #157 removed-consumer-encoding: the consumer rewarding purpose is gone; a row that
             -- asks for its own stake withdrawal is the only one left.
             hookPairs = case fsWithdrawal fs' of
                 Nothing -> []
@@ -534,7 +534,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
                 Nothing -> []
                 Just (_, s) -> [(hashScript s, s)]
             -- A request script witness with no request redeemer is an
-            -- ExtraneousScriptWitnesses phase-1 failure (CG11's empty
+            -- ExtraneousScriptWitnesses phase-1 failure (empty-fold's empty
             -- fold consumes no requests).
             requestScripts =
                 [ (hashScript reqScript, reqScript)
@@ -802,7 +802,7 @@ validProofs env reqUtxos =
   where
     -- The key and the edge are the request's own, read from its datum
     -- exactly as the library builder reads them: the rows no longer
-    -- share one (#157 C3: a read proves its key and leaves it alone,
+    -- share one (#157 read-preserves-intermediate-root: a read proves its key and leaves it alone,
     -- which `walkEdge` already knows).
     processOne trie (_, txOut) = walkEdge trie key edge
       where

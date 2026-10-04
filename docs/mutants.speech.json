@@ -1,30 +1,88 @@
 {
+  "mutation-ledger": [
+    {
+      "text": "Mutation ledger.",
+      "pause": 500
+    },
+    {
+      "text": "As someone deciding whether to trust these proofs, use this register to see that the model's guarantees actually constrain the model — that each law was shown to fail when the behaviour it describes is broken, rather than merely shown to compile when it is not.",
+      "pause": 400
+    },
+    {
+      "text": "The four mutations below are the ones the registry-mode epic names. Each was executed. None is a proposal.",
+      "pause": 400
+    }
+  ],
   "what-counts-as-a-kill-here": [
     {
-      "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence. The mutated definition must elaborate first, so what is measured is a semantic change rather than a syntax error; and the kill must land on an obligation rather than on a restatement, so each mutation carries its effect lemma with it. The first run of this campaign killed all four at the effect lemmas — a near-tautological result, discarded rather than reported. The campaign mutated the model at the exact revision recorded on the page, a hash beginning c nine five one. The current model is a different revision, beginning five three eight b, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. A campaign is evidence about the definitions it broke, so a later model is a later campaign rather than a carried-forward result.",
+      "text": "What counts as a kill here.",
+      "pause": 500
+    },
+    {
+      "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence:",
+      "pause": 400
+    },
+    {
+      "text": "the mutated definition must elaborate first, so what is measured is a semantic change and not a syntax error;",
+      "pause": 300
+    },
+    {
+      "text": "the kill must land on an obligation, not on a restatement. Mutating applyEdge trivially breaks the effect lemmas that restate applyEdge, which proves nothing; so each mutation carries its effect lemma with it, and the failure surfaces where the invariant is established;",
+      "pause": 300
+    },
+    {
+      "text": "a positive control shows the same obligations hold on the unmutated tree.",
+      "pause": 300
+    },
+    {
+      "text": "The first run of this campaign killed all four at the effect lemmas. That was a near-tautological result and was discarded rather than reported.",
+      "pause": 400
+    },
+    {
+      "text": "The campaign mutated Model.lean at sha256 c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8. The current Model.lean is beec6567f46b7b0bb273ebe3e28cf7197bf56668bcdf8dfd4590c58ec6d29d97, and the campaign has not been rerun against it: the four rows below are evidence about the revision they name and nothing later. A campaign is evidence about the exact definitions it broke, so a later model is a later campaign, not a carried-forward result.",
       "pause": 400
     }
   ],
   "the-mutants": [
     {
-      "text": "Four mutations, each executed: a second active token, an absent token for a key just made active, a read that will attest an active key, and an update that leaves the absent token outstanding. All four were killed, and the positive control shows the same obligations hold on the unmutated tree.",
+      "text": "The mutants.",
+      "pause": 500
+    },
+    {
+      "text": "Positive control: on the unmutated tree the statements prove, and the compiled axiom report carries no sorryAx.",
       "pause": 400
     }
   ],
   "why-the-kills-land-where-they-do": [
     {
-      "text": "Every promise is read off one invariant, which the model proves survives each of the seven edges, so a mutation that breaks a supply law breaks that invariant conjunct and everything below it. The read mutation is the one worth reading closely: it breaks no arithmetic, it breaks a derivation — the attestation can no longer be shown sound, which is exactly the soundness law failing.",
+      "text": "Why the kills land where they do.",
+      "pause": 500
+    },
+    {
+      "text": "Every promise in the interface is read off one invariant — Consistent — which step_ok_consistent proves survives each of the seven edges. active-witness-unique and absent-witness-unique are its supply conjuncts read one state at a time, supply-matches-leaf-state is the same fact stated as a biconditional, witness-kinds-exclude follows from the supply conjuncts plus a key having one leaf, and terminal-attestation-sound is its terminal-holding conjunct. So a mutation that breaks a supply law breaks the invariant's corresponding conjunct, and everything downstream of it fails with it.",
+      "pause": 400
+    },
+    {
+      "text": "attest-active-key is the one worth reading closely. Dropping the terminal requirement from the read does not break arithmetic; it breaks a derivation. The witnessTerminal branch establishes that the attested key's leaf is terminal by reading it out of the verified read. With the mutation the read no longer carries that fact, so the attestation can no longer be shown sound — which is exactly terminal-attestation-sound failing, and exactly the defect the mutation describes.",
       "pause": 400
     }
   ],
   "limits": [
     {
-      "text": "Four mutants are four points, not a mutation score. A killed mutant shows the proofs constrain the mutated definition; it does not show the definition is the right one.",
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "Four mutants are four points, not a mutation score. A campaign that enumerated every guard and reported a survivor census would say more, and is not what this is: these four were chosen because the interface names them as the failures its witness laws exist to prevent.",
+      "pause": 400
+    },
+    {
+      "text": "A killed mutant shows the proofs constrain the mutated definition. It does not show the definition is the right one — that is what the operator's rulings, the interface and the simulation are for.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "mutants.md",
-    "sha256": "49c780a0c228f4663bc9a855af5ad2214f4d11aa6b6b0d96eabdc276e9b6e050"
+    "sha256": "95dcc06ec0321bb6a31c6cd04a7c06096c7d58fffb6e773d1f5bd5c92677990e"
   }
 }

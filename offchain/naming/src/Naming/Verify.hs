@@ -195,11 +195,11 @@ data CompleteEvidence = CompleteEvidence
     -}
     , ceReqKey :: ByteString
     {- ^ Folded request's registry key (request datum bytes): must be
-    the burned asset's own name (#157 D-ASSET, the asset name IS the
+    the burned asset's own name (#157 token-name-is-registry-key, the asset name IS the
     key).
     -}
     , ceReqEdge :: Integer
-    {- ^ Folded request's C2 row index (request datum bytes): must be
+    {- ^ Folded request's seven-admitted-edges row index (request datum bytes): must be
     the retirement, edge 3 `updateTerminal` (#183). The request states
     no values any more, so the move it asks for is the tag itself, and
     that tag is what the cage reads and the scripts check on ledger.

@@ -25,7 +25,7 @@
       url = "github:intersectmbo/cardano-haskell-packages/8479db771a3186eb326e42d8480eddc20a208275";
       flake = false;
     };
-    # Pinned cardano-node, used as a subprocess by the devnet E2E
+    # Pinned cardano-node, used as a subprocess by the devnet end-to-end
     # tests. Version tracks the upstream cardano-node-clients
     # devnet Dockerfile.
     cardano-node = {
@@ -102,7 +102,7 @@
           ghc = project.project.pkg-set.config.ghc.package;
         };
 
-        # #278 S2: the pinned house formatter. Fourmolu is resolved by the
+        # #278 terminal-attestation-permanent: the pinned house formatter. Fourmolu is resolved by the
         # locked dev-shell tool set; this extraction exposes exactly that
         # binary as a package, so the root format recipes, the root format
         # controls and this tree's lint check all run the one pinned
@@ -359,7 +359,7 @@
           text = builtins.readFile ./contract-test/external.sh;
         };
 
-        # The connected verifier (issue #77, S3): recomputes verdicts from
+        # The connected verifier (issue #77, supply-matches-leaf-state): recomputes verdicts from
         # raw run evidence. Pure offline tool: no node on PATH needed, but
         # wrapped like the runners for uniformity. Blueprints come from the
         # caller at run time (--blueprint/--blueprint-blueprint).
@@ -501,7 +501,7 @@
           inherit (components.exes) singular;
           # #326 R4: a SignedTx is constructible only through signTx.
           inherit (haskellChecks) signed-tx-control;
-          # #278 S2: the pinned house formatter, for the root format
+          # #278 terminal-attestation-permanent: the pinned house formatter, for the root format
           # recipes and controls (same locked tool as the lint check).
           fourmolu = fourmoluTool;
           # Mechanical adapter (D-008): exposes the cardano-node already

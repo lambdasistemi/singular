@@ -1,54 +1,116 @@
 {
+  "156-functions-model": [
+    {
+      "text": "#156 — functions model.",
+      "pause": 500
+    },
+    {
+      "text": "New and changed declarations: names, explicit argument names, argument and result types, and signature-level constraints. No bodies, no proofs, no tactics.",
+      "pause": 400
+    },
+    {
+      "text": "Qualified names are binding: the manifests, the compiled axiom report and the audit bind to these exact identities.",
+      "pause": 400
+    }
+  ],
   "model-the-alphabet-and-the-leaf": [
     {
-      "text": "The state and leaf types, and the two codec functions, which must be total, injective and defined on exactly the three codec bytes.",
-      "pause": 400
+      "text": "Model — the alphabet and the leaf.",
+      "pause": 500
     }
   ],
   "model-the-edges": [
     {
-      "text": "Exactly seven edges and exactly three token kinds, with the delta equal to the interface table and the transition refusing every edge out of terminal.",
-      "pause": 400
+      "text": "Model — the edges.",
+      "pause": 500
     }
   ],
   "model-admission-routing-the-fold": [
     {
-      "text": "The eight-field configuration, admission, routing, the step function whose every refusal carries a distinct reason, the atomic batch fold that threads the root through the actions, and the positional read.",
-      "pause": 400
+      "text": "Model — admission, routing, the fold.",
+      "pause": 500
     }
   ],
   "the-oracle-observation-surface-required-and-read-only-to-the-author": [
     {
-      "text": "The gate's frozen oracle evaluates the model at inputs the ticket owner fixed before any code existed, and compares them to expected outputs the author cannot regenerate. That is what makes the gate measure correspondence rather than self-consistency, and it is the repair for the unfit verdict the blind gate audit returned. The model exposes ten total observations; everything behind them is the author's to shape freely. They must be defined in terms of the real model, never as an independent table written to satisfy the oracle — mutating the model must move the observations with it.",
+      "text": "The oracle observation surface — required, and read-only to the author.",
+      "pause": 500
+    },
+    {
+      "text": "The gate's frozen oracle (leg independent-model-oracle) evaluates the model at inputs the ticket owner fixed before any code existed and compares to expected outputs the author cannot regenerate. That is what makes the gate measure correspondence instead of self-consistency, and it is the repair for the UNFIT verdict the blind gate audit returned on gate a3.",
+      "pause": 400
+    },
+    {
+      "text": "So the model must expose these total observations. They are the contract the oracle reads; everything behind them is the author's to shape freely.",
+      "pause": 400
+    },
+    {
+      "text": "These are observations, not a second model. Each must be defined in terms of the real model — the fold, the transition, the routing the cage performs — never as an independent table written to satisfy the oracle. A surface that hard-codes the oracle's answers while the model does something else is the exact defect the anti-cheat pass looks for, and obligation definition-mutant-controls's mutants are what catch it: mutate the model and the observations must move with it.",
+      "pause": 400
+    },
+    {
+      "text": "The oracle itself lives outside the repository, in the ticket runtime root. Gate leg frozen-scope-check refuses any diff that touches the mandate or the oracle, so the author cannot see the expected values, edit them, or regenerate them.",
       "pause": 400
     }
   ],
   "statements": [
     {
-      "text": "The eleven bound statement identities, repeated here as the binding list for the manifest and the axiom report, accompanied by one inversion per edge.",
+      "text": "Statements.",
+      "pause": 500
+    },
+    {
+      "text": "The eleven identities are fixed in plan.md and are repeated here as the binding list for the manifest and the axiom report:",
+      "pause": 400
+    },
+    {
+      "text": "Edge inversions accompany them, one per edge, exposing the exact guards and effects rather than restating a success boolean. Their identities are the commit owner's to choose within Singular.Statements; they are inventoried by the manifest like any other declaration.",
       "pause": 400
     }
   ],
   "open-application": [
     {
-      "text": "A policy that certifies every edge for every key, with one instantiation per registry promise and no naming vocabulary anywhere in it.",
-      "pause": 400
+      "text": "Open application.",
+      "pause": 500
     }
   ],
   "naming-preserved-identities": [
     {
-      "text": "The naming statements and recovery rows keep their names and meaning. The retirement theorem does not: it is a generic statement, superseded by the termination law, which is why every base declaration needs an explicit disposition. Naming's policy follows the operator's six-edge ruling.",
+      "text": "Naming — preserved identities.",
+      "pause": 500
+    },
+    {
+      "text": "Singular.NamingStatements.naming_delete_refused, Singular.Naming.WellFormed and the recovery rows keep their qualified names and their meaning, re-stated over the new alphabet.",
+      "pause": 400
+    },
+    {
+      "text": "Correction (operator answer (A-002)): over_terminal is not in the naming layer. It is Singular.Statements.over_terminal (Statements.lean:142), and the interface supersedes it with terminal-key-cannot-change rather than preserving it — as it does over_no_representative, resolve_over and the consumer theorems in that same module. Every one of the 44 base generic declarations therefore needs an explicit disposition: see retirement-map-for-generic-statements's retirement map in plan.md. A declaration that appears in neither the new manifest nor the map is a finding, not an oversight.",
+      "pause": 400
+    },
+    {
+      "text": "Under ruling operator answer (A-001) tools/check_model.py is opened to the new identities, so its previous corpus-id and source-extent lists are not constraints on this deliverable. Its discipline is: exact identity matching against the manifests, PROVED only from the standard axioms, STATED for admitted declarations, byte-for-byte corpus regeneration, and the keyword/proof-hole audit over lean/. Weakening any of those is a finding, not a repair.",
+      "pause": 400
+    },
+    {
+      "text": "Naming's approval policy follows naming-approval-rules (operator ruling) for all six edges: insertAbsent for anyone; updateActive on the signature of the controller who will own the record; deleteAbsent on the signature of the refund address the insertAbsent request named; insertActive on the controller's; updateTerminal on the quorum's; deleteActive never.",
       "pause": 400
     }
   ],
   "removed": [
     {
-      "text": "Seven declarations go, including the operation triple with its free-form update and the representative policy, which is renamed — so the old name must not survive either. All seven are checked against the elaborated environment, never a source grep: a declaration left in place under a new alias passes a grep and must fail here.",
+      "text": "Removed.",
+      "pause": 500
+    },
+    {
+      "text": "Singular.Value, Singular.Entry.incarnation, Singular.Representative.assetScope, Singular.Config.reuseIdentity, Singular.Config.consumerPin, Singular.Operation with its free-form update, and Singular.Config.representativePolicy — renamed to activePolicy, so the old name must not survive either. Removal, not deprecation: a rename would preserve a distinction the registry does not make.",
+      "pause": 400
+    },
+    {
+      "text": "All seven are checked against the elaborated environment, never by a source grep: a declaration left in place under a new alias passes a grep and must fail here.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "3ba774001351f4943610d5e710e3896988e9c447e7a5f340441c3e1d7964760f"
+    "sha256": "9cc1411155655ba8f3c3ca4187317cf1328be024cc320ad60ffe1c5e6b2c075e"
   }
 }

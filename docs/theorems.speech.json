@@ -1,30 +1,76 @@
 {
+  "theorem-manifest": [
+    {
+      "text": "Theorem manifest.",
+      "pause": 500
+    },
+    {
+      "text": "As a proof reviewer, use this register to identify exactly which statements the registry-mode model supplies, that each one is proved, and from which axioms. Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely.",
+      "pause": 400
+    },
+    {
+      "text": "All 44 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 65 in total, each with its own manifest and its own compiled gate.",
+      "pause": 400
+    }
+  ],
   "what-the-eleven-promises-are": [
     {
-      "text": "The interface states eleven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary state value the supply laws are simply false. Every promise is reached through one invariant that the model proves survives each of the seven edges, which is why the statements read as consequences rather than as separate arguments.",
+      "text": "What the eleven promises are.",
+      "pause": 500
+    },
+    {
+      "text": "The interface states eleven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary State value the supply laws are simply false.",
+      "pause": 400
+    },
+    {
+      "text": "Every promise is reached through one invariant — Consistent — that the model proves survives each of the seven edges. That is why the statements read as consequences rather than as separate arguments.",
       "pause": 400
     }
   ],
   "exact-declaration-inventory": [
     {
-      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name. The absent-insertion transaction statement now binds a refund-only custody payload, its deposit, and the key recovered from its sole absent asset, together with the constructed transaction and logical root effects. Its proof does not certify the current on-chain wire. One statement covers who must sign a fold: at every one of the seven edges the transaction the model builds requires no signer, and neither the step nor the transaction changes when the approval carries a different set of signatures. Five statements cover where a request's deposit goes, each over every way a request can end — a fold of any of the seven edges, a reject or a retract. No exit strands a deposit: some payment the exit owes is at least the deposit. Only a retract owes the tip. What an exit owes is read off the request alone, including, for a retract, the output reference the request sits at, to which its return is bound. Value an exit does not owe is unconstrained: giving the recipients it owes at least as much lovelace — for a retraction, in the one output bound to its request — never turns a settled transaction into an unsettled one, and fees and the folder's tip play no part. And every transaction an exit builds settles what it owes. One more statement says that a retract, in any registry state, pays exactly its obligations and nothing the state holds. The three transaction statements now carry the deposit in the output that pays it: at the cage for an absent insertion, with the token for a registration, and back to the owner, in an output with no datum, for a retirement. Three statements cover the destination output, at every one of the seven edges: a fold describes one only when it routes a token to the requester, so an absent insertion, a retirement and a deletion describe none; a delivered output carries the datum its request named, inline when it names one and none when it names none, as the chain requires; and a witness a later fold spends presents the datum its delivery gave it. Four statements say which pending requests their owner can retract, and when. A retraction is admitted exactly when the request inserts a key or reads a terminal one, its owner signed, and its validity interval lies inside phase 2; a refusal names the first check it fails, in the request script's order: insert-only, then the owner's signature, then the window. The request script names that window refusal not-phase2, as its exact-outcome tests assert. An admitted retraction is the retract exit itself, and admission changes no other exit. And a retraction refused admission is refused for that reason whatever it spends or pays. Two statements say that a batch of one answers as the single request does: a batch fold of one request whose claim is its own edge's delta is exactly that request's step, and a batch of one reject is judged exactly as the reject is.",
+      "text": "Exact declaration inventory.",
+      "pause": 500
+    },
+    {
+      "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
       "pause": 400
     }
   ],
   "how-this-register-is-kept-honest": [
     {
-      "text": "A compiled gate runs while the library elaborates and fails the build if any theorem depends on an axiom outside the standard three, so a sorry cannot reach this page. The model checker then cross-checks the sources against the manifests, the compiled axiom report against both, and, added after the drift was found, this page against the manifest. That last check exists because it was missing: before it, the page claimed forty-one declarations while the manifest held forty-four, and three proved statements appeared nowhere.",
+      "text": "How this register is kept honest.",
+      "pause": 500
+    },
+    {
+      "text": "A compiled gate in Audit.lean runs while the library elaborates: it collects the axioms of every theorem in the frozen module and fails the build if any lies outside the three standard ones. Re-admitting a single theorem turns the build red, so a sorry cannot reach this page.",
+      "pause": 400
+    },
+    {
+      "text": "tools/check_model.py then cross-checks three things that are easy to let drift apart: the source declarations against the manifests, the compiled axiom report against both, and — added after the drift below was found — this page against the manifest. The last one exists because it was missing: before it, the page claimed 41 declarations while the manifest held 44, and three proved statements appeared nowhere. The check is set equality, and the total above is derived from the manifest rather than typed by hand.",
       "pause": 400
     }
   ],
   "what-this-establishes-and-what-it-does-not": [
     {
-      "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will — that is what the operator's rulings, the interface and the simulation are for. The model is also abstract where the chain is concrete: commitments stand for collision-free canonical commitments, and the executable consumer supplies the real hashes. Retraction admission is stated over a finite validity interval, with its lower bound included and its upper bound excluded, as the request script and the ledger read it. The model's bounds are finite, so an interval open at either end is not a case it can be asked: that is a named non-goal, not a gap waiting on a ticket, and the chain side is pinned by the request validator's Aiken exact-outcome tests, which admit the window's two endpoints and return the named refusal not-phase2 one unit before the lower bound and one unit past the upper, and for an open interval alike. The finite cases are compared live: the retraction-window row submits an owner-signed retraction before phase 2 and one after it on a devnet, both refused by the request script and answered not-phase2 by the model, which agrees on every step. The deployed validators are compiled without traces, so this run's live refusals expose no name: they are attributed to the applied request script, and the name itself is never described as a live observation.",
+      "text": "What this establishes, and what it does not.",
+      "pause": 500
+    },
+    {
+      "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
+      "pause": 400
+    },
+    {
+      "text": "The model is abstract where the chain is concrete. Commitments stand for collision-free canonical commitments, the trie is a logical authenticated map, and an approval's asset name is a commitment over the tuple it scopes rather than a real BLAKE2b digest. The executable consumer supplies the real hashes; the model fixes the complete preimages.",
+      "pause": 400
+    },
+    {
+      "text": "Retraction admission is stated over a finite validity interval. Its bounds are read off the request script's in_phase2 and the ledger's validity interval, whose lower bound is included and upper bound excluded. The model's bounds are finite, so an interval open at either end is not a case it can be asked: that is a named non-goal, not a gap waiting on a ticket, and the chain side is pinned by the request validator's Aiken exact-outcome tests — they admit an owner-signed retraction at the window's included lower bound and where its excluded upper bound reaches the retraction time's end, and refuse it with the named not-phase2 one unit before the lower bound and one unit past the upper, and for an interval with no lower or no upper bound alike. The finite cases are compared live: the retraction-window row (retract-outside-window) submits an owner-signed retraction before phase 2 and one after it on a devnet, both refused by the request script and answered not-phase2 by the model, which agrees on every step. The deployed validators are compiled without traces, so this run's live refusals expose no name: they are attributed to the applied request script, and the name itself is never described as a live observation (#287).",
       "pause": 400
     }
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "15037ae5f5aecdb1c940cbd4b448c0ccbe408183db1aea994997b527ef1ac949"
+    "sha256": "3acf5120431c139e5ab62b54692840ae12d41ae7c8ebec29f12bad82af420bfd"
   }
 }

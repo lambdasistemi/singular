@@ -1,4 +1,4 @@
-//// What an admitted request still owes the transaction (#157 C6).
+//// What an admitted request still owes the transaction (#157 token-destinations-and-refunds).
 ////
 //// ## Responsibility
 ////
@@ -41,7 +41,7 @@ use lib.{
 use types.{State}
 
 /// What one consumed request still owes the transaction once its edge is
-/// admitted (#157 C6). Collected during the fold, discharged after it, so
+/// admitted (#157 token-destinations-and-refunds). Collected during the fold, discharged after it, so
 /// the trie walk and the value walk stay separate and each names its own
 /// reason.
 pub type Duty {
@@ -84,7 +84,7 @@ pub type Duty {
   ///
   /// That one fact also settles the Lean row's `kindCount t.state
   /// .active r.key = 0`: with one unit on an input and the mint pinned
-  /// at `-1` by C5, ledger conservation leaves the outputs carrying
+  /// at `-1` by mint-matches-edge-deltas, ledger conservation leaves the outputs carrying
   /// none. No separate output rule is added for the two to disagree
   /// over.
   BurnFromInput { policy: PolicyId, key: ByteArray, sole: Bool }
@@ -97,7 +97,7 @@ pub type Duty {
   ReturnDeposit { owner: VerificationKeyHash, floor: Int }
 }
 
-/// The duties an admitted edge creates (#157 C6). Read off the edge and
+/// The duties an admitted edge creates (#157 token-destinations-and-refunds). Read off the edge and
 /// the request, never off anything the folder declares. An edge that
 /// delivers no token (3, 4, 5) owes its deposit to the request's owner
 /// (#253); the others owe it with the token they deliver.

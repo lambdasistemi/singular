@@ -24,13 +24,13 @@ flowchart TD
 
 | ID | Owner | Responsibility and direction |
 | --- | --- | --- |
-| M266-O | `Node.Options` | Parse mode flags and environment, own the one-time process mode and mode-specific diagnostics. No dependency on runtime modules. |
-| M266-W | `Node.Wallet` | Parse signing keys, derive addresses, own the one-time process wallet and expose the original funding identity through the facade. Depends on options. |
-| M266-I | `Node.Indexer` | Own follower state, genesis sweep state, provider address-read guard and counter; follow a chain and answer indexed reads. Depends on wallet and options. |
-| M266-F | `Node.Funding` | Own funding floor checks and their existing diagnostics. Depends on wallet presentation. |
-| M266-S | `Node.Session` | Own open session state, node client connection, protocol parameters, mode-specific setup and bracketed lifecycle. Depends on options, wallet, indexer and funding. |
-| M266-C | `Node.Confirmation` | Own waits, deadlines and chain observation. Reads the session and follower through their owners; neither owner imports confirmation. |
-| M266-N | `Singular.Registry.Node` | Compatibility facade retaining its exact public export list and old caller imports. It owns no copied global. |
+| parse-mode-flags-environment-own-one-time | `Node.Options` | Parse mode flags and environment, own the one-time process mode and mode-specific diagnostics. No dependency on runtime modules. |
+| parse-signing-keys-derive-addresses-own-one | `Node.Wallet` | Parse signing keys, derive addresses, own the one-time process wallet and expose the original funding identity through the facade. Depends on options. |
+| own-follower-state-genesis-sweep-state-provider | `Node.Indexer` | Own follower state, genesis sweep state, provider address-read guard and counter; follow a chain and answer indexed reads. Depends on wallet and options. |
+| own-funding-floor-checks-their-existing-diagnostics | `Node.Funding` | Own funding floor checks and their existing diagnostics. Depends on wallet presentation. |
+| own-open-session-state-node-client-connection | `Node.Session` | Own open session state, node client connection, protocol parameters, mode-specific setup and bracketed lifecycle. Depends on options, wallet, indexer and funding. |
+| own-waits-deadlines-chain-observation-reads-session | `Node.Confirmation` | Own waits, deadlines and chain observation. Reads the session and follower through their owners; neither owner imports confirmation. |
+| compatibility-facade-retaining-its-exact-public-export | `Singular.Registry.Node` | Compatibility facade retaining its exact public export list and old caller imports. It owns no copied global. |
 
 The owner may choose a smaller acyclic graph when the actual type dependencies
 require it, but must version this plan before changing a listed owner or adding

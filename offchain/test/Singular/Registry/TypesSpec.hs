@@ -55,7 +55,7 @@ genTxOutRef =
 genRoot :: Gen OnChainRoot
 genRoot = OnChainRoot <$> genBS32
 
-{- | A C2 row index (#183). The seven admitted rows most of the time,
+{- | A seven-admitted-edges row index (#183). The seven admitted rows most of the time,
 and a tag outside the table some of the time: the wire is a plain
 integer, and a request the cage will refuse `edge-inadmissible` still
 has to encode and decode, or no row could ever build one.
@@ -100,7 +100,7 @@ genRequest =
         <*> genNonNeg
         <*> genDestination
 
--- | The destination a request names (#157 D-DEST).
+-- | The destination a request names (#157 request-destination-binding).
 genDestination :: Gen (BS.ByteString, BS.ByteString)
 genDestination = (,) <$> genBS <*> genBS
 

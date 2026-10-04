@@ -1,36 +1,66 @@
 {
+  "expose-two-batch-questions": [
+    {
+      "text": "Expose two batch questions.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want the batch laws reachable through the driver, its transport and the story language in one reviewed change.",
+      "pause": 400
+    }
+  ],
   "delivery": [
     {
-      "text": "Model laws are executed verbatim by the driver, declared and checked, carried by the transport, and asked by the story executor. One coder delivers two slices, reviewed at each checkpoint.",
-      "pause": 350
+      "text": "Delivery.",
+      "pause": 500
+    },
+    {
+      "text": "Two slices, in order, by one coder, with RED, each acceptance line GREEN and pre-push checkpoints reviewed by the persistent auditor.",
+      "pause": 400
     }
   ],
-  "slice-s1-the-driver-answers-both-questions": [
+  "slice-driver-answers-both-questions-the-driver-answers-both-questions": [
     {
-      "text": "The first slice makes the driver, its proofs, transport, corpus, model check and translation table answer both batch questions.",
-      "pause": 350
+      "text": "Slice driver-answers-both-questions: the driver answers both questions.",
+      "pause": 500
+    },
+    {
+      "text": "Driver, statements, transport, corpus, tools/check_model.py, translation table and every consumer of the moved surface digest, theorem manifest and Lean mirror. Delivers driver-answers-foldbatch-question-list-fold-requests, REJECT, PRESERVE, SURFACE and CONTROLS.",
+      "pause": 400
     }
   ],
-  "slice-s2-the-story-language-says-a-batch": [
+  "slice-story-language-says-batch-the-story-language-says-a-batch": [
     {
-      "text": "The second slice lets a story submit a multi-request fold and a multi-request reject and ask the model, without moving any conformance row.",
-      "pause": 350
+      "text": "Slice story-language-says-batch: the story language says a batch.",
+      "pause": 500
+    },
+    {
+      "text": "Story instructions, their validation, rendering and execution, and the model question the executor asks. Delivers story-language-can-say-multi-request-fold. No conformance row changes state; the empty-fold, request-value-and-refund-routing and register-active-key comparisons and receipts belong to #287.",
+      "pause": 400
     }
   ],
   "boundary": [
     {
-      "text": "The model file stays byte-identical. A false preservation statement is returned with its counterexample. Offchain, onchain and conformance rows stay out of scope.",
-      "pause": 350
+      "text": "Boundary.",
+      "pause": 500
+    },
+    {
+      "text": "lean/Singular/Model.lean stays byte-identical. A preservation statement that is false as written is returned with its counterexample, never weakened. Offchain, onchain and conformance rows are outside the writable scope.",
+      "pause": 400
     }
   ],
   "verification-limits": [
     {
-      "text": "The model check shows what Lean answers, not what a chain does. Story execution shows a batch is submitted and asked, not that the comparison holds.",
-      "pause": 350
+      "text": "Verification limits.",
+      "pause": 500
+    },
+    {
+      "text": "The model check and corpus establish what Lean answers; they do not establish that a chain agrees. Story execution establishes that a batch is submitted and asked, not that the comparison holds.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a5bf1d71435376ed6e221e888dc1178cd6ee74abcb88eaabe0566512ef8afe63"
+    "sha256": "816bf6e4325feded7a2786700757f7ec1db8ad6e53a5b20d854270e6faab5a5e"
   }
 }

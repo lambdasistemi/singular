@@ -4,6 +4,8 @@ site_url: https://lambdasistemi.github.io/singular/
 repo_url: https://github.com/lambdasistemi/singular
 repo_name: lambdasistemi/singular
 docs_dir: .docs-source
+exclude_docs: |
+  docs/audio/manifest.json
 site_dir: site
 nav:
   - Home: index.md
@@ -53,28 +55,12 @@ nav:
   - Conformance API reference: docs/conformance-api-reference.md
   - Conformance suite owners: docs/conformance-architecture.md
 theme:
-  name: material
+  name: terminal
   custom_dir: overrides
-  font: false
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+  palette: default
   features:
-    - navigation.sections
-    - navigation.top
-    - content.code.copy
+    - footer.prev_next
+    - navigation.top.cursor_animation.hide
 hooks:
   - tools/mkdocs_api_overlay.py
 plugins:
@@ -93,7 +79,6 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 extra_javascript:
   - assets/mermaid.min.js
-  - assets/read-aloud.js
 validation:
   links:
     not_found: warn

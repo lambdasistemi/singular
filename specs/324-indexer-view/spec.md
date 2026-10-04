@@ -6,15 +6,15 @@ Parent epic #322. Stacked on #323 (`refactor/323-acquired-node-interface`, base 
 
 **Requirements.**
 
-- R1 An indexer adapter implements the #323 read interface. Address reads come from the in-process UTxO indexer; protocol parameters, script registration, time conversion and evaluation come from a node view. Every read of one view is answered at one chain point (network, slot, block hash).
-- R2 Node and indexer data are combined only at the same chain point. The indexer's applied point, its readiness and coverage, and the UTxO bytes it returns are read from one indexer state that does not change while the view is held. A point mismatch is rejected, never averaged or mixed.
-- R3 Explicit failures, each a named outcome class carrying the points involved: indexer lag behind the node view beyond a bound; a same-slot different-block fork; an index that started at a tip or filters addresses (incomplete coverage); restoration or catch-up in progress; upstream disconnection; a capability the adapter cannot serve. An empty answer from an incomplete index is never reported as absence.
-- R4 Selection by configuration at startup: the backend (node or indexer) is chosen once in composition; no command or builder takes a mode flag or names the indexer.
-- R5 Every ordinary command (`create`, `insert`, `update`, `terminate`, `inspect`) runs end-to-end on a generated DevNet with the indexer adapter; `docs/` describes the indexer backend configuration and its failure messages.
-- R6 A missing upstream primitive in `cardano-node-clients` is recorded as a tracked dependency with an issue link in the PR, not reimplemented in Singular.
-- R7 Lean-governed behaviour is unchanged; existing conformance, CLI, journey and e2e suites stay green.
+- indexer-adapter-implements-read-interface-address-reads An indexer adapter implements the #323 read interface. Address reads come from the in-process UTxO indexer; protocol parameters, script registration, time conversion and evaluation come from a node view. Every read of one view is answered at one chain point (network, slot, block hash).
+- node-indexer-data-combined-at-same-chain Node and indexer data are combined only at the same chain point. The indexer's applied point, its readiness and coverage, and the UTxO bytes it returns are read from one indexer state that does not change while the view is held. A point mismatch is rejected, never averaged or mixed.
+- explicit-failures-named-outcome-class-carrying-points Explicit failures, each a named outcome class carrying the points involved: indexer lag behind the node view beyond a bound; a same-slot different-block fork; an index that started at a tip or filters addresses (incomplete coverage); restoration or catch-up in progress; upstream disconnection; a capability the adapter cannot serve. An empty answer from an incomplete index is never reported as absence.
+- selection-by-configuration-at-startup-backend-node Selection by configuration at startup: the backend (node or indexer) is chosen once in composition; no command or builder takes a mode flag or names the indexer.
+- ordinary-command-create-insert-update-terminate-inspect Every ordinary command (`create`, `insert`, `update`, `terminate`, `inspect`) runs end-to-end on a generated DevNet with the indexer adapter; `docs/` describes the indexer backend configuration and its failure messages.
+- missing-upstream-primitive-in-cardano-node-clients A missing upstream primitive in `cardano-node-clients` is recorded as a tracked dependency with an issue link in the PR, not reimplemented in Singular.
+- lean-governed-behaviour-unchanged-existing-conformance-cli Lean-governed behaviour is unchanged; existing conformance, CLI, journey and e2e suites stay green.
 
-**Rejection behaviour.** R3's classes, plus the #323 classes (origin, out-of-scope view, lost node connection) unchanged.
+**Rejection behaviour.** explicit-failures-named-outcome-class-carrying-points's classes, plus the #323 classes (origin, out-of-scope view, lost node connection) unchanged.
 
 **Non-goals.** Registry membership or Terminal proofs from a generic asset index; asset queries (upstream #200 unmerged); a persistent proof service; public indexer deployment; recovery semantics (#325); the node-clients pin bump (no needed primitive is missing at the pin; deferred until upstream #200 merges).
 

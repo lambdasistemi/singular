@@ -69,7 +69,7 @@ pub const redirected_refund =
 pub const redirected_hash =
   #"d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebeced"
 
-/// The registry key a naming record is booked under (#157 D-ASSET):
+/// The registry key a naming record is booked under (#157 token-name-is-registry-key):
 /// under each token policy the asset name IS this key, so the record
 /// carries `(active_policy, registry_key)` and nothing else.
 pub const registry_key = #"616c696365"

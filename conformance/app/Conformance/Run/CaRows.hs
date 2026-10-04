@@ -6,11 +6,11 @@ License     : Apache-2.0
 module Conformance.Run.CaRows
     ( withCa
     , designateSplit
-    , runCA01
-    , runCA02
-    , runCA03
-    , runCA04
-    , runCA05
+    , runCanonicalSeedIdentity
+    , runRivalSeedAuthentication
+    , runPolicyAddressOnlyAuthenticationControl
+    , runAppliedValidatorIdentity
+    , runTokenlessOutputAuthentication
     , canonicalStateUtxo
     , rivalStateUtxo
     , stateUtxoByToken
@@ -125,10 +125,10 @@ import Conformance.Receipt
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
 withCa env row f = case envCa env of
     Just w -> f env w
-    Nothing -> failWith ("row " <> row <> " needs a CA session")
+    Nothing -> failWith ("row " <> row <> " needs a registry-identity session")
 
 -- ---------------------------------------------------------
--- CA rows (issue #69): canonical identity authentication
+-- registry-identity rows (issue #69): canonical identity authentication
 -- ---------------------------------------------------------
 
 {- | The designation split: the largest wallet UTxO becomes two
@@ -183,7 +183,7 @@ designateSplit prov submit label = do
                     <> show (length mine)
                 )
 
-{- | CA01: boot the canonical registry from the published seed, then
+{- | canonical-seed-identity: boot the canonical registry from the published seed, then
 recompute the token name in Haskell as SHA-256 of the seed's outRef
 and match it against the state UTxO read from the chain: exactly
 that name at quantity one under the canonical policy. The executing
@@ -191,8 +191,8 @@ control: the same derivation over a fabricated outRef must NOT
 match. With @false-claim@ armed the fabricated derivation is bound
 to the match instead, and the run must fail.
 -}
-runCA01 :: Env -> CaWorld -> IO ()
-runCA01 env w = do
+runCanonicalSeedIdentity :: Env -> CaWorld -> IO ()
+runCanonicalSeedIdentity env w = do
     let cfg = caCfg w
         prov = envProv env
     unsignedBoot <-
@@ -205,12 +205,12 @@ runCA01 env w = do
         Submitted _ -> pure ()
         Rejected reason ->
             failWith
-                ( "CA01: the node refused the canonical boot: "
+                ( "canonical-seed-identity: the node refused the canonical boot: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
     confirmTx env signedBoot
     let size = txSizeBytes signedBoot
-    emitMeasure env "CA01-boot" mem cpu size
+    emitMeasure env "canonical-seed-identity-boot" mem cpu size
     tid <- extractTokenId cfg signedBoot
     writeIORef (caTidRef w) (Just tid)
     writeIORef
@@ -220,7 +220,7 @@ runCA01 env w = do
         (caBootMeasureRef w)
         (Just (txIdHex signedBoot, mem, cpu, size))
     -- read the state UTxO back from the chain at the cage address
-    -- (CA04 derives that address independently and cross-checks it)
+    -- (applied-validator-identity derives that address independently and cross-checks it)
     (stateIn, stateOut) <- canonicalStateUtxo env w
     let policyBytes =
             scriptHashBytes (policyID (cagePolicyIdFromCfg cfg))
@@ -234,11 +234,11 @@ runCA01 env w = do
             FalseClaim -> wrongName
             _ -> derivedName
     require
-        "CA01: the state UTxO carries no assets under the canonical policy"
+        "canonical-seed-identity: the state UTxO carries no assets under the canonical policy"
         (maybe False (not . Map.null) underPolicy)
     let chainNames = maybe [] (map fst . Map.toList) underPolicy
     require
-        ( "CA01: the canonical policy carries names "
+        ( "canonical-seed-identity: the canonical policy carries names "
             <> show (map hex chainNames)
             <> ", wanted exactly 0x"
             <> hex expectedName
@@ -246,7 +246,7 @@ runCA01 env w = do
         )
         (fmap Map.toList underPolicy == Just [(expectedName, 1)])
     require
-        ( "CA01 control failed: the fabricated outRef's derivation 0x"
+        ( "canonical-seed-identity control failed: the fabricated outRef's derivation 0x"
             <> hex wrongName
             <> " matches the chain name — the derivation is not \
                \seed-bound"
@@ -263,7 +263,7 @@ runCA01 env w = do
         )
     writeRowReceipt
         env
-        "CA01"
+        "canonical-seed-identity"
         Accepted
         AgreesWithModel
         [txIdHex signedBoot]
@@ -276,7 +276,7 @@ runCA01 env w = do
         Nothing
     emit
         "row"
-        ( "CA01: canonical registry token name 0x"
+        ( "canonical-seed-identity: canonical registry token name 0x"
             <> hex derivedName
             <> " = SHA-256 of the published seed's outRef, matched \
                \on chain at quantity one; the fabricated outRef \
@@ -285,7 +285,7 @@ runCA01 env w = do
             <> " and does not match (control)"
         )
 
-{- | CA02: initialize a rival registry from a second seed through the
+{- | rival-seed-authentication: initialize a rival registry from a second seed through the
 same bootstrap path. The ledger ACCEPTS it — the settled finding
 (naming-correspondence.md, "What t50 settled"): a permissionless
 ledger cannot prohibit a rival, so canonical identity is a
@@ -294,15 +294,15 @@ performs. The row asserts three things, each read back from the
 chain: the rival is accepted and live at the applied address, the
 two token names differ (each the SHA-256 of its own seed's outRef),
 and the canonical registry is unaffected — same UTxO, same value,
-same datum bytes as CA01's snapshot. The authentication then rejects
+same datum bytes as canonical-seed-identity's snapshot. The authentication then rejects
 the rival on the derived name while accepting the canonical
 registry.
 -}
-runCA02 :: Env -> CaWorld -> IO ()
-runCA02 env w = do
+runRivalSeedAuthentication :: Env -> CaWorld -> IO ()
+runRivalSeedAuthentication env w = do
     tidC <- readIORef (caTidRef w)
     require
-        "CA02 needs CA01's canonical registry; run CA01 first"
+        "rival-seed-authentication needs canonical-seed-identity's canonical registry; run canonical-seed-identity first"
         (isJust tidC)
     -- the second designation split: output 0 is the rival seed
     (rivalIn, _) <- designateSplit (envProv env) (envCaps env) "rival"
@@ -318,7 +318,7 @@ runCA02 env w = do
     case result of
         Rejected reason ->
             failWith
-                ( "CA02 FINDING: the ledger REFUSED the internally \
+                ( "rival-seed-authentication FINDING: the ledger REFUSED the internally \
                   \consistent rival ("
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                     <> ") — contradicts the settled design \
@@ -328,7 +328,7 @@ runCA02 env w = do
         Submitted _ -> pure ()
     confirmTx env signedRival
     let size = txSizeBytes signedRival
-    emitMeasure env "CA02-rival-boot" mem cpu size
+    emitMeasure env "rival-seed-authentication-rival-boot" mem cpu size
     tidR <- extractTokenId cfgR signedRival
     writeIORef (caRivalTidRef w) (Just tidR)
     -- read both registries back from the chain
@@ -345,32 +345,34 @@ runCA02 env w = do
     -- 2. the two token names differ, both read from the chain and
     --    each the SHA-256 of its own seed's outRef
     require
-        "CA02: the canonical state's policy assets are not exactly the derived name at quantity one"
+        "rival-seed-authentication: the canonical state's policy assets are not exactly the derived name at quantity one"
         (policyAsset canonOut == Just (Map.singleton canonicalName 1))
     require
-        "CA02: the rival state's policy assets are not exactly its own seed's derivation at quantity one"
+        "rival-seed-authentication: the rival state's policy assets are not exactly its own seed's derivation at quantity one"
         (policyAsset rivalOut == Just (Map.singleton rivalName 1))
     require
-        ( "CA02: the rival name equals the canonical name — \
+        ( "rival-seed-authentication: the rival name equals the canonical name — \
           \derivation broken ("
             <> hex rivalName
             <> ")"
         )
         (rivalName /= canonicalName)
     -- 3. the canonical registry is unaffected: same UTxO, value and
-    --    datum bytes as CA01's snapshot
+    --    datum bytes as canonical-seed-identity's snapshot
     snap <- readIORef (caSnapRef w)
     case snap of
-        Nothing -> failWith "CA02: no canonical snapshot; run CA01 first"
+        Nothing ->
+            failWith
+                "rival-seed-authentication: no canonical snapshot; run canonical-seed-identity first"
         Just s -> do
             require
-                "CA02: the canonical registry UTxO moved"
+                "rival-seed-authentication: the canonical registry UTxO moved"
                 (csIn s == canonIn)
             require
-                "CA02: the canonical registry value changed"
+                "rival-seed-authentication: the canonical registry value changed"
                 (csValue s == canonOut ^. valueTxOutL)
             require
-                "CA02: the canonical registry datum changed"
+                "rival-seed-authentication: the canonical registry datum changed"
                 (csDatum s == canonOut ^. datumTxOutL)
     -- the consumer's authentication, on chain-read assets: the
     -- derived canonical name accepts the canonical registry and
@@ -380,14 +382,14 @@ runCA02 env w = do
         authCanon =
             authenticate policyBytes canonicalName (outAssets canonOut)
     require
-        ( "CA02: authentication accepted the rival — the derived \
+        ( "rival-seed-authentication: authentication accepted the rival — the derived \
           \name does not bind ("
             <> show authRival
             <> ")"
         )
         (authRival == AuthReject NameMismatch)
     require
-        "CA02: authentication rejected the canonical registry"
+        "rival-seed-authentication: authentication rejected the canonical registry"
         (authCanon == AuthAccept)
     -- the receipt records the LEDGER's verdict on the row's tx:
     -- accepted. The authentication's rejection is the assertion
@@ -397,7 +399,7 @@ runCA02 env w = do
         (Just (txIdHex signedRival, mem, cpu, size))
     writeRowReceipt
         env
-        "CA02"
+        "rival-seed-authentication"
         Accepted
         AgreesWithModel
         [txIdHex signedRival]
@@ -410,7 +412,7 @@ runCA02 env w = do
         Nothing
     emit
         "row"
-        ( "CA02: rival ACCEPTED by the ledger, as the settled design \
+        ( "rival-seed-authentication: rival ACCEPTED by the ledger, as the settled design \
           \requires — tx="
             <> txIdHex signedRival
             <> " live at the applied address under token 0x"
@@ -419,22 +421,22 @@ runCA02 env w = do
             <> hex canonicalName
             <> " (each SHA-256 of its own seed's outRef); the \
                \canonical registry is unaffected: same UTxO, value \
-               \and datum bytes as the CA01 snapshot; authentication \
+               \and datum bytes as the canonical-seed-identity snapshot; authentication \
                \rejects the rival on the derived name"
         )
 
-{- | CA03: the executing negative control that makes CA02 worth
+{- | policy-address-only-authentication-control: the executing negative control that makes rival-seed-authentication worth
 anything. An authenticator checking only policy and address — not
 the derived name — ACCEPTS the rival read back from the chain: the
 rival is indistinguishable from the canonical registry on every leg
 except the name. The same chain-read value bound to the full
-authenticator is rejected, so CA02's rejection is attributable to
+authenticator is rejected, so rival-seed-authentication's rejection is attributable to
 the derived name alone. Armed (@naive-authenticator@) the row
 instead requires the weak authenticator to reject the rival, which
 it cannot, and the run fails naming the accepted rival.
 -}
-runCA03 :: Env -> CaWorld -> IO ()
-runCA03 env w = do
+runPolicyAddressOnlyAuthenticationControl :: Env -> CaWorld -> IO ()
+runPolicyAddressOnlyAuthenticationControl env w = do
     (rivalIn, rivalOut) <- rivalStateUtxo env w
     let cfg = caCfg w
         policyBytes =
@@ -444,7 +446,7 @@ runCA03 env w = do
         strong = authenticate policyBytes canonicalName (outAssets rivalOut)
     when (envControl env == NaiveAuthenticator) $
         failWith
-            ( "CA03 ARMED (naive-authenticator): the policy+address \
+            ( "policy-address-only-authentication-control ARMED (naive-authenticator): the policy+address \
               \authenticator ACCEPTED the rival (UTxO "
                 <> show rivalIn
                 <> "), as designed — the run required the control \
@@ -453,13 +455,13 @@ runCA03 env w = do
                    \canonical registry"
             )
     require
-        "CA03: the weak authenticator REJECTED the rival — the \
+        "policy-address-only-authentication-control: the weak authenticator REJECTED the rival — the \
         \control does not discriminate: policy+address already \
-        \excludes the rival, so CA02's rejection is not \
+        \excludes the rival, so rival-seed-authentication's rejection is not \
         \attributable to the name check"
         (weak == AuthAccept)
     require
-        ( "CA03: the strong authenticator accepted the rival — CA02's \
+        ( "policy-address-only-authentication-control: the strong authenticator accepted the rival — rival-seed-authentication's \
           \discrimination is gone ("
             <> show strong
             <> ")"
@@ -468,11 +470,12 @@ runCA03 env w = do
     m <- readIORef (caRivalMeasure w)
     case m of
         Nothing ->
-            failWith "CA03: no rival measurements; run CA02 first"
+            failWith
+                "policy-address-only-authentication-control: no rival measurements; run rival-seed-authentication first"
         Just (txid, mem, cpu, size) ->
             writeRowReceipt
                 env
-                "CA03"
+                "policy-address-only-authentication-control"
                 Accepted
                 AgreesWithModel
                 [txid]
@@ -485,7 +488,7 @@ runCA03 env w = do
                 Nothing
     emit
         "row"
-        ( "CA03: control fired — the policy+address authenticator \
+        ( "policy-address-only-authentication-control: control fired — the policy+address authenticator \
           \accepts the rival (weak="
             <> show weak
             <> ") while the derived-name check rejects it (strong="
@@ -493,7 +496,7 @@ runCA03 env w = do
             <> "): the name is the only discriminator"
         )
 
-{- | CA04: identity derivation per validator by declared arity.
+{- | applied-validator-identity: identity derivation per validator by declared arity.
 The published manifest (@onchain/script-identity.json@) pins the
 state hash and declares parameter count 0; the run requires arity
 0, derives the deployment address through the PRODUCTION path
@@ -508,33 +511,37 @@ pass (it must fail). The receipt carries typed addresses, arity,
 match/distinct/refused outcomes and the explicit off-chain
 identity venue — never phase-2 ledger evidence.
 -}
-runCA04 :: Env -> CaWorld -> IO ()
-runCA04 env w = do
+runAppliedValidatorIdentity :: Env -> CaWorld -> IO ()
+runAppliedValidatorIdentity env w = do
     manifest <- readScriptManifest
     let pins = pinsUnder "state.state" manifest
     (pinHash, pinParam) <- case pins of
-        [] -> failWith "CA04: the manifest pins no state.state entry"
+        [] ->
+            failWith
+                "applied-validator-identity: the manifest pins no state.state entry"
         (h, p) : rest
             | any ((/= h) . fst) rest ->
                 failWith
-                    ("CA04: the manifest's pins disagree: " <> show pins)
+                    ( "applied-validator-identity: the manifest's pins disagree: "
+                        <> show pins
+                    )
             | any ((/= p) . snd) rest ->
                 failWith
-                    ( "CA04: the manifest's parameter counts disagree: "
+                    ( "applied-validator-identity: the manifest's parameter counts disagree: "
                         <> show pins
                     )
             | otherwise -> pure (h, p)
     let stateRaw = caRawState w
         unappliedHex = hex (scriptHashBytes (computeScriptHash stateRaw))
     require
-        ( "CA04: the pinned unapplied hash 0x"
+        ( "applied-validator-identity: the pinned unapplied hash 0x"
             <> T.unpack pinHash
             <> " is not this run's blueprint code 0x"
             <> unappliedHex
         )
         (pinHash == T.pack unappliedHex)
     require
-        ( "CA04: the manifest declares "
+        ( "applied-validator-identity: the manifest declares "
             <> show pinParam
             <> " parameters for state.state, wanted 0 \
                \(zero-parameter state)"
@@ -561,36 +568,40 @@ runCA04 env w = do
         (normalAddr, normalMatches) = checkDerivation cfg
     emit
         "identity"
-        ( "CA04: state arity 0 — production derivation "
+        ( "applied-validator-identity: state arity 0 — production derivation "
             <> show normalAddr
             <> " vs chain "
             <> show chainAddr
             <> " (layer equality expected here, carries no weight alone)"
         )
-    require "CA04 normal derivation mismatch" normalMatches
+    require
+        "applied-validator-identity normal derivation mismatch"
+        normalMatches
     -- Request arity 2 (E18: distinctness retained): the deployed
     -- request address must differ from the unapplied request bytes.
     -- A blanket equal-layers restatement would erase this live
     -- discriminator.
-    mTidCA04 <- readIORef (caTidRef w)
-    tidCA04 <- case mTidCA04 of
+    mTidAppliedValidatorIdentity <- readIORef (caTidRef w)
+    tidAppliedValidatorIdentity <- case mTidAppliedValidatorIdentity of
         Just t -> pure t
-        Nothing -> failWith "CA04: no token id; run CA01 first"
-    let (_, requestBytesCA04, _) = envCodes env
+        Nothing ->
+            failWith
+                "applied-validator-identity: no token id; run canonical-seed-identity first"
+    let (_, requestBytesAppliedValidatorIdentity, _) = envCodes env
         unappliedReqAddr =
             Addr
                 Testnet
-                (ScriptHashObj (computeScriptHash requestBytesCA04))
+                (ScriptHashObj (computeScriptHash requestBytesAppliedValidatorIdentity))
                 StakeRefNull
-        deployedReqAddr = requestAddrFromCfg cfg tidCA04 (network cfg)
+        deployedReqAddr = requestAddrFromCfg cfg tidAppliedValidatorIdentity (network cfg)
     require
-        ( "CA04: request applied layer equals unapplied layer — "
+        ( "applied-validator-identity: request applied layer equals unapplied layer — "
             <> "distinctness lost"
         )
         (deployedReqAddr /= unappliedReqAddr)
     emit
         "identity"
-        ( "CA04: request arity 2 distinctness holds (deployed "
+        ( "applied-validator-identity: request arity 2 distinctness holds (deployed "
             <> show deployedReqAddr
             <> " /= unapplied "
             <> show unappliedReqAddr
@@ -613,22 +624,24 @@ runCA04 env w = do
         corruptedHex = hex (scriptHashBytes (computeScriptHash corruptedBytes))
     emit
         "identity"
-        ( "CA04 derivation [corrupted-List[]]: derived "
+        ( "applied-validator-identity derivation [corrupted-List[]]: derived "
             <> show badAddr
             <> " vs chain "
             <> show chainAddr
         )
-    require "CA04 corrupted derivation was accepted" (not badMatches)
+    require
+        "applied-validator-identity corrupted derivation was accepted"
+        (not badMatches)
     emit
         "control"
-        ( "CA04: corrupted List[] derivation 0x"
+        ( "applied-validator-identity: corrupted List[] derivation 0x"
             <> corruptedHex
             <> " refused (mismatch observed via the same checker) — extra application breaks identity"
         )
     if envControl env == UnappliedAddress
         then
             require
-                ( "CA04 ARMED (unapplied-address): corrupted derivation "
+                ( "applied-validator-identity ARMED (unapplied-address): corrupted derivation "
                     <> show badAddr
                     <> " was required to pass for the deployed script; the chain reports "
                     <> show chainAddr
@@ -638,7 +651,7 @@ runCA04 env w = do
         else
             emit
                 "control"
-                "CA04: armed equality demand available under CONFORMANCE_CONTROL=unapplied-address"
+                "applied-validator-identity: armed equality demand available under CONFORMANCE_CONTROL=unapplied-address"
     let derivationEvidence =
             [ DerivationEvidence
                 { deValidator = "state.state"
@@ -670,11 +683,13 @@ runCA04 env w = do
             ]
     m <- readIORef (caBootMeasureRef w)
     case m of
-        Nothing -> failWith "CA04: no boot measurements; run CA01 first"
+        Nothing ->
+            failWith
+                "applied-validator-identity: no boot measurements; run canonical-seed-identity first"
         Just (txid, mem, cpu, size) ->
             writeRowReceipt
                 env
-                "CA04"
+                "applied-validator-identity"
                 Accepted
                 AgreesWithModel
                 [txid]
@@ -687,26 +702,26 @@ runCA04 env w = do
                 (Just derivationEvidence)
     emit
         "row"
-        ( "CA04: pinned state 0x"
+        ( "applied-validator-identity: pinned state 0x"
             <> unappliedHex
             <> " (0 declared parameters, arity 0) — production derivation "
             <> show normalAddr
             <> " equals the chain-reported address; request arity 2 distinct; corrupted derivation refused via the same checker (receipt carries all three, off-chain venue)"
         )
 
-{- | CA05: a forged output at the canonical address carrying no
+{- | tokenless-output-authentication: a forged output at the canonical address carrying no
 registry token is not a registry — and creating it executes
 nothing. The protocol specification's rule: creating an output at
 Singular's address MUST NOT be treated as execution of its spending
 validator. The row shows NO script executed — the accepted
 transaction carries no script witness, no redeemer and no mint, and
 the node's evaluation reports no purpose — not merely that nothing
-bad happened: the same detector fires on the CA01 boot tx, which
+bad happened: the same detector fires on the canonical-seed-identity boot tx, which
 carried the state script. The authentication rejects the forgery on
 the missing policy token.
 -}
-runCA05 :: Env -> CaWorld -> IO ()
-runCA05 env w = do
+runTokenlessOutputAuthentication :: Env -> CaWorld -> IO ()
+runTokenlessOutputAuthentication env w = do
     let cfg = caCfg w
         prov = envProv env
         scriptAddr = cageAddrFromCfg cfg (network cfg)
@@ -718,7 +733,9 @@ runCA05 env w = do
     (_, stateOut) <- canonicalStateUtxo env w
     datum <- case extractCageDatum stateOut of
         Just (StateDatum s) -> pure s
-        _ -> failWith "CA05: the canonical state has no StateDatum to copy"
+        _ ->
+            failWith
+                "tokenless-output-authentication: the canonical state has no StateDatum to copy"
     (funderIn, funderOut) <- largestWalletUtxo prov
     let Coin avail = funderOut ^. coinTxOutL
         forgedCoin = 2_000_000
@@ -735,14 +752,14 @@ runCA05 env w = do
                 & feeTxBodyL .~ Coin fee
         unsigned = mkBasicTx body
     require
-        "CA05: the funder is too small for the forgery"
+        "tokenless-output-authentication: the funder is too small for the forgery"
         (change > forgedCoin)
     require
-        "CA05: the forged tx unexpectedly carries script witnesses"
+        "tokenless-output-authentication: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
     evalMap <- Cage.withView prov (`Cage.viewEvaluateTx` unsigned)
     require
-        ( "CA05: the node evaluated "
+        ( "tokenless-output-authentication: the node evaluated "
             <> show (Map.size evalMap)
             <> " script purposes on a plain payment"
         )
@@ -753,7 +770,7 @@ runCA05 env w = do
     case result of
         Rejected reason ->
             failWith
-                ( "CA05: the ledger refused the forged output ("
+                ( "tokenless-output-authentication: the ledger refused the forged output ("
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                     <> ") — creating an output at an address needs \
                        \nobody's permission"
@@ -761,14 +778,14 @@ runCA05 env w = do
         Submitted _ -> pure ()
     confirmTx env signed
     let size = txSizeBytes signed
-    emitMeasure env "CA05-forged" 0 0 size
+    emitMeasure env "tokenless-output-authentication-forged" 0 0 size
     -- read the forgery back from the chain
     utxos <- Cage.withView prov (`Cage.viewUTxOsAt` scriptAddr)
     forgedLive <- case [o | (i, o) <- utxos, txInTxIdHex i == txIdHex signed] of
         [o] -> pure o
         other ->
             failWith
-                ( "CA05: expected the forged output live at the canonical \
+                ( "tokenless-output-authentication: expected the forged output live at the canonical \
                   \address, found "
                     <> show (length other)
                 )
@@ -778,27 +795,29 @@ runCA05 env w = do
                 (deriveAssetName (caSeedRef w))
                 (outAssets forgedLive)
     require
-        ( "CA05: authentication accepted the forged output ("
+        ( "tokenless-output-authentication: authentication accepted the forged output ("
             <> show verdict
             <> ")"
         )
         (verdict == AuthReject PolicyAbsent)
     -- the detector proven able to fire: the same no-script detector
-    -- fires on the CA01 boot tx, which carried the state script
+    -- fires on the canonical-seed-identity boot tx, which carried the state script
     bootTx <- readIORef (caBootTxRef w)
     case bootTx of
-        Nothing -> failWith "CA05: no boot tx recorded; run CA01 first"
+        Nothing ->
+            failWith
+                "tokenless-output-authentication: no boot tx recorded; run canonical-seed-identity first"
         Just bt ->
             require
-                "CA05 control failed: the no-script detector did not \
+                "tokenless-output-authentication control failed: the no-script detector did not \
                 \fire on the boot tx, which carried the state script"
                 (not (null (txScriptWitnesses bt)))
     require
-        "CA05: the detector reported script execution on the forged payment"
+        "tokenless-output-authentication: the detector reported script execution on the forged payment"
         (null (txScriptWitnesses signed))
     writeRowReceipt
         env
-        "CA05"
+        "tokenless-output-authentication"
         Accepted
         AgreesWithModel
         [txIdHex signed]
@@ -811,7 +830,7 @@ runCA05 env w = do
         Nothing
     emit
         "row"
-        "CA05: forged output accepted at the canonical address with \
+        "tokenless-output-authentication: forged output accepted at the canonical address with \
         \NO script executed (no witness, no redeemer, no mint, \
         \empty node evaluation; the same detector fires on the \
         \boot tx) — creating an output is not execution of its \
@@ -819,7 +838,7 @@ runCA05 env w = do
         \under the canonical policy"
 
 -- ---------------------------------------------------------
--- CA helpers
+-- registry-identity helpers
 -- ---------------------------------------------------------
 
 -- | The canonical registry's state UTxO, read back from the chain.
@@ -828,7 +847,8 @@ canonicalStateUtxo env w = do
     tid <- readIORef (caTidRef w)
     case tid of
         Nothing ->
-            failWith "the canonical registry is not booted; run CA01 first"
+            failWith
+                "the canonical registry is not booted; run canonical-seed-identity first"
         Just t -> stateUtxoByToken env w t
 
 -- | The rival registry's state UTxO, read back from the chain.
@@ -836,7 +856,9 @@ rivalStateUtxo :: Env -> CaWorld -> IO (TxIn, TxOut ConwayEra)
 rivalStateUtxo env w = do
     tid <- readIORef (caRivalTidRef w)
     case tid of
-        Nothing -> failWith "the rival registry is not booted; run CA02 first"
+        Nothing ->
+            failWith
+                "the rival registry is not booted; run rival-seed-authentication first"
         Just t -> stateUtxoByToken env w t
 
 stateUtxoByToken

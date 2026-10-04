@@ -1,106 +1,186 @@
 {
   "story-and-authority": [
     {
-      "text": "As a validator contributor, I run the Aiken suite and observe precise failures for wrong authorization or token identity behavior, in tests whose names and model references explain the rule.",
+      "text": "Story and authority.",
       "pause": 500
     },
     {
-      "text": "Everything here is test-only on top of the recorded base; the accepted Lean tree is the authority and no model, validator, or blueprint byte changed.",
-      "pause": 300
+      "text": "As a validator contributor, I run the Aiken suite and observe precise failures for wrong authorization or token identity behavior, in tests whose names and model references explain the rule.",
+      "pause": 400
+    },
+    {
+      "text": "Everything here is test-only. The worktree base is ba788d0fd19ed3d2388335436594d3318ff9c80d (the review baseline for the findings is its parent e19ca5e); the Lean tree at that base is the accepted model surface (lean/Singular.*, last model commit 759ceba). No Lean file, production validator, blueprint, or lockfile changed. The on-chain gates are nix flake check ./onchain and nix flake check ./naming-onchain, unchanged.",
+      "pause": 400
     }
   ],
   "boundary-repairs-and-controls": [
     {
-      "text": "Three properties had an existential shape: a single unequal result satisfied them, so a partial defect stayed invisible.",
+      "text": "Boundary repairs and controls.",
+      "pause": 500
+    },
+    {
+      "text": "Three properties had an existential shape: fail once around an expression that was expected to be false, so a single unequal result satisfied the test and a partial defect stayed invisible. Each was replaced by a property that asserts the intended outcome EXACTLY for every generated case, with structurally distinct identities.",
+      "pause": 400
+    },
+    {
+      "text": "Controls recorded (evidence files in the worker runtime, evidence-20260921/):",
+      "pause": 400
+    },
+    {
+      "text": "old miss, quantity: mutating lib.quantity so an absent token yields a wrong non-None value made BOTH old properties pass at iteration 1 — satisfied immediately, nothing exercised (old-…-under-… record and /tmp/mut_lib.log from the interrupted session).",
       "pause": 300
     },
     {
-      "text": "Each now asserts the intended outcome exactly for every generated case, with structurally distinct identities.",
-      "pause": 400
+      "text": "new detect, quantity: the same mutation makes both new properties fail at iteration 1 (new-quantity-props-under-some0-mutation.json).",
+      "pause": 300
     },
     {
-      "text": "Old properties passed under deliberate mutations; the new ones fail under the same mutations, and the accepting controls were retained.",
-      "pause": 400
+      "text": "old miss, retract: under the recovered parity mutation of the owner check, the old property passed at iteration 3 while the validator accepted the all-zero wrong signer (old-retract-prop-under-parity-mutation.json).",
+      "pause": 300
+    },
+    {
+      "text": "new detect, retract: the same mutation makes the new property fail with counterexample c75a0f85… — an even-first-byte signer (new-retract-prop-under-parity-mutation.json).",
+      "pause": 300
+    },
+    {
+      "text": "accepting controls retained: prop_quantity_present, prop_valueFromToken_roundtrip, prop_quantity_valueFromToken, prop_tokenFromValue_ada_only, and the owner-signed retract_happy.",
+      "pause": 300
     }
   ],
   "authorization-fixture-repair": [
     {
-      "text": "The retract fixtures now use twenty-eight byte owner and signer hashes, matching Cardano key hashes.",
-      "pause": 300
-    },
-    {
-      "text": "Non-owner inequality is structural: generated signers end in a byte the owner cannot have, so the property is purely about authorization.",
-      "pause": 300
-    },
-    {
-      "text": "The accepting and refusing rows share one request and differ only in the signer; and a correct key-hash length is a valid representation, not by itself a complete ledger transaction.",
+      "text": "Authorization fixture repair.",
       "pause": 500
     },
     {
-      "text": "The out-of-window retract rows are no longer script-failure expectations: since the request validator names the phase refusal, they assert the exact outcome — the spend handler returns False and the refusal helper returns not-phase2 — each beside an accepting partner that differs only in the validity interval.",
-      "pause": 500
+      "text": "The retract fixtures previously used a 29-byte owner literal and signer strings of other lengths. Cardano ed25519 key hashes are 28 bytes, so owner and generated signers are now BOTH 28 bytes and the non-owner inequality is structural, not length-based:",
+      "pause": 400
+    },
+    {
+      "text": "owner: the_real_owner_key_aaaaaaaaa (final byte 0x61),",
+      "pause": 300
+    },
+    {
+      "text": "generated signer: a fuzzed 27-byte prefix plus final byte 0xFF,",
+      "pause": 300
+    },
+    {
+      "text": "paired refusal row: the_real_owner_key_bbbbbbbbb.",
+      "pause": 300
+    },
+    {
+      "text": "retract_happy and retract_wrong_signer share one request datum and one Phase-2 window and differ ONLY in the signer, so the pair isolates the authorization change. Boundary note, stated plainly: a correctly sized key hash makes a shape ledger-representable; the harness still executes the script struct only, so these rows are script-level evidence, not a built ledger transaction. The phase rows retract_in_phase1 and retract_in_phase3 are no longer script-failure expectations: since the request validator began naming the phase refusal, they assert the exact outcome — the spend handler returns False and retractRefusal returns Some(@\"not-phase2\") — each beside an accepting partner that differs only in the validity interval. At this record's base they were fail rows at an expect in_phase2(...) boundary claiming neither a named semantic refusal nor Lean correspondence; the re-cut rows, with the window-edge and open-bound rows beside them, cite Singular.Statements.retract_refusal_first_failing for the refusals and Singular.Statements.retract_admitted_iff for the accepting partners.",
+      "pause": 400
     }
   ],
   "refusal-classification": [
     {
-      "text": "Refusal rows distinguish clean semantic outcomes and malformed input failures; the phase-guard class once proved rejection without a clean Boolean result, and its column is empty now that the request validator names the phase refusal.",
+      "text": "Refusal classification.",
       "pause": 500
     },
     {
-      "text": "Helper-string reason checks never stand alone; each carries an executable refusal row beside it.",
-      "pause": 300
+      "text": "Classification of the affected groups; semantic means the validator returns a named clean refusal (asserted through the executable spend boundary), while malformed means the input itself cannot be interpreted at the script boundary. A script-level phase guard is separately classified: at this record's base the validator rejected the phase at an expect, so fail proved script rejection but not a clean Boolean outcome or named semantic reason; that column is now empty because the request validator names the phase refusal.",
+      "pause": 400
+    },
+    {
+      "text": "Helper-string rows (the …_reason_is_… checks) assert the construction site the validator reads; they never stand alone — each semantic refusal row in the same group carries the executable spend result, and the reason rows are extra bindings on top.",
+      "pause": 400
     }
   ],
   "module-organization": [
     {
-      "text": "The three-thousand-line cage test module was split into twelve behavior modules plus a shared fixture module.",
-      "pause": 300
+      "text": "Module organization.",
+      "pause": 500
     },
     {
-      "text": "Ticket-named modules became behavior-led names, with ticket identifiers kept in the documentation as provenance, and stale currently-broken prose was removed.",
+      "text": "The 3,092-line cage.tests.ak was split into behavior modules plus a shared fixture module; the ticket-named modules were renamed to behavior-led names (ticket identifiers stay in the module documentation as provenance):",
+      "pause": 400
+    },
+    {
+      "text": "Stale \"currently broken\" prose was removed: the duplicate-registration module no longer claims the fold crashes or that a key-exists path is absent (the fold refuses cleanly through the named site today, and the == False row passes); the terminal-retirement module now states the library-crash hazard as the reason refusals happen at the validator's own named sites before the library call.",
       "pause": 400
     }
   ],
   "name-inventory": [
     {
-      "text": "Every test of the base tree is accounted for: the cage rows move with exactly one rename, and every other rename is a pure ticket-prefix strip. Counts per module are unchanged.",
+      "text": "Name inventory.",
       "pause": 500
+    },
+    {
+      "text": "Every test of the base tree is accounted for: 97 cage rows move with exactly one rename; every other rename is a pure ticket-prefix strip. Counts per module are unchanged.",
+      "pause": 400
     }
   ],
   "cage-split-inventory": [
     {
-      "text": "This block lists every cage test and its new behavior module: ninety-seven rows, one rename, zero drops.",
+      "text": "Cage split inventory.",
+      "pause": 500
+    },
+    {
+      "text": "The single cage rename: prop_retract_requires_owner -> prop_retract_refuses_every_non_owner_signer. No cage row was dropped or merged (mechanical diff of base versus split name sets: 97 -> 97, one rename).",
       "pause": 400
     }
   ],
   "ticket-prefix-strips": [
     {
-      "text": "This block lists all one hundred sixty-eight prefix renames, old to new, so any reader can verify the mechanical rule rather than trust it.",
+      "text": "Ticket-prefix strips.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket identifiers no longer lead any test name; lowercase row-group tags (registry gate and row labels such as g2_, a1_, m1_, t5_, n8_, v1_, lr01_) are kept as secondary provenance. All 168 renames:",
       "pause": 400
     }
   ],
   "lean-bindings": [
     {
-      "text": "Citations to absent Lean files are recorded as missing bindings with no conformance claim, and the citations that do resolve are stated with their exact qualified declarations; the retract phase rows are bound since the validator names the refusal, refusals citing the first-failing rule and partners the admission rule.",
+      "text": "Lean bindings.",
       "pause": 500
+    },
+    {
+      "text": "The historic citations in lib.props.ak and cage.props.ak name Lean files that do not exist in this repository's Lean tree. Both property modules now record the binding as MISSING and claim no conformance; the tests stand as behavioral regression properties over the Aiken helpers.",
+      "pause": 300
+    },
+    {
+      "text": "Retract timing was unbound at this record's base; the user ruled that Issue 197 preserve the executable script-level phase guards without a clean-refusal or Lean-correspondence claim. The phase rows are bound since the request validator names the refusal: refusals cite Singular.Statements.retract_refusal_first_failing and their accepting partners Singular.Statements.retract_admitted_iff, both declared in lean/Singular/Statements.lean.",
+      "pause": 300
+    },
+    {
+      "text": "duplicate_insert.tests.ak cites the keyed-mint fault; the accepted qualified declaration is Singular.assetSame (declared in lean/Singular/Model.lean under namespace Singular), and it exists.",
+      "pause": 300
+    },
+    {
+      "text": "terminal_retire.tests.ak cites Singular.Statements.update_terminal_transaction_row; the nested namespace is declared in lean/Singular/Statements.lean and the theorem exists at that qualified name.",
+      "pause": 300
     }
   ],
   "verification-and-limits": [
     {
-      "text": "The final staged source passed both existing flake gates: three on-chain checks and two naming-onchain checks; focused runs were controls, not substitutes.",
-      "pause": 300
-    },
-    {
-      "text": "The raw Aiken logs record zero errors but retain non-failing warnings, so the result is not described as warning-clean.",
-      "pause": 300
-    },
-    {
-      "text": "The limits are stated: malformed-context rows bound input shape only, the out-of-window retract rows assert the exact named refusal since the validator names it, and mutation evidence lives outside the repository because mutations are never committed.",
+      "text": "Verification and limits.",
       "pause": 500
+    },
+    {
+      "text": "Required gates passed on the final staged source: nix flake check ./onchain global invocation 10 exited 0 across its three checks, and nix flake check ./naming-onchain global invocation 2 exited 0 across its two checks. Total spend includes the predecessor run: on-chain 10 invocations (3 predecessor, 7 continuation) and naming-onchain 2 invocations (1 each); the second remaining naming allocation was not needed. Focused Aiken runs used for controls are listed in the worker journal and are separate from the flake-gate budget.",
+      "pause": 300
+    },
+    {
+      "text": "The successful Aiken logs report 2,171 on-chain checks with 0 errors and 616 warnings, and 307 naming-onchain checks with 0 errors and 13 warnings. The warnings are non-failing diagnostics (including unused imports exposed by the split); this record does not claim a warning-clean suite.",
+      "pause": 300
+    },
+    {
+      "text": "Control evidence lives outside the repo in the worker runtime because the mutations are deliberately never committed; the journal binds each run to its command and result.",
+      "pause": 300
+    },
+    {
+      "text": "Known limits: malformed-context rows bound only input shape, not a refusal reason. The out-of-window retract rows asserted rejection at the expect in_phase2(...) script boundary at this record's base; they now assert the exact outcome — False from the spend handler and not-phase2 from the refusal helper — since the request validator names the refusal. The full-suite verification of the split is the candidate gate itself, and no focused run substitutes for it.",
+      "pause": 300
+    },
+    {
+      "text": "Out of scope and untouched: Lean, production validators, blueprints, lockfiles, conformance rows, sibling tickets' scopes.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "mapping.md",
-    "sha256": "77edd6e6ab4e64657e0801f61d6aa684d170c6d68532e9f8db3bedb853ee01da"
+    "sha256": "f827ab76cb0848b2ec7340fe2c8bf4dffdbb35ff1ad2ec7563e35722bd9c3e67"
   }
 }

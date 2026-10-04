@@ -1,20 +1,78 @@
 {
+  "requirements-quality-checklist": [
+    {
+      "text": "Requirements quality checklist.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want the requirements checked for testability and scope before any code is written.",
+      "pause": 400
+    }
+  ],
   "content-quality": [
     {
-      "text": "The story names who, what and why, each requirement is observable from an exit, a log or a record field, and none prescribes more implementation than the mutation and the retained location.",
+      "text": "Content quality.",
       "pause": 500
+    },
+    {
+      "text": "[x] The story names an actor, an action and an outcome.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Each requirement is observable from a command's exit, its log or a record field.",
+      "pause": 300
+    },
+    {
+      "text": "[x] No requirement prescribes an implementation beyond the mutation it names and the retained location.",
+      "pause": 300
     }
   ],
   "requirement-completeness": [
     {
-      "text": "The red names its command, its single change and four witnesses, and excludes setup and misattributed failures. The green reuses the same bindings. The identity fields are complete, the passing-mutant case has a bounded repair, and the exclusions are explicit.",
+      "text": "Requirement completeness.",
       "pause": 500
+    },
+    {
+      "text": "[x] The RED names the command, the mutant's single change and four ordered witnesses.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Setup, compile, network and misattributed failures are excluded from the RED.",
+      "pause": 300
+    },
+    {
+      "text": "[x] The GREEN uses the same command, blueprint, genesis and node on the clean candidate.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Identity binding covers source, model, blueprint, genesis, node, command, time, exit and log.",
+      "pause": 300
+    },
+    {
+      "text": "[x] The case where the mutant passes has a bounded repair path.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Scope exclusions are explicit: CI workflow, product runner, Lean, public pages and other rows.",
+      "pause": 300
     }
   ],
   "readiness": [
     {
-      "text": "No clarification is open, the limits are stated, and every requirement maps to a task.",
+      "text": "Readiness.",
       "pause": 500
+    },
+    {
+      "text": "[x] No clarification is open; each disposition is recorded in the spec.",
+      "pause": 300
+    },
+    {
+      "text": "[x] The evidence limits say what the pair does not show.",
+      "pause": 300
+    },
+    {
+      "text": "[x] Every requirement maps to at least one task.",
+      "pause": 300
     }
   ],
   "_source": {

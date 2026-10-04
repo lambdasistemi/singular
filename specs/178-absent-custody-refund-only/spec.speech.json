@@ -1,26 +1,64 @@
 {
+  "absent-custody-carries-refund-only": [
+    {
+      "text": "Absent custody carries refund only.",
+      "pause": 500
+    },
+    {
+      "text": "Model/base: d92f35bf722120369c386ce09e6c7a40d321182f, PR 208 merged. Correction citations reverified against this base. Constitution 1.0.0 applies.",
+      "pause": 400
+    }
+  ],
   "story": [
     {
-      "text": "A registry integrator needs the custody datum to carry only the refund address, so the output's sole asset is the one source of token identity. The library and validator must agree on that wire."
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry integrator, I want an absent token's custody output to carry only the refund address in its datum, so that token identity has one source: the output's sole asset. The existing library and validator must agree on that wire.",
+      "pause": 400
     }
   ],
   "authority": [
     {
-      "text": "The accepted behavioral authority is the merged absent-insertion transaction model. Its custody key and transaction construction definitions govern this correction. No Lean change is authorized."
+      "text": "Authority.",
+      "pause": 500
+    },
+    {
+      "text": "PR 208 candidate inspected: cf8f0d44880a5f774af1dc493302aec1aa2c595e. Singular.Statements.insert_absent_transaction_row, Singular.custodyKey, Singular.txCageOutputs, and Singular.txOf govern. Statement digest: cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46. Accepted model revision is the merge commit above. No Lean change is authorized.",
+      "pause": 400
     }
   ],
   "requirements-and-invariants": [
     {
-      "text": "The real encoders, decoders, validator and builder must agree on a refund-only datum. Identity comes from exactly one non-ADA asset of quantity one under the absent policy. Empty or multiple asset sets provide no key, and neither datum nor request supplies a fallback. Insertion preserves the model's deposit, refund, mint, root and authorization relationships. CI must execute and judge the registered conformance row; an unregistered-row control must demonstrate the selection gap. Every copy and verification limit belongs in the final pull request."
+      "text": "Requirements and invariants.",
+      "pause": 500
+    },
+    {
+      "text": "The first acceptance line requires executable singleton/zero/two-asset evidence at the implementation boundary, including a check observed to fail for the defect. Source search is discovery only. Quantification must not silently erase assets from other policies or accept an empty population.",
+      "pause": 400
     }
   ],
   "scope-and-limits": [
     {
-      "text": "The wire correction precedes the conformance row, which remains held until the separate DSL merge. Minimal adaptations of existing consumers are authorized while their edge contracts stay unchanged. The edge-four reference selection needs existing before-and-after evidence and a control able to fail; any uncovered selection must be named explicitly. The independent naming validator, simulator engine and new insert-absent command are outside this ticket. Simulator transaction replay and broader coverage debt remain unresolved. No project-wide conformance or release claim follows."
+      "text": "Scope and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Two ordered slices; no runnable command. Owned production: onchain/, offchain/lib/Singular/Registry/, offchain/test/, conformance/ rows and coverage, Conformance workflow row registration, and docs for this edge. Forbidden: naming-onchain/, simulator engine, another edge's arm, offchain/insert-absent/, onchain-release/INSERT-ABSENT.md. Minimal mechanical representation adaptations of existing consumers are authorized by the parent's ruling of 2026-09-21T16:34Z: edgeReferences edge 4, custodyInput/custodyKeyOf, and the AbsentCustody spending arm. Their edge contracts do not change. For edge 4's reference selection, identify an existing executing check and retain before/after passes plus a selection perturbation that fails it. If none exercises it, state \"no executing check covers this selection\" in the PR and name the uncovered consumer. Do not create a bespoke check or claim deleteAbsent certification coverage.",
+      "pause": 400
+    },
+    {
+      "text": "refund-custody-wire-and-consumers is wire and consumer adaptation. refund-custody-conformance is the new conformance row and its registration, HELD until the parent reports the conformance story language merge. No new conformance test-tree changes in refund-custody-wire-and-consumers. refund-custody-conformance remains mandatory for ticket acceptance; it may be deferred at the wall without undoing a separately verified refund-custody-wire-and-consumers.",
+      "pause": 400
+    },
+    {
+      "text": "Simulator transaction replay remains a named gap. Coverage-check INCOMPLETE remains debt, not acceptance. No full-project conformance or release claim. Code-the-design rung 1 for these invariants, preserving existing cross-layer checks and adding the ticket's explicit conformance registration obligation. Model ambiguity holds affected acceptance and travels upward as a concrete user story with the conflicting revisions and clauses.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "381be98a95b27d991a58c4eab14e0f682ba3ce07ab4e7e70a8f560027de20157"
+    "sha256": "ed32b5d585b002f53279deb2b3ae501e03a589c348f80c333cbe6518777c7d15"
   }
 }

@@ -4,9 +4,9 @@ Authority: the operator's 2026-09-22 instructions to set these ticket specs,
 drive Opus and Grok workers, and use Muse or GLM for mechanical parts.
 
 **#209 is a parent epic with six child tickets, each with its own pull
-request**: #220 the executable book DSL and its resource lifetime (PR 217),
+request**: #220 the executable book story language and its resource lifetime (PR 217),
 #221 the generic Lean model driver (PR 226), then #222 registration observation
-comparison, #223 connected retirement and refusals, #224 batch and shared E2E
+comparison, #223 connected retirement and refusals, #224 batch and shared end-to-end
 contexts, and #225 theorem consumers, receipts and the book.
 
 **PR 226 delivers #221 and nothing else.** It carries this epic plan for
@@ -21,13 +21,13 @@ edges, external deployments or merge.
 
 ## User stories
 
-> As paolino, I want to see all acceptance tests as DSL with interpreters over
+> As paolino, I want to see all acceptance tests as story language with interpreters over
 > devnet and Lean evaluators.
 
 That is the outcome the four narrower stories below add up to, and the twelve
 invariants serve it. One description, two interpreters: one executing against a
 real devnet, one evaluating the Lean. A test that exists in only one of them is
-not finished, and a test that exists outside the DSL is not in scope of the
+not finished, and a test that exists outside the story language is not in scope of the
 claim.
 
 - A consumer reads a registration promise and can run its example against a
@@ -47,18 +47,18 @@ gate, and a merged child's pull request closes only its own ticket.
 
 | ID | Required behavior | Failure that must be detected |
 |---|---|---|
-| R01 | One model-owned driver exposes the executable law and declared boundary observations with bound identities. | A per-theorem projection substitutes for the declared boundary. |
-| R02 | Model-owned scenarios carry theorem bindings, parameters and lawful setup traces where required. | Code-side invented expectations, unexercised hypotheses or a seeded final state stand in for a connected run. |
-| R03 | Acceptance and domain refusal are distinguished from parse, process and infrastructure errors. | A broken runner earns refusal evidence or an unexecuted law earns acceptance. |
-| R04 | The constitution states the concrete realization of each law/observation, identity rules and named unobservable fields. | A support module silently invents the correspondence or excludes a required field. |
-| R05 | One Haskell abstraction compares all declared observable fields, with field-level differences. | A wrong signer, refund, output, datum, asset, configuration or state change is ignored. |
-| R06 | Identities are allocated during context/actions and looked up during observation. | An unknown observed identity is assigned the expected model ID. |
-| R07 | Registration and retirement share actual history and identity maps; context is supplied outside the story. | Retirement burns a substitute token or restarts from a constructed active state. |
-| R08 | Product claims use the typed theorem/clause DSL with total execution and rendering. | A discovered instruction or nested program executes but disappears from the book. |
-| R09 | Refusal replay fails when model and implementation disagree. | An accepted mutant passes or a client/setup error is represented as ledger rejection. |
-| R10 | Each project theorem has executable consumers or a named unmet requirement. | A pointer, proof-only classification, stale receipt or skipped run earns executable coverage. |
-| R11 | E2E reuses the scenario/translation/comparison logic with its supplied context. | Duplicated expectations drift between conformance and E2E. |
-| R12 | CI runs the suite and produces a readable, receipt-derived book with visible gaps. | Local-only execution or a passing inventory is advertised as product conformance. |
+| one-model-owned-driver-exposes-executable-law | One model-owned driver exposes the executable law and declared boundary observations with bound identities. | A per-theorem projection substitutes for the declared boundary. |
+| model-owned-scenarios-carry-theorem-bindings-parameters | Model-owned scenarios carry theorem bindings, parameters and lawful setup traces where required. | Code-side invented expectations, unexercised hypotheses or a seeded final state stand in for a connected run. |
+| acceptance-domain-refusal-distinguished-from-parse-process | Acceptance and domain refusal are distinguished from parse, process and infrastructure errors. | A broken runner earns refusal evidence or an unexecuted law earns acceptance. |
+| constitution-states-concrete-realization-law-observation-identity | The constitution states the concrete realization of each law/observation, identity rules and named unobservable fields. | A support module silently invents the correspondence or excludes a required field. |
+| one-haskell-abstraction-compares-declared-observable-fields | One Haskell abstraction compares all declared observable fields, with field-level differences. | A wrong signer, refund, output, datum, asset, configuration or state change is ignored. |
+| identities-allocated-during-context-actions-looked-up | Identities are allocated during context/actions and looked up during observation. | An unknown observed identity is assigned the expected model ID. |
+| registration-retirement-share-actual-history-identity-maps | Registration and retirement share actual history and identity maps; context is supplied outside the story. | Retirement burns a substitute token or restarts from a constructed active state. |
+| product-claims-use-typed-theorem-clause-dsl | Product claims use the typed theorem/clause story language with total execution and rendering. | A discovered instruction or nested program executes but disappears from the book. |
+| refusal-replay-fails-model-implementation-disagree | Refusal replay fails when model and implementation disagree. | An accepted mutant passes or a client/setup error is represented as ledger rejection. |
+| project-theorem-has-executable-consumers-or-named | Each project theorem has executable consumers or a named unmet requirement. | A pointer, proof-only classification, stale receipt or skipped run earns executable coverage. |
+| reuse-scenario-translation-and-comparison | end-to-end reuses the scenario/translation/comparison logic with its supplied context. | Duplicated expectations drift between conformance and E2E. |
+| ci-runs-suite-produces-readable-receipt-derived | CI runs the suite and produces a readable, receipt-derived book with visible gaps. | Local-only execution or a passing inventory is advertised as product conformance. |
 
 No new Cardano byte model in Lean. The existing abstract root encoding is not
 the concrete trie hash; translation must state and check their relationship.

@@ -1,16 +1,26 @@
 {
-  "dependency-direction": [
+  "owners-of-registry-wire-values": [
     {
-      "text": "The diagram starts with callers at the Types compatibility facade. Primitive values feed request, state, proof and redeemer owners. State reads request, and redeemer reads proof. No child reads back through the facade.",
-      "pause": 350
+      "text": "Owners of registry wire values.",
+      "pause": 500
     },
     {
-      "text": "The table assigns one responsibility to each owner. The five new modules are internal to the public library; existing callers continue through the exposed Types module.",
-      "pause": 350
+      "text": "As a contributor, I need one directed dependency path from a registry wire value to its codec, so an edit cannot leave two competing definitions or silently bypass the public API.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Keep the five owners as package-internal other-modules of the existing public library. Types remains exposed. Existing callers should continue to import Types; a narrow import adaptation is allowed only when compilation demonstrates the need. No owner imports the facade, and no cycle is permitted. The generated API reference documents the internal owners for contributors while clearly distinguishing them from the caller-importable facade.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "962f96f8a4d5bb22da87bcfa7fffc27d8df38e02253325ed793f15a400cab78e"
+    "sha256": "86e57c334051edc5d539410d2b8f7ace73f197f6df693af6221c42847dde05cd"
   }
 }

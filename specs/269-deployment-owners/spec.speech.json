@@ -1,18 +1,36 @@
 {
+  "separate-deployment-records-from-node-attachment": [
+    {
+      "text": "Separate deployment records from node attachment.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator, I record one deployment and attach a later run to it. I want the same manifest bytes, mirror path and contents, node checks, refusal messages and transaction effects after the code is divided into owners.",
+      "pause": 400
+    }
+  ],
   "requirements": [
     {
-      "text": "The operator keeps the same public deployment interface, manifest and mirror formats, node decisions and refusal messages. The table also requires a focused execution of the moved attach function, separate from the public verify command's script identity check.",
-      "pause": 400
+      "text": "Requirements.",
+      "pause": 500
     }
   ],
   "evidence-and-authority": [
     {
-      "text": "The diagram shows two library paths from a manifest: verification reads the live policy and windows, while attachment resolves outputs without those checks. A retained journey caller separately compares a loaded mirror with the chain. The accepted Lean tree governs registry behavior, while concrete file and node claims need their own evidence.",
+      "text": "Evidence and authority.",
       "pause": 500
+    },
+    {
+      "text": "Base 519058d0f40616e28f7bc7e7940a7ea14ac544aa contains accepted Lean tree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2. lean/Singular/Model.lean defines the registry state, transitions, custody and root; the constitution names the concrete trie hash as unobservable. Lean specifies no deployment JSON, file path, node query or mirror persistence behavior. Those concrete representation contracts are pinned by the existing public API, current callers and executable evidence; they cannot be claimed as Lean proofs. Any newly found conflict with clear Lean, or an ambiguous model claim, is escalated as a user story before affected acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Conformance source, model, validators, simulator, retained legacy journey repairs and release/deployment operations are outside this ticket. Current deployment-attach-check.sh depends on retained register-rows, recovery-rows and retirement-rows and is not a passing current receipt.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "d1cb2f3543a4e3bddbd63fc46d5debba8d052a40913c2393dea9846ecc440a70"
+    "sha256": "e949c87132d47e44c474cf86736a1c934daf78fa433775b19e94cf501e4cb9d1"
   }
 }

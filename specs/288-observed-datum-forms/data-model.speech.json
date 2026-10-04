@@ -1,18 +1,44 @@
 {
-  "_source": {
-    "file": "data-model.md",
-    "sha256": "1be83188acc40f9c9c24d91fb4fe60bf1f47f6a4d9079bed929ce5b81879bc2a"
-  },
+  "preserve-the-three-datum-forms": [
+    {
+      "text": "Preserve the three datum forms.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader, I want inline, hashed and absent datums to remain distinguishable in transaction evidence.",
+      "pause": 400
+    }
+  ],
   "data-contract": [
     {
-      "text": "Inline, hashed, and absent datums remain distinct. Attribute each observation to its real input reference or destination output. Missing evidence is an error, never an invented inline value.",
-      "pause": 350
+      "text": "Data contract.",
+      "pause": 500
+    },
+    {
+      "text": "Existing Singular.DatumForm has inline, hashed and none. Existing input/output JSON carries the datum field. There is no receipt-schema or model change. Observed forms are a translation of the corresponding concrete ledger datum constructor, independent of the expected model value.",
+      "pause": 400
+    },
+    {
+      "text": "Every reported spent input must be attributable to its actual output reference and observed output. Every reported destination must be attributable to the actual destination output. Missing or ambiguous attribution must fail instead of manufacturing a datum form. Preserve request, state, custody and witness identities and all other fields.",
+      "pause": 400
     }
   ],
   "retained-state-input": [
     {
-      "text": "Retain the actual state output from before submission. A reported state input must have unique corresponding evidence. A retraction reports no state input. This field carries observations only; it changes no transaction or model behavior.",
-      "pause": 350
+      "text": "Retained state input.",
+      "pause": 500
+    },
+    {
+      "text": "The internal LiveStep observation record gains lsStateUtxo :: Maybe (TxIn, TxOut ConwayEra): this registry's actual spent state output retained from the pre-submission snapshot. An accepted fold or reject reporting a state input requires exactly one corresponding retained state output. Missing or ambiguous evidence is an error. A retraction reports no state input. Unsupported or refused cases do not acquire accepted observations from this field.",
+      "pause": 400
+    },
+    {
+      "text": "This is observation metadata only; it does not change the built transaction, registry state, public receipt schema or Lean model. Other observation fields and their identities remain unchanged.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "1be83188acc40f9c9c24d91fb4fe60bf1f47f6a4d9079bed929ce5b81879bc2a"
+  }
 }

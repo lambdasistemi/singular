@@ -26,7 +26,7 @@ flowchart LR
    imports, exports and narrowly justified type plumbing.
 3. Keep affected existing tests and callers through production entry points.
    Add focused behavior-sensitive assertions for the ordering and effect blind
-   spots. In one fresh-blueprint E2E run, present two real request outputs in
+   spots. In one fresh-blueprint end-to-end run, present two real request outputs in
    descending TxIn order to witness canonical input/proof association, then run
    connected stages for all seven admissible edges. Derive expected effects
    from observed pre-state and the accepted Lean row; compare the built body,
@@ -40,7 +40,7 @@ flowchart LR
    the persistent auditor's product checkpoint. Keep the historical cheap-call
    breaches and the new prospective guard separate from development and final
    receipts. Truthfully complete the implementation task rows and any required
-   speech stamp before the final candidate commit. Run the frozen Gate S once
+   speech stamp before the final candidate commit. Run the frozen acceptance checks once
    on that clean final head,
    obtain the auditor's exact-head pre-push report, bind pushed-head CI and
    hand back the draft PR. The epic owner alone accepts and merges.
@@ -48,6 +48,6 @@ flowchart LR
 One cohesive implementation slice covers code, focused control and docs to
 avoid a documentation-only second product campaign. Final gate, audit, CI and
 handback are acceptance receipts, not prematurely completed tracked tasks.
-Finite execution and auditor attempt bounds are in the runtime Gate S and
+Finite execution and auditor attempt bounds are in the runtime acceptance checks and
 worker briefs. Historical failed charges remain recorded. `Update`'s public
 API and Conformance bytes must remain unchanged.

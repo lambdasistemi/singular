@@ -170,7 +170,7 @@ test witness_prop_minting_always_needs_the_fold(kind via fuzz.int_between(0, 2))
   !moveWitness(kind, 1, False) && moveWitness(kind, 1, True)
 }
 
-/// W3: a terminal witness says a name is over, forever. Its holder may
+/// terminal-witnesses-plural: a terminal witness says a name is over, forever. Its holder may
 /// destroy their own copy without a fold.
 test witness_terminal_pure_burn_needs_no_fold() {
   moveWitness(2, -1, False)

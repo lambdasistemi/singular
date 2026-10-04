@@ -69,30 +69,40 @@ spec = describe
             $ do
                 steps <- recordedSteps
                 length steps `shouldBe` 19
-                size (chapter "CG22" steps) `shouldSatisfy` (> maxReceiptBytes)
+                size (chapter "retire-active-key" steps)
+                    `shouldSatisfy` (> maxReceiptBytes)
                 putStrLn
                     ( "rebuilt run: "
-                        <> show (size (chapter "CG22" steps))
+                        <> show (size (chapter "retire-active-key" steps))
                         <> " bytes, "
                         <> show (missing steps)
                         <> " short of the observed; retirement "
-                        <> show (size (chapter "CG22" (take retirementSteps steps)))
+                        <> show (size (chapter "retire-active-key" (take retirementSteps steps)))
                         <> ", exit controls "
-                        <> show (size (chapter "CG23" (drop retirementSteps steps)))
+                        <> show
+                            ( size
+                                ( chapter
+                                    "reject-and-retract-refund-controls"
+                                    (drop retirementSteps steps)
+                                )
+                            )
                         <> " bytes before that is added"
                     )
         it
             "Writes the exit controls' receipt under the bound, with every byte the rebuilt run misses added"
             $ do
                 steps <- recordedSteps
-                let exits = chapter "CG23" (drop retirementSteps steps)
+                let exits =
+                        chapter
+                            "reject-and-retract-refund-controls"
+                            (drop retirementSteps steps)
                 size exits + missing steps `shouldSatisfy` (< maxReceiptBytes)
                 checkReceiptSize exits `shouldSatisfy` isRight
         it
             "Writes the retirement receipt under the bound, with every byte the rebuilt run misses added"
             $ do
                 steps <- recordedSteps
-                let retirement = chapter "CG22" (take retirementSteps steps)
+                let retirement = chapter "retire-active-key" (take retirementSteps steps)
                 size retirement + missing steps `shouldSatisfy` (< maxReceiptBytes)
                 checkReceiptSize retirement `shouldSatisfy` isRight
 
@@ -101,7 +111,7 @@ size = fromIntegral . BSL.length . encode
 
 -- | What the rebuilt run falls short of the receipt the run failed to write.
 missing :: [Value] -> Int
-missing steps = max 0 (observedBytes - size (chapter "CG22" steps))
+missing steps = max 0 (observedBytes - size (chapter "retire-active-key" steps))
 
 {- | A chapter's receipt as the story receipt writer builds it. The envelope
 numbers take the widest values a run of this size writes.

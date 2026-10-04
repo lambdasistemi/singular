@@ -1,6 +1,32 @@
 {
+  "changed-responsibilities": [
+    {
+      "text": "Changed responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "command-line-component: new offchain/cli component owns reusable public command parsing/dispatch and command-specific CLI errors. It depends on registry production facades; registry library never depends on CLI. See parse-command/RUN.",
+      "pause": 400
+    },
+    {
+      "text": "saved-registry-state: CLI configuration/state owner holds public identity and authenticated local state across processes, validates version/identity/commitment and excludes secrets. It composes existing Deployment/Trie persistence. See saved-public-identity/STATE.",
+      "pause": 400
+    },
+    {
+      "text": "authenticated-chain-observation: CLI observation owner reads ledger state and holdings with fresh chain points, binds selected-key proof to ledger commitment and labels local proof separately. Its inspection session consumes public node settings only and exposes no signing/funding/submission requirement. See command-observation-receipt.",
+      "pause": 400
+    },
+    {
+      "text": "MM299-WRITES: CLI lifecycle owner composes existing production boot/request/fold builders; caller wallet/seed/input safety and partial-state preservation are its obligations. Promote only a necessary reusable helper to its nearest existing stable owner, preserving facades and existing semantics; never duplicate model or builder logic.",
+      "pause": 400
+    },
+    {
+      "text": "MM299-ARTIFACT: Cabal/flake/component inventory and release assembly expose singular; ordinary-CLI archive CI and run page consume that packaged entry point. Demo script owns orchestration only. Existing commands remain available and their controls retained.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "5cd01f8682d99fd4ac094f0ec84ab2876f6d4042866767b265274318d0a7d542"
+    "sha256": "9ed0371e2697211fc259333d4465e0afefedda952f168befef2741b6dd4441e6"
   }
 }

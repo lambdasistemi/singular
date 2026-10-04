@@ -1,12 +1,26 @@
 {
-  "_source": {
-    "file": "functions-model.md",
-    "sha256": "c01f5d3f0311efe7cb70a40b88f61fb776d0c20ab873613f6064792f148ab1ff"
-  },
+  "wait-bound-function-boundaries": [
+    {
+      "text": "Wait bound function boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the bounded forms injectable for tests while the public confirmation functions keep their signatures.",
+      "pause": 400
+    }
+  ],
   "signatures": [
     {
-      "text": "One function bounds any whole wait and throws the named failure. A bounded submitter wraps any node submitter. Indexed and session confirmation gain forms that take an explicit bound for tests. Session confirmation raises the named failure when its limit fires and when its window closes, and every node read it makes, including the window computation, is inside a bound. The public confirmation functions keep their signatures. A wait-aware catch replaces every catch-all that classifies failures.",
+      "text": "Signatures.",
       "pause": 500
+    },
+    {
+      "text": "The coder chooses local helper names inside these owners. A placement or signature conflict goes to the ticket owner as a question before the RED commit. The mandate is versioned, not worked around.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "131740ea2527af6a14922c7e100316ffb9bc65a75b603bb71fc007890a080edf"
+  }
 }

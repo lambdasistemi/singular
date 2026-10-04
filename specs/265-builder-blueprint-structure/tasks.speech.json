@@ -1,12 +1,22 @@
 {
+  "delivery-tasks": [
+    {
+      "text": "Delivery tasks.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I expect a reviewable extraction whose old commands still work and whose evidence names what was actually checked.",
+      "pause": 400
+    }
+  ],
   "completion-sequence": [
     {
-      "text": "The work advances from intake through extraction, contributor documentation, generated Haddock, source-content negative control, future archive check and exact-head audit handback.",
-      "pause": 400
+      "text": "Completion sequence.",
+      "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8d3827f59b21f0ee71452016f78a9573a0b72ed6f3569f1fea84961c456059a0"
+    "sha256": "3a2bae89f0e550b73fea590647bb21e14b041258b59aa49aec720bb866571f24"
   }
 }

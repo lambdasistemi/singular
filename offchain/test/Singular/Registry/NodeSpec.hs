@@ -69,7 +69,9 @@ spec = describe "the chain a runner selects" $ do
         nodeModeFromArgs [] [] `shouldBe` Right Devnet
 
     it "ignores a runner's own arguments" $
-        nodeModeFromArgs ["run", "CA01", "CG02"] []
+        nodeModeFromArgs
+            ["run", "canonical-seed-identity", "update-existing-key"]
+            []
             `shouldBe` Right Devnet
 
     it "is the joiner's node when all three settings are given" $
@@ -94,7 +96,9 @@ spec = describe "the chain a runner selects" $ do
             `shouldBe` Right (external "/run/node.sock" 1 "joiner.skey")
 
     it "takes a runner's arguments around the flags" $
-        nodeModeFromArgs (["run", "CA01"] <> full <> ["--verbose"]) []
+        nodeModeFromArgs
+            (["run", "canonical-seed-identity"] <> full <> ["--verbose"])
+            []
             `shouldBe` Right (external "/run/node.sock" 1 "joiner.skey")
 
     it "refuses a socket without a magic or a key, naming what is missing" $

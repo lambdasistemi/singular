@@ -24,8 +24,8 @@ flowchart LR
 
 The implementation owner may change `offchain/singular-registry.cabal`,
 `offchain/nix/checks.nix`, `offchain/flake.nix` and `.github/workflows/ci.yml`
-under epic answer A-001. The initial all-component carrier was superseded by
-A-005 after a direct `connected-verifier` RED. The classified
+under operator answer (A-001). The initial all-component carrier was superseded by
+operator answer (A-005) after a direct `connected-verifier` RED. The classified
 `component-build` carrier must close the supported set derived from live
 required workflows and current supported command dependencies, with an
 inventory row for every Cabal declaration; its CI step must run
@@ -49,8 +49,8 @@ stands for the off-chain component build.
 
 ## Coverage handoff
 
-The `b69ecca` Gate S v11 and exact-head CI receipts measured 70 discovered
-Haskell files in 22 directories, 68 Fourmolu files after the two A-003
+The `b69ecca` acceptance checks v11 and exact-head CI receipts measured 70 discovered
+Haskell files in 22 directories, 68 Fourmolu files after the two operator answer (A-003)
 independent verifier exclusions, and 57 HLint files in nine directories. The
 remaining 13 files are outside HLint enforcement under 13 configured
 debt-directory names. The 214 retained hints were measured at an earlier
@@ -71,7 +71,7 @@ That establishes compilation and inventory of the included set, not execution
 of commands or build success for the nine omitted members. The contributor
 guide explains the commands and boundaries.
 
-## A-011 release-instruction correction
+## operator answer (A-011) release-instruction correction
 
 The operator ruled the current release README outdated and chose a forward
 correction on 2026-09-25. Correct the current archive README, release notes and
@@ -92,10 +92,10 @@ head. No current documentation correction is evidence that a legacy command
 builds. Conformance remains excluded, and #278 owns full-repository lint and
 format coverage.
 
-At `b69ecca`, the reviewed Gate S v11 ran the assembled archive and four
+At `b69ecca`, the reviewed acceptance checks v11 ran the assembled archive and four
 checksum-valid negative controls GREEN. Local `release-check` remained
-HOST-BLOCKED under A-012, and that exact pushed-head CI job passed. The
-documentation correction at `e276bab` passed its own audit, Gate S v12 and
+HOST-BLOCKED under operator answer (A-012), and that exact pushed-head CI job passed. The
+documentation correction at `e276bab` passed its own audit, acceptance checks v12 and
 exact-head CI on main `2ae29b0`. Main has since advanced to `80eba16`, whose
 accepted Lean source is `03fd9e0` and whose constitution is 1.10.0. Its #239
 retraction admission changes no #264 tooling or bounded fold-journey claim;

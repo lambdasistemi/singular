@@ -1,76 +1,200 @@
 {
   "who-this-is-for": [
     {
-      "text": "Naming is an instance of the registry, not a second model: the same seven edges, the same tokens, the same refusals, with naming's own rule about who may certify what. Open the simulator and switch the profile picker to the naming profile.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "A reviewer who wants to play the naming profile in the docs rather than read a proposed walkthrough. Naming is an instance of the registry, not a second model: the same seven edges, the same tokens, the same refusals, with naming's own rule about who may certify what.",
+      "pause": 400
+    },
+    {
+      "text": "Open the simulator and switch the profile picker to Naming — the Over witness.",
+      "pause": 400
+    }
+  ],
+  "how-a-name-moves-in-the-registry": [
+    {
+      "text": "How a name moves in the registry.",
+      "pause": 500
+    },
+    {
+      "text": "Naming is an instance of the registry, not a layer bolted beside it. A name is one key in the registry's authenticated map, and the value of that key is a single byte:",
+      "pause": 400
+    },
+    {
+      "text": "Seven requests move a key, and nothing else does. Each one moves a witness token, and the witness is what a reader looks at — never the root:",
+      "pause": 400
+    },
+    {
+      "text": "Every other shape is refused before any proof is checked, and each refusal carries one trace label naming its own reason.",
+      "pause": 400
+    },
+    {
+      "text": "The witnesses obey four laws:",
+      "pause": 400
+    },
+    {
+      "text": "A witness moves only inside a fold. A mint or a burn under the absent, active or terminal policy is accepted only in a transaction that spends the registry's state token and folds it.",
+      "pause": 300
+    },
+    {
+      "text": "The fold decides how many, and where. It sums the witness column of the requests it consumed, and the transaction's mint under the three policies must equal that sum exactly — asset by asset, quantity by quantity. Nothing else may move under them.",
+      "pause": 300
+    },
+    {
+      "text": "A terminal witness is its holder's to destroy. It says a name is over, forever; burning your own copy costs the registry nothing, so that burn alone needs no fold.",
+      "pause": 300
+    },
+    {
+      "text": "The asset name is the registry key. Identity is the pair of policy and key, so a name recreated after a delete carries the same identity again.",
+      "pause": 300
+    },
+    {
+      "text": "One edge carries a rule of its own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone.",
+      "pause": 400
+    },
+    {
+      "text": "No application script at fold time. The naming validator is not executed by a fold at all. What it does instead is certify an edge in advance: it mints one approval whose asset name binds the edge, the key, the owner and the destination, the requester attaches that approval to their request, and the cage recomputes the name from the request itself and refuses anything that does not match. A folder is permissionless and can therefore be anyone, which is exactly why the destination is bound: without it a folder could route your name to itself.",
       "pause": 400
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Watch the journey. The controller books alice with one insertActive, certified by the controller's signature, and the active token goes to the record. A quorum then retires it with one updateTerminal: the active token is burned and the leaf can never move again. The control key alone cannot do this — the rule is the committed recovery key revealed and signing, or a distinct-member quorum, and the control key on its own is neither.",
+      "text": "What you can do.",
+      "pause": 500
+    },
+    {
+      "text": "Watch the journey. Five steps, played rather than asserted:",
       "pause": 400
     },
     {
-      "text": "Then a folded read mints the Over witness, which needs no approval at all: anyone may attest a retired name. Then another, because the terminal witness is plural — the attestation is a read, so both copies are true. Burn them both and the leaf is still terminal. An attestation says something that stays true whether or not you keep the token.",
+      "text": "The controller books alice. One insertActive, certified by the controller's signature. The active token goes to the record.",
+      "pause": 300
+    },
+    {
+      "text": "A quorum retires it. One updateTerminal. The active token is burned and the leaf can never move again. The control key alone cannot do this — the rule is the committed recovery key revealed and signing, or a distinct-member quorum, and the control key on its own is neither.",
+      "pause": 300
+    },
+    {
+      "text": "A folded read mints the Over witness. witnessTerminal needs no approval at all: anyone may attest a retired name.",
+      "pause": 300
+    },
+    {
+      "text": "And another. The terminal witness is plural, because the attestation is a read. Both copies are true.",
+      "pause": 300
+    },
+    {
+      "text": "Burn them both. The leaf is still terminal. An attestation says something that stays true whether or not you keep the token.",
+      "pause": 300
+    },
+    {
+      "text": "Read the replay below it. Twenty-four naming rows across six sections — spellings, queues, folds, transitions, resolutions and replays — each one a verdict the Lean computed, recomputed in your browser. Two of them carry the amended retirement rule — the control key alone never retires, and the quorum does — and a third shows the other route, retirement by the recovery key.",
       "pause": 400
     },
     {
-      "text": "Below the journey, twenty-four naming rows across six sections are replayed in your browser, each a verdict the Lean computed. Two of them carry the amended retirement rule — the control key alone never retires, and the quorum does — and a third shows the other route, retirement by the recovery key. Below that, twenty-one lifecycle rows: seeding the consumer with its pinned policies, moving a payment destination while the registry root stays put, revealing the committed recovery key, and both retirement routes with the refusals that guard them.",
+      "text": "Then the lifecycle. Twenty-one more rows: seeding the consumer with its pinned policies, moving a payment destination while the registry root stays put, revealing the committed recovery key, and both retirement routes with the refusals that guard them.",
+      "pause": 400
+    }
+  ],
+  "finding-alice": [
+    {
+      "text": "Finding alice.",
+      "pause": 500
+    },
+    {
+      "text": "The asset name IS the registry key. Given the registry's active policy id, alice's witness is that policy plus the raw bytes of alice — no hash, no controller, no registry token, no prefix and no incarnation enters it:",
+      "pause": 400
+    },
+    {
+      "text": "That is the naming partition's convention, where the witness policies are the absent, active and terminal policies. The registry partition deployed on preprod names its representative differently: by the BLAKE2b-256 digest of the spelling under the representative policy, as the preprod record shows. The two queries are not interchangeable; each finds a token only under its own partition's policies.",
+      "pause": 400
+    },
+    {
+      "text": "The following Koios queries are a historical diagnostic for the earlier preprod naming walkthrough. The dated naming and escrow plays require an indexed read path with a recorded chain point and freshness; registry follower #107 tracks that path. A Koios response alone does not satisfy those plays.",
+      "pause": 400
+    },
+    {
+      "text": "For that historical query, substitute the published active policy id and use Koios Asset UTxOs:",
+      "pause": 400
+    },
+    {
+      "text": "The holding address and inline datum identify the live record or the completion-only custody a pending ending put it in. No trie lookup and no creation-controller lookup is needed to locate a live witness.",
+      "pause": 400
+    },
+    {
+      "text": "The three policies share that one convention, so the same query answers three different questions about the same name. A witness under the absent policy says somebody has staked a deposit on the name being free. A witness under the active policy says the name is booked, and its holding output is the record. A witness under the terminal policy says the name is over — anyone may ask for one by folding a read, and nobody can ever make the name live again.",
+      "pause": 400
+    },
+    {
+      "text": "The token's presence at a live output is the witness being read; this example does not query the root or walk history. A connected demonstration also records which indexed chain state supplied that output.",
       "pause": 400
     }
   ],
   "what-you-see-when-it-is-refused": [
     {
-      "text": "Every refusal names its own condition; a generic exception is a defect. Booking a name that is already booked is already-booked. Moving a retired name, by any edge at all, is terminal-immutable. Attesting a name that is not retired names the state it found instead.",
+      "text": "What you see when it is refused.",
+      "pause": 500
+    },
+    {
+      "text": "Every refusal names its intended condition. A generic exception is a defect.",
       "pause": 400
     },
     {
-      "text": "Two rows are deliberately different names. Naming defines no delete, so a delete through the naming profile is naming-no-delete. A retirement that met neither authorization route is a different failure — naming-retirement-uncertified — and must not wear delete's name. The two approval rows are the ones worth trying by hand: an approval under the right policy for a different request is refused, and so is no approval at all on any edge but the read.",
+      "text": "The last two are the ones worth trying by hand in the generic profile's free play. The retirement row and the delete row are deliberately different names: naming defines no delete, and a retirement that met neither authorization route is a different failure that must not wear delete's name.",
       "pause": 400
     }
   ],
   "how-the-pieces-relate": [
     {
-      "text": "The diagram shows the registry model with its forty-four proved statements feeding the naming instance with seven, which in turn feeds its lifecycle with nine and its wire datum with five. Each layer exports its own corpus, and one page replays all three. Naming does not re-implement the registry and the page does not re-implement naming. The previous simulator did re-implement it, in about nine hundred lines of JavaScript, and when the Lean moved those lines went on describing a model that no longer existed while still reporting green. What the page transcribes is the replay: every row is a verdict the Lean computed, and the page recomputes or re-checks it in front of you.",
+      "text": "How the pieces relate.",
+      "pause": 500
+    },
+    {
+      "text": "Naming does not re-implement the registry and the page does not re-implement naming. The previous simulator did re-implement it, in about nine hundred lines of JavaScript, and when the Lean moved those lines went on describing a model that no longer existed while still reporting green. What the page transcribes is the replay: every row is a verdict the Lean computed, and the page recomputes or re-checks it in front of you.",
       "pause": 400
     }
   ],
   "what-is-proved-and-what-is-checked-here": [
     {
-      "text": "The naming instance carries seven theorem declarations, its lifecycle nine and its wire encoding five — twenty-one in all, each proved in Lean from the standard axioms alone and each in its own manifest with its own compiled gate, separate from the registry's forty-four. The theorem manifest derives these counts from the manifests rather than stating them by hand.",
+      "text": "What is proved and what is checked here.",
+      "pause": 500
+    },
+    {
+      "text": "The naming instance carries seven theorem declarations, its lifecycle nine and its wire encoding five — twenty-one in all, each PROVED in Lean from the standard axioms alone and each in its own manifest with its own compiled gate, separate from the registry's forty-four. The theorem manifest derives these counts from the manifests rather than stating them by hand. The naming statements are stated as characterisations rather than one-way implications: the retirement rule says exactly when retirement is certified, so a model that certified more than the rule allows fails them as surely as one that certified less.",
       "pause": 400
     },
     {
-      "text": "The naming statements are stated as characterisations rather than one-way implications: the retirement rule says exactly when retirement is certified, so a model that certified more than the rule allows fails them as surely as one that certified less. Finite checks are finite: the replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.",
+      "text": "The page replays twenty-four naming rows and twenty-one lifecycle rows, and requires the verdict it computes to be the verdict the Lean exported.",
+      "pause": 400
+    },
+    {
+      "text": "Finite checks are finite: the corpus replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.",
       "pause": 400
     }
   ],
   "fixture-fields-and-finite-model-limits": [
     {
-      "text": "The playable claim card carries four fixture fields: an optional canonical payment destination, a canonical controller address, a thirty-two-byte next-control commitment, and a threshold quorum. These are finite-model fixtures, not product or economic policy: the profile fixes where a deposit returns and invents no fee, bond, price, expiry, deposit-amount or refund-value rule. The pending request also stores its refund address inside the Insert commitment, and cancellation can only copy it. Retirement request withdrawal remains a distinct refusal case.",
+      "text": "Fixture fields and finite-model limits.",
+      "pause": 500
+    },
+    {
+      "text": "Values are finite-model fixtures, not product or economic policy: the profile fixes where a deposit returns and invents no fee, bond, price, expiry, deposit-amount or refund-value rule. alice maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the lifecycle page for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.",
       "pause": 400
     }
   ],
   "status-of-this-candidate": [
     {
-      "text": "The claim, fold, and resolve naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review. Building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head and states that the candidate is unaccepted.",
+      "text": "Status of this candidate.",
+      "pause": 500
+    },
+    {
+      "text": "The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review; building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-demo.md",
     "sha256": "436263bc082ad564a8a644a219dd275b102503e68c37fdc3ad4fb2d3faedf11f"
-  },
-  "finding-alice": [
-    {
-      "pause": 400,
-      "text": "The asset name is the registry key: alice's witness is the active policy plus the raw bytes of the spelling, with no hash and no prefix. That is the naming partition's convention, under the absent, active and terminal policies. The registry partition deployed on preprod names its representative differently, by a BLAKE two b digest of the spelling under the representative policy, so the two queries are not interchangeable; each finds a token only under its own partition's policies. The historical Koios query shows how to find the live witness under each policy, but it is not the read path for the dated preprod demos, which require an indexed chain point and freshness. The holding address and inline datum identify the live record or completion custody. The token at that output is the witness read; this example does not query the root or walk history."
-    }
-  ],
-  "how-a-name-moves-in-the-registry": [
-    {
-      "pause": 400,
-      "text": "A name is one key in the registry's authenticated map, and the value of that key is a single byte: zero for absent, one for active, two for terminal — the state the original design and the simulator's profile name call Over. Seven requests move a key and nothing else does, and each one moves a witness token — the thing a reader actually looks at, never the root. The witnesses obey four laws. A witness moves only inside a fold. The fold decides how many and where, summing the witness column of the requests it consumed so the transaction's mint must equal that sum exactly. A terminal witness is its holder's to destroy, because saying a name is over costs the registry nothing. And the asset name is the registry key, so identity is the pair of policy and key. No application script runs at fold time: naming certifies an edge in advance by minting one approval whose name binds the edge, the key, the owner and the destination, and the cage recomputes that name from the request itself."
-    }
-  ]
+  }
 }

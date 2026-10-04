@@ -82,7 +82,7 @@ import Singular.Registry.Types
     )
 
 -- ---------------------------------------------------------
--- Registry-mode obligations (#157 C5, C6, T1-T6)
+-- Registry-mode obligations (#157 mint-matches-edge-deltas, token-destinations-and-refunds, T1-T6)
 -- ---------------------------------------------------------
 
 {- | Everything an edge owes a fold beyond the trie: what must move under
@@ -188,7 +188,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                         then pure mempty
                         else approvalReturn req reqOut
                 pure (mints <> rest <> back)
-    {- An approval is not burned at the fold (D-APPROVAL), so it has to
+    {- An approval is not burned at the fold (approval-asset-binding), so it has to
     land somewhere. It goes back to the owner who booked it, in an output
     of its own: left to the balancer it would settle in the folder's
     change, and the folder's wallet would stop being able to fund a fold
@@ -325,7 +325,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             <> show key
                             <> "; the burn must name one source"
                         )
-    -- C6: the absent token sits at the cage, alone, under a custody datum
+    -- token-destinations-and-refunds: the absent token sits at the cage, alone, under a custody datum
     -- naming the address the deposit goes back to. Its sole asset is its key.
     lockCustody key refund floorAda = do
         let value =
@@ -450,7 +450,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     -- request's deposit to its owner's key. The cage sums what one fold
     -- owes one key and counts only the outputs paying that key outside the
     -- token carriers, so each owner's deposits go out together, in one
-    -- output. The approvals those requests carried (D-APPROVAL: not burned)
+    -- output. The approvals those requests carried (approval-asset-binding: not burned)
     -- ride back in the same output, as a rejected request's refund carries
     -- its approval; an output holding them is never ada-only, so it cannot
     -- be mistaken for a custody refund of the same address and amount.

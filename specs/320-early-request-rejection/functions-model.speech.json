@@ -1,24 +1,38 @@
 {
+  "functions-new-and-changed-signatures": [
+    {
+      "text": "Functions: new and changed signatures.",
+      "pause": 500
+    },
+    {
+      "text": "Only signatures and their constraints. Bodies, helpers and tests belong to the implementation.",
+      "pause": 400
+    }
+  ],
   "removed": [
     {
-      "text": "The two rejectability predicates go, and the story language's untimed reject goes, with every caller moved in the same change.",
-      "pause": 400
+      "text": "Removed.",
+      "pause": 500
     }
   ],
   "changed-same-signature": [
     {
-      "text": "The request script's contribute check and the fold's per request step change their rule but not their signatures, except that the contribute check may take the request's own output reference. The builder's exported functions keep their signatures. CG09's runner records acceptance as unmet by ruling.",
-      "pause": 400
+      "text": "Changed, same signature.",
+      "pause": 500
     }
   ],
   "added": [
     {
-      "text": "The story language gains a placement type with three values, a placed reject and a placed tampered reject. A new early reject story and the CG24 row runner are added.",
+      "text": "Added.",
+      "pause": 500
+    },
+    {
+      "text": "The interpreter's internal realization of reject-within/tamper-reject-within in conformance/app/Conformance/Run/Live.hs is not part of this model. Its observable rule is in reject-placement-in-story-language.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "f60d0bb24d19c9bcbe72eaec95f49de0c60d0589291a8b43e6de044efd57ddbe"
+    "sha256": "789e116c5aff093990496fc04a6e328eac8901545e172b7430ccfeecec28c607"
   }
 }

@@ -1,12 +1,26 @@
 {
+  "preserve-the-observation-boundary": [
+    {
+      "text": "Preserve the observation boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want this fix at the existing observation boundary without another interpreter or a refactor.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The existing live observer owns ledger reads and their translation. The comparator owns equality and existing permitted floors. The Lean oracle owns expectations. Preserve this direction and existing public entry points. Tests may depend on the actual observation implementation; the implementation must not depend on tests. No module relocation is authorized.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
     "sha256": "86f9b5f335fd650413d00cbdb6fec633e8e10e8afdb1c09d4b06c8ef3bdb5177"
-  },
-  "responsibilities": [
-    {
-      "text": "The live observer supplies actual fields to the comparator. The Lean oracle independently supplies expectations. Tests exercise the actual observer. No module relocation or second interpreter is authorized.",
-      "pause": 350
-    }
-  ]
+  }
 }

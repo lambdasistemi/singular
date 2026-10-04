@@ -6,9 +6,9 @@ Module      : Singular.Registry.TxBuilder.Edges
 Description : Booking and folding one registry-mode tree edge
 License     : Apache-2.0
 
-Registry mode admits seven edges and nothing else (#157 C2), and every
+Registry mode admits seven edges and nothing else (#157 seven-admitted-edges), and every
 processed edge but a read rides on an approval the naming application's
-mint arm certified (#157 C4, D-APPROVAL). A caller that wants a fold to
+mint arm certified (#157 tree-edge-admission-by-approval, approval-asset-binding). A caller that wants a fold to
 land therefore needs three things this module supplies: the four policy
 pins derived from the naming partition's own compiled code, a booking
 transaction that carries each edge's certification — which edges get
@@ -20,7 +20,7 @@ it, the request validator and a token policy does not fit in a
 transaction. 'publishCageRefs' publishes them once as reference outputs
 and every purpose resolves through those instead.
 
-Every consumer of the application — the conformance rows, the devnet E2E
+Every consumer of the application — the conformance rows, the devnet end-to-end
 and the bounded journey — derives its pins and books its edges the same
 way, so all three move together.
 -}
@@ -194,7 +194,7 @@ witnessScriptOf cfg codes kind =
             (applyDataParam (PLC.I kind) (ncWitness codes))
         )
 
-{- | The four pins a registry identity carries (#157 D-BOOT), derived
+{- | The four pins a registry identity carries (#157 genesis-policy-pins), derived
 from the naming partition's own compiled code: the application validator
 for the approval, and @witness(kind, registry)@ at kinds 0, 1 and 2.
 
@@ -423,7 +423,7 @@ edgeRecordDatumHash =
     hashToBytes
         (extractHash (hashData (Data edgeRecordDatum :: Data ConwayEra)))
 
-{- | Where an edge delivers (#157 D-DEST). An absence names the address
+{- | Where an edge delivers (#157 request-destination-binding). An absence names the address
 its deposit comes back to and no datum; an activation names the naming
 application's own address and the record datum it will carry.
 -}
@@ -721,7 +721,7 @@ bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
     pure (certifyBooking pp feeIn approval (mkBasicTx body))
 
 {- | A booking's edge must be one of the seven the registry admits (#183):
-the tag IS the edge. A booking states its own C2 row, and a row outside the
+the tag IS the edge. A booking states its own seven-admitted-edges row, and a row outside the
 table is one only an adversarial caller wants, so it is refused here rather
 than carried to a fold that would refuse it @edge-inadmissible@ anyway.
 -}

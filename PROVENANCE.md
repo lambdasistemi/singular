@@ -204,7 +204,7 @@ The gate is a file-identity check. It says nothing about behavior.
 The import above stays byte-exact at the frozen revision
 `34a5bfbb8cca2cb1911b7060d0e61db28ba21e83`. On top of it, this
 repository carries exactly one authorized local divergence, owned by
-epic 17 under A-002 and required by the repository constitution
+epic 17 under operator answer (A-002) and required by the repository constitution
 (Principle I: imported code carries the same obligation as our own
 code; Lean `lean/Singular/Model.lean` is the behavioral authority).
 
@@ -262,7 +262,7 @@ Builders consume the compiled blueprint at run time
 (`MPFS_BLUEPRINT`), so they pick up the repaired identities without
 baked hashes; the row runners assert the pinned unapplied identities
 against the build on every run. Documents that quoted observed
-identities (`docs/consumer-conformance.md` CA04, the LI01 rows in
+identities (`docs/consumer-conformance.md` applied-validator-identity, the LI01 rows in
 `offchain/naming-correspondence.md`) were updated to the values this
 repair produces (applied `state.state`:
 `ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e`,

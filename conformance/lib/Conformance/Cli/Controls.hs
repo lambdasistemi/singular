@@ -697,35 +697,35 @@ haltsAttributably :: Theorem ClientObligation
 haltsAttributably =
     obligationRow
         "R299-05"
-        "48571660f8f961589835502e6e91c13869ca9147bbd61ce61051a1c723f4c489"
+        "0c79da4ca0f30b7e225d13cceff5ea6e4cf92cd2b197cdf267f35754ef3bfb47"
 
 -- | Submissions and partial state survive interruption; nothing is resubmitted.
 partialSurvives :: Theorem ClientObligation
 partialSurvives =
     obligationRow
         "INV299-PARTIAL"
-        "061a9d1cf5e9a2dd19350bc408eb7d6d021111ec258d32b10b4d20423c013403"
+        "3dc6a0b02d40eb86f251b9451729c3d55a1a37fadfb624153956819944c745eb"
 
 -- | A leaf is reported only against the observed commitment.
 authenticated :: Theorem ClientObligation
 authenticated =
     obligationRow
         "INV299-AUTHENTICATED"
-        "52603654cc9882b70cc851e8c5f5723711cb71a6953f2201e4aa275bc9f7ca19"
+        "f35b175f8df8140f9a947178c375c1627864d4fa91fd39cc14234ee95b17b2aa"
 
 -- | The saved identity binds every write; a substitution refuses.
 identityBinds :: Theorem ClientObligation
 identityBinds =
     obligationRow
         "INV299-IDENTITY"
-        "4d240e11a11aa2bbcc17ba83488bd71a7eb1f0331fe03118c2d43df0880975aa"
+        "344952d2e47e5daf254552a9c20e3e8fc094ddb0887865b067c46574f7eb1ab4"
 
 -- | An unavailable read never prints confirmed status.
 readOnly :: Theorem ClientObligation
 readOnly =
     obligationRow
         "INV299-READONLY"
-        "e55cb1ea53e72fb95ffb8553f92dec19d78faebcb84052d5a37b225e8715aabc"
+        "ada685ce0cafbdaaa2c0c500d26bf53c51d990c851108cc3e7b802257c3fe6d8"
 
 -- | The clause an indexer's read is told under.
 indexerTitle :: Indexer -> String
@@ -738,7 +738,7 @@ indexerReads :: Theorem ClientObligation
 indexerReads =
     obligationRow
         "INV300-INDEXER"
-        "cc8d5274fb2e08a2f860e439ab4ec48e1bfca1ef84774ddfada40e4d1fdd9c12"
+        "3b78a7a63946e3d2796c9d4792f7c2bf451762a2909019bc3166ee7614dedd70"
 
 -- | The client obligations the controls bind.
 obligationBindings :: [Binding]
@@ -759,7 +759,11 @@ resolveObligation
 resolveObligation sha256 specification b =
     case [ l
          | l <- T.lines specification
-         , ("| " <> T.pack (boName b) <> " |") `T.isPrefixOf` l
+         , let firstCell = case drop 1 (T.splitOn "|" l) of
+                cell : _ -> T.strip cell
+                [] -> ""
+         , firstCell == T.pack (boName b)
+            || (" (" <> T.pack (boName b) <> ")") `T.isSuffixOf` firstCell
          ] of
         [l]
             | sha256 l == T.pack (boDigest b) -> Right ()

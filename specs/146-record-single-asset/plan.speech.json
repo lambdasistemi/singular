@@ -1,25 +1,45 @@
 {
   "outcome-and-authority": [
     {
-      "text": "Deliver one repair slice that keeps a clean record recoverable and retirable. Follow the frozen specification and constitution; keep the bound Lean revision unchanged.",
+      "text": "Outcome and authority.",
+      "pause": 500
+    },
+    {
+      "text": "The controller keeps a clean record's recovery and retirement paths available. Implement the frozen specification under constitution 1.0.0, with Lean at 41861a66b72a840042f2e633ce33a607e817d6c6 unchanged. This is one repair slice with named invariant checks and a second implementation boundary.",
       "pause": 400
     }
   ],
   "implementation": [
     {
-      "text": "First add permanent tests, requiring Boolean refusals so crashes fail. Then compare complete non-ADA values, handle malformed cardinality before extraction, preserve maintenance and recovery, and enforce the genuine insert-fold output. The diagram orders tests, repair, Haskell checking, compiled identity, documentation, CI, independent audit and merge.",
+      "text": "Implementation.",
+      "pause": 500
+    },
+    {
+      "text": "Add permanent tests before production edits in naming-onchain/validators/application.tests.ak. Use ordinary Boolean negation for polluted recovery and retirement so premature exit is a failure. Preserve the polluted-maintenance accepted reproduction and clean controls.",
+      "pause": 400
+    },
+    {
+      "text": "In naming-onchain/validators/application.ak, compare flattened non-ADA values exactly and check ADA separately. Return a named Boolean refusal for malformed record asset cardinality before extracting a representative. Apply the shared preservation rule to maintenance and recovery. Require the genuine insert-fold continuation to contain only its already authenticated representative; the legacy empty-representatives cancellation fixture path retains its meaning.",
       "pause": 400
     }
   ],
   "decisions": [
     {
-      "text": "Exact token equality allows ADA top-up while forbidding additions and quantity changes. Named false values diagnose malformed records. Insert-fold checking establishes the invariant, and unchanged polluted maintenance preserves the issue reproduction verdict.",
-      "pause": 400
+      "text": "Decisions.",
+      "pause": 500
     }
   ],
   "verification-and-delivery": [
     {
-      "text": "Retain behavioral RED and GREEN evidence. Run Aiken, Haskell and compiled identity checks, root CI and presentation checks. The draft PR records model correspondence, hashes and limits. Stop for external blind audit; merge only after PASS and completed remote checks. One worker, no comments, no Lean edits or preprod deployment.",
+      "text": "Verification and delivery.",
+      "pause": 500
+    },
+    {
+      "text": "Capture executed RED and GREEN results in the runtime evidence directory. Run the Aiken suite, the appropriate Haskell cage or devnet check, compiled script-identity verification, root nix develop --quiet -c just ci, and the presentation gate on new specs and docs. Regenerate manifests using naming-onchain/justfile and document exactly which hashes move.",
+      "pause": 400
+    },
+    {
+      "text": "Create one draft PR with fix, assignee paolino, Closes #146, the repository template's model mapping and verification limits. Journal READY-FOR-AUDIT and stop until a matching external PASS handoff exists. Merge with a merge commit only after all PR checks have passed. No additional workers, GitHub comments, preprod deployment or Lean edits.",
       "pause": 400
     }
   ],

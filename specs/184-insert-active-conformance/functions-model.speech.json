@@ -1,30 +1,34 @@
 {
   "runner-entry-point": [
     {
-      "text": "Run CG21 executes the complete fold, refusal and control story in the current open-registry session and writes one receipt.",
-      "pause": 400
+      "text": "Runner entry point.",
+      "pause": 500
     }
   ],
   "receipt-validation": [
     {
-      "text": "CG21 receipt validation rejects missing or incomplete edge evidence without changing unrelated rows.",
-      "pause": 400
+      "text": "Receipt validation.",
+      "pause": 500
     }
   ],
   "existing-boundaries-retained": [
     {
-      "text": "The dispatcher, receipt codec and packaged generic-row workflow keep their existing boundaries.",
-      "pause": 400
+      "text": "Existing boundaries retained.",
+      "pause": 500
     }
   ],
   "no-new-public-production-api": [
     {
-      "text": "No validator, off-chain transaction-builder or Lean API is added.",
+      "text": "No new public production API.",
+      "pause": 500
+    },
+    {
+      "text": "This ticket adds no validator, off-chain transaction-builder or Lean API. Names local to the runner may vary; changing a published signature is a planning challenge.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "4afc90e734b45e98a969a6493fbd6d2bb3fbf2307ff9a8ff6e4ecdf0142825bb"
+    "sha256": "e2f21afbdc044bcbb49555966c638dc5488637d3173c8ad830c7cdcf8d67070a"
   }
 }

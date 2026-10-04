@@ -1,11 +1,24 @@
 {
   "contract": [
     {
-      "text": "The custody datum carries only the refund address at constructor index two. Its output holds the deposit and exactly one absent token, with quantity one. That token's policy and name determine its identity. Zero tokens, multiple tokens, an incorrect policy or an incorrect quantity cannot supply a custody key. The old two-field datum is incompatible; this correction introduces no migration or compatibility promise."
+      "text": "Contract.",
+      "pause": 500
+    },
+    {
+      "text": "Base d92f35bf722120369c386ce09e6c7a40d321182f; vocabulary bound by spec.md.",
+      "pause": 400
+    },
+    {
+      "text": "Representation correspondence: Lean logical Nat key/address map to existing ledger bytes and address encoding; this correction does not invent a new encoding. Lean's assets list excludes the separately represented lovelace. Removing ADA from the ledger value is that explicit representation mapping; discarding another policy's non-ADA asset would weaken the model's singleton.",
+      "pause": 400
+    },
+    {
+      "text": "Old two-field datum is an incompatible wire, documented as such. No migration, legacy decoder, deployment, naming mirror change or compatibility promise is introduced by this ticket.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "05fa5b3fd92f86837b00fc8be9c6592c44372bcc8543e09b66efc9623a7ab155"
+    "sha256": "786c75bf505996dbd0fb85dd96b9bfb979ba3a5ed8092d68378570d9485b00d1"
   }
 }

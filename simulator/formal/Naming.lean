@@ -6,9 +6,9 @@ request construction only, never person identity, entitlement to a spelling, or
 ownership of a payment destination.
 
 The record UTxO holds the active token and the trie carries only `Active`
-(NM1); `maintain` and `recover` never touch the trie (NM2); retirement creates
+(record-binds-active-registration); `maintain` and `recover` never touch the trie (local-record-update-preserves-registry); retirement creates
 a bound pending request and only its later completion applies `updateTerminal`
-(NM3); the approval policy follows R-NM4 for all
+(retirement-removes-active-witness); the approval policy follows naming-approval-rules for all
 six edges, with `updateTerminal` certified by the committed recovery key
 revealed and signing, or by a distinct-member quorum — never by the current
 control key alone (operator ruling). Naming fixtures are first-class fields
@@ -191,7 +191,7 @@ def otherFixture : NamingFixture :=
 def malformedFixture : NamingFixture :=
   { aliceFixture with paymentDestination := some controllerAddress }
 
-/-- An active naming record: the record UTxO holds the active token (NM1) and
+/-- An active naming record: the record UTxO holds the active token (record-binds-active-registration) and
 carries the certified fixture. `output` is the output the booking request
 named. -/
 structure NamingRecord where
@@ -212,7 +212,7 @@ input, so the application/request derivation remains acyclic. -/
 def appliedRequestValidatorHashFor (registryStatePolicy cageTokenName : Nat) : Nat :=
   (fnv1a [0x52, registryStatePolicy.toUInt8, cageTokenName.toUInt8] &&& 0xFFFFFFFF).toNat
 
-/-- NYA's application identity is derived only after the applied request
+/-- Naming Your Assets's application identity is derived only after the applied request
 validator identity is known. -/
 def namingApplicationPolicyFor (requestValidatorHash : Nat) : Nat :=
   (fnv1a [0x4E, requestValidatorHash.toUInt8] &&& 0xFFFFFFFF).toNat
@@ -321,7 +321,7 @@ def namingContext (state : NamingState) (key : Key) (owner : List Nat) :
           some { controllerBytes := owner, refundBytes := owner
                , fixture := aliceFixture }
 
-/-- R-NM4 (operator ruling, as amended): what naming's approval policy
+/-- naming-approval-rules (operator ruling, as amended): what naming's approval policy
 certifies on, per edge. `insertAbsent` for anyone; `updateActive` on the
 signature of the controller who will own the record; `deleteAbsent` on the
 signature of the refund address the `insertAbsent` request named; `insertActive`
@@ -354,7 +354,7 @@ def namingConfig : Config :=
   , terminalPolicy := 10 }
 
 /-- The naming transition: a request is admitted only if the cage admits it
-and naming's policy certifies it (R-NM4); every uncertified request is refused
+and naming's policy certifies it (naming-approval-rules); every uncertified request is refused
 with the naming reason for its own cause, never a single catch-all.
 `deleteActive` is never certified, so naming defines no delete. -/
 def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
@@ -404,7 +404,7 @@ def namingWitness (state : NamingState) (key : Nat) (witness : Nat) (deposit : N
     fun result => { state with registry := result.state }
 
 /-- Register a fresh name: `insertActive`, the controller's signature; the
-record UTxO holds the active token and the trie carries only `Active` (NM1). -/
+record UTxO holds the active token and the trie carries only `Active` (record-binds-active-registration). -/
 def namingRegister (state : NamingState) (key : Nat) (out : Nat)
     (fixture : NamingFixture) : Except String NamingState := do
   let r : Request :=
@@ -418,8 +418,8 @@ def namingRegister (state : NamingState) (key : Nat) (out : Nat)
         records := { key := key, output := out, fixture := fixture } :: state.records }
 
 /-- Retract a witnessed absence: `deleteAbsent`, the refund address the
-`insertAbsent` request named — the inserter only, never anyone else (R-ADA,
-R-NM4). The deposit returns to the inserter whichever way the absence ends. -/
+`insertAbsent` request named — the inserter only, never anyone else (custody-lovelace-refund,
+naming-approval-rules). The deposit returns to the inserter whichever way the absence ends. -/
 def namingRetract (state : NamingState) (key : Nat) : Except String NamingState := do
   let entry ←
     Option.toExcept (state.registry.custody.find? (·.key == key)) "custody-missing"

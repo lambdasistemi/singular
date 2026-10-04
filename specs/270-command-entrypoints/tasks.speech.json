@@ -1,18 +1,40 @@
 {
-  "_source": {
-    "file": "tasks.md",
-    "sha256": "d3f90903875e438a6f23fac119c004fde90d93e464a148423937a910ab49863b"
-  },
+  "delivery-ledger-for-active-command-entry-points": [
+    {
+      "text": "Delivery ledger for active command entry points.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I need each task stamp to name its actual source and receipt rather than treat a build as behavior proof.",
+      "pause": 400
+    }
+  ],
   "work-items": [
     {
-      "text": "The implementation tasks are accepted at the named audited candidate. The finalization task is complete only when that final pushed head passes its local gate, remote continuous integration, and metadata and finalization checks. The linked pull request records readiness. This stamp does not replace command, archive, audit or integration receipts.",
+      "text": "Work items.",
       "pause": 500
+    },
+    {
+      "text": "Task stamps do not substitute for command, archive, audit or remote CI evidence. Epic #272 accepts and merges; this ticket does not release or deploy.",
+      "pause": 400
     }
   ],
   "acceptance-and-finalization-evidence": [
     {
-      "text": "The independent audit approves seven rows at the named candidate. The executed runtime observations belong to the earlier named implementation revision, followed only by comments and prose changes. The finalization task requires the exact final pushed head to pass its local gate, remote continuous integration and finalization and metadata checks. The linked pull request becomes ready only after that evidence is available.",
+      "text": "Acceptance and finalization evidence.",
       "pause": 500
+    },
+    {
+      "text": "Implementation accepted at 0d3ccb4b4a6148b0f18351a02d0f762c8286d322, against Lean tree f1e6a0edcaf9edce7369fd42add8b3677ddabeb2. The seven-row independent audit approves this candidate; its command runtime observations were executed at 71a116b3ccd1a301c185da61968bcb937e161099, with later changes confined to comments and prose.",
+      "pause": 400
+    },
+    {
+      "text": "declaration-caller-map-exact-candidate-audit-final is fulfilled only when the exact pushed head passes the final local gate, remote CI and finalization/metadata checks. The linked PR records that evidence and becomes ready only then. This implementation stamp does not claim those future checks passed.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "df696b20776cda2843132fb80fa795a3dcb52907febff4921a7bf7401a20f434"
+  }
 }

@@ -1,19 +1,37 @@
 {
+  "modules": [
+    {
+      "text": "Modules.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #122 merged at 6ab1093367e00290a4b74638f03f5ef44b3137e6.",
+      "pause": 400
+    }
+  ],
   "new-and-changed-responsibilities": [
     {
-      "text": "One new funding module, the node setup, the three runners, the attach check, the joiner guide, and the regression suite. The flowchart shows parameters flowing into the funding layer and then into the runners, with docs and tests describing the layer.",
-      "pause": 400
+      "text": "New and changed responsibilities.",
+      "pause": 500
     }
   ],
   "dependency-direction": [
     {
-      "text": "Live parameters flow into the funding layer, the funding layer flows into the runners, and the runners keep their existing transaction builders.",
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "Live parameters flow into the funding layer; the funding layer flows into the three runners; the runners keep their existing connected transaction builders. Docs and tests describe the layer; they do not define funding policy.",
       "pause": 400
     }
   ],
   "promotion": [
     {
-      "text": "One new library module owned by the lifecycle runners. No shared extraction and no changes to Lean, validators, workflow, or gates.",
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "One new library module owned by the lifecycle runners. No shared extraction, no changes to Lean, validators, workflow or CI gates.",
       "pause": 400
     }
   ],

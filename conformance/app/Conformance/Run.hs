@@ -6,21 +6,21 @@ License     : Apache-2.0
 One @run@ boots an isolated devnet per session and executes the requested
 rows in canonical order. Every result is read back from the chain.
 
-The CA rows (issue #69) run as their own session: a designation
-split publishes a canonical seed, CA01 boots the canonical registry
+The registry-identity rows (issue #69) run as their own session: a designation
+split publishes a canonical seed, canonical-seed-identity boots the canonical registry
 and matches its on-chain token name against the SHA-256 derivation,
-CA02 initializes a rival registry from a second seed — which the
+rival-seed-authentication initializes a rival registry from a second seed — which the
 ledger ACCEPTS (naming-correspondence.md, "What t50 settled": a
 permissionless ledger cannot prohibit a rival; canonical identity is
 a derivation the consumer authenticates, not a refusal the chain
 performs) — and asserts the rival's acceptance, the name difference
 and the canonical registry's unaffected state, each read back from
-the chain. CA03 is the executing control: an authenticator that
-checks only policy and address accepts the rival, proving CA02's
-rejection is attributable to the derived name alone. CA04 derives
+the chain. policy-address-only-authentication-control is the executing control: an authenticator that
+checks only policy and address accepts the rival, proving rival-seed-authentication's
+rejection is attributable to the derived name alone. applied-validator-identity derives
 the applied address from the pinned unapplied hash plus the declared
 parameters and compares it with the address the chain reports.
-CA05 forges an output at the canonical address carrying no registry
+tokenless-output-authentication forges an output at the canonical address carrying no registry
 token: creating an output does not execute the receiving script, and
 the run must show no script executed — not merely that nothing bad
 happened.
@@ -28,19 +28,19 @@ happened.
 The registry rows run as their own session. A row with a program
 ("Conformance.Edge.Programs") runs it through the generic interpreter, in
 registries of its own, so a row's odd state (a parked request) cannot poison
-its neighbours; CG10 and CG12, which the model cannot express, run their own
+its neighbours; fold-against-superseded-root and surplus-fold-actions, which the model cannot express, run their own
 refusals and accepting controls. A held, unmet or failing row ends the
 session non-zero, naming every such row.
 
-@CONFORMANCE_CONTROL=wrong-reason@ arms the CS refusal matcher against
+@CONFORMANCE_CONTROL=wrong-reason@ arms the serialization refusal matcher against
 an impossible marker (the run must fail naming what came back; a registry
 session refuses it, no registry row matching a refusal against a marker);
-@CONFORMANCE_CONTROL=false-claim@, in a CA session, binds the fabricated
-wrong-seed derivation to CA01's name match (it must fail).
-@CONFORMANCE_CONTROL=naive-authenticator@ makes CA03 require the
+@CONFORMANCE_CONTROL=false-claim@, in a registry-identity session, binds the fabricated
+wrong-seed derivation to canonical-seed-identity's name match (it must fail).
+@CONFORMANCE_CONTROL=naive-authenticator@ makes policy-address-only-authentication-control require the
 policy+address-only authenticator to reject the rival, which it
 cannot (the run must fail naming the accepted rival);
-@CONFORMANCE_CONTROL=unapplied-address@ makes CA04 require the
+@CONFORMANCE_CONTROL=unapplied-address@ makes applied-validator-identity require the
 unapplied layer's address to pass for the deployed script, which it
 cannot (the run must fail). All prove the harness fails when it
 should.
@@ -91,13 +91,13 @@ import Singular.Registry.TxBuilder.Internal
     ( txInToRef
     )
 
-import Conformance.CS01 (runCS01)
-import Conformance.CS06 (runCS06)
+import Conformance.BlueprintEncoding (runBlueprintEncodingRoundTrip)
 import Conformance.Mirror
     ( emit
     , failWith
     , newMirror
     )
+import Conformance.ScriptParameters (runScriptParameterApplication)
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -114,13 +114,13 @@ runRows rawRows receiptsDir = do
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
         failWith
-            "wrong-reason arms a refusal matcher, but the CA rows \
+            "wrong-reason arms a refusal matcher, but the registry-identity rows \
             \assert no ledger refusal (the rival is accepted by \
             \design); use naive-authenticator, false-claim or \
             \unapplied-address"
     when (cgRequested && control == WrongReason) $
         failWith
-            "wrong-reason arms a refusal matcher, but no CG row matches a \
+            "wrong-reason arms a refusal matcher, but no registry-operations row matches a \
             \refusal against it; a compared refusal's reason is controlled \
             \by CONFORMANCE_REASON_CONTROL"
     when
@@ -128,8 +128,8 @@ runRows rawRows receiptsDir = do
             && control `elem` [NaiveAuthenticator, UnappliedAddress, FalseClaim]
         )
         $ failWith
-            "naive-authenticator, unapplied-address and false-claim are CA \
-            \controls; the CG rows they cannot arm would pass vacuously"
+            "naive-authenticator, unapplied-address and false-claim are registry-identity \
+            \controls; the registry-operations rows they cannot arm would pass vacuously"
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     -- Observe tree identity before any side effect: creating the
     -- receipts directory first would always report dirty.
@@ -138,8 +138,18 @@ runRows rawRows receiptsDir = do
     dirty <- requireTreeClean
     emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
     createDirectoryIfMissing True receiptsDir
-    let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
-        devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
+    let localRows =
+            [ r
+            | r <- rows
+            , r
+                `elem` ["blueprint-encoding-round-trip", "script-parameter-application"]
+            ]
+        devnetRows =
+            [ r
+            | r <- rows
+            , r
+                `notElem` ["blueprint-encoding-round-trip", "script-parameter-application"]
+            ]
         cgDevnet = [r | r <- devnetRows, r `elem` cgSessionRows]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
@@ -197,15 +207,14 @@ runRows rawRows receiptsDir = do
 runLocalRow
     :: FilePath -> FilePath -> String -> Bool -> String -> IO ()
 runLocalRow blueprintPath receiptsDir base dirty row = case row of
-    "CS01" -> runCS01 blueprintPath receiptsDir base dirty
-    "CS06" -> runCS06 blueprintPath receiptsDir base dirty
+    "blueprint-encoding-round-trip" -> runBlueprintEncodingRoundTrip blueprintPath receiptsDir base dirty
+    "script-parameter-application" -> runScriptParameterApplication blueprintPath receiptsDir base dirty
     _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]
 validateRows [] =
     failWith
-        "run needs at least one row: run CA01..CA05, the CS families, or \
-        \the registry rows"
+        "run needs at least one requirement name; list shows the available names"
 validateRows raw = do
     let bad = [r | r <- raw, r `notElem` canonicalRows]
     unless (null bad) $
@@ -214,8 +223,8 @@ validateRows raw = do
     when
         (any (`elem` caRows) requested && any (`elem` cgSessionRows) requested)
         $ failWith
-            "CA and CG rows run as separate sessions, one devnet \
-            \each: run CA01..CA05, then the CG rows"
+            "registry-identity and registry-operations rows run as separate sessions, one devnet \
+            \each: run the identity requirements, then the registry operation requirements"
     pure requested
 
 -- ---------------------------------------------------------
@@ -271,7 +280,7 @@ runSession
                         , envTm = tm
                         , -- never read: every registry row boots its own
                           -- registries, and the row validator keeps them out
-                          -- of a CA session
+                          -- of a registry-identity session
                           envTid = TokenId (AssetName (SBS.toShort ""))
                         , envMirror = mirror
                         , envControl = control
@@ -298,9 +307,9 @@ runSession
         (env, bootLine) <-
             if caMode
                 then do
-                    -- CA session: publish the canonical seed by a
-                    -- designation split, then CA01 boots from it.
-                    -- No cage is booted here: the boot IS row CA01.
+                    -- registry-identity session: publish the canonical seed by a
+                    -- designation split, then canonical-seed-identity boots from it.
+                    -- No cage is booted here: the boot IS row canonical-seed-identity.
                     --
                     -- The wallet is swept BEFORE the designation. After it,
                     -- the canonical seed is an ordinary ada-only output and
@@ -320,7 +329,7 @@ runSession
                     env <- environment cfg (Just world)
                     pure
                         ( env
-                        , "CA session: canonical seed published at outRef "
+                        , "registry-identity session: canonical seed published at outRef "
                             <> show seedRef
                             <> " — the consumer derives the canonical \
                                \name as SHA-256 of this outRef"
@@ -346,8 +355,8 @@ runSession
             )
             rows
         if caMode
-            then writeCaCL01 env rows
-            else writeCL01Receipt env rows
+            then writeCaExecutionUnitsAndTransactionSize env rows
+            else writeExecutionUnitsAndTransactionSizeReceipt env rows
         emit
             "complete"
             (show (length rows) <> "/" <> show (length rows) <> " rows ok")
@@ -370,26 +379,26 @@ runSession
 
 runRow :: Env -> String -> IO ()
 runRow env row = do
-    -- A CA row boots from the seed the session designated, so its wallet
+    -- A registry-identity row boots from the seed the session designated, so its wallet
     -- is left exactly as the designation left it. Every other row wants
     -- one ada-only output to fund from.
-    unless (take 2 row == "CA") (consolidateFunding env)
+    unless (row `elem` caRows) (consolidateFunding env)
     -- #177 A-003: every boot in this session references the state
     -- validator instead of carrying it inline. Idempotent, so it is
     -- established before the first row and found by every later one.
     ensureStateRef env
     runRowIn env row
 
--- | One row by what runs it: the CA runners, a program, or its own runner.
+-- | One row by what runs it: the registry-identity runners, a program, or its own runner.
 runRowIn :: Env -> String -> IO ()
 runRowIn env row = case (row, programFor row) of
-    ("CA01", _) -> withCa env row runCA01
-    ("CA02", _) -> withCa env row runCA02
-    ("CA03", _) -> withCa env row runCA03
-    ("CA04", _) -> withCa env row runCA04
-    ("CA05", _) -> withCa env row runCA05
-    ("CG10", _) -> runCG10 env
-    ("CG12", _) -> runCG12 env
+    ("canonical-seed-identity", _) -> withCa env row runCanonicalSeedIdentity
+    ("rival-seed-authentication", _) -> withCa env row runRivalSeedAuthentication
+    ("policy-address-only-authentication-control", _) -> withCa env row runPolicyAddressOnlyAuthenticationControl
+    ("applied-validator-identity", _) -> withCa env row runAppliedValidatorIdentity
+    ("tokenless-output-authentication", _) -> withCa env row runTokenlessOutputAuthentication
+    ("fold-against-superseded-root", _) -> runFoldAgainstSupersededRoot env
+    ("surplus-fold-actions", _) -> runSurplusFoldActions env
     ("batch", _) -> runBatchHarness env
     (_, Just program) -> runProgram env program
     _ -> failWith ("run cannot execute row: " <> row)

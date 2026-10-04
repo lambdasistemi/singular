@@ -4,7 +4,7 @@ Phase: MODEL + STATEMENTS + INVERSIONS + PROOFS; occurrence-safe re-cut `310-occ
 
 ## Where it lives and how it builds
 
-- `applications/open-datum/` is an isolated Lake project. `lakefile.lean` requires the unchanged root project (`require singular from "../.."`). It has no `lean-toolchain` of its own: the root `application-model` recipe checks the selected `lean --version` against the root pin `leanprover/lean4:v4.25.0`. The Lean-DSL manifest is used because the repository inventory classifies `lakefile.toml` and `lean-toolchain` only at the root.
+- `applications/open-datum/` is an isolated Lake project. `lakefile.lean` requires the unchanged root project (`require singular from "../.."`). It has no `lean-toolchain` of its own: the root `application-model` recipe checks the selected `lean --version` against the root pin `leanprover/lean4:v4.25.0`. The Lean-story language manifest is used because the repository inventory classifies `lakefile.toml` and `lean-toolchain` only at the root.
 - Library `OpenDatumApplication`: `Model` (the law), `Statements` (statements and inversions), `ProofSupport` (lemmas the proofs use, not statements), `Driver` (codecs, corpus, ledgers, checks) and `Audit` (the compiled proof status). The executable `open-datum-application` has these modes:
   - `write DIR` writes the corpus and the ledgers;
   - `check DIR` regenerates both and compares them with the committed files, and replays every scenario;

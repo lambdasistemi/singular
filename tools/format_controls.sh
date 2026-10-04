@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Negative and positive controls for the Haskell format check
-# (issue #278 S2).
+# (issue #278 terminal-attestation-permanent).
 #
 #   f1  a misformatted Haskell source — one that Fourmolu DEFAULTS accept
 #       but the house configuration rejects (function-arrows: leading,

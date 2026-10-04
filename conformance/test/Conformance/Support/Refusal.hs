@@ -206,7 +206,7 @@ fires: accepted, held-q002, transaction id and measurements present.
 heldRowReceipt :: Receipt
 heldRowReceipt =
     Receipt
-        { receiptRow = "CG11"
+        { receiptRow = "empty-fold"
         , receiptOutcome = Accepted
         , receiptVerdict = HeldQ002
         , receiptTransactions = [T.pack "rowtxid"]
@@ -255,7 +255,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalControl
                         dir
-                        "CG11"
+                        "empty-fold"
                         HeldQ002
                         "state"
                         policyMarker
@@ -283,7 +283,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalRow
                         dir
-                        "CG05"
+                        "insert-occupied-key"
                         AgreesWithModel
                         "state"
                         policyMarker
@@ -313,7 +313,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalControl
                         "/nonexistent-conformance-refusal-spec"
-                        "CG12"
+                        "surplus-fold-actions"
                         HeldQ002
                         "state"
                         policyMarker
@@ -333,7 +333,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalRow
                         dir
-                        "CG05"
+                        "insert-occupied-key"
                         AgreesWithModel
                         "state"
                         policyMarker
@@ -364,7 +364,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalRow
                         dir
-                        "CG05"
+                        "insert-occupied-key"
                         AgreesWithModel
                         "state"
                         policyMarker
@@ -389,7 +389,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalRow
                         dir
-                        "CG05"
+                        "insert-occupied-key"
                         AgreesWithModel
                         "state"
                         policyMarker
@@ -415,7 +415,7 @@ receiptPolicySpec = describe
                     attributeRefusalReceipt
                         RefusalRow
                         dir
-                        "CG05"
+                        "insert-occupied-key"
                         AgreesWithModel
                         "state"
                         policyMarker
@@ -427,7 +427,7 @@ receiptPolicySpec = describe
                         "blueprint"
                         untraced
                 r `shouldSatisfy` isLeft
-                exists <- doesFileExist (dir </> "receipt-CG05.json")
+                exists <- doesFileExist (dir </> "receipt-insert-occupied-key.json")
                 exists `shouldBe` False
 
 -- | A rejection whose traced replay admitted @key-exists@ for the state script.

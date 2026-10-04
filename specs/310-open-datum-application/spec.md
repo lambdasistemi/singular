@@ -20,7 +20,7 @@ Payments sum the original application deposits and the distinct registry/request
 
 ## Required controls
 
-Successful update and termination have accepting controls. Unauthorized update, altered protected controls, token escape, premature withdrawal, unrelated registry/key/approval, short additive settlement, duplicate insertion and same-identity post-Terminal resurrection need reached refusal controls. Client or setup failure never establishes a ledger refusal. The generic registry's laws are imported unchanged; #304's destination-output correspondence remains E209-owned and held.
+Successful update and termination have accepting controls. Unauthorized update, altered protected controls, token escape, premature withdrawal, unrelated registry/key/approval, short additive settlement, duplicate insertion and same-identity post-Terminal resurrection need reached refusal controls. Client or setup failure never establishes a ledger refusal. The generic registry's laws are imported unchanged; #304's destination-output correspondence remains Epic #209-owned and held.
 
 ## Sources and current phase
 

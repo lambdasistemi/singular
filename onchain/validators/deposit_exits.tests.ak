@@ -125,15 +125,15 @@ fn updateTerminal(outputs: List<Output>) -> Scenario {
   )
 }
 
-test e3_deposit_paid_to_the_owner_accepts() {
+test retirement_deposit_paid_to_the_owner_accepts() {
   accepts(updateTerminal([paid(fx.bookerAddress, fx.deposit)]))
 }
 
-test e3_deposit_diverted_to_another_address_refuses() {
+test retirement_deposit_diverted_to_another_address_refuses() {
   refusesDepositReturned(updateTerminal([paid(fx.strangerAddress, fx.deposit)]))
 }
 
-test e3_deposit_one_lovelace_short_refuses() {
+test retirement_deposit_one_lovelace_short_refuses() {
   refusesDepositReturned(
     updateTerminal([paid(fx.bookerAddress, fx.deposit - 1)]),
   )
@@ -158,7 +158,7 @@ fn deleteAbsent(outputs: List<Output>) -> Scenario {
   )
 }
 
-test e4_deposit_paid_to_the_owner_accepts() {
+test absent_deletion_deposit_paid_to_the_owner_accepts() {
   accepts(
     deleteAbsent(
       [paid(fx.inserterAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
@@ -166,7 +166,7 @@ test e4_deposit_paid_to_the_owner_accepts() {
   )
 }
 
-test e4_deposit_diverted_to_another_address_refuses() {
+test absent_deletion_deposit_diverted_to_another_address_refuses() {
   refusesDepositReturned(
     deleteAbsent(
       [
@@ -177,7 +177,7 @@ test e4_deposit_diverted_to_another_address_refuses() {
   )
 }
 
-test e4_deposit_one_lovelace_short_refuses() {
+test absent_deletion_deposit_one_lovelace_short_refuses() {
   refusesDepositReturned(
     deleteAbsent(
       [
@@ -204,15 +204,15 @@ fn deleteActive(outputs: List<Output>) -> Scenario {
   )
 }
 
-test e5_deposit_paid_to_the_owner_accepts() {
+test active_deletion_deposit_paid_to_the_owner_accepts() {
   accepts(deleteActive([paid(fx.bookerAddress, fx.deposit)]))
 }
 
-test e5_deposit_diverted_to_another_address_refuses() {
+test active_deletion_deposit_diverted_to_another_address_refuses() {
   refusesDepositReturned(deleteActive([paid(fx.strangerAddress, fx.deposit)]))
 }
 
-test e5_deposit_one_lovelace_short_refuses() {
+test active_deletion_deposit_one_lovelace_short_refuses() {
   refusesDepositReturned(deleteActive([paid(fx.bookerAddress, fx.deposit - 1)]))
 }
 

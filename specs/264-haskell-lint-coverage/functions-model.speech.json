@@ -1,7 +1,21 @@
 {
+  "function-signatures": [
+    {
+      "text": "Function signatures.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I keep every Haskell callable interface unchanged while the lint command gains source coverage.",
+      "pause": 400
+    }
+  ],
   "interface-boundary": [
     {
-      "text": "No Haskell function or signature changes. The existing lint command keeps its name and exit-status contract while its source discovery expands.",
+      "text": "Interface boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No function is added, removed, moved, or given a new signature in this ticket. The existing lint app keeps its command name and exit-status contract. Its source discovery is configuration, not a new exported function.",
       "pause": 400
     }
   ],

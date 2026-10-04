@@ -1,6 +1,20 @@
 {
+  "fold-callable-contracts": [
+    {
+      "text": "Fold callable contracts.",
+      "pause": 500
+    },
+    {
+      "text": "As a caller, I need the same types and observable failures at the original Update import path.",
+      "pause": 400
+    },
+    {
+      "text": "RegistryContext (..) and RegistryDuties (..) retain all constructors and record selectors through Update; internal placement adds no public API.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "dd403c5d75192ac130e86a3a4f5394cd69b0c433da649a2e6a93a9865d08fe06"
+    "sha256": "4c3b32f25c0e952394989e909382f493927c7bffb7ac29ad46668cb9bb0926ae"
   }
 }

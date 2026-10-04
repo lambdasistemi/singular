@@ -1,31 +1,71 @@
 {
   "who-this-is-for": [
     {
-      "text": "As a name controller, I want wallet change to leave recovery and retirement available. This specification follows issue 146 and the frozen operator acceptance of September fifteenth.",
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "As a name's controller, I want wallet change selection to leave recovery and retirement available, so an unrelated token cannot permanently disable either operation. This specification implements issue #146 and the operator's frozen acceptance of 2026-09-15.",
       "pause": 400
     }
   ],
   "required-behavior": [
     {
-      "text": "Maintenance and recovery preserve exactly the non-ADA policies, names and quantities, allowing ADA top-up. An added token refuses as record value preservation. Insert fold creates only the representative and ADA. The diagram shows these preservation steps and the refusal branch before a polluted continuation becomes a record.",
+      "text": "Required behavior.",
+      "pause": 500
+    },
+    {
+      "text": "A maintenance continuation must carry exactly the spent record's non-ADA assets, including policies, names and quantities. ADA may increase but must not decrease. Adding an unrelated token must refuse with record-value-preservation before the continuation becomes a record. Recovery preserves the same value shape. An insert fold must create a record containing exactly ADA and its representative.",
       "pause": 400
     }
   ],
   "existing-polluted-records": [
     {
-      "text": "The three reproductions become permanent tests. Polluted recovery and retirement return a named Boolean refusal instead of crashing. Unchanged polluted maintenance remains accepted. This does not repair an old record or migrate an old script output.",
+      "text": "Existing polluted records.",
+      "pause": 500
+    },
+    {
+      "text": "The three issue reproductions become permanent tests. Recovery and retirement from a record containing a second non-ADA asset return false with record-single-asset, instead of failing a list destructuring assertion. Maintenance of an already polluted value remains accepted when the entire non-ADA value is unchanged. This preserves the issue's third reproduction verdict; it does not repair such a record or promise a migration of old script outputs.",
       "pause": 400
     }
   ],
   "acceptance-and-controls": [
     {
-      "text": "Boolean refusal tests must fail on a crash. Clean controls accept. Added, removed, replaced and increased tokens refuse, while ADA top-up accepts. Recovery and insert-fold pollution also refuse. A compiled cage test checks names, the suites and CI pass, identity is regenerated, and Haskell readers inspect the complete value.",
-      "pause": 400
+      "text": "Acceptance and controls.",
+      "pause": 500
+    },
+    {
+      "text": "The polluted recovery and retirement tests assert a Boolean refusal, so a crash cannot satisfy them. Their clean controls continue to accept.",
+      "pause": 300
+    },
+    {
+      "text": "Maintenance refuses asset addition, removal, replacement and quantity changes; ADA top-up and an unchanged value accept, and ADA reduction refuses.",
+      "pause": 300
+    },
+    {
+      "text": "Recovery cannot introduce another token, and insert fold cannot create a polluted record. Both have clean positive controls.",
+      "pause": 300
+    },
+    {
+      "text": "One devnet runner row or cage-test exercises the extra-token maintenance continuation and checks its named refusal.",
+      "pause": 300
+    },
+    {
+      "text": "The naming Aiken suite and root just ci pass. Script identity is regenerated from the compiled blueprint, and the changed application hash is documented.",
+      "pause": 300
+    },
+    {
+      "text": "Haskell mirrors and evidence verifiers that encode value shape agree with the exact non-ADA preservation rule.",
+      "pause": 300
     }
   ],
   "model-binding-and-limits": [
     {
-      "text": "Lean stays at the exact bound repository revision. Its output contains one representative, quantity and scalar value. Naming lifecycle transitions remain authoritative. Multi-asset encoding is the operator-assigned implementation refinement; the correspondence names its enforcement. Fixtures prove component behavior only. No preprod deployment.",
+      "text": "Model binding and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Lean is unchanged, bound to repository revision 41861a66b72a840042f2e633ce33a607e817d6c6: Singular.Output in lean/Singular/Model.lean has one representative, a quantity and scalar value. Singular.NamingLifecycle.maintainDestination, recoverController, beginRetirement and validateLifecycleOutput in lean/Singular/NamingLifecycle.lean govern the lifecycle. Multi-asset encoding is the implementation refinement explicitly assigned by the operator. The correspondence table must identify the checks that establish and preserve the clean-record invariant. Fixtures establish component behavior; they do not establish a public-network lifecycle. No preprod deployment is included.",
       "pause": 400
     }
   ],

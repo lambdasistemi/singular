@@ -3,7 +3,7 @@ Module      : Singular.Registry.Config.Application
 Description : The application a registry pins, derived at boot and re-derived at attach
 License     : Apache-2.0
 
-A registry's four pins (#157 D-BOOT) are derived, never written down:
+A registry's four pins (#157 genesis-policy-pins) are derived, never written down:
 the application policy and @witness(kind, registry)@ at kinds 0, 1 and 2,
 all for the registry identity the boot seed determines (state policy ‖
 the token name the seed derives). Which application the first pin comes

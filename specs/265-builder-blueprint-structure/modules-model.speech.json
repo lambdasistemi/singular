@@ -1,12 +1,30 @@
 {
-  "_source": {
-    "file": "modules-model.md",
-    "sha256": "13a1e5d36707c3eb73cf0cbe2ff40d6f38fa385023021fd591563dc5ee46b434"
-  },
-  "responsibilities": [
+  "module-ownership": [
     {
-      "text": "Blueprint and builder facades keep old callers. Focused owners implement concerns once. The documentation build derives exposed and other library modules from Cabal and checks source-matched generated pages in the site and future archive.",
+      "text": "Module ownership.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want one owner for each shared concern, while a caller of the established modules keeps its import path and result.",
       "pause": 400
     }
-  ]
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "Owners may split further only when the resulting dependency graph remains acyclic and the responsibility remains evident. The 150–350 line guide is a review aid; a module over 500 lines needs an explanation, not automatic failure.",
+      "pause": 400
+    },
+    {
+      "text": "The documentation build consumes the Cabal library declaration and candidate source, then supplies a rendered API tree to the site and its link checker. The resulting references are documentation artifacts; they do not change the library's public Haskell exports.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "5592817d95f00c0627651e3dbcc97e4419fad43ddc77fa7eec66fd58c9807f18"
+  }
 }

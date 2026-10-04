@@ -1,48 +1,90 @@
 {
-  "d1-replaycapsule": [
+  "data-model-traced-refusal-reasons": [
     {
-      "text": "A capsule holds the rejected transaction, every output it spends or references, the node's parameters and time translation, and the failing hashes, captured before the next submission and bound by a content hash.",
+      "text": "Data model: traced refusal reasons.",
       "pause": 500
+    },
+    {
+      "text": "Owned by modules-model.md conformance-replay unless stated. Wire shapes of stored files are in contracts/replay-evidence.md.",
+      "pause": 400
     }
   ],
-  "d2-tracedprovenance-m1-output-read-by-m3": [
+  "replaycapsule-replaycapsule": [
     {
-      "text": "The traced build records its source, compiler, flags and the untraced hashes of the same toolchain, which must equal the deployed blueprint's.",
+      "text": "replaycapsule ReplayCapsule.",
       "pause": 500
+    },
+    {
+      "text": "Invariants: captured before the run's next submission; resolved covers every reference in the transaction or the capsule is incomplete (class capture-incomplete); never edited after captureId is computed.",
+      "pause": 400
     }
   ],
-  "d3-purposereplay": [
+  "tracedprovenance-output-read-by-tracedprovenance-build-traced-registry-blueprint-from-onchain-build-output-read-by-conformance-run-replay": [
     {
-      "text": "One failing purpose: the deployed and traced hashes and two runs.",
+      "text": "tracedprovenance-output-read-by TracedProvenance (build-traced-registry-blueprint-from-onchain-build output, read by conformance-run-replay).",
       "pause": 500
+    },
+    {
+      "text": "Invariant: the correspondence check (toolchain-correspondence) passed for this provenance; at run time the deployed blueprint's hashes equal untracedHashes, else no replay is admitted (toolchain-mismatch).",
+      "pause": 400
     }
   ],
-  "d4-replayrun": [
+  "purposereplay-purposereplay": [
     {
-      "text": "A run records the bytes, the budget and the outcome. The deployed run keeps the declared budget; the traced run gets the protocol maximum.",
+      "text": "purposereplay PurposeReplay.",
       "pause": 500
+    },
+    {
+      "text": "One failing purpose of one capsule: deployedHash (the failing hash), tracedHash (hash of the traced code with the same parameters), the purpose (spend, mint, …) and redeemer index, and two runs.",
+      "pause": 400
     }
   ],
-  "d5-replayclass": [
+  "replayrun-replayrun": [
     {
-      "text": "A reason is admitted only when the deployed bytes fail as a validator and the traced bytes fail with exactly one user trace; otherwise the class names one distinct cause, including phase one, setup failure, timeout and client exception, and it separates a script with no replay route, a replayed script whose parameters do not reproduce the hash, and a script no family explains.",
+      "text": "replayrun ReplayRun.",
       "pause": 500
+    },
+    {
+      "text": "bytesHash, budgetLimit, budgetUsed, outcome ∈ {succeeded, validator-failure(logs), budget-exhausted, evaluation-error(text)}. The deployed run's limit is the transaction's declared units for the purpose; the traced run's is the protocol per-transaction maximum.",
+      "pause": 400
     }
   ],
-  "d6-reasoncomparison": [
+  "replayclass-replayclass": [
     {
-      "text": "A step agrees only on equal reasons. The index entry is written before the runner acts, so a differing step fails its row and still leaves its evidence, and an unobserved step keeps its row, writes its receipt without a reason and names its cause.",
+      "text": "replayclass ReplayClass.",
       "pause": 500
+    },
+    {
+      "text": "admitted(reason) or unobserved(cause), cause one of: capture-incomplete, context-unavailable, toolchain-mismatch, no-replay-route (the failing script's family is identified — an untraced application of a deployed-blueprint validator, built from the capture, reproduces the failing hash — but the replay has no traced route for it), parameters-mismatch (the failing script's family is identified by evidence other than that hash — the run's recorded role for the script — an application of it was attempted from the capture, and its untraced hash differs from the failing hash), unidentified-script (no family is identified and no application is claimed as attempted), deployed-succeeds, deployed-budget, traced-succeeds, traced-budget, no-user-trace, several-user-traces, phase-1 (the node rejected before scripts ran), setup-failure (the run could not reach the evaluation), timeout, client-exception, evaluation-error (the evaluator itself failed). Each is a distinct value; none is a coarse bucket for another.",
+      "pause": 400
+    },
+    {
+      "text": "Invariant: admitted ⇔ deployed validator-failure ∧ traced validator-failure with exactly one user-defined log line ∧ no earlier cause; reason is that line verbatim.",
+      "pause": 400
     }
   ],
-  "receipt-replay-object-fr-11-operator-ruling-2026-10-01": [
+  "reasoncomparison-reasoncomparison": [
     {
-      "text": "Each refusal now carries one optional replay object with both hashes, the observed reason or the named cause, and the capture identity, plus once per receipt the build correspondence it relied on. Older receipts without it still load; an incomplete one is rejected, and the size limit is set from measured receipts.",
+      "text": "reasoncomparison ReasonComparison.",
       "pause": 500
+    },
+    {
+      "text": "agrees (admitted ∧ reason = Lean's), differs(chain, lean), uncompared(cause). Only a step where both sides refuse and the model names a reason is compared; that fact, not a label, makes the refusal class A; attribution rows carry replayclass only. Durability: the index entry (contract) records modelReason and the reasoncomparison value before the runner acts on it. differs then fails the row, so its evidence survives in the replay index though no receipt is written for a failed row. uncompared does not fail the row: the step's existing outcome comparison stays agrees, the receipt is written with no chain-side reason, and the index names the cause; it is never counted as reason agreement.",
+      "pause": 400
+    }
+  ],
+  "receipt-replay-object-self-contained-replay-receipt-operator-ruling-2026-10-01": [
+    {
+      "text": "Receipt replay object (self-contained-replay-receipt, operator ruling 2026-10-01).",
+      "pause": 500
+    },
+    {
+      "text": "Additive and optional, on step chain.refusal and on RefusalInfo: replay = { deployedHash, tracedHash, reason | cause, captureId }, one per failing purpose (a list where several purposes fail). reason only for replayclass admitted; cause the replayclass name otherwise; tracedHash absent only when no traced application exists (no-replay-route, unidentified-script). Once per receipt with any replay: replayCorrespondence = { source, compiler, flags, untracedHashesDigest } from tracedprovenance-output-read-by. Existing fields (trace, branch, limit, hashes) keep their meaning. Loader: absent object accepted (legacy); present object must be complete and agree with trace/branch; size cap raised only to the measured largest receipt with the object plus headroom (the current largest, retire-active-key at 0287727, is 12 910 bytes before it).",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "f0b2a3f2820a29548085861d4e4a088e501f8d2d637235e963a83c5df917d1eb"
+    "sha256": "b41fb38dd5931d174f4f8dc46cfc38f890c05d8985dc274cb3d5f06102431c43"
   }
 }

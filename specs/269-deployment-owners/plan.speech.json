@@ -1,19 +1,57 @@
 {
+  "extract-deployment-owners-behind-one-facade": [
+    {
+      "text": "Extract deployment owners behind one facade.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want each persistent record and node decision to have one owner while the existing deployment interface and its observed failures remain stable.",
+      "pause": 400
+    }
+  ],
   "delivery-order": [
     {
-      "text": "The work begins with a clean model-bound baseline and draft pull request. The coder splits three responsibilities behind one facade, preserving verification's extra checks. A focused cage test must execute attach and observe resolved outputs and a refusal. Independent review precedes the handoff.",
-      "pause": 400
+      "text": "Delivery order.",
+      "pause": 500
+    },
+    {
+      "text": "Bind the live issue, clean base, accepted Lean tree, all facade exports and moved declarations, actual callers, active workflow commands and clean baseline. Open a draft issue PR before implementation.",
+      "pause": 300
+    },
+    {
+      "text": "Freeze one finite gate and a source-derived command budget. The supported deployment and devnet components provide the scoped executable script-identity check. Add its command to required off-chain CI in this ticket; classify that row MISSING-CI-JOB until the pushed head executes it. Add a focused cage-tests row that invokes attach itself through a provider fixture and checks the returned Attached values, query order and a reference-script refusal. Keep the retained three-runner script's current limitation explicit.",
+      "pause": 300
+    },
+    {
+      "text": "The approved GLM owner extracts Manifest, Mirror and Attach with one-way dependencies and a thin public facade. Use existing focused TxBuilder.Internal.Identity and .Lookup adapters. Preserve the entire external export set and every moved declaration once. In particular, do not make attach call verifyDeployment: only verification currently checks the live state datum's active policy and request windows. Adapt only necessary Cabal declarations, callers and focused checks.",
+      "pause": 300
+    },
+    {
+      "text": "The same owner ships the high-level deployment ownership guide, module purposes, navigation, complete generated API module/source extent and curated speech. It must correct any description that attributes the callers' mirror-root check to attach itself.",
+      "pause": 300
+    },
+    {
+      "text": "The independent approved Opus auditor checks the exact candidate at checkpoints. After evidence and task/speech stamps are complete, run the exact-head local gate, verify the pushed head and CI, then hand the draft PR to epic #272 for acceptance and merge. This ticket does no #270 work.",
+      "pause": 300
     }
   ],
   "evidence-limits-and-gates": [
     {
-      "text": "A build alone cannot prove a script identity refusal. A supported local devnet check must accept the intact manifest and reject a changed script identity. It does not prove every attachment query. The retained journey mirror check stays a separately named evidence limit.",
+      "text": "Evidence limits and gates.",
       "pause": 500
+    },
+    {
+      "text": "The active offchain-lint, offchain-component-build, focused cage-tests, root just ci, docs and packaging checks establish their actual source and command boundaries. A build cannot establish attachment refusal. The new local-devnet identity test must report an intact verification, then alter the recorded script identity and observe the real deployment verify rejection and diagnostic; it must fail if the command never reaches that boundary. That test establishes the shared compiled-release identity check, not every attach query. The mirror-root comparison lives in retained journey callers, so its executable status remains a separate limit until a supported caller or focused harness proves it. No historical #268 or retained-script receipt transfers to #269.",
+      "pause": 400
+    },
+    {
+      "text": "Count direct and nested tool invocations from receipts. Freeze cheap, expensive and auditor launch ceilings before worker launch; stop before an exhausted tier. Planning artifacts target 4 KiB and 90 lines; worker briefs target 12 KiB.",
+      "pause": 400
     }
   ],
   "source-to-criterion-witnesses": [
     {
-      "text": "The table separates three witnesses. Focused tests check manifest and mirror fixtures, and call attach with a controlled provider. A new required CI step drives deployment verify on a local devnet with an intact and changed script identity. The latter does not prove every attach query.",
+      "text": "Source to criterion witnesses.",
       "pause": 500
     }
   ],

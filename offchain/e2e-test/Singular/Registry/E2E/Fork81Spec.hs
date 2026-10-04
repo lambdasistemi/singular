@@ -8,7 +8,7 @@ License     : Apache-2.0
 Desk ruling A-001 acceptance for the vendored lone-fork-exclusion patch:
 on the real packaged patched validator, a fresh devnet must
 
-1. accept the valid absence insertion of key "cs07-fork-C11" (the CS07
+1. accept the valid absence insertion of key "cs07-fork-C11" (the proof-step-constructor-witnesses
    witness shape whose sole proof step is a root-level Fork with skip > 0),
    with the key readable back from chain;
 2. refuse a second insert of the now-present key (occupied-key);
@@ -129,7 +129,7 @@ fork81Spec stateBytes requestBytes = do
                 foldInsert k = void (foldEdge reg k edgeInsertAbsent)
             foldInsert "cs07-fork-A"
             foldInsert "cs07-fork-B1294"
-            -- The previously-refused fold (CS07): its proof's sole step
+            -- The previously-refused fold (proof-step-constructor-witnesses): its proof's sole step
             -- is a root-level Fork with skip > 0.
             foldInsert "cs07-fork-C11"
             -- Read back from chain: the state datum root must equal an
@@ -137,7 +137,7 @@ fork81Spec stateBytes requestBytes = do
             -- C built from the independent trie must fold to the chain
             -- root (C provably present with value vc).
             -- The cage address also holds the custody each absence
-            -- insertion created (#157 C6), so the state UTxO is the
+            -- insertion created (#157 token-destinations-and-refunds), so the state UTxO is the
             -- one carrying the registry policy token, not the only one.
             let stateAddr = cageAddrFromCfg cfg Testnet
             stateUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` stateAddr)

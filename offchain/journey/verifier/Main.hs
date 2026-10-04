@@ -4,14 +4,14 @@
 
 {- |
 Module      : Main
-Description : Recompute S3 verdicts from raw run evidence (issue #77)
+Description : Recompute supply-matches-leaf-state verdicts from raw run evidence (issue #77)
 License     : Apache-2.0
 
 Offline verifier for the connected insert journey. It reads the raw
 artifacts a `register-rows` run retained — serialized submitted bodies,
 submission outcomes, full address listings, blueprint paths — recomputes
 every fact from ledger bytes and the built blueprint, and writes one
-verdict per S3 obligation:
+verdict per supply-matches-leaf-state obligation:
 
 > connected-verifier --evidence <dir> --blueprint <path>
 >   --registry-blueprint <path> --candidate <sha> --out <verdicts.json>

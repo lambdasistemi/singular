@@ -1,19 +1,41 @@
 {
+  "functions": [
+    {
+      "text": "Functions.",
+      "pause": 500
+    },
+    {
+      "text": "Retroactive record, written 2026-09-15 from PR #121 merged at 454aec3858f0aa029d93928f09b5c4447bf49894.",
+      "pause": 400
+    }
+  ],
   "publisher-behaviour": [
     {
-      "text": "Extract the version section, refuse loudly when absent, compose section plus stable text or override, skip creation when published, and verify both archives with identities and equality.",
+      "text": "Publisher behaviour.",
+      "pause": 500
+    },
+    {
+      "text": "No bodies here.",
       "pause": 400
     }
   ],
   "check-behaviour": [
     {
-      "text": "Assert a non-empty section and clean wording, then drive the real publisher through eleven doubled cases and compare every passing body exactly.",
+      "text": "Check behaviour.",
+      "pause": 500
+    },
+    {
+      "text": "The publish check asserts the manifest version's changelog section is non-empty and the stable text carries no forbidden wording, then runs the real publisher Bash against Git and GitHub doubles across the eleven cases and asserts the composed notes equal the expected section plus stable text on every passing case. The release check asserts shipped instructions equal the source and refuses internal wording.",
       "pause": 400
     }
   ],
   "test-surface": [
     {
-      "text": "Eleven double-backed cases plus forbidden-phrase, original-publisher, and stable-only controls, with the restored candidate passing.",
+      "text": "Test surface.",
+      "pause": 500
+    },
+    {
+      "text": "Eleven double-backed publisher cases plus the forbidden-phrase, original-publisher and stable-only-body negative controls, with the restored candidate passing.",
       "pause": 400
     }
   ],

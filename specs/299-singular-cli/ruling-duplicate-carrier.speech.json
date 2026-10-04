@@ -1,46 +1,170 @@
 {
   "the-operators-ruling": [
     {
-      "text": "On the thirtieth of September the operator answered: yes, record that limit and retain the model and validator tests. The live command-line acceptance no longer waits on a test of a duplicated token carrier, and it says plainly that the case was not tested live.",
+      "text": "The operator's ruling.",
+      "pause": 500
+    },
+    {
+      "text": "Authority: direct operator answer, 30 September 2026.",
       "pause": 400
     },
     {
-      "text": "Asked how an impossible action can be proved, the answer is kept here with its limits. This page records a scope decision and a conditional argument; it proves nothing new.",
+      "text": "\"Yes, record that limit and retain the model/validator tests.\"",
+      "pause": 400
+    },
+    {
+      "text": "The question put to the operator had three parts:",
+      "pause": 400
+    },
+    {
+      "text": "record that the ledger keeps a transaction duplicating the key's token from ever reaching the open-datum application;",
+      "pause": 300
+    },
+    {
+      "text": "keep the model and validator tests of that case;",
+      "pause": 300
+    },
+    {
+      "text": "stop holding the command-line acceptance on a live test of it, saying clearly that it was not tested live.",
+      "pause": 300
+    },
+    {
+      "text": "The operator then asked how an impossible action can be proved. The answer is recorded below, with its limits. This ruling proves nothing new. It records a scope decision and the conditional argument behind it.",
       "pause": 400
     }
   ],
   "the-story-it-concerns": [
     {
-      "text": "Alice holds an Active key whose one token rides in its live holding. She tries an update that leaves the token in two outputs, one each. The approved case asks the application to refuse that, under the proved statement that an update preserves custody.",
+      "text": "The story it concerns.",
+      "pause": 500
+    },
+    {
+      "text": "Alice holds one key in the Active state. Its one active token rides in the key's live holding at the application.",
+      "pause": 400
+    },
+    {
+      "text": "She tries an update whose continuation leaves that token in two outputs. Each output carries one token.",
+      "pause": 400
+    },
+    {
+      "text": "The approved case, \"an update whose continuation duplicates the token's carrier\", asks that the application refuse this. It bears on OpenDatumApplication.Statements.update_preserves_custody, which is PROVED in applications/open-datum/ledgers.json under statement digest 56a7b787884ab930d2ccb9524d13fb31a391f5c08aab2ac727080d39c4d498cc.",
       "pause": 400
     }
   ],
   "the-argument-stated-conditionally": [
     {
-      "text": "Start from one active token per Active key, which the registry model proves for every reachable state. A payload update changes the key's active token supply by zero, and the terminate's release by minus one. The application's spend handler makes no mint of its own and does not by itself say that the whole transaction mints nothing, so the argument does not rely on it: the active policy lets only a fold mint one, one per inserted key, never for a key already held. So the ledger's conservation of value keeps two one-token outputs from forming, and such a transaction never reaches the application.",
+      "text": "The argument, stated conditionally.",
+      "pause": 500
+    },
+    {
+      "text": "Pins. The argument was written at main 24ecba3f02840424c65b68bf391fccb61b43ea2f; its citations to the validator sources were read again at main 3f04e50d293b80360a3234ebf3114abc8172d851, where onchain/validators/open_datum.ak and the registry validators are unchanged from the revision named next. On-chain sources and the Lean registry model last changed at 17df0cf3e4750a65b3f52418dbc26975967836d1. The application model is at de34300540223ccedf1ca85216b131fd09a148b4. The command-line union changes none of them.",
       "pause": 400
     },
     {
-      "text": "Lean proves the supply bound in its model. The validator rules were read in source and unit tested; their compiled enforcement on the ledger is not formally proved. A rejection before any script runs would prove neither the argument nor a script refusal, and no universal proof is claimed.",
+      "text": "The argument runs in three steps.",
       "pause": 400
+    },
+    {
+      "text": "Start: one token per Active key. The key starts with exactly one active token.",
+      "pause": 300
+    },
+    {
+      "text": "The registry model proves this for every reachable state in Singular.Statements.biconditional_supply_sync: a key's active supply is one if and only if its leaf is Active. That statement is PROVED in lean/theorem-debt.json under digest 7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68.",
+      "pause": 300
+    },
+    {
+      "text": "The application's invariant says each application output carries exactly one token of its own key. OpenDatumApplication.Statements.reachable_consistent (digest f3d108992cbf8e634d136ae3104c2420cd2b31105f1052d7497b8bf59f5e7e59) holds it over reachable worlds.",
+      "pause": 300
+    },
+    {
+      "text": "The update mints no active token. A payload update changes the key's active-token supply by zero; the terminate's release, by minus one.",
+      "pause": 300
+    },
+    {
+      "text": "The spend handler (onchain/validators/open_datum.ak) makes no mint of its own and does not by itself assert that the transaction as a whole mints nothing. Its update path (validUpdate) requires exactly one output carrying any of the key's active token, kept at the holding's address under the same control and assets. Its release path (validRelease) requires the transaction to burn exactly one of the key's active token (quantity_of(tx.mint, control.activePolicy, control.key) == -1), which OpenDatumApplication.Statements.release_burns_atomically states. This argument relies on neither path to forbid a mint.",
+      "pause": 300
+    },
+    {
+      "text": "The key's active policy is the registry's witness policy. It accepts a mint only in a transaction that spends the registry state as a fold (onchain/validators/witness.ak, foldPresent).",
+      "pause": 300
+    },
+    {
+      "text": "In a fold, the registry pins the mint to the fold's own delta (onchain/validators/registry/modify.ak, mintMatches). It adds one active token only for an insertion or an Absent-to-Active update (onchain/validators/lib.ak). It refuses an insertion of an occupied key (onchain/validators/registry/fold.ak).",
+      "pause": 300
+    },
+    {
+      "text": "Conclusion: at most one output can carry the token. The ledger conserves value. With one token among the inputs and none minted, it keeps a transaction with two one-token outputs from being valid. That transaction never reaches the application's script.",
+      "pause": 300
+    },
+    {
+      "text": "Exact extent of the argument:",
+      "pause": 400
+    },
+    {
+      "text": "Lean proves the supply bound for its reachable model.",
+      "pause": 300
+    },
+    {
+      "text": "The validator interfaces cited above were read in source and are exercised by the Aiken unit tests. Their universal enforcement by the compiled scripts on the ledger is not formally proved.",
+      "pause": 300
+    },
+    {
+      "text": "A transaction rejected before any script ran would not establish the argument. It would not be a refusal by the application's script either.",
+      "pause": 300
+    },
+    {
+      "text": "No universal proof that no compiled validator and ledger transaction can present two carriers is established by this work.",
+      "pause": 300
     }
   ],
   "the-evidence-that-is-kept-and-what-it-shows": [
     {
-      "text": "The model refuses two carriers, and the Aiken test shows the validator's refusal branch on a fixture that would not balance on a ledger. Neither shows a ledger could present the case. Both tests and the supply statement stay unchanged.",
+      "text": "The evidence that is kept, and what it shows.",
+      "pause": 500
+    },
+    {
+      "text": "Both tests and the supply statement are unchanged.",
       "pause": 400
     }
   ],
   "alternatives-considered": [
     {
-      "text": "Submitting such a transaction live would be rejected for conservation before any script ran, which tests nothing about the application. Keeping the case as a blocker would wait on a transaction the argument says cannot be made. The operator chose to record the limit and keep the tests.",
-      "pause": 400
+      "text": "Alternatives considered.",
+      "pause": 500
+    },
+    {
+      "text": "Submit such a transaction live. The ledger would reject it for value conservation before any script ran. The controls count such a rejection as no refusal by the application, so it would test nothing about the application.",
+      "pause": 300
+    },
+    {
+      "text": "Keep the case as an open blocker. Acceptance would then wait on a transaction that the argument above says cannot be made.",
+      "pause": 300
+    },
+    {
+      "text": "Record the limit and keep the model and validator tests. This is what the operator chose.",
+      "pause": 300
     }
   ],
   "what-changes-and-what-does-not": [
     {
-      "text": "The case stays visible in the approved matrix and the published controls, reported uncovered because the live suite runs nothing for it, and citing this page. It no longer blocks the command-line acceptance. Nothing is claimed live, covered or passing, and Lean, the application model, the validators and the statement ledgers are unchanged.",
+      "text": "What changes, and what does not.",
+      "pause": 500
+    },
+    {
+      "text": "The case stays in the approved matrix and in the published controls section. The live suite runs no transaction for it, so the section reports it as uncovered and cites this page.",
       "pause": 400
+    },
+    {
+      "text": "Changes: the case no longer blocks the command-line acceptance of #299.",
+      "pause": 300
+    },
+    {
+      "text": "Unchanged: no live, covered or passing result is claimed for it, and every other acceptance requirement stands.",
+      "pause": 300
+    },
+    {
+      "text": "Unchanged: Lean, the application model, the on-chain validators and the statement ledgers.",
+      "pause": 300
     }
   ],
   "_source": {

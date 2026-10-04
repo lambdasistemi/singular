@@ -22,13 +22,13 @@ flowchart TD
 
 | ID | Responsibility | Dependency constraint |
 | --- | --- | --- |
-| M265-1 | Blueprint schema parsing and validation | No implementation import of the Blueprint facade. |
-| M265-2 | Blueprint parameter application and compiled code selection/loading | Preserve parameter order and failure text; no facade cycle. |
-| M265-3 | Builder script identity and ledger/data conversion | Preserve bytes, hash derivations and public type signatures. |
-| M265-4 | Builder UTxO lookup, balancing/integrity and time | Preserve lookup order, effects and error behavior. |
-| M265-5 | Builder failure attribution, consumer binding and edge decisions | Preserve independent expected evidence and one decision owner. |
-| M265-6 | Existing public facades | Explicit original exports only; no duplicate bodies. |
-| M265-7 | Candidate documentation build and checker | Generate the affected library's Haddock from the same revision as the site, derive `exposed-modules` and `other-modules` from Cabal, include module/source/index pages, fail the docs job on absent pages or source-content mismatch, and verify the future archive via the existing release-check job. Keep release/publication scripts outside this owner. |
+| blueprint-schema-parsing-validation | Blueprint schema parsing and validation | No implementation import of the Blueprint facade. |
+| blueprint-parameter-application-compiled-code-selection-loading | Blueprint parameter application and compiled code selection/loading | Preserve parameter order and failure text; no facade cycle. |
+| builder-script-identity-ledger-data-conversion | Builder script identity and ledger/data conversion | Preserve bytes, hash derivations and public type signatures. |
+| builder-utxo-lookup-balancing-integrity-time | Builder UTxO lookup, balancing/integrity and time | Preserve lookup order, effects and error behavior. |
+| builder-failure-attribution-consumer-binding-edge-decisions | Builder failure attribution, consumer binding and edge decisions | Preserve independent expected evidence and one decision owner. |
+| explicit-original-exports-no-duplicate-bodies | Existing public facades | Explicit original exports only; no duplicate bodies. |
+| candidate-documentation-build-checker | Candidate documentation build and checker | Generate the affected library's Haddock from the same revision as the site, derive `exposed-modules` and `other-modules` from Cabal, include module/source/index pages, fail the docs job on absent pages or source-content mismatch, and verify the future archive via the existing release-check job. Keep release/publication scripts outside this owner. |
 
 Owners may split further only when the resulting dependency graph remains
 acyclic and the responsibility remains evident. The 150–350 line guide is a

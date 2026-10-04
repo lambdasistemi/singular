@@ -1,6 +1,20 @@
 {
+  "fold-data-contracts": [
+    {
+      "text": "Fold data contracts.",
+      "pause": 500
+    },
+    {
+      "text": "As a caller, I need the same context fields and duties to mean the same thing after their owning modules change.",
+      "pause": 400
+    },
+    {
+      "text": "The RegistryDuties calculation is an off-chain derivation independent of the on-chain cage's dutiesOf/dutyOk. The Conformance suite's own receipt-derived state is another independent boundary; this extraction cannot rewrite it.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "b23a29b0fdd71239810f84a5081be1d2daeb6ba0ad1ea41ff0b466ac74974c0e"
+    "sha256": "ee686c14940b97b9ab683a75c09a27384f108d231ab12d52bd7b168348bfdb38"
   }
 }

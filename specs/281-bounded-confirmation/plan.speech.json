@@ -1,24 +1,62 @@
 {
-  "_source": {
-    "file": "plan.md",
-    "sha256": "a26e46017090ace786ed24a5f9f4dbdacf3e088a9c64268288491ca28637ac18"
-  },
+  "bound-every-wait-on-a-submitted-transaction": [
+    {
+      "text": "Bound every wait on a submitted transaction.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I want one mechanism for bounding a wait, applied to submission, indexed confirmation and session confirmation. I want the existing ad hoc window message replaced by that mechanism rather than kept beside it, and every negative case seen to fail before the fix.",
+      "pause": 400
+    }
+  ],
   "delivery": [
     {
-      "text": "One coder, first GLM and then Sonnet by the operator's instruction, commits failing specs first, with every negative case failing on its own time guard. It then commits the shared bound applied to every wait, with the wait-aware catch at every classifier that reaches a submission, and deletes the old window path. The ticket owner audits that exact candidate before it is pushed to the draft pull request. Continuous integration on the exact head carries format, lint, compile and devnet compatibility.",
+      "text": "Delivery.",
       "pause": 500
+    },
+    {
+      "text": "Intake is done: the source map, the historical evidence, the frozen base and draft PR #314. One approved coder owns all production code, tests and local commits: first GLM 5.3, then Claude Sonnet 5.5 on the operator's instruction. The ticket owner is the final auditor and commissions no other seat.",
+      "pause": 300
+    },
+    {
+      "text": "RED commit: the new specs and any behavior-neutral seams they need to compile. Each negative spec executes its subject under its own time guard and fails because the wait does not end. Pre-existing specs pass. A compile or setup failure is not a RED.",
+      "pause": 300
+    },
+    {
+      "text": "Fix commit: the shared wait bound, the bounded submitter at every construction site, indexed and session confirmation under the bound, the wait-aware catch at every classifier that reaches a submission or confirmation, and the old window failure path deleted.",
+      "pause": 300
+    },
+    {
+      "text": "The ticket owner audits the exact candidate with the coder parked. The audit covers semantics, negative-control adequacy, cancellation and cleanup, whole-wait coverage and unchanged success.",
+      "pause": 300
+    },
+    {
+      "text": "Push the audited candidate to the draft PR. Format, lint, component compile, end-to-end and devnet compatibility are bound to the exact head's CI jobs. The PR stays draft until those are green; no merge is authorized.",
+      "pause": 300
     }
   ],
   "execution-budget": [
     {
-      "text": "Eight local invocations were granted and all are spent. Two builds did not compile. After them came a red and a green run for the fix, for its audit repair, and for the whole-call elapsed repair. The audit reads source and receipts, and continuous integration on the exact head carries every compile, lint and devnet run.",
+      "text": "Execution budget.",
       "pause": 500
+    },
+    {
+      "text": "Eight local invocations were granted in three steps, 15 minutes each and 90 minutes in total. Every Nix, build, test, format and lint command counts; reading an existing build log is not an invocation. All eight are spent. The audit reads source and receipts, and CI on the exact head carries format, lint, every component compile, the end-to-end runs and the devnet runs.",
+      "pause": 400
     }
   ],
   "evidence-limits": [
     {
-      "text": "The unit specs establish the bound over stubs and a real in-memory indexer, not a real node withholding its verdict. Devnet compatibility comes from continuous integration on the exact head. Other node reads and the upstream client library are unchanged.",
+      "text": "Evidence limits.",
       "pause": 500
+    },
+    {
+      "text": "The unit specs establish the bound and the failure shape over stub submitters, a real in-memory indexer and stub sessions. They do not reproduce a real node withholding a verdict. Devnet success compatibility is established by the exact head's CI, not locally. Node reads outside these waits keep their current behavior: address, parameter and evaluation queries, and the awaitChain observation. The bound stays in this repository; cardano-node-clients is not changed.",
+      "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a26e46017090ace786ed24a5f9f4dbdacf3e088a9c64268288491ca28637ac18"
+  }
 }
