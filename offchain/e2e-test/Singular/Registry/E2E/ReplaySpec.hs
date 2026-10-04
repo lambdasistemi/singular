@@ -1,0 +1,700 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+{- |
+Module      : Singular.Registry.E2E.ReplaySpec
+Description : A registry's trie rebuilt from its public history, checked against the chain
+License     : Apache-2.0
+
+One registry is made on a devnet ("Singular.Registry.E2E.ReplayHistory"):
+@create@, a fold of each of the seven edges, a fold that rejects its
+request and a fold that applies one request and rejects the others. Every
+expected value below comes from that chain: the roots are the state datums
+the chain holds after each fold, the transactions and their identifiers
+are the ones it accepted. Nothing is typed in.
+
+The replay must rebuild, at every state output of that history, the trie
+whose root the chain holds there; refuse by name a history that does not
+chain from @create@ to the selection; and give, at every fold, proofs for
+every key of the history that verify against the chain's root under a
+verifier that never sees the trie.
+-}
+module Singular.Registry.E2E.ReplaySpec (spec) where
+
+import Control.Monad (forM, forM_, unless, when)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
+import Data.IORef (IORef, newIORef, readIORef)
+import Data.List (nub)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Lens.Micro ((&), (.~), (^.))
+import Test.Hspec
+
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.Scripts.Data (Data (..), getPlutusData)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , referenceInputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
+import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Tx.Ledger (ConwayTx)
+import MPF.Backend.Pure (MPFInMemoryDB, emptyMPFInMemoryDB)
+import MPF.Verify
+    ( verifyAikenExclusionProof
+    , verifyAikenInclusionProof
+    )
+import PlutusTx (fromBuiltinData, toBuiltinData)
+import PlutusTx.Builtins (serialiseData)
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (Blueprint, extractCompiledCode)
+import Singular.Registry.Ledger (ConwayEra, Root (..))
+import Singular.Registry.Replay
+    ( Incomplete (..)
+    , Mismatch (..)
+    , Refusal (..)
+    , RegistryToken (..)
+    , ReplayFailure (..)
+    , Replayed (..)
+    , replayLineage
+    )
+import Singular.Registry.Trie (Trie (..))
+import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.TxBuilder.Internal
+    ( extractCageDatum
+    , leafAbsent
+    , leafActive
+    , leafTerminal
+    , mkInlineDatum
+    , toPlcData
+    , txInToRef
+    , walkEdge
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , MintRedeemer (..)
+    , Neighbor (..)
+    , OnChainRequest (..)
+    , OnChainTokenId (..)
+    , ProofStep (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeWitnessTerminal
+    )
+
+import Singular.Registry.E2E.ReplayHistory
+    ( History (..)
+    , MixedFold (..)
+    , StatePoint (..)
+    , recordHistory
+    )
+
+spec :: Blueprint -> Spec
+spec bp =
+    describe "Rebuilding a registry's trie from its public history" $
+        case ( extractCompiledCode "state.state" bp
+             , extractCompiledCode "request.request" bp
+             ) of
+            (Just stateBytes, Just requestBytes) ->
+                beforeAll (recordHistory stateBytes requestBytes) replaySpec
+            _ ->
+                it "no compiled code" $
+                    expectationFailure "state or request script not found"
+
+replaySpec :: SpecWith History
+replaySpec = do
+    describe "the rebuilt root is the chain's root" $ do
+        it "covers all seven edges, a rejecting fold and a mixed fold" $ \h -> do
+            let folds = map (decodeFold h . pointTx) (historyFolds h)
+                applied = [requestEdge r | (r, Update _) <- concat folds]
+            forM_ allEdges $ \e ->
+                unless (e `elem` applied) $
+                    expectationFailure ("no fold of the history applies edge " <> show e)
+            unless (any (all (isRejected . snd)) folds) $
+                expectationFailure "no fold of the history rejects all its requests"
+            unless
+                ( any
+                    (\f -> any (isRejected . snd) f && any (not . isRejected . snd) f)
+                    folds
+                )
+                $ expectationFailure
+                    "no fold of the history mixes applied and rejected requests"
+
+        it "replays to the chain's root at create and after every fold" $ \h ->
+            forM_ (zip [0 ..] (points h)) $ \(k, p) -> do
+                (result, db) <-
+                    replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
+                result
+                    `shouldBe` Right
+                        ( Replayed
+                            (txIdTx (pointTx (historyCreate h)))
+                            (map (txIdTx . pointTx) (take k (historyFolds h)))
+                        )
+                rebuilt <- rootOf db
+                (pointLabel p, rebuilt) `shouldBe` (pointLabel p, pointRoot p)
+
+        it "refuses, naming the fold, a request served with an altered edge" $ \h -> do
+            let target = firstFold "insertActive" h
+                fid = txIdTx (pointTx target)
+            (reqIn, req) <- case decodeFold h (pointTx target) of
+                [(r, _)] -> case requestInputs h (pointTx target) of
+                    [(i, _)] -> pure (i, r)
+                    _ -> fail "the insertActive fold spends other than one request"
+                _ -> fail "the insertActive fold carries other than one request"
+            let altered =
+                    Map.adjust
+                        (setRequest req{requestEdge = edgeInsertAbsent})
+                        reqIn
+                        (historyResolved h)
+            (result, _) <-
+                replayAt h altered (historyTxs h) (historyToken h) (lastPoint h)
+            case result of
+                Left (ReplayFailure tok tx RootDoesNotChain{recordedRoot = recorded}) -> do
+                    tok `shouldBe` historyToken h
+                    tx `shouldBe` fid
+                    recorded `shouldBe` pointRoot target
+                other ->
+                    expectationFailure ("expected RootDoesNotChain, got " <> show other)
+
+    describe "a mixed fold changes the trie by its applied requests only" $ do
+        it "applies one request and rejects the others, all of this registry" $ \h -> do
+            let pairs = decodeFold h (pointTx (mixedPoint h))
+            length pairs `shouldSatisfy` (> 1)
+            [r | (r, Update _) <- pairs] `shouldSatisfy` ((== 1) . length)
+            map fst (requestInputs h (pointTx (mixedPoint h)))
+                `shouldSatisfy` elem (mixedApplied (historyMixed h))
+
+        it "differs from what applying every request would give" $ \h -> do
+            let pairs = decodeFold h (pointTx (mixedPoint h))
+            root <- applyOnTop h (beforeMixed h) [r | (r, _) <- pairs]
+            root `shouldNotBe` pointRoot (mixedPoint h)
+
+    describe
+        "actions pair with this registry's requests in ledger input order" $ do
+        it
+            "books the mixed fold's requests in an order that is not the ledger's" $ \h -> do
+            let booked = mixedBooked (historyMixed h)
+            length booked `shouldSatisfy` (> 1)
+            Set.toAscList (Set.fromList booked) `shouldNotBe` booked
+
+        it "differs from what pairing in booking order would give" $ \h -> do
+            let tx = pointTx (mixedPoint h)
+                actions = map snd (decodeFold h tx)
+                requests = Map.fromList (requestInputs h tx)
+                byBooking =
+                    [ r
+                    | (b, a) <- zip (mixedBooked (historyMixed h)) actions
+                    , not (isRejected a)
+                    , Just r <- [Map.lookup b requests]
+                    ]
+            length byBooking `shouldBe` 1
+            root <- applyOnTop h (beforeMixed h) byBooking
+            root `shouldNotBe` pointRoot (mixedPoint h)
+
+        it "spends another registry's request and references one of its own" $ \h -> do
+            let body = pointTx (mixedPoint h) ^. bodyTxL
+                m = historyMixed h
+            Set.member (mixedDecoySpent m) (body ^. inputsTxBodyL) `shouldBe` True
+            Set.member (mixedDecoyReferenced m) (body ^. referenceInputsTxBodyL)
+                `shouldBe` True
+            requestTokenAt h (mixedDecoySpent m)
+                `shouldSatisfy` maybe False (/= tokenBytes h)
+            requestTokenAt h (mixedDecoyReferenced m)
+                `shouldBe` Just (tokenBytes h)
+
+    describe
+        "a history that does not chain from create is refused by name" $ do
+        it "rebuilds the same trie from the history in another order" $ \h -> do
+            let txs = historyTxs h
+            (inOrder, db0) <-
+                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+            r0 <- rootOf db0
+            inOrder
+                `shouldBe` Right
+                    ( Replayed
+                        (txIdTx (pointTx (historyCreate h)))
+                        (map (txIdTx . pointTx) (historyFolds h))
+                    )
+            r0 `shouldBe` pointRoot (lastPoint h)
+            forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
+                (result, db) <-
+                    replayAt h (historyResolved h) shuffled (historyToken h) (lastPoint h)
+                result `shouldBe` inOrder
+                rootOf db >>= (`shouldBe` r0)
+
+        it "refuses a history with one fold dropped, naming it" $ \h -> do
+            let dropped = historyFolds h !! 4
+                txs = filter ((/= txIdTx (pointTx dropped)) . txIdTx) (historyTxs h)
+            (result, _) <-
+                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx (pointTx dropped))
+                        (HistoryIncomplete MissingTransaction)
+                    )
+
+        it "refuses a history without create, naming it" $ \h -> do
+            let createId = txIdTx (pointTx (historyCreate h))
+                txs = filter ((/= createId) . txIdTx) (historyTxs h)
+            (result, _) <-
+                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        createId
+                        (HistoryIncomplete MissingTransaction)
+                    )
+
+        it
+            "refuses a state output spent by two transactions, naming the second" $ \h -> do
+            let spentFrom = historyFolds h !! 2
+                forkedFrom = historyFolds h !! 3
+                fork = bumpFee (pointTx forkedFrom)
+            txIdTx fork `shouldNotBe` txIdTx (pointTx forkedFrom)
+            (result, _) <-
+                replayAt
+                    h
+                    (historyResolved h)
+                    (historyTxs h <> [fork])
+                    (historyToken h)
+                    (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx fork)
+                        (HistoryIncomplete (ForkedStateOutput (pointOutput spentFrom)))
+                    )
+
+        it "refuses a transaction that touches the token outside the lineage" $ \h -> do
+            let stray = bumpFee (pointTx (historyCreate h))
+            (result, _) <-
+                replayAt
+                    h
+                    (historyResolved h)
+                    (stray : historyTxs h)
+                    (historyToken h)
+                    (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx stray)
+                        (HistoryIncomplete OutsideLineage)
+                    )
+
+    describe
+        "a selection the history does not reach is never an empty trie" $
+        it "refuses a selection newer than the history as incomplete" $ \h -> do
+            let newest = lastPoint h
+                txs = filter ((/= txIdTx (pointTx newest)) . txIdTx) (historyTxs h)
+            (result, _) <-
+                replayAt h (historyResolved h) txs (historyToken h) newest
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx (pointTx newest))
+                        (HistoryIncomplete MissingTransaction)
+                    )
+
+    describe "the registry's identity comes from create" $ do
+        it "refuses a selection naming another registry's token" $ \h -> do
+            let other =
+                    AssetName
+                        (SBS.toShort (deriveAssetName (txInToRef (historyStranger h))))
+                tok = (historyToken h){tokenName = other}
+            (result, _) <-
+                replayAt h (historyResolved h) (historyTxs h) tok (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        tok
+                        (txIdTx (pointTx (lastPoint h)))
+                        (WrongRegistry SelectionNotState)
+                    )
+
+        it "refuses a selection naming another policy" $ \h -> do
+            let tok = (historyToken h){tokenPolicy = otherPolicy h}
+            (result, _) <-
+                replayAt h (historyResolved h) (historyTxs h) tok (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        tok
+                        (txIdTx (pointTx (lastPoint h)))
+                        (WrongRegistry SelectionNotState)
+                    )
+
+        it "refuses a create minting under another seed" $ \h -> do
+            let create = pointTx (historyCreate h)
+                reseeded = withMintRedeemer (Minting (txInToRef (historyStranger h))) create
+            txIdTx reseeded `shouldBe` txIdTx create
+            let txs = reseeded : filter ((/= txIdTx create) . txIdTx) (historyTxs h)
+            (result, _) <-
+                replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx create)
+                        (WrongRegistry SeedNotSpent)
+                    )
+
+    describe "a stale selection is refused" $
+        it
+            "refuses a selected root that is not the root at the selected output" $ \h -> do
+            let newest = lastPoint h
+                previous = last (init (points h))
+            pointRoot previous `shouldNotBe` pointRoot newest
+            (result, _) <-
+                replayAt
+                    h
+                    (historyResolved h)
+                    (historyTxs h)
+                    (historyToken h)
+                    newest{pointRoot = pointRoot previous}
+            result
+                `shouldBe` Left
+                    ( ReplayFailure
+                        (historyToken h)
+                        (txIdTx (pointTx newest))
+                        (StaleRoot (pointRoot previous) (pointRoot newest))
+                    )
+
+    describe
+        "proofs from the rebuilt trie verify against the chain's root" $ do
+        it "proves every key of the history at create and after every fold" $ \h ->
+            forM_ (points h) $ \p -> do
+                (result, db) <-
+                    replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
+                result `shouldSatisfy` isRight'
+                forM_ (historyKeys h) $ \key -> do
+                    verdicts <- proofVerdicts db (pointRoot p) key
+                    (pointLabel p, key, length (filter id verdicts))
+                        `shouldBe` (pointLabel p, key, 1)
+
+        it "does not prove a fold's root from the previous fold's trie" $ \h ->
+            forM_ (zip (points h) (drop 1 (points h))) $ \(earlier, later) ->
+                when (pointRoot earlier /= pointRoot later) $ do
+                    (_, db) <-
+                        replayAt h (historyResolved h) (historyTxs h) (historyToken h) earlier
+                    own <- forM (historyKeys h) $ \key ->
+                        length . filter id <$> proofVerdicts db (pointRoot earlier) key
+                    (pointLabel earlier, all (== 1) own)
+                        `shouldBe` (pointLabel earlier, True)
+                    counts <- forM (historyKeys h) $ \key ->
+                        length . filter id <$> proofVerdicts db (pointRoot later) key
+                    (pointLabel later, all (== 1) counts)
+                        `shouldBe` (pointLabel later, False)
+
+        it "does not verify a proof with one step corrupted" $ \h -> do
+            let p = lastPoint h
+            (_, db) <-
+                replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
+            trie <- trieOf db
+            present <- fmap concat $ forM (historyKeys h) $ \key -> do
+                steps <- getProofSteps trie key
+                pure [(key, s) | Just s@(_ : _) <- [steps]]
+            case present of
+                [] -> expectationFailure "no key of the history has a non-empty proof"
+                (key, steps) : _ -> do
+                    leaf <- leafOf db (pointRoot p) key
+                    verifyAikenInclusionProof
+                        (unRoot (pointRoot p))
+                        key
+                        leaf
+                        (proofBytes steps)
+                        `shouldBe` True
+                    verifyAikenInclusionProof
+                        (unRoot (pointRoot p))
+                        key
+                        leaf
+                        (proofBytes (corruptFirst steps))
+                        `shouldBe` False
+
+-- ---------------------------------------------------------
+-- The history's shape
+-- ---------------------------------------------------------
+
+points :: History -> [StatePoint]
+points h = historyCreate h : historyFolds h
+
+lastPoint :: History -> StatePoint
+lastPoint = last . points
+
+mixedPoint :: History -> StatePoint
+mixedPoint = lastPoint
+
+beforeMixed :: History -> StatePoint
+beforeMixed = last . init . points
+
+firstFold :: String -> History -> StatePoint
+firstFold label h = case filter ((== label) . pointLabel) (historyFolds h) of
+    p : _ -> p
+    [] -> error ("the history has no " <> label <> " fold")
+
+-- | The state token's history, as the provider serves it.
+historyTxs :: History -> [ConwayTx]
+historyTxs = map pointTx . points
+
+tokenBytes :: History -> ByteString
+tokenBytes h = let AssetName n = tokenName (historyToken h) in SBS.fromShort n
+
+-- | A real policy that is not the state policy: the one the decoy's spent input pays no heed to.
+otherPolicy :: History -> PolicyID
+otherPolicy h =
+    case [ p
+         | p <- Map.keys (mintOf (pointTx (firstFold "insertActive" h)))
+         , p /= tokenPolicy (historyToken h)
+         ] of
+        p : _ -> p
+        [] -> error "the insertActive fold mints under no other policy"
+  where
+    mintOf tx = let MultiAsset m = tx ^. bodyTxL . mintTxBodyL in m
+
+-- | Every request key the history's resolved outputs name for this registry.
+historyKeys :: History -> [ByteString]
+historyKeys h =
+    nub
+        [ requestKey r
+        | o <- Map.elems (historyResolved h)
+        , Just (RequestDatum r) <- [extractCageDatum o]
+        , tokenOf r == tokenBytes h
+        ]
+
+allEdges :: [Integer]
+allEdges =
+    [ edgeInsertAbsent
+    , edgeInsertActive
+    , edgeUpdateActive
+    , edgeUpdateTerminal
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeWitnessTerminal
+    ]
+
+-- ---------------------------------------------------------
+-- Reading a fold, independently of the replay
+-- ---------------------------------------------------------
+
+{- | A fold's own-token requests in ledger order, each with the action the
+fold's @Modify@ redeemer gives it. Read here from the transaction and the
+resolutions, so the coverage and the controls do not rest on the replay.
+-}
+decodeFold :: History -> ConwayTx -> [(OnChainRequest, RequestAction)]
+decodeFold h tx = zip (map snd (requestInputs h tx)) (modifyActions h tx)
+
+requestInputs :: History -> ConwayTx -> [(TxIn, OnChainRequest)]
+requestInputs h tx =
+    [ (i, r)
+    | i <- Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)
+    , Just o <- [Map.lookup i (historyResolved h)]
+    , Just (RequestDatum r) <- [extractCageDatum o]
+    , tokenOf r == tokenBytes h
+    ]
+
+{- | The actions of the state input's @Modify@ redeemer: the spend of the
+input holding the registry's token, at its position among the inputs.
+-}
+modifyActions :: History -> ConwayTx -> [RequestAction]
+modifyActions h tx =
+    case [ ix
+         | (ix, i) <- zip [0 ..] (Set.toAscList (tx ^. bodyTxL . inputsTxBodyL))
+         , Just o <- [Map.lookup i (historyResolved h)]
+         , holdsToken h o
+         ] of
+        [ix] -> case Map.lookup (ConwaySpending (AsIx ix)) rdmrs of
+            Just (d, _)
+                | Just (Modify as) <- fromBuiltinData (BuiltinData (getPlutusData d)) ->
+                    as
+            _ -> []
+        _ -> []
+  where
+    Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
+
+holdsToken :: History -> TxOut ConwayEra -> Bool
+holdsToken h o =
+    let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
+        RegistryToken policy name = historyToken h
+    in  maybe 0 (Map.findWithDefault 0 name) (Map.lookup policy m) == 1
+
+requestTokenAt :: History -> TxIn -> Maybe ByteString
+requestTokenAt h i = case Map.lookup i (historyResolved h) >>= extractCageDatum of
+    Just (RequestDatum r) -> Just (tokenOf r)
+    _ -> Nothing
+
+tokenOf :: OnChainRequest -> ByteString
+tokenOf r = let OnChainTokenId (BuiltinByteString b) = requestToken r in b
+
+isRejected :: RequestAction -> Bool
+isRejected Rejected = True
+isRejected _ = False
+
+isRight' :: Either a b -> Bool
+isRight' = either (const False) (const True)
+
+-- ---------------------------------------------------------
+-- Faults built from the chain's own transactions
+-- ---------------------------------------------------------
+
+setRequest :: OnChainRequest -> TxOut ConwayEra -> TxOut ConwayEra
+setRequest r o = o & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum r))
+
+-- | The same transaction with a different body: same inputs, another identifier.
+bumpFee :: ConwayTx -> ConwayTx
+bumpFee tx = tx & bodyTxL . feeTxBodyL .~ (fee <> Coin 1)
+  where
+    fee = tx ^. bodyTxL . feeTxBodyL
+
+-- | Replace every mint redeemer; the body, and so the identifier, is unchanged.
+withMintRedeemer :: MintRedeemer -> ConwayTx -> ConwayTx
+withMintRedeemer m tx =
+    tx & witsTxL . rdmrsTxWitsL .~ Redeemers (Map.mapWithKey swap rdmrs)
+  where
+    Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
+    swap _ (d, units) = case fromBuiltinData (BuiltinData (getPlutusData d)) of
+        Just (Minting _) -> (Data (toPlcData m), units)
+        _ -> (d, units)
+
+rotate :: Int -> [a] -> [a]
+rotate n xs = let k = n `mod` max 1 (length xs) in drop k xs <> take k xs
+
+-- ---------------------------------------------------------
+-- Running the replay
+-- ---------------------------------------------------------
+
+replayAt
+    :: History
+    -> Map TxIn (TxOut ConwayEra)
+    -> [ConwayTx]
+    -> RegistryToken
+    -> StatePoint
+    -> IO (Either ReplayFailure Replayed, IORef MPFInMemoryDB)
+replayAt _ resolved txs tok p = do
+    ref <- newIORef emptyMPFInMemoryDB
+    result <-
+        replayLineage
+            (mkPureTrieFromRef ref)
+            tok
+            (pointOutput p)
+            (pointRoot p)
+            resolved
+            txs
+    pure (result, ref)
+
+trieOf :: IORef MPFInMemoryDB -> IO (Trie IO)
+trieOf = pure . mkPureTrieFromRef
+
+rootOf :: IORef MPFInMemoryDB -> IO Root
+rootOf ref = trieOf ref >>= getRoot
+
+{- | The root a fault would reach: the trie at a state output, with the given
+requests' edges walked on top of it.
+-}
+applyOnTop :: History -> StatePoint -> [OnChainRequest] -> IO Root
+applyOnTop h p rs = do
+    (result, ref) <-
+        replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
+    unless (isRight' result) $ fail ("no replay at " <> pointLabel p)
+    reached <- rootOf ref
+    unless (reached == pointRoot p) $
+        fail
+            ( "the replay at "
+                <> pointLabel p
+                <> " does not reach the chain's root there"
+            )
+    trie <- trieOf ref
+    forM_ rs $ \r -> walkEdge trie (requestKey r) (requestEdge r)
+    getRoot trie
+
+-- ---------------------------------------------------------
+-- Proofs, verified without the trie
+-- ---------------------------------------------------------
+
+{- | For one key, whether each answer verifies against the root: not a
+member, a member with the absent leaf, the active leaf, the terminal leaf.
+The proofs come from the trie; the verifier sees only bytes and the root.
+-}
+proofVerdicts
+    :: IORef MPFInMemoryDB -> Root -> ByteString -> IO [Bool]
+proofVerdicts ref (Root root) key = do
+    trie <- trieOf ref
+    member <- getProofSteps trie key
+    excluded <- exclusionSteps ref key
+    let asMember leaf =
+            maybe
+                False
+                (verifyAikenInclusionProof root key leaf . proofBytes)
+                member
+    pure
+        [ verifyAikenExclusionProof root key (proofBytes excluded)
+        , asMember leafAbsent
+        , asMember leafActive
+        , asMember leafTerminal
+        ]
+
+{- | The proof that a key is not in a trie: its proof in a copy of the trie
+with the key inserted, which is how a proof of absence reads on chain.
+-}
+exclusionSteps :: IORef MPFInMemoryDB -> ByteString -> IO [ProofStep]
+exclusionSteps ref key = do
+    db <- readIORef ref
+    copy <- mkPureTrieFromRef <$> newIORef db
+    _ <- insert copy key leafActive
+    maybe [] id <$> getProofSteps copy key
+
+leafOf :: IORef MPFInMemoryDB -> Root -> ByteString -> IO ByteString
+leafOf ref root key = do
+    verdicts <- proofVerdicts ref root key
+    case [ l
+         | (True, l) <-
+            zip (drop 1 verdicts) [leafAbsent, leafActive, leafTerminal]
+         ] of
+        [l] -> pure l
+        _ -> fail "the key is not a member under one leaf"
+
+-- | A proof in the encoding the validator reads.
+proofBytes :: [ProofStep] -> ByteString
+proofBytes steps = let BuiltinByteString b = serialiseData (toBuiltinData steps) in b
+
+-- | The first step with one hash byte flipped.
+corruptFirst :: [ProofStep] -> [ProofStep]
+corruptFirst [] = []
+corruptFirst (s : rest) = flipStep s : rest
+  where
+    flipStep (Branch skip ns) = Branch skip (flipByte ns)
+    flipStep (Fork skip n) = Fork skip n{neighborRoot = flipByte (neighborRoot n)}
+    flipStep (Leaf skip k v) = Leaf skip k (flipByte v)
+    flipByte b = case BS.uncons b of
+        Just (w, t) -> BS.cons (w + 1) t
+        Nothing -> b
