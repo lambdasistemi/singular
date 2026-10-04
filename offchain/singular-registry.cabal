@@ -74,6 +74,9 @@ library
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
+    Singular.Provider.Koios.Client
+    Singular.Provider.Koios.Recorded
+    Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -202,6 +205,27 @@ library node-internal
     , text
     , time
     , unix
+
+-- #389: the live Koios transport and the read-only fixture recorder.
+-- Public so the Koios ledger-provider instance and the commands that select
+-- Koios link it; the main library carries no HTTP dependency.
+library koios-http
+  import:           warnings
+  default-language: GHC2021
+  visibility:       public
+  hs-source-dirs:   koios-http/src
+  exposed-modules:
+    Singular.Provider.Koios.Http
+    Singular.Provider.Koios.Recorder
+
+  build-depends:
+    , base                 >=4.14 && <5
+    , bytestring
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , text
+    , time
 
 executable cage-test-vectors
   import:           warnings
@@ -731,8 +755,20 @@ test-suite cage-tests
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
+    Singular.Provider.Koios.ClientSpec
+    Singular.Provider.Koios.FakeServer
+    Singular.Provider.Koios.HttpSpec
+    Singular.Provider.Koios.RecordedSpec
+    Singular.Provider.Koios.RecorderSpec
+    Singular.Provider.Koios.Scripted
     Naming.RecordValueSpec
   build-depends:
+    , case-insensitive
+    , http-types
+    , network
+    , singular-registry:koios-http
+    , wai
+    , warp
     , aeson
     , async
     , cardano-ledger-binary
