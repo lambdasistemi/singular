@@ -158,6 +158,8 @@ The HTTP transport's bounds are configuration values. Their defaults are a
 20 second timeout per attempt, five attempts, delays doubling from a
 quarter second up to eight seconds with jitter, a rate-limit wait honoured
 up to 30 seconds, and 60 seconds for a whole request, retries included.
+That ceiling bounds the elapsed time: no retry starts past it, and each
+attempt's timeout is cut to what remains of it.
 
 ## Recorded answers and the recorder
 
@@ -167,8 +169,15 @@ runs the same requests and writes every raw answer they take, page by
 page, as one fixture file holding the request, the Koios schema revision,
 the time and the SHA-256 of the body. Its requests name read calls only;
 submission is not one of them, and the recording transport refuses one
-without sending it. Headers are not recorded, so a token never reaches a
-fixture.
+without sending it. The token file is read before anything is sent, the
+schema document included, and the schema document is fetched under the
+same timeout and retry bounds as every call. Request headers are not
+recorded; answer headers are, and the live transport replaces the token
+wherever an answer or a failure carries it, so a server that echoes the
+token back cannot put it into a fixture, a failure or a log. An answer the
+client refuses for its content — an absent fact, an answer that does not
+decode — is recorded all the same, and recording goes on: the tests judge
+it. A directory or file that cannot be written is a named refusal.
 
 The schema revision is the `info.version` of the `koiosapi.yaml` document
 Koios serves at the origin of the base URL. Loading a fixture directory
@@ -199,8 +208,12 @@ parameters Koios serves for the same epoch.
 The recorded set is one day's snapshot of public preprod and covers the
 shapes it holds: key and script addresses, ada-only and multi-asset
 values, inline datums, datum hashes and Plutus V3 reference scripts.
-Native and Plutus V1 or V2 reference scripts, Byron addresses and pointer
-addresses are not in it. No transaction that failed its scripts was found
+Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses
+are not in it. Koios gives no bytes for a native (timelock) reference
+script, only a summary of it, so an output holding one cannot be decoded
+exactly: the client refuses it by name, as the recorded preprod answer in
+the set shows. A caller that reads such outputs cannot use this client
+for them. No transaction that failed its scripts was found
 on preprod, so a recorded transaction with its validity flag cleared
 stands in for one; its id hashes the body alone and is unchanged. The live
 preprod service does not send the `valid_contract` field its published

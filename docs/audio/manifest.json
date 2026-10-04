@@ -181736,17 +181736,17 @@
    ]
   },
   "docs-offchain-koios-client/recorded-answers-and-the-recorder-01": {
-   "audio_sha256": "5a6f900700f6727d6871e122bf310ef6d284856a032262b6f8d339c84d0e6ac5",
-   "characters": 511,
-   "cost": 0.00031682,
-   "duration": 36.4,
+   "audio_sha256": "5320f42776fbbbc49628997de1f55b2a8d333be5877b49e1985838db260c1941",
+   "characters": 1074,
+   "cost": 0.0006658800000000001,
+   "duration": 74.525,
    "index": 1,
-   "key": "44b083ccb145827e32ce7847257d2cb2ec9e03ac19a3149dd5e84055717b1def",
+   "key": "700e2aee516fec1dac8f8ac8569bea0f7b1ec893f23efa09f063387cce07b22f",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,
    "section": "recorded-answers-and-the-recorder",
-   "sent_text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. Headers are not recorded, so a token never reaches a fixture.",
-   "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. Headers are not recorded, so a token never reaches a fixture.",
+   "sent_text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token wherever an answer or a failure carries it, so a server that echoes the token back cannot put it into a fixture, a failure or a log. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
+   "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token wherever an answer or a failure carries it, so a server that echoes the token back cannot put it into a fixture, a failure or a log. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
    "words": [
     {
      "end": 1.138,
@@ -182179,68 +182179,643 @@
      "text": "."
     },
     {
-     "end": 32.775,
-     "start": 32.4,
-     "text": "Headers"
+     "end": 32.45,
+     "start": 32.375,
+     "text": "The"
     },
     {
-     "end": 32.875,
-     "start": 32.775,
-     "text": "are"
-    },
-    {
-     "end": 33.088,
-     "start": 32.875,
-     "text": "not"
-    },
-    {
-     "end": 33.675,
-     "start": 33.088,
-     "text": "recorded"
-    },
-    {
-     "end": 33.775,
-     "start": 33.675,
-     "text": ","
-    },
-    {
-     "end": 33.888,
-     "start": 33.775,
-     "text": "so"
-    },
-    {
-     "end": 33.95,
-     "start": 33.888,
-     "text": "a"
-    },
-    {
-     "end": 34.388,
-     "start": 33.95,
+     "end": 32.862,
+     "start": 32.45,
      "text": "token"
     },
     {
-     "end": 34.7,
-     "start": 34.388,
-     "text": "never"
+     "end": 33.25,
+     "start": 32.862,
+     "text": "file"
     },
     {
-     "end": 35.062,
-     "start": 34.7,
-     "text": "reaches"
+     "end": 33.412,
+     "start": 33.25,
+     "text": "is"
     },
     {
-     "end": 35.162,
-     "start": 35.062,
+     "end": 33.75,
+     "start": 33.412,
+     "text": "read"
+    },
+    {
+     "end": 34.125,
+     "start": 33.75,
+     "text": "before"
+    },
+    {
+     "end": 34.55,
+     "start": 34.125,
+     "text": "anything"
+    },
+    {
+     "end": 34.688,
+     "start": 34.55,
+     "text": "is"
+    },
+    {
+     "end": 35.1,
+     "start": 34.688,
+     "text": "sent"
+    },
+    {
+     "end": 35.175,
+     "start": 35.1,
+     "text": ","
+    },
+    {
+     "end": 35.312,
+     "start": 35.175,
+     "text": "the"
+    },
+    {
+     "end": 35.7,
+     "start": 35.312,
+     "text": "schema"
+    },
+    {
+     "end": 36.162,
+     "start": 35.7,
+     "text": "document"
+    },
+    {
+     "end": 37.2,
+     "start": 36.162,
+     "text": "included"
+    },
+    {
+     "end": 37.425,
+     "start": 37.2,
+     "text": ","
+    },
+    {
+     "end": 37.713,
+     "start": 37.625,
+     "text": "and"
+    },
+    {
+     "end": 37.8,
+     "start": 37.713,
+     "text": "the"
+    },
+    {
+     "end": 38.15,
+     "start": 37.8,
+     "text": "schema"
+    },
+    {
+     "end": 38.675,
+     "start": 38.15,
+     "text": "document"
+    },
+    {
+     "end": 38.862,
+     "start": 38.675,
+     "text": "is"
+    },
+    {
+     "end": 39.25,
+     "start": 38.862,
+     "text": "fetched"
+    },
+    {
+     "end": 39.438,
+     "start": 39.25,
+     "text": "under"
+    },
+    {
+     "end": 39.562,
+     "start": 39.438,
+     "text": "the"
+    },
+    {
+     "end": 39.9,
+     "start": 39.562,
+     "text": "same"
+    },
+    {
+     "end": 40.463,
+     "start": 39.9,
+     "text": "timeout"
+    },
+    {
+     "end": 40.6,
+     "start": 40.463,
+     "text": "and"
+    },
+    {
+     "end": 41.05,
+     "start": 40.6,
+     "text": "retry"
+    },
+    {
+     "end": 41.525,
+     "start": 41.05,
+     "text": "bounds"
+    },
+    {
+     "end": 41.688,
+     "start": 41.525,
+     "text": "as"
+    },
+    {
+     "end": 42.025,
+     "start": 41.688,
+     "text": "every"
+    },
+    {
+     "end": 42.95,
+     "start": 42.025,
+     "text": "call"
+    },
+    {
+     "end": 43.15,
+     "start": 42.95,
+     "text": "."
+    },
+    {
+     "end": 43.725,
+     "start": 43.325,
+     "text": "Request"
+    },
+    {
+     "end": 44.075,
+     "start": 43.725,
+     "text": "headers"
+    },
+    {
+     "end": 44.175,
+     "start": 44.075,
+     "text": "are"
+    },
+    {
+     "end": 44.388,
+     "start": 44.175,
+     "text": "not"
+    },
+    {
+     "end": 45.325,
+     "start": 44.388,
+     "text": "recorded"
+    },
+    {
+     "end": 45.525,
+     "start": 45.325,
+     "text": ";"
+    },
+    {
+     "end": 46.0,
+     "start": 45.725,
+     "text": "answer"
+    },
+    {
+     "end": 46.362,
+     "start": 46.0,
+     "text": "headers"
+    },
+    {
+     "end": 46.95,
+     "start": 46.362,
+     "text": "are"
+    },
+    {
+     "end": 47.175,
+     "start": 46.95,
+     "text": ","
+    },
+    {
+     "end": 47.463,
+     "start": 47.375,
+     "text": "and"
+    },
+    {
+     "end": 47.55,
+     "start": 47.463,
+     "text": "the"
+    },
+    {
+     "end": 47.875,
+     "start": 47.55,
+     "text": "live"
+    },
+    {
+     "end": 48.5,
+     "start": 47.875,
+     "text": "transport"
+    },
+    {
+     "end": 49.075,
+     "start": 48.5,
+     "text": "replaces"
+    },
+    {
+     "end": 49.175,
+     "start": 49.075,
+     "text": "the"
+    },
+    {
+     "end": 49.65,
+     "start": 49.175,
+     "text": "token"
+    },
+    {
+     "end": 50.013,
+     "start": 49.65,
+     "text": "wherever"
+    },
+    {
+     "end": 50.138,
+     "start": 50.013,
+     "text": "an"
+    },
+    {
+     "end": 50.638,
+     "start": 50.138,
+     "text": "answer"
+    },
+    {
+     "end": 50.775,
+     "start": 50.638,
+     "text": "or"
+    },
+    {
+     "end": 50.888,
+     "start": 50.775,
      "text": "a"
     },
     {
-     "end": 36.175,
-     "start": 35.162,
+     "end": 51.35,
+     "start": 50.888,
+     "text": "failure"
+    },
+    {
+     "end": 51.763,
+     "start": 51.35,
+     "text": "carries"
+    },
+    {
+     "end": 52.475,
+     "start": 51.763,
+     "text": "it"
+    },
+    {
+     "end": 52.7,
+     "start": 52.475,
+     "text": ","
+    },
+    {
+     "end": 53.05,
+     "start": 52.9,
+     "text": "so"
+    },
+    {
+     "end": 53.162,
+     "start": 53.05,
+     "text": "a"
+    },
+    {
+     "end": 53.575,
+     "start": 53.162,
+     "text": "server"
+    },
+    {
+     "end": 53.787,
+     "start": 53.575,
+     "text": "that"
+    },
+    {
+     "end": 54.275,
+     "start": 53.787,
+     "text": "echoes"
+    },
+    {
+     "end": 54.375,
+     "start": 54.275,
+     "text": "the"
+    },
+    {
+     "end": 54.75,
+     "start": 54.375,
+     "text": "token"
+    },
+    {
+     "end": 55.088,
+     "start": 54.75,
+     "text": "back"
+    },
+    {
+     "end": 55.45,
+     "start": 55.088,
+     "text": "cannot"
+    },
+    {
+     "end": 55.638,
+     "start": 55.45,
+     "text": "put"
+    },
+    {
+     "end": 55.713,
+     "start": 55.638,
+     "text": "it"
+    },
+    {
+     "end": 55.938,
+     "start": 55.713,
+     "text": "into"
+    },
+    {
+     "end": 56.037,
+     "start": 55.938,
+     "text": "a"
+    },
+    {
+     "end": 57.05,
+     "start": 56.037,
      "text": "fixture"
     },
     {
-     "end": 36.4,
-     "start": 36.175,
+     "end": 57.275,
+     "start": 57.05,
+     "text": ","
+    },
+    {
+     "end": 57.525,
+     "start": 57.45,
+     "text": "a"
+    },
+    {
+     "end": 57.9,
+     "start": 57.525,
+     "text": "failure"
+    },
+    {
+     "end": 58.013,
+     "start": 57.9,
+     "text": "or"
+    },
+    {
+     "end": 58.075,
+     "start": 58.013,
+     "text": "a"
+    },
+    {
+     "end": 58.775,
+     "start": 58.075,
+     "text": "log"
+    },
+    {
+     "end": 58.975,
+     "start": 58.775,
+     "text": "."
+    },
+    {
+     "end": 59.275,
+     "start": 59.175,
+     "text": "An"
+    },
+    {
+     "end": 59.662,
+     "start": 59.275,
+     "text": "answer"
+    },
+    {
+     "end": 59.75,
+     "start": 59.662,
+     "text": "the"
+    },
+    {
+     "end": 60.125,
+     "start": 59.75,
+     "text": "client"
+    },
+    {
+     "end": 60.7,
+     "start": 60.125,
+     "text": "refuses"
+    },
+    {
+     "end": 60.812,
+     "start": 60.7,
+     "text": "for"
+    },
+    {
+     "end": 60.975,
+     "start": 60.812,
+     "text": "its"
+    },
+    {
+     "end": 61.6,
+     "start": 60.975,
+     "text": "content"
+    },
+    {
+     "end": 61.675,
+     "start": 61.6,
+     "text": "—"
+    },
+    {
+     "end": 61.812,
+     "start": 61.675,
+     "text": "an"
+    },
+    {
+     "end": 62.25,
+     "start": 61.812,
+     "text": "absent"
+    },
+    {
+     "end": 63.125,
+     "start": 62.25,
+     "text": "fact"
+    },
+    {
+     "end": 63.325,
+     "start": 63.125,
+     "text": ","
+    },
+    {
+     "end": 63.662,
+     "start": 63.525,
+     "text": "an"
+    },
+    {
+     "end": 64.075,
+     "start": 63.662,
+     "text": "answer"
+    },
+    {
+     "end": 64.188,
+     "start": 64.075,
+     "text": "that"
+    },
+    {
+     "end": 64.375,
+     "start": 64.188,
+     "text": "does"
+    },
+    {
+     "end": 64.6,
+     "start": 64.375,
+     "text": "not"
+    },
+    {
+     "end": 65.225,
+     "start": 64.6,
+     "text": "decode"
+    },
+    {
+     "end": 65.3,
+     "start": 65.225,
+     "text": "—"
+    },
+    {
+     "end": 65.45,
+     "start": 65.3,
+     "text": "is"
+    },
+    {
+     "end": 65.95,
+     "start": 65.45,
+     "text": "recorded"
+    },
+    {
+     "end": 66.113,
+     "start": 65.95,
+     "text": "all"
+    },
+    {
+     "end": 66.238,
+     "start": 66.113,
+     "text": "the"
+    },
+    {
+     "end": 66.7,
+     "start": 66.238,
+     "text": "same"
+    },
+    {
+     "end": 66.775,
+     "start": 66.7,
+     "text": ","
+    },
+    {
+     "end": 66.887,
+     "start": 66.775,
+     "text": "and"
+    },
+    {
+     "end": 67.4,
+     "start": 66.887,
+     "text": "recording"
+    },
+    {
+     "end": 67.7,
+     "start": 67.4,
+     "text": "goes"
+    },
+    {
+     "end": 68.525,
+     "start": 67.7,
+     "text": "on"
+    },
+    {
+     "end": 68.725,
+     "start": 68.525,
+     "text": ":"
+    },
+    {
+     "end": 69.012,
+     "start": 68.9,
+     "text": "the"
+    },
+    {
+     "end": 69.438,
+     "start": 69.012,
+     "text": "tests"
+    },
+    {
+     "end": 69.762,
+     "start": 69.438,
+     "text": "judge"
+    },
+    {
+     "end": 69.95,
+     "start": 69.762,
+     "text": "it"
+    },
+    {
+     "end": 70.025,
+     "start": 69.95,
+     "text": "."
+    },
+    {
+     "end": 70.1,
+     "start": 70.025,
+     "text": "A"
+    },
+    {
+     "end": 70.725,
+     "start": 70.1,
+     "text": "directory"
+    },
+    {
+     "end": 70.9,
+     "start": 70.725,
+     "text": "or"
+    },
+    {
+     "end": 71.3,
+     "start": 70.9,
+     "text": "file"
+    },
+    {
+     "end": 71.45,
+     "start": 71.3,
+     "text": "that"
+    },
+    {
+     "end": 71.8,
+     "start": 71.45,
+     "text": "cannot"
+    },
+    {
+     "end": 71.963,
+     "start": 71.8,
+     "text": "be"
+    },
+    {
+     "end": 72.45,
+     "start": 71.963,
+     "text": "written"
+    },
+    {
+     "end": 72.625,
+     "start": 72.45,
+     "text": "is"
+    },
+    {
+     "end": 72.738,
+     "start": 72.625,
+     "text": "a"
+    },
+    {
+     "end": 73.125,
+     "start": 72.738,
+     "text": "named"
+    },
+    {
+     "end": 74.325,
+     "start": 73.125,
+     "text": "refusal"
+    },
+    {
+     "end": 74.525,
+     "start": 74.325,
      "text": "."
     }
    ]
@@ -187006,17 +187581,17 @@
    ]
   },
   "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-02": {
-   "audio_sha256": "16adda2ec8643591e0a8c6df3f803241a93a8b1eefa473eac21958d40c02fb42",
-   "characters": 855,
-   "cost": 0.0005301,
-   "duration": 58.85,
+   "audio_sha256": "dda2608f17bf4466dbc65645775e4caae02994359793a22318ebcfe8afb86cce",
+   "characters": 1127,
+   "cost": 0.0006987400000000001,
+   "duration": 77.025,
    "index": 2,
-   "key": "98f3b11c2878543dcbfeb60bcd1cf6d04cc607f2962537ad673317d0fa11ced0",
+   "key": "1f536368407879c37cc43b79686c8975509ce076e42ea5e11bf8ae0e6f02ef2b",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,
    "section": "what-the-evidence-establishes-and-what-it-does-not",
-   "sent_text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Native and Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
-   "text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Native and Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
+   "sent_text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. Koios gives no bytes for a native (timelock) reference script, only a summary of it, so an output holding one cannot be decoded exactly: the client refuses it by name, as the recorded preprod answer in the set shows. A caller that reads such outputs cannot use this client for them. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
+   "text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. Koios gives no bytes for a native (timelock) reference script, only a summary of it, so an output holding one cannot be decoded exactly: the client refuses it by name, as the recorded preprod answer in the set shows. A caller that reads such outputs cannot use this client for them. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
    "words": [
     {
      "end": 0.275,
@@ -187209,608 +187784,893 @@
      "text": "."
     },
     {
-     "end": 15.575,
-     "start": 15.125,
-     "text": "Native"
-    },
-    {
-     "end": 15.712,
-     "start": 15.575,
-     "text": "and"
-    },
-    {
-     "end": 16.163,
-     "start": 15.712,
+     "end": 15.462,
+     "start": 15.075,
      "text": "Plutus"
     },
     {
-     "end": 16.975,
-     "start": 16.163,
+     "end": 16.2,
+     "start": 15.462,
      "text": "V1"
     },
     {
-     "end": 17.188,
-     "start": 16.975,
+     "end": 16.388,
+     "start": 16.2,
      "text": "or"
     },
     {
-     "end": 17.7,
-     "start": 17.188,
+     "end": 16.9,
+     "start": 16.388,
      "text": "V2"
     },
     {
-     "end": 18.1,
-     "start": 17.7,
+     "end": 17.325,
+     "start": 16.9,
      "text": "reference"
     },
     {
-     "end": 18.675,
-     "start": 18.1,
+     "end": 17.875,
+     "start": 17.325,
      "text": "scripts"
     },
     {
-     "end": 18.763,
-     "start": 18.675,
+     "end": 17.962,
+     "start": 17.875,
      "text": ","
     },
     {
-     "end": 19.125,
-     "start": 18.763,
+     "end": 18.325,
+     "start": 17.962,
      "text": "Byron"
     },
     {
-     "end": 19.75,
-     "start": 19.125,
+     "end": 18.95,
+     "start": 18.325,
      "text": "addresses"
     },
     {
-     "end": 19.875,
-     "start": 19.75,
+     "end": 19.075,
+     "start": 18.95,
      "text": "and"
     },
     {
-     "end": 20.3,
-     "start": 19.875,
+     "end": 19.475,
+     "start": 19.075,
      "text": "pointer"
     },
     {
-     "end": 20.888,
-     "start": 20.3,
+     "end": 20.05,
+     "start": 19.475,
      "text": "addresses"
     },
     {
-     "end": 21.05,
-     "start": 20.888,
+     "end": 20.2,
+     "start": 20.05,
      "text": "are"
     },
     {
-     "end": 21.3,
-     "start": 21.05,
+     "end": 20.45,
+     "start": 20.2,
      "text": "not"
     },
     {
-     "end": 21.425,
-     "start": 21.3,
+     "end": 20.575,
+     "start": 20.45,
      "text": "in"
     },
     {
-     "end": 22.175,
-     "start": 21.425,
+     "end": 21.3,
+     "start": 20.575,
      "text": "it"
     },
     {
-     "end": 22.4,
-     "start": 22.175,
+     "end": 21.525,
+     "start": 21.3,
      "text": "."
     },
     {
-     "end": 22.8,
-     "start": 22.6,
-     "text": "No"
-    },
-    {
-     "end": 23.462,
-     "start": 22.8,
-     "text": "transaction"
-    },
-    {
-     "end": 23.6,
-     "start": 23.462,
-     "text": "that"
-    },
-    {
-     "end": 23.913,
-     "start": 23.6,
-     "text": "failed"
-    },
-    {
-     "end": 24.025,
-     "start": 23.913,
-     "text": "its"
-    },
-    {
-     "end": 24.45,
-     "start": 24.025,
-     "text": "scripts"
-    },
-    {
-     "end": 24.625,
-     "start": 24.45,
-     "text": "was"
-    },
-    {
-     "end": 24.913,
-     "start": 24.625,
-     "text": "found"
-    },
-    {
-     "end": 25.05,
-     "start": 24.913,
-     "text": "on"
-    },
-    {
-     "end": 26.1,
-     "start": 25.05,
-     "text": "preprod"
-    },
-    {
-     "end": 26.325,
-     "start": 26.1,
-     "text": ","
-    },
-    {
-     "end": 26.7,
-     "start": 26.525,
-     "text": "so"
-    },
-    {
-     "end": 26.8,
-     "start": 26.7,
-     "text": "a"
-    },
-    {
-     "end": 27.325,
-     "start": 26.8,
-     "text": "recorded"
-    },
-    {
-     "end": 28.1,
-     "start": 27.325,
-     "text": "transaction"
-    },
-    {
-     "end": 28.237,
-     "start": 28.1,
-     "text": "with"
-    },
-    {
-     "end": 28.375,
-     "start": 28.237,
-     "text": "its"
-    },
-    {
-     "end": 28.837,
-     "start": 28.375,
-     "text": "validity"
-    },
-    {
-     "end": 29.263,
-     "start": 28.837,
-     "text": "flag"
-    },
-    {
-     "end": 29.725,
-     "start": 29.263,
-     "text": "cleared"
-    },
-    {
-     "end": 30.15,
-     "start": 29.725,
-     "text": "stands"
-    },
-    {
-     "end": 30.3,
-     "start": 30.15,
-     "text": "in"
-    },
-    {
-     "end": 30.45,
-     "start": 30.3,
-     "text": "for"
-    },
-    {
-     "end": 31.275,
-     "start": 30.45,
-     "text": "one"
-    },
-    {
-     "end": 31.475,
-     "start": 31.275,
-     "text": ";"
-    },
-    {
-     "end": 31.825,
-     "start": 31.675,
-     "text": "its"
-    },
-    {
-     "end": 32.025,
-     "start": 31.825,
-     "text": "id"
-    },
-    {
-     "end": 32.412,
-     "start": 32.025,
-     "text": "hashes"
-    },
-    {
-     "end": 32.5,
-     "start": 32.412,
-     "text": "the"
-    },
-    {
-     "end": 32.825,
-     "start": 32.5,
-     "text": "body"
-    },
-    {
-     "end": 33.2,
-     "start": 32.825,
-     "text": "alone"
-    },
-    {
-     "end": 33.312,
-     "start": 33.2,
-     "text": "and"
-    },
-    {
-     "end": 33.45,
-     "start": 33.312,
-     "text": "is"
-    },
-    {
-     "end": 34.6,
-     "start": 33.45,
-     "text": "unchanged"
-    },
-    {
-     "end": 34.8,
-     "start": 34.6,
-     "text": "."
-    },
-    {
-     "end": 35.1,
-     "start": 35.0,
-     "text": "The"
-    },
-    {
-     "end": 35.425,
-     "start": 35.1,
-     "text": "live"
-    },
-    {
-     "end": 35.85,
-     "start": 35.425,
-     "text": "preprod"
-    },
-    {
-     "end": 36.275,
-     "start": 35.85,
-     "text": "service"
-    },
-    {
-     "end": 36.5,
-     "start": 36.275,
-     "text": "does"
-    },
-    {
-     "end": 36.763,
-     "start": 36.5,
-     "text": "not"
-    },
-    {
-     "end": 37.013,
-     "start": 36.763,
-     "text": "send"
-    },
-    {
-     "end": 37.1,
-     "start": 37.013,
-     "text": "the"
-    },
-    {
-     "end": 38.088,
-     "start": 37.1,
-     "text": "valid_contract"
-    },
-    {
-     "end": 38.362,
-     "start": 38.088,
-     "text": "field"
-    },
-    {
-     "end": 38.562,
-     "start": 38.362,
-     "text": "its"
-    },
-    {
-     "end": 39.013,
-     "start": 38.562,
-     "text": "published"
-    },
-    {
-     "end": 39.425,
-     "start": 39.013,
-     "text": "schema"
-    },
-    {
-     "end": 39.85,
-     "start": 39.425,
-     "text": "lists"
-    },
-    {
-     "end": 40.013,
-     "start": 39.85,
-     "text": "for"
-    },
-    {
-     "end": 41.037,
-     "start": 40.013,
-     "text": "tx_cbor"
-    },
-    {
-     "end": 41.188,
-     "start": 41.037,
-     "text": "and"
-    },
-    {
-     "end": 42.75,
-     "start": 41.188,
-     "text": "tx_info"
-    },
-    {
-     "end": 43.025,
-     "start": 42.75,
-     "text": ";"
-    },
-    {
-     "end": 43.713,
-     "start": 43.225,
-     "text": "validity"
-    },
-    {
-     "end": 44.05,
-     "start": 43.713,
-     "text": "comes"
-    },
-    {
-     "end": 44.188,
-     "start": 44.05,
-     "text": "from"
-    },
-    {
-     "end": 44.275,
-     "start": 44.188,
-     "text": "the"
-    },
-    {
-     "end": 45.075,
-     "start": 44.275,
-     "text": "transaction's"
-    },
-    {
-     "end": 45.325,
-     "start": 45.075,
-     "text": "own"
-    },
-    {
-     "end": 45.812,
-     "start": 45.325,
-     "text": "bytes"
-    },
-    {
-     "end": 45.95,
-     "start": 45.812,
-     "text": "and"
-    },
-    {
-     "end": 46.088,
-     "start": 45.95,
-     "text": "from"
-    },
-    {
-     "end": 46.175,
-     "start": 46.088,
-     "text": "the"
-    },
-    {
-     "end": 46.725,
-     "start": 46.175,
-     "text": "per-script"
-    },
-    {
-     "end": 47.125,
-     "start": 46.725,
-     "text": "flags"
-    },
-    {
-     "end": 47.575,
-     "start": 47.125,
+     "end": 22.15,
+     "start": 21.725,
      "text": "Koios"
     },
     {
-     "end": 47.812,
-     "start": 47.575,
-     "text": "does"
+     "end": 22.4,
+     "start": 22.15,
+     "text": "gives"
     },
     {
-     "end": 48.75,
-     "start": 47.812,
-     "text": "send"
+     "end": 22.6,
+     "start": 22.4,
+     "text": "no"
     },
     {
-     "end": 48.975,
-     "start": 48.75,
-     "text": "."
+     "end": 22.95,
+     "start": 22.6,
+     "text": "bytes"
     },
     {
-     "end": 49.225,
-     "start": 49.15,
-     "text": "A"
+     "end": 23.075,
+     "start": 22.95,
+     "text": "for"
     },
     {
-     "end": 49.55,
-     "start": 49.225,
-     "text": "body"
+     "end": 23.188,
+     "start": 23.075,
+     "text": "a"
     },
     {
-     "end": 49.75,
-     "start": 49.55,
-     "text": "cut"
+     "end": 23.6,
+     "start": 23.188,
+     "text": "native"
     },
     {
-     "end": 49.938,
-     "start": 49.75,
-     "text": "off"
+     "end": 23.675,
+     "start": 23.6,
+     "text": "("
     },
     {
-     "end": 50.037,
-     "start": 49.938,
-     "text": "on"
+     "end": 24.175,
+     "start": 23.675,
+     "text": "timelock"
     },
     {
-     "end": 50.125,
-     "start": 50.037,
-     "text": "the"
+     "end": 24.225,
+     "start": 24.175,
+     "text": ")"
     },
     {
-     "end": 50.675,
-     "start": 50.125,
-     "text": "connection"
+     "end": 24.675,
+     "start": 24.225,
+     "text": "reference"
     },
     {
-     "end": 50.838,
-     "start": 50.675,
-     "text": "is"
+     "end": 25.225,
+     "start": 24.675,
+     "text": "script"
     },
     {
-     "end": 51.463,
-     "start": 50.838,
-     "text": "retried"
-    },
-    {
-     "end": 51.6,
-     "start": 51.463,
-     "text": "and"
-    },
-    {
-     "end": 51.9,
-     "start": 51.6,
-     "text": "named"
-    },
-    {
-     "end": 52.05,
-     "start": 51.9,
-     "text": "in"
-    },
-    {
-     "end": 52.95,
-     "start": 52.05,
-     "text": "code"
-    },
-    {
-     "end": 53.175,
-     "start": 52.95,
+     "end": 25.325,
+     "start": 25.225,
      "text": ","
     },
     {
-     "end": 53.463,
-     "start": 53.35,
-     "text": "but"
-    },
-    {
-     "end": 53.55,
-     "start": 53.463,
-     "text": "the"
-    },
-    {
-     "end": 53.95,
-     "start": 53.55,
-     "text": "loopback"
-    },
-    {
-     "end": 54.275,
-     "start": 53.95,
-     "text": "server"
-    },
-    {
-     "end": 54.625,
-     "start": 54.275,
-     "text": "cannot"
-    },
-    {
-     "end": 55.0,
-     "start": 54.625,
-     "text": "produce"
-    },
-    {
-     "end": 55.725,
-     "start": 55.0,
-     "text": "one"
-    },
-    {
-     "end": 55.925,
-     "start": 55.725,
-     "text": ","
-    },
-    {
-     "end": 56.225,
-     "start": 56.125,
-     "text": "so"
-    },
-    {
-     "end": 56.513,
-     "start": 56.225,
+     "end": 25.625,
+     "start": 25.325,
      "text": "only"
     },
     {
-     "end": 56.6,
-     "start": 56.513,
-     "text": "the"
+     "end": 25.737,
+     "start": 25.625,
+     "text": "a"
     },
     {
-     "end": 57.0,
-     "start": 56.6,
-     "text": "client's"
+     "end": 26.175,
+     "start": 25.737,
+     "text": "summary"
     },
     {
-     "end": 57.362,
-     "start": 57.0,
-     "text": "mapping"
-    },
-    {
-     "end": 57.45,
-     "start": 57.362,
+     "end": 26.312,
+     "start": 26.175,
      "text": "of"
     },
     {
-     "end": 57.575,
-     "start": 57.45,
+     "end": 27.025,
+     "start": 26.312,
      "text": "it"
     },
     {
-     "end": 57.725,
-     "start": 57.575,
+     "end": 27.25,
+     "start": 27.025,
+     "text": ","
+    },
+    {
+     "end": 27.538,
+     "start": 27.45,
+     "text": "so"
+    },
+    {
+     "end": 27.625,
+     "start": 27.538,
+     "text": "an"
+    },
+    {
+     "end": 28.05,
+     "start": 27.625,
+     "text": "output"
+    },
+    {
+     "end": 28.425,
+     "start": 28.05,
+     "text": "holding"
+    },
+    {
+     "end": 28.675,
+     "start": 28.425,
+     "text": "one"
+    },
+    {
+     "end": 29.013,
+     "start": 28.675,
+     "text": "cannot"
+    },
+    {
+     "end": 29.15,
+     "start": 29.013,
+     "text": "be"
+    },
+    {
+     "end": 29.675,
+     "start": 29.15,
+     "text": "decoded"
+    },
+    {
+     "end": 30.75,
+     "start": 29.675,
+     "text": "exactly"
+    },
+    {
+     "end": 30.975,
+     "start": 30.75,
+     "text": ":"
+    },
+    {
+     "end": 31.25,
+     "start": 31.15,
+     "text": "the"
+    },
+    {
+     "end": 31.65,
+     "start": 31.25,
+     "text": "client"
+    },
+    {
+     "end": 32.275,
+     "start": 31.65,
+     "text": "refuses"
+    },
+    {
+     "end": 32.4,
+     "start": 32.275,
+     "text": "it"
+    },
+    {
+     "end": 32.6,
+     "start": 32.4,
+     "text": "by"
+    },
+    {
+     "end": 33.1,
+     "start": 32.6,
+     "text": "name"
+    },
+    {
+     "end": 33.213,
+     "start": 33.1,
+     "text": ","
+    },
+    {
+     "end": 33.375,
+     "start": 33.213,
+     "text": "as"
+    },
+    {
+     "end": 33.475,
+     "start": 33.375,
+     "text": "the"
+    },
+    {
+     "end": 33.975,
+     "start": 33.475,
+     "text": "recorded"
+    },
+    {
+     "end": 34.463,
+     "start": 33.975,
+     "text": "preprod"
+    },
+    {
+     "end": 34.862,
+     "start": 34.463,
+     "text": "answer"
+    },
+    {
+     "end": 34.938,
+     "start": 34.862,
+     "text": "in"
+    },
+    {
+     "end": 35.025,
+     "start": 34.938,
+     "text": "the"
+    },
+    {
+     "end": 35.275,
+     "start": 35.025,
+     "text": "set"
+    },
+    {
+     "end": 36.25,
+     "start": 35.275,
+     "text": "shows"
+    },
+    {
+     "end": 36.45,
+     "start": 36.25,
+     "text": "."
+    },
+    {
+     "end": 36.725,
+     "start": 36.65,
+     "text": "A"
+    },
+    {
+     "end": 37.1,
+     "start": 36.725,
+     "text": "caller"
+    },
+    {
+     "end": 37.275,
+     "start": 37.1,
+     "text": "that"
+    },
+    {
+     "end": 37.6,
+     "start": 37.275,
+     "text": "reads"
+    },
+    {
+     "end": 37.825,
+     "start": 37.6,
+     "text": "such"
+    },
+    {
+     "end": 38.362,
+     "start": 37.825,
+     "text": "outputs"
+    },
+    {
+     "end": 38.725,
+     "start": 38.362,
+     "text": "cannot"
+    },
+    {
+     "end": 38.95,
+     "start": 38.725,
+     "text": "use"
+    },
+    {
+     "end": 39.15,
+     "start": 38.95,
+     "text": "this"
+    },
+    {
+     "end": 39.5,
+     "start": 39.15,
+     "text": "client"
+    },
+    {
+     "end": 39.625,
+     "start": 39.5,
+     "text": "for"
+    },
+    {
+     "end": 40.375,
+     "start": 39.625,
+     "text": "them"
+    },
+    {
+     "end": 40.575,
+     "start": 40.375,
+     "text": "."
+    },
+    {
+     "end": 40.975,
+     "start": 40.775,
+     "text": "No"
+    },
+    {
+     "end": 41.638,
+     "start": 40.975,
+     "text": "transaction"
+    },
+    {
+     "end": 41.775,
+     "start": 41.638,
+     "text": "that"
+    },
+    {
+     "end": 42.088,
+     "start": 41.775,
+     "text": "failed"
+    },
+    {
+     "end": 42.2,
+     "start": 42.088,
+     "text": "its"
+    },
+    {
+     "end": 42.625,
+     "start": 42.2,
+     "text": "scripts"
+    },
+    {
+     "end": 42.8,
+     "start": 42.625,
+     "text": "was"
+    },
+    {
+     "end": 43.088,
+     "start": 42.8,
+     "text": "found"
+    },
+    {
+     "end": 43.225,
+     "start": 43.088,
+     "text": "on"
+    },
+    {
+     "end": 44.275,
+     "start": 43.225,
+     "text": "preprod"
+    },
+    {
+     "end": 44.5,
+     "start": 44.275,
+     "text": ","
+    },
+    {
+     "end": 44.875,
+     "start": 44.7,
+     "text": "so"
+    },
+    {
+     "end": 44.975,
+     "start": 44.875,
+     "text": "a"
+    },
+    {
+     "end": 45.5,
+     "start": 44.975,
+     "text": "recorded"
+    },
+    {
+     "end": 46.275,
+     "start": 45.5,
+     "text": "transaction"
+    },
+    {
+     "end": 46.412,
+     "start": 46.275,
+     "text": "with"
+    },
+    {
+     "end": 46.55,
+     "start": 46.412,
+     "text": "its"
+    },
+    {
+     "end": 47.013,
+     "start": 46.55,
+     "text": "validity"
+    },
+    {
+     "end": 47.438,
+     "start": 47.013,
+     "text": "flag"
+    },
+    {
+     "end": 47.9,
+     "start": 47.438,
+     "text": "cleared"
+    },
+    {
+     "end": 48.325,
+     "start": 47.9,
+     "text": "stands"
+    },
+    {
+     "end": 48.475,
+     "start": 48.325,
+     "text": "in"
+    },
+    {
+     "end": 48.625,
+     "start": 48.475,
+     "text": "for"
+    },
+    {
+     "end": 49.45,
+     "start": 48.625,
+     "text": "one"
+    },
+    {
+     "end": 49.65,
+     "start": 49.45,
+     "text": ";"
+    },
+    {
+     "end": 50.0,
+     "start": 49.85,
+     "text": "its"
+    },
+    {
+     "end": 50.2,
+     "start": 50.0,
+     "text": "id"
+    },
+    {
+     "end": 50.588,
+     "start": 50.2,
+     "text": "hashes"
+    },
+    {
+     "end": 50.675,
+     "start": 50.588,
+     "text": "the"
+    },
+    {
+     "end": 51.0,
+     "start": 50.675,
+     "text": "body"
+    },
+    {
+     "end": 51.375,
+     "start": 51.0,
+     "text": "alone"
+    },
+    {
+     "end": 51.487,
+     "start": 51.375,
+     "text": "and"
+    },
+    {
+     "end": 51.625,
+     "start": 51.487,
      "text": "is"
     },
     {
-     "end": 58.65,
-     "start": 57.725,
+     "end": 52.775,
+     "start": 51.625,
+     "text": "unchanged"
+    },
+    {
+     "end": 52.975,
+     "start": 52.775,
+     "text": "."
+    },
+    {
+     "end": 53.275,
+     "start": 53.175,
+     "text": "The"
+    },
+    {
+     "end": 53.6,
+     "start": 53.275,
+     "text": "live"
+    },
+    {
+     "end": 54.025,
+     "start": 53.6,
+     "text": "preprod"
+    },
+    {
+     "end": 54.45,
+     "start": 54.025,
+     "text": "service"
+    },
+    {
+     "end": 54.675,
+     "start": 54.45,
+     "text": "does"
+    },
+    {
+     "end": 54.938,
+     "start": 54.675,
+     "text": "not"
+    },
+    {
+     "end": 55.188,
+     "start": 54.938,
+     "text": "send"
+    },
+    {
+     "end": 55.275,
+     "start": 55.188,
+     "text": "the"
+    },
+    {
+     "end": 56.263,
+     "start": 55.275,
+     "text": "valid_contract"
+    },
+    {
+     "end": 56.537,
+     "start": 56.263,
+     "text": "field"
+    },
+    {
+     "end": 56.737,
+     "start": 56.537,
+     "text": "its"
+    },
+    {
+     "end": 57.188,
+     "start": 56.737,
+     "text": "published"
+    },
+    {
+     "end": 57.6,
+     "start": 57.188,
+     "text": "schema"
+    },
+    {
+     "end": 58.025,
+     "start": 57.6,
+     "text": "lists"
+    },
+    {
+     "end": 58.188,
+     "start": 58.025,
+     "text": "for"
+    },
+    {
+     "end": 59.213,
+     "start": 58.188,
+     "text": "tx_cbor"
+    },
+    {
+     "end": 59.362,
+     "start": 59.213,
+     "text": "and"
+    },
+    {
+     "end": 60.925,
+     "start": 59.362,
+     "text": "tx_info"
+    },
+    {
+     "end": 61.2,
+     "start": 60.925,
+     "text": ";"
+    },
+    {
+     "end": 61.888,
+     "start": 61.4,
+     "text": "validity"
+    },
+    {
+     "end": 62.225,
+     "start": 61.888,
+     "text": "comes"
+    },
+    {
+     "end": 62.362,
+     "start": 62.225,
+     "text": "from"
+    },
+    {
+     "end": 62.45,
+     "start": 62.362,
+     "text": "the"
+    },
+    {
+     "end": 63.25,
+     "start": 62.45,
+     "text": "transaction's"
+    },
+    {
+     "end": 63.5,
+     "start": 63.25,
+     "text": "own"
+    },
+    {
+     "end": 63.987,
+     "start": 63.5,
+     "text": "bytes"
+    },
+    {
+     "end": 64.125,
+     "start": 63.987,
+     "text": "and"
+    },
+    {
+     "end": 64.262,
+     "start": 64.125,
+     "text": "from"
+    },
+    {
+     "end": 64.35,
+     "start": 64.262,
+     "text": "the"
+    },
+    {
+     "end": 64.9,
+     "start": 64.35,
+     "text": "per-script"
+    },
+    {
+     "end": 65.3,
+     "start": 64.9,
+     "text": "flags"
+    },
+    {
+     "end": 65.75,
+     "start": 65.3,
+     "text": "Koios"
+    },
+    {
+     "end": 65.988,
+     "start": 65.75,
+     "text": "does"
+    },
+    {
+     "end": 66.925,
+     "start": 65.988,
+     "text": "send"
+    },
+    {
+     "end": 67.15,
+     "start": 66.925,
+     "text": "."
+    },
+    {
+     "end": 67.4,
+     "start": 67.325,
+     "text": "A"
+    },
+    {
+     "end": 67.725,
+     "start": 67.4,
+     "text": "body"
+    },
+    {
+     "end": 67.925,
+     "start": 67.725,
+     "text": "cut"
+    },
+    {
+     "end": 68.113,
+     "start": 67.925,
+     "text": "off"
+    },
+    {
+     "end": 68.213,
+     "start": 68.113,
+     "text": "on"
+    },
+    {
+     "end": 68.3,
+     "start": 68.213,
+     "text": "the"
+    },
+    {
+     "end": 68.85,
+     "start": 68.3,
+     "text": "connection"
+    },
+    {
+     "end": 69.012,
+     "start": 68.85,
+     "text": "is"
+    },
+    {
+     "end": 69.637,
+     "start": 69.012,
+     "text": "retried"
+    },
+    {
+     "end": 69.775,
+     "start": 69.637,
+     "text": "and"
+    },
+    {
+     "end": 70.075,
+     "start": 69.775,
+     "text": "named"
+    },
+    {
+     "end": 70.225,
+     "start": 70.075,
+     "text": "in"
+    },
+    {
+     "end": 71.125,
+     "start": 70.225,
+     "text": "code"
+    },
+    {
+     "end": 71.35,
+     "start": 71.125,
+     "text": ","
+    },
+    {
+     "end": 71.637,
+     "start": 71.525,
+     "text": "but"
+    },
+    {
+     "end": 71.725,
+     "start": 71.637,
+     "text": "the"
+    },
+    {
+     "end": 72.125,
+     "start": 71.725,
+     "text": "loopback"
+    },
+    {
+     "end": 72.45,
+     "start": 72.125,
+     "text": "server"
+    },
+    {
+     "end": 72.8,
+     "start": 72.45,
+     "text": "cannot"
+    },
+    {
+     "end": 73.175,
+     "start": 72.8,
+     "text": "produce"
+    },
+    {
+     "end": 73.9,
+     "start": 73.175,
+     "text": "one"
+    },
+    {
+     "end": 74.1,
+     "start": 73.9,
+     "text": ","
+    },
+    {
+     "end": 74.4,
+     "start": 74.3,
+     "text": "so"
+    },
+    {
+     "end": 74.688,
+     "start": 74.4,
+     "text": "only"
+    },
+    {
+     "end": 74.775,
+     "start": 74.688,
+     "text": "the"
+    },
+    {
+     "end": 75.175,
+     "start": 74.775,
+     "text": "client's"
+    },
+    {
+     "end": 75.537,
+     "start": 75.175,
+     "text": "mapping"
+    },
+    {
+     "end": 75.625,
+     "start": 75.537,
+     "text": "of"
+    },
+    {
+     "end": 75.75,
+     "start": 75.625,
+     "text": "it"
+    },
+    {
+     "end": 75.9,
+     "start": 75.75,
+     "text": "is"
+    },
+    {
+     "end": 76.825,
+     "start": 75.9,
      "text": "tested"
     },
     {
-     "end": 58.85,
-     "start": 58.65,
+     "end": 77.025,
+     "start": 76.825,
      "text": "."
     }
    ]
@@ -188251,17 +189111,17 @@
    ]
   },
   "docs-offchain-koios-client/why-a-call-stops-02": {
-   "audio_sha256": "f4f8f7ee37888343fc5b6d128f9e778a096bf37d0f1b59191cf55ad3a6af30c4",
-   "characters": 290,
-   "cost": 0.0001798,
-   "duration": 20.45,
+   "audio_sha256": "0edcda04f73ed71560a07edcf6a2cce9fd85b7450226f2514f93e05c651d4a97",
+   "characters": 410,
+   "cost": 0.0002542,
+   "duration": 28.45,
    "index": 2,
-   "key": "8293cb0047a2de81624887326528da6ba609b8cfba9cfb4b3ca76e09efa29681",
+   "key": "427f7a0bc3dbe93e9024bf5944512bbbb623eccdb243d5abcbe3f65433f69e88",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,
    "section": "why-a-call-stops",
-   "sent_text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included.",
-   "text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included.",
+   "sent_text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included. That ceiling bounds the elapsed time: no retry starts past it, and each attempt's timeout is cut to what remains of it.",
+   "text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included. That ceiling bounds the elapsed time: no retry starts past it, and each attempt's timeout is cut to what remains of it.",
    "words": [
     {
      "end": 0.3,
@@ -188531,6 +189391,131 @@
     {
      "end": 20.45,
      "start": 20.25,
+     "text": "."
+    },
+    {
+     "end": 20.888,
+     "start": 20.65,
+     "text": "That"
+    },
+    {
+     "end": 21.3,
+     "start": 20.888,
+     "text": "ceiling"
+    },
+    {
+     "end": 21.775,
+     "start": 21.3,
+     "text": "bounds"
+    },
+    {
+     "end": 21.925,
+     "start": 21.775,
+     "text": "the"
+    },
+    {
+     "end": 22.35,
+     "start": 21.925,
+     "text": "elapsed"
+    },
+    {
+     "end": 22.875,
+     "start": 22.35,
+     "text": "time"
+    },
+    {
+     "end": 22.987,
+     "start": 22.875,
+     "text": ":"
+    },
+    {
+     "end": 23.225,
+     "start": 22.987,
+     "text": "no"
+    },
+    {
+     "end": 23.725,
+     "start": 23.225,
+     "text": "retry"
+    },
+    {
+     "end": 24.112,
+     "start": 23.725,
+     "text": "starts"
+    },
+    {
+     "end": 24.575,
+     "start": 24.112,
+     "text": "past"
+    },
+    {
+     "end": 24.775,
+     "start": 24.575,
+     "text": "it"
+    },
+    {
+     "end": 24.85,
+     "start": 24.775,
+     "text": ","
+    },
+    {
+     "end": 24.987,
+     "start": 24.85,
+     "text": "and"
+    },
+    {
+     "end": 25.225,
+     "start": 24.987,
+     "text": "each"
+    },
+    {
+     "end": 25.663,
+     "start": 25.225,
+     "text": "attempt's"
+    },
+    {
+     "end": 26.125,
+     "start": 25.663,
+     "text": "timeout"
+    },
+    {
+     "end": 26.288,
+     "start": 26.125,
+     "text": "is"
+    },
+    {
+     "end": 26.575,
+     "start": 26.288,
+     "text": "cut"
+    },
+    {
+     "end": 26.7,
+     "start": 26.575,
+     "text": "to"
+    },
+    {
+     "end": 26.85,
+     "start": 26.7,
+     "text": "what"
+    },
+    {
+     "end": 27.312,
+     "start": 26.85,
+     "text": "remains"
+    },
+    {
+     "end": 27.425,
+     "start": 27.312,
+     "text": "of"
+    },
+    {
+     "end": 28.225,
+     "start": 27.425,
+     "text": "it"
+    },
+    {
+     "end": 28.45,
+     "start": 28.225,
      "text": "."
     }
    ]
