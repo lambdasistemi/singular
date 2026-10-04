@@ -4528,8 +4528,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 54 modules in three kinds: 41 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "0b519f9ddbb6"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 57 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "00714ae3c2c5"
    },
    {
     "index": 3,
@@ -4619,302 +4619,323 @@
     "index": 15,
     "name": "docs-offchain-api-reference/what-this-reference-contains-15",
     "pause_ms": 300,
-    "text": "Singular.Registry.AssetName — source",
-    "v": "1be78783fa20"
+    "text": "Singular.Provider.Koios.Client — source",
+    "v": "96f0ae611f2d"
    },
    {
     "index": 16,
     "name": "docs-offchain-api-reference/what-this-reference-contains-16",
     "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint — source",
-    "v": "94c3fb1cca1e"
+    "text": "Singular.Provider.Koios.Recorded — source",
+    "v": "bb8fba2038c0"
    },
    {
     "index": 17,
     "name": "docs-offchain-api-reference/what-this-reference-contains-17",
     "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Load — source",
-    "v": "afa8f4e51046"
+    "text": "Singular.Provider.Koios.Wire — source",
+    "v": "28ebb46c4be7"
    },
    {
     "index": 18,
     "name": "docs-offchain-api-reference/what-this-reference-contains-18",
     "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Params — source",
-    "v": "33e91d641405"
+    "text": "Singular.Registry.AssetName — source",
+    "v": "4d4c9460e6fa"
    },
    {
     "index": 19,
     "name": "docs-offchain-api-reference/what-this-reference-contains-19",
     "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Schema — source",
-    "v": "6d3e9a0cdde1"
+    "text": "Singular.Registry.Blueprint — source",
+    "v": "d999cfdc88c5"
    },
    {
     "index": 20,
     "name": "docs-offchain-api-reference/what-this-reference-contains-20",
     "pause_ms": 300,
-    "text": "Singular.Registry.Candidate — source",
-    "v": "efe50cb9520f"
+    "text": "Singular.Registry.Blueprint.Load — source",
+    "v": "43b172a2adfe"
    },
    {
     "index": 21,
     "name": "docs-offchain-api-reference/what-this-reference-contains-21",
     "pause_ms": 300,
-    "text": "Singular.Registry.Config — source",
-    "v": "0853bc76a0d7"
+    "text": "Singular.Registry.Blueprint.Params — source",
+    "v": "b0c33c4ffb66"
    },
    {
     "index": 22,
     "name": "docs-offchain-api-reference/what-this-reference-contains-22",
     "pause_ms": 300,
-    "text": "Singular.Registry.Config.Application — source",
-    "v": "e9c631bd4f4e"
+    "text": "Singular.Registry.Blueprint.Schema — source",
+    "v": "598192de18e0"
    },
    {
     "index": 23,
     "name": "docs-offchain-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
-    "text": "Singular.Registry.Deployment — source",
-    "v": "d0f139ae1476"
+    "text": "Singular.Registry.Candidate — source",
+    "v": "5db66e84086b"
    },
    {
     "index": 24,
     "name": "docs-offchain-api-reference/what-this-reference-contains-24",
     "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Attach — source",
-    "v": "b7579e694b8f"
+    "text": "Singular.Registry.Config — source",
+    "v": "52b5b0229045"
    },
    {
     "index": 25,
     "name": "docs-offchain-api-reference/what-this-reference-contains-25",
     "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Manifest — source",
-    "v": "9de9c03b7a44"
+    "text": "Singular.Registry.Config.Application — source",
+    "v": "dfb8523954cd"
    },
    {
     "index": 26,
     "name": "docs-offchain-api-reference/what-this-reference-contains-26",
     "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Mirror — source",
-    "v": "b6d11c4bad24"
+    "text": "Singular.Registry.Deployment — source",
+    "v": "8e6f8e25e3b0"
    },
    {
     "index": 27,
     "name": "docs-offchain-api-reference/what-this-reference-contains-27",
     "pause_ms": 300,
-    "text": "Singular.Registry.Driver — source",
-    "v": "c8d6762f7964"
+    "text": "Singular.Registry.Deployment.Attach — source",
+    "v": "5875f3c569ff"
    },
    {
     "index": 28,
     "name": "docs-offchain-api-reference/what-this-reference-contains-28",
     "pause_ms": 300,
-    "text": "Singular.Registry.Ledger — source",
-    "v": "5bd187e60870"
+    "text": "Singular.Registry.Deployment.Manifest — source",
+    "v": "1b5cccb07864"
    },
    {
     "index": 29,
     "name": "docs-offchain-api-reference/what-this-reference-contains-29",
     "pause_ms": 300,
-    "text": "Singular.Registry.Lifecycle — source",
-    "v": "95259c7ef749"
+    "text": "Singular.Registry.Deployment.Mirror — source",
+    "v": "4296c7d53104"
    },
    {
     "index": 30,
     "name": "docs-offchain-api-reference/what-this-reference-contains-30",
     "pause_ms": 300,
-    "text": "Singular.Registry.Node — source",
-    "v": "8754e0cdd0c1"
+    "text": "Singular.Registry.Driver — source",
+    "v": "680b29f866ce"
    },
    {
     "index": 31,
     "name": "docs-offchain-api-reference/what-this-reference-contains-31",
     "pause_ms": 300,
-    "text": "Singular.Registry.Proof — source",
-    "v": "1734e0057cdc"
+    "text": "Singular.Registry.Ledger — source",
+    "v": "4c30136a025a"
    },
    {
     "index": 32,
     "name": "docs-offchain-api-reference/what-this-reference-contains-32",
     "pause_ms": 300,
-    "text": "Singular.Registry.Provider — source",
-    "v": "af83b3bc03ef"
+    "text": "Singular.Registry.Lifecycle — source",
+    "v": "51e3838e7684"
    },
    {
     "index": 33,
     "name": "docs-offchain-api-reference/what-this-reference-contains-33",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie — source",
-    "v": "2bb417d76e47"
+    "text": "Singular.Registry.Node — source",
+    "v": "93111d345d29"
    },
    {
     "index": 34,
     "name": "docs-offchain-api-reference/what-this-reference-contains-34",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie.Pure — source",
-    "v": "f69ff58d01a3"
+    "text": "Singular.Registry.Proof — source",
+    "v": "121591907dad"
    },
    {
     "index": 35,
     "name": "docs-offchain-api-reference/what-this-reference-contains-35",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie.PureManager — source",
-    "v": "37b5a74dc5b7"
+    "text": "Singular.Registry.Provider — source",
+    "v": "7e9abf272d62"
    },
    {
     "index": 36,
     "name": "docs-offchain-api-reference/what-this-reference-contains-36",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Boot — source",
-    "v": "dbca322b05df"
+    "text": "Singular.Registry.Trie — source",
+    "v": "26ae84b82299"
    },
    {
     "index": 37,
     "name": "docs-offchain-api-reference/what-this-reference-contains-37",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
-    "v": "ba13b49c06ca"
+    "text": "Singular.Registry.Trie.Pure — source",
+    "v": "bbc895c82a1b"
    },
    {
     "index": 38,
     "name": "docs-offchain-api-reference/what-this-reference-contains-38",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Edges — source",
-    "v": "12f58baed189"
+    "text": "Singular.Registry.Trie.PureManager — source",
+    "v": "bc8e3eabaae5"
    },
    {
     "index": 39,
     "name": "docs-offchain-api-reference/what-this-reference-contains-39",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal — source",
-    "v": "0b85f8debd2f"
+    "text": "Singular.Registry.TxBuilder.Boot — source",
+    "v": "0df9602ffa5c"
    },
    {
     "index": 40,
     "name": "docs-offchain-api-reference/what-this-reference-contains-40",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
-    "v": "d3ca165522a6"
+    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
+    "v": "03d53c65656b"
    },
    {
     "index": 41,
     "name": "docs-offchain-api-reference/what-this-reference-contains-41",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
-    "v": "ac3e7735ff1e"
+    "text": "Singular.Registry.TxBuilder.Edges — source",
+    "v": "52e9bb079293"
    },
    {
     "index": 42,
     "name": "docs-offchain-api-reference/what-this-reference-contains-42",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
-    "v": "1a44ff824df2"
+    "text": "Singular.Registry.TxBuilder.Internal — source",
+    "v": "4d7454069d40"
    },
    {
     "index": 43,
     "name": "docs-offchain-api-reference/what-this-reference-contains-43",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Register — source",
-    "v": "e4fbec8347a7"
+    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
+    "v": "d477e0a47d3f"
    },
    {
     "index": 44,
     "name": "docs-offchain-api-reference/what-this-reference-contains-44",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Reject — source",
-    "v": "54dbb628e5e1"
+    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
+    "v": "a5207aadee1e"
    },
    {
     "index": 45,
     "name": "docs-offchain-api-reference/what-this-reference-contains-45",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Request — source",
-    "v": "7e9a5d02c123"
+    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
+    "v": "f3c33847f5bc"
    },
    {
     "index": 46,
     "name": "docs-offchain-api-reference/what-this-reference-contains-46",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Retract — source",
-    "v": "6b1af0e740c9"
+    "text": "Singular.Registry.TxBuilder.Register — source",
+    "v": "8b58712b0969"
    },
    {
     "index": 47,
     "name": "docs-offchain-api-reference/what-this-reference-contains-47",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update — source",
-    "v": "45e32c9a423f"
+    "text": "Singular.Registry.TxBuilder.Reject — source",
+    "v": "afa95c6110f5"
    },
    {
     "index": 48,
     "name": "docs-offchain-api-reference/what-this-reference-contains-48",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Build — source",
-    "v": "74b858f8ebc5"
+    "text": "Singular.Registry.TxBuilder.Request — source",
+    "v": "af6db6af0a9c"
    },
    {
     "index": 49,
     "name": "docs-offchain-api-reference/what-this-reference-contains-49",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Context — source",
-    "v": "bad93de5d147"
+    "text": "Singular.Registry.TxBuilder.Retract — source",
+    "v": "7f36e9a5c4ee"
    },
    {
     "index": 50,
     "name": "docs-offchain-api-reference/what-this-reference-contains-50",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
-    "v": "eb9d21b2fd8d"
+    "text": "Singular.Registry.TxBuilder.Update — source",
+    "v": "1a4d5b69418a"
    },
    {
     "index": 51,
     "name": "docs-offchain-api-reference/what-this-reference-contains-51",
     "pause_ms": 300,
-    "text": "Singular.Registry.Types — source",
-    "v": "22154e905b3b"
+    "text": "Singular.Registry.TxBuilder.Update.Build — source",
+    "v": "9c995d5699f1"
    },
    {
     "index": 52,
     "name": "docs-offchain-api-reference/what-this-reference-contains-52",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Primitive — source",
-    "v": "e28eac65d957"
+    "text": "Singular.Registry.TxBuilder.Update.Context — source",
+    "v": "a272f0f98620"
    },
    {
     "index": 53,
     "name": "docs-offchain-api-reference/what-this-reference-contains-53",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Proof — source",
-    "v": "6ac14715485e"
+    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
+    "v": "82111e4b5ec6"
    },
    {
     "index": 54,
     "name": "docs-offchain-api-reference/what-this-reference-contains-54",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Redeemer — source",
-    "v": "a9769e421c16"
+    "text": "Singular.Registry.Types — source",
+    "v": "2ea7d9e6c38c"
    },
    {
     "index": 55,
     "name": "docs-offchain-api-reference/what-this-reference-contains-55",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Request — source",
-    "v": "b1b93d5c6a89"
+    "text": "Singular.Registry.Wire.Primitive — source",
+    "v": "d33836fd7d09"
    },
    {
     "index": 56,
     "name": "docs-offchain-api-reference/what-this-reference-contains-56",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.State — source",
-    "v": "0fe4f51e0003"
+    "text": "Singular.Registry.Wire.Proof — source",
+    "v": "d24258a3450d"
    },
    {
     "index": 57,
     "name": "docs-offchain-api-reference/what-this-reference-contains-57",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Redeemer — source",
+    "v": "6e715d91a3e1"
+   },
+   {
+    "index": 58,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-58",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.Request — source",
+    "v": "79d91005be99"
+   },
+   {
+    "index": 59,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-59",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.State — source",
+    "v": "dfcd62f88716"
+   },
+   {
+    "index": 60,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-60",
     "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
-    "v": "d30d0f9ba9c4"
+    "v": "ec4adb3c1a04"
    }
   ]
  },
@@ -5678,6 +5699,236 @@
     "pause_ms": 400,
     "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
     "v": "e98918416653"
+   }
+  ]
+ },
+ "docs/offchain-koios-client.md": {
+  "decisions": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/decisions-00",
+    "pause_ms": 500,
+    "text": "Decisions.",
+    "v": "7676b40896a7"
+   }
+  ],
+  "how-pages-are-read": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/how-pages-are-read-00",
+    "pause_ms": 500,
+    "text": "How pages are read.",
+    "v": "c1f10da976cd"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/how-pages-are-read-01",
+    "pause_ms": 400,
+    "text": "The listing calls are read page by page, each page asking for an exact row total, in a stable order: output reference for the output listings, block height then transaction id for the asset history.",
+    "v": "437cbe418ee2"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/how-pages-are-read-02",
+    "pause_ms": 400,
+    "text": "The client stops when the rows read reach the total, or at the first page shorter than the limit, and then requires the rows read to equal the total. Each of these refuses the whole call as an incomplete page, and never returns a shorter answer as a whole one: a body cut off or not one JSON document, a page with more rows than the limit, a range that does not name the rows at the offset asked for, an answer with no exact total, a total that changes between pages, fewer rows than the total, and more pages than the configured ceiling. The public preprod service answers an exact total on every listing call when asked for one.",
+    "v": "f390705dd700"
+   }
+  ],
+  "recorded-answers-and-the-recorder": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/recorded-answers-and-the-recorder-00",
+    "pause_ms": 500,
+    "text": "Recorded answers and the recorder.",
+    "v": "9100a4f8aa4b"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/recorded-answers-and-the-recorder-01",
+    "pause_ms": 400,
+    "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. Headers are not recorded, so a token never reaches a fixture.",
+    "v": "5a6f900700f6"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/recorded-answers-and-the-recorder-02",
+    "pause_ms": 400,
+    "text": "The schema revision is the info.version of the koiosapi.yaml document Koios serves at the origin of the base URL. Loading a fixture directory refuses a fixture whose body does not match its hash, fixtures recorded under different schema revisions, two fixtures for one request, and an empty directory.",
+    "v": "24dacc91c1f1"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-koios-client/recorded-answers-and-the-recorder-03",
+    "pause_ms": 400,
+    "text": "The preprod set under offchain/test/fixtures/koios/preprod/ is recorded by just koios-fixtures from https://preprod.koios.rest/api/v1 with read calls only. The tests replay it through the recorded transport and through the HTTP transport pointed at a loopback server serving the same answers, and both must decode identically. A loopback server in the test suite also produces rate limiting, slow answers, cut-off and missing pages, server errors, refused tokens and refused submissions on demand, and the tests count the attempts it receives.",
+    "v": "a54158bffba5"
+   }
+  ],
+  "the-koios-client": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/the-koios-client-00",
+    "pause_ms": 500,
+    "text": "The Koios client.",
+    "v": "31c222d5ae4f"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/the-koios-client-01",
+    "pause_ms": 400,
+    "text": "A provider author building the Koios instance of the ledger provider wants one Koios client that the recorded answers in continuous integration and the live public service both go through, so that a test that passes on a recording says something about the live service. A user on a busy public endpoint wants every command to finish or to stop with a named reason, never to continue on half an answer presented as a whole one. This page shows how the client is put together, what each call returns, how pages are read, why a call stops, and what the recorded evidence does and does not establish.",
+    "v": "5af8749bd67d"
+   }
+  ],
+  "the-modules": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/the-modules-00",
+    "pause_ms": 500,
+    "text": "The modules.",
+    "v": "7048d504af62"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/the-modules-01",
+    "pause_ms": 400,
+    "text": "The client is three modules of the public off-chain library and one public sublibrary, koios-http, that holds everything touching the network. The main library gains no network dependency.",
+    "v": "3ed23b69e03c"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/the-modules-02",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Wire describes one request per Koios call and decodes each answer into Conway ledger types. It performs no request.",
+    "v": "459d57a4cb13"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-koios-client/the-modules-03",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Client defines the transport — one request in, one raw answer and its attempt count out — and builds every typed call on it: it pages, classifies the status and decodes, once, for every transport.",
+    "v": "517a58f1b05d"
+   },
+   {
+    "index": 4,
+    "name": "docs-offchain-koios-client/the-modules-04",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Recorded answers from a fixture directory. A request with no fixture is named as not recorded.",
+    "v": "d2e5ea0d309e"
+   },
+   {
+    "index": 5,
+    "name": "docs-offchain-koios-client/the-modules-05",
+    "pause_ms": 300,
+    "text": "The HTTP transport, Singular.Provider.Koios.Http in the koios-http sublibrary (source), sends requests to a base URL with an optional bearer token, a timeout on every attempt and bounded retries.",
+    "v": "f9330ffbbb6a"
+   },
+   {
+    "index": 6,
+    "name": "docs-offchain-koios-client/the-modules-06",
+    "pause_ms": 300,
+    "text": "The recorder and probe, Singular.Provider.Koios.Recorder in the same sublibrary (source), run read requests named on the command line and either print their decoded facts or write every raw answer as a fixture.",
+    "v": "ec4d787d5dc3"
+   },
+   {
+    "index": 7,
+    "name": "docs-offchain-koios-client/the-modules-07",
+    "pause_ms": 400,
+    "text": "The two koios-http modules are documented here by their source, because the generated reference covers the main library only.",
+    "v": "3ecb100776b7"
+   }
+  ],
+  "the-story-this-serves": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/the-story-this-serves-00",
+    "pause_ms": 500,
+    "text": "The story this serves.",
+    "v": "1869476eef48"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/the-story-this-serves-01",
+    "pause_ms": 400,
+    "text": "As a provider author, I import a Koios client that knows nothing of registries or of the ledger-provider interface, and I choose its transport: recorded answers for the test suite, or the live HTTP service. Both hand the client the same raw answers — status, headers and body — so the same code pages and decodes both, and a fixture and a live answer cannot be read two different ways.",
+    "v": "73d7ce459a10"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/the-story-this-serves-02",
+    "pause_ms": 400,
+    "text": "As a user with a Koios account, I give the client my bearer token in a file. The token never appears on the command line, in a failure, in a log or in a recorded fixture.",
+    "v": "e07fddd111d1"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-koios-client/the-story-this-serves-03",
+    "pause_ms": 400,
+    "text": "As a user on a busy endpoint, I see a call either answer or stop with one named reason: unreachable, timed out, rate limited, server failing, refused by the server, an incomplete page, an unknown fact, or an answer that does not decode at a named position. An address with no outputs is an empty answer, not a failure.",
+    "v": "b948083aeb1b"
+   }
+  ],
+  "what-each-call-returns": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/what-each-call-returns-00",
+    "pause_ms": 500,
+    "text": "What each call returns.",
+    "v": "53a3cf6b9fe5"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/what-each-call-returns-01",
+    "pause_ms": 400,
+    "text": "Koios reports a datum hash for an output that carries an inline datum too; the inline datum wins. A reference script must hash to the script hash Koios names. A transaction that failed its scripts is returned with its validity false, never dropped. The order of asset_txs makes pages stable; it is not the order in which the asset was passed on, because Koios gives no position within a block and a transaction that included an asset need not have spent it.",
+    "v": "f90d07192ea2"
+   }
+  ],
+  "what-the-evidence-establishes-and-what-it-does-not": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-00",
+    "pause_ms": 500,
+    "text": "What the evidence establishes, and what it does not.",
+    "v": "1826a2abaae5"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-01",
+    "pause_ms": 400,
+    "text": "Each recorded output is compared with the output at the same index of its producing transaction, decoded by the ledger from that transaction's recorded bytes, and the set of output references is compared with the producer's — the raw recorded rows for a listing, the transaction's own inputs, reference inputs and outputs for tx_info — so a decoder that changes, drops or adds an output fails. The protocol parameters decoded from epoch_params must equal the ledger's own reading of the node-form parameters Koios serves for the same epoch.",
+    "v": "0b51d02ee494"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-02",
+    "pause_ms": 400,
+    "text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Native and Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
+    "v": "16adda2ec864"
+   }
+  ],
+  "why-a-call-stops": [
+   {
+    "index": 0,
+    "name": "docs-offchain-koios-client/why-a-call-stops-00",
+    "pause_ms": 500,
+    "text": "Why a call stops.",
+    "v": "90b8ad555682"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-koios-client/why-a-call-stops-01",
+    "pause_ms": 400,
+    "text": "Every failure names the call, the attempts the transport made and the evidence. Retries live in the HTTP transport, so a recorded replay never sleeps. A submission is retried only when no answer arrived — unreachable or timed out — because resending the same signed bytes cannot apply them twice; a 400 at submission is the server's refusal of that transaction and is returned as its text after one attempt.",
+    "v": "9852668d9df2"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-koios-client/why-a-call-stops-02",
+    "pause_ms": 400,
+    "text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included.",
+    "v": "f4f8f7ee3788"
    }
   ]
  },
