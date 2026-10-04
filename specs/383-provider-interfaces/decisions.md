@@ -39,13 +39,10 @@ accounts for every required call and the current gaps.
 
 ```mermaid
 flowchart TD
-  CLI[Packaged singular commands] -->|Koios-shaped requests| Facade[CI provider facade]
-  Facade -->|Independent ledger reads and submission| Devnet[Private development network]
-  Devnet -->|Raw ledger results| Facade
-  Facade -->|Stores CBOR and resolved dependencies| Archive[Test history archive]
-  Archive -->|Serves generic history| Facade
-  CLI -->|Writes results for checking| Receipts[Terminal receipts]
-  Checker[Journey checker] -->|Compares observed outcomes| Receipts
+  Devnet[Private devnet] -->|Raw ledger data| Facade[CI provider and archive]
+  Facade -->|Koios-shaped facts| CLI[Packaged singular]
+  CLI -->|Observed results| Receipts[Terminal receipts]
+  Receipts -->|Evidence| Checker[Journey checker]
 ```
 
 The facade must never read Terminal receipts. A real devnet supplies outputs,

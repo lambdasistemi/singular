@@ -41,6 +41,10 @@
       "pause": 400
     },
     {
+      "text": "Local time conversion also consumes the pinned genesis and era history. Those reviewed network files are separate inputs to the common service.",
+      "pause": 400
+    },
+    {
       "text": "Move shared Provider responsibilities out of the node-internal component. Use one ledger-provider capability module, one evidence/verdict module, one generic history representation, common local evaluator and time modules, the recorded Koios adapter, and a pure State fixture adapter. Replace CLI.Node composition with terminal composition. Keep generic wallet/signing, transaction builders, application proofs and receipt durability; move them to their stable owners rather than retaining a node namespace as a compatibility shim.",
       "pause": 400
     },
@@ -121,6 +125,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "672db4fb0743f51ad795d80db82ba7363e0ba09758b75f4ff1659c5721b98ff3"
+    "sha256": "fe82adf9660ac134e231ac3e9566b26aee472c2672997670b63ebf2f637514d6"
   }
 }

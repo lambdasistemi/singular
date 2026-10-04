@@ -41,6 +41,10 @@
       "pause": 400
     },
     {
+      "text": "The diagram follows ledger facts into local computation. Signed transactions travel through the provider to the ledger, which accepts or refuses them.",
+      "pause": 400
+    },
+    {
       "text": "History contains full transaction CBOR and resolved spent outputs, with reference-output dependencies available where interpretation needs them. It is reconstruction material, never Evidenced or Verified history. The existing local application-root check remains mandatory; agreement with a provider's state output does not authenticate either side against the ledger.",
       "pause": 400
     }
@@ -105,6 +109,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "0df04b092c2ef3cfa75cb001ea9e662281c2f38ffd97ea327a59869ad0ae2b82"
+    "sha256": "f41bea269073cf1d0c312b1516d5ea9f953af369d817b6168dab2069da4f5202"
   }
 }

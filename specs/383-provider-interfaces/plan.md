@@ -85,15 +85,14 @@ so that its bounded behavior can also run in a pure state fixture.
 
 ```mermaid
 flowchart TD
-  Command[Registry command] -->|Acquires network session| Facts[Fact collection and verdict receipts]
-  Facts -->|Resolved inputs and parameters| Evaluate[Local ledger evaluator]
-  Pins[Pinned genesis and era history] -->|Supplies network time context| Time[Local time conversion]
-  Evaluate -->|Measured units| Build[Existing transaction builders]
-  Time -->|Validity slots| Build
-  Facts -->|Outputs and parameter values| Build
+  Facts[Session facts] -->|Raw inputs| Local[Local evaluation and time]
+  Local -->|Units and validity slots| Build[Transaction builders]
   Build -->|Prepared body| Send[Signing and submission]
-  Send -->|Accepted transaction id| Poll[Bounded output visibility polling]
+  Send -->|Accepted id| Poll[Bounded output visibility]
 ```
+
+Local time conversion also consumes the pinned genesis and era history.
+Those reviewed network files are separate inputs to the common service.
 
 Move shared Provider responsibilities out of the node-internal component.
 Use one ledger-provider capability module, one evidence/verdict module, one

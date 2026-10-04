@@ -37,15 +37,13 @@ facts and untrusted reconstruction material. Demo 1 has no anchor.
 
 ```mermaid
 flowchart TD
-  User[Registry user] -->|Runs a command| Terminal[singular terminal]
-  Terminal -->|Requests raw facts| Provider[Ledger provider]
-  Provider -->|Unverified answers and history| Terminal
-  Terminal -->|Computes locally| Application[Built-in application service]
-  Application -->|Transaction and application proof| Terminal
-  Terminal -->|Submits signed transaction| Provider
-  Provider -->|Relays transaction| Ledger[Cardano ledger]
-  Ledger -->|Accepts or refuses| Provider
+  Ledger[Cardano ledger] -->|Raw ledger data| Provider[Ledger provider]
+  Provider -->|Unverified facts| Terminal[singular terminal]
+  Terminal -->|Local computation| Application[Built-in application]
 ```
+
+The diagram follows ledger facts into local computation. Signed transactions
+travel through the provider to the ledger, which accepts or refuses them.
 
 History contains full transaction CBOR and resolved spent outputs, with
 reference-output dependencies available where interpretation needs them.
