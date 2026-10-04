@@ -91,6 +91,8 @@ library
     Singular.Registry.Trie
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
+    Singular.Registry.TrieState
+    Singular.Registry.TrieState.Fixture
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
@@ -122,6 +124,8 @@ library
   -- encoding instances, and the generated API reference documents them
   -- here for the contributor while callers keep importing the facade.
   other-modules:
+    Singular.Registry.TrieState.Types
+    Singular.Registry.TrieState.Core
     -- #269: the deployment record's focused owners behind the
     -- Deployment facade. Same arrangement as the fold and wire owners
     -- above: Singular.Registry.Deployment re-exports the unchanged

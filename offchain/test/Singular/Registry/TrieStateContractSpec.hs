@@ -159,21 +159,20 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         after@(afterChosen, _, _, _) <- history who afterMoves
                         (_, expectedRoot, expectedProofs) <- produced token afterMoves
                         let fixture = storeOf before
-                            action = withTrieState fixtureTrieState chosen $ \snap -> do
-                                walked <- speculateEdges snap ((key, edge) :| [])
-                                pure walked
+                            action = withTrieState fixtureTrieState chosen $ \snap ->
+                                speculateEdges snap ((key, edge) :| [])
                             (walked, unchanged) = runState action fixture
                         walk <- right walked >>= right
                         walkRoot walk `shouldBe` expectedRoot
                         walkProofs walk `shouldBe` [last expectedProofs]
                         fixtureNodes unchanged `shouldBe` fixtureNodes fixture
                         fixtureFolds unchanged `shouldBe` fixtureFolds fixture
-                        let reads = withTrieState fixtureTrieState afterChosen $ \snap -> do
+                        let proofReads = withTrieState fixtureTrieState afterChosen $ \snap -> do
                                 leaf <- leafAt snap key
                                 missing <- nonMembership snap "never-bound"
                                 member <- membership snap key want
                                 pure (leaf, missing, member)
-                            (answers, untouched) = runState reads (storeOf after)
+                            (answers, untouched) = runState proofReads (storeOf after)
                         (leaf, missing, member) <- right answers
                         leaf `shouldBe` Right want
                         proofOfAbsence <- right missing
@@ -227,18 +226,23 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                 `shouldBe` Right 2
             query (Just create) (take 1 events) nodes
                 `shouldBe` Left HistoryIncomplete
-            query (Just create) (tail events) nodes `shouldSatisfy` isLeft
+            query (Just create) (drop 1 events) nodes `shouldSatisfy` isLeft
             query (Just create) events emptyMPFInMemoryDB `shouldSatisfy` isLeft
-            let ObservedFold from to edges = head events
+            ObservedFold from to edges <- case events of
+                first : _ -> pure first
+                [] ->
+                    expectationFailure "the producer emitted no coverage transitions"
+                        >> fail "empty history"
+            let
                 broken =
                     ObservedFold
                         from
                         (to{trieSelectionRoot = Root (BS.replicate 32 9)})
                         edges
-            query (Just create) (broken : tail events) nodes
+            query (Just create) (broken : drop 1 events) nodes
                 `shouldBe` Left RootDoesNotChain
             let undecodable = ObservedFold from to (("first", 99) :| [])
-            query (Just create) (undecodable : tail events) nodes
+            query (Just create) (undecodable : drop 1 events) nodes
                 `shouldBe` Left UndecodableRequest
     it
         "reads authenticated nodes after the uncommitted key index is erased"
