@@ -117,11 +117,11 @@
       "pause": 500
     },
     {
-      "text": "singular registry inspect and every --preview form run against public.",
+      "text": "The read-only registry inspect, and the preview form of every write.",
       "pause": 300
     },
     {
-      "text": "preprod Koios with no node, and their receipts report each fact as   unverified and each session as unbound. - The pull request records one read-only preprod run: the commands, the Koios   URL, the schema revision, the duration of each call, and the phase log of   registry insert --preview.",
+      "text": "command, run against public preprod Koios with no node. Their receipts   report each fact as unverified and each session as unbound. - The pull request records one read-only preprod run: the commands, the Koios   URL, the schema revision, the duration of each call, and the phase log of   registry insert --preview.",
       "pause": 400
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "01e3ae477e1505954910c80f40403de853135d57a5dfa645748bf20ec6fca638"
+    "sha256": "4ccd154c9f6bd1629a7c1bf36610812feeffbb9835cb3af69f65a398a9432f3f"
   }
 }

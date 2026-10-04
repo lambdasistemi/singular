@@ -111,9 +111,9 @@ such as an address with no outputs, is distinct from all of them.
 
 ### Live acceptance on preprod
 
-- `singular registry inspect` and every `--preview` form run against public
-  preprod Koios with no node, and their receipts report each fact as
-  unverified and each session as unbound.
+- The read-only `registry inspect`, and the preview form of every write
+  command, run against public preprod Koios with no node. Their receipts
+  report each fact as unverified and each session as unbound.
 - The pull request records one read-only preprod run: the commands, the Koios
   URL, the schema revision, the duration of each call, and the phase log of
   `registry insert --preview`.
