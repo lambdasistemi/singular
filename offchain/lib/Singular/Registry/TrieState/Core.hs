@@ -91,7 +91,12 @@ checkedCoverage TrieEntry{..} = do
         else
             if rootFromDb entryNodes /= selected
                 then
-                    Left (RootDoesNotChain who Nothing (rootFromDb entryNodes) selected)
+                    Left
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (rootFromDb entryNodes) selected)
+                        )
                 else Right (CompleteFromCreate count)
   where
     who = trieSelectionIdentity entrySelection
@@ -103,14 +108,22 @@ checkedCoverage TrieEntry{..} = do
             Left (WrongRegistry who Nothing (OtherRegistry other))
         | trieSelectionRoot from /= rootFromDb db =
             Left
-                (RootDoesNotChain who Nothing (rootFromDb db) (trieSelectionRoot from))
+                ( RootDoesNotChain
+                    who
+                    Nothing
+                    (RootsPart (rootFromDb db) (trieSelectionRoot from))
+                )
         | otherwise = do
             (changed, walked) <- walkNodes who db edges
             if walkRoot walked == trieSelectionRoot to
                 then Right (changed, count + 1)
                 else
                     Left
-                        (RootDoesNotChain who Nothing (walkRoot walked) (trieSelectionRoot to))
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
+                        )
 
 capability
     :: (Monad m)
@@ -230,8 +243,7 @@ capabilityObserved fetch persist emit = TrieState select accept
                         ( RootDoesNotChain
                             (trieSelectionIdentity from)
                             Nothing
-                            (walkRoot walked)
-                            (trieSelectionRoot to)
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
                         )
                 else
                     Right

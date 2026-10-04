@@ -96,6 +96,7 @@ import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.TrieState
     ( Incomplete (..)
     , Mismatch (..)
+    , Parting (..)
     , RegistryIdentity (..)
     , Staleness (..)
     , StatePolicyId (..)
@@ -194,7 +195,7 @@ replaySpec = do
             (result, _) <-
                 replayAt h altered (historyTxs h) (historyToken h) (lastPoint h)
             case result of
-                Left (RootDoesNotChain tok (Just tx) _ recorded) -> do
+                Left (RootDoesNotChain tok (Just tx) (RootsPart _ recorded)) -> do
                     tok `shouldBe` historyToken h
                     tx `shouldBe` fid
                     recorded `shouldBe` pointRoot target
@@ -264,7 +265,7 @@ replaySpec = do
                             (lastPoint h)
                     case result of
                         Left
-                            (RootDoesNotChain tok (Just named) _ recorded) -> do
+                            (RootDoesNotChain tok (Just named) (RootsPart _ recorded)) -> do
                                 tok `shouldBe` historyToken h
                                 named `shouldBe` tid
                                 recorded `shouldBe` pointRoot target
@@ -761,8 +762,7 @@ replaySpec = do
                         ( RootDoesNotChain
                             (historyToken h)
                             (Just (txIdTx (pointTx (historyCreate h))))
-                            stale
-                            (pointRoot (historyCreate h))
+                            (RootsPart stale (pointRoot (historyCreate h)))
                         )
 
     describe

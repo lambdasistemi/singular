@@ -25,6 +25,7 @@ module Singular.Registry.TrieState
     , Leaf (..)
     , leafName
     , TrieFailure (..)
+    , Parting (..)
     , Incomplete (..)
     , Undecodable (..)
     , Mismatch (..)
@@ -107,7 +108,7 @@ speculateEdges = snapshotSpeculateEdges
 failureRegistry :: TrieFailure -> RegistryIdentity
 failureRegistry = \case
     HistoryIncomplete who _ _ -> who
-    RootDoesNotChain who _ _ _ -> who
+    RootDoesNotChain who _ _ -> who
     UndecodableRequest who _ _ -> who
     WrongRegistry who _ _ -> who
     StaleState who _ _ -> who
@@ -117,7 +118,7 @@ failureRegistry = \case
 failureTransaction :: TrieFailure -> Maybe TxId
 failureTransaction = \case
     HistoryIncomplete _ tx _ -> tx
-    RootDoesNotChain _ tx _ _ -> tx
+    RootDoesNotChain _ tx _ -> tx
     UndecodableRequest _ tx _ -> tx
     WrongRegistry _ tx _ -> tx
     StaleState _ tx _ -> tx
@@ -157,10 +158,13 @@ trieFailureFields failure = [("trieRefusal", object [(Key.fromText k, v) | (k, v
             NoStateInput -> reason "no-state-input"
             ForkedStateOutput i -> reason "forked-state-output" <> output i
             OutsideLineage -> reason "outside-lineage"
-        RootDoesNotChain _ _ rebuilt recorded ->
-            [ ("rebuiltRoot", rootJson rebuilt)
-            , ("recordedRoot", rootJson recorded)
-            ]
+        RootDoesNotChain _ _ (UnreadableRoot what) ->
+            reason "unreadable-root" <> [("record", toJSON what)]
+        RootDoesNotChain _ _ (RootsPart rebuilt recorded) ->
+            reason "roots-part"
+                <> [ ("rebuiltRoot", rootJson rebuilt)
+                   , ("recordedRoot", rootJson recorded)
+                   ]
         UndecodableRequest _ _ why -> case why of
             UndecodableStateOutput -> reason "undecodable-state-output"
             MissingRedeemer -> reason "missing-redeemer"

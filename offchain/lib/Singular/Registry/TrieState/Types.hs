@@ -16,6 +16,7 @@ module Singular.Registry.TrieState.Types
     , leafName
     , leafBytes
     , TrieFailure (..)
+    , Parting (..)
     , Incomplete (..)
     , Undecodable (..)
     , Mismatch (..)
@@ -100,8 +101,8 @@ reason. A backend passes what it knows and never invents the rest.
 data TrieFailure
     = -- | The history does not reach the selection from @create@.
       HistoryIncomplete RegistryIdentity (Maybe TxId) Incomplete
-    | -- | A rebuilt root differs from the root recorded on chain: rebuilt, recorded.
-      RootDoesNotChain RegistryIdentity (Maybe TxId) Root Root
+    | -- | A rebuilt root is not the recorded one, or a recorded root cannot be read.
+      RootDoesNotChain RegistryIdentity (Maybe TxId) Parting
     | -- | A fold's redeemer, actions, state output or edges cannot be read.
       UndecodableRequest RegistryIdentity (Maybe TxId) Undecodable
     | -- | The material is another registry's, or not this registry's state.
@@ -110,6 +111,14 @@ data TrieFailure
       StaleState RegistryIdentity (Maybe TxId) Staleness
     | -- | No proof can be given.
       MissingProof RegistryIdentity Missing
+    deriving stock (Eq, Show)
+
+-- | How a rebuilt root parts from the recorded one.
+data Parting
+    = -- | The rebuilt root is not the recorded root: rebuilt, recorded.
+      RootsPart Root Root
+    | -- | A recorded root cannot be read; the text says which.
+      UnreadableRoot Text
     deriving stock (Eq, Show)
 
 -- | How a history falls short of the lineage.

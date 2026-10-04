@@ -76,6 +76,7 @@ import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.TrieState
     ( Incomplete (..)
     , Mismatch (..)
+    , Parting (..)
     , RegistryIdentity (..)
     , Staleness (..)
     , StatePolicyId (..)
@@ -421,7 +422,8 @@ because refusal why token tid = refusal token tid why
 
 -- | A rebuilt root that is not the recorded one: rebuilt, recorded.
 chained :: Root -> Root -> Refuse
-chained rebuilt recorded token tid = RootDoesNotChain token tid rebuilt recorded
+chained rebuilt recorded token tid =
+    RootDoesNotChain token tid (RootsPart rebuilt recorded)
 
 -- | The spending inputs in ledger order.
 spendingInputs :: ConwayTx -> [TxIn]

@@ -3,24 +3,30 @@
 
 {- |
 Module      : Singular.CLI.TrieRefusalSpec
-Description : Every trie refusal a command prints names its registry and transaction
+Description : Every trie refusal a command prints names its registry, transaction and cause
 License     : Apache-2.0
 
 A person reading a refused command's receipt must learn which registry was
-refused and, where the refusal is about one transaction, which one. Every
-refusal class is printed here through the commands' own stop
-('failTrie') and through an inspect's proof error, for two registries and
-two transactions, so a receipt that names a constant, or drops the payload,
-does not pass. The payload is one @trieRefusal@ field, so it can never
-overwrite a field the receipt already carries. The expected spellings are the identities' own bytes and the
-transaction's own hash, hex-encoded here, never the renderer's output.
+refused, which transaction the refusal is about where there is one, and
+why. Every refusal class with every cause is printed here through the
+commands' own stop ('failTrie') and through an inspect's proof error, over
+two registries and two transactions. The printed reason, outcome class,
+exit status and the whole @trieRefusal@ field must equal what this module
+expects.
+
+The expectation is written here, not read from the renderer: the names, the
+causes and their field names are spelled out below, the outcome classes and
+exits are the ones commands printed before the refusals carried a payload
+(the command stop at @cli/src/Singular/CLI/Live.hs:529-536@ and
+'Singular.CLI.Receipt.exitCodeOf' at that revision), and every identity,
+root, output and key is hex-encoded here from the sample's own bytes.
 -}
 module Singular.CLI.TrieRefusalSpec (spec) where
 
 import Control.Exception (try)
 import Control.Monad (forM_)
 import Data.Aeson (Value (..), object, toJSON, (.=))
-import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Aeson.Key qualified as Key
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -30,9 +36,11 @@ import Data.List (nub, sort)
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import System.Exit (ExitCode (..))
 import Test.Hspec
 
 import Cardano.Crypto.Hash (hashToBytes)
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
@@ -42,7 +50,9 @@ import Singular.CLI.Proof
     , authErrorFields
     , renderAuthError
     )
+import Singular.CLI.Receipt (exitCodeOf, outcomeName)
 import Singular.CLI.Session (CommandFailure (..))
+import Singular.CLI.TrieHistory (journalRoot)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.TrieState
@@ -96,7 +106,7 @@ selection who n =
         who
         (StatePoint (SessionId "refusal") Unbound (outRef 'c' n))
 
--- | Every class and every reason, over two registries, with and without a transaction.
+-- | Every class and every cause, over two registries, with and without a transaction.
 samples :: [TrieFailure]
 samples =
     concat
@@ -111,7 +121,10 @@ samples =
                 , OutsideLineage
                 ]
           ]
-            <> [RootDoesNotChain who tx rootA rootB]
+            <> [ RootDoesNotChain who tx why
+               | why <-
+                    [RootsPart rootA rootB, UnreadableRoot "a journal root is not hex"]
+               ]
             <> [ UndecodableRequest who tx why
                | why <-
                     [ UndecodableStateOutput
@@ -119,7 +132,7 @@ samples =
                     , NotModify
                     , ActionCount 2 1
                     , EdgeOutOfRange 99
-                    , UnreadableRecord "a journal root is not hex"
+                    , UnreadableRecord "a journal key is not hex"
                     ]
                ]
             <> [ WrongRegistry who tx why
@@ -152,35 +165,137 @@ samples =
   where
     other who = if who == registryA then registryB else registryA
 
--- | The registry as the receipt must spell it, from the identity's own bytes.
+-- ---------------------------------------------------------
+-- The expectation, written independently of the renderer
+-- ---------------------------------------------------------
+
+-- | What a command must print for a refusal: reason, outcome, exit, payload.
+data Printed = Printed
+    { printedReason :: String
+    , printedOutcome :: Text
+    , printedExit :: ExitCode
+    , printedFields :: [(Text, Value)]
+    }
+    deriving stock (Eq, Show)
+
+expected :: TrieFailure -> Printed
+expected f =
+    Printed
+        { printedReason = "TrieState " <> name
+        , printedOutcome = outcome
+        , printedExit = ExitFailure exit
+        , printedFields =
+            [
+                ( "trieRefusal"
+                , object
+                    ( ["registry" .= registryJson who]
+                        <> maybe [] (\t -> ["transaction" .= txHex t]) tx
+                        <> map (\(k, v) -> Key.fromText k .= v) cause
+                    )
+                )
+            ]
+        }
+  where
+    -- Outcome classes and exits as commands printed them before the payload.
+    staleState = ("stale-state", 14)
+    clientRefusal = ("client-refusal", 10)
+    proofMissing = ("proof-missing", 17)
+    (name, who, tx, (outcome, exit), cause) = case f of
+        HistoryIncomplete w t why ->
+            ("HistoryIncomplete", w, t, staleState, incomplete why)
+        RootDoesNotChain w t why ->
+            ("RootDoesNotChain", w, t, staleState, parting why)
+        UndecodableRequest w t why ->
+            ("UndecodableRequest", w, t, clientRefusal, undecodable why)
+        WrongRegistry w t why ->
+            ("WrongRegistry", w, t, clientRefusal, mismatch why)
+        StaleState w t why ->
+            ("StaleState", w, t, staleState, staleness why)
+        MissingProof w why ->
+            ("MissingProof", w, Nothing, proofMissing, missing why)
+    causeOnly c = [("cause", String c)]
+    withOutput c i = causeOnly c <> [("output", String (outRefText i))]
+    incomplete = \case
+        MissingTransaction -> causeOnly "missing-transaction"
+        UnresolvedInput i -> withOutput "unresolved-input" i
+        ConflictingResolution i -> withOutput "conflicting-resolution" i
+        ConflictingCopies -> causeOnly "conflicting-copies"
+        NoStateInput -> causeOnly "no-state-input"
+        ForkedStateOutput i -> withOutput "forked-state-output" i
+        OutsideLineage -> causeOnly "outside-lineage"
+    parting = \case
+        RootsPart rebuilt recorded ->
+            causeOnly "roots-part"
+                <> [ ("rebuiltRoot", String (rootHex rebuilt))
+                   , ("recordedRoot", String (rootHex recorded))
+                   ]
+        UnreadableRoot what -> causeOnly "unreadable-root" <> [("record", String what)]
+    undecodable = \case
+        UndecodableStateOutput -> causeOnly "undecodable-state-output"
+        MissingRedeemer -> causeOnly "missing-redeemer"
+        NotModify -> causeOnly "not-modify"
+        ActionCount given found ->
+            causeOnly "action-count"
+                <> [("actions", toJSON given), ("requests", toJSON found)]
+        EdgeOutOfRange edge -> causeOnly "edge-out-of-range" <> [("edge", toJSON edge)]
+        UnreadableRecord what -> causeOnly "unreadable-record" <> [("record", String what)]
+    mismatch = \case
+        SelectionNotState -> causeOnly "selection-not-state"
+        CreateMint -> causeOnly "create-mint"
+        SeedNotSpent -> causeOnly "seed-not-spent"
+        SeedName -> causeOnly "seed-name"
+        CreateOutput -> causeOnly "create-output"
+        OtherRegistry o -> causeOnly "other-registry" <> [("otherRegistry", registryJson o)]
+        UnknownRegistry -> causeOnly "unknown-registry"
+    staleness = \case
+        StaleRoot selected current ->
+            causeOnly "stale-root"
+                <> [ ("selectedRoot", String (rootHex selected))
+                   , ("currentRoot", String (rootHex current))
+                   ]
+        StaleSelection selected held ->
+            causeOnly "stale-selection"
+                <> [("selected", selectionJson selected), ("held", selectionJson held)]
+        StaleOutput selected made ->
+            causeOnly "stale-output"
+                <> [ ("selectedOutput", String (outRefText selected))
+                   , ("madeOutput", String (outRefText made))
+                   ]
+        NoSelection -> causeOnly "no-selection"
+    missing = \case
+        NoProofFor key -> causeOnly "no-proof" <> [("key", String (hex key))]
+        NoLocalTrie -> causeOnly "no-local-trie"
+
 registryJson :: RegistryIdentity -> Value
 registryJson (RegistryIdentity (StatePolicyId policy) (AssetName name)) =
     object ["policy" .= hex policy, "name" .= hex (SBS.fromShort name)]
 
--- | The transaction as the receipt must spell it, from its own hash.
-txJson :: TxId -> Value
-txJson (TxId h) = toJSON (hex (hashToBytes (extractHash h)))
+selectionJson :: TrieSelection -> Value
+selectionJson (TrieSelection _ point root) =
+    object
+        [ "output" .= outRefText (pointOutput point)
+        , "root" .= rootHex root
+        ]
+
+txHex :: TxId -> Text
+txHex (TxId h) = hex (hashToBytes (extractHash h))
+
+outRefText :: TxIn -> Text
+outRefText (TxIn t (TxIx ix)) = txHex t <> "#" <> T.pack (show ix)
+
+rootHex :: Root -> Text
+rootHex (Root r) = hex r
 
 hex :: ByteString -> Text
 hex = T.pack . BC.unpack . B16.encode
 
--- | What a refusal must name: its registry, and its transaction where one exists.
-subject :: TrieFailure -> (Maybe Value, Maybe Value)
-subject f =
-    ( Just (registryJson (failureRegistry f))
-    , txJson <$> failureTransaction f
-    )
-
-{- | What the printed fields name, read from the one @trieRefusal@ object;
-nothing when the fields are anything else.
--}
-printedSubject :: [(Text, Value)] -> (Maybe Value, Maybe Value)
-printedSubject = \case
-    [("trieRefusal", Object payload)] ->
-        ( KeyMap.lookup "registry" payload
-        , KeyMap.lookup "transaction" payload
-        )
-    _ -> (Nothing, Nothing)
+-- | What the command stop printed for a refusal.
+stopped :: TrieFailure -> IO (Either String Printed)
+stopped f =
+    try (failTrie f) >>= \case
+        Left (CommandFailure c why fields) ->
+            pure (Right (Printed why (outcomeName c) (exitCodeOf c) fields))
+        Right () -> pure (Left ("the command did not stop on " <> show f))
 
 spec :: Spec
 spec = describe "A trie refusal, as a command prints it" $ do
@@ -193,23 +308,48 @@ spec = describe "A trie refusal, as a command prints it" $ do
                 `shouldSatisfy` ((== 2) . length)
 
     it
-        "names the registry and, where one exists, the transaction, in a command's receipt"
+        "prints its name, outcome, exit, registry, transaction and cause in a command's receipt"
         $ forM_ samples
         $ \f -> do
-            stopped <- try (failTrie f)
-            case stopped of
-                Left (CommandFailure _ why fields) -> do
-                    (show f, why)
-                        `shouldBe` (show f, "TrieState " <> T.unpack (trieFailureName f))
-                    (show f, printedSubject fields) `shouldBe` (show f, subject f)
-                Right () -> expectationFailure ("the command did not stop on " <> show f)
+            printed <- stopped f
+            (show f, printed) `shouldBe` (show f, Right (expected f))
 
     it
-        "names the registry and, where one exists, the transaction, in an inspect's refusal"
+        "prints its name, registry, transaction and cause in an inspect's refusal"
         $ forM_ samples
         $ \f -> do
             let err = TrieRefusal f
-            (show f, renderAuthError err)
-                `shouldBe` (show f, "TrieState " <> T.unpack (trieFailureName f))
-            (show f, printedSubject (authErrorFields err))
-                `shouldBe` (show f, subject f)
+                want = expected f
+            (show f, renderAuthError err, authErrorFields err)
+                `shouldBe` (show f, printedReason want, printedFields want)
+
+    describe "a journal root an accepted fold records" $ do
+        it "reads a hex root" $
+            journalRoot registryA (Just (rootHex rootA)) `shouldBe` Right rootA
+
+        it
+            "refuses a root that is not hex as a root that does not chain, stale state, exit 14"
+            $ do
+                refusal <-
+                    either pure (fail . ("a non-hex root was read: " <>) . show) $
+                        journalRoot registryA (Just "not-a-hex-root")
+                classOf refusal `shouldBe` ClassRootDoesNotChain
+                printed <- stopped refusal
+                fmap
+                    (\p -> (printedReason p, printedOutcome p, printedExit p))
+                    printed
+                    `shouldBe` Right ("TrieState RootDoesNotChain", "stale-state", ExitFailure 14)
+                printed `shouldBe` Right (expected refusal)
+
+        it
+            "refuses a missing root as an incomplete history, stale state, exit 14"
+            $ do
+                refusal <-
+                    either pure (fail . ("a missing root was read: " <>) . show) $
+                        journalRoot registryA Nothing
+                classOf refusal `shouldBe` ClassHistoryIncomplete
+                printed <- stopped refusal
+                fmap
+                    (\p -> (printedReason p, printedOutcome p, printedExit p))
+                    printed
+                    `shouldBe` Right ("TrieState HistoryIncomplete", "stale-state", ExitFailure 14)

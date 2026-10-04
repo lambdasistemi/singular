@@ -206,14 +206,22 @@ replaceFromHistory (MirrorStore path who ref) chosen create events
         | trieSelectionRoot from == trieSelectionRoot to = Right db
         | trieSelectionRoot from /= rootFromDb db =
             Left
-                (RootDoesNotChain who Nothing (rootFromDb db) (trieSelectionRoot from))
+                ( RootDoesNotChain
+                    who
+                    Nothing
+                    (RootsPart (rootFromDb db) (trieSelectionRoot from))
+                )
         | otherwise = do
             (changed, walked) <- walkNodes who db moves
             if walkRoot walked == trieSelectionRoot to
                 then Right changed
                 else
                     Left
-                        (RootDoesNotChain who Nothing (walkRoot walked) (trieSelectionRoot to))
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
+                        )
 
 {- | A checked create comes from the actual accepted boot's state output and
 mint, not a caller-supplied empty-root assertion.
@@ -227,8 +235,7 @@ checkedCreateRecord who tx = do
             ( RootDoesNotChain
                 who
                 (Just (txIdTx tx))
-                (rootFromDb emptyMPFInMemoryDB)
-                root
+                (RootsPart (rootFromDb emptyMPFInMemoryDB) root)
             )
     let MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
     if quantity who minted /= 1
@@ -249,7 +256,7 @@ checkedFoldRecord
 checkedFoldRecord sid who before after moves tx = do
     (output, root) <- stateOutput who tx
     when (root /= after) $
-        Left (RootDoesNotChain who (Just (txIdTx tx)) after root)
+        Left (RootDoesNotChain who (Just (txIdTx tx)) (RootsPart after root))
     let Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
         inputs = Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)
         candidates =

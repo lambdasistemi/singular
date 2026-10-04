@@ -1,7 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- | Existing accepted local records for application trie coverage. No
 provider queries or invented output lineage: equal-root records are ignored.
 -}
-module Singular.CLI.TrieHistory (readTrieHistory, historyAtRoot) where
+module Singular.CLI.TrieHistory (readTrieHistory, journalRoot, historyAtRoot) where
 
 import Control.Monad (forM)
 import Data.ByteString.Base16 qualified as B16
@@ -53,8 +55,8 @@ readTrieHistory dir sid who = do
             (_, body) <- boundBody entries (journalTxId p)
             pure $ do
                 tx <- either (const (Left missing)) Right body
-                before <- rootField (journalRootBefore p)
-                after <- rootField (journalRootAfter p)
+                before <- journalRoot who (journalRootBefore p)
+                after <- journalRoot who (journalRootAfter p)
                 key <- case journalKey p of
                     Nothing -> Left (unreadable "an accepted fold names no key")
                     Just text ->
@@ -72,11 +74,26 @@ readTrieHistory dir sid who = do
   where
     missing = HistoryIncomplete who Nothing MissingTransaction
     unreadable = UndecodableRequest who Nothing . UnreadableRecord
-    rootField Nothing = Left missing
-    rootField (Just text) =
+
+{- | A root an accepted fold's journal entry records: none is an incomplete
+history, and text that is not hex is a root that does not chain.
+-}
+journalRoot
+    :: RegistryIdentity -> Maybe T.Text -> Either TrieFailure Root
+journalRoot who = \case
+    Nothing -> Left (HistoryIncomplete who Nothing MissingTransaction)
+    Just text ->
         Root
             <$> either
-                (const (Left (unreadable "an accepted fold's root is not hex")))
+                ( const
+                    ( Left
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (UnreadableRoot "an accepted fold's journal root is not hex")
+                        )
+                    )
+                )
                 Right
                 (B16.decode (BC.pack (T.unpack text)))
 

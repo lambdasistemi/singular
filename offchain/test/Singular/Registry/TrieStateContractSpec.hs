@@ -246,10 +246,15 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                     expectationFailure "the producer emitted one transition"
                         >> fail "short history"
             query (Just create) (drop 1 events) nodes
-                `shouldBe` Left (RootDoesNotChain identity Nothing emptyRoot secondFrom)
+                `shouldBe` Left
+                    (RootDoesNotChain identity Nothing (RootsPart emptyRoot secondFrom))
             query (Just create) events emptyMPFInMemoryDB
                 `shouldBe` Left
-                    (RootDoesNotChain identity Nothing emptyRoot (trieSelectionRoot chosen))
+                    ( RootDoesNotChain
+                        identity
+                        Nothing
+                        (RootsPart emptyRoot (trieSelectionRoot chosen))
+                    )
             ObservedFold from to edges <- case events of
                 first : _ -> pure first
                 [] ->
@@ -266,8 +271,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                     ( RootDoesNotChain
                         identity
                         Nothing
-                        (trieSelectionRoot to)
-                        (Root (BS.replicate 32 9))
+                        (RootsPart (trieSelectionRoot to) (Root (BS.replicate 32 9)))
                     )
             let discontinuous =
                     ObservedFold
@@ -276,7 +280,11 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         edges
             query (Just create) (discontinuous : drop 1 events) nodes
                 `shouldBe` Left
-                    (RootDoesNotChain identity Nothing emptyRoot (trieSelectionRoot chosen))
+                    ( RootDoesNotChain
+                        identity
+                        Nothing
+                        (RootsPart emptyRoot (trieSelectionRoot chosen))
+                    )
             let undecodable = ObservedFold from to (("first", 99) :| [])
             query (Just create) (undecodable : drop 1 events) nodes
                 `shouldBe` Left (UndecodableRequest identity Nothing (EdgeOutOfRange 99))
