@@ -13,8 +13,9 @@ slot, with a block hash derived from that slot.
 The chain starts at its origin when 'csTip' is empty, and acquiring
 there is 'AcquiredAtOrigin'. 'loseConnection' makes every later
 acquisition and read 'ViewConnectionLost'. Script evaluation is the
-ledger's own, over the snapshot's parameters and UTxO, with the chain's
-fixed slot length.
+ledger's own, through common resolved-input evaluation over the snapshot's
+parameters and UTxO. Evaluation and conversion use the same explicitly
+validated finite synthetic network-time context.
 
 Library code rather than test code: interleaving controls and contract
 suites use it to drive builders deterministically.

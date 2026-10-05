@@ -42,11 +42,11 @@ library
   default-language:   GHC2021
   hs-source-dirs:     lib naming/src
   build-depends:
-    , aeson                            >=2.1  && <2.3
+    , aeson                             >=2.1  && <2.3
     , aeson-pretty
-    , base                             >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
-    , bytestring                       >=0.11 && <0.13
+    , bytestring                        >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
@@ -58,7 +58,7 @@ library
     , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
-    , containers                       >=0.6  && <0.8
+    , containers                        >=0.6  && <0.8
     , crypton
     , directory
     , filepath
@@ -70,8 +70,9 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
+    , singular-registry:local-services
     , singular-registry:node-internal
-    , text                             >=2.0  && <2.2
+    , text                              >=2.0  && <2.2
     , time
     , unix
 
@@ -162,8 +163,10 @@ library local-services
   default-language: GHC2021
   hs-source-dirs:   local-services
   exposed-modules:
+    Singular.Registry.Ledger
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
+    Singular.Registry.Provider
 
   build-depends:
     , aeson
@@ -173,6 +176,7 @@ library local-services
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
+    , cardano-ledger-mary
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
@@ -186,18 +190,17 @@ library local-services
     , transformers
 
 -- The private Node ownership core (issue #266, A-003): the six focused
--- Node children plus the two modules they read (Ledger, Provider) live in
--- one package-private internal library so the public facade and the cage
+-- Node children live in one package-private internal library so the
+-- public facade and the cage
 -- test component link the SAME compiled instance of every process global.
--- The public library re-exports Ledger and Provider under their original
--- import paths; the Node children stay reachable only through the facade's
--- export list.
+-- Ledger and Provider now have stable public ownership in local-services,
+-- re-exported by the public library under their original import paths.
+-- Node children remain behind the facade export list.
 library node-internal
   import:           warnings
   default-language: GHC2021
   hs-source-dirs:   node-internal
   exposed-modules:
-    Singular.Registry.Ledger
     Singular.Registry.Node.Confirmation
     Singular.Registry.Node.Funding
     Singular.Registry.Node.Indexer
@@ -212,7 +215,6 @@ library node-internal
     Singular.Registry.Node.View
     Singular.Registry.Node.Wait
     Singular.Registry.Node.Wallet
-    Singular.Registry.Provider
 
   build-depends:
     , aeson

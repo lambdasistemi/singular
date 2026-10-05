@@ -45,20 +45,11 @@ import Control.Exception (Exception, finally, throwIO)
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Map.Strict (Map)
 import Data.Text (Text)
 import Data.Word (Word32)
 
-import Cardano.Ledger.Alonzo.Plutus.Evaluate
-    ( TransactionScriptFailure
-    )
-import Cardano.Ledger.Alonzo.Scripts
-    ( AsIx
-    , PlutusPurpose
-    )
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Plutus (ExUnits)
 import Cardano.Slotting.Slot (SlotNo (..))
 
 import Cardano.Tx.Ledger (ConwayTx)
@@ -69,14 +60,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 
--- | Per-script evaluation result.
-type EvaluateTxResult era =
-    Map
-        (PlutusPurpose AsIx era)
-        ( Either
-            (TransactionScriptFailure era)
-            ExUnits
-        )
+import Singular.Registry.LocalEvaluation (EvaluateTxResult)
 
 {- | A point on a chain: the network it belongs to, the era of the
 ledger state there, its slot and the hash of the block header at that
