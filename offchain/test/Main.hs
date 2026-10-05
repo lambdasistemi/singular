@@ -35,6 +35,7 @@ import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.ProviderSpec qualified
+import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
@@ -73,6 +74,7 @@ main = hspec $ do
     Singular.Registry.OneViewSpec.spec
     Singular.Registry.PhaseLogSpec.spec
     Singular.Registry.ProviderSpec.spec
+    Singular.Registry.Private.ArchiveSpec.spec
     Singular.Registry.IndexerViewSpec.spec
     Singular.Registry.LifecycleSpec.spec
     Singular.Registry.TypesSpec.spec

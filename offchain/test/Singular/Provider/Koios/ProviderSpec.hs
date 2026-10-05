@@ -128,6 +128,38 @@ import Test.Hspec
 
 spec :: Spec
 spec = describe "Koios ledger provider constructor" $ do
+    it "names an unknown transaction as the missing requested output" $ do
+        source <- timeSource
+        let (target, _, _) = dependentPair True
+            reference = TxIn (keyOf target) (TxIx 0)
+            client =
+                Client.Koios
+                    recordedConfig
+                    (Client.Transport (const (pure (okJson [] "[]"))))
+            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+            (result, state) =
+                runState
+                    ( acquire
+                        provider
+                        (Latest (Network 1))
+                        (\session -> fmap (fmap value) (outputs session (AtTxIn reference)))
+                    )
+                    initialProviderState
+        persist
+            "unknown-transaction-output"
+            ( object
+                [ "result" .= show result
+                , "requested" .= show reference
+                , "events" .= map eventJson (providerEvents state)
+                ]
+            )
+        result `shouldBe` Right (Left (MissingOutput reference))
+        Set.null (openSessions state) `shouldBe` True
+        [ Client.rawCall request
+          | RawExchange _ request _ <- providerEvents state
+          ]
+            `shouldBe` [Wire.CallTxInfo]
+
     it
         "orders a complete block by asset spends across a page despite opposite hash order"
         $ do
@@ -1688,7 +1720,10 @@ pollingClient target visibleAt genesisMs = Client.Koios recordedConfig (Client.T
                             ]
                         ]
                     )
-            Wire.CallTxInfo -> okJson [] (jsonBytes [infoRow target []])
+            Wire.CallTxInfo ->
+                okJson
+                    []
+                    (jsonBytes [infoRow target [] | maybe False (now >=) visibleAt])
             Wire.CallAddressUtxos ->
                 pageAnswer
                     [ row pair

@@ -73,6 +73,7 @@ import Cardano.Node.Client.E2E.Setup
     , rawSerialiseSignKeyDSIGN
     )
 import Devnet.Probe qualified as Probe
+import Singular.Registry.Private.Smoke (runFacadeSmoke)
 
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -103,6 +104,14 @@ main = do
     hSetBuffering stdout LineBuffering
     args <- getArgs
     case args of
+        ("facade-smoke" : rest) -> do
+            gDir <- genesisDir
+            output <-
+                maybe
+                    (die "devnet facade-smoke: --evidence-dir is required")
+                    pure
+                    (flag "--evidence-dir" rest)
+            runFacadeSmoke gDir output
         ("probe" : rest) -> probe rest
         _ -> spawn args
 

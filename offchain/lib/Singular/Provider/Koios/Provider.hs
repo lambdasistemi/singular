@@ -196,7 +196,8 @@ queryOutputs client = \case
     AtTxIn reference@(TxIn key _) -> do
         -- tx_info includes spent outputs: current visibility requires the
         -- shared UTxO endpoint at the resolved output's address as well.
-        infos <- fetch (Client.txInfo client [key])
+        infos <-
+            ExceptT $ fmap (first missingTransaction) (Client.txInfo client [key])
         produced <- mergeOutputs (concatMap Wire.txInfoOutputs infos)
         case lookup reference produced of
             Nothing -> throwError (MissingOutput reference)
@@ -208,6 +209,13 @@ queryOutputs client = \case
                     Nothing -> throwError (MissingOutput reference)
                     Just actual | actual /= output -> throwError (ConflictingOutput reference)
                     Just _ -> pure [(reference, output)]
+      where
+        missingTransaction failure
+            | Client.UnknownFact (Client.UnknownTransaction missing) <-
+                Client.failureReason failure
+            , missing == key =
+                MissingOutput reference
+            | otherwise = backendFailure failure
     AnyOf queries ->
         traverse (queryOutputs client) (NE.toList queries)
             >>= mergeOutputs . concat

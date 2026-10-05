@@ -758,9 +758,16 @@ executable retirement-verify
 executable devnet
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   devnet
+  hs-source-dirs:   devnet private-facade
   main-is:          Main.hs
-  other-modules:    Devnet.Probe
+  other-modules:
+    Devnet.Probe
+    Singular.Registry.Private.Archive
+    Singular.Registry.Private.Source
+    Singular.Registry.Private.Smoke
+    Singular.Registry.Private.EpochParameters
+    Singular.Registry.Private.Facade
+    Singular.Registry.Private.TimePublication
   build-depends:
     , aeson
     , async
@@ -782,6 +789,27 @@ executable devnet
     , singular-registry
     , singular-registry:local-services
     , singular-registry:node-internal
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-tx-tools:tx-build
+    , chain-follower
+    , contra-tracer
+    , crypton
+    , http-types
+    , memory
+    , wai
+    , warp
+    , unix
+    , serialise
+    , time
+    , cardano-ledger-read
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , singular-registry:koios-http
+    , cardano-ledger-byron
+    , case-insensitive
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -866,7 +894,7 @@ test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test cli/src
+  hs-source-dirs:   test cli/src private-facade
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
@@ -933,6 +961,8 @@ test-suite cage-tests
     Singular.Registry.OneViewSpec
     Singular.Registry.PhaseLogSpec
     Singular.Registry.ProviderSpec
+    Singular.Registry.Private.ArchiveSpec
+    Singular.Registry.Private.Archive
     Singular.Registry.RawNodeFixture
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
@@ -1002,6 +1032,7 @@ test-suite cage-tests
     , singular-registry:node-internal
     , stm
     , temporary
+    , cardano-ledger-read
     , text
     , time
     , unix
