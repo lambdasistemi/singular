@@ -325,14 +325,15 @@ spec = describe "A trie refusal, as a command prints it" $ do
 
     describe "a journal root an accepted fold records" $ do
         it "reads a hex root" $
-            journalRoot registryA (Just (rootHex rootA)) `shouldBe` Right rootA
+            journalRoot registryA Nothing (Just (rootHex rootA))
+                `shouldBe` Right rootA
 
         it
             "refuses a root that is not hex as a root that does not chain, stale state, exit 14"
             $ do
                 refusal <-
                     either pure (fail . ("a non-hex root was read: " <>) . show) $
-                        journalRoot registryA (Just "not-a-hex-root")
+                        journalRoot registryA Nothing (Just "not-a-hex-root")
                 classOf refusal `shouldBe` ClassRootDoesNotChain
                 printed <- stopped refusal
                 fmap
@@ -346,7 +347,7 @@ spec = describe "A trie refusal, as a command prints it" $ do
             $ do
                 refusal <-
                     either pure (fail . ("a missing root was read: " <>) . show) $
-                        journalRoot registryA Nothing
+                        journalRoot registryA Nothing Nothing
                 classOf refusal `shouldBe` ClassHistoryIncomplete
                 printed <- stopped refusal
                 fmap

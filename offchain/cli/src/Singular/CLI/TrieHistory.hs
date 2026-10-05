@@ -5,6 +5,8 @@ provider queries or invented output lineage: equal-root records are ignored.
 -}
 module Singular.CLI.TrieHistory (readTrieHistory, journalRoot, historyAtRoot) where
 
+import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.TxIn (TxId)
 import Control.Monad (forM)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -55,33 +57,36 @@ readTrieHistory dir sid who = do
             (_, body) <- boundBody entries (journalTxId p)
             pure $ do
                 tx <- either (const (Left missing)) Right body
-                before <- journalRoot who (journalRootBefore p)
-                after <- journalRoot who (journalRootAfter p)
+                before <- journalRoot who (Just (txIdTx tx)) (journalRootBefore p)
+                after <- journalRoot who (Just (txIdTx tx)) (journalRootAfter p)
                 key <- case journalKey p of
-                    Nothing -> Left (unreadable "an accepted fold names no key")
+                    Nothing -> Left (unreadable tx "an accepted fold names no key")
                     Just text ->
                         either
-                            (const (Left (unreadable "an accepted fold's key is not hex")))
+                            (const (Left (unreadable tx "an accepted fold's key is not hex")))
                             Right
                             (B16.decode (BC.pack (T.unpack text)))
                 edge <-
                     maybe
-                        (Left (unreadable "an accepted fold names no edge"))
+                        (Left (unreadable tx "an accepted fold names no edge"))
                         Right
                         (journalEdge p)
                 checkedFoldRecord sid who before after ((key, edge) :| []) tx
     pure ((,) <$> create <*> sequence folds)
   where
     missing = HistoryIncomplete who Nothing MissingTransaction
-    unreadable = UndecodableRequest who Nothing . UnreadableRecord
+    unreadable tx = UndecodableRequest who (Just (txIdTx tx)) . UnreadableRecord
 
 {- | A root an accepted fold's journal entry records: none is an incomplete
 history, and text that is not hex is a root that does not chain.
 -}
 journalRoot
-    :: RegistryIdentity -> Maybe T.Text -> Either TrieFailure Root
-journalRoot who = \case
-    Nothing -> Left (HistoryIncomplete who Nothing MissingTransaction)
+    :: RegistryIdentity
+    -> Maybe TxId
+    -> Maybe T.Text
+    -> Either TrieFailure Root
+journalRoot who transaction = \case
+    Nothing -> Left (HistoryIncomplete who transaction MissingTransaction)
     Just text ->
         Root
             <$> either
@@ -89,7 +94,7 @@ journalRoot who = \case
                     ( Left
                         ( RootDoesNotChain
                             who
-                            Nothing
+                            transaction
                             (UnreadableRoot "an accepted fold's journal root is not hex")
                         )
                     )
