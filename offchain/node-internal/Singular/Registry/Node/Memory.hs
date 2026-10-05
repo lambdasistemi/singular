@@ -41,15 +41,9 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Word (Word32)
 
-import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.State (UTxO (..))
-import Cardano.Slotting.EpochInfo (fixedEpochInfo)
-import Cardano.Slotting.Slot (EpochSize (..))
-import Cardano.Slotting.Time (SystemStart (..), mkSlotLength)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL)
@@ -57,6 +51,15 @@ import Singular.Registry.Ledger
     ( ConwayEra
     , PParams
     , TxIn
+    )
+import Singular.Registry.LocalEvaluation
+    ( EvaluationContext (..)
+    , localEvaluation
+    )
+import Singular.Registry.NetworkTime
+    ( NetworkTime
+    , posixMsCeilingSlot
+    , posixMsFloorSlot
     )
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -81,10 +84,8 @@ data ChainState = ChainState
     -- ^ Unspent outputs
     , csRegistered :: Set ScriptHash
     -- ^ Script credentials with a registered reward account
-    , csSystemStartMs :: Integer
-    -- ^ POSIX time (ms) of slot zero
-    , csSlotLengthMs :: Integer
-    -- ^ Length of every slot (ms)
+    , csNetworkTime :: NetworkTime
+    -- ^ Explicit validated, finite synthetic time material
     }
 
 -- | A mutable in-memory chain.
@@ -119,16 +120,8 @@ memoryProvider chain = scopedProvider $ \action -> do
     let reading :: IO a -> IO a
         reading answer = connected >> answer
         utxo = csUTxO s
-        slotOf ms =
-            SlotNo
-                ( fromInteger
-                    (max 0 (ms - csSystemStartMs s) `div` csSlotLengthMs s)
-                )
-        ceilSlotOf ms =
-            let SlotNo floor' = slotOf ms
-                exact = (ms - csSystemStartMs s) `mod` csSlotLengthMs s == 0
-            in  SlotNo
-                    (if ms <= csSystemStartMs s || exact then floor' else floor' + 1)
+        context = EvaluationContext (csPParams s) (csNetworkTime s)
+        resolved refs = reading (pure (Map.toList (Map.restrictKeys utxo refs)))
     action
         View
             { viewPoint =
@@ -145,20 +138,12 @@ memoryProvider chain = scopedProvider $ \action -> do
             , viewScriptRegistered = \sh ->
                 reading . pure $ Set.member sh (csRegistered s)
             , viewEvaluateTx = \tx ->
-                reading . pure $
-                    evalTxExUnits
-                        (csPParams s)
-                        tx
-                        (UTxO utxo)
-                        ( fixedEpochInfo
-                            (EpochSize 432_000)
-                            (mkSlotLength (fromInteger (csSlotLengthMs s) / 1000))
-                        )
-                        ( SystemStart
-                            (posixSecondsToUTCTime (fromInteger (csSystemStartMs s) / 1000))
-                        )
-            , viewPosixMsToSlot = reading . pure . slotOf
-            , viewPosixMsCeilSlot = reading . pure . ceilSlotOf
+                localEvaluation context resolved tx >>= either throwIO pure
+            , viewPosixMsToSlot = \ms ->
+                reading (either throwIO pure (posixMsFloorSlot (csNetworkTime s) ms))
+            , viewPosixMsCeilSlot = \ms ->
+                reading
+                    (either throwIO pure (posixMsCeilingSlot (csNetworkTime s) ms))
             }
   where
     connected = do

@@ -245,6 +245,7 @@ library node-internal
     , ouroboros-network:api
     , process
     , serialise
+    , singular-registry:local-services
     , stm
     , text
     , time
@@ -830,6 +831,7 @@ test-suite cage-tests
     Singular.Registry.ProviderSpec
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
+    Singular.Registry.SyntheticTime
     Singular.Registry.TrieStateContractSpec
     Singular.Registry.TrieStateSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
@@ -906,6 +908,7 @@ test-suite contract-tests
     Singular.Registry.ContractNode
     Singular.Registry.ContractSuite
     Singular.Registry.IndexerRig
+    Singular.Registry.SyntheticTime
 
   build-depends:
     , aeson
@@ -921,17 +924,23 @@ test-suite contract-tests
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-node-clients:utxo-indexer-lib
+    , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
+    , crypton
     , directory
     , filepath
     , hspec
+    , memory
     , microlens
+    , ouroboros-consensus
     , ouroboros-network:api
     , process
     , random
+    , serialise
     , singular-registry
+    , singular-registry:local-services
     , singular-registry:node-internal
     , stm
     , temporary

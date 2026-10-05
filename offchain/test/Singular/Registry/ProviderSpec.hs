@@ -40,6 +40,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
+import Singular.Registry.SyntheticTime (syntheticTime)
 import System.Timeout (timeout)
 import Test.Hspec
 
@@ -120,8 +121,7 @@ genesis =
         , csPParams = params 155_381
         , csUTxO = Map.fromList [(outRef '3', ada 100_000_000)]
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 changed :: ChainState -> ChainState

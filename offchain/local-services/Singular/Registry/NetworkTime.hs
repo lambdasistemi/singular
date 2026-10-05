@@ -21,6 +21,7 @@ module Singular.Registry.NetworkTime
     , networkSystemStart
     ) where
 
+import Control.Exception (Exception)
 import Control.Monad (unless)
 import Control.Monad.Trans.Except (runExcept)
 import Crypto.Hash (Digest, SHA256, hash)
@@ -91,6 +92,8 @@ data NetworkTimeFailure
     | TimePastHorizon Integer
     | SlotPastHorizon SlotNo
     deriving stock (Eq, Show)
+
+instance Exception NetworkTimeFailure
 
 type NetworkEras = '[(), (), (), (), (), (), (), ()]
 

@@ -46,6 +46,7 @@ import Data.Time
     , getCurrentTime
     , parseTimeM
     )
+import Singular.Registry.SyntheticTime (syntheticTime)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
@@ -658,8 +659,7 @@ memoryState =
         , csPParams = emptyPParams
         , csUTxO = Map.empty
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 outRef :: Char -> TxIn

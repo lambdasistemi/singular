@@ -16,6 +16,7 @@ module Singular.Registry.LocalEvaluation
     , evaluationInputs
     ) where
 
+import Control.Exception (Exception)
 import Control.Monad (foldM, unless)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -63,6 +64,8 @@ data EvaluationFailure
     = MissingEvaluationInputs (Set TxIn)
     | ConflictingEvaluationInput TxIn
     deriving stock (Eq, Show)
+
+instance Exception EvaluationFailure
 
 -- | The complete spent, collateral and reference-output extent of a body.
 evaluationInputs :: ConwayTx -> Set TxIn
