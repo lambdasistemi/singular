@@ -26,6 +26,7 @@ import Cardano.Node.Client.N2C.Connection
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
+import Cardano.Node.Client.Provider qualified as Node
 import Cardano.Slotting.Time (SystemStart (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Serialise (deserialiseOrFail)
@@ -105,7 +106,13 @@ confirmationSmoke output sock = withDevnetIndexer sock $ do
             snapshot <- rawSnapshot view
             BS.writeFile (output </> "confirmation-era-history.cbor") bytes
             LBS.writeFile (output </> "confirmation-point.json") $
-                encode (object ["snapshot" .= show snapshot])
+                encode
+                    ( object
+                        [ "point" .= show (Node.ledgerChainPoint snapshot)
+                        , "era" .= Node.ledgerCurrentEra snapshot
+                        , "tipSlot" .= Cage.unSlotNo (Node.ledgerTipSlot snapshot)
+                        ]
+                    )
             summaries <-
                 either (fail . show) pure (deserialiseOrFail (LBS.fromStrict bytes))
             end <- case reverse summaries of
@@ -121,65 +128,66 @@ confirmationSmoke output sock = withDevnetIndexer sock $ do
             magic
             sock
             provider
-            (node, submit) $ \session -> do
-            wallet <- walletForMode Devnet
-            point <- Cage.withView (nsProvider session) (pure . Cage.viewPoint)
-            let upper = SlotNo (Cage.unSlotNo (Cage.cpSlot point) + 50)
-                -- Independent arithmetic for this exact generated fixture:
-                -- 100ms slots and an unchanged finite raw history.
-                initialEnd = startMs + 100 * toInteger (Cage.unSlotNo horizon)
-                finiteDeadline = startMs + 100 * toInteger (Cage.unSlotNo upper) + 120_000
-            unless (upper < horizon && finiteDeadline > initialEnd) $
-                fail "ConfirmationSmokeNotShortHorizon"
-            finite <- payment session wallet (SJust upper)
-            confirmDeadline (nsProvider session) finite >>= \actual ->
-                unless
-                    (actual == finiteDeadline)
-                    (fail "ConfirmationSmokeFiniteDeadlineMismatch")
-            landedFinite <- sendAndConfirm session wallet finite
-            unbounded <- payment session wallet SNothing
-            landedUnbounded <- sendAndConfirm session wallet unbounded
-            -- Refusal at the actual finite ledger bound must never fall
-            -- back to the local wait margin.
-            refusal <-
-                try @NetworkTimeFailure $
-                    confirmDeadline
-                        (nsProvider session)
-                        ( finite
-                            & bodyTxL . vldtTxBodyL
-                                .~ ValidityInterval SNothing (SJust (SlotNo (Cage.unSlotNo horizon + 1)))
-                        )
-            case refusal of
-                Left _ -> pure ()
-                Right _ -> fail "ConfirmationSmokeAcceptedPastHorizonLedgerBound"
-            let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
-                missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
-            (finiteFailure, unboundedFailure) <-
-                concurrently
-                    (expectTimeout session missingFinite (Just finiteDeadline) initialEnd)
-                    (expectTimeout session missingUnbounded Nothing initialEnd)
-            LBS.writeFile (output </> "confirmation-smoke.json") $
-                encode $
-                    object
-                        [ "networkMagic" .= (42 :: Int)
-                        , "initialPoint" .= show point
-                        , "initialHorizonSlot" .= Cage.unSlotNo horizon
-                        , "initialHorizonEndMs" .= initialEnd
-                        , "finiteUpperSlot" .= Cage.unSlotNo upper
-                        , "finiteDeadlineMs" .= finiteDeadline
-                        , "confirmedFiniteTx" .= show (txIdTx landedFinite)
-                        , "confirmedNoUpperTx" .= show (txIdTx landedUnbounded)
-                        , "finiteMissingTx" .= show (txIdTx missingFinite)
-                        , "noUpperMissingTx" .= show (txIdTx missingUnbounded)
-                        , "finiteTimeout" .= show finiteFailure
-                        , "noUpperTimeout" .= show unboundedFailure
-                        , "ledgerPastHorizonRefusal"
-                            .= either show (const "unexpected acceptance") refusal
-                        , "limit"
-                            .= ( "Private key payments and confirmation waits only; registry journey remains separately required"
-                                    :: String
-                               )
-                        ]
+            (node, submit)
+            $ \session -> do
+                wallet <- walletForMode Devnet
+                point <- Cage.withView (nsProvider session) (pure . Cage.viewPoint)
+                let upper = SlotNo (Cage.unSlotNo (Cage.cpSlot point) + 50)
+                    -- Independent arithmetic for this exact generated fixture:
+                    -- 100ms slots and an unchanged finite raw history.
+                    initialEnd = startMs + 100 * toInteger (Cage.unSlotNo horizon)
+                    finiteDeadline = startMs + 100 * toInteger (Cage.unSlotNo upper) + 120_000
+                unless (upper < horizon && finiteDeadline > initialEnd) $
+                    fail "ConfirmationSmokeNotShortHorizon"
+                finite <- payment session wallet (SJust upper)
+                confirmDeadline (nsProvider session) finite >>= \actual ->
+                    unless
+                        (actual == finiteDeadline)
+                        (fail "ConfirmationSmokeFiniteDeadlineMismatch")
+                landedFinite <- sendAndConfirm session wallet finite
+                unbounded <- payment session wallet SNothing
+                landedUnbounded <- sendAndConfirm session wallet unbounded
+                -- Refusal at the actual finite ledger bound must never fall
+                -- back to the local wait margin.
+                refusal <-
+                    try @NetworkTimeFailure $
+                        confirmDeadline
+                            (nsProvider session)
+                            ( finite
+                                & bodyTxL . vldtTxBodyL
+                                    .~ ValidityInterval SNothing (SJust (SlotNo (Cage.unSlotNo horizon + 1)))
+                            )
+                case refusal of
+                    Left _ -> pure ()
+                    Right _ -> fail "ConfirmationSmokeAcceptedPastHorizonLedgerBound"
+                let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
+                    missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
+                (finiteFailure, unboundedFailure) <-
+                    concurrently
+                        (expectTimeout session missingFinite (Just finiteDeadline) initialEnd)
+                        (expectTimeout session missingUnbounded Nothing initialEnd)
+                LBS.writeFile (output </> "confirmation-smoke.json") $
+                    encode $
+                        object
+                            [ "networkMagic" .= (42 :: Int)
+                            , "initialPoint" .= show point
+                            , "initialHorizonSlot" .= Cage.unSlotNo horizon
+                            , "initialHorizonEndMs" .= initialEnd
+                            , "finiteUpperSlot" .= Cage.unSlotNo upper
+                            , "finiteDeadlineMs" .= finiteDeadline
+                            , "confirmedFiniteTx" .= show (txIdTx landedFinite)
+                            , "confirmedNoUpperTx" .= show (txIdTx landedUnbounded)
+                            , "finiteMissingTx" .= show (txIdTx missingFinite)
+                            , "noUpperMissingTx" .= show (txIdTx missingUnbounded)
+                            , "finiteTimeout" .= show finiteFailure
+                            , "noUpperTimeout" .= show unboundedFailure
+                            , "ledgerPastHorizonRefusal"
+                                .= either show (const "unexpected acceptance") refusal
+                            , "limit"
+                                .= ( "Private key payments and confirmation waits only; registry journey remains separately required"
+                                        :: String
+                                   )
+                            ]
 
 payment :: NodeSession -> Wallet -> StrictMaybe SlotNo -> IO ConwayTx
 payment session wallet upper = Cage.withView (nsProvider session) $ \view -> do

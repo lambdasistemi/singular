@@ -59,7 +59,7 @@ import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, witsTxL)
+import Cardano.Ledger.Api.Tx (mkBasicTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, mkBasicTxBody)
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
 import Cardano.Ledger.Api.Tx.Wits
