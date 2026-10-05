@@ -1263,6 +1263,12 @@ runCommand env c target key r = do
                         }
             }
 
+{- | Throwaway CLI registries leave the thirty-second fold guard plus
+fifteen seconds for preparation; retracts have fifteen seconds too.
+-}
+developmentWindows :: [String]
+developmentWindows = ["--process-time", "45000", "--retract-time", "15000"]
+
 -- | The arguments of one ordinary command, writing the files it reads.
 commandArgs
     :: Env -> Command -> Target -> String -> Receipt -> IO [String]
@@ -1279,7 +1285,12 @@ commandArgs env c target key r = do
         Create -> do
             seed <- previewSeed env r "preview" (optWalletKey o) dir Nothing
             pure
-                (["registry", "create", "--seed", seed] <> common <> node <> wallet)
+                ( ["registry", "create", "--seed", seed]
+                    <> developmentWindows
+                    <> common
+                    <> node
+                    <> wallet
+                )
         Insert -> do
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
@@ -1351,6 +1362,7 @@ previewSeed env r label skey dir seed = do
             , "--blueprint"
             , optBlueprint o
             ]
+                <> developmentWindows
                 <> ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
                 <> ["--wallet-skey", skey]
                 <> maybe [] (\s -> ["--seed", s]) seed
@@ -1548,22 +1560,23 @@ provoke env p target key r = do
                     env
                     r
                     "seed-late-after"
-                    [ "registry"
-                    , "create"
-                    , "--preview"
-                    , "--registry"
-                    , work </> "probe-after"
-                    , "--blueprint"
-                    , optBlueprint o
-                    , "--node-socket"
-                    , optSocket o
-                    , "--network-magic"
-                    , show (optMagic o)
-                    , "--wallet-skey"
-                    , late
-                    , "--seed"
-                    , seedLate
-                    ]
+                    $ [ "registry"
+                      , "create"
+                      , "--preview"
+                      , "--registry"
+                      , work </> "probe-after"
+                      , "--blueprint"
+                      , optBlueprint o
+                      , "--node-socket"
+                      , optSocket o
+                      , "--network-magic"
+                      , show (optMagic o)
+                      , "--wallet-skey"
+                      , late
+                      , "--seed"
+                      , seedLate
+                      ]
+                        <> developmentWindows
             finishFrom lockedBefore status printed (T.pack ("evidence" </> out)) $ \pe ->
                 pe
                     { peFilesBefore = copies
@@ -1612,6 +1625,7 @@ provoke env p target key r = do
             , "--confirm-timeout"
             , "120"
             ]
+                <> developmentWindows
     snapshot copyDir = do
         createDirectoryIfMissing True copyDir
         forM_ savedFiles $ \f ->
