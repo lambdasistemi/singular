@@ -45,6 +45,12 @@ import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 import Test.QuickCheck qualified as QC
 
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Core (eraProtVerHigh, mkBasicTx, mkBasicTxBody)
+import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
+import Cardano.Tx.Ledger (ConwayTx)
+
 import Singular.Provider.Koios.Client
 import Singular.Provider.Koios.FakeServer
 import Singular.Provider.Koios.Http
@@ -58,11 +64,11 @@ import Singular.Provider.Koios.Scripted
     ( assetTxRow
     , pageAnswer
     , scriptHashOfByte
+    , signedTransaction
     , txIdOfByte
     )
 import Singular.Provider.Koios.Wire (tipRequest)
-
-import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
+import Singular.Registry.Node (signedTx)
 
 -- | Fast bounds: three attempts, short delays, a short timeout.
 fast :: Text -> HttpConfig
@@ -355,7 +361,7 @@ echoSpec = describe "a server echoing the token" $
                     k <-
                         clientFor (fast base){httpTokenFile = Just file, httpAttempts = 1}
                     a <- show <$> tip k
-                    b <- show <$> submitTx k "tx"
+                    b <- show <$> submitTx k signedTransaction
                     c <- show <$> txStatus k [txIdOfByte 1]
                     -- the raw answer itself, header names and values and body
                     transport <-
@@ -522,7 +528,7 @@ assertAcceptedTokenAbsent token =
                 rendered <-
                     sequence
                         [ show <$> tip k
-                        , show <$> submitTx k "synthetic"
+                        , show <$> submitTx k signedTransaction
                         , show <$> probe k TipOf
                         ]
                 -- These are the failure and result renderings the CLI prints.
@@ -629,7 +635,8 @@ submitSpec = describe "submission" $ do
     it "returns a 400's refusal text after exactly one attempt" $
         withFakeKoios (\_ _ -> respond 400 [] "BadInputsUTxO") $ \base logOf -> do
             k <- clientFor (fast base)
-            submitTx k "tx" `shouldReturn` Right (SubmitRefused "BadInputsUTxO")
+            submitTx k signedTransaction
+                `shouldReturn` Right (SubmitRefused "BadInputsUTxO")
             countAt "/submittx" <$> logOf `shouldReturn` 1
 
     it "does not retry a 503 or a 429 at submission"
@@ -639,29 +646,36 @@ submitSpec = describe "submission" $ do
             )
         $ \base logOf -> do
             k <- clientFor (fast base)
-            reasonOf <$> submitTx k "tx"
+            reasonOf <$> submitTx k signedTransaction
                 `shouldReturn` Just (1, ServerFailing 503 "busy")
-            reasonOf <$> submitTx k "tx"
+            reasonOf <$> submitTx k signedTransaction
                 `shouldReturn` Just (1, RateLimited Nothing)
             countAt "/submittx" <$> logOf `shouldReturn` 2
 
     it "retries a submission that timed out, within the bound" $
         withFakeKoios (\_ _ -> respondAfter 1.5 202 [] "\"aa\"") $ \base logOf -> do
             k <- clientFor (fast base)
-            reasonOf <$> submitTx k "tx" `shouldReturn` Just (3, TimedOut)
+            reasonOf <$> submitTx k signedTransaction
+                `shouldReturn` Just (3, TimedOut)
             countAt "/submittx" <$> logOf `shouldReturn` 3
 
-    it "posts the raw bytes as CBOR"
+    it "posts the signed transaction as CBOR with its witness preserved"
         $ withFakeKoios
             ( \_ _ ->
                 respond 202 [] (BSL.toStrict (encode (T.replicate 64 "a")))
             )
         $ \base logOf -> do
             k <- clientFor (fast base)
-            submitTx k "\x84\x01\x02"
+            submitTx k signedTransaction
                 `shouldReturn` Right (SubmitAccepted (txIdOfByte 0xaa))
             seen <- logOf
-            map seenBody seen `shouldBe` ["\x84\x01\x02"]
+            let bytes = serialize' (eraProtVerHigh @ConwayEra) (signedTx signedTransaction)
+                unsigned =
+                    serialize'
+                        (eraProtVerHigh @ConwayEra)
+                        (mkBasicTx mkBasicTxBody :: ConwayTx)
+            bytes `shouldNotBe` unsigned
+            map seenBody seen `shouldBe` [bytes]
             map (lookup "content-type" . seenHeaders) seen
                 `shouldBe` [Just "application/cbor"]
 

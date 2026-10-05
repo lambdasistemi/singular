@@ -433,7 +433,7 @@ submitSpec = describe "submission" $ do
     it "a 400 is the server's refusal of the transaction, not a failure" $ do
         (transport, seen) <-
             scriptedTransport (\_ _ -> pure (answered 1 400 [] "BadInputsUTxO"))
-        result <- submitTx (koiosWith 10 10 transport) "tx-bytes"
+        result <- submitTx (koiosWith 10 10 transport) signedTransaction
         result `shouldBe` Right (SubmitRefused "BadInputsUTxO")
         map rawRetry <$> seen `shouldReturn` [RetryUnanswered]
     it "a 202 returns the accepted transaction id" $ do
@@ -442,7 +442,7 @@ submitSpec = describe "submission" $ do
                 ( \_ _ ->
                     pure (answered 1 202 [] (BSL.toStrict (encode (T.replicate 64 "a"))))
                 )
-        submitTx (koiosWith 10 10 transport) "tx-bytes"
+        submitTx (koiosWith 10 10 transport) signedTransaction
             `shouldReturn` Right (SubmitAccepted someTxId)
     it "reads are retried as transient, submission only when unanswered" $ do
         (transport, seen) <- scriptedTransport (\_ _ -> pure (okJson [] "[]"))

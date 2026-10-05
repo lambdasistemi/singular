@@ -101,6 +101,13 @@ the generated reference covers the main library only.
 | tx_status | each named transaction's confirmations | not yet seen |
 | account_info | registered or not registered, only when Koios says so | unknown registration |
 
+Submission through `submitTx` takes the existing `SignedTx` type, whose
+hidden constructor is reached through `signTx` with a payment signing key.
+The client serializes that signed transaction as Conway CBOR, preserving
+its body and witnesses. It accepts no unsigned transaction or raw byte
+string through this call. The type establishes that a payment-key witness
+was added; the ledger still decides whether the transaction is valid.
+
 Koios reports a datum hash for an output that carries an inline datum too;
 the inline datum wins. A reference script must hash to the script hash
 Koios names. A transaction that failed its scripts is returned with its

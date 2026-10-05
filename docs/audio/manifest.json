@@ -187891,11 +187891,381 @@
    ]
   },
   "docs-offchain-koios-client/what-each-call-returns-01": {
-   "audio_sha256": "f90d07192ea2e867f694073909accaf9ebd2c6b58a45fa8342cae89a13a8709a",
+   "audio_sha256": "ba990ad0ac70b9c47d050dfe55565be071d4ace290c82d1c4ac1964b83b035f5",
+   "characters": 428,
+   "cost": 0.00026536,
+   "duration": 28.875,
+   "index": 1,
+   "key": "4ee7498a536379bc90b659123b12f463acc3bdb917e0e15376b94feba191c0f2",
+   "page": "docs/offchain-koios-client.md",
+   "pause_ms": 400,
+   "section": "what-each-call-returns",
+   "sent_text": "Submission through submitTx takes the existing SignedTx type, whose hidden constructor is reached through signTx with a payment signing key. The client serializes that signed transaction as Conway CBOR, preserving its body and witnesses. It accepts no unsigned transaction or raw byte string through this call. The type establishes that a payment-key witness was added; the ledger still decides whether the transaction is valid.",
+   "text": "Submission through submitTx takes the existing SignedTx type, whose hidden constructor is reached through signTx with a payment signing key. The client serializes that signed transaction as Conway CBOR, preserving its body and witnesses. It accepts no unsigned transaction or raw byte string through this call. The type establishes that a payment-key witness was added; the ledger still decides whether the transaction is valid.",
+   "words": [
+    {
+     "end": 0.788,
+     "start": 0.25,
+     "text": "Submission"
+    },
+    {
+     "end": 1.038,
+     "start": 0.788,
+     "text": "through"
+    },
+    {
+     "end": 2.062,
+     "start": 1.038,
+     "text": "submitTx"
+    },
+    {
+     "end": 2.375,
+     "start": 2.062,
+     "text": "takes"
+    },
+    {
+     "end": 2.5,
+     "start": 2.375,
+     "text": "the"
+    },
+    {
+     "end": 3.088,
+     "start": 2.5,
+     "text": "existing"
+    },
+    {
+     "end": 4.05,
+     "start": 3.088,
+     "text": "SignedTx"
+    },
+    {
+     "end": 4.475,
+     "start": 4.05,
+     "text": "type"
+    },
+    {
+     "end": 4.55,
+     "start": 4.475,
+     "text": ","
+    },
+    {
+     "end": 4.775,
+     "start": 4.55,
+     "text": "whose"
+    },
+    {
+     "end": 5.1,
+     "start": 4.775,
+     "text": "hidden"
+    },
+    {
+     "end": 5.75,
+     "start": 5.1,
+     "text": "constructor"
+    },
+    {
+     "end": 5.912,
+     "start": 5.75,
+     "text": "is"
+    },
+    {
+     "end": 6.325,
+     "start": 5.912,
+     "text": "reached"
+    },
+    {
+     "end": 6.537,
+     "start": 6.325,
+     "text": "through"
+    },
+    {
+     "end": 7.45,
+     "start": 6.537,
+     "text": "signTx"
+    },
+    {
+     "end": 7.588,
+     "start": 7.45,
+     "text": "with"
+    },
+    {
+     "end": 7.65,
+     "start": 7.588,
+     "text": "a"
+    },
+    {
+     "end": 8.087,
+     "start": 7.65,
+     "text": "payment"
+    },
+    {
+     "end": 8.488,
+     "start": 8.087,
+     "text": "signing"
+    },
+    {
+     "end": 9.5,
+     "start": 8.488,
+     "text": "key"
+    },
+    {
+     "end": 9.775,
+     "start": 9.5,
+     "text": "."
+    },
+    {
+     "end": 10.075,
+     "start": 9.975,
+     "text": "The"
+    },
+    {
+     "end": 10.462,
+     "start": 10.075,
+     "text": "client"
+    },
+    {
+     "end": 11.25,
+     "start": 10.462,
+     "text": "serializes"
+    },
+    {
+     "end": 11.462,
+     "start": 11.25,
+     "text": "that"
+    },
+    {
+     "end": 11.775,
+     "start": 11.462,
+     "text": "signed"
+    },
+    {
+     "end": 12.587,
+     "start": 11.775,
+     "text": "transaction"
+    },
+    {
+     "end": 12.762,
+     "start": 12.587,
+     "text": "as"
+    },
+    {
+     "end": 13.262,
+     "start": 12.762,
+     "text": "Conway"
+    },
+    {
+     "end": 14.125,
+     "start": 13.262,
+     "text": "CBOR"
+    },
+    {
+     "end": 14.225,
+     "start": 14.125,
+     "text": ","
+    },
+    {
+     "end": 14.75,
+     "start": 14.225,
+     "text": "preserving"
+    },
+    {
+     "end": 14.962,
+     "start": 14.75,
+     "text": "its"
+    },
+    {
+     "end": 15.375,
+     "start": 14.962,
+     "text": "body"
+    },
+    {
+     "end": 15.5,
+     "start": 15.375,
+     "text": "and"
+    },
+    {
+     "end": 16.8,
+     "start": 15.5,
+     "text": "witnesses"
+    },
+    {
+     "end": 17.0,
+     "start": 16.8,
+     "text": "."
+    },
+    {
+     "end": 17.288,
+     "start": 17.175,
+     "text": "It"
+    },
+    {
+     "end": 17.725,
+     "start": 17.288,
+     "text": "accepts"
+    },
+    {
+     "end": 17.975,
+     "start": 17.725,
+     "text": "no"
+    },
+    {
+     "end": 18.5,
+     "start": 17.975,
+     "text": "unsigned"
+    },
+    {
+     "end": 19.263,
+     "start": 18.5,
+     "text": "transaction"
+    },
+    {
+     "end": 19.438,
+     "start": 19.263,
+     "text": "or"
+    },
+    {
+     "end": 19.675,
+     "start": 19.438,
+     "text": "raw"
+    },
+    {
+     "end": 19.962,
+     "start": 19.675,
+     "text": "byte"
+    },
+    {
+     "end": 20.3,
+     "start": 19.962,
+     "text": "string"
+    },
+    {
+     "end": 20.487,
+     "start": 20.3,
+     "text": "through"
+    },
+    {
+     "end": 20.675,
+     "start": 20.487,
+     "text": "this"
+    },
+    {
+     "end": 21.5,
+     "start": 20.675,
+     "text": "call"
+    },
+    {
+     "end": 21.7,
+     "start": 21.5,
+     "text": "."
+    },
+    {
+     "end": 21.95,
+     "start": 21.875,
+     "text": "The"
+    },
+    {
+     "end": 22.188,
+     "start": 21.95,
+     "text": "type"
+    },
+    {
+     "end": 22.925,
+     "start": 22.188,
+     "text": "establishes"
+    },
+    {
+     "end": 23.062,
+     "start": 22.925,
+     "text": "that"
+    },
+    {
+     "end": 23.125,
+     "start": 23.062,
+     "text": "a"
+    },
+    {
+     "end": 23.65,
+     "start": 23.125,
+     "text": "payment-key"
+    },
+    {
+     "end": 24.025,
+     "start": 23.65,
+     "text": "witness"
+    },
+    {
+     "end": 24.212,
+     "start": 24.025,
+     "text": "was"
+    },
+    {
+     "end": 25.05,
+     "start": 24.212,
+     "text": "added"
+    },
+    {
+     "end": 25.275,
+     "start": 25.05,
+     "text": ";"
+    },
+    {
+     "end": 25.525,
+     "start": 25.45,
+     "text": "the"
+    },
+    {
+     "end": 25.85,
+     "start": 25.525,
+     "text": "ledger"
+    },
+    {
+     "end": 26.125,
+     "start": 25.85,
+     "text": "still"
+    },
+    {
+     "end": 26.7,
+     "start": 26.125,
+     "text": "decides"
+    },
+    {
+     "end": 26.913,
+     "start": 26.7,
+     "text": "whether"
+    },
+    {
+     "end": 27.0,
+     "start": 26.913,
+     "text": "the"
+    },
+    {
+     "end": 27.65,
+     "start": 27.0,
+     "text": "transaction"
+    },
+    {
+     "end": 27.8,
+     "start": 27.65,
+     "text": "is"
+    },
+    {
+     "end": 28.675,
+     "start": 27.8,
+     "text": "valid"
+    },
+    {
+     "end": 28.875,
+     "start": 28.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-koios-client/what-each-call-returns-02": {
+   "audio_sha256": "b8a40cfd23311d498a0fe3a5e7aa1eeda819e5dbf036182567a3c35c69cc146c",
    "characters": 457,
    "cost": 0.00028334000000000003,
    "duration": 30.375,
-   "index": 1,
+   "index": 2,
    "key": "2db9a7970a8659b43f91996941a42337760a1beb109e9f50b14bcacd09579178",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,

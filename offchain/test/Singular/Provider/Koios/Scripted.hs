@@ -17,6 +17,7 @@ module Singular.Provider.Koios.Scripted
     , queryParam
     , txIdOfByte
     , scriptHashOfByte
+    , signedTransaction
     ) where
 
 import Data.Aeson (Value, encode, object, (.=))
@@ -29,7 +30,10 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word8)
 
+import Cardano.Crypto.DSIGN (genKeyDSIGN)
 import Cardano.Crypto.Hash.Class (hashFromBytes)
+import Cardano.Crypto.Seed (mkSeedFromBytes)
+import Cardano.Ledger.Core (mkBasicTx, mkBasicTxBody)
 import Cardano.Ledger.Hashes (ScriptHash (..), unsafeMakeSafeHash)
 import Cardano.Ledger.TxIn (TxId (..))
 
@@ -41,6 +45,16 @@ import Singular.Provider.Koios.Client
     , RawRequest (..)
     , Transport (..)
     )
+import Singular.Registry.Node (SignedTx, signTx)
+
+{- | An empty transaction with a real witness from a deterministic test key.
+It exercises signed serialization, not ledger acceptance or funding.
+-}
+signedTransaction :: SignedTx
+signedTransaction =
+    signTx
+        (genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 1)))
+        (mkBasicTx mkBasicTxBody)
 
 {- | A transport answering each request with the script's exchange,
 given the request and how many requests preceded it. The second action

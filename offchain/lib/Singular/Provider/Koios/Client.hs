@@ -81,8 +81,9 @@ import Data.Text.Encoding qualified as TE
 import Cardano.Ledger.Address (AccountAddress, Addr)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (EpochNo)
+import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Conway (ConwayEra)
-import Cardano.Ledger.Core (PParams)
+import Cardano.Ledger.Core (PParams, eraProtVerHigh)
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
@@ -122,6 +123,7 @@ import Singular.Provider.Koios.Wire
     , txInfoRequest
     , txStatusRequest
     )
+import Singular.Registry.Node (SignedTx, signedTx)
 
 -- | How a transport may retry a request.
 data Retry
@@ -549,16 +551,19 @@ data SubmitOutcome
       SubmitRefused Text
     deriving stock (Eq, Show)
 
-{- | Submit a signed transaction's CBOR. A 400 is the server's refusal of
-the transaction and is returned as its text; the transport retries the
-submission only when no answer arrived.
+{- | Submit a 'SignedTx', whose hidden constructor requires a payment-key
+witness through 'Singular.Registry.Node.signTx'. Serialize that
+signed transaction as Conway CBOR without changing its body or witnesses.
+A 400 is the server's refusal of the transaction and is returned as its
+text; the transport retries the submission only when no answer arrived.
 -}
 submitTx
     :: (Monad m)
     => Koios m
-    -> ByteString
+    -> SignedTx
     -> m (Either ClientFailure SubmitOutcome)
-submitTx k bytes = do
+submitTx k tx = do
+    let bytes = serialize' (eraProtVerHigh @ConwayEra) (signedTx tx)
     ex <- exchange (koiosTransport k) (rawRequest (submitTxRequest bytes))
     let failure = failing CallSubmitTx
         attempts = exchangeAttempts ex

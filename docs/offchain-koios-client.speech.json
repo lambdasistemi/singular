@@ -67,6 +67,10 @@
       "pause": 500
     },
     {
+      "text": "Submission through submitTx takes the existing SignedTx type, whose hidden constructor is reached through signTx with a payment signing key. The client serializes that signed transaction as Conway CBOR, preserving its body and witnesses. It accepts no unsigned transaction or raw byte string through this call. The type establishes that a payment-key witness was added; the ledger still decides whether the transaction is valid.",
+      "pause": 400
+    },
+    {
       "text": "Koios reports a datum hash for an output that carries an inline datum too; the inline datum wins. A reference script must hash to the script hash Koios names. A transaction that failed its scripts is returned with its validity false, never dropped. The order of asset_txs makes pages stable; it is not the order in which the asset was passed on, because Koios gives no position within a block and a transaction that included an asset need not have spent it.",
       "pause": 400
     }
@@ -143,6 +147,6 @@
   ],
   "_source": {
     "file": "offchain-koios-client.md",
-    "sha256": "1d40b9da222af019c0470f15a248bcc12ed097c5d7a34437a0aa4bbabba6e447"
+    "sha256": "dac22be36bfd460d792f85113a748bedca577c02e6ead62529163f02c5edae66"
   }
 }
