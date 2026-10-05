@@ -263,6 +263,7 @@ acceptance from these computation checks. Recorded comparisons, reached faults,
 retained query and builder properties, compiler closure and the actual private
 journey and recovery are separate evidence obligations. The first approved
 checkpoint binds source comparisons and a reached caller fault; it does not
-accept the migrated callers. Final evidence and the second checkpoint remain
-pending. API source links follow the moved public owner; wider generated local
-service coverage and changed narration are explicit gaps, not implied passes.
+accept the migrated callers. Acceptance requires final receipt-bound checks and
+the second checkpoint. API source links follow the moved public owner. Wider
+generated local service coverage remains a published gap; changed narration
+requires root generation and a successful clip check.

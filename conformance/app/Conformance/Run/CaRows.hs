@@ -82,6 +82,7 @@ import Singular.Registry.Node
     , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -757,7 +758,7 @@ runTokenlessOutputAuthentication env w = do
     require
         "tokenless-output-authentication: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
-    evalMap <- Cage.withView prov (`Cage.viewEvaluateTx` unsigned)
+    evalMap <- Cage.withView prov (`Services.evaluateTx` unsigned)
     require
         ( "tokenless-output-authentication: the node evaluated "
             <> show (Map.size evalMap)

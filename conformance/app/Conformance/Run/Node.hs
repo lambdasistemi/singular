@@ -28,8 +28,14 @@ module Conformance.Run.Node
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel)
+import Control.Exception (bracket)
 import Data.Text (Text)
 import GHC.Clock (getMonotonicTime)
+import Ouroboros.Network.Magic (unNetworkMagic)
+import Singular.Registry.Node.RawView (rawNodeProvider)
+import Singular.Registry.Node.Session (guardRawConnection)
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import System.FilePath (takeDirectory)
 
 import Cardano.Node.Client.N2C.Connection
     ( newLSQChannel
@@ -114,32 +120,29 @@ openHarnessNode
 openHarnessNode wrap body = withNodeSocket $ \sock -> do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
-    nodeThread <-
-        async $
-            runNodeClient
-                sessionMagic
-                sock
-                lsqCh
-                ltxsCh
-    let n2c = mkN2CProvider lsqCh
-        nodeProv = adaptProvider sessionMagic n2c
-    awaitConnection sessionMagic sock nodeThread nodeProv
-    (submit, extra) <-
-        wrap
-            n2c
-            lsqCh
-            (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
-    prov <- followedProvider nodeProv submit
-    result <-
-        body
-            Capabilities
-                { capReads = prov
-                , capSubmit = signedSubmitter submit
-                , capConfirm = confirm
-                }
-            extra
-    cancel nodeThread
-    pure result
+    bracket
+        (async (runNodeClient sessionMagic sock lsqCh ltxsCh))
+        cancel
+        $ \nodeThread -> do
+            (n2c, guardedSubmit, raw) <-
+                guardRawConnection
+                    nodeThread
+                    (mkN2CProvider lsqCh)
+                    (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
+                    (rawNodeProvider lsqCh)
+            material <-
+                loadTimeMaterial (unNetworkMagic sessionMagic) (takeDirectory sock)
+            let nodeProv = adaptProvider sessionMagic material raw
+            awaitConnection sessionMagic sock nodeThread nodeProv
+            (submit, extra) <- wrap n2c lsqCh guardedSubmit
+            prov <- followedProvider nodeProv submit
+            body
+                Capabilities
+                    { capReads = prov
+                    , capSubmit = signedSubmitter submit
+                    , capConfirm = confirm
+                    }
+                extra
 
 -- | Wait until a submitted transaction is on chain, as the mode allows.
 confirm :: ConwayTx -> IO ()

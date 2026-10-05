@@ -125,6 +125,7 @@ import Singular.Registry.Node
     , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
@@ -569,7 +570,7 @@ readRequestDatum prov cfg tid key = do
 measureUnitsProv
     :: Cage.Provider IO -> ConwayTx -> IO (Integer, Integer)
 measureUnitsProv prov tx = do
-    evalMap <- Cage.withView prov (`Cage.viewEvaluateTx` tx)
+    evalMap <- Cage.withView prov (`Services.evaluateTx` tx)
     let evalStr = Map.map (either (Left . show) Right) evalMap
     units <- case sequence evalStr of
         Left e -> failWith ("measure: node evaluation failed: " <> e)
