@@ -616,39 +616,25 @@ countingProvider' answer = Cage.Provider $ \act ->
 positional pattern fails to compile when the view gains a read.
 -}
 driveEveryQuery :: Cage.View IO -> IO ()
-driveEveryQuery
-    ( Cage.View
-            _point
-            _params
-            _time
-            _resolved
-            _log
-            utxos
-            registered
-            evaluate
-            toSlot
-            ceil
-        ) =
-        do
-                replicateM_ timeCalls (void time)
-            replicateM_
-            resolvedCalls
-            (void (resolved Set.empty))
-            replicateM_
-            utxosCalls
-            (void (utxos payer))
-            replicateM_
-            registeredCalls
-            (void (registered credential))
-            replicateM_
-            evaluateCalls
-            (void (evaluate emptyTx))
-            replicateM_
-            toSlotCalls
-            (void (toSlot 1_000))
-            replicateM_
-            ceilCalls
-            (void (ceil 1_000))
+driveEveryQuery ( Cage.View
+                        _point
+                        _params
+                        time
+                        resolved
+                        _log
+                        utxos
+                        registered
+                        evaluate
+                        toSlot
+                        ceil
+                    ) = do
+    replicateM_ timeCalls (void time)
+    replicateM_ resolvedCalls (void (resolved Set.empty))
+    replicateM_ utxosCalls (void (utxos payer))
+    replicateM_ registeredCalls (void (registered credential))
+    replicateM_ evaluateCalls (void (evaluate emptyTx))
+    replicateM_ toSlotCalls (void (toSlot 1_000))
+    replicateM_ ceilCalls (void (ceil 1_000))
 
 -- | An address and a script credential every read can be given.
 payer :: Addr
