@@ -175,6 +175,39 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         }
                 )
+    describe "registry creation windows" $ do
+        it "accepts positive integer windows in milliseconds" $
+            forM_ [("1", "1"), ("120000", "30000"), ("600000", "300000")] $
+                \(processing, retracting) ->
+                    parseCommand
+                        ( ["registry", "create", "--seed", seedText]
+                            <> ["--process-time", processing, "--retract-time", retracting]
+                            <> reg
+                            <> node
+                            <> wallet
+                        )
+                        `shouldSatisfy` either (const False) (const True)
+        forM_ ["--process-time", "--retract-time"] $ \flag -> do
+            it
+                ("refuses non-positive and non-integer " <> flag <> " before effects") $
+                forM_ ["0", "-1", "1.5", "lots", "", "1e3"] $ \argument ->
+                    parseCommand
+                        ( ["registry", "create", "--seed", seedText, flag, argument]
+                            <> reg
+                            <> node
+                            <> wallet
+                        )
+                        `shouldBe` Left
+                            (BadValue flag "needs a positive integer number of milliseconds")
+            it ("refuses a missing " <> flag <> " value") $
+                parseCommand
+                    ( ["registry", "create", "--seed", seedText]
+                        <> reg
+                        <> node
+                        <> wallet
+                        <> [flag]
+                    )
+                    `shouldBe` Left (BadValue flag "needs a value")
     it "reads an insert with its payload and the default deposit" $
         parseCommand
             ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]

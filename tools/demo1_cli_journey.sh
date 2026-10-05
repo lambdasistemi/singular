@@ -450,7 +450,9 @@ run create-seed-not-owned client-refusal -- registry create --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 [ ! -e "$reg/registry.json" ] || fail "a refused create saved a registry"
 
-run create success -- registry create --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+process_time=120000
+retract_time=30000
+run create success -- registry create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 state="$(field create .pins.pinState)"
 token="$(field create .token)"
 active="$(field create .pins.pinActive)"
@@ -459,6 +461,9 @@ alicekey="$(field create .walletKeyHash)"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
   "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
 refused create-again client-refusal -- registry create --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e --argjson p "$process_time" --argjson r "$retract_time" \
+  '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
+  || fail "create did not report the chosen processing and retract windows"
 say "registry $token booted from $seed"
 
 # ------------------------------------------------------------------
@@ -558,6 +563,14 @@ jq -e --slurpfile i "$receipts/insert.json" '. == $i[0].envelope' "$stored" >/de
   || fail "the kept envelope is not the one inserted"
 run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
+jq -e --argjson p "$process_time" --argjson r "$retract_time" --slurpfile b "$receipts/insert.json" '
+  .processTime == $p and .retractTime == $r
+  and ([.pendingRequests[] | select(.request == $b[0].request)] | length == 1)
+  and ([.pendingRequests[] | select(.request == $b[0].request)][0].submittedAt + .processTime == $b[0].foldDeadline.posixMs)
+' "$receipts/inspect-pending.json" >/dev/null \
+  || fail "inspect did not read the chosen windows, or the booking deadline differs from its live submission time plus the processing window"
+say "chosen registry windows read back; booking deadline is submission time plus the processing window"
+
 
 # A-001: an unconverted processing deadline cannot prove opening and is
 # refused before the window, naming when it opens.
