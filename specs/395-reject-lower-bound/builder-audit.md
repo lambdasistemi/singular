@@ -107,12 +107,12 @@ SHA-256 `760f92c00e51d945a141b29d2ef6c571826a4df3df7d0486aacc19f75526c87e`.
 
 ## Sparse blocks and verification limits
 
-The Registry CI job added in `6ce9a7c0` runs the existing connected phase-three reject
-on a genesis variant with active-slot coefficient 0.05, one-second slots and
-an epoch of 2000 slots. It changes only the supplied genesis and adds one job.
-The existing `E2E_GENESIS_DIR` input selects it; ordinary fast-window rows retain
-their current genesis. The sparse job's ledger acceptance is pending exact-head
-CI, and this page claims neither a local sparse run nor a preprod write.
+The [sparse-block reject check (#403)](https://github.com/lambdasistemi/singular/issues/403)
+continues separately. The [attempted CI job](https://github.com/lambdasistemi/singular/actions/runs/37308568141/job/111758568690)
+reached the phase-three reject test and was cancelled after its 60-minute limit
+without an acceptance result. The sparse job and its genesis variant have been
+removed from this change. Sparse-block ledger acceptance remains unverified;
+this page claims neither a local sparse run nor a preprod write.
 
 The focused reject test executed a built body with a controlled view whose tip
 lags the host clock: three checks passed, including 100 generated lag cases.

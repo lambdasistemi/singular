@@ -49,12 +49,12 @@
       "pause": 400
     },
     {
-      "text": "Sparse-block development network: one CI run with an active-slot coefficient below one, or a linked ticket when larger than a configuration change and one job.",
+      "text": "Sparse-block development network: the sparse-block reject check (#403) tracks the larger repair after the attempted job exceeded its 60-minute limit. The sparse job and genesis variant are removed here; ledger acceptance remains unverified.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "c4cf60bbed4e1787f6313279631d5d8012d1c17a5d3fe9e1ad8456acdc15d69c"
+    "sha256": "a9358350328b495e2ddd711ede9c4f822f41b67fe983a7da9959c95364fb2fc2"
   }
 }

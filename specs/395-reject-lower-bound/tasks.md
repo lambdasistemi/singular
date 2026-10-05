@@ -28,6 +28,8 @@ As a maintainer, I want CI to see what preprod sees.
 
 - [x] Release-PR failure verdict: whether job 111713723071 shares this cause,
   with the evidence, recorded in the audit page; a different cause filed.
-- [x] Sparse-block development network: one CI run with an active-slot
-  coefficient below one, or a linked ticket when larger than a configuration
-  change and one job.
+- [x] Sparse-block development network:
+  [the sparse-block reject check (#403)](https://github.com/lambdasistemi/singular/issues/403)
+  tracks the larger repair
+  after the attempted job exceeded its 60-minute limit. The sparse job and
+  genesis variant are removed here; ledger acceptance remains unverified.

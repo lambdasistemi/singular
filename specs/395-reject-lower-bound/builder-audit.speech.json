@@ -81,7 +81,7 @@
       "pause": 500
     },
     {
-      "text": "The Registry CI job added in 6ce9a7c0 runs the existing connected phase-three reject on a genesis variant with active-slot coefficient 0.05, one-second slots and an epoch of 2000 slots. It changes only the supplied genesis and adds one job. The existing E2E_GENESIS_DIR input selects it; ordinary fast-window rows retain their current genesis. The sparse job's ledger acceptance is pending exact-head CI, and this page claims neither a local sparse run nor a preprod write.",
+      "text": "The sparse-block reject check (#403) continues separately. The attempted CI job reached the phase-three reject test and was cancelled after its 60-minute limit without an acceptance result. The sparse job and its genesis variant have been removed from this change. Sparse-block ledger acceptance remains unverified; this page claims neither a local sparse run nor a preprod write.",
       "pause": 400
     },
     {
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "builder-audit.md",
-    "sha256": "cd1a8d95f3e37478337352464ac8658fb21d393c9ca2f2546692635a09dedf89"
+    "sha256": "4c5058e6300ae3ded373497e24166cfe8f5edff429662c75cd1e6072fcece78a"
   }
 }
