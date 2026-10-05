@@ -3,7 +3,7 @@
 
 {- |
 Module      : Singular.Registry.OneViewSpec
-Description : #323 — one operation reads the chain at one point
+Description : #323 — one operation consumes one acquired raw session
 License     : Apache-2.0
 
 The #300 review found the ordinary CLI reading protocol parameters for
@@ -13,8 +13,11 @@ the body disagree. These rows run the real request builder against the in-memory
 adapter, change the protocol parameters and the wallet between the
 operation's preview and its build, and compare the built body with the
 one the same operation builds when nothing changes. An operation is one
-acquired view, so the change never enters; the pre-change shape, the
+acquired raw session, so the change never enters; the pre-change shape, the
 preview and the build each acquiring their own, lets it in.
+
+This private fixture snapshots its raw value at acquisition. Its explicit
+Unbound descriptor makes no claim about shipping Koios snapshot binding.
 
 The reached control runs a fresh operation after the change and
 requires it to differ from the unchanged body, so the change is one the
@@ -63,20 +66,22 @@ import UntypedPlutusCore.DeBruijn ()
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.Node.Memory
-    ( ChainState (..)
-    , MemoryChain
-    , memoryProvider
-    , mutate
-    , newMemoryChain
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.RawChainFixture
+    ( ChainFacts (..)
+    , RawChain
+    , advanceChain
+    , newRawChain
+    , rawChainProvider
     )
-import Singular.Registry.Provider (Provider (..), View (..))
+import Singular.Registry.SessionIO (parameters, withLatest)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -85,11 +90,10 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 
 -- | The chain before anything changes: parameters and the payer's wallet.
-initial :: ChainState
+initial :: ChainFacts
 initial =
-    ChainState
+    ChainFacts
         { csNetwork = 42
-        , csEra = "Conway"
         , csTip = Nothing
         , csPParams = params 44 4_310
         , csUTxO = Map.fromList [(outRef '3', ada 100_000_000)]
@@ -100,7 +104,7 @@ initial =
 {- | The change made between preview and build: dearer bytes and a new,
 larger wallet output the builder would pick as its fee input.
 -}
-change :: ChainState -> ChainState
+change :: ChainFacts -> ChainFacts
 change c =
     c
         { csPParams = params 88 8_620
@@ -117,14 +121,14 @@ params perByte perUTxOByte =
         & ppMaxValSizeL .~ 5_000
 
 -- | A chain holding this value, past its origin.
-chainOf :: ChainState -> IO MemoryChain
+chainOf :: ChainFacts -> IO RawChain
 chainOf s = do
-    chain <- newMemoryChain s
-    mutate chain id
+    chain <- newRawChain s
+    advanceChain chain id
     pure chain
 
 -- | Build the request from one view.
-request :: View IO -> IO ConwayTx
+request :: Session NoWitness IO -> IO ConwayTx
 request v =
     requestEdgeImpl cfg v (Coin 1_000_000) tokenId "t323-key" 1 payer
 
@@ -132,10 +136,10 @@ request v =
 @between@ happen, then build the request from the same view. Returns the
 preview's parameters and the body.
 -}
-operation :: MemoryChain -> IO () -> IO (PParams ConwayEra, ConwayTx)
+operation :: RawChain -> IO () -> IO (PParams ConwayEra, ConwayTx)
 operation chain between =
-    withView (memoryProvider chain) $ \v -> do
-        let preview = viewProtocolParams v
+    withLatest (rawChainProvider chain) $ \v -> do
+        preview <- parameters v
         between
         tx <- request v
         pure (preview, tx)
@@ -143,12 +147,12 @@ operation chain between =
 {- | The pre-change shape: the preview reads the chain once and the
 builder reads it again, each through its own acquisition.
 -}
-twoReads :: MemoryChain -> IO () -> IO (PParams ConwayEra, ConwayTx)
+twoReads :: RawChain -> IO () -> IO (PParams ConwayEra, ConwayTx)
 twoReads chain between = do
-    let prov = memoryProvider chain
-    preview <- withView prov (pure . viewProtocolParams)
+    let prov = rawChainProvider chain
+    preview <- withLatest prov parameters
     between
-    tx <- withView prov request
+    tx <- withLatest prov request
     pure (preview, tx)
 
 -- | What a body commits to that the chain's state decides.
@@ -175,7 +179,7 @@ spec = describe "one operation reads the chain at one point (#323)" $ do
         $ do
             (_, control) <- chainOf initial >>= (`operation` pure ())
             raced <- chainOf initial
-            (preview, built) <- operation raced (mutate raced change)
+            (preview, built) <- operation raced (advanceChain raced change)
             preview `shouldBe` csPParams initial
             shape built `shouldBe` shape control
     it "a fresh operation after the change sees it (reached control)" $ do
@@ -189,7 +193,7 @@ spec = describe "one operation reads the chain at one point (#323)" $ do
         $ do
             (_, control) <- chainOf initial >>= (`operation` pure ())
             raced <- chainOf initial
-            (preview, built) <- twoReads raced (mutate raced change)
+            (preview, built) <- twoReads raced (advanceChain raced change)
             preview `shouldBe` csPParams initial
             shape built `shouldNotBe` shape control
 

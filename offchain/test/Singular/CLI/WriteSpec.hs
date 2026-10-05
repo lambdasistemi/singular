@@ -11,13 +11,13 @@ One write of the ordinary CLI, driven through 'submitBuilt' over the
 in-memory adapter with a recording submitter and a recording
 confirmation: no node, no process-wide session.
 
-Every compared value is obtained at run time: the chain point is the one
-the build's own view reports, the signed body is the one the build
+Every compared value is obtained at run time: the session identity and
+consumed raw facts are the ones the build reports, the signed body is the one the build
 returned signed by the wallet's key, and the moved chain's point is read
 back by a fresh acquisition. The chain is moved inside the build, after
-the view is acquired and before the body is signed, so a journal that
-re-read the chain would name another point; the reached control requires
-the fresh point to differ.
+the session is acquired and before the body is signed. The reached control
+requires the fresh tip to differ. Unbound is retained; an observed tip is
+never promoted to an atomic chain-point binding.
 -}
 module Singular.CLI.WriteSpec (spec) where
 
@@ -111,13 +111,10 @@ import Cardano.Ledger.BaseTypes
     )
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..))
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
 
+import Data.Aeson.KeyMap qualified as KeyMap
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
 import Singular.CLI.Live
@@ -130,7 +127,6 @@ import Singular.CLI.Live
     , savedIdentity
     , txInText
     )
-import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Plan (planTerminate, planUpdate)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -158,32 +154,37 @@ import Singular.CLI.Session
     , txIdHex
     )
 import Singular.CLI.TrieHistory (readTrieHistory)
+import Singular.Registry.Capabilities
+    ( Capabilities (..)
+    , sessionReceipt
+    )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment
     ( Deployment (..)
     , mirrorPathFor
     , parseOutRef
     )
+import Singular.Registry.Evidence (unverifiedVerifier)
 import Singular.Registry.Ledger (Coin (..), Root (..), TokenId (..))
-import Singular.Registry.Node.Memory
-    ( ChainState (..)
-    , MemoryChain
-    , memoryProvider
-    , mutate
-    , newMemoryChain
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.RawChainFixture
+    ( ChainFacts (..)
+    , RawChain
+    , advanceChain
+    , newRawChain
+    , rawChainProvider
     )
-import Singular.Registry.Node.PhaseLog
-    ( PhaseLog
-    , loggedProvider
-    , phaseLogAt
-    )
-import Singular.Registry.Node.Submit
+import Singular.Registry.SessionEvidence (FactRecord, observeProvider)
+import Singular.Registry.SessionIO qualified as SessionIO
+import Singular.Registry.Signing
     ( signTx
-    , signedSubmitter
     , signedTx
     )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.StubSession
+    ( servingSession
+    , stubSession
+    , withAddressOutputs
+    )
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Mirror qualified as TrieMirror
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
@@ -209,24 +210,29 @@ spec = writeRows >> phaseLogRows >> inputRows
 writeRows :: Spec
 writeRows = describe "a singular write on injected capabilities (#323)" $ do
     it
-        "journals every field of the point its body was built from, \
-        \though the chain moved before signing"
+        "journals the actual build session and consumed raw facts, though the chain moved before signing"
         $ withFixture
         $ \fx -> do
             _ <- try @SomeException (write fx)
             built <- readIORef (fxBuiltAt fx)
-            point <- maybe (fail "the build never ran") pure built
+            (scope, builtTip) <- maybe (fail "the build never ran") pure built
             fresh <-
-                Cage.withView (memoryProvider (fxChain fx)) (pure . Cage.viewPoint)
-            fresh `shouldNotBe` point
+                SessionIO.withLatest (rawChainProvider (fxChain fx)) SessionIO.tip
+            Cage.observedSlot fresh `shouldNotBe` Cage.observedSlot builtTip
             prepared <- preparedLines (fxDir fx)
-            map journalledPoint prepared
-                `shouldBe` [ Just
-                                ( Cage.cpNetwork point
-                                , Cage.cpEra point
-                                , renderPoint point
-                                )
-                           ]
+            map (field "journalSession") prepared `shouldBe` [Just scope]
+            map (field "journalNetwork") prepared `shouldBe` [Just viewNetwork]
+            map (field "journalEra") prepared `shouldBe` [Just ("Conway" :: Text)]
+            map (field "journalChainPoint") prepared
+                `shouldBe` [Nothing :: Maybe Text]
+            case scope of
+                Aeson.Object fields -> do
+                    field "networkMagic" fields `shouldBe` Just viewNetwork
+                    (field "facts" fields :: Maybe [Aeson.Value])
+                        `shouldSatisfy` maybe False (not . null)
+                    field "binding" fields
+                        `shouldBe` Just (Aeson.object ["kind" Aeson..= ("Unbound" :: Text)])
+                _ -> expectationFailure "the build session is not a computed object"
     it
         "confirms through the confirmation it was given, with no node \
         \session open"
@@ -383,13 +389,14 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                 , wcCapabilities =
                                     (wcCapabilities (writeContext fx))
                                         { capReads =
-                                            servingView
-                                                stubView
-                                                    { Cage.viewUTxOsAt = \addr ->
+                                            servingSession $
+                                                withAddressOutputs
+                                                    ( \addr ->
                                                         if addr == requestAddr
                                                             then pure [(request, requestOut)]
                                                             else fail "an inadmissible request reached a later provider read"
-                                                    }
+                                                    )
+                                                    stubSession
                                         }
                                 }
                         action =
@@ -517,41 +524,46 @@ withInputFixture use = withFixture $ \fx -> do
         "boot"
         boot
         "fixture state output recorded"
-    let live = Live saved [] (TxIn (txIdTx boot) (TxIx 0), stateOut)
-    point <- newStatePoint (fst (liveState live))
-    let chosen = TS.TrieSelection (savedIdentity saved) point (Root emptyRoot)
-    TrieMirror.createStoredMirror
-        (configPath (fxDir fx))
-        chosen
-        boot
-        (const (pure ()))
-        `shouldReturn` Right ()
-    mirror <- openMirror saved
-    requireMirrorSelection saved live mirror
-    use fx saved live mirror boot
+    SessionIO.withLatest (capReads (wcCapabilities (writeContext fx))) $ \actualSession -> do
+        let live =
+                Live
+                    { liveSession = actualSession
+                    , liveSaved = saved
+                    , liveRefs = []
+                    , liveState = (TxIn (txIdTx boot) (TxIx 0), stateOut)
+                    }
+        let point = newStatePoint actualSession (fst (liveState live))
+        let chosen = TS.TrieSelection (savedIdentity saved) point (Root emptyRoot)
+        TrieMirror.createStoredMirror
+            (configPath (fxDir fx))
+            chosen
+            boot
+            (const (pure ()))
+            `shouldReturn` Right ()
+        mirror <- openMirror saved
+        requireMirrorSelection saved live mirror
+        use fx saved live mirror boot
 
 data Fixture = Fixture
     { fxDir :: FilePath
-    , fxChain :: MemoryChain
+    , fxChain :: RawChain
     , fxWallet :: Wallet
     , fxSent :: IORef [ConwayTx]
     , fxConfirmed :: IORef [String]
-    , fxBuiltAt :: IORef (Maybe Cage.ChainPoint)
+    , fxBuiltAt :: IORef (Maybe (Aeson.Value, Cage.TipObservation))
     , fxUnsigned :: IORef (Maybe ConwayTx)
+    , fxFacts :: IORef [FactRecord]
     }
 
 magic :: Word32
 magic = 42
 
-{- | The network and era the chain's views name: neither the magic the
-wallet was loaded under nor the era name a journal could write as a
-constant, so a journalled point that does not come from the view fails.
+{- | The configured provider network differs from the wallet's loading magic,
+so writing the wallet's magic into the acquired session receipt fails.
+The transaction era is read from the actual Conway body type.
 -}
 viewNetwork :: Word32
 viewNetwork = 2_323
-
-viewEra :: Text
-viewEra = "era-under-test"
 
 withFixture :: (Fixture -> IO a) -> IO a
 withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
@@ -559,10 +571,9 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
     BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
     w <- loadWallet magic keyPath
     chain <-
-        newMemoryChain
-            ChainState
+        newRawChain
+            ChainFacts
                 { csNetwork = viewNetwork
-                , csEra = viewEra
                 , csTip = Nothing
                 , csPParams = emptyPParams
                 , csUTxO =
@@ -572,12 +583,13 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
                 , csRegistered = Set.empty
                 , csNetworkTime = syntheticTime
                 }
-    mutate chain id
+    advanceChain chain id
     Fixture (dir </> "registry") chain w
         <$> newIORef []
         <*> newIORef []
         <*> newIORef Nothing
         <*> newIORef Nothing
+        <*> newIORef []
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -591,11 +603,21 @@ writeContext fx =
         , wcWallet = fxWallet fx
         , wcCapabilities =
             Capabilities
-                { capReads = memoryProvider (fxChain fx)
-                , capSubmit = signedSubmitter $ Submitter $ \tx -> do
+                { capReads =
+                    let (network, provider) = rawChainProvider (fxChain fx)
+                    in  ( network
+                        , observeProvider
+                            unverifiedVerifier
+                            (\fact -> modifyIORef' (fxFacts fx) (<> [fact]))
+                            provider
+                        )
+                , capSubmit = \signed -> do
+                    let tx = signedTx signed
                     modifyIORef' (fxSent fx) (<> [tx])
-                    pure (Submitted (txIdTx tx))
-                , capConfirm = \_ txid -> modifyIORef' (fxConfirmed fx) (<> [txid])
+                    pure (Cage.SubmitAccepted (txIdTx tx))
+                , capConfirm = \tx -> modifyIORef' (fxConfirmed fx) (<> [T.unpack (txIdHex tx)])
+                , capFacts = readIORef (fxFacts fx)
+                , capTrace = pure []
                 }
         , wcTimeout = Just 5
         }
@@ -613,9 +635,11 @@ writeVia
     :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConwayTx, ())
 writeVia ctx shape fx =
     submitBuilt ctx "fold" (const (expecting "state")) $ \v -> do
-        writeIORef (fxBuiltAt fx) (Just (Cage.viewPoint v))
-        utxos <- Cage.viewUTxOsAt v (walletAddr (fxWallet fx))
-        mutate (fxChain fx) id
+        utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
+        observed <- SessionIO.tip v
+        scope <- sessionReceipt (wcCapabilities ctx) v
+        writeIORef (fxBuiltAt fx) (Just (scope, observed))
+        advanceChain (fxChain fx) id
         let tx =
                 shape $
                     mkBasicTx
@@ -639,22 +663,8 @@ preparedLines dir = do
         [ o | o <- objects, field "journalEvent" o == Just ("prepared" :: Text)
         ]
 
--- | The network, era and @slot.hash@ a @prepared@ line names, if all three.
-journalledPoint :: Aeson.Object -> Maybe (Word32, Text, Text)
-journalledPoint o =
-    (,,)
-        <$> field "journalNetwork" o
-        <*> field "journalEra" o
-        <*> field "journalChainPoint" o
-
 field :: (Aeson.FromJSON a) => Aeson.Key -> Aeson.Object -> Maybe a
 field k = Aeson.parseMaybe (.: k)
-
-renderPoint :: Cage.ChainPoint -> Text
-renderPoint p =
-    T.pack (show (Cage.unSlotNo (Cage.cpSlot p)))
-        <> "."
-        <> T.pack (BC.unpack (B16.encode (Cage.cpBlockHash p)))
 
 {- | Two lines as a write before the view point was journalled left them:
 a tip slot, a two-part point, no network or era.
@@ -710,7 +720,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
             logged <- withFixture $ \fx -> do
                 let path = takeDirectory (fxDir fx) </> "phase.log"
                 withLogEnv (Just path) $ do
-                    _ <- writeVia (loggedContext (phaseLogAt path) fx) id fx
+                    _ <- writeVia (writeContext fx) id fx
                     doesFileExist path
             logged `shouldBe` True
     it
@@ -725,14 +735,14 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                         .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
             (signed, ()) <-
                 withLogEnv (Just path) $
-                    writeVia (loggedContext (phaseLogAt path) fx) bounded fx
+                    writeVia (writeContext fx) bounded fx
             built <- readIORef (fxBuiltAt fx)
             builtPoint <- maybe (fail "the build never ran") pure built
             tip <-
-                Cage.cpSlot
-                    <$> Cage.withView (memoryProvider (fxChain fx)) (pure . Cage.viewPoint)
+                Cage.observedSlot
+                    <$> SessionIO.withLatest (rawChainProvider (fxChain fx)) SessionIO.tip
             -- the build's own view is not the tip the submission met
-            Cage.cpSlot builtPoint `shouldNotBe` tip
+            Cage.observedSlot (snd builtPoint) `shouldNotBe` tip
             objects <- logObjects path
             let phased p = [o | o <- objects, field "phase" o == Just (p :: Text)]
                 txid = txIdHex signed
@@ -747,7 +757,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
             map (field "outcome") (phased "confirm")
                 `shouldBe` [Just ("confirmed" :: Text)]
             map (field "tip_slot") (phased "submit")
-                `shouldBe` [Just (Cage.unSlotNo tip)]
+                `shouldBe` [Just (unSlotNo tip)]
             map (field "validity_lower") (phased "submit")
                 `shouldBe` [strict (invalidBefore vldt)]
             map (field "validity_upper") (phased "submit")
@@ -768,13 +778,13 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = loggedContext (phaseLogAt path) fx
+                ctx = writeContext fx
                 caps = wcCapabilities ctx
                 broken =
                     ctx
                         { wcCapabilities =
                             caps
-                                { capConfirm = \_ _ ->
+                                { capConfirm = \_ ->
                                     throwIO (userError "403 for project_id=CRED-5c1d2")
                                 }
                         }
@@ -790,7 +800,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = loggedContext (phaseLogAt path) fx
+                ctx = writeContext fx
                 caps = wcCapabilities ctx
                 key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
                 hex = B16.encode key
@@ -807,7 +817,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     ctx
                         { wcCapabilities =
                             caps
-                                { capSubmit = signedSubmitter $ Submitter $ \_ ->
+                                { capSubmit = \_ ->
                                     throwIO (userError "401 for project_id=CRED-9e4b7")
                                 }
                         }
@@ -828,14 +838,19 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         \unset run's but for its times and body paths, and the log is a file \
         \of its own"
         $ do
-            let normal e = e{journalBody = Nothing, journalTime = Nothing}
+            let normal e =
+                    e
+                        { journalBody = Nothing
+                        , journalTime = Nothing
+                        , journalSession = normalizeSessionIds <$> journalSession e
+                        }
                 run logPath = withFixture $ \fx -> do
                     ((), out, err) <- withLogEnv logPath $ captured $ do
                         _ <-
                             writeVia
                                 ( maybe
                                     (writeContext fx)
-                                    (\p -> loggedContext (phaseLogAt p) fx)
+                                    (\_ -> writeContext fx)
                                     logPath
                                 )
                                 id
@@ -870,14 +885,14 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     let ctx0 =
                             maybe
                                 (writeContext fx)
-                                (\p -> loggedContext (phaseLogAt p) fx)
+                                (\_ -> writeContext fx)
                                 logPath
                         caps = wcCapabilities ctx0
                         ctx
                             | failing =
                                 ctx0
                                     { wcCapabilities =
-                                        caps{capConfirm = \_ _ -> throwIO (userError "the wait broke")}
+                                        caps{capConfirm = \_ -> throwIO (userError "the wait broke")}
                                     }
                             | otherwise = ctx0
                     r <- withLogEnv logPath (try @SomeException (writeVia ctx id fx))
@@ -955,15 +970,22 @@ bech32Of hrp bytes =
         h <- first show (Bech32.humanReadablePartFromText hrp)
         first show (Bech32.encode h (Bech32.dataPartFromBytes bytes))
 
--- | A write context whose reads go through the phase log, as a command's do.
-loggedContext :: PhaseLog -> Fixture -> WriteContext
-loggedContext lg fx =
-    ctx
-        { wcCapabilities = caps{capReads = loggedProvider lg (capReads caps)}
-        }
-  where
-    ctx = writeContext fx
-    caps = wcCapabilities ctx
+{- | Compare independent acquisitions up to their fresh opaque identity,
+retaining every binding, raw fact, verdict and source field.
+-}
+normalizeSessionIds :: Aeson.Value -> Aeson.Value
+normalizeSessionIds = \case
+    Aeson.Object fields ->
+        Aeson.Object $
+            KeyMap.mapWithKey
+                ( \key value ->
+                    if key == "session"
+                        then Aeson.String "alpha-session"
+                        else normalizeSessionIds value
+                )
+                fields
+    Aeson.Array values -> Aeson.Array (fmap normalizeSessionIds values)
+    value -> value
 
 -- | Run with @SINGULAR_LOG@ set to a path or unset, restoring it after.
 withLogEnv :: Maybe FilePath -> IO a -> IO a
