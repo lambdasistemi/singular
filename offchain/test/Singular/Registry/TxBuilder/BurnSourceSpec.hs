@@ -109,14 +109,15 @@ import UntypedPlutusCore.DeBruijn ()
 import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef, saveMirror)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -1043,15 +1044,15 @@ anywhere else. Explicit finite synthetic time, exact resolved outputs and
 unit-returning synthetic witnesses let the real local evaluator run. These
 rows inspect assembled bodies and do not establish registry script admission.
 -}
-foldProvider :: View IO
+foldProvider :: Session NoWitness IO
 foldProvider =
-    stubView
-        { viewUTxOsAt = pure . utxosAt
-        , viewProtocolParams = withSyntheticCosts preprodParams
-        , viewTimeContext = pure syntheticTime
-        , viewResolvedOutputs =
-            resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] []
-        }
+    ( withAddressOutputs (pure . utxosAt) $
+        withParameters (withSyntheticCosts preprodParams) $
+            withTime (pure syntheticTime) $
+                withResolvedOutputs
+                    (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] []) $
+                    stubSession
+    )
 
 -- | Actual script address for the request the built fixture owns.
 builtRequest :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
@@ -1099,7 +1100,7 @@ builtFoldUnder pp = do
     createTrie tm foldTokenId
     updateTokenWithDuties
         builtCfg
-        foldProvider{viewProtocolParams = withSyntheticCosts pp}
+        (withParameters (withSyntheticCosts pp) $ foldProvider)
         tm
         foldTokenId
         payer
@@ -1208,27 +1209,31 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
     it "still refuses a view without the state output" $
         checkView
             "updateToken: state UTxO not found"
-            foldProvider
-                { viewUTxOsAt = \a ->
+            ( withAddressOutputs
+                ( \a ->
                     pure (if a == cageAddrFromCfg builtCfg Testnet then [] else utxosAt a)
-                }
+                )
+                $ foldProvider
+            )
     it "still refuses a view without pending requests" $
         checkView
             "updateToken: no pending requests"
-            foldProvider
-                { viewUTxOsAt = \a ->
+            ( withAddressOutputs
+                ( \a ->
                     pure
                         ( if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                             then []
                             else utxosAt a
                         )
-                }
+                )
+                $ foldProvider
+            )
     it "still refuses a view without an ada-only funding output" $
         checkView
             "updateToken: no ada-only UTxO to fund the fold"
-            foldProvider
-                { viewUTxOsAt = \a -> pure (if a == payer then [] else utxosAt a)
-                }
+            ( withAddressOutputs (\a -> pure (if a == payer then [] else utxosAt a)) $
+                foldProvider
+            )
   where
     who =
         TS.RegistryIdentity
@@ -1247,8 +1252,8 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     )
     check name identity output state requests =
         checkWith name identity output $ \root ->
-            foldProvider
-                { viewUTxOsAt = \a ->
+            ( withAddressOutputs
+                ( \a ->
                     pure $
                         if a == cageAddrFromCfg builtCfg Testnet
                             then [(stateIn, state root)]
@@ -1256,7 +1261,9 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                                     then requests
                                     else utxosAt a
-                }
+                )
+                $ foldProvider
+            )
     checkView name view = checkWith name who stateIn (const view)
     checkWith name identity output viewAt = withSystemTempDirectory "fold-builder-refusals" $ \path -> do
         saveMirror path (Map.singleton foldTokenId emptyMPFInMemoryDB)
@@ -1441,16 +1448,18 @@ liveOutput =
     )
 
 -- | A stub view whose one pending request is `request`.
-providerWith :: (TxIn, TxOut ConwayEra) -> View IO
+providerWith :: (TxIn, TxOut ConwayEra) -> Session NoWitness IO
 providerWith request =
-    foldProvider
-        { viewUTxOsAt = \a ->
+    ( withAddressOutputs
+        ( \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                     then [builtRequest request]
                     else utxosAt a
-        , viewResolvedOutputs = resolveBuilt [builtRequest request] []
-        }
+        )
+        $ withResolvedOutputs (resolveBuilt [builtRequest request] [])
+        $ foldProvider
+    )
 
 -- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
 trieWith :: Maybe ByteString -> IO (TrieManager IO)
@@ -1614,10 +1623,10 @@ retireWithReferences app = do
             )
     updateTokenWithDuties
         builtCfg
-        (providerWith (retirementAt 1 ownerKey keyA))
-            { viewResolvedOutputs =
-                resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive]
-            }
+        ( withResolvedOutputs
+            (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive]) $
+            (providerWith (retirementAt 1 ownerKey keyA))
+        )
         tm
         foldTokenId
         payer

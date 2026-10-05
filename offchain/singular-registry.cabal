@@ -936,6 +936,7 @@ test-suite cage-tests
     Singular.Registry.RawNodeFixture
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
+    Singular.Registry.StubSession
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime
     Singular.Registry.TrieStateContractSpec

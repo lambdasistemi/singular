@@ -116,10 +116,10 @@ import Singular.Registry.Deployment
     , replaceDurably
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.Node (bech32Address)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | The pins a registry identity carries, as hex.
 data Pins = Pins

@@ -21,8 +21,10 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Singular.Registry.Provider (SlotNo (..), View (..))
-import Singular.Registry.StubView (stubView)
+import Cardano.Slotting.Slot (SlotNo (..))
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticTime (syntheticTimeWith)
 import Singular.Registry.TxBuilder.Internal (trySlots, tryUpperSlots)
 
@@ -32,11 +34,9 @@ horizon = 500
 slotMs = 100
 
 -- | A view that converts times as the node client does, up to the horizon.
-horizonView :: View IO
+horizonView :: Session NoWitness IO
 horizonView =
-    stubView
-        { viewTimeContext = pure (syntheticTimeWith 0 (1 / 10) 500)
-        }
+    (withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) $ stubSession)
 
 -- | Inside the horizon: strictly below it.
 inside :: SlotNo -> Bool
@@ -69,13 +69,14 @@ spec = describe "A fold's validity upper bound and the node's horizon" $ do
     cancellationSpec
 
 -- | A view whose every conversion first counts itself, then is cancelled.
-cancelledView :: IORef Int -> View IO
+cancelledView :: IORef Int -> Session NoWitness IO
 cancelledView calls =
-    horizonView
-        { viewTimeContext = do
+    withTime
+        ( do
             modifyIORef' calls (+ 1)
             throwIO ThreadKilled
-        }
+        )
+        horizonView
 
 -- | A cancellation escapes the fallback, and no later conversion is tried.
 cancellationSpec :: Spec

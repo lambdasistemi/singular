@@ -59,13 +59,16 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn)
 
+import Data.ByteString qualified as BS
 import Data.Set qualified as Set
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
+import Singular.Registry.LedgerProvider (Session, TipObservation (..))
 import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
-import Singular.Registry.Provider (ChainPoint (..), View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.SessionIO qualified as SessionIO
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -215,35 +218,45 @@ fundingOf sc =
         (comparing snd)
         [(txIn 'e' i, l) | (i, l) <- zip [0 ..] (scAda sc)]
 
-chainView :: Scenario -> Integer -> Maybe Integer -> View IO
+chainView
+    :: Scenario -> Integer -> Maybe Integer -> Session NoWitness IO
 chainView sc submittedAt horizon =
-    stubView
-        { viewPoint =
-            (viewPoint stubView)
-                { cpSlot =
-                    SlotNo
-                        (fromInteger ((submittedAt + defaultProcessTime cfg + 999) `div` 1000))
-                }
-        , viewUTxOsAt = \addr ->
-            pure $
-                if addr == requestAddrFromCfg cfg tokenId Testnet
-                    then [(requestIn, requestOut submittedAt)]
-                    else
-                        if addr == cageAddrFromCfg cfg Testnet
-                            then [(stateIn, stateOut)]
-                            else wallet sc
-        , viewProtocolParams = withSyntheticCosts preprodParams
-        , viewTimeContext = pure $ case horizon of
-            Nothing -> syntheticTime
-            Just limit -> syntheticTimeWith 0 1 (fromIntegral (limit `div` 1000 + 1))
-        , viewResolvedOutputs = \wanted ->
-            pure
-                [ (reference, output)
-                | (reference, output) <-
-                    (requestIn, requestOut submittedAt) : (stateIn, stateOut) : wallet sc
-                , reference `Set.member` wanted
-                ]
-        }
+    withTip
+        ( TipObservation
+            ( SlotNo
+                (fromInteger ((submittedAt + defaultProcessTime cfg + 999) `div` 1000))
+            )
+            (BS.replicate 32 0)
+            1
+            0
+        )
+        $ ( withAddressOutputs
+                ( \addr ->
+                    pure $
+                        if addr == requestAddrFromCfg cfg tokenId Testnet
+                            then [(requestIn, requestOut submittedAt)]
+                            else
+                                if addr == cageAddrFromCfg cfg Testnet
+                                    then [(stateIn, stateOut)]
+                                    else wallet sc
+                )
+                $ withParameters (withSyntheticCosts preprodParams)
+                $ withTime
+                    ( pure $ case horizon of
+                        Nothing -> syntheticTime
+                        Just limit -> syntheticTimeWith 0 1 (fromIntegral (limit `div` 1000 + 1))
+                    )
+                $ withResolvedOutputs
+                    ( \wanted ->
+                        pure
+                            [ (reference, output)
+                            | (reference, output) <-
+                                (requestIn, requestOut submittedAt) : (stateIn, stateOut) : wallet sc
+                            , reference `Set.member` wanted
+                            ]
+                    )
+                $ stubSession
+          )
 
 spec :: Spec
 spec = do
@@ -261,7 +274,7 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
             forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
                 now <- currentPosixMs
                 let view = rejectView (slotOf (now - lag * 1000)) Nothing
-                    tip = cpSlot (viewPoint view)
+                tip <- observedSlot <$> SessionIO.tip view
                 tx <- rejectRequestsImpl cfg view tokenId payer
                 let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
                 pure $
@@ -273,16 +286,18 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
     it "keeps a nonempty interval when the host clock is behind the tip" $ do
         now <- currentPosixMs
         let view = rejectView (slotOf (now + 300_000)) Nothing
+        actualTip <- SessionIO.tip view
         tx <- rejectRequestsImpl cfg view tokenId payer
         let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        lower `shouldBe` SJust (observedSlot actualTip)
         upper `shouldSatisfy` (> lower)
     it "keeps the upper-bound fallback inside the conversion horizon" $ do
         now <- currentPosixMs
         let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
+        actualTip <- SessionIO.tip view
         tx <- rejectRequestsImpl cfg view tokenId payer
         let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        lower `shouldBe` SJust (observedSlot actualTip)
         upper `shouldSatisfy` (> lower)
         upper `shouldSatisfy` (<= SJust (slotOf (now + 10_000)))
     it "refuses a view tip at the finite conversion horizon by name" $ do
@@ -310,7 +325,7 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
     slotOf ms = SlotNo (fromInteger (ms `div` 1000))
     rejectView tip horizon =
         let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 horizon
-        in  view{viewPoint = (viewPoint view){cpSlot = tip}}
+        in  withTip (TipObservation tip (BS.replicate 32 0) 1 0) view
 
 {- | Both public entry points must refuse a future lower bound rather
 than return a transaction the acquired ledger cannot accept yet.
@@ -323,11 +338,12 @@ retractValidity = describe "a retraction never starts ahead of its acquired view
         $ forAll (chooseInteger (0, 30))
         $ \tip -> ioProperty $ do
             let view = atTip (SlotNo (fromInteger tip))
+            actualTip <- SessionIO.tip view
             mapM_
                 refuses
                 [ retractRequestImpl cfg view tokenId requestIn payer
                 , retractRequestAtTipImpl
-                    (cpSlot (viewPoint view))
+                    (observedSlot actualTip)
                     cfg
                     view
                     tokenId
@@ -341,16 +357,17 @@ retractValidity = describe "a retraction never starts ahead of its acquired view
             (retractRequestAtTipImpl (SlotNo 41) cfg view tokenId requestIn payer)
     it "admits phase two's opening slot through either entry point" $ do
         let view = atTip (SlotNo 31)
+        actualTip <- SessionIO.tip view
         mapM_
             ( \build -> do
                 tx <- build
                 let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-                lower `shouldBe` SJust (cpSlot (viewPoint view))
+                lower `shouldBe` SJust (observedSlot actualTip)
                 upper `shouldSatisfy` (> lower)
             )
             [ retractRequestImpl cfg view tokenId requestIn payer
             , retractRequestAtTipImpl
-                (cpSlot (viewPoint view))
+                (observedSlot actualTip)
                 cfg
                 view
                 tokenId
@@ -360,7 +377,7 @@ retractValidity = describe "a retraction never starts ahead of its acquired view
   where
     atTip tip =
         let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 Nothing
-        in  view{viewPoint = (viewPoint view){cpSlot = tip}}
+        in  withTip (TipObservation tip (BS.replicate 32 0) 1 0) view
     refuses build = do
         result <- try @SomeException build
         case result of

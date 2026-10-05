@@ -59,8 +59,8 @@ newCapabilities settings = do
         provider =
             observeProvider
                 unverifiedVerifier
-                (\fact -> modifyIORef' facts (<> [fact])) $
-                koiosProvider
+                (\fact -> modifyIORef' facts (<> [fact]))
+                $ koiosProvider
                     runtime
                     network
                     ( loadPinnedSource

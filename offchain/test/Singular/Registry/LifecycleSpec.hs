@@ -2,19 +2,22 @@ module Singular.Registry.LifecycleSpec (spec) where
 
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Inject (..))
+import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Data.ByteString qualified as BS
 import Data.Either (isLeft)
 import Data.Text qualified as T
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.LedgerProvider (Network (..))
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
     , fundingView
     , lifecycleRequested
     )
-import Singular.Registry.Node (funderAddr)
-import Singular.Registry.Provider (ChainPoint (..), View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.SessionIO (outputsAt)
+import Singular.Registry.StubSession
+import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
@@ -23,8 +26,8 @@ spec = do
     executionLimit
 
 lifecycleSelection :: Spec
-lifecycleSelection = describe "lifecycle selection from the chain point" $ do
-    let at magic = (viewPoint stubView){cpNetwork = magic}
+lifecycleSelection = describe "lifecycle selection from the configured network" $ do
+    let at = Network
     it "stays off on the factory devnet unless asked" $ do
         lifecycleRequested (at 42) [] `shouldBe` False
         lifecycleRequested (at 42) ["--lifecycle"] `shouldBe` True
@@ -61,11 +64,12 @@ executionLimit = describe "live aggregate transaction execution limit" $ do
                 either fail pure (parseOutRef (T.pack (replicate 64 '0' <> "#0")))
             free <-
                 either fail pure (parseOutRef (T.pack (replicate 64 '0' <> "#1")))
-            let output :: Integer -> TxOut ConwayEra
-                output amount = mkBasicTxOut funderAddr (inject (Coin amount))
+            let payer = addrFromKeyHashBytes Ledger.Testnet (BS.replicate 28 0x19)
+                output :: Integer -> TxOut ConwayEra
+                output amount = mkBasicTxOut payer (inject (Coin amount))
                 prov =
-                    stubView
-                        { viewUTxOsAt = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
-                        }
-            selected <- viewUTxOsAt (fundingView [reserved] prov) funderAddr
+                    withAddressOutputs
+                        (\_ -> pure [(reserved, output 100000000), (free, output 5000000)])
+                        stubSession
+            selected <- outputsAt (fundingView [reserved] prov) payer
             map fst selected `shouldBe` [free]
