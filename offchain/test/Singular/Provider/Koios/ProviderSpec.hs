@@ -208,6 +208,191 @@ spec = describe "Koios ledger provider constructor" $ do
             length [() | RawTime _ _ <- providerEvents state] `shouldBe` 1
             Set.null (openSessions state) `shouldBe` True
 
+    it "preserves exact output identity in every pure query form" $ do
+        source <- timeSource
+        let (parent, _, tokenOutput) = dependentPair True
+            (funding, _, plainOutput) = dependentPair False
+            token = (TxIn (keyOf parent) (TxIx 0), tokenOutput)
+            plain = (TxIn (keyOf funding) (TxIx 0), plainOutput)
+            client = outputClient [token, plain] [token] [parent, funding]
+            provider = koiosProvider stateRuntime (Network 1) source client
+            address = AtAddress payer
+            holding = HoldingAsset asset
+            reference = AtTxIn (fst token)
+            queries =
+                [ address
+                , holding
+                , reference
+                , AnyOf (address NE.:| [holding, reference])
+                , AllOf (address NE.:| [holding, reference])
+                ]
+            (result, state) =
+                runState
+                    ( acquire provider (Latest (Network 1)) $ \session -> traverse (fmap (fmap value) . outputs session) queries
+                    )
+                    initialProviderState
+        persist
+            "pure-exact-queries"
+            ( object
+                [ "result" .= show result
+                , "events" .= map eventJson (providerEvents state)
+                ]
+            )
+        result
+            `shouldBe` Right
+                ( map
+                    Right
+                    [ sortOn fst [token, plain]
+                    , [token]
+                    , [token]
+                    , sortOn fst [token, plain]
+                    , [token]
+                    ]
+                )
+        Set.null (openSessions state) `shouldBe` True
+
+    it "keeps policy identity when asset names are equal" $ do
+        source <- timeSource
+        let (parent, _, output) = dependentPair True
+            token = (TxIn (keyOf parent) (TxIx 0), output)
+            client = outputClient [token] [token] [parent]
+            provider = koiosProvider stateRuntime (Network 1) source client
+            otherAsset = (PolicyID (scriptHashOfByte 12), snd asset)
+            wanted = HoldingAsset asset
+            other = HoldingAsset otherAsset
+            (result, state) =
+                runState
+                    ( acquire provider (Latest (Network 1)) $ \session ->
+                        traverse
+                            (fmap (fmap value) . outputs session)
+                            [ other
+                            , AnyOf (other NE.:| [wanted])
+                            , AllOf (AtAddress payer NE.:| [other])
+                            ]
+                    )
+                    initialProviderState
+        result `shouldBe` Right [Right [], Right [token], Right []]
+        Set.null (openSessions state) `shouldBe` True
+
+    it
+        "refuses conflicting references in direct and composed pure queries"
+        $ do
+            source <- timeSource
+            let (parent, _, output) = dependentPair True
+                reference = TxIn (keyOf parent) (TxIx 0)
+                conflicting = output & valueTxOutL .~ MaryValue (Coin 123) (MultiAsset Map.empty)
+                client =
+                    outputClient
+                        [(reference, output), (reference, conflicting)]
+                        [(reference, output), (reference, conflicting)]
+                        [parent]
+                provider = koiosProvider stateRuntime (Network 1) source client
+                queries =
+                    [ AtAddress payer
+                    , HoldingAsset asset
+                    , AtTxIn reference
+                    , AnyOf (AtAddress payer NE.:| [HoldingAsset asset])
+                    , AllOf (AtAddress payer NE.:| [AtTxIn reference])
+                    ]
+                (result, state) =
+                    runState
+                        ( acquire provider (Latest (Network 1)) $ \session -> traverse (fmap (fmap value) . outputs session) queries
+                        )
+                        initialProviderState
+            persist
+                "pure-conflicting-queries"
+                ( object
+                    [ "result" .= show result
+                    , "events" .= map eventJson (providerEvents state)
+                    ]
+                )
+            result
+                `shouldBe` Right
+                    (replicate (length queries) (Left (ConflictingOutput reference)))
+
+    it
+        "refuses wrong networks and unsupported points before acquisition effects"
+        $ do
+            source <- timeSource
+            set <- recordedSet
+            let provider =
+                    koiosProvider
+                        stateRuntime
+                        (Network 1)
+                        source
+                        (Client.Koios recordedConfig (recordedTransport set))
+                requests =
+                    [ Latest (Network 42)
+                    , AtPoint (Network 42) Genesis
+                    , AtPoint (Network 1) Genesis
+                    ]
+                (result, state) =
+                    runState
+                        ( traverse
+                            (\request -> acquire provider request (const (pure ())))
+                            requests
+                        )
+                        initialProviderState
+            result
+                `shouldBe` [ Left (WrongNetwork (Network 1) (Network 42))
+                           , Left (WrongNetwork (Network 1) (Network 42))
+                           , Left (PointNotSupported Genesis)
+                           ]
+            nextSessionNumber state `shouldBe` 0
+            length (providerEvents state) `shouldBe` 0
+
+    it "refuses every released read and deferred history continuation" $ do
+        source <- timeSource
+        let (parent, child, output) = dependentPair True
+            reference = TxIn (keyOf parent) (TxIx 0)
+            client =
+                synthetic
+                    [(parent, []), (child, [(reference, output)])]
+                    [keyOf child, keyOf parent]
+            provider = koiosProvider stateRuntime (Network 1) source client
+            action = do
+                acquired <- acquire provider (Latest (Network 1)) $ \session -> do
+                    stream <- history session asset (HistoryRange Nothing Nothing)
+                    pure (session, stream)
+                case acquired of
+                    Right (session, Right stream) -> do
+                        let voidFact readAction = fmap (fmap (const ())) readAction
+                        releasedAnswers <-
+                            sequence
+                                [ voidFact (outputs session (AtAddress payer))
+                                , voidFact (outputs session (HoldingAsset asset))
+                                , voidFact (outputs session (AtTxIn reference))
+                                , voidFact
+                                    (outputs session (AnyOf (AtAddress payer NE.:| [HoldingAsset asset])))
+                                , voidFact
+                                    (outputs session (AllOf (AtAddress payer NE.:| [AtTxIn reference])))
+                                , voidFact (protocolParameters session)
+                                , voidFact (tipObservation session)
+                                , voidFact (networkTime session)
+                                , voidFact (scriptRegistered session (scriptHashOfByte 11))
+                                ]
+                        newStream <-
+                            voidFact (history session asset (HistoryRange Nothing Nothing))
+                        continued <- voidFact (nextBlock stream)
+                        pure (Just (sessionId session, releasedAnswers, newStream, continued))
+                    _ -> pure Nothing
+            (result, state) = runState action initialProviderState
+        case result of
+            Just (identity, releasedAnswers, newStream, continued) -> do
+                releasedAnswers
+                    `shouldBe` replicate 9 (Left (ReleasedSession identity))
+                newStream
+                    `shouldBe` Left (HistoryReadFailure (ReleasedSession identity))
+                continued
+                    `shouldBe` Left (HistoryReadFailure (ReleasedSession identity))
+            Nothing ->
+                expectationFailure
+                    "could not acquire history for the released-read control"
+        Set.null (openSessions state) `shouldBe` True
+        -- Acquiring the cursor fetches its first page. Released continuation
+        -- refuses before fetching another page or reconstruction material.
+        length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 1
+
     it
         "reconciles every real constructor HTTP read, time and parameters with phase logging"
         $ do
@@ -570,6 +755,61 @@ synthetic transactions listed =
                     (Client.NoRecording "synthetic history has no unrelated endpoint")
                 )
     offset request = maybe 0 (read . Text.unpack) (queryParam "offset" request)
+
+-- Synthetic query answers retain independently constructed outputs, including
+-- deliberately conflicting identities. The production decoder sees raw JSON.
+outputClient
+    :: Outputs -> Outputs -> [ConwayTx] -> Client.Koios (State ProviderState)
+outputClient addressOutputs assetOutputs producers =
+    Client.Koios
+        recordedConfig
+        ( recordedTransport
+            (FixtureSet "synthetic exact-output control" fixtures)
+        )
+  where
+    page request =
+        let raw = Client.rawRequest request
+        in  raw
+                { Client.rawQuery =
+                    Client.rawQuery raw
+                        <> [ ("order", "tx_hash.asc,tx_index.asc")
+                           , ("offset", "0")
+                           , ("limit", "20")
+                           ]
+                }
+    addressRow pair = case outputRow pair of
+        Object row ->
+            Object (KM.insert "address" (String (Wire.renderAddress payer)) row)
+        _ -> error "output row is not an object"
+    answers =
+        [
+            ( page (Wire.addressUtxosRequest [payer])
+            , pageAnswer (map addressRow addressOutputs) 0 20
+            )
+        ,
+            ( page (Wire.assetUtxosRequest [asset])
+            , pageAnswer (map addressRow assetOutputs) 0 20
+            )
+        ,
+            ( page
+                (Wire.assetUtxosRequest [(PolicyID (scriptHashOfByte 12), snd asset)])
+            , pageAnswer [] 0 20
+            )
+        ]
+            <> [ ( Client.rawRequest (Wire.txInfoRequest [keyOf tx])
+                 , okJson [] (jsonBytes [infoRow tx []])
+                 )
+               | tx <- producers
+               ]
+    fixtures =
+        [ Fixture
+            (fixtureRequestOf request)
+            "synthetic exact-output control"
+            (UTCTime (fromGregorian 2026 10 5) 0)
+            (bodySha256 (Client.answerBody answer))
+            answer
+        | (request, Client.Exchange _ (Right answer)) <- answers
+        ]
 
 asked :: Client.RawRequest -> [Text]
 asked request = case Client.rawBody request of

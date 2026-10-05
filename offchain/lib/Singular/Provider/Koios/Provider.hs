@@ -127,8 +127,8 @@ koiosProvider runtime configured timeSource client =
                         runtime
                         identity
                         "network-time"
-                        (const (RawTime identity timeSource)) $
-                        pure
+                        (const (RawTime identity timeSource))
+                        $ pure
                             ( first
                                 NetworkTimeRefusal
                                 ( fmap
@@ -195,16 +195,19 @@ queryOutputs
     :: (Monad m)
     => Client.Koios m -> OutputQuery -> ExceptT ReadFailure m Outputs
 queryOutputs client = \case
-    AtAddress address -> fetch (Client.addressUtxos client [address])
-    HoldingAsset asset -> fetch (Client.assetUtxos client [asset])
+    AtAddress address -> fetch (Client.addressUtxos client [address]) >>= mergeOutputs
+    HoldingAsset asset -> fetch (Client.assetUtxos client [asset]) >>= mergeOutputs
     AtTxIn reference@(TxIn key _) -> do
         -- tx_info includes spent outputs: current visibility requires the
         -- shared UTxO endpoint at the resolved output's address as well.
         infos <- fetch (Client.txInfo client [key])
-        case lookup reference (concatMap Wire.txInfoOutputs infos) of
+        produced <- mergeOutputs (concatMap Wire.txInfoOutputs infos)
+        case lookup reference produced of
             Nothing -> throwError (MissingOutput reference)
             Just output -> do
-                current <- fetch (Client.addressUtxos client [output ^. addrTxOutL])
+                current <-
+                    fetch (Client.addressUtxos client [output ^. addrTxOutL])
+                        >>= mergeOutputs
                 case lookup reference current of
                     Nothing -> throwError (MissingOutput reference)
                     Just actual | actual /= output -> throwError (ConflictingOutput reference)
