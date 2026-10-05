@@ -10,10 +10,10 @@ source observations and work that still needs its own repair. Read the
 
 A reject starts at `cpSlot (viewPoint view)` and ends strictly later. Its
 clock chooses only the upper bound. Lean `exitAdmission` admits `.reject`
-without reading time ([Model.lean:1201](https://github.com/lambdasistemi/singular/blob/22637d4613cba968a5b4676df65b013134a9ac2f/lean/Singular/Model.lean#L1201));
+without reading time (`lean/Singular/Model.lean:1201`);
 the state-validator property
 `prop_reject_admitted_for_every_validity_range`
-([cage.props.ak:201](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/onchain/validators/cage.props.ak#L201)) names the
+(`onchain/validators/cage.props.ak:201`) names the
 corresponding script rule. No retract deadline is a premise of reject
 admission. The client command's policy about when to offer rejection is a
 separate concern.
@@ -36,30 +36,30 @@ callers, and the additional construction sites found by scanning Haskell and
 shell sources for lower and upper validity setters. An absent lower bound is
 unbounded below and satisfies this particular rule; that says nothing about
 an upper bound expiring, script correctness or complete lifecycle behavior.
-Source links pin the corrected implementation at `6ce9a7c0`; the model link
-pins the stated base revision.
+Source locations name repository paths and lines in the corrected implementation.
+The model revision is stated above.
 
 | Builder or entry point | Interval and source location | Verdict against the acquired-tip rule |
 | --- | --- | --- |
-| Reject, including reference-script form | `Reject.hs:241–250`, `:338–339`: tip lower; first convertible clock-based upper, at least lower plus one. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Reject.hs#L241). | Corrected here; built-body lag, clock-behind and shortened-horizon checks. |
-| Retraction with caller tip | `Retract.hs:178–182`, `:218–220`: lower is max of supplied tip and ceiling phase-two opening; upper is first convertible window-end/fallback slot minus one. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Retract.hs#L178). | Corrected here: named refusal if lower exceeds the actual view tip. |
-| Retraction without caller tip | `Retract.hs:104`: supplies zero to the same builder. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Retract.hs#L104). | Shares the acquired-tip guard; lower is phase-two opening when admitted. |
-| Reclaim command | `CLI/Reclaim.hs:115–143`: reads the acquired tip, checks the window, passes that tip to retraction. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/cli/src/Singular/CLI/Reclaim.hs#L115). | Library guard also catches a ceiling opening beyond a floor-based caller check. |
-| Connected fold | `ConnectedFold.hs:294–316`, `:396`: earliest processing deadline as upper, with clock-based conversion fallbacks; no lower. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs#L294). | No lower bound. |
-| Update and ordinary fold | `Update.hs:195–196` selects the connected-fold upper; `Update/Build.hs:205` writes only upper. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs#L205). | No lower bound. |
-| Ordinary request booking | `Request.hs:94`, `:121`: clock stamps the request datum; basic body has no interval setter. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Request.hs#L94). | No lower or upper bound. |
-| Edge booking | `Edges.hs:690–721`: clock stamps datum, basic body otherwise. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Edges.hs#L690). | No lower or upper bound. |
-| Measured edge booking | `Edges.hs:848–871`: clock stamps datum, basic body evaluated and balanced. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Edges.hs#L848). | No lower or upper bound. |
-| Script publication, including boot reference publication | `Edges.hs:329–337`: basic body. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Edges.hs#L329). | No lower or upper bound. |
-| Boot | `Boot.hs:247`: basic body, with no validity assignment. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Boot.hs#L247). | No lower or upper bound. |
-| Stake-script registration | `Register.hs:95–100`: only registers the credential in its build program. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/TxBuilder/Register.hs#L95). | No lower or upper bound. Consumer-registration entry point was removed, so no extant interval to judge. |
-| End and malformed-request cleanup | `Lifecycle.hs:129`, `:313`: basic bodies. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Registry/Lifecycle.hs#L129). | No lower or upper bound. |
-| Indexer funding/consolidation | `Node/Indexer.hs:389`: basic body. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/node-internal/Singular/Registry/Node/Indexer.hs#L389). | No lower or upper bound. |
-| Open-datum application update | `Application/OpenDatum/Update.hs:126–145`: build program spends, outputs, signs and attaches/references scripts. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/lib/Singular/Application/OpenDatum/Update.hs#L126). | No lower or upper bound. |
-| Repair journey's ordinary retract | `journey/repair/Main.hs:1012`: calls no-tip library retraction through an obsolete provider interface. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/journey/repair/Main.hs#L1012). | Library corrected; journey itself remains unverified and needs its existing migration. |
-| Repair journey's unsigned-owner retract control | `journey/repair/Main.hs:1152–1169`: ceiling phase-two opening lower; floor closing minus one upper. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/journey/repair/Main.hs#L1152). | Unguarded future lower: repair tracked in [#400](https://github.com/lambdasistemi/singular/issues/400). |
-| Repair journey's permissionless fold | `journey/repair/Main.hs:1850–1898`: deadline/fallback upper only. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/journey/repair/Main.hs#L1850). | No lower bound; retained journey remains unverified. |
-| Register journey's resume and support retracts | `journey/register/Main.hs:1701`, `:2739`: pass a separately observed tip to the library. [Source](https://github.com/lambdasistemi/singular/blob/6ce9a7c066b035863773bbde64c82648312eb82f/offchain/journey/register/Main.hs#L1701). | Current library checks actual view; legacy caller interfaces still need the existing migration. |
+| Reject, including reference-script form | `Reject.hs:241–250`, `:338–339`: tip lower; first convertible clock-based upper, at least lower plus one. `offchain/lib/Singular/Registry/TxBuilder/Reject.hs:241`. | Corrected here; built-body lag, clock-behind and shortened-horizon checks. |
+| Retraction with caller tip | `Retract.hs:178–182`, `:218–220`: lower is max of supplied tip and ceiling phase-two opening; upper is first convertible window-end/fallback slot minus one. `offchain/lib/Singular/Registry/TxBuilder/Retract.hs:178`. | Corrected here: named refusal if lower exceeds the actual view tip. |
+| Retraction without caller tip | `Retract.hs:104`: supplies zero to the same builder. `offchain/lib/Singular/Registry/TxBuilder/Retract.hs:104`. | Shares the acquired-tip guard; lower is phase-two opening when admitted. |
+| Reclaim command | `CLI/Reclaim.hs:115–143`: reads the acquired tip, checks the window, passes that tip to retraction. `offchain/cli/src/Singular/CLI/Reclaim.hs:115`. | Library guard also catches a ceiling opening beyond a floor-based caller check. |
+| Connected fold | `ConnectedFold.hs:294–316`, `:396`: earliest processing deadline as upper, with clock-based conversion fallbacks; no lower. `offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs:294`. | No lower bound. |
+| Update and ordinary fold | `Update.hs:195–196` selects the connected-fold upper; `Update/Build.hs:205` writes only upper. `offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs:205`. | No lower bound. |
+| Ordinary request booking | `Request.hs:94`, `:121`: clock stamps the request datum; basic body has no interval setter. `offchain/lib/Singular/Registry/TxBuilder/Request.hs:94`. | No lower or upper bound. |
+| Edge booking | `Edges.hs:690–721`: clock stamps datum, basic body otherwise. `offchain/lib/Singular/Registry/TxBuilder/Edges.hs:690`. | No lower or upper bound. |
+| Measured edge booking | `Edges.hs:848–871`: clock stamps datum, basic body evaluated and balanced. `offchain/lib/Singular/Registry/TxBuilder/Edges.hs:848`. | No lower or upper bound. |
+| Script publication, including boot reference publication | `Edges.hs:329–337`: basic body. `offchain/lib/Singular/Registry/TxBuilder/Edges.hs:329`. | No lower or upper bound. |
+| Boot | `Boot.hs:247`: basic body, with no validity assignment. `offchain/lib/Singular/Registry/TxBuilder/Boot.hs:247`. | No lower or upper bound. |
+| Stake-script registration | `Register.hs:95–100`: only registers the credential in its build program. `offchain/lib/Singular/Registry/TxBuilder/Register.hs:95`. | No lower or upper bound. Consumer-registration entry point was removed, so no extant interval to judge. |
+| End and malformed-request cleanup | `Lifecycle.hs:129`, `:313`: basic bodies. `offchain/lib/Singular/Registry/Lifecycle.hs:129`. | No lower or upper bound. |
+| Indexer funding/consolidation | `Node/Indexer.hs:389`: basic body. `offchain/node-internal/Singular/Registry/Node/Indexer.hs:389`. | No lower or upper bound. |
+| Open-datum application update | `Application/OpenDatum/Update.hs:126–145`: build program spends, outputs, signs and attaches/references scripts. `offchain/lib/Singular/Application/OpenDatum/Update.hs:126`. | No lower or upper bound. |
+| Repair journey's ordinary retract | `journey/repair/Main.hs:1012`: calls no-tip library retraction through an obsolete provider interface. `offchain/journey/repair/Main.hs:1012`. | Library corrected; journey itself remains unverified and needs its existing migration. |
+| Repair journey's unsigned-owner retract control | `journey/repair/Main.hs:1152–1169`: ceiling phase-two opening lower; floor closing minus one upper. `offchain/journey/repair/Main.hs:1152`. | Unguarded future lower: repair tracked in [#400](https://github.com/lambdasistemi/singular/issues/400). |
+| Repair journey's permissionless fold | `journey/repair/Main.hs:1850–1898`: deadline/fallback upper only. `offchain/journey/repair/Main.hs:1850`. | No lower bound; retained journey remains unverified. |
+| Register journey's resume and support retracts | `journey/register/Main.hs:1701`, `:2739`: pass a separately observed tip to the library. `offchain/journey/register/Main.hs:1701`. | Current library checks actual view; legacy caller interfaces still need the existing migration. |
 
 ## Further work
 

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "A reject starts at cpSlot (viewPoint view) and ends strictly later. Its clock chooses only the upper bound. Lean exitAdmission admits .reject without reading time (Model.lean:1201); the state-validator property prop_reject_admitted_for_every_validity_range (cage.props.ak:201) names the corresponding script rule. No retract deadline is a premise of reject admission. The client command's policy about when to offer rejection is a separate concern.",
+      "text": "A reject starts at cpSlot (viewPoint view) and ends strictly later. Its clock chooses only the upper bound. Lean exitAdmission admits .reject without reading time (lean/Singular/Model.lean:1201); the state-validator property prop_reject_admitted_for_every_validity_range (onchain/validators/cage.props.ak:201) names the corresponding script rule. No retract deadline is a premise of reject admission. The client command's policy about when to offer rejection is a separate concern.",
       "pause": 400
     },
     {
@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The table covers the registry builders, their two retraction entry points and callers, and the additional construction sites found by scanning Haskell and shell sources for lower and upper validity setters. An absent lower bound is unbounded below and satisfies this particular rule; that says nothing about an upper bound expiring, script correctness or complete lifecycle behavior. Source links pin the corrected implementation at 6ce9a7c0; the model link pins the stated base revision.",
+      "text": "The table covers the registry builders, their two retraction entry points and callers, and the additional construction sites found by scanning Haskell and shell sources for lower and upper validity setters. An absent lower bound is unbounded below and satisfies this particular rule; that says nothing about an upper bound expiring, script correctness or complete lifecycle behavior. Source locations name repository paths and lines in the corrected implementation. The model revision is stated above.",
       "pause": 400
     },
     {
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "builder-audit.md",
-    "sha256": "826ea0da594d8a7f7394a61a6fb53689de2d70e7b33abf53b899106ac9ee09b4"
+    "sha256": "cd1a8d95f3e37478337352464ac8658fb21d393c9ca2f2546692635a09dedf89"
   }
 }
