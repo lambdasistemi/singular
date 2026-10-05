@@ -4525,6 +4525,13 @@
     "v": "3a6bd52ed7f7"
    },
    {
+    "index": 2,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-02",
+    "pause_ms": 400,
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "5e8bf0481def"
+   },
+   {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 300,
@@ -6005,6 +6012,13 @@
     "pause_ms": 500,
     "text": "Facade, callers and the private boundary.",
     "v": "4ac98ea74422"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-node-ownership/facade-callers-and-the-private-boundary-01",
+    "pause_ms": 400,
+    "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
+    "v": "fdc134925ee9"
    }
   ],
   "node-module-ownership": [
@@ -6030,6 +6044,13 @@
     "pause_ms": 500,
     "text": "One owner per runtime concern.",
     "v": "c5b93e15551a"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-01",
+    "pause_ms": 400,
+    "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+    "v": "aa3a6ef3e1c1"
    },
    {
     "index": 2,

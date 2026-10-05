@@ -146730,6 +146730,1471 @@
     }
    ]
   },
+  "docs-offchain-api-reference/what-this-reference-contains-02": {
+   "audio_sha256": "5e8bf0481defbcb578d1ac1fb9374ea5b41e98749fd07a3aa902063c3522d4ee",
+   "characters": 1634,
+   "cost": 0.0010130800000000002,
+   "duration": 111.925,
+   "index": 2,
+   "key": "696ee55c735336b961978ac9169f6ff3a0e06a5dcc42b2d33caf9a42fa7d4f47",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "what-this-reference-contains",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.325,
+     "text": "module"
+    },
+    {
+     "end": 1.25,
+     "start": 0.725,
+     "text": "extent"
+    },
+    {
+     "end": 1.4,
+     "start": 1.25,
+     "text": "is"
+    },
+    {
+     "end": 1.538,
+     "start": 1.4,
+     "text": "the"
+    },
+    {
+     "end": 1.95,
+     "start": 1.538,
+     "text": "public"
+    },
+    {
+     "end": 2.55,
+     "start": 1.95,
+     "text": "library"
+    },
+    {
+     "end": 2.638,
+     "start": 2.55,
+     "text": "of"
+    },
+    {
+     "end": 2.787,
+     "start": 2.638,
+     "text": "the"
+    },
+    {
+     "end": 3.425,
+     "start": 2.787,
+     "text": "off-chain"
+    },
+    {
+     "end": 3.9,
+     "start": 3.425,
+     "text": "Cabal"
+    },
+    {
+     "end": 4.438,
+     "start": 3.9,
+     "text": "file"
+    },
+    {
+     "end": 4.525,
+     "start": 4.438,
+     "text": "—"
+    },
+    {
+     "end": 4.85,
+     "start": 4.525,
+     "text": "every"
+    },
+    {
+     "end": 5.463,
+     "start": 4.85,
+     "text": "exposed"
+    },
+    {
+     "end": 6.025,
+     "start": 5.463,
+     "text": "module"
+    },
+    {
+     "end": 6.125,
+     "start": 6.025,
+     "text": ","
+    },
+    {
+     "end": 6.45,
+     "start": 6.125,
+     "text": "every"
+    },
+    {
+     "end": 6.975,
+     "start": 6.45,
+     "text": "internal"
+    },
+    {
+     "end": 7.525,
+     "start": 6.975,
+     "text": "module"
+    },
+    {
+     "end": 7.6,
+     "start": 7.525,
+     "text": ","
+    },
+    {
+     "end": 7.725,
+     "start": 7.6,
+     "text": "and"
+    },
+    {
+     "end": 8.062,
+     "start": 7.725,
+     "text": "every"
+    },
+    {
+     "end": 8.55,
+     "start": 8.062,
+     "text": "module"
+    },
+    {
+     "end": 8.675,
+     "start": 8.55,
+     "text": "the"
+    },
+    {
+     "end": 9.212,
+     "start": 8.675,
+     "text": "library"
+    },
+    {
+     "end": 9.925,
+     "start": 9.212,
+     "text": "re-exports"
+    },
+    {
+     "end": 10.2,
+     "start": 9.925,
+     "text": "under"
+    },
+    {
+     "end": 10.4,
+     "start": 10.2,
+     "text": "its"
+    },
+    {
+     "end": 10.65,
+     "start": 10.4,
+     "text": "own"
+    },
+    {
+     "end": 11.775,
+     "start": 10.65,
+     "text": "name"
+    },
+    {
+     "end": 12.0,
+     "start": 11.775,
+     "text": "."
+    },
+    {
+     "end": 12.4,
+     "start": 12.175,
+     "text": "That"
+    },
+    {
+     "end": 12.762,
+     "start": 12.4,
+     "text": "complete"
+    },
+    {
+     "end": 13.262,
+     "start": 12.762,
+     "text": "extent"
+    },
+    {
+     "end": 13.413,
+     "start": 13.262,
+     "text": "is"
+    },
+    {
+     "end": 14.0,
+     "start": 13.413,
+     "text": "63"
+    },
+    {
+     "end": 14.45,
+     "start": 14.0,
+     "text": "modules"
+    },
+    {
+     "end": 14.6,
+     "start": 14.45,
+     "text": "in"
+    },
+    {
+     "end": 14.825,
+     "start": 14.6,
+     "text": "three"
+    },
+    {
+     "end": 15.775,
+     "start": 14.825,
+     "text": "kinds"
+    },
+    {
+     "end": 15.975,
+     "start": 15.775,
+     "text": ":"
+    },
+    {
+     "end": 16.75,
+     "start": 16.175,
+     "text": "48"
+    },
+    {
+     "end": 17.425,
+     "start": 16.75,
+     "text": "explicitly"
+    },
+    {
+     "end": 18.0,
+     "start": 17.425,
+     "text": "exposed"
+    },
+    {
+     "end": 18.612,
+     "start": 18.0,
+     "text": "modules"
+    },
+    {
+     "end": 18.775,
+     "start": 18.612,
+     "text": "and"
+    },
+    {
+     "end": 19.062,
+     "start": 18.775,
+     "text": "two"
+    },
+    {
+     "end": 19.775,
+     "start": 19.062,
+     "text": "re-exported"
+    },
+    {
+     "end": 20.388,
+     "start": 19.775,
+     "text": "modules"
+    },
+    {
+     "end": 20.525,
+     "start": 20.388,
+     "text": "are"
+    },
+    {
+     "end": 20.663,
+     "start": 20.525,
+     "text": "what"
+    },
+    {
+     "end": 20.725,
+     "start": 20.663,
+     "text": "a"
+    },
+    {
+     "end": 21.1,
+     "start": 20.725,
+     "text": "caller"
+    },
+    {
+     "end": 22.25,
+     "start": 21.1,
+     "text": "imports"
+    },
+    {
+     "end": 22.45,
+     "start": 22.25,
+     "text": ";"
+    },
+    {
+     "end": 22.763,
+     "start": 22.65,
+     "text": "the"
+    },
+    {
+     "end": 23.038,
+     "start": 22.763,
+     "text": "two"
+    },
+    {
+     "end": 23.3,
+     "start": 23.038,
+     "text": "trie"
+    },
+    {
+     "end": 23.987,
+     "start": 23.3,
+     "text": "capability"
+    },
+    {
+     "end": 24.45,
+     "start": 23.987,
+     "text": "owners"
+    },
+    {
+     "end": 24.862,
+     "start": 24.45,
+     "text": "behind"
+    },
+    {
+     "end": 24.962,
+     "start": 24.862,
+     "text": "the"
+    },
+    {
+     "end": 25.6,
+     "start": 24.962,
+     "text": "TrieState"
+    },
+    {
+     "end": 26.2,
+     "start": 25.6,
+     "text": "facade"
+    },
+    {
+     "end": 26.275,
+     "start": 26.2,
+     "text": "("
+    },
+    {
+     "end": 26.85,
+     "start": 26.275,
+     "text": "Singular"
+    },
+    {
+     "end": 26.95,
+     "start": 26.85,
+     "text": "."
+    },
+    {
+     "end": 27.55,
+     "start": 26.95,
+     "text": "Registry"
+    },
+    {
+     "end": 27.625,
+     "start": 27.55,
+     "text": "."
+    },
+    {
+     "end": 28.25,
+     "start": 27.625,
+     "text": "TrieState"
+    },
+    {
+     "end": 28.325,
+     "start": 28.25,
+     "text": "."
+    },
+    {
+     "end": 28.562,
+     "start": 28.325,
+     "text": "Core"
+    },
+    {
+     "end": 28.675,
+     "start": 28.562,
+     "text": "and"
+    },
+    {
+     "end": 29.725,
+     "start": 28.675,
+     "text": ".Types"
+    },
+    {
+     "end": 29.9,
+     "start": 29.725,
+     "text": ")"
+    },
+    {
+     "end": 29.95,
+     "start": 29.9,
+     "text": ","
+    },
+    {
+     "end": 30.263,
+     "start": 30.15,
+     "text": "the"
+    },
+    {
+     "end": 30.562,
+     "start": 30.263,
+     "text": "three"
+    },
+    {
+     "end": 30.938,
+     "start": 30.562,
+     "text": "fold"
+    },
+    {
+     "end": 31.35,
+     "start": 30.938,
+     "text": "owners"
+    },
+    {
+     "end": 31.737,
+     "start": 31.35,
+     "text": "behind"
+    },
+    {
+     "end": 31.85,
+     "start": 31.737,
+     "text": "the"
+    },
+    {
+     "end": 32.3,
+     "start": 31.85,
+     "text": "Update"
+    },
+    {
+     "end": 32.9,
+     "start": 32.3,
+     "text": "facade"
+    },
+    {
+     "end": 32.987,
+     "start": 32.9,
+     "text": "—"
+    },
+    {
+     "end": 33.525,
+     "start": 32.987,
+     "text": "Singular"
+    },
+    {
+     "end": 33.625,
+     "start": 33.525,
+     "text": "."
+    },
+    {
+     "end": 34.275,
+     "start": 33.625,
+     "text": "Registry"
+    },
+    {
+     "end": 34.375,
+     "start": 34.275,
+     "text": "."
+    },
+    {
+     "end": 35.125,
+     "start": 34.375,
+     "text": "TxBuilder"
+    },
+    {
+     "end": 35.175,
+     "start": 35.125,
+     "text": "."
+    },
+    {
+     "end": 35.55,
+     "start": 35.175,
+     "text": "Update"
+    },
+    {
+     "end": 35.625,
+     "start": 35.55,
+     "text": "."
+    },
+    {
+     "end": 36.575,
+     "start": 35.625,
+     "text": "Build"
+    },
+    {
+     "end": 36.8,
+     "start": 36.575,
+     "text": ","
+    },
+    {
+     "end": 37.7,
+     "start": 37.0,
+     "text": ".Context"
+    },
+    {
+     "end": 37.85,
+     "start": 37.7,
+     "text": "and"
+    },
+    {
+     "end": 38.425,
+     "start": 37.85,
+     "text": ".Duties"
+    },
+    {
+     "end": 38.487,
+     "start": 38.425,
+     "text": "—"
+    },
+    {
+     "end": 38.612,
+     "start": 38.487,
+     "text": "the"
+    },
+    {
+     "end": 38.975,
+     "start": 38.612,
+     "text": "five"
+    },
+    {
+     "end": 39.362,
+     "start": 38.975,
+     "text": "wire"
+    },
+    {
+     "end": 39.75,
+     "start": 39.362,
+     "text": "owners"
+    },
+    {
+     "end": 40.138,
+     "start": 39.75,
+     "text": "behind"
+    },
+    {
+     "end": 40.225,
+     "start": 40.138,
+     "text": "the"
+    },
+    {
+     "end": 40.575,
+     "start": 40.225,
+     "text": "Types"
+    },
+    {
+     "end": 41.175,
+     "start": 40.575,
+     "text": "facade"
+    },
+    {
+     "end": 41.25,
+     "start": 41.175,
+     "text": "—"
+    },
+    {
+     "end": 41.725,
+     "start": 41.25,
+     "text": "Singular"
+    },
+    {
+     "end": 41.8,
+     "start": 41.725,
+     "text": "."
+    },
+    {
+     "end": 42.4,
+     "start": 41.8,
+     "text": "Registry"
+    },
+    {
+     "end": 42.5,
+     "start": 42.4,
+     "text": "."
+    },
+    {
+     "end": 42.825,
+     "start": 42.5,
+     "text": "Wire"
+    },
+    {
+     "end": 42.9,
+     "start": 42.825,
+     "text": "."
+    },
+    {
+     "end": 44.0,
+     "start": 42.9,
+     "text": "Primitive"
+    },
+    {
+     "end": 44.225,
+     "start": 44.0,
+     "text": ","
+    },
+    {
+     "end": 44.775,
+     "start": 44.4,
+     "text": ".Request"
+    },
+    {
+     "end": 44.825,
+     "start": 44.775,
+     "text": ","
+    },
+    {
+     "end": 45.5,
+     "start": 44.825,
+     "text": ".State"
+    },
+    {
+     "end": 45.7,
+     "start": 45.5,
+     "text": ","
+    },
+    {
+     "end": 46.25,
+     "start": 45.9,
+     "text": ".Proof"
+    },
+    {
+     "end": 46.375,
+     "start": 46.25,
+     "text": "and"
+    },
+    {
+     "end": 47.0,
+     "start": 46.375,
+     "text": ".Redeemer"
+    },
+    {
+     "end": 47.088,
+     "start": 47.0,
+     "text": "—"
+    },
+    {
+     "end": 47.213,
+     "start": 47.088,
+     "text": "and"
+    },
+    {
+     "end": 47.338,
+     "start": 47.213,
+     "text": "the"
+    },
+    {
+     "end": 47.575,
+     "start": 47.338,
+     "text": "three"
+    },
+    {
+     "end": 48.162,
+     "start": 47.575,
+     "text": "deployment"
+    },
+    {
+     "end": 48.6,
+     "start": 48.162,
+     "text": "owners"
+    },
+    {
+     "end": 49.013,
+     "start": 48.6,
+     "text": "behind"
+    },
+    {
+     "end": 49.1,
+     "start": 49.013,
+     "text": "the"
+    },
+    {
+     "end": 49.7,
+     "start": 49.1,
+     "text": "Deployment"
+    },
+    {
+     "end": 50.312,
+     "start": 49.7,
+     "text": "facade"
+    },
+    {
+     "end": 50.412,
+     "start": 50.312,
+     "text": "—"
+    },
+    {
+     "end": 51.0,
+     "start": 50.412,
+     "text": "Singular"
+    },
+    {
+     "end": 51.1,
+     "start": 51.0,
+     "text": "."
+    },
+    {
+     "end": 51.7,
+     "start": 51.1,
+     "text": "Registry"
+    },
+    {
+     "end": 51.775,
+     "start": 51.7,
+     "text": "."
+    },
+    {
+     "end": 52.375,
+     "start": 51.775,
+     "text": "Deployment"
+    },
+    {
+     "end": 52.475,
+     "start": 52.375,
+     "text": "."
+    },
+    {
+     "end": 53.775,
+     "start": 52.475,
+     "text": "Manifest"
+    },
+    {
+     "end": 54.0,
+     "start": 53.775,
+     "text": ","
+    },
+    {
+     "end": 54.775,
+     "start": 54.275,
+     "text": ".Mirror"
+    },
+    {
+     "end": 54.95,
+     "start": 54.775,
+     "text": "and"
+    },
+    {
+     "end": 55.025,
+     "start": 54.95,
+     "text": "."
+    },
+    {
+     "end": 55.65,
+     "start": 55.025,
+     "text": "Attach"
+    },
+    {
+     "end": 55.737,
+     "start": 55.65,
+     "text": "—"
+    },
+    {
+     "end": 55.912,
+     "start": 55.737,
+     "text": "are"
+    },
+    {
+     "end": 56.825,
+     "start": 55.912,
+     "text": "package-internal"
+    },
+    {
+     "end": 57.675,
+     "start": 56.825,
+     "text": "other-modules"
+    },
+    {
+     "end": 57.862,
+     "start": 57.675,
+     "text": "with"
+    },
+    {
+     "end": 58.487,
+     "start": 57.862,
+     "text": "generated"
+    },
+    {
+     "end": 58.95,
+     "start": 58.487,
+     "text": "pages"
+    },
+    {
+     "end": 59.225,
+     "start": 58.95,
+     "text": "here"
+    },
+    {
+     "end": 59.35,
+     "start": 59.225,
+     "text": "for"
+    },
+    {
+     "end": 59.45,
+     "start": 59.35,
+     "text": "the"
+    },
+    {
+     "end": 60.112,
+     "start": 59.45,
+     "text": "contributor"
+    },
+    {
+     "end": 60.525,
+     "start": 60.112,
+     "text": "reading"
+    },
+    {
+     "end": 60.625,
+     "start": 60.525,
+     "text": "the"
+    },
+    {
+     "end": 61.2,
+     "start": 60.625,
+     "text": "facades'"
+    },
+    {
+     "end": 62.875,
+     "start": 61.2,
+     "text": "implementations"
+    },
+    {
+     "end": 63.075,
+     "start": 62.875,
+     "text": ","
+    },
+    {
+     "end": 63.362,
+     "start": 63.25,
+     "text": "but"
+    },
+    {
+     "end": 63.525,
+     "start": 63.362,
+     "text": "no"
+    },
+    {
+     "end": 63.812,
+     "start": 63.525,
+     "text": "caller"
+    },
+    {
+     "end": 64.1,
+     "start": 63.812,
+     "text": "import"
+    },
+    {
+     "end": 64.85,
+     "start": 64.1,
+     "text": "path"
+    },
+    {
+     "end": 65.075,
+     "start": 64.85,
+     "text": ":"
+    },
+    {
+     "end": 65.35,
+     "start": 65.275,
+     "text": "a"
+    },
+    {
+     "end": 65.725,
+     "start": 65.35,
+     "text": "caller"
+    },
+    {
+     "end": 66.3,
+     "start": 65.725,
+     "text": "compiles"
+    },
+    {
+     "end": 66.637,
+     "start": 66.3,
+     "text": "against"
+    },
+    {
+     "end": 66.725,
+     "start": 66.637,
+     "text": "the"
+    },
+    {
+     "end": 67.225,
+     "start": 66.725,
+     "text": "facades'"
+    },
+    {
+     "end": 67.85,
+     "start": 67.225,
+     "text": "exports"
+    },
+    {
+     "end": 67.925,
+     "start": 67.85,
+     "text": ","
+    },
+    {
+     "end": 68.137,
+     "start": 67.925,
+     "text": "not"
+    },
+    {
+     "end": 68.463,
+     "start": 68.137,
+     "text": "against"
+    },
+    {
+     "end": 68.675,
+     "start": 68.463,
+     "text": "these"
+    },
+    {
+     "end": 69.775,
+     "start": 68.675,
+     "text": "modules"
+    },
+    {
+     "end": 69.975,
+     "start": 69.775,
+     "text": "."
+    },
+    {
+     "end": 70.65,
+     "start": 70.2,
+     "text": "Singular"
+    },
+    {
+     "end": 70.7,
+     "start": 70.65,
+     "text": "."
+    },
+    {
+     "end": 71.25,
+     "start": 70.7,
+     "text": "Registry"
+    },
+    {
+     "end": 71.35,
+     "start": 71.25,
+     "text": "."
+    },
+    {
+     "end": 71.713,
+     "start": 71.35,
+     "text": "Ledger"
+    },
+    {
+     "end": 71.887,
+     "start": 71.713,
+     "text": "and"
+    },
+    {
+     "end": 72.4,
+     "start": 71.887,
+     "text": "Singular"
+    },
+    {
+     "end": 72.475,
+     "start": 72.4,
+     "text": "."
+    },
+    {
+     "end": 73.0,
+     "start": 72.475,
+     "text": "Registry"
+    },
+    {
+     "end": 73.075,
+     "start": 73.0,
+     "text": "."
+    },
+    {
+     "end": 73.55,
+     "start": 73.075,
+     "text": "Provider"
+    },
+    {
+     "end": 73.662,
+     "start": 73.55,
+     "text": "are"
+    },
+    {
+     "end": 73.75,
+     "start": 73.662,
+     "text": "the"
+    },
+    {
+     "end": 75.05,
+     "start": 73.75,
+     "text": "re-exports"
+    },
+    {
+     "end": 75.25,
+     "start": 75.05,
+     "text": ":"
+    },
+    {
+     "end": 75.613,
+     "start": 75.475,
+     "text": "their"
+    },
+    {
+     "end": 76.55,
+     "start": 75.613,
+     "text": "implementations"
+    },
+    {
+     "end": 76.713,
+     "start": 76.55,
+     "text": "are"
+    },
+    {
+     "end": 77.125,
+     "start": 76.713,
+     "text": "owned"
+    },
+    {
+     "end": 77.3,
+     "start": 77.125,
+     "text": "by"
+    },
+    {
+     "end": 77.412,
+     "start": 77.3,
+     "text": "the"
+    },
+    {
+     "end": 77.825,
+     "start": 77.412,
+     "text": "public"
+    },
+    {
+     "end": 78.7,
+     "start": 77.825,
+     "text": "local-services"
+    },
+    {
+     "end": 79.387,
+     "start": 78.7,
+     "text": "component"
+    },
+    {
+     "end": 79.475,
+     "start": 79.387,
+     "text": "("
+    },
+    {
+     "end": 82.075,
+     "start": 79.475,
+     "text": "offchain/local-services/"
+    },
+    {
+     "end": 82.175,
+     "start": 82.075,
+     "text": ")"
+    },
+    {
+     "end": 82.287,
+     "start": 82.175,
+     "text": "and"
+    },
+    {
+     "end": 82.375,
+     "start": 82.287,
+     "text": "the"
+    },
+    {
+     "end": 82.675,
+     "start": 82.375,
+     "text": "main"
+    },
+    {
+     "end": 83.2,
+     "start": 82.675,
+     "text": "library"
+    },
+    {
+     "end": 83.85,
+     "start": 83.2,
+     "text": "re-exports"
+    },
+    {
+     "end": 84.775,
+     "start": 83.85,
+     "text": "them"
+    },
+    {
+     "end": 84.975,
+     "start": 84.775,
+     "text": ","
+    },
+    {
+     "end": 85.262,
+     "start": 85.175,
+     "text": "so"
+    },
+    {
+     "end": 85.425,
+     "start": 85.262,
+     "text": "their"
+    },
+    {
+     "end": 85.875,
+     "start": 85.425,
+     "text": "import"
+    },
+    {
+     "end": 86.4,
+     "start": 85.875,
+     "text": "paths"
+    },
+    {
+     "end": 86.512,
+     "start": 86.4,
+     "text": "and"
+    },
+    {
+     "end": 86.675,
+     "start": 86.512,
+     "text": "their"
+    },
+    {
+     "end": 87.137,
+     "start": 86.675,
+     "text": "entries"
+    },
+    {
+     "end": 87.213,
+     "start": 87.137,
+     "text": "in"
+    },
+    {
+     "end": 87.4,
+     "start": 87.213,
+     "text": "this"
+    },
+    {
+     "end": 87.875,
+     "start": 87.4,
+     "text": "reference"
+    },
+    {
+     "end": 88.025,
+     "start": 87.875,
+     "text": "are"
+    },
+    {
+     "end": 89.25,
+     "start": 88.025,
+     "text": "unchanged"
+    },
+    {
+     "end": 89.475,
+     "start": 89.25,
+     "text": "."
+    },
+    {
+     "end": 89.812,
+     "start": 89.7,
+     "text": "The"
+    },
+    {
+     "end": 90.262,
+     "start": 89.812,
+     "text": "private"
+    },
+    {
+     "end": 90.625,
+     "start": 90.262,
+     "text": "node"
+    },
+    {
+     "end": 91.1,
+     "start": 90.625,
+     "text": "runtime"
+    },
+    {
+     "end": 91.637,
+     "start": 91.1,
+     "text": "owners"
+    },
+    {
+     "end": 91.812,
+     "start": 91.637,
+     "text": "are"
+    },
+    {
+     "end": 92.475,
+     "start": 91.812,
+     "text": "deliberately"
+    },
+    {
+     "end": 92.738,
+     "start": 92.475,
+     "text": "not"
+    },
+    {
+     "end": 93.037,
+     "start": 92.738,
+     "text": "part"
+    },
+    {
+     "end": 93.125,
+     "start": 93.037,
+     "text": "of"
+    },
+    {
+     "end": 93.363,
+     "start": 93.125,
+     "text": "this"
+    },
+    {
+     "end": 94.0,
+     "start": 93.363,
+     "text": "reference"
+    },
+    {
+     "end": 94.075,
+     "start": 94.0,
+     "text": "—"
+    },
+    {
+     "end": 94.225,
+     "start": 94.075,
+     "text": "they"
+    },
+    {
+     "end": 94.375,
+     "start": 94.225,
+     "text": "are"
+    },
+    {
+     "end": 94.6,
+     "start": 94.375,
+     "text": "not"
+    },
+    {
+     "end": 95.25,
+     "start": 94.6,
+     "text": "importable"
+    },
+    {
+     "end": 95.412,
+     "start": 95.25,
+     "text": "from"
+    },
+    {
+     "end": 95.5,
+     "start": 95.412,
+     "text": "the"
+    },
+    {
+     "end": 95.9,
+     "start": 95.5,
+     "text": "public"
+    },
+    {
+     "end": 96.65,
+     "start": 95.9,
+     "text": "library"
+    },
+    {
+     "end": 96.738,
+     "start": 96.65,
+     "text": "—"
+    },
+    {
+     "end": 96.875,
+     "start": 96.738,
+     "text": "and"
+    },
+    {
+     "end": 97.037,
+     "start": 96.875,
+     "text": "are"
+    },
+    {
+     "end": 97.725,
+     "start": 97.037,
+     "text": "documented"
+    },
+    {
+     "end": 97.912,
+     "start": 97.725,
+     "text": "with"
+    },
+    {
+     "end": 98.3,
+     "start": 97.912,
+     "text": "source"
+    },
+    {
+     "end": 98.675,
+     "start": 98.3,
+     "text": "links"
+    },
+    {
+     "end": 98.838,
+     "start": 98.675,
+     "text": "in"
+    },
+    {
+     "end": 99.2,
+     "start": 98.838,
+     "text": "Node"
+    },
+    {
+     "end": 99.6,
+     "start": 99.2,
+     "text": "module"
+    },
+    {
+     "end": 100.925,
+     "start": 99.6,
+     "text": "ownership"
+    },
+    {
+     "end": 101.175,
+     "start": 100.925,
+     "text": "."
+    },
+    {
+     "end": 101.5,
+     "start": 101.375,
+     "text": "The"
+    },
+    {
+     "end": 101.9,
+     "start": 101.5,
+     "text": "extent"
+    },
+    {
+     "end": 102.363,
+     "start": 101.9,
+     "text": "below"
+    },
+    {
+     "end": 102.525,
+     "start": 102.363,
+     "text": "is"
+    },
+    {
+     "end": 102.625,
+     "start": 102.525,
+     "text": "the"
+    },
+    {
+     "end": 103.188,
+     "start": 102.625,
+     "text": "complete"
+    },
+    {
+     "end": 103.85,
+     "start": 103.188,
+     "text": "documented"
+    },
+    {
+     "end": 104.238,
+     "start": 103.85,
+     "text": "module"
+    },
+    {
+     "end": 104.9,
+     "start": 104.238,
+     "text": "surface"
+    },
+    {
+     "end": 104.975,
+     "start": 104.9,
+     "text": "—"
+    },
+    {
+     "end": 105.725,
+     "start": 104.975,
+     "text": "exposed"
+    },
+    {
+     "end": 105.812,
+     "start": 105.725,
+     "text": ","
+    },
+    {
+     "end": 106.55,
+     "start": 105.812,
+     "text": "re-exported"
+    },
+    {
+     "end": 106.675,
+     "start": 106.55,
+     "text": "and"
+    },
+    {
+     "end": 107.525,
+     "start": 106.675,
+     "text": "package-internal"
+    },
+    {
+     "end": 108.55,
+     "start": 107.525,
+     "text": "alike"
+    },
+    {
+     "end": 108.775,
+     "start": 108.55,
+     "text": ";"
+    },
+    {
+     "end": 109.025,
+     "start": 108.95,
+     "text": "the"
+    },
+    {
+     "end": 109.25,
+     "start": 109.025,
+     "text": "site"
+    },
+    {
+     "end": 109.5,
+     "start": 109.25,
+     "text": "check"
+    },
+    {
+     "end": 109.812,
+     "start": 109.5,
+     "text": "fails"
+    },
+    {
+     "end": 110.175,
+     "start": 109.812,
+     "text": "until"
+    },
+    {
+     "end": 110.325,
+     "start": 110.175,
+     "text": "it"
+    },
+    {
+     "end": 110.438,
+     "start": 110.325,
+     "text": "and"
+    },
+    {
+     "end": 110.625,
+     "start": 110.438,
+     "text": "this"
+    },
+    {
+     "end": 110.85,
+     "start": 110.625,
+     "text": "list"
+    },
+    {
+     "end": 111.7,
+     "start": 110.85,
+     "text": "agree"
+    },
+    {
+     "end": 111.925,
+     "start": 111.7,
+     "text": "."
+    }
+   ]
+  },
   "docs-offchain-api-reference/what-this-reference-contains-03": {
    "audio_sha256": "94b777eba9674bcecaecb96d4f4a89d00895432301eb3f4d4b967036f7bd92ab",
    "characters": 44,
@@ -191720,6 +193185,921 @@
     }
    ]
   },
+  "docs-offchain-node-ownership/facade-callers-and-the-private-boundary-01": {
+   "audio_sha256": "fdc134925ee97988c6257c50711a476e27c60e1330b979d9878567385596ab95",
+   "characters": 1010,
+   "cost": 0.0006262,
+   "duration": 69.4,
+   "index": 1,
+   "key": "0408e8c36aac27ab5b01943c257951751c9eb69c9179a375d062882467fa02af",
+   "page": "docs/offchain-node-ownership.md",
+   "pause_ms": 400,
+   "section": "facade-callers-and-the-private-boundary",
+   "sent_text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
+   "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.275,
+     "text": "split"
+    },
+    {
+     "end": 0.863,
+     "start": 0.625,
+     "text": "left"
+    },
+    {
+     "end": 0.95,
+     "start": 0.863,
+     "text": "the"
+    },
+    {
+     "end": 1.5,
+     "start": 0.95,
+     "text": "facade's"
+    },
+    {
+     "end": 1.987,
+     "start": 1.5,
+     "text": "export"
+    },
+    {
+     "end": 2.25,
+     "start": 1.987,
+     "text": "list"
+    },
+    {
+     "end": 3.05,
+     "start": 2.25,
+     "text": "unchanged"
+    },
+    {
+     "end": 3.125,
+     "start": 3.05,
+     "text": ","
+    },
+    {
+     "end": 3.475,
+     "start": 3.125,
+     "text": "token"
+    },
+    {
+     "end": 3.6,
+     "start": 3.475,
+     "text": "for"
+    },
+    {
+     "end": 4.575,
+     "start": 3.6,
+     "text": "token"
+    },
+    {
+     "end": 4.775,
+     "start": 4.575,
+     "text": ";"
+    },
+    {
+     "end": 5.025,
+     "start": 4.95,
+     "text": "the"
+    },
+    {
+     "end": 5.45,
+     "start": 5.025,
+     "text": "bounded"
+    },
+    {
+     "end": 5.8,
+     "start": 5.45,
+     "text": "waits"
+    },
+    {
+     "end": 6.012,
+     "start": 5.8,
+     "text": "then"
+    },
+    {
+     "end": 6.363,
+     "start": 6.012,
+     "text": "added"
+    },
+    {
+     "end": 6.725,
+     "start": 6.363,
+     "text": "five"
+    },
+    {
+     "end": 7.175,
+     "start": 6.725,
+     "text": "names"
+    },
+    {
+     "end": 7.25,
+     "start": 7.175,
+     "text": ","
+    },
+    {
+     "end": 7.45,
+     "start": 7.25,
+     "text": "which"
+    },
+    {
+     "end": 7.55,
+     "start": 7.45,
+     "text": "the"
+    },
+    {
+     "end": 8.075,
+     "start": 7.55,
+     "text": "facade"
+    },
+    {
+     "end": 8.7,
+     "start": 8.075,
+     "text": "re-exports"
+    },
+    {
+     "end": 8.875,
+     "start": 8.7,
+     "text": "from"
+    },
+    {
+     "end": 9.475,
+     "start": 8.875,
+     "text": "Node"
+    },
+    {
+     "end": 9.6,
+     "start": 9.475,
+     "text": "."
+    },
+    {
+     "end": 10.425,
+     "start": 9.6,
+     "text": "Wait"
+    },
+    {
+     "end": 10.65,
+     "start": 10.425,
+     "text": ":"
+    },
+    {
+     "end": 11.387,
+     "start": 10.85,
+     "text": "WaitStage"
+    },
+    {
+     "end": 11.425,
+     "start": 11.387,
+     "text": "("
+    },
+    {
+     "end": 11.45,
+     "start": 11.425,
+     "text": "."
+    },
+    {
+     "end": 11.475,
+     "start": 11.45,
+     "text": "."
+    },
+    {
+     "end": 11.5,
+     "start": 11.475,
+     "text": ")"
+    },
+    {
+     "end": 11.55,
+     "start": 11.5,
+     "text": ","
+    },
+    {
+     "end": 12.262,
+     "start": 11.55,
+     "text": "WaitFailure"
+    },
+    {
+     "end": 12.3,
+     "start": 12.262,
+     "text": "("
+    },
+    {
+     "end": 12.325,
+     "start": 12.3,
+     "text": "."
+    },
+    {
+     "end": 12.375,
+     "start": 12.325,
+     "text": "."
+    },
+    {
+     "end": 12.425,
+     "start": 12.375,
+     "text": ")"
+    },
+    {
+     "end": 12.512,
+     "start": 12.425,
+     "text": ","
+    },
+    {
+     "end": 13.425,
+     "start": 12.512,
+     "text": "submissionBound"
+    },
+    {
+     "end": 13.475,
+     "start": 13.425,
+     "text": ","
+    },
+    {
+     "end": 14.425,
+     "start": 13.475,
+     "text": "boundedSubmitter"
+    },
+    {
+     "end": 14.55,
+     "start": 14.425,
+     "text": "and"
+    },
+    {
+     "end": 15.825,
+     "start": 14.55,
+     "text": "tryOutcome"
+    },
+    {
+     "end": 16.05,
+     "start": 15.825,
+     "text": "."
+    },
+    {
+     "end": 16.8,
+     "start": 16.325,
+     "text": "Modules"
+    },
+    {
+     "end": 16.975,
+     "start": 16.8,
+     "text": "that"
+    },
+    {
+     "end": 17.513,
+     "start": 16.975,
+     "text": "imported"
+    },
+    {
+     "end": 18.075,
+     "start": 17.513,
+     "text": "Singular"
+    },
+    {
+     "end": 18.15,
+     "start": 18.075,
+     "text": "."
+    },
+    {
+     "end": 18.775,
+     "start": 18.15,
+     "text": "Registry"
+    },
+    {
+     "end": 18.875,
+     "start": 18.775,
+     "text": "."
+    },
+    {
+     "end": 19.312,
+     "start": 18.875,
+     "text": "Ledger"
+    },
+    {
+     "end": 19.525,
+     "start": 19.312,
+     "text": "or"
+    },
+    {
+     "end": 20.125,
+     "start": 19.525,
+     "text": "Singular"
+    },
+    {
+     "end": 20.225,
+     "start": 20.125,
+     "text": "."
+    },
+    {
+     "end": 20.975,
+     "start": 20.225,
+     "text": "Registry"
+    },
+    {
+     "end": 21.075,
+     "start": 20.975,
+     "text": "."
+    },
+    {
+     "end": 21.587,
+     "start": 21.075,
+     "text": "Provider"
+    },
+    {
+     "end": 21.875,
+     "start": 21.587,
+     "text": "keep"
+    },
+    {
+     "end": 22.075,
+     "start": 21.875,
+     "text": "their"
+    },
+    {
+     "end": 22.538,
+     "start": 22.075,
+     "text": "import"
+    },
+    {
+     "end": 23.05,
+     "start": 22.538,
+     "text": "paths"
+    },
+    {
+     "end": 23.25,
+     "start": 23.05,
+     "text": "through"
+    },
+    {
+     "end": 23.35,
+     "start": 23.25,
+     "text": "the"
+    },
+    {
+     "end": 23.75,
+     "start": 23.35,
+     "text": "public"
+    },
+    {
+     "end": 24.375,
+     "start": 23.75,
+     "text": "library's"
+    },
+    {
+     "end": 25.8,
+     "start": 24.375,
+     "text": "re-exports"
+    },
+    {
+     "end": 26.025,
+     "start": 25.8,
+     "text": "."
+    },
+    {
+     "end": 26.3,
+     "start": 26.2,
+     "text": "The"
+    },
+    {
+     "end": 26.8,
+     "start": 26.3,
+     "text": "runtime"
+    },
+    {
+     "end": 27.175,
+     "start": 26.8,
+     "text": "owners"
+    },
+    {
+     "end": 27.95,
+     "start": 27.175,
+     "text": "themselves"
+    },
+    {
+     "end": 28.125,
+     "start": 27.95,
+     "text": "are"
+    },
+    {
+     "end": 28.375,
+     "start": 28.125,
+     "text": "not"
+    },
+    {
+     "end": 29.0,
+     "start": 28.375,
+     "text": "importable"
+    },
+    {
+     "end": 29.138,
+     "start": 29.0,
+     "text": "from"
+    },
+    {
+     "end": 29.225,
+     "start": 29.138,
+     "text": "the"
+    },
+    {
+     "end": 29.5,
+     "start": 29.225,
+     "text": "main"
+    },
+    {
+     "end": 30.6,
+     "start": 29.5,
+     "text": "library"
+    },
+    {
+     "end": 30.825,
+     "start": 30.6,
+     "text": ":"
+    },
+    {
+     "end": 31.125,
+     "start": 31.0,
+     "text": "they"
+    },
+    {
+     "end": 31.312,
+     "start": 31.125,
+     "text": "live"
+    },
+    {
+     "end": 31.388,
+     "start": 31.312,
+     "text": "in"
+    },
+    {
+     "end": 31.475,
+     "start": 31.388,
+     "text": "the"
+    },
+    {
+     "end": 32.062,
+     "start": 31.475,
+     "text": "package's"
+    },
+    {
+     "end": 32.5,
+     "start": 32.062,
+     "text": "private"
+    },
+    {
+     "end": 33.0,
+     "start": 32.5,
+     "text": "internal"
+    },
+    {
+     "end": 34.05,
+     "start": 33.0,
+     "text": "library"
+    },
+    {
+     "end": 34.25,
+     "start": 34.05,
+     "text": "."
+    },
+    {
+     "end": 34.6,
+     "start": 34.45,
+     "text": "By"
+    },
+    {
+     "end": 35.1,
+     "start": 34.6,
+     "text": "Cabal's"
+    },
+    {
+     "end": 35.362,
+     "start": 35.1,
+     "text": "own"
+    },
+    {
+     "end": 35.838,
+     "start": 35.362,
+     "text": "rule"
+    },
+    {
+     "end": 35.963,
+     "start": 35.838,
+     "text": "a"
+    },
+    {
+     "end": 36.35,
+     "start": 35.963,
+     "text": "named"
+    },
+    {
+     "end": 37.0,
+     "start": 36.35,
+     "text": "library"
+    },
+    {
+     "end": 37.362,
+     "start": 37.0,
+     "text": "without"
+    },
+    {
+     "end": 37.775,
+     "start": 37.362,
+     "text": "public"
+    },
+    {
+     "end": 38.537,
+     "start": 37.775,
+     "text": "visibility"
+    },
+    {
+     "end": 38.725,
+     "start": 38.537,
+     "text": "can"
+    },
+    {
+     "end": 38.875,
+     "start": 38.725,
+     "text": "be"
+    },
+    {
+     "end": 39.35,
+     "start": 38.875,
+     "text": "depended"
+    },
+    {
+     "end": 39.675,
+     "start": 39.35,
+     "text": "on"
+    },
+    {
+     "end": 40.075,
+     "start": 39.675,
+     "text": "only"
+    },
+    {
+     "end": 40.25,
+     "start": 40.075,
+     "text": "by"
+    },
+    {
+     "end": 40.9,
+     "start": 40.25,
+     "text": "components"
+    },
+    {
+     "end": 41.0,
+     "start": 40.9,
+     "text": "of"
+    },
+    {
+     "end": 41.188,
+     "start": 41.0,
+     "text": "this"
+    },
+    {
+     "end": 41.5,
+     "start": 41.188,
+     "text": "same"
+    },
+    {
+     "end": 42.725,
+     "start": 41.5,
+     "text": "package"
+    },
+    {
+     "end": 42.95,
+     "start": 42.725,
+     "text": "."
+    },
+    {
+     "end": 43.25,
+     "start": 43.15,
+     "text": "The"
+    },
+    {
+     "end": 43.575,
+     "start": 43.25,
+     "text": "main"
+    },
+    {
+     "end": 44.175,
+     "start": 43.575,
+     "text": "library's"
+    },
+    {
+     "end": 44.75,
+     "start": 44.175,
+     "text": "facade"
+    },
+    {
+     "end": 44.875,
+     "start": 44.75,
+     "text": "and"
+    },
+    {
+     "end": 45.162,
+     "start": 44.875,
+     "text": "each"
+    },
+    {
+     "end": 45.588,
+     "start": 45.162,
+     "text": "test"
+    },
+    {
+     "end": 45.763,
+     "start": 45.588,
+     "text": "or"
+    },
+    {
+     "end": 46.15,
+     "start": 45.763,
+     "text": "tool"
+    },
+    {
+     "end": 46.675,
+     "start": 46.15,
+     "text": "importing"
+    },
+    {
+     "end": 47.138,
+     "start": 46.675,
+     "text": "private"
+    },
+    {
+     "end": 47.513,
+     "start": 47.138,
+     "text": "seams"
+    },
+    {
+     "end": 47.875,
+     "start": 47.513,
+     "text": "bind"
+    },
+    {
+     "end": 47.963,
+     "start": 47.875,
+     "text": "to"
+    },
+    {
+     "end": 48.088,
+     "start": 47.963,
+     "text": "the"
+    },
+    {
+     "end": 48.425,
+     "start": 48.088,
+     "text": "same"
+    },
+    {
+     "end": 48.925,
+     "start": 48.425,
+     "text": "compiled"
+    },
+    {
+     "end": 49.662,
+     "start": 48.925,
+     "text": "instance"
+    },
+    {
+     "end": 49.75,
+     "start": 49.662,
+     "text": "—"
+    },
+    {
+     "end": 50.0,
+     "start": 49.75,
+     "text": "one"
+    },
+    {
+     "end": 51.0,
+     "start": 50.0,
+     "text": "build"
+    },
+    {
+     "end": 51.225,
+     "start": 51.0,
+     "text": ","
+    },
+    {
+     "end": 51.612,
+     "start": 51.425,
+     "text": "one"
+    },
+    {
+     "end": 51.95,
+     "start": 51.612,
+     "text": "memory"
+    },
+    {
+     "end": 52.0,
+     "start": 51.95,
+     "text": ","
+    },
+    {
+     "end": 52.175,
+     "start": 52.0,
+     "text": "no"
+    },
+    {
+     "end": 52.5,
+     "start": 52.175,
+     "text": "second"
+    },
+    {
+     "end": 53.35,
+     "start": 52.5,
+     "text": "copy"
+    },
+    {
+     "end": 53.575,
+     "start": 53.35,
+     "text": "."
+    },
+    {
+     "end": 54.1,
+     "start": 53.775,
+     "text": "Nothing"
+    },
+    {
+     "end": 54.487,
+     "start": 54.1,
+     "text": "outside"
+    },
+    {
+     "end": 54.575,
+     "start": 54.487,
+     "text": "the"
+    },
+    {
+     "end": 55.05,
+     "start": 54.575,
+     "text": "package"
+    },
+    {
+     "end": 55.2,
+     "start": 55.05,
+     "text": "can"
+    },
+    {
+     "end": 55.388,
+     "start": 55.2,
+     "text": "name"
+    },
+    {
+     "end": 55.475,
+     "start": 55.388,
+     "text": "the"
+    },
+    {
+     "end": 55.85,
+     "start": 55.475,
+     "text": "private"
+    },
+    {
+     "end": 56.9,
+     "start": 55.85,
+     "text": "library"
+    },
+    {
+     "end": 57.1,
+     "start": 56.9,
+     "text": "."
+    },
+    {
+     "end": 57.412,
+     "start": 57.325,
+     "text": "A"
+    },
+    {
+     "end": 58.125,
+     "start": 57.412,
+     "text": "downstream"
+    },
+    {
+     "end": 58.513,
+     "start": 58.125,
+     "text": "runner"
+    },
+    {
+     "end": 58.963,
+     "start": 58.513,
+     "text": "uses"
+    },
+    {
+     "end": 60.0,
+     "start": 58.963,
+     "text": "guardNodeConnection"
+    },
+    {
+     "end": 60.1,
+     "start": 60.0,
+     "text": "to"
+    },
+    {
+     "end": 60.65,
+     "start": 60.1,
+     "text": "compose"
+    },
+    {
+     "end": 60.85,
+     "start": 60.65,
+     "text": "its"
+    },
+    {
+     "end": 61.425,
+     "start": 60.85,
+     "text": "existing"
+    },
+    {
+     "end": 62.037,
+     "start": 61.425,
+     "text": "connection"
+    },
+    {
+     "end": 62.188,
+     "start": 62.037,
+     "text": "and"
+    },
+    {
+     "end": 62.588,
+     "start": 62.188,
+     "text": "common"
+    },
+    {
+     "end": 63.225,
+     "start": 62.588,
+     "text": "services"
+    },
+    {
+     "end": 63.662,
+     "start": 63.225,
+     "text": "without"
+    },
+    {
+     "end": 64.238,
+     "start": 63.662,
+     "text": "importing"
+    },
+    {
+     "end": 64.55,
+     "start": 64.238,
+     "text": "raw"
+    },
+    {
+     "end": 65.05,
+     "start": 64.55,
+     "text": "adapter"
+    },
+    {
+     "end": 66.15,
+     "start": 65.05,
+     "text": "types"
+    },
+    {
+     "end": 66.35,
+     "start": 66.15,
+     "text": ";"
+    },
+    {
+     "end": 66.625,
+     "start": 66.525,
+     "text": "the"
+    },
+    {
+     "end": 67.05,
+     "start": 66.625,
+     "text": "original"
+    },
+    {
+     "end": 67.5,
+     "start": 67.05,
+     "text": "facade"
+    },
+    {
+     "end": 67.975,
+     "start": 67.5,
+     "text": "imports"
+    },
+    {
+     "end": 68.35,
+     "start": 67.975,
+     "text": "remain"
+    },
+    {
+     "end": 69.2,
+     "start": 68.35,
+     "text": "valid"
+    },
+    {
+     "end": 69.4,
+     "start": 69.2,
+     "text": "."
+    }
+   ]
+  },
   "docs-offchain-node-ownership/node-module-ownership-00": {
    "audio_sha256": "2838752a9865d858c7939dd83b8fad7128515ce038f62e398d970ca9776b8798",
    "characters": 22,
@@ -192326,6 +194706,476 @@
     {
      "end": 2.3,
      "start": 2.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-node-ownership/one-owner-per-runtime-concern-01": {
+   "audio_sha256": "aa3a6ef3e1c111d987a32cc553010abc7057b5843a6bf72a20e45d155d6d20a9",
+   "characters": 545,
+   "cost": 0.00033790000000000003,
+   "duration": 36.5,
+   "index": 1,
+   "key": "99e8122351e96464605e98be4bd1e94e39932a480182106f8b4052a40371cdec",
+   "page": "docs/offchain-node-ownership.md",
+   "pause_ms": 400,
+   "section": "one-owner-per-runtime-concern",
+   "sent_text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+   "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.275,
+     "text": "node"
+    },
+    {
+     "end": 1.1,
+     "start": 0.625,
+     "text": "runtime"
+    },
+    {
+     "end": 1.625,
+     "start": 1.1,
+     "text": "owners"
+    },
+    {
+     "end": 2.025,
+     "start": 1.625,
+     "text": "live"
+    },
+    {
+     "end": 2.112,
+     "start": 2.025,
+     "text": "in"
+    },
+    {
+     "end": 2.2,
+     "start": 2.112,
+     "text": "the"
+    },
+    {
+     "end": 3.0,
+     "start": 2.2,
+     "text": "package-private"
+    },
+    {
+     "end": 3.7,
+     "start": 3.0,
+     "text": "node-internal"
+    },
+    {
+     "end": 4.825,
+     "start": 3.7,
+     "text": "library"
+    },
+    {
+     "end": 5.025,
+     "start": 4.825,
+     "text": "."
+    },
+    {
+     "end": 5.575,
+     "start": 5.25,
+     "text": "Ledger"
+    },
+    {
+     "end": 5.7,
+     "start": 5.575,
+     "text": "and"
+    },
+    {
+     "end": 6.238,
+     "start": 5.7,
+     "text": "Provider"
+    },
+    {
+     "end": 6.512,
+     "start": 6.238,
+     "text": "have"
+    },
+    {
+     "end": 6.925,
+     "start": 6.512,
+     "text": "public"
+    },
+    {
+     "end": 7.475,
+     "start": 6.925,
+     "text": "ownership"
+    },
+    {
+     "end": 7.6,
+     "start": 7.475,
+     "text": "in"
+    },
+    {
+     "end": 9.075,
+     "start": 7.6,
+     "text": "local-services"
+    },
+    {
+     "end": 9.275,
+     "start": 9.075,
+     "text": ","
+    },
+    {
+     "end": 9.625,
+     "start": 9.45,
+     "text": "which"
+    },
+    {
+     "end": 10.012,
+     "start": 9.625,
+     "text": "also"
+    },
+    {
+     "end": 10.387,
+     "start": 10.012,
+     "text": "owns"
+    },
+    {
+     "end": 10.725,
+     "start": 10.387,
+     "text": "fixed"
+    },
+    {
+     "end": 11.025,
+     "start": 10.725,
+     "text": "local"
+    },
+    {
+     "end": 11.95,
+     "start": 11.025,
+     "text": "evaluation"
+    },
+    {
+     "end": 12.1,
+     "start": 11.95,
+     "text": "and"
+    },
+    {
+     "end": 12.725,
+     "start": 12.1,
+     "text": "validated"
+    },
+    {
+     "end": 13.05,
+     "start": 12.725,
+     "text": "time"
+    },
+    {
+     "end": 14.2,
+     "start": 13.05,
+     "text": "conversion"
+    },
+    {
+     "end": 14.4,
+     "start": 14.2,
+     "text": "."
+    },
+    {
+     "end": 14.65,
+     "start": 14.575,
+     "text": "The"
+    },
+    {
+     "end": 15.05,
+     "start": 14.65,
+     "text": "public"
+    },
+    {
+     "end": 15.438,
+     "start": 15.05,
+     "text": "module"
+    },
+    {
+     "end": 15.9,
+     "start": 15.438,
+     "text": "Singular"
+    },
+    {
+     "end": 15.95,
+     "start": 15.9,
+     "text": "."
+    },
+    {
+     "end": 16.575,
+     "start": 15.95,
+     "text": "Registry"
+    },
+    {
+     "end": 16.7,
+     "start": 16.575,
+     "text": "."
+    },
+    {
+     "end": 16.962,
+     "start": 16.7,
+     "text": "Node"
+    },
+    {
+     "end": 17.062,
+     "start": 16.962,
+     "text": "is"
+    },
+    {
+     "end": 17.125,
+     "start": 17.062,
+     "text": "a"
+    },
+    {
+     "end": 18.15,
+     "start": 17.125,
+     "text": "facade"
+    },
+    {
+     "end": 18.35,
+     "start": 18.15,
+     "text": ":"
+    },
+    {
+     "end": 18.625,
+     "start": 18.55,
+     "text": "it"
+    },
+    {
+     "end": 18.875,
+     "start": 18.625,
+     "text": "owns"
+    },
+    {
+     "end": 19.3,
+     "start": 18.875,
+     "text": "nothing"
+    },
+    {
+     "end": 19.35,
+     "start": 19.3,
+     "text": ","
+    },
+    {
+     "end": 19.638,
+     "start": 19.35,
+     "text": "keeps"
+    },
+    {
+     "end": 19.725,
+     "start": 19.638,
+     "text": "the"
+    },
+    {
+     "end": 20.075,
+     "start": 19.725,
+     "text": "original"
+    },
+    {
+     "end": 21.125,
+     "start": 20.075,
+     "text": "exports"
+    },
+    {
+     "end": 21.325,
+     "start": 21.125,
+     "text": ","
+    },
+    {
+     "end": 21.663,
+     "start": 21.525,
+     "text": "and"
+    },
+    {
+     "end": 21.975,
+     "start": 21.663,
+     "text": "adds"
+    },
+    {
+     "end": 22.125,
+     "start": 21.975,
+     "text": "the"
+    },
+    {
+     "end": 22.525,
+     "start": 22.125,
+     "text": "five"
+    },
+    {
+     "end": 22.8,
+     "start": 22.525,
+     "text": "wait"
+    },
+    {
+     "end": 23.25,
+     "start": 22.8,
+     "text": "names"
+    },
+    {
+     "end": 23.375,
+     "start": 23.25,
+     "text": "and"
+    },
+    {
+     "end": 24.425,
+     "start": 23.375,
+     "text": "guardNodeConnection"
+    },
+    {
+     "end": 24.6,
+     "start": 24.425,
+     "text": "for"
+    },
+    {
+     "end": 25.6,
+     "start": 24.6,
+     "text": "existing-connection"
+    },
+    {
+     "end": 26.85,
+     "start": 25.6,
+     "text": "composition"
+    },
+    {
+     "end": 27.05,
+     "start": 26.85,
+     "text": "."
+    },
+    {
+     "end": 27.55,
+     "start": 27.25,
+     "text": "Every"
+    },
+    {
+     "end": 27.975,
+     "start": 27.55,
+     "text": "original"
+    },
+    {
+     "end": 28.4,
+     "start": 27.975,
+     "text": "caller"
+    },
+    {
+     "end": 28.462,
+     "start": 28.4,
+     "text": "—"
+    },
+    {
+     "end": 28.562,
+     "start": 28.462,
+     "text": "the"
+    },
+    {
+     "end": 29.0,
+     "start": 28.562,
+     "text": "focused"
+    },
+    {
+     "end": 29.275,
+     "start": 29.0,
+     "text": "node"
+    },
+    {
+     "end": 29.7,
+     "start": 29.275,
+     "text": "tests"
+    },
+    {
+     "end": 29.75,
+     "start": 29.7,
+     "text": ","
+    },
+    {
+     "end": 29.875,
+     "start": 29.75,
+     "text": "the"
+    },
+    {
+     "end": 30.225,
+     "start": 29.875,
+     "text": "journey"
+    },
+    {
+     "end": 31.075,
+     "start": 30.225,
+     "text": "runner"
+    },
+    {
+     "end": 31.3,
+     "start": 31.075,
+     "text": ","
+    },
+    {
+     "end": 31.6,
+     "start": 31.475,
+     "text": "the"
+    },
+    {
+     "end": 32.213,
+     "start": 31.6,
+     "text": "end-to-end"
+    },
+    {
+     "end": 32.575,
+     "start": 32.213,
+     "text": "suite"
+    },
+    {
+     "end": 32.612,
+     "start": 32.575,
+     "text": ","
+    },
+    {
+     "end": 32.737,
+     "start": 32.612,
+     "text": "the"
+    },
+    {
+     "end": 33.05,
+     "start": 32.737,
+     "text": "shipped"
+    },
+    {
+     "end": 33.65,
+     "start": 33.05,
+     "text": "commands"
+    },
+    {
+     "end": 33.725,
+     "start": 33.65,
+     "text": "—"
+    },
+    {
+     "end": 34.025,
+     "start": 33.725,
+     "text": "keeps"
+    },
+    {
+     "end": 34.525,
+     "start": 34.025,
+     "text": "compiling"
+    },
+    {
+     "end": 34.875,
+     "start": 34.525,
+     "text": "against"
+    },
+    {
+     "end": 35.025,
+     "start": 34.875,
+     "text": "it"
+    },
+    {
+     "end": 36.275,
+     "start": 35.025,
+     "text": "unchanged"
+    },
+    {
+     "end": 36.5,
+     "start": 36.275,
      "text": "."
     }
    ]
