@@ -27,7 +27,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((&), (.~))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
@@ -42,7 +42,6 @@ import Cardano.Ledger.Mary.Value
 import PlutusCore.Data qualified as PLC
 import UntypedPlutusCore.DeBruijn ()
 
-import Data.Set qualified as Set
 import Singular.Application.OpenDatum.Book
 import Singular.Application.OpenDatum.Envelope
 import Singular.Application.OpenDatum.Script
