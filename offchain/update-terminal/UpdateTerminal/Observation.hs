@@ -28,12 +28,13 @@ import Data.Text qualified as T
 import Singular.Registry.Ledger (Root (..))
 import UpdateTerminal.Controls (UnknownLeg (..), refusalTrace)
 import UpdateTerminal.Narration (hex, say)
-import UpdateTerminal.Registry (txIdOf, walletDestination)
+import UpdateTerminal.Registry (txIdOf)
 import UpdateTerminal.Steps (Retirement (..), storyKey)
 
 -- | What one run executed and read back.
 data Observed = Observed
     { obsOpenPolicy :: T.Text
+    , obsWalletAddress :: T.Text
     , obsOpenParams :: Int
     , obsActivePolicy :: T.Text
     , obsRegistryToken :: ByteString
@@ -65,7 +66,7 @@ observation o =
                     , "maxFee" .= obsMaxFee o
                     ]
             , "boot" .= obsBoot o
-            , "requested" .= object ["address" .= hex (fst walletDestination)]
+            , "requested" .= object ["address" .= obsWalletAddress o]
             , "retirement"
                 .= object
                     [ "activePolicy" .= obsActivePolicy o

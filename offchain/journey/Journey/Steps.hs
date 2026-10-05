@@ -37,13 +37,16 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Journey.Chain (extractTokenId, genesisAddr, submitWithGenesis)
+import Journey.Chain (extractTokenId)
 import Journey.Narration (emit, failWith, hex, require, textOf)
 import Singular.Registry.Blueprint (NamingCodes)
+import Singular.Registry.Capabilities (Capabilities)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..), TxIn)
-import Singular.Registry.Node (Capabilities)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Provider
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (submitWithWallet)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -62,6 +65,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeInsertAbsent
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 {- | The bounded operation the journey applies: an insert of
 'journeyKey' with 'journeyValue'.
@@ -76,18 +80,20 @@ journeyValue = leafAbsent
 observe the state UTxO and read the boot state datum.
 -}
 stepBoot
-    :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    :: Wallet
+    -> CageConfig
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> TrieManager IO
     -> IO (TokenId, OnChainRoot, ConwayTx)
-stepBoot cfg prov caps tm = do
-    unsigned <- Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-    signed <- submitWithGenesis caps unsigned
+stepBoot wallet cfg prov caps tm = do
+    unsigned <-
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v (walletAddr wallet))
+    signed <- submitWithWallet wallet caps unsigned
     (tid, tidBytes) <- extractTokenId cfg signed
     createTrie tm tid
     stateUtxos <-
-        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
+        Cage.withLatest prov (`Cage.outputsAt` cageAddrFromCfg cfg Testnet)
     require "boot: state UTxO present at the cage address" $
         not (null stateUtxos)
     bootRoot <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
@@ -114,15 +120,16 @@ stepBoot cfg prov caps tm = do
 and observe it land.
 -}
 stepRequest
-    :: CageConfig
+    :: Wallet
+    -> CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> TokenId
     -> IO Int
-stepRequest cfg codes prov caps tid = do
+stepRequest wallet cfg codes prov caps tid = do
     let reqAddr = requestAddrFromCfg cfg tid Testnet
-    before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
+    before <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require "request: request address empty before the request" $
         null before
     -- #157 tree-edge-admission-by-approval, approval-asset-binding: a tree edge is BOOKED, not merely requested.
@@ -134,12 +141,12 @@ stepRequest cfg codes prov caps tid = do
             cfg
             codes
             prov
-            (submitWithGenesis caps)
-            genesisAddr
+            (submitWithWallet wallet caps)
+            (walletAddr wallet)
             tid
             journeyKey
             edgeInsertAbsent
-    after <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
+    after <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require
         "request: request UTxO observed at the request address"
         (length after == 1)
@@ -160,24 +167,25 @@ stepRequest cfg codes prov caps tid = do
 request UTxO and moves the trie root on chain.
 -}
 stepApply
-    :: CageConfig
+    :: Wallet
+    -> CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> Int
     -> IO ConwayTx
-stepApply cfg codes prov caps tm tid refs reqCount = do
-    unsigned <- Cage.withView prov $ \v -> do
+stepApply wallet cfg codes prov caps tm tid refs reqCount = do
+    unsigned <- Cage.withLatest prov $ \v -> do
         ctx <- Edges.registryContextFor cfg codes v refs
-        updateTokenWithDuties cfg v tm tid genesisAddr ctx
-    signed <- submitWithGenesis caps unsigned
+        updateTokenWithDuties cfg v tm tid (walletAddr wallet) ctx
+    signed <- submitWithWallet wallet caps unsigned
     after <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid Testnet)
+            (`Cage.outputsAt` requestAddrFromCfg cfg tid Testnet)
     require "apply: the request UTxO was consumed" $
         length after < reqCount
     emit
@@ -198,13 +206,13 @@ as read, for the negative section's unchanged control.
 -}
 stepReadBack
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
     -> TokenId
     -> OnChainRoot
     -> IO OnChainTokenState
 stepReadBack cfg prov tid bootRoot = do
     stateUtxos <-
-        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
+        Cage.withLatest prov (`Cage.outputsAt` cageAddrFromCfg cfg Testnet)
     st <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "read-back: no state UTxO carrying the policy token"

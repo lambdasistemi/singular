@@ -23,11 +23,12 @@ import Data.Text qualified as T
 
 import InsertActive.Controls (controlKey, refusalTrace)
 import InsertActive.Narration (hex, say)
-import InsertActive.Steps (storyKey, walletDestination)
+import InsertActive.Steps (storyKey)
 
 -- | What one run executed and read back.
 data Observed = Observed
     { obsOpenPolicy :: T.Text
+    , obsWalletAddress :: T.Text
     , obsOpenParams :: Int
     , obsActivePolicy :: T.Text
     , obsRegistryToken :: T.Text
@@ -58,11 +59,11 @@ observation o =
                 , "maxFee" .= obsMaxFee o
                 ]
         , "requested"
-            .= object ["address" .= hex (fst walletDestination)]
+            .= object ["address" .= obsWalletAddress o]
         , "fold" .= object ["txid" .= obsFoldTxid o]
         , "wallet"
             .= object
-                [ "address" .= hex (fst walletDestination)
+                [ "address" .= obsWalletAddress o
                 , "assets"
                     .= [ object
                             [ "policy" .= obsActivePolicy o

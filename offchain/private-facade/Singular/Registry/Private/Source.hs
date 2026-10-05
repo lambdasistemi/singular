@@ -8,6 +8,11 @@ this connection; a packaged command only receives the fixture's HTTP URL.
 module Singular.Registry.Private.Source
     ( LedgerSource (..)
     , readLedgerSource
+    , TimeSourceFacts (..)
+    , timeFactsOf
+    , readTimeSourceFacts
+    , OutputSourceFacts (..)
+    , readOutputSourceFacts
     , readRegistrations
     ) where
 
@@ -41,7 +46,7 @@ import Ouroboros.Consensus.HardFork.Combinator.Ledger.Query
     , pattern QueryHardFork
     )
 import Ouroboros.Consensus.Ledger.Query
-    ( Query (BlockQuery, GetChainPoint, GetSystemStart)
+    ( Query (BlockQuery, GetChainBlockNo, GetChainPoint, GetSystemStart)
     )
 import Ouroboros.Consensus.Protocol.Praos.Header ()
 import Ouroboros.Consensus.Shelley.Ledger.NetworkProtocolVersion ()
@@ -52,10 +57,12 @@ import Ouroboros.Consensus.Shelley.Ledger.Query
     , pattern GetUTxOWhole
     )
 import Ouroboros.Consensus.Shelley.Ledger.SupportsProtocol ()
-import Ouroboros.Network.Block (Point)
+import Ouroboros.Network.Block (BlockNo, Point)
+import Ouroboros.Network.Point (WithOrigin)
 
 data LedgerSource = LedgerSource
     { sourcePoint :: Point Block
+    , sourceBlockNo :: WithOrigin BlockNo
     , sourceEpoch :: EpochNo
     , sourceParameters :: PParams ConwayEra
     , sourceOutputs :: Map TxIn (TxOut ConwayEra)
@@ -68,6 +75,7 @@ readLedgerSource channel = withAcquiredLSQ channel $ \handle -> do
     let query :: Query Block result -> IO result
         query = queryAcquiredLSQ handle
     point <- query GetChainPoint
+    height <- query GetChainBlockNo
     epoch <-
         expectConway "epoch"
             =<< query (BlockQuery (QueryIfCurrentConway GetEpochNo))
@@ -81,7 +89,49 @@ readLedgerSource channel = withAcquiredLSQ channel $ \handle -> do
     history <-
         LBS.toStrict . serialise
             <$> query (BlockQuery (QueryHardFork GetInterpreter))
-    pure (LedgerSource point epoch parameters outputs start history)
+    pure
+        (LedgerSource point height epoch parameters outputs start history)
+
+{- | Time publication needs these three raw facts, not a fresh whole UTxO
+and parameter dump for every empty block. They still share one acquisition.
+-}
+data TimeSourceFacts = TimeSourceFacts
+    { timeSourcePoint :: Point Block
+    , timeSourceSystemStart :: SystemStart
+    , timeSourceEraHistory :: ByteString
+    }
+
+timeFactsOf :: LedgerSource -> TimeSourceFacts
+timeFactsOf source =
+    TimeSourceFacts
+        (sourcePoint source)
+        (sourceSystemStart source)
+        (sourceEraHistory source)
+
+readTimeSourceFacts :: LSQChannel -> IO TimeSourceFacts
+readTimeSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
+    point <- queryAcquiredLSQ handle GetChainPoint
+    start <- queryAcquiredLSQ handle GetSystemStart
+    history <-
+        LBS.toStrict . serialise
+            <$> queryAcquiredLSQ handle (BlockQuery (QueryHardFork GetInterpreter))
+    pure (TimeSourceFacts point start history)
+
+-- | A current output response needs the exact acquired point and full UTxO.
+data OutputSourceFacts = OutputSourceFacts
+    { outputSourcePoint :: Point Block
+    , outputSourceOutputs :: Map TxIn (TxOut ConwayEra)
+    }
+
+readOutputSourceFacts :: LSQChannel -> IO OutputSourceFacts
+readOutputSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
+    point <- queryAcquiredLSQ handle GetChainPoint
+    UTxO outputs <-
+        expectConway "UTxO"
+            =<< queryAcquiredLSQ
+                handle
+                (BlockQuery (QueryIfCurrentConway GetUTxOWhole))
+    pure (OutputSourceFacts point outputs)
 
 readRegistrations
     :: LSQChannel

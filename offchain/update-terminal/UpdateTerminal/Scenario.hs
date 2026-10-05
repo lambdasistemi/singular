@@ -21,7 +21,7 @@ import Data.Text qualified as T
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Root (..))
-import Singular.Registry.Node (withCapabilities)
+import Singular.Registry.Runner (withRunner)
 import Singular.Registry.Types (OnChainTokenState (..))
 import UpdateTerminal.Controls (absentRefusal, unknownRefusal)
 import UpdateTerminal.Narration (die, hex, say)
@@ -36,6 +36,7 @@ import UpdateTerminal.Registry
     , bootRegistry
     , bootStateOf
     , openSession
+    , walletDestination
     )
 import UpdateTerminal.Steps
     ( Retirement (..)
@@ -48,8 +49,8 @@ import UpdateTerminal.Steps
 updateTerminal :: Maybe FilePath -> IO ()
 updateTerminal observedPath = do
     inputs <- readStoryInputs
-    withCapabilities $ \caps -> do
-        session <- openSession caps inputs
+    withRunner $ \wallet caps -> do
+        session <- openSession wallet caps inputs
         story <- bootRegistry session "story"
         unknownReg <- bootRegistry session "unknown-leg"
         let cfg = regCfg story
@@ -73,6 +74,7 @@ updateTerminal observedPath = do
             observation
                 Observed
                     { obsOpenPolicy = openPolicy
+                    , obsWalletAddress = hex (fst (walletDestination story))
                     , obsOpenParams = inputOpenParams inputs
                     , obsActivePolicy = activePolicy
                     , obsRegistryToken = regTidBytes story

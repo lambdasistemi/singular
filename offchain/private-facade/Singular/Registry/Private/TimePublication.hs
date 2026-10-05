@@ -32,13 +32,13 @@ import Singular.Registry.NetworkTime
     , NetworkTimeManifest (..)
     , validateNetworkTime
     )
-import Singular.Registry.Private.Source (LedgerSource (..))
+import Singular.Registry.Private.Source (TimeSourceFacts (..))
 import System.Directory (createDirectoryIfMissing, renameFile)
 import System.FilePath ((</>))
 import System.Posix.Files (createSymbolicLink, setFileMode)
 
 publishTime
-    :: FilePath -> ByteString -> LedgerSource -> IO NetworkTime
+    :: FilePath -> ByteString -> TimeSourceFacts -> IO NetworkTime
 publishTime root genesis source = do
     eras <-
         either
@@ -50,9 +50,10 @@ publishTime root genesis source = do
     horizon <- case reverse eras of
         EraSummary{eraEnd = EraEnd end} : _ -> pure (boundSlot end)
         _ -> throwIO MissingTimeHorizon
-    let SystemStart start = sourceSystemStart source
+    let SystemStart start = timeSourceSystemStart source
         startMs = floor (utcTimeToPOSIXSeconds start * 1000)
-        identity = "private devnet raw LSQ " <> Text.pack (show (sourcePoint source))
+        identity =
+            "private devnet raw LSQ " <> Text.pack (show (timeSourcePoint source))
         manifest =
             NetworkTimeManifest
                 42
@@ -86,6 +87,6 @@ publishTime root genesis source = do
     renameFile next (root </> "current")
     pure context
   where
-    history = sourceEraHistory source
+    history = timeSourceEraHistory source
     digest bytes = convert (hash bytes :: Digest SHA256)
     hex = decodeUtf8 . B16.encode

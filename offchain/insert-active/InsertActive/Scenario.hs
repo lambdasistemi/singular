@@ -33,17 +33,18 @@ import InsertActive.Steps
     , foldOnce
     , storyKey
     , txIdOf
+    , walletDestination
     )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Node (withCapabilities)
+import Singular.Registry.Runner (withRunner)
 import Singular.Registry.Types (OnChainTokenState (..))
 
 -- | Run the story; write the observation to the path when one is given.
 insertActive :: Maybe FilePath -> IO ()
 insertActive observedPath = do
     inputs <- readStoryInputs
-    withCapabilities $ \caps -> do
-        story <- bootStory caps inputs
+    withRunner $ \wallet caps -> do
+        story <- bootStory wallet caps inputs
         let cfg = storyConfig story
 
         book story storyKey
@@ -61,6 +62,7 @@ insertActive observedPath = do
             observation
                 Observed
                     { obsOpenPolicy = hex (SBS.fromShort (cfgApplicationPolicy cfg))
+                    , obsWalletAddress = hex (fst (walletDestination story))
                     , obsOpenParams = inputOpenParams inputs
                     , obsActivePolicy = hex (SBS.fromShort (cfgActivePolicy cfg))
                     , obsRegistryToken = hex (storyTokenBytes story)

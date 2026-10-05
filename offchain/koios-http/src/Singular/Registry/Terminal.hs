@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- | The sole live terminal composition: shared HTTP/client/Wire, the generic
 Koios constructor, pinned time input, and explicit receipt sinks. The signed
 raw Koios submitter is the allowlisted composition because the transport
@@ -8,8 +10,10 @@ module Singular.Registry.Terminal
     , withReads
     , withWrites
     , newCapabilities
+    , submitWithWallet
     ) where
 
+import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text qualified as Text
@@ -30,12 +34,14 @@ import Singular.Registry.LedgerProvider
     ( Network (..)
     , ReadFailure (..)
     , Session (..)
+    , SubmitResult (..)
     , submitTx
     )
 import Singular.Registry.PhaseLog (phaseLogFromEnv)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO (withLatest)
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TimeSource (loadPinnedSource)
 import Singular.Registry.Wait (boundedSignedSubmission)
 import Singular.Registry.Wallet (Wallet (..))
@@ -101,3 +107,15 @@ withWrites settings wallet action = withReads settings $ \capabilities -> do
         (walletAddr wallet)
         defaultFundingFloor
     action capabilities
+
+-- | Sign with the caller's explicit wallet and confirm only these signed bytes.
+submitWithWallet
+    :: Wallet -> Capabilities w IO -> ConwayTx -> IO ConwayTx
+submitWithWallet wallet capabilities unsigned = do
+    let signed = signTx (walletSignKey wallet) unsigned
+    capSubmit capabilities signed >>= \case
+        SubmitAccepted _ -> pure ()
+        SubmitRefused reason -> throwIO (ErrorCall ("tx rejected: " <> show reason))
+        other -> throwIO (ErrorCall ("tx submission unavailable: " <> show other))
+    capConfirm capabilities (signedTx signed)
+    pure (signedTx signed)

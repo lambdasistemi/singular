@@ -367,6 +367,7 @@ library koios-http
     Singular.Provider.Koios.Http
     Singular.Provider.Koios.Recorder
     Singular.Registry.Terminal
+    Singular.Registry.Runner
 
   build-depends:
     , aeson
@@ -380,6 +381,7 @@ library koios-http
     , cardano-ledger-mary
     , cardano-slotting
     , case-insensitive
+    , cardano-tx-tools:tx-build
     , directory
     , filepath
     , http-client
@@ -442,13 +444,14 @@ executable journey
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , mts:mpf-write
     , plutus-tx
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -788,7 +791,6 @@ executable devnet
     , ouroboros-network:api
     , singular-registry
     , singular-registry:local-services
-    , singular-registry:node-internal
     , cardano-ledger-alonzo
     , cardano-ledger-binary
     , cardano-ledger-conway
@@ -810,6 +812,8 @@ executable devnet
     , singular-registry:koios-http
     , cardano-ledger-byron
     , case-insensitive
+    , temporary
+    , process
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1182,11 +1186,12 @@ executable insert-active
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1223,11 +1228,12 @@ executable update-terminal
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N

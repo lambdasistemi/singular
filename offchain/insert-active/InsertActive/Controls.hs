@@ -35,7 +35,7 @@ import Data.Text qualified as T
 
 import InsertActive.Narration (die, hex, say)
 import InsertActive.Steps (Story, book, foldOnce, storyKey, txIdOf)
-import Singular.Registry.Node (tryOutcome)
+import Singular.Registry.Wait (tryOutcome)
 
 -- | A second, never-booked key: the accepting control.
 controlKey :: ByteString

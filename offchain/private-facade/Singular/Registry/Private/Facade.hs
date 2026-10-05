@@ -73,6 +73,7 @@ import Cardano.Node.Client.N2C.Connection
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.N2C.Types (LSQChannel, LTxSChannel)
 import Cardano.Node.Client.Submitter qualified as Node
+import Cardano.Node.Client.Types (Block)
 import Cardano.Slotting.EpochInfo (epochInfoEpoch)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -189,74 +190,76 @@ withGeneratedFacade genesisDirectory observer action =
         lsq <- newLSQChannel 16
         submit <- newLTxSChannel 16
         withAsync
-            (closedConnection =<< runNodeClient (NetworkMagic 42) socket lsq submit) $ \connection -> do
-            link connection
-            initial <- withinStartup (readLedgerSource lsq)
-            genesis <-
-                BS.readFile (takeDirectory socket </> "shelley-genesis.json")
-            byron <- BS.readFile (takeDirectory socket </> "byron-genesis.json")
-            byronValue <- either fail pure (eitherDecodeStrict' byron)
-            security <-
-                parsed
-                    ( withObject
-                        "Byron genesis"
-                        ( \value ->
-                            value .: "protocolConsts"
-                                >>= withObject "Byron protocol constants" (.: "k")
+            (closedConnection =<< runNodeClient (NetworkMagic 42) socket lsq submit)
+            $ \connection -> do
+                link connection
+                initial <- withinStartup (readLedgerSource lsq)
+                genesis <-
+                    BS.readFile (takeDirectory socket </> "shelley-genesis.json")
+                byron <- BS.readFile (takeDirectory socket </> "byron-genesis.json")
+                byronValue <- either fail pure (eitherDecodeStrict' byron)
+                security <-
+                    parsed
+                        ( withObject
+                            "Byron genesis"
+                            ( \value ->
+                                value .: "protocolConsts"
+                                    >>= withObject "Byron protocol constants" (.: "k")
+                            )
                         )
+                        byronValue
+                unless
+                    ( (security :: Integer) > 0
+                        && security <= toInteger (maxBound :: Word64) `div` 10
                     )
-                    byronValue
-            unless
-                ( (security :: Integer) > 0
-                    && security <= toInteger (maxBound :: Word64) `div` 10
-                )
-                (fail "private facade unsupported Byron security parameter")
-            let epochSlots = EpochSlots (fromInteger (security * 10))
-            let initialEvent =
-                    object
-                        [ "kind" .= ("initial-genesis-ledger" :: Text)
-                        , "genesisBytes" .= hex genesis
-                        , "byronGenesisBytes" .= hex byron
-                        , "source" .= sourceValue initial
-                        ]
-            observer initialEvent
-            validateGenesisUTxO genesis byron initial
-            archive <- newIORef (emptyArchive (sourceOutputs initial))
-            events <- newIORef [initialEvent]
-            let timeRoot = takeDirectory socket </> "facade-time"
-                server = Server lsq submit archive events genesis timeRoot observer
-            createDirectoryIfMissing True timeRoot
-            void (publishTime timeRoot genesis initial)
-            withAsync
-                ( closedConnection
-                    =<< runChainSyncN2C
-                        epochSlots
-                        (NetworkMagic 42)
-                        socket
-                        ( mkChainSyncN2C
-                            nullTracer
-                            nullTracer
-                            (intersector server)
-                            [Chain.GenesisPoint]
-                        )
-                ) $ \follower -> do
-                link follower
-                withinStartup (awaitArchive server initial)
-                bootstrapGenesis server initial
-                testWithApplication (pure (application server)) $ \port ->
-                    action
-                        startMs
-                        Facade
-                            { facadeSettings =
-                                ProviderSettings
-                                    ("http://127.0.0.1:" <> show port <> "/api/v1")
-                                    42
-                                    Nothing
-                                    (Just (timeRoot </> "current"))
-                            , facadeSources = readIORef events
-                            , facadeArchive = readIORef archive
-                            , facadeSocket = socket
-                            }
+                    (fail "private facade unsupported Byron security parameter")
+                let epochSlots = EpochSlots (fromInteger (security * 10))
+                let initialEvent =
+                        object
+                            [ "kind" .= ("initial-genesis-ledger" :: Text)
+                            , "genesisBytes" .= hex genesis
+                            , "byronGenesisBytes" .= hex byron
+                            , "source" .= sourceValue initial
+                            ]
+                observer initialEvent
+                validateGenesisUTxO genesis byron initial
+                archive <- newIORef (emptyArchive (sourceOutputs initial))
+                events <- newIORef [initialEvent]
+                let timeRoot = takeDirectory socket </> "facade-time"
+                    server = Server lsq submit archive events genesis timeRoot observer
+                createDirectoryIfMissing True timeRoot
+                void (publishTime timeRoot genesis (timeFactsOf initial))
+                withAsync
+                    ( closedConnection
+                        =<< runChainSyncN2C
+                            epochSlots
+                            (NetworkMagic 42)
+                            socket
+                            ( mkChainSyncN2C
+                                nullTracer
+                                nullTracer
+                                (intersector server)
+                                [Chain.GenesisPoint]
+                            )
+                    )
+                    $ \follower -> do
+                        link follower
+                        withinStartup (awaitArchive server initial)
+                        bootstrapGenesis server initial
+                        testWithApplication (pure (application server)) $ \port ->
+                            action
+                                startMs
+                                Facade
+                                    { facadeSettings =
+                                        ProviderSettings
+                                            ("http://127.0.0.1:" <> show port <> "/api/v1")
+                                            42
+                                            Nothing
+                                            (Just (timeRoot </> "current"))
+                                    , facadeSources = reverse <$> readIORef events
+                                    , facadeArchive = readIORef archive
+                                    , facadeSocket = socket
+                                    }
   where
     closedConnection =
         either
@@ -362,7 +365,7 @@ intersector server = scope
         Follower
             { rollForward = \fetched _ -> do
                 updateArchive server (appendFetched fetched)
-                source <- readLedgerSource (serverLSQ server)
+                source <- readTimeSourceFacts (serverLSQ server)
                 void
                     (publishTime (serverTimeRoot server) (serverGenesis server) source)
                 blocks <- archiveBlocks <$> readIORef (serverArchive server)
@@ -373,7 +376,7 @@ intersector server = scope
                             ( object
                                 [ "kind" .= ("chain-sync-full-block" :: Text)
                                 , "block" .= blockValue block
-                                , "timeSource" .= sourceValue source
+                                , "timeSource" .= timeSourceValue source
                                 ]
                             )
                     [] -> fail "private facade: missing appended block"
@@ -533,6 +536,14 @@ answer server request body
                 , "result" .= value
                 ]
             )
+    | requestMethod request == "POST"
+    , rawPathInfo request
+        `elem` ["/api/v1/tx_info", "/api/v1/tx_cbor", "/api/v1/tx_status"] =
+        answerArchive server request body
+    | requestMethod request == "POST"
+    , rawPathInfo request
+        `elem` ["/api/v1/address_utxos", "/api/v1/asset_utxos"] =
+        answerOutputs server request body
     | otherwise = do
         source <- readLedgerSource (serverLSQ server)
         archive <- readIORef (serverArchive server)
@@ -547,42 +558,52 @@ answer server request body
                     (sourceEraHistory source)
                 )
         let json value = pure (status200, [], encode value, sourceValue source)
-            rows values = do
+            archiveRows blocks =
+                rowsFrom
+                    ( object
+                        [ "ledger" .= sourceValue source
+                        , "blocks"
+                            .= map
+                                blockValue
+                                ( Map.elems
+                                    (Map.fromList [(archivedHeight block, block) | block <- blocks])
+                                )
+                        ]
+                    )
+            rowsFrom origin values = do
                 (headers, value) <- paged request values
                 pure
                     ( status200
                     , headers
                     , encode value
-                    , object
-                        [ "ledger" .= sourceValue source
-                        , "blocks" .= map blockValue (archiveBlocks archive)
-                        ]
+                    , origin
                     )
-            outputs = Map.toAscList (sourceOutputs source)
             material =
                 [ (block, tx)
                 | block <- archiveBlocks archive
                 , tx <- archivedTransactions block
                 ]
         case (requestMethod request, rawPathInfo request) of
-            ("GET", "/api/v1/tip") -> case reverse (archiveBlocks archive) of
-                block : _ -> do
-                    epoch <- epochFor context (archivedSlot block)
-                    header <- pointHash (archivedPoint block)
-                    milliseconds <-
-                        either throwIO pure (slotStartMs context (archivedSlot block))
-                    json
-                        ( toJSON
-                            [ object
-                                [ "abs_slot" .= archivedSlot block
-                                , "hash" .= header
-                                , "block_height" .= archivedHeight block
-                                , "epoch_no" .= epoch
-                                , "block_time" .= (milliseconds `div` 1000)
+            ("GET", "/api/v1/tip") -> case (sourcePoint source, sourceBlockNo source) of
+                ( point@(Chain.BlockPoint slot _)
+                    , Point.At (Chain.BlockNo height)
+                    ) -> do
+                        let EpochNo epoch = sourceEpoch source
+                        header <- pointHash point
+                        milliseconds <-
+                            either throwIO pure (slotStartMs context slot)
+                        json
+                            ( toJSON
+                                [ object
+                                    [ "abs_slot" .= slot
+                                    , "hash" .= header
+                                    , "block_height" .= height
+                                    , "epoch_no" .= epoch
+                                    , "block_time" .= (milliseconds `div` 1000)
+                                    ]
                                 ]
-                            ]
-                        )
-                [] -> fail "private facade has no actual block"
+                            )
+                _ -> fail "private facade raw ledger has no actual block"
             ("GET", "/api/v1/cli_protocol_params") -> json (toJSON (sourceParameters source))
             ("GET", "/api/v1/epoch_params") -> do
                 selected <- requiredQuery "_epoch_no" request
@@ -591,20 +612,6 @@ answer server request body
                     (readMaybe (Text.unpack selected) == Just epoch)
                     (fail "private facade has no historical epoch parameters")
                 json (toJSON [epochParameters (sourceParameters source)])
-            ("POST", "/api/v1/address_utxos") -> do
-                addresses <- jsonField "_addresses" body
-                rows
-                    [ outputValue False reference output
-                    | (reference, output) <- outputs
-                    , Wire.renderAddress (output ^. addrTxOutL) `elem` (addresses :: [Text])
-                    ]
-            ("POST", "/api/v1/asset_utxos") -> do
-                assets <- jsonField "_asset_list" body
-                rows
-                    [ outputValue False reference output
-                    | (reference, output) <- outputs
-                    , any (matchesAsset output) (assets :: [[Text]])
-                    ]
             ("GET", "/api/v1/asset_txs") -> do
                 policy <- requiredQuery "_asset_policy" request
                 name <- requiredQuery "_asset_name" request
@@ -629,42 +636,7 @@ answer server request body
                                 (Map.elems (archivedInputs tx) <> map snd (archivedBodyOutputs tx))
                             ]
                         )
-                rows values
-            ("POST", "/api/v1/tx_info") -> do
-                asked <- jsonField "_tx_hashes" body
-                rows
-                    [ transactionValue block tx
-                    | (block, tx) <- material
-                    , Wire.txIdHex (archivedId tx) `elem` (asked :: [Text])
-                    ]
-            ("POST", "/api/v1/tx_cbor") -> do
-                asked <- jsonField "_tx_hashes" body
-                rows
-                    [ object
-                        [ "tx_hash" .= Wire.txIdHex (archivedId tx)
-                        , "cbor" .= hex (archivedCBOR tx)
-                        , "valid_contract" .= archivedValid tx
-                        ]
-                    | (_, tx) <- material
-                    , Wire.txIdHex (archivedId tx) `elem` (asked :: [Text])
-                    ]
-            ("POST", "/api/v1/tx_status") -> do
-                asked <- jsonField "_tx_hashes" body
-                let latest = maximum (0 : map archivedHeight (archiveBlocks archive))
-                json
-                    ( toJSON
-                        [ object
-                            [ "tx_hash" .= identity
-                            , "num_confirmations" .= case [ latest - archivedHeight block + 1
-                                                          | (block, tx) <- material
-                                                          , Wire.txIdHex (archivedId tx) == identity
-                                                          ] of
-                                count : _ -> Just count
-                                [] -> Nothing
-                            ]
-                        | identity <- (asked :: [Text])
-                        ]
-                    )
+                archiveRows (archiveBlocks archive) values
             ("POST", "/api/v1/account_info") -> do
                 asked <- jsonField "_stake_addresses" body
                 accounts <-
@@ -707,6 +679,114 @@ answer server request body
                     , Null
                     )
 
+-- | Keep current-output provenance to the actual acquired point and UTxO.
+answerOutputs
+    :: Server
+    -> Request
+    -> ByteString
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerOutputs server request body = do
+    source <- readOutputSourceFacts (serverLSQ server)
+    let outputs = Map.toAscList (outputSourceOutputs source)
+    values <- case rawPathInfo request of
+        "/api/v1/address_utxos" -> do
+            addresses <- jsonField "_addresses" body
+            pure
+                [ outputValue False reference output
+                | (reference, output) <- outputs
+                , Wire.renderAddress (output ^. addrTxOutL) `elem` (addresses :: [Text])
+                ]
+        "/api/v1/asset_utxos" -> do
+            assets <- jsonField "_asset_list" body
+            pure
+                [ outputValue False reference output
+                | (reference, output) <- outputs
+                , any (matchesAsset output) (assets :: [[Text]])
+                ]
+        _ -> fail "private facade output endpoint is not mapped"
+    (headers, value) <- paged request values
+    pure
+        ( status200
+        , headers
+        , encode value
+        , object
+            [ "point" .= show (outputSourcePoint source)
+            , "outputsCBOR"
+                .= [ object
+                        [ "reference" .= show reference
+                        , "bytes" .= hex (serialize' (eraProtVerHigh @ConwayEra) output)
+                        ]
+                   | (reference, output) <- outputs
+                   ]
+            ]
+        )
+
+{- | These endpoints consume confirmed full-block material only. A fresh
+whole-UTxO/parameter acquisition contributes no fact to their answer.
+Current output visibility is checked separately by address_utxos.
+-}
+answerArchive
+    :: Server
+    -> Request
+    -> ByteString
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerArchive server request body = do
+    archive <- readIORef (serverArchive server)
+    asked <- jsonField "_tx_hashes" body
+    let material =
+            [ (block, tx)
+            | block <- archiveBlocks archive
+            , tx <- archivedTransactions block
+            , Wire.txIdHex (archivedId tx) `elem` (asked :: [Text])
+            ]
+        blocks = case rawPathInfo request of
+            "/api/v1/tx_status" -> archiveBlocks archive
+            _ -> map fst material
+        origin =
+            object
+                [ "blocks"
+                    .= map
+                        blockValue
+                        ( Map.elems
+                            (Map.fromList [(archivedHeight block, block) | block <- blocks])
+                        )
+                ]
+        rows values = do
+            (headers, value) <- paged request values
+            pure (status200, headers, encode value, origin)
+    case rawPathInfo request of
+        "/api/v1/tx_info" ->
+            rows [transactionValue block tx | (block, tx) <- material]
+        "/api/v1/tx_cbor" ->
+            rows
+                [ object
+                    [ "tx_hash" .= Wire.txIdHex (archivedId tx)
+                    , "cbor" .= hex (archivedCBOR tx)
+                    , "valid_contract" .= archivedValid tx
+                    ]
+                | (_, tx) <- material
+                ]
+        "/api/v1/tx_status" -> do
+            let latest = maximum (0 : map archivedHeight (archiveBlocks archive))
+            pure
+                ( status200
+                , []
+                , encode
+                    [ object
+                        [ "tx_hash" .= identity
+                        , "num_confirmations" .= case [ latest - archivedHeight block + 1
+                                                      | (block, tx) <- material
+                                                      , Wire.txIdHex (archivedId tx) == identity
+                                                      ] of
+                            count : _ -> Just count
+                            [] -> Nothing
+                        ]
+                    | identity <- asked
+                    ]
+                , origin
+                )
+        _ -> fail "private facade archive endpoint is not mapped"
+
 epochFor :: NetworkTime -> SlotNo -> IO Word64
 epochFor context slot = do
     EpochNo epoch <-
@@ -720,7 +800,7 @@ record :: Server -> Value -> IO ()
 record server value = do
     atomicModifyIORef'
         (serverLog server)
-        (\values -> (values <> [value], ()))
+        (\values -> (value : values, ()))
     serverObserver server value
 
 parsed :: (Value -> Parser a) -> Value -> IO a
@@ -867,6 +947,7 @@ sourceValue :: LedgerSource -> Value
 sourceValue source =
     object
         [ "point" .= show (sourcePoint source)
+        , "blockNo" .= show (sourceBlockNo source)
         , "epoch" .= sourceEpoch source
         , "protocolParametersCBOR"
             .= hex (serialize' (eraProtVerHigh @ConwayEra) (sourceParameters source))
@@ -881,7 +962,15 @@ sourceValue source =
         , "eraHistoryCBOR" .= hex (sourceEraHistory source)
         ]
 
-pointHash :: HeaderPoint -> IO Text
+timeSourceValue :: TimeSourceFacts -> Value
+timeSourceValue source =
+    object
+        [ "point" .= show (timeSourcePoint source)
+        , "systemStart" .= show (timeSourceSystemStart source)
+        , "eraHistoryCBOR" .= hex (timeSourceEraHistory source)
+        ]
+
+pointHash :: Chain.Point Block -> IO Text
 pointHash point = case point of
     Chain.GenesisPoint -> fail "private facade tip has no block hash"
     Chain.BlockPoint _ (OneEraHash header) -> pure (hex (SBS.fromShort header))

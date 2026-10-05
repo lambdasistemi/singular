@@ -34,7 +34,6 @@ import Data.Foldable (toList)
 import Data.List (isInfixOf)
 import Data.Maybe (mapMaybe)
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr (..))
@@ -45,12 +44,7 @@ import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Journey.Chain
-    ( genesisAddr
-    , genesisSignKey
-    , readChainState
-    , submitWithGenesis
-    )
+import Journey.Chain (readChainState)
 import Journey.Malformations
     ( dropModifyProof
     , forgeContributeStateRef
@@ -60,20 +54,20 @@ import Journey.Malformations
 import Journey.Narration (emit, failWith, hex, require, textOf)
 import Journey.Steps (journeyKey, journeyValue)
 import Singular.Registry.Blueprint (NamingCodes)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
     , TokenId (..)
     , TxIn
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , signTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Provider
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx)
+import Singular.Registry.Terminal (submitWithWallet)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -92,6 +86,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeInsertAbsent
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 {- | The rejection reason each negative case requires: the
 node must report a phase-2 Plutus evaluation failure — the
@@ -124,21 +119,22 @@ evaluation never applies, so the rejected transactions must
 have left no trace.
 -}
 stepReject
-    :: CageConfig
+    :: Wallet
+    -> CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> OnChainTokenState
     -> IO ()
-stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
+stepReject wallet cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- A second, unapplied insert request: the payload the
     -- mutated updates below pretend to process. It stays at
     -- the request address throughout.
     let reqAddr = requestAddrFromCfg cfg tid Testnet
-    before <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
+    before <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require "reject: request address empty before the second request" $
         null before
     _ <-
@@ -146,12 +142,12 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
             cfg
             codes
             prov
-            (submitWithGenesis caps)
-            genesisAddr
+            (submitWithWallet wallet caps)
+            (walletAddr wallet)
             tid
             negativeKey
             edgeInsertAbsent
-    reqUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
+    reqUtxos <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1
     forgedRef <- case reqUtxos of
@@ -186,10 +182,11 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- well-formed for ledger phase 1 (the case descriptions
     -- say how), so only the on-chain validator stands between
     -- each transaction and the ledger.
-    (baseTx, pp) <- Cage.withView prov $ \v -> do
+    (baseTx, pp) <- Cage.withLatest prov $ \v -> do
         rejectCtx <- Edges.registryContextFor cfg codes v refs
-        tx <- updateTokenWithDuties cfg v tm tid genesisAddr rejectCtx
-        pure (tx, Cage.viewProtocolParams v)
+        tx <- updateTokenWithDuties cfg v tm tid (walletAddr wallet) rejectCtx
+        pp <- Cage.parameters v
+        pure (tx, pp)
     newRoot <- baseTxStateRoot baseTx
     -- The validators the three cases require to refuse, by
     -- their script hashes as the node names them in a phase-2
@@ -203,6 +200,7 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- UTxO itself — as the cage's state UTxO. It carries no
     -- state token, and request.request.spend must refuse it.
     expectRejected
+        wallet
         "reject-forged-identity"
         "request.request.spend validateContribute: the claimed state UTxO carries no state token"
         requestScriptHash
@@ -213,6 +211,7 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- byte complement of the root the proofs certify.
     let tamperedRoot = tamperRoot newRoot
     expectRejected
+        wallet
         "reject-tampered-output"
         "state.state.spend validModify: output datum root must equal the proof-recomputed root"
         stateScriptHash
@@ -234,6 +233,7 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     -- the carried witness is the Merkle proof certifying the net
     -- effect — `mpf` verification of a witnessless Update must fail.
     expectRejected
+        wallet
         "reject-missing-proof"
         "state.state.spend validModify: a Modify with no Merkle proof witness is refused"
         stateScriptHash
@@ -250,7 +250,7 @@ stepReject cfg codes prov caps tm tid refs stateBeforeRejects = do
     require
         "reject-control: authenticated state datum unchanged"
         (stateAfter == stateBeforeRejects)
-    reqAfter <- Cage.withView prov (`Cage.viewUTxOsAt` reqAddr)
+    reqAfter <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require
         "reject-control: the pending request is still unapplied"
         (length reqAfter == 1)
@@ -270,22 +270,23 @@ accepts it — naming the guard that did not hold — or if it
 rejects it for any reason other than 'expectedRejectionReason'.
 -}
 expectRejected
-    :: String
+    :: Wallet
     -> String
     -> String
-    -> Capabilities
+    -> String
+    -> Capabilities NoWitness IO
     -> ConwayTx
     -> IO ()
-expectRejected caseName guard expectedScript caps tx = do
-    result <- submitSigned (capSubmit caps) (signTx genesisSignKey tx)
+expectRejected wallet caseName guard expectedScript caps tx = do
+    result <- capSubmit caps (signTx (walletSignKey wallet) tx)
     case result of
-        Submitted _ ->
+        SubmitAccepted _ ->
             failWith $
                 caseName
                     <> ": transaction was ACCEPTED — the guard did not hold: "
                     <> guard
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+        SubmitRefused reason -> do
+            let reasonText = T.unpack reason
             unless (phase2ScriptFailureMarker reasonText) $
                 failWith $
                     caseName
@@ -305,6 +306,9 @@ expectRejected caseName guard expectedScript caps tx = do
                         <> reasonText
                         <> ">"
             emit caseName ("node refused it, reason matched: " <> reasonText)
+        unavailable ->
+            failWith
+                (caseName <> ": submission unavailable: " <> show unavailable)
 
 {- | The payload of the request the negative section
 pretends to process. It is never applied.
