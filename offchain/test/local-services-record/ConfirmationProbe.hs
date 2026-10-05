@@ -14,6 +14,8 @@ import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.Tx (mkBasicTx, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Core (PParams)
 import Cardano.Node.Client.Provider qualified as Node
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Slotting.Time (SystemStart (..))
@@ -57,8 +59,9 @@ probeConfirmation
     -> SystemStart
     -> BS.ByteString
     -> SlotNo
+    -> PParams ConwayEra
     -> IO ()
-probeConfirmation output magic snapshot (SystemStart start) history horizon = do
+probeConfirmation output magic snapshot (SystemStart start) history horizon pp = do
     genesis <- BS.readFile (output </> "shelley-genesis.json")
     let manifest =
             NetworkTimeManifest
@@ -95,7 +98,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon = do
         view =
             View
                 { viewPoint = point
-                , viewProtocolParams = error "confirmation reads no protocol parameters"
+                , viewProtocolParams = pp
                 , viewUTxOsAt = const unused
                 , viewScriptRegistered = const unused
                 , viewEvaluateTx = const unused

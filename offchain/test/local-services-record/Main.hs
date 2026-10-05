@@ -76,6 +76,11 @@ import Ouroboros.Consensus.Shelley.Ledger.Query
     ( pattern GetCurrentPParams
     )
 import Ouroboros.Network.Magic (NetworkMagic (..))
+import Singular.Registry.Node.RawView
+    ( RawProvider (..)
+    , RawView (..)
+    , rawNodeProvider
+    )
 
 {- | Eight slots accommodate the seven historical Cardano eras and Dijkstra;
 the raw list is checked separately to prevent the decoder truncating it.
@@ -114,7 +119,45 @@ captureNode output = do
                     , "dijkstra-genesis.json"
                     , "node-config.json"
                     ]
-                capture output sock (NetworkMagic 42)
+                probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
+                if probe == Just "1"
+                    then captureConfirmation output sock (NetworkMagic 42)
+                    else capture output sock (NetworkMagic 42)
+
+-- Only the missing caller context is recorded here; completed independent
+-- floor/ceiling and evaluator recordings are never recaptured by this probe.
+captureConfirmation :: FilePath -> FilePath -> NetworkMagic -> IO ()
+captureConfirmation output sock magic@(NetworkMagic networkMagic) = do
+    channel <- newLSQChannel 16
+    submit <- newLTxSChannel 16
+    withAsync (runNodeClient magic sock channel submit) $ \_ ->
+        withRawView (rawNodeProvider channel) $ \view -> do
+            snapshot <- rawSnapshot view
+            start <- rawSystemStart view
+            history <- rawEraHistory view
+            pp <- rawParameters view
+            eras <-
+                either
+                    (fail . show)
+                    pure
+                    ( deserialiseOrFail (LBS.fromStrict history)
+                        :: Either DeserialiseFailure [EraSummary]
+                    )
+            horizon <- case reverse eras of
+                EraSummary{eraEnd = EraEnd end} : _ -> pure (boundSlot end)
+                _ -> fail "MissingFiniteHorizon"
+            LBS.writeFile (output </> "era-history.cbor") (LBS.fromStrict history)
+            LBS.writeFile
+                (output </> "protocol-parameters.cbor")
+                (LBS.fromStrict (serialize' (eraProtVerLow @ConwayEra) pp))
+            probeConfirmation
+                output
+                networkMagic
+                snapshot
+                start
+                history
+                horizon
+                pp
 
 capture :: FilePath -> FilePath -> NetworkMagic -> IO ()
 capture output sock magic@(NetworkMagic networkMagic) = do
@@ -268,17 +311,6 @@ capture output sock magic@(NetworkMagic networkMagic) = do
                             <> show (length answers)
                             <> " time comparisons"
                         )
-                    probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
-                    case (probe, endBounds) of
-                        (Just "1", [horizon]) ->
-                            probeConfirmation
-                                output
-                                networkMagic
-                                observed
-                                start
-                                (LBS.toStrict historyBytes)
-                                (boundSlot horizon)
-                        _ -> pure ()
   where
     answer :: Either ErrorCall SlotNo -> Value
     answer =

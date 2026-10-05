@@ -294,6 +294,7 @@ executable local-services-record
     , serialise
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:node-internal
     , text
     , time
 
