@@ -74,6 +74,7 @@ import Singular.Registry.Ledger
     , TokenId
     )
 import Singular.Registry.Provider (View (..))
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
@@ -174,7 +175,7 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     let phase2Start = submAt + procTime
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
-        viewPosixMsCeilSlot view phase2Start
+        Services.ceilingSlot view phase2Start
     -- The window's end may lie past what the node can translate to a slot
     -- (its horizon). A validity upper bound anywhere inside the window is as
     -- correct as its end, so a nearer bound stands in: the window's end first,

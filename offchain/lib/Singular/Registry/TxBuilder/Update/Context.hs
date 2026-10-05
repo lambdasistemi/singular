@@ -66,6 +66,7 @@ import Singular.Registry.Ledger
 import Singular.Registry.Provider
     ( View (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)
@@ -317,7 +318,7 @@ computeUpperSlot view oldState reqUtxos = do
                                 oldState
                     )
                     reqUtxos
-    mUpperSlot <- trySync (viewPosixMsToSlot view earliestDeadline)
+    mUpperSlot <- trySync (Services.floorSlot view earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do

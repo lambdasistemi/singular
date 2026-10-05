@@ -3,34 +3,38 @@ module Singular.Registry.LocalServicesCallerSpec (spec) where
 
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Api.Tx (witsTxL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, datumTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Plutus (ExUnits (..))
 import Cardano.Ledger.State (UTxO (..))
+import Data.ByteString qualified as BS
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
-import Lens.Micro ((^.))
+import Data.Set qualified as Set
+import Lens.Micro ((&), (.~), (^.))
+import PlutusLedgerApi.V3 qualified as PLC
 import Singular.Registry.LocalEvaluation
     ( EvaluationContext (..)
-    , evaluateResolved
     )
 import Singular.Registry.LocalEvaluationSpec (fixture)
 import Singular.Registry.NetworkTime
     ( networkEpochInfo
     , networkSystemStart
     )
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Internal
     ( evaluateAndBalanceReferencing
+    , mkInlineDatum
     )
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
-spec = describe "Common services through the existing transaction balancer" $
-    it
-        "declares sufficient units for exactly the actual final-body purposes" $ do
+spec = describe "Common services through the existing transaction balancer"
+    $ it
+        "declares sufficient units for exactly the actual final-body purposes"
+    $ do
         (ctx, inputs, tx, _, _, _) <- fixture
         fault <- (== Just "1") <$> lookupEnv "LOCAL_SERVICES_CALLER_FAULT"
         calls <- newIORef (0 :: Int)
@@ -39,14 +43,20 @@ spec = describe "Common services through the existing transaction balancer" $
             view =
                 stubView
                     { viewProtocolParams = pp
-                    , viewEvaluateTx = \candidate -> do
+                    , viewPoint = (viewPoint stubView){cpNetwork = 1}
+                    , viewTimeContext = pure time
+                    , viewResolvedOutputs = \wanted -> do
                         modifyIORef' calls (+ 1)
-                        actual <-
-                            either (fail . show) pure (evaluateResolved ctx candidate inputs)
-                        pure $
-                            if fault
-                                then Map.map (const (Right (ExUnits 1 1))) actual
-                                else actual
+                        pure
+                            [ if fault
+                                then
+                                    ( reference
+                                    , output & datumTxOutL .~ mkInlineDatum (PLC.B (BS.replicate 1000 0x61))
+                                    )
+                                else (reference, output)
+                            | (reference, output) <- inputs
+                            , reference `Set.member` wanted
+                            ]
                     }
         case inputs of
             funding : collateral : reference : [] -> do

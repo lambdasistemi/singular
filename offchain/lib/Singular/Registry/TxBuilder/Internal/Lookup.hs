@@ -119,6 +119,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Provider (View (..))
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -180,10 +181,10 @@ evaluateAndBalanceReferencing prov pp inputUtxos refUtxos changeAddr tx =
                     (tx ^. bodyTxL . inputsTxBodyL)
                     inputUtxos
 
-    -- What the node's evaluator says every redeemer costs; a failing script
+    -- What the common ledger evaluator computes every redeemer costs; a failing script
     -- stops the build, it is never declared.
     measure t = do
-        evalResult <- viewEvaluateTx prov t
+        evalResult <- Services.evaluateTx prov t
         case [(p, e) | (p, Left e) <- Map.toList evalResult] of
             [] ->
                 pure (Map.fromList [(p, eu) | (p, Right eu) <- Map.toList evalResult])
@@ -332,7 +333,7 @@ trySlots _ [] =
 trySlots p (ms : rest) = do
     r <-
         try @SomeException
-            (viewPosixMsCeilSlot p ms)
+            (Services.ceilingSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> trySlots p rest
@@ -385,7 +386,7 @@ tryUpperSlots _ [] =
         "posixMsToSlot: all fallbacks \
         \past horizon"
 tryUpperSlots p (ms : rest) = do
-    r <- trySync (viewPosixMsToSlot p ms)
+    r <- trySync (Services.floorSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> tryUpperSlots p rest

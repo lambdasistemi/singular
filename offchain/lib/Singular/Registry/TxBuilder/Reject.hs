@@ -64,6 +64,7 @@ import Singular.Registry.Ledger
 import Singular.Registry.Provider
     ( View (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -239,7 +240,7 @@ deadline; a reject is admitted in every window.
 rejectValidity :: View IO -> IO (SlotNo, SlotNo)
 rejectValidity view = do
     now <- currentPosixMs
-    lowerSlot <- viewPosixMsToSlot view now
+    lowerSlot <- Services.floorSlot view now
     upperSlot <-
         tryUpperSlots view $
             map
@@ -247,7 +248,7 @@ rejectValidity view = do
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
     pure (lowerSlot, upperSlot)
 
--- | Wrap the Provider's viewEvaluateTx for the story language.
+-- | Wrap common local evaluation for the story language.
 mkRejectEvalTx
     :: View IO
     -> ConwayTx
@@ -257,7 +258,7 @@ mkRejectEvalTx
             (Either String ExUnits)
         )
 mkRejectEvalTx view tx = do
-    r <- viewEvaluateTx view tx
+    r <- Services.evaluateTx view tx
     pure $
         Map.map
             ( \case

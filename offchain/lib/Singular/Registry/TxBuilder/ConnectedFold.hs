@@ -72,6 +72,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider (View (..))
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)
@@ -167,7 +168,7 @@ connectedFoldTx args = do
                             (Map.size rdmrs)
                 pure (Map.map (const (Right units)) rdmrs)
             | otherwise = \tx -> do
-                r <- viewEvaluateTx view tx
+                r <- Services.evaluateTx view tx
                 pure $
                     Map.map
                         ( \case
@@ -304,7 +305,7 @@ computeUpperSlot view oldState reqUtxos = do
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
     mUpperSlot <-
-        trySync (viewPosixMsToSlot view earliestDeadline)
+        trySync (Services.floorSlot view earliestDeadline)
     case mUpperSlot of
         Right s -> pure s
         Left _ -> do
