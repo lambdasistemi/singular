@@ -166,12 +166,14 @@ library local-services
     Singular.Registry.Ledger
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
+    Singular.Registry.PhaseLog
     Singular.Registry.Provider
 
   build-depends:
     , aeson
     , base                       >=4.14 && <5
     , bytestring
+    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-conway
@@ -188,6 +190,7 @@ library local-services
     , text
     , time
     , transformers
+    , unix
 
 -- The private Node ownership core (issue #266, A-003): the six focused
 -- Node children live in one package-private internal library so the
@@ -225,7 +228,6 @@ library node-internal
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra
-    , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
