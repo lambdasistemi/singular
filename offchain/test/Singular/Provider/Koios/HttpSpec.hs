@@ -14,7 +14,7 @@ The timings are configuration values, so the suite runs in seconds.
 module Singular.Provider.Koios.HttpSpec (spec) where
 
 import Control.Exception (bracket)
-import Control.Monad (forM, forM_)
+import Control.Monad (forM, forM_, (>=>))
 import Data.Aeson (Value (..), decodeStrict', encode)
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -281,7 +281,7 @@ pageSpec = describe "pages over HTTP" $ do
 
 tokenSpec :: Spec
 tokenSpec = describe "bearer token" $ do
-    let token = "koios-test-token-7f3a"
+    let token = "koios-test-token-7f3a-synthetic-credential"
     it
         "a missing token file is a configuration failure before any request"
         $ withFakeKoios (\_ _ -> respond 200 [] tipBody)
@@ -374,7 +374,7 @@ echoSpec = describe "a server echoing the token" $
             filter (T.isInfixOf (T.toLower token) . T.toLower . T.pack) shown
                 `shouldBe` []
   where
-    token = "Echoed-Token-5d1E"
+    token = "Echoed-Token-5d1E-synthetic-credential"
 
 {- | Generate the entire chosen bearer alphabet, independently of readToken.
 Adversarial branches extend marker, header and JSON-literal substrings;
@@ -388,8 +388,16 @@ genAcceptedToken = do
     let alphabet =
             if headerSafe then filter (/= '/') bearerAlphabet else bearerAlphabet
     chars <- QC.vectorOf size (QC.elements alphabet)
+    position <- QC.chooseInt (0, size - 1)
+    nonHex <-
+        QC.elements
+            (filter (`notElem` ("0123456789abcdefABCDEF" :: String)) alphabet)
     padding <- if headerSafe then pure 0 else QC.chooseInt (0, 3)
-    pure (stem <> T.pack chars <> T.replicate padding "=")
+    pure
+        ( stem
+            <> T.pack (take position chars <> [nonHex] <> drop (position + 1) chars)
+            <> T.replicate padding "="
+        )
 
 bearerAlphabet :: String
 bearerAlphabet = ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "-._~+/"
@@ -414,6 +422,10 @@ genRefusedToken =
 
 tokenDomainSpec :: Spec
 tokenDomainSpec = describe "token domain and absence properties" $ do
+    it "refuses arbitrary digest-shaped credentials before any request" $
+        QC.forAll
+            genDigestToken
+            (QC.ioProperty . fmap (const True) . assertRefusedToken)
     it "refuses 31 characters and accepts 32 without exposing them" $ do
         assertRefusedToken (T.replicate 31 "x")
         assertAcceptedTokenAbsent (T.replicate 32 "x")
@@ -451,6 +463,12 @@ tokenDomainSpec = describe "token domain and absence properties" $ do
         | start <- [0 .. 6]
         , size <- [1 .. 7 - start]
         ]
+
+-- | SHA-256 fixture metadata must never collide with an accepted credential.
+genDigestToken :: QC.Gen Text
+genDigestToken = do
+    size <- QC.chooseInt (32, 64)
+    T.pack <$> QC.vectorOf size (QC.elements "0123456789abcdefABCDEF")
 
 assertRefusedToken :: Text -> IO ()
 assertRefusedToken token =
@@ -526,7 +544,7 @@ assertAcceptedTokenAbsent token =
                     [TipOf]
                     >>= either (fail . show) pure
             length files `shouldBe` 1
-            forM_ files $ \path -> BS.readFile path >>= assertAbsent token
+            forM_ files (BS.readFile >=> assertAbsent token)
             seen <- logOf
             length seen `shouldBe` 2
             map (lookup "authorization" . seenHeaders) seen

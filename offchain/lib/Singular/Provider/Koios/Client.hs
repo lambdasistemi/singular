@@ -253,6 +253,8 @@ data FailureReason
       Undecodable DecodeFailure
     | -- | The token file could not be read; no request was made
       TokenFileUnreadable FilePath Text
+    | -- | The file's token is outside the accepted bearer domain; nothing was sent
+      TokenFileInvalid FilePath Text
     | -- | A recorded transport holds no answer for the request
       NotRecorded Text
     deriving stock (Eq, Show)

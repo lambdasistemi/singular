@@ -181736,17 +181736,17 @@
    ]
   },
   "docs-offchain-koios-client/recorded-answers-and-the-recorder-01": {
-   "audio_sha256": "5320f42776fbbbc49628997de1f55b2a8d333be5877b49e1985838db260c1941",
-   "characters": 1074,
-   "cost": 0.0006658800000000001,
-   "duration": 74.525,
+   "audio_sha256": "f443e452bb1ba1a367e3cc8a31cc094862cf811536e68191a51ed3880f3a0e60",
+   "characters": 1332,
+   "cost": 0.00082584,
+   "duration": 93.05,
    "index": 1,
-   "key": "700e2aee516fec1dac8f8ac8569bea0f7b1ec893f23efa09f063387cce07b22f",
+   "key": "c4bf777db053f00edb9b79bbb13e1cbd2e1198650994197b21d147aade9d3d74",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,
    "section": "recorded-answers-and-the-recorder",
-   "sent_text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token wherever an answer or a failure carries it, so a server that echoes the token back cannot put it into a fixture, a failure or a log. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
-   "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token wherever an answer or a failure carries it, so a server that echoes the token back cannot put it into a fixture, a failure or a log. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
+   "sent_text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token in header names, header values, bodies and exception text before returning an exchange. It recognises literal characters and JSON escapes, including mixed Unicode escapes and escaped slashes, even in an incomplete JSON body. Bytes outside each match are preserved. A server that echoes an accepted token back therefore cannot put that copy into a fixture, a failure or its printed log text. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
+   "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token in header names, header values, bodies and exception text before returning an exchange. It recognises literal characters and JSON escapes, including mixed Unicode escapes and escaped slashes, even in an incomplete JSON body. Bytes outside each match are preserved. A server that echoes an accepted token back therefore cannot put that copy into a fixture, a failure or its printed log text. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
    "words": [
     {
      "end": 1.138,
@@ -182369,453 +182369,658 @@
      "text": ";"
     },
     {
-     "end": 46.0,
+     "end": 46.1,
      "start": 45.725,
      "text": "answer"
     },
     {
-     "end": 46.362,
-     "start": 46.0,
+     "end": 46.525,
+     "start": 46.1,
      "text": "headers"
     },
     {
-     "end": 46.95,
-     "start": 46.362,
+     "end": 46.85,
+     "start": 46.525,
      "text": "are"
     },
     {
-     "end": 47.175,
-     "start": 46.95,
+     "end": 46.925,
+     "start": 46.85,
      "text": ","
     },
     {
-     "end": 47.463,
-     "start": 47.375,
+     "end": 47.037,
+     "start": 46.925,
      "text": "and"
     },
     {
-     "end": 47.55,
-     "start": 47.463,
+     "end": 47.125,
+     "start": 47.037,
      "text": "the"
     },
     {
-     "end": 47.875,
-     "start": 47.55,
+     "end": 47.45,
+     "start": 47.125,
      "text": "live"
     },
     {
-     "end": 48.5,
-     "start": 47.875,
+     "end": 48.075,
+     "start": 47.45,
      "text": "transport"
     },
     {
-     "end": 49.075,
-     "start": 48.5,
+     "end": 48.625,
+     "start": 48.075,
      "text": "replaces"
     },
     {
-     "end": 49.175,
-     "start": 49.075,
+     "end": 48.725,
+     "start": 48.625,
      "text": "the"
     },
     {
-     "end": 49.65,
-     "start": 49.175,
+     "end": 49.15,
+     "start": 48.725,
      "text": "token"
     },
     {
-     "end": 50.013,
-     "start": 49.65,
-     "text": "wherever"
+     "end": 49.3,
+     "start": 49.15,
+     "text": "in"
     },
     {
-     "end": 50.138,
-     "start": 50.013,
-     "text": "an"
+     "end": 49.625,
+     "start": 49.3,
+     "text": "header"
     },
     {
-     "end": 50.638,
-     "start": 50.138,
-     "text": "answer"
+     "end": 50.575,
+     "start": 49.625,
+     "text": "names"
     },
     {
      "end": 50.775,
-     "start": 50.638,
-     "text": "or"
-    },
-    {
-     "end": 50.888,
-     "start": 50.775,
-     "text": "a"
-    },
-    {
-     "end": 51.35,
-     "start": 50.888,
-     "text": "failure"
-    },
-    {
-     "end": 51.763,
-     "start": 51.35,
-     "text": "carries"
-    },
-    {
-     "end": 52.475,
-     "start": 51.763,
-     "text": "it"
-    },
-    {
-     "end": 52.7,
-     "start": 52.475,
+     "start": 50.575,
      "text": ","
     },
     {
-     "end": 53.05,
-     "start": 52.9,
-     "text": "so"
+     "end": 51.25,
+     "start": 50.975,
+     "text": "header"
     },
     {
-     "end": 53.162,
-     "start": 53.05,
-     "text": "a"
+     "end": 51.8,
+     "start": 51.25,
+     "text": "values"
     },
     {
-     "end": 53.575,
-     "start": 53.162,
-     "text": "server"
-    },
-    {
-     "end": 53.787,
-     "start": 53.575,
-     "text": "that"
-    },
-    {
-     "end": 54.275,
-     "start": 53.787,
-     "text": "echoes"
-    },
-    {
-     "end": 54.375,
-     "start": 54.275,
-     "text": "the"
-    },
-    {
-     "end": 54.75,
-     "start": 54.375,
-     "text": "token"
-    },
-    {
-     "end": 55.088,
-     "start": 54.75,
-     "text": "back"
-    },
-    {
-     "end": 55.45,
-     "start": 55.088,
-     "text": "cannot"
-    },
-    {
-     "end": 55.638,
-     "start": 55.45,
-     "text": "put"
-    },
-    {
-     "end": 55.713,
-     "start": 55.638,
-     "text": "it"
-    },
-    {
-     "end": 55.938,
-     "start": 55.713,
-     "text": "into"
-    },
-    {
-     "end": 56.037,
-     "start": 55.938,
-     "text": "a"
-    },
-    {
-     "end": 57.05,
-     "start": 56.037,
-     "text": "fixture"
-    },
-    {
-     "end": 57.275,
-     "start": 57.05,
+     "end": 51.875,
+     "start": 51.8,
      "text": ","
     },
     {
-     "end": 57.525,
-     "start": 57.45,
-     "text": "a"
+     "end": 52.325,
+     "start": 51.875,
+     "text": "bodies"
     },
     {
-     "end": 57.9,
-     "start": 57.525,
-     "text": "failure"
-    },
-    {
-     "end": 58.013,
-     "start": 57.9,
-     "text": "or"
-    },
-    {
-     "end": 58.075,
-     "start": 58.013,
-     "text": "a"
-    },
-    {
-     "end": 58.775,
-     "start": 58.075,
-     "text": "log"
-    },
-    {
-     "end": 58.975,
-     "start": 58.775,
-     "text": "."
-    },
-    {
-     "end": 59.275,
-     "start": 59.175,
-     "text": "An"
-    },
-    {
-     "end": 59.662,
-     "start": 59.275,
-     "text": "answer"
-    },
-    {
-     "end": 59.75,
-     "start": 59.662,
-     "text": "the"
-    },
-    {
-     "end": 60.125,
-     "start": 59.75,
-     "text": "client"
-    },
-    {
-     "end": 60.7,
-     "start": 60.125,
-     "text": "refuses"
-    },
-    {
-     "end": 60.812,
-     "start": 60.7,
-     "text": "for"
-    },
-    {
-     "end": 60.975,
-     "start": 60.812,
-     "text": "its"
-    },
-    {
-     "end": 61.6,
-     "start": 60.975,
-     "text": "content"
-    },
-    {
-     "end": 61.675,
-     "start": 61.6,
-     "text": "—"
-    },
-    {
-     "end": 61.812,
-     "start": 61.675,
-     "text": "an"
-    },
-    {
-     "end": 62.25,
-     "start": 61.812,
-     "text": "absent"
-    },
-    {
-     "end": 63.125,
-     "start": 62.25,
-     "text": "fact"
-    },
-    {
-     "end": 63.325,
-     "start": 63.125,
-     "text": ","
-    },
-    {
-     "end": 63.662,
-     "start": 63.525,
-     "text": "an"
-    },
-    {
-     "end": 64.075,
-     "start": 63.662,
-     "text": "answer"
-    },
-    {
-     "end": 64.188,
-     "start": 64.075,
-     "text": "that"
-    },
-    {
-     "end": 64.375,
-     "start": 64.188,
-     "text": "does"
-    },
-    {
-     "end": 64.6,
-     "start": 64.375,
-     "text": "not"
-    },
-    {
-     "end": 65.225,
-     "start": 64.6,
-     "text": "decode"
-    },
-    {
-     "end": 65.3,
-     "start": 65.225,
-     "text": "—"
-    },
-    {
-     "end": 65.45,
-     "start": 65.3,
-     "text": "is"
-    },
-    {
-     "end": 65.95,
-     "start": 65.45,
-     "text": "recorded"
-    },
-    {
-     "end": 66.113,
-     "start": 65.95,
-     "text": "all"
-    },
-    {
-     "end": 66.238,
-     "start": 66.113,
-     "text": "the"
-    },
-    {
-     "end": 66.7,
-     "start": 66.238,
-     "text": "same"
-    },
-    {
-     "end": 66.775,
-     "start": 66.7,
-     "text": ","
-    },
-    {
-     "end": 66.887,
-     "start": 66.775,
+     "end": 52.438,
+     "start": 52.325,
      "text": "and"
     },
     {
-     "end": 67.4,
-     "start": 66.887,
-     "text": "recording"
+     "end": 52.975,
+     "start": 52.438,
+     "text": "exception"
     },
     {
-     "end": 67.7,
-     "start": 67.4,
-     "text": "goes"
+     "end": 53.35,
+     "start": 52.975,
+     "text": "text"
+    },
+    {
+     "end": 53.725,
+     "start": 53.35,
+     "text": "before"
+    },
+    {
+     "end": 54.162,
+     "start": 53.725,
+     "text": "returning"
+    },
+    {
+     "end": 54.25,
+     "start": 54.162,
+     "text": "an"
+    },
+    {
+     "end": 55.4,
+     "start": 54.25,
+     "text": "exchange"
+    },
+    {
+     "end": 55.625,
+     "start": 55.4,
+     "text": "."
+    },
+    {
+     "end": 55.925,
+     "start": 55.8,
+     "text": "It"
+    },
+    {
+     "end": 56.662,
+     "start": 55.925,
+     "text": "recognises"
+    },
+    {
+     "end": 57.0,
+     "start": 56.662,
+     "text": "literal"
+    },
+    {
+     "end": 57.662,
+     "start": 57.0,
+     "text": "characters"
+    },
+    {
+     "end": 57.8,
+     "start": 57.662,
+     "text": "and"
+    },
+    {
+     "end": 58.5,
+     "start": 57.8,
+     "text": "JSON"
+    },
+    {
+     "end": 59.525,
+     "start": 58.5,
+     "text": "escapes"
+    },
+    {
+     "end": 59.725,
+     "start": 59.525,
+     "text": ","
+    },
+    {
+     "end": 60.412,
+     "start": 59.925,
+     "text": "including"
+    },
+    {
+     "end": 60.688,
+     "start": 60.412,
+     "text": "mixed"
+    },
+    {
+     "end": 61.112,
+     "start": 60.688,
+     "text": "Unicode"
+    },
+    {
+     "end": 61.65,
+     "start": 61.112,
+     "text": "escapes"
+    },
+    {
+     "end": 61.763,
+     "start": 61.65,
+     "text": "and"
+    },
+    {
+     "end": 62.237,
+     "start": 61.763,
+     "text": "escaped"
+    },
+    {
+     "end": 63.025,
+     "start": 62.237,
+     "text": "slashes"
+    },
+    {
+     "end": 63.125,
+     "start": 63.025,
+     "text": ","
+    },
+    {
+     "end": 63.45,
+     "start": 63.125,
+     "text": "even"
+    },
+    {
+     "end": 63.537,
+     "start": 63.45,
+     "text": "in"
+    },
+    {
+     "end": 63.662,
+     "start": 63.537,
+     "text": "an"
+    },
+    {
+     "end": 64.338,
+     "start": 63.662,
+     "text": "incomplete"
+    },
+    {
+     "end": 65.1,
+     "start": 64.338,
+     "text": "JSON"
+    },
+    {
+     "end": 66.075,
+     "start": 65.1,
+     "text": "body"
+    },
+    {
+     "end": 66.3,
+     "start": 66.075,
+     "text": "."
+    },
+    {
+     "end": 66.713,
+     "start": 66.475,
+     "text": "Bytes"
+    },
+    {
+     "end": 67.1,
+     "start": 66.713,
+     "text": "outside"
+    },
+    {
+     "end": 67.3,
+     "start": 67.1,
+     "text": "each"
+    },
+    {
+     "end": 67.537,
+     "start": 67.3,
+     "text": "match"
+    },
+    {
+     "end": 67.625,
+     "start": 67.537,
+     "text": "are"
     },
     {
      "end": 68.525,
-     "start": 67.7,
-     "text": "on"
+     "start": 67.625,
+     "text": "preserved"
     },
     {
      "end": 68.725,
      "start": 68.525,
-     "text": ":"
-    },
-    {
-     "end": 69.012,
-     "start": 68.9,
-     "text": "the"
-    },
-    {
-     "end": 69.438,
-     "start": 69.012,
-     "text": "tests"
-    },
-    {
-     "end": 69.762,
-     "start": 69.438,
-     "text": "judge"
-    },
-    {
-     "end": 69.95,
-     "start": 69.762,
-     "text": "it"
-    },
-    {
-     "end": 70.025,
-     "start": 69.95,
      "text": "."
     },
     {
-     "end": 70.1,
-     "start": 70.025,
+     "end": 69.037,
+     "start": 68.95,
      "text": "A"
     },
     {
-     "end": 70.725,
-     "start": 70.1,
-     "text": "directory"
+     "end": 69.45,
+     "start": 69.037,
+     "text": "server"
     },
     {
-     "end": 70.9,
-     "start": 70.725,
-     "text": "or"
-    },
-    {
-     "end": 71.3,
-     "start": 70.9,
-     "text": "file"
-    },
-    {
-     "end": 71.45,
-     "start": 71.3,
+     "end": 69.625,
+     "start": 69.45,
      "text": "that"
     },
     {
-     "end": 71.8,
-     "start": 71.45,
-     "text": "cannot"
+     "end": 70.075,
+     "start": 69.625,
+     "text": "echoes"
+    },
+    {
+     "end": 70.175,
+     "start": 70.075,
+     "text": "an"
+    },
+    {
+     "end": 70.7,
+     "start": 70.175,
+     "text": "accepted"
+    },
+    {
+     "end": 71.075,
+     "start": 70.7,
+     "text": "token"
+    },
+    {
+     "end": 71.4,
+     "start": 71.075,
+     "text": "back"
     },
     {
      "end": 71.963,
-     "start": 71.8,
-     "text": "be"
+     "start": 71.4,
+     "text": "therefore"
     },
     {
-     "end": 72.45,
+     "end": 72.35,
      "start": 71.963,
-     "text": "written"
+     "text": "cannot"
     },
     {
-     "end": 72.625,
-     "start": 72.45,
-     "text": "is"
+     "end": 72.575,
+     "start": 72.35,
+     "text": "put"
     },
     {
-     "end": 72.738,
-     "start": 72.625,
+     "end": 72.838,
+     "start": 72.575,
+     "text": "that"
+    },
+    {
+     "end": 73.225,
+     "start": 72.838,
+     "text": "copy"
+    },
+    {
+     "end": 73.475,
+     "start": 73.225,
+     "text": "into"
+    },
+    {
+     "end": 73.588,
+     "start": 73.475,
      "text": "a"
     },
     {
-     "end": 73.125,
-     "start": 72.738,
+     "end": 74.25,
+     "start": 73.588,
+     "text": "fixture"
+    },
+    {
+     "end": 74.35,
+     "start": 74.25,
+     "text": ","
+    },
+    {
+     "end": 74.463,
+     "start": 74.35,
+     "text": "a"
+    },
+    {
+     "end": 75.1,
+     "start": 74.463,
+     "text": "failure"
+    },
+    {
+     "end": 75.3,
+     "start": 75.1,
+     "text": "or"
+    },
+    {
+     "end": 75.5,
+     "start": 75.3,
+     "text": "its"
+    },
+    {
+     "end": 75.875,
+     "start": 75.5,
+     "text": "printed"
+    },
+    {
+     "end": 76.2,
+     "start": 75.875,
+     "text": "log"
+    },
+    {
+     "end": 77.25,
+     "start": 76.2,
+     "text": "text"
+    },
+    {
+     "end": 77.5,
+     "start": 77.25,
+     "text": "."
+    },
+    {
+     "end": 77.8,
+     "start": 77.7,
+     "text": "An"
+    },
+    {
+     "end": 78.188,
+     "start": 77.8,
+     "text": "answer"
+    },
+    {
+     "end": 78.275,
+     "start": 78.188,
+     "text": "the"
+    },
+    {
+     "end": 78.65,
+     "start": 78.275,
+     "text": "client"
+    },
+    {
+     "end": 79.225,
+     "start": 78.65,
+     "text": "refuses"
+    },
+    {
+     "end": 79.338,
+     "start": 79.225,
+     "text": "for"
+    },
+    {
+     "end": 79.5,
+     "start": 79.338,
+     "text": "its"
+    },
+    {
+     "end": 80.125,
+     "start": 79.5,
+     "text": "content"
+    },
+    {
+     "end": 80.2,
+     "start": 80.125,
+     "text": "—"
+    },
+    {
+     "end": 80.338,
+     "start": 80.2,
+     "text": "an"
+    },
+    {
+     "end": 80.775,
+     "start": 80.338,
+     "text": "absent"
+    },
+    {
+     "end": 81.65,
+     "start": 80.775,
+     "text": "fact"
+    },
+    {
+     "end": 81.85,
+     "start": 81.65,
+     "text": ","
+    },
+    {
+     "end": 82.188,
+     "start": 82.05,
+     "text": "an"
+    },
+    {
+     "end": 82.6,
+     "start": 82.188,
+     "text": "answer"
+    },
+    {
+     "end": 82.713,
+     "start": 82.6,
+     "text": "that"
+    },
+    {
+     "end": 82.9,
+     "start": 82.713,
+     "text": "does"
+    },
+    {
+     "end": 83.125,
+     "start": 82.9,
+     "text": "not"
+    },
+    {
+     "end": 83.75,
+     "start": 83.125,
+     "text": "decode"
+    },
+    {
+     "end": 83.825,
+     "start": 83.75,
+     "text": "—"
+    },
+    {
+     "end": 83.975,
+     "start": 83.825,
+     "text": "is"
+    },
+    {
+     "end": 84.475,
+     "start": 83.975,
+     "text": "recorded"
+    },
+    {
+     "end": 84.637,
+     "start": 84.475,
+     "text": "all"
+    },
+    {
+     "end": 84.762,
+     "start": 84.637,
+     "text": "the"
+    },
+    {
+     "end": 85.225,
+     "start": 84.762,
+     "text": "same"
+    },
+    {
+     "end": 85.3,
+     "start": 85.225,
+     "text": ","
+    },
+    {
+     "end": 85.412,
+     "start": 85.3,
+     "text": "and"
+    },
+    {
+     "end": 85.925,
+     "start": 85.412,
+     "text": "recording"
+    },
+    {
+     "end": 86.225,
+     "start": 85.925,
+     "text": "goes"
+    },
+    {
+     "end": 87.05,
+     "start": 86.225,
+     "text": "on"
+    },
+    {
+     "end": 87.25,
+     "start": 87.05,
+     "text": ":"
+    },
+    {
+     "end": 87.537,
+     "start": 87.425,
+     "text": "the"
+    },
+    {
+     "end": 87.963,
+     "start": 87.537,
+     "text": "tests"
+    },
+    {
+     "end": 88.287,
+     "start": 87.963,
+     "text": "judge"
+    },
+    {
+     "end": 88.475,
+     "start": 88.287,
+     "text": "it"
+    },
+    {
+     "end": 88.55,
+     "start": 88.475,
+     "text": "."
+    },
+    {
+     "end": 88.625,
+     "start": 88.55,
+     "text": "A"
+    },
+    {
+     "end": 89.25,
+     "start": 88.625,
+     "text": "directory"
+    },
+    {
+     "end": 89.425,
+     "start": 89.25,
+     "text": "or"
+    },
+    {
+     "end": 89.825,
+     "start": 89.425,
+     "text": "file"
+    },
+    {
+     "end": 89.975,
+     "start": 89.825,
+     "text": "that"
+    },
+    {
+     "end": 90.325,
+     "start": 89.975,
+     "text": "cannot"
+    },
+    {
+     "end": 90.488,
+     "start": 90.325,
+     "text": "be"
+    },
+    {
+     "end": 90.975,
+     "start": 90.488,
+     "text": "written"
+    },
+    {
+     "end": 91.15,
+     "start": 90.975,
+     "text": "is"
+    },
+    {
+     "end": 91.262,
+     "start": 91.15,
+     "text": "a"
+    },
+    {
+     "end": 91.65,
+     "start": 91.262,
      "text": "named"
     },
     {
-     "end": 74.325,
-     "start": 73.125,
+     "end": 92.85,
+     "start": 91.65,
      "text": "refusal"
     },
     {
-     "end": 74.525,
-     "start": 74.325,
+     "end": 93.05,
+     "start": 92.85,
      "text": "."
     }
    ]
@@ -185926,17 +186131,17 @@
    ]
   },
   "docs-offchain-koios-client/the-story-this-serves-02": {
-   "audio_sha256": "e07fddd111d155f659dd4d3451929bd26215cf78e47451e64ac5a4c3d71b09fe",
-   "characters": 170,
-   "cost": 0.00010540000000000001,
-   "duration": 11.3,
+   "audio_sha256": "218a023e8c46eac8502a5978db6c6bb50a401884cec4daa141b24e71935de409",
+   "characters": 946,
+   "cost": 0.00058652,
+   "duration": 69.975,
    "index": 2,
-   "key": "abf6b8b381c6142ec9c64ec0a3a50047d8ac38df27347ba871df0176338f3885",
+   "key": "7783cefa4f8cc3849357ef3e4677774138bebf3505f2a21614454359d614d6d5",
    "page": "docs/offchain-koios-client.md",
    "pause_ms": 400,
    "section": "the-story-this-serves",
-   "sent_text": "As a user with a Koios account, I give the client my bearer token in a file. The token never appears on the command line, in a failure, in a log or in a recorded fixture.",
-   "text": "As a user with a Koios account, I give the client my bearer token in a file. The token never appears on the command line, in a failure, in a log or in a recorded fixture.",
+   "sent_text": "As a user with a Koios account, I give the client my bearer token in a file. After surrounding white space is stripped, it must contain at least 32 ASCII characters: letters, digits and -._~+/, with optional = padding at the end, and at least one character outside 0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F. An all-hexadecimal token could occur in a fixture's SHA-256 metadata even after its echoed copies were removed, so it is refused too. A short or empty token, a substring of the redaction marker  less than token greater than , or a token containing other characters is refused as TokenFileInvalid before any request, including the recorder's schema request. The refusal explains the restriction without printing the token. For an accepted token, the client replaces echoed copies in returned answers, failures and recorded fixtures; the command line names only its file, and the failure text printed to logs carries no echoed credential.",
+   "text": "As a user with a Koios account, I give the client my bearer token in a file. After surrounding white space is stripped, it must contain at least 32 ASCII characters: letters, digits and -._~+/, with optional = padding at the end, and at least one character outside 0123456789abcdefABCDEF. An all-hexadecimal token could occur in a fixture's SHA-256 metadata even after its echoed copies were removed, so it is refused too. A short or empty token, a substring of the redaction marker <token>, or a token containing other characters is refused as TokenFileInvalid before any request, including the recorder's schema request. The refusal explains the restriction without printing the token. For an accepted token, the client replaces echoed copies in returned answers, failures and recorded fixtures; the command line names only its file, and the failure text printed to logs carries no echoed credential.",
    "words": [
     {
      "end": 0.338,
@@ -186034,113 +186239,848 @@
      "text": "."
     },
     {
-     "end": 5.4,
+     "end": 5.625,
      "start": 5.325,
-     "text": "The"
+     "text": "After"
     },
     {
-     "end": 5.825,
-     "start": 5.4,
-     "text": "token"
+     "end": 6.175,
+     "start": 5.625,
+     "text": "surrounding"
     },
     {
-     "end": 6.15,
-     "start": 5.825,
-     "text": "never"
-    },
-    {
-     "end": 6.613,
-     "start": 6.15,
-     "text": "appears"
-    },
-    {
-     "end": 6.713,
-     "start": 6.613,
-     "text": "on"
+     "end": 6.425,
+     "start": 6.175,
+     "text": "white"
     },
     {
      "end": 6.8,
-     "start": 6.713,
-     "text": "the"
+     "start": 6.425,
+     "text": "space"
     },
     {
-     "end": 7.225,
+     "end": 6.938,
      "start": 6.8,
-     "text": "command"
+     "text": "is"
     },
     {
-     "end": 7.6,
-     "start": 7.225,
-     "text": "line"
+     "end": 7.5,
+     "start": 6.938,
+     "text": "stripped"
     },
     {
-     "end": 7.675,
-     "start": 7.6,
+     "end": 7.575,
+     "start": 7.5,
      "text": ","
     },
     {
-     "end": 7.762,
-     "start": 7.675,
-     "text": "in"
+     "end": 7.7,
+     "start": 7.575,
+     "text": "it"
     },
     {
-     "end": 7.863,
-     "start": 7.762,
-     "text": "a"
+     "end": 7.95,
+     "start": 7.7,
+     "text": "must"
     },
     {
-     "end": 8.35,
-     "start": 7.863,
-     "text": "failure"
-    },
-    {
-     "end": 8.4,
-     "start": 8.35,
-     "text": ","
+     "end": 8.375,
+     "start": 7.95,
+     "text": "contain"
     },
     {
      "end": 8.5,
-     "start": 8.4,
-     "text": "in"
+     "start": 8.375,
+     "text": "at"
     },
     {
-     "end": 8.613,
+     "end": 8.788,
      "start": 8.5,
-     "text": "a"
-    },
-    {
-     "end": 9.125,
-     "start": 8.613,
-     "text": "log"
-    },
-    {
-     "end": 9.375,
-     "start": 9.125,
-     "text": "or"
+     "text": "least"
     },
     {
      "end": 9.462,
-     "start": 9.375,
-     "text": "in"
+     "start": 8.788,
+     "text": "32"
     },
     {
-     "end": 9.525,
+     "end": 9.85,
      "start": 9.462,
-     "text": "a"
-    },
-    {
-     "end": 10.05,
-     "start": 9.525,
-     "text": "recorded"
+     "text": "ASCII"
     },
     {
      "end": 11.075,
-     "start": 10.05,
-     "text": "fixture"
+     "start": 9.85,
+     "text": "characters"
     },
     {
-     "end": 11.3,
+     "end": 11.275,
      "start": 11.075,
+     "text": ":"
+    },
+    {
+     "end": 11.925,
+     "start": 11.5,
+     "text": "letters"
+    },
+    {
+     "end": 11.988,
+     "start": 11.925,
+     "text": ","
+    },
+    {
+     "end": 12.462,
+     "start": 11.988,
+     "text": "digits"
+    },
+    {
+     "end": 12.613,
+     "start": 12.462,
+     "text": "and"
+    },
+    {
+     "end": 13.6,
+     "start": 12.613,
+     "text": "-._~+/"
+    },
+    {
+     "end": 13.675,
+     "start": 13.6,
+     "text": ","
+    },
+    {
+     "end": 13.863,
+     "start": 13.675,
+     "text": "with"
+    },
+    {
+     "end": 14.35,
+     "start": 13.863,
+     "text": "optional"
+    },
+    {
+     "end": 14.788,
+     "start": 14.35,
+     "text": "="
+    },
+    {
+     "end": 15.163,
+     "start": 14.788,
+     "text": "padding"
+    },
+    {
+     "end": 15.238,
+     "start": 15.163,
+     "text": "at"
+    },
+    {
+     "end": 15.375,
+     "start": 15.238,
+     "text": "the"
+    },
+    {
+     "end": 16.175,
+     "start": 15.375,
+     "text": "end"
+    },
+    {
+     "end": 16.4,
+     "start": 16.175,
+     "text": ","
+    },
+    {
+     "end": 16.712,
+     "start": 16.625,
+     "text": "and"
+    },
+    {
+     "end": 16.8,
+     "start": 16.712,
+     "text": "at"
+    },
+    {
+     "end": 17.075,
+     "start": 16.8,
+     "text": "least"
+    },
+    {
+     "end": 17.312,
+     "start": 17.075,
+     "text": "one"
+    },
+    {
+     "end": 17.825,
+     "start": 17.312,
+     "text": "character"
+    },
+    {
+     "end": 18.362,
+     "start": 17.825,
+     "text": "outside"
+    },
+    {
+     "end": 18.812,
+     "start": 18.362,
+     "text": "0"
+    },
+    {
+     "end": 19.087,
+     "start": 18.812,
+     "text": "1"
+    },
+    {
+     "end": 19.362,
+     "start": 19.087,
+     "text": "2"
+    },
+    {
+     "end": 19.612,
+     "start": 19.362,
+     "text": "3"
+    },
+    {
+     "end": 19.938,
+     "start": 19.612,
+     "text": "4"
+    },
+    {
+     "end": 20.312,
+     "start": 19.938,
+     "text": "5"
+    },
+    {
+     "end": 20.575,
+     "start": 20.312,
+     "text": "6"
+    },
+    {
+     "end": 20.925,
+     "start": 20.575,
+     "text": "7"
+    },
+    {
+     "end": 21.15,
+     "start": 20.925,
+     "text": "8"
+    },
+    {
+     "end": 21.612,
+     "start": 21.15,
+     "text": "9"
+    },
+    {
+     "end": 21.725,
+     "start": 21.612,
+     "text": "a"
+    },
+    {
+     "end": 21.962,
+     "start": 21.725,
+     "text": "b"
+    },
+    {
+     "end": 22.212,
+     "start": 21.962,
+     "text": "c"
+    },
+    {
+     "end": 22.513,
+     "start": 22.212,
+     "text": "d"
+    },
+    {
+     "end": 22.775,
+     "start": 22.513,
+     "text": "e"
+    },
+    {
+     "end": 23.112,
+     "start": 22.775,
+     "text": "f"
+    },
+    {
+     "end": 23.288,
+     "start": 23.112,
+     "text": "A"
+    },
+    {
+     "end": 23.6,
+     "start": 23.288,
+     "text": "B"
+    },
+    {
+     "end": 23.825,
+     "start": 23.6,
+     "text": "C"
+    },
+    {
+     "end": 24.05,
+     "start": 23.825,
+     "text": "D"
+    },
+    {
+     "end": 24.212,
+     "start": 24.05,
+     "text": "E"
+    },
+    {
+     "end": 25.2,
+     "start": 24.212,
+     "text": "F."
+    },
+    {
+     "end": 25.562,
+     "start": 25.425,
+     "text": "An"
+    },
+    {
+     "end": 26.5,
+     "start": 25.562,
+     "text": "all-hexadecimal"
+    },
+    {
+     "end": 26.95,
+     "start": 26.5,
+     "text": "token"
+    },
+    {
+     "end": 27.1,
+     "start": 26.95,
+     "text": "could"
+    },
+    {
+     "end": 27.525,
+     "start": 27.1,
+     "text": "occur"
+    },
+    {
+     "end": 27.612,
+     "start": 27.525,
+     "text": "in"
+    },
+    {
+     "end": 27.712,
+     "start": 27.612,
+     "text": "a"
+    },
+    {
+     "end": 28.312,
+     "start": 27.712,
+     "text": "fixture's"
+    },
+    {
+     "end": 30.212,
+     "start": 28.312,
+     "text": "SHA-256"
+    },
+    {
+     "end": 30.85,
+     "start": 30.212,
+     "text": "metadata"
+    },
+    {
+     "end": 31.2,
+     "start": 30.85,
+     "text": "even"
+    },
+    {
+     "end": 31.513,
+     "start": 31.2,
+     "text": "after"
+    },
+    {
+     "end": 31.688,
+     "start": 31.513,
+     "text": "its"
+    },
+    {
+     "end": 32.1,
+     "start": 31.688,
+     "text": "echoed"
+    },
+    {
+     "end": 32.55,
+     "start": 32.1,
+     "text": "copies"
+    },
+    {
+     "end": 32.7,
+     "start": 32.55,
+     "text": "were"
+    },
+    {
+     "end": 33.9,
+     "start": 32.7,
+     "text": "removed"
+    },
+    {
+     "end": 34.125,
+     "start": 33.9,
+     "text": ","
+    },
+    {
+     "end": 34.438,
+     "start": 34.325,
+     "text": "so"
+    },
+    {
+     "end": 34.513,
+     "start": 34.438,
+     "text": "it"
+    },
+    {
+     "end": 34.612,
+     "start": 34.513,
+     "text": "is"
+    },
+    {
+     "end": 35.112,
+     "start": 34.612,
+     "text": "refused"
+    },
+    {
+     "end": 35.8,
+     "start": 35.112,
+     "text": "too"
+    },
+    {
+     "end": 36.025,
+     "start": 35.8,
+     "text": "."
+    },
+    {
+     "end": 36.287,
+     "start": 36.2,
+     "text": "A"
+    },
+    {
+     "end": 36.537,
+     "start": 36.287,
+     "text": "short"
+    },
+    {
+     "end": 36.625,
+     "start": 36.537,
+     "text": "or"
+    },
+    {
+     "end": 36.9,
+     "start": 36.625,
+     "text": "empty"
+    },
+    {
+     "end": 37.725,
+     "start": 36.9,
+     "text": "token"
+    },
+    {
+     "end": 37.925,
+     "start": 37.725,
+     "text": ","
+    },
+    {
+     "end": 38.213,
+     "start": 38.125,
+     "text": "a"
+    },
+    {
+     "end": 38.713,
+     "start": 38.213,
+     "text": "substring"
+    },
+    {
+     "end": 38.787,
+     "start": 38.713,
+     "text": "of"
+    },
+    {
+     "end": 38.875,
+     "start": 38.787,
+     "text": "the"
+    },
+    {
+     "end": 39.375,
+     "start": 38.875,
+     "text": "redaction"
+    },
+    {
+     "end": 39.925,
+     "start": 39.375,
+     "text": "marker"
+    },
+    {
+     "end": 40.2,
+     "start": 39.925,
+     "text": " less"
+    },
+    {
+     "end": 40.375,
+     "start": 40.2,
+     "text": "than"
+    },
+    {
+     "end": 40.725,
+     "start": 40.375,
+     "text": "token"
+    },
+    {
+     "end": 41.15,
+     "start": 40.725,
+     "text": "greater"
+    },
+    {
+     "end": 41.925,
+     "start": 41.15,
+     "text": "than"
+    },
+    {
+     "end": 42.125,
+     "start": 41.925,
+     "text": ","
+    },
+    {
+     "end": 42.475,
+     "start": 42.325,
+     "text": "or"
+    },
+    {
+     "end": 42.588,
+     "start": 42.475,
+     "text": "a"
+    },
+    {
+     "end": 43.025,
+     "start": 42.588,
+     "text": "token"
+    },
+    {
+     "end": 43.575,
+     "start": 43.025,
+     "text": "containing"
+    },
+    {
+     "end": 43.85,
+     "start": 43.575,
+     "text": "other"
+    },
+    {
+     "end": 44.537,
+     "start": 43.85,
+     "text": "characters"
+    },
+    {
+     "end": 44.7,
+     "start": 44.537,
+     "text": "is"
+    },
+    {
+     "end": 45.412,
+     "start": 44.7,
+     "text": "refused"
+    },
+    {
+     "end": 45.588,
+     "start": 45.412,
+     "text": "as"
+    },
+    {
+     "end": 46.675,
+     "start": 45.588,
+     "text": "TokenFileInvalid"
+    },
+    {
+     "end": 47.062,
+     "start": 46.675,
+     "text": "before"
+    },
+    {
+     "end": 47.3,
+     "start": 47.062,
+     "text": "any"
+    },
+    {
+     "end": 48.425,
+     "start": 47.3,
+     "text": "request"
+    },
+    {
+     "end": 48.65,
+     "start": 48.425,
+     "text": ","
+    },
+    {
+     "end": 49.263,
+     "start": 48.85,
+     "text": "including"
+    },
+    {
+     "end": 49.338,
+     "start": 49.263,
+     "text": "the"
+    },
+    {
+     "end": 49.825,
+     "start": 49.338,
+     "text": "recorder's"
+    },
+    {
+     "end": 50.175,
+     "start": 49.825,
+     "text": "schema"
+    },
+    {
+     "end": 51.075,
+     "start": 50.175,
+     "text": "request"
+    },
+    {
+     "end": 51.275,
+     "start": 51.075,
+     "text": "."
+    },
+    {
+     "end": 51.525,
+     "start": 51.45,
+     "text": "The"
+    },
+    {
+     "end": 52.175,
+     "start": 51.525,
+     "text": "refusal"
+    },
+    {
+     "end": 52.737,
+     "start": 52.175,
+     "text": "explains"
+    },
+    {
+     "end": 52.825,
+     "start": 52.737,
+     "text": "the"
+    },
+    {
+     "end": 53.45,
+     "start": 52.825,
+     "text": "restriction"
+    },
+    {
+     "end": 53.8,
+     "start": 53.45,
+     "text": "without"
+    },
+    {
+     "end": 54.162,
+     "start": 53.8,
+     "text": "printing"
+    },
+    {
+     "end": 54.25,
+     "start": 54.162,
+     "text": "the"
+    },
+    {
+     "end": 55.225,
+     "start": 54.25,
+     "text": "token"
+    },
+    {
+     "end": 55.425,
+     "start": 55.225,
+     "text": "."
+    },
+    {
+     "end": 55.737,
+     "start": 55.625,
+     "text": "For"
+    },
+    {
+     "end": 55.825,
+     "start": 55.737,
+     "text": "an"
+    },
+    {
+     "end": 56.35,
+     "start": 55.825,
+     "text": "accepted"
+    },
+    {
+     "end": 56.775,
+     "start": 56.35,
+     "text": "token"
+    },
+    {
+     "end": 56.825,
+     "start": 56.775,
+     "text": ","
+    },
+    {
+     "end": 56.938,
+     "start": 56.825,
+     "text": "the"
+    },
+    {
+     "end": 57.35,
+     "start": 56.938,
+     "text": "client"
+    },
+    {
+     "end": 57.912,
+     "start": 57.35,
+     "text": "replaces"
+    },
+    {
+     "end": 58.3,
+     "start": 57.912,
+     "text": "echoed"
+    },
+    {
+     "end": 58.775,
+     "start": 58.3,
+     "text": "copies"
+    },
+    {
+     "end": 58.9,
+     "start": 58.775,
+     "text": "in"
+    },
+    {
+     "end": 59.375,
+     "start": 58.9,
+     "text": "returned"
+    },
+    {
+     "end": 59.975,
+     "start": 59.375,
+     "text": "answers"
+    },
+    {
+     "end": 60.088,
+     "start": 59.975,
+     "text": ","
+    },
+    {
+     "end": 60.725,
+     "start": 60.088,
+     "text": "failures"
+    },
+    {
+     "end": 60.85,
+     "start": 60.725,
+     "text": "and"
+    },
+    {
+     "end": 61.375,
+     "start": 60.85,
+     "text": "recorded"
+    },
+    {
+     "end": 62.6,
+     "start": 61.375,
+     "text": "fixtures"
+    },
+    {
+     "end": 62.8,
+     "start": 62.6,
+     "text": ";"
+    },
+    {
+     "end": 63.075,
+     "start": 63.0,
+     "text": "the"
+    },
+    {
+     "end": 63.5,
+     "start": 63.075,
+     "text": "command"
+    },
+    {
+     "end": 63.85,
+     "start": 63.5,
+     "text": "line"
+    },
+    {
+     "end": 64.188,
+     "start": 63.85,
+     "text": "names"
+    },
+    {
+     "end": 64.55,
+     "start": 64.188,
+     "text": "only"
+    },
+    {
+     "end": 64.762,
+     "start": 64.55,
+     "text": "its"
+    },
+    {
+     "end": 65.275,
+     "start": 64.762,
+     "text": "file"
+    },
+    {
+     "end": 65.35,
+     "start": 65.275,
+     "text": ","
+    },
+    {
+     "end": 65.463,
+     "start": 65.35,
+     "text": "and"
+    },
+    {
+     "end": 65.562,
+     "start": 65.463,
+     "text": "the"
+    },
+    {
+     "end": 66.0,
+     "start": 65.562,
+     "text": "failure"
+    },
+    {
+     "end": 66.375,
+     "start": 66.0,
+     "text": "text"
+    },
+    {
+     "end": 66.725,
+     "start": 66.375,
+     "text": "printed"
+    },
+    {
+     "end": 66.85,
+     "start": 66.725,
+     "text": "to"
+    },
+    {
+     "end": 67.312,
+     "start": 66.85,
+     "text": "logs"
+    },
+    {
+     "end": 67.775,
+     "start": 67.312,
+     "text": "carries"
+    },
+    {
+     "end": 68.113,
+     "start": 67.775,
+     "text": "no"
+    },
+    {
+     "end": 68.55,
+     "start": 68.113,
+     "text": "echoed"
+    },
+    {
+     "end": 69.775,
+     "start": 68.55,
+     "text": "credential"
+    },
+    {
+     "end": 69.975,
+     "start": 69.775,
      "text": "."
     }
    ]
@@ -188671,6 +189611,741 @@
     {
      "end": 77.025,
      "start": 76.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-03": {
+   "audio_sha256": "28be3d35717783bfabdd8ef66059895a5c27c82c3811083d75dc36402a36b94f",
+   "characters": 885,
+   "cost": 0.0005487000000000001,
+   "duration": 61.225,
+   "index": 3,
+   "key": "bfd3811a0885644dd29b56247818058fcb703e7c845357591272c4a56834dbc4",
+   "page": "docs/offchain-koios-client.md",
+   "pause_ms": 400,
+   "section": "what-the-evidence-establishes-and-what-it-does-not",
+   "sent_text": "The token checks generate accepted bearer credentials containing text from the redaction marker, header names and JSON literals, alongside arbitrary characters from the full accepted alphabet. Coverage checks require each adversarial family, padding, slashes and credentials that can also name HTTP headers to occur. A loopback server echoes each credential literally and through Unicode escapes; the checks inspect status, header names, header values, body bytes, failure and probe renderings, and the actual fixture files with their JSON encoding. Generated all-hexadecimal credentials are refused too. Refused credentials must produce zero server requests, both for the transport and for the recorder. The fixed credentials remain examples. These generated cases are local evidence over sampled inputs, not a formal proof over all credentials or evidence of public-service behavior.",
+   "text": "The token checks generate accepted bearer credentials containing text from the redaction marker, header names and JSON literals, alongside arbitrary characters from the full accepted alphabet. Coverage checks require each adversarial family, padding, slashes and credentials that can also name HTTP headers to occur. A loopback server echoes each credential literally and through Unicode escapes; the checks inspect status, header names, header values, body bytes, failure and probe renderings, and the actual fixture files with their JSON encoding. Generated all-hexadecimal credentials are refused too. Refused credentials must produce zero server requests, both for the transport and for the recorder. The fixed credentials remain examples. These generated cases are local evidence over sampled inputs, not a formal proof over all credentials or evidence of public-service behavior.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.837,
+     "start": 0.363,
+     "text": "token"
+    },
+    {
+     "end": 1.188,
+     "start": 0.837,
+     "text": "checks"
+    },
+    {
+     "end": 1.725,
+     "start": 1.188,
+     "text": "generate"
+    },
+    {
+     "end": 2.287,
+     "start": 1.725,
+     "text": "accepted"
+    },
+    {
+     "end": 2.65,
+     "start": 2.287,
+     "text": "bearer"
+    },
+    {
+     "end": 3.3,
+     "start": 2.65,
+     "text": "credentials"
+    },
+    {
+     "end": 3.862,
+     "start": 3.3,
+     "text": "containing"
+    },
+    {
+     "end": 4.325,
+     "start": 3.862,
+     "text": "text"
+    },
+    {
+     "end": 4.488,
+     "start": 4.325,
+     "text": "from"
+    },
+    {
+     "end": 4.575,
+     "start": 4.488,
+     "text": "the"
+    },
+    {
+     "end": 5.15,
+     "start": 4.575,
+     "text": "redaction"
+    },
+    {
+     "end": 5.65,
+     "start": 5.15,
+     "text": "marker"
+    },
+    {
+     "end": 5.762,
+     "start": 5.65,
+     "text": ","
+    },
+    {
+     "end": 6.1,
+     "start": 5.762,
+     "text": "header"
+    },
+    {
+     "end": 6.562,
+     "start": 6.1,
+     "text": "names"
+    },
+    {
+     "end": 6.738,
+     "start": 6.562,
+     "text": "and"
+    },
+    {
+     "end": 7.6,
+     "start": 6.738,
+     "text": "JSON"
+    },
+    {
+     "end": 8.25,
+     "start": 7.6,
+     "text": "literals"
+    },
+    {
+     "end": 8.363,
+     "start": 8.25,
+     "text": ","
+    },
+    {
+     "end": 9.087,
+     "start": 8.363,
+     "text": "alongside"
+    },
+    {
+     "end": 9.738,
+     "start": 9.087,
+     "text": "arbitrary"
+    },
+    {
+     "end": 10.35,
+     "start": 9.738,
+     "text": "characters"
+    },
+    {
+     "end": 10.512,
+     "start": 10.35,
+     "text": "from"
+    },
+    {
+     "end": 10.65,
+     "start": 10.512,
+     "text": "the"
+    },
+    {
+     "end": 10.975,
+     "start": 10.65,
+     "text": "full"
+    },
+    {
+     "end": 11.5,
+     "start": 10.975,
+     "text": "accepted"
+    },
+    {
+     "end": 12.775,
+     "start": 11.5,
+     "text": "alphabet"
+    },
+    {
+     "end": 13.025,
+     "start": 12.775,
+     "text": "."
+    },
+    {
+     "end": 13.663,
+     "start": 13.25,
+     "text": "Coverage"
+    },
+    {
+     "end": 14.025,
+     "start": 13.663,
+     "text": "checks"
+    },
+    {
+     "end": 14.637,
+     "start": 14.025,
+     "text": "require"
+    },
+    {
+     "end": 14.962,
+     "start": 14.637,
+     "text": "each"
+    },
+    {
+     "end": 15.712,
+     "start": 14.962,
+     "text": "adversarial"
+    },
+    {
+     "end": 16.325,
+     "start": 15.712,
+     "text": "family"
+    },
+    {
+     "end": 16.438,
+     "start": 16.325,
+     "text": ","
+    },
+    {
+     "end": 17.05,
+     "start": 16.438,
+     "text": "padding"
+    },
+    {
+     "end": 17.175,
+     "start": 17.05,
+     "text": ","
+    },
+    {
+     "end": 17.85,
+     "start": 17.175,
+     "text": "slashes"
+    },
+    {
+     "end": 17.975,
+     "start": 17.85,
+     "text": "and"
+    },
+    {
+     "end": 18.625,
+     "start": 17.975,
+     "text": "credentials"
+    },
+    {
+     "end": 18.775,
+     "start": 18.625,
+     "text": "that"
+    },
+    {
+     "end": 18.9,
+     "start": 18.775,
+     "text": "can"
+    },
+    {
+     "end": 19.25,
+     "start": 18.9,
+     "text": "also"
+    },
+    {
+     "end": 19.562,
+     "start": 19.25,
+     "text": "name"
+    },
+    {
+     "end": 20.4,
+     "start": 19.562,
+     "text": "HTTP"
+    },
+    {
+     "end": 20.8,
+     "start": 20.4,
+     "text": "headers"
+    },
+    {
+     "end": 20.95,
+     "start": 20.8,
+     "text": "to"
+    },
+    {
+     "end": 22.025,
+     "start": 20.95,
+     "text": "occur"
+    },
+    {
+     "end": 22.275,
+     "start": 22.025,
+     "text": "."
+    },
+    {
+     "end": 22.55,
+     "start": 22.475,
+     "text": "A"
+    },
+    {
+     "end": 22.975,
+     "start": 22.55,
+     "text": "loopback"
+    },
+    {
+     "end": 23.325,
+     "start": 22.975,
+     "text": "server"
+    },
+    {
+     "end": 23.763,
+     "start": 23.325,
+     "text": "echoes"
+    },
+    {
+     "end": 24.05,
+     "start": 23.763,
+     "text": "each"
+    },
+    {
+     "end": 24.575,
+     "start": 24.05,
+     "text": "credential"
+    },
+    {
+     "end": 25.275,
+     "start": 24.575,
+     "text": "literally"
+    },
+    {
+     "end": 25.438,
+     "start": 25.275,
+     "text": "and"
+    },
+    {
+     "end": 25.65,
+     "start": 25.438,
+     "text": "through"
+    },
+    {
+     "end": 26.087,
+     "start": 25.65,
+     "text": "Unicode"
+    },
+    {
+     "end": 27.15,
+     "start": 26.087,
+     "text": "escapes"
+    },
+    {
+     "end": 27.35,
+     "start": 27.15,
+     "text": ";"
+    },
+    {
+     "end": 27.6,
+     "start": 27.525,
+     "text": "the"
+    },
+    {
+     "end": 27.9,
+     "start": 27.6,
+     "text": "checks"
+    },
+    {
+     "end": 28.375,
+     "start": 27.9,
+     "text": "inspect"
+    },
+    {
+     "end": 28.95,
+     "start": 28.375,
+     "text": "status"
+    },
+    {
+     "end": 29.025,
+     "start": 28.95,
+     "text": ","
+    },
+    {
+     "end": 29.325,
+     "start": 29.025,
+     "text": "header"
+    },
+    {
+     "end": 29.7,
+     "start": 29.325,
+     "text": "names"
+    },
+    {
+     "end": 29.75,
+     "start": 29.7,
+     "text": ","
+    },
+    {
+     "end": 30.025,
+     "start": 29.75,
+     "text": "header"
+    },
+    {
+     "end": 30.5,
+     "start": 30.025,
+     "text": "values"
+    },
+    {
+     "end": 30.55,
+     "start": 30.5,
+     "text": ","
+    },
+    {
+     "end": 30.875,
+     "start": 30.55,
+     "text": "body"
+    },
+    {
+     "end": 31.75,
+     "start": 30.875,
+     "text": "bytes"
+    },
+    {
+     "end": 31.95,
+     "start": 31.75,
+     "text": ","
+    },
+    {
+     "end": 32.6,
+     "start": 32.15,
+     "text": "failure"
+    },
+    {
+     "end": 32.725,
+     "start": 32.6,
+     "text": "and"
+    },
+    {
+     "end": 33.05,
+     "start": 32.725,
+     "text": "probe"
+    },
+    {
+     "end": 33.75,
+     "start": 33.05,
+     "text": "renderings"
+    },
+    {
+     "end": 33.825,
+     "start": 33.75,
+     "text": ","
+    },
+    {
+     "end": 33.938,
+     "start": 33.825,
+     "text": "and"
+    },
+    {
+     "end": 34.062,
+     "start": 33.938,
+     "text": "the"
+    },
+    {
+     "end": 34.487,
+     "start": 34.062,
+     "text": "actual"
+    },
+    {
+     "end": 34.975,
+     "start": 34.487,
+     "text": "fixture"
+    },
+    {
+     "end": 35.425,
+     "start": 34.975,
+     "text": "files"
+    },
+    {
+     "end": 35.562,
+     "start": 35.425,
+     "text": "with"
+    },
+    {
+     "end": 35.763,
+     "start": 35.562,
+     "text": "their"
+    },
+    {
+     "end": 36.525,
+     "start": 35.763,
+     "text": "JSON"
+    },
+    {
+     "end": 37.625,
+     "start": 36.525,
+     "text": "encoding"
+    },
+    {
+     "end": 37.825,
+     "start": 37.625,
+     "text": "."
+    },
+    {
+     "end": 38.575,
+     "start": 38.025,
+     "text": "Generated"
+    },
+    {
+     "end": 39.425,
+     "start": 38.575,
+     "text": "all-hexadecimal"
+    },
+    {
+     "end": 40.138,
+     "start": 39.425,
+     "text": "credentials"
+    },
+    {
+     "end": 40.275,
+     "start": 40.138,
+     "text": "are"
+    },
+    {
+     "end": 40.812,
+     "start": 40.275,
+     "text": "refused"
+    },
+    {
+     "end": 41.6,
+     "start": 40.812,
+     "text": "too"
+    },
+    {
+     "end": 41.825,
+     "start": 41.6,
+     "text": "."
+    },
+    {
+     "end": 42.575,
+     "start": 42.05,
+     "text": "Refused"
+    },
+    {
+     "end": 43.237,
+     "start": 42.575,
+     "text": "credentials"
+    },
+    {
+     "end": 43.5,
+     "start": 43.237,
+     "text": "must"
+    },
+    {
+     "end": 43.938,
+     "start": 43.5,
+     "text": "produce"
+    },
+    {
+     "end": 44.362,
+     "start": 43.938,
+     "text": "zero"
+    },
+    {
+     "end": 44.75,
+     "start": 44.362,
+     "text": "server"
+    },
+    {
+     "end": 45.425,
+     "start": 44.75,
+     "text": "requests"
+    },
+    {
+     "end": 45.475,
+     "start": 45.425,
+     "text": ","
+    },
+    {
+     "end": 45.775,
+     "start": 45.475,
+     "text": "both"
+    },
+    {
+     "end": 45.888,
+     "start": 45.775,
+     "text": "for"
+    },
+    {
+     "end": 45.975,
+     "start": 45.888,
+     "text": "the"
+    },
+    {
+     "end": 46.7,
+     "start": 45.975,
+     "text": "transport"
+    },
+    {
+     "end": 46.875,
+     "start": 46.7,
+     "text": "and"
+    },
+    {
+     "end": 47.025,
+     "start": 46.875,
+     "text": "for"
+    },
+    {
+     "end": 47.125,
+     "start": 47.025,
+     "text": "the"
+    },
+    {
+     "end": 48.275,
+     "start": 47.125,
+     "text": "recorder"
+    },
+    {
+     "end": 48.5,
+     "start": 48.275,
+     "text": "."
+    },
+    {
+     "end": 48.75,
+     "start": 48.675,
+     "text": "The"
+    },
+    {
+     "end": 49.0,
+     "start": 48.75,
+     "text": "fixed"
+    },
+    {
+     "end": 49.55,
+     "start": 49.0,
+     "text": "credentials"
+    },
+    {
+     "end": 49.888,
+     "start": 49.55,
+     "text": "remain"
+    },
+    {
+     "end": 50.975,
+     "start": 49.888,
+     "text": "examples"
+    },
+    {
+     "end": 51.175,
+     "start": 50.975,
+     "text": "."
+    },
+    {
+     "end": 51.588,
+     "start": 51.35,
+     "text": "These"
+    },
+    {
+     "end": 52.15,
+     "start": 51.588,
+     "text": "generated"
+    },
+    {
+     "end": 52.737,
+     "start": 52.15,
+     "text": "cases"
+    },
+    {
+     "end": 52.9,
+     "start": 52.737,
+     "text": "are"
+    },
+    {
+     "end": 53.25,
+     "start": 52.9,
+     "text": "local"
+    },
+    {
+     "end": 53.75,
+     "start": 53.25,
+     "text": "evidence"
+    },
+    {
+     "end": 54.037,
+     "start": 53.75,
+     "text": "over"
+    },
+    {
+     "end": 54.5,
+     "start": 54.037,
+     "text": "sampled"
+    },
+    {
+     "end": 55.5,
+     "start": 54.5,
+     "text": "inputs"
+    },
+    {
+     "end": 55.7,
+     "start": 55.5,
+     "text": ","
+    },
+    {
+     "end": 56.088,
+     "start": 55.9,
+     "text": "not"
+    },
+    {
+     "end": 56.188,
+     "start": 56.088,
+     "text": "a"
+    },
+    {
+     "end": 56.588,
+     "start": 56.188,
+     "text": "formal"
+    },
+    {
+     "end": 56.95,
+     "start": 56.588,
+     "text": "proof"
+    },
+    {
+     "end": 57.263,
+     "start": 56.95,
+     "text": "over"
+    },
+    {
+     "end": 57.525,
+     "start": 57.263,
+     "text": "all"
+    },
+    {
+     "end": 58.325,
+     "start": 57.525,
+     "text": "credentials"
+    },
+    {
+     "end": 58.513,
+     "start": 58.325,
+     "text": "or"
+    },
+    {
+     "end": 59.0,
+     "start": 58.513,
+     "text": "evidence"
+    },
+    {
+     "end": 59.125,
+     "start": 59.0,
+     "text": "of"
+    },
+    {
+     "end": 59.9,
+     "start": 59.125,
+     "text": "public-service"
+    },
+    {
+     "end": 61.0,
+     "start": 59.9,
+     "text": "behavior"
+    },
+    {
+     "end": 61.225,
+     "start": 61.0,
      "text": "."
     }
    ]

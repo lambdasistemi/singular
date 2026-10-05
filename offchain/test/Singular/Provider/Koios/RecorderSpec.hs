@@ -124,7 +124,7 @@ tipBody =
     \\"block_height\":5253272,\"block_no\":5253272,\"block_time\":1791128700}]"
 
 token :: Text
-token = "recorder-test-token-91c2"
+token = "recorder-test-token-91c2-synthetic-credential"
 
 -- | The loopback server: schema document, tip, and a five-row history.
 scene :: Scene

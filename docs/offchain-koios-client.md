@@ -20,8 +20,18 @@ code pages and decodes both, and a fixture and a live answer cannot be
 read two different ways.
 
 As a user with a Koios account, I give the client my bearer token in a
-file. The token never appears on the command line, in a failure, in a log
-or in a recorded fixture.
+file. After surrounding white space is stripped, it must contain at least
+32 ASCII characters: letters, digits and `-._~+/`, with optional `=`
+padding at the end, and at least one character outside `0123456789abcdefABCDEF`.
+An all-hexadecimal token could occur in a fixture's SHA-256 metadata even
+after its echoed copies were removed, so it is refused too.
+A short or empty token, a substring of the redaction
+marker `<token>`, or a token containing other characters is refused as
+`TokenFileInvalid` before any request, including the recorder's schema
+request. The refusal explains the restriction without printing the token.
+For an accepted token, the client replaces echoed copies in returned
+answers, failures and recorded fixtures; the command line names only its
+file, and the failure text printed to logs carries no echoed credential.
 
 As a user on a busy endpoint, I see a call either answer or stop with one
 named reason: unreachable, timed out, rate limited, server failing,
@@ -144,7 +154,8 @@ exact total on every listing call when asked for one.
 | incomplete page | one of the page refusals above | a body cut off on the connection only |
 | unknown fact | a requested transaction, registration, epoch or tip absent from the answer | no |
 | undecodable | an answer that does not decode, with the JSON path that failed | no |
-| token file unreadable | the token file is missing, unreadable or empty; no request is made | no |
+| token file unreadable | the token file is missing or unreadable; no request is made | no |
+| token file invalid | fewer than 32 characters, a redaction-marker substring, all hexadecimal characters, or characters outside the accepted bearer alphabet and trailing padding; no request is made | no |
 | not recorded | the recorded transport holds no answer for the request | no |
 
 Every failure names the call, the attempts the transport made and the
@@ -173,8 +184,12 @@ without sending it. The token file is read before anything is sent, the
 schema document included, and the schema document is fetched under the
 same timeout and retry bounds as every call. Request headers are not
 recorded; answer headers are, and the live transport replaces the token
-wherever an answer or a failure carries it, so a server that echoes the
-token back cannot put it into a fixture, a failure or a log. An answer the
+in header names, header values, bodies and exception text before returning
+an exchange. It recognises literal characters and JSON escapes, including
+mixed Unicode escapes and escaped slashes, even in an incomplete JSON
+body. Bytes outside each match are preserved. A server that echoes an
+accepted token back therefore cannot put that copy into a fixture, a
+failure or its printed log text. An answer the
 client refuses for its content — an absent fact, an answer that does not
 decode — is recorded all the same, and recording goes on: the tests judge
 it. A directory or file that cannot be written is a named refusal.
@@ -223,6 +238,20 @@ body cut off on the connection is retried and named in code, but the
 loopback server cannot produce one, so only the client's mapping of it is
 tested.
 
+The token checks generate accepted bearer credentials containing text
+from the redaction marker, header names and JSON literals, alongside
+arbitrary characters from the full accepted alphabet. Coverage checks
+require each adversarial family, padding, slashes and credentials that
+can also name HTTP headers to occur. A loopback server echoes each
+credential literally and through Unicode escapes; the checks inspect
+status, header names, header values, body bytes, failure and probe
+renderings, and the actual fixture files with their JSON encoding.
+Generated all-hexadecimal credentials are refused too. Refused credentials
+must produce zero server requests, both for the
+transport and for the recorder. The fixed credentials remain examples.
+These generated cases are local evidence over sampled inputs, not a
+formal proof over all credentials or evidence of public-service behavior.
+
 ## Decisions
 
 | Chosen | Over | Why |
@@ -232,3 +261,5 @@ tested.
 | A separate failure for an unrecorded request | Reporting it as unreachable | A missing fixture is never read as a network fault. |
 | Check `epoch_params` against the ledger's reading of `cli_protocol_params` | Typed expected parameters | The expected side comes from an independent producer, not from the test's author. |
 | Record one producing transaction per `tx_cbor` request | One request for every producer | Koios limits a public request body to one kilobyte. |
+| At least 32 characters in the ASCII bearer alphabet, with trailing padding and a non-hexadecimal character | Any nonempty file text | Real bearer credentials are long; the restriction prevents collisions with the marker and fixture hashes, and excludes JSON syntax, escapes and HTTP control characters from the credential itself. JSON literal text such as `null` can still occur within an accepted credential. |
+| Match literal and JSON-escaped token characters before returning each exchange | Literal replacement alone, or parsing only valid JSON | Echoes through Unicode escapes and incomplete bodies must be cleared without changing unrelated bytes. |

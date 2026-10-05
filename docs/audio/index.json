@@ -5747,8 +5747,8 @@
     "index": 1,
     "name": "docs-offchain-koios-client/recorded-answers-and-the-recorder-01",
     "pause_ms": 400,
-    "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token wherever an answer or a failure carries it, so a server that echoes the token back cannot put it into a fixture, a failure or a log. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
-    "v": "5320f42776fb"
+    "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token in header names, header values, bodies and exception text before returning an exchange. It recognises literal characters and JSON escapes, including mixed Unicode escapes and escaped slashes, even in an incomplete JSON body. Bytes outside each match are preserved. A server that echoes an accepted token back therefore cannot put that copy into a fixture, a failure or its printed log text. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
+    "v": "f443e452bb1b"
    },
    {
     "index": 2,
@@ -5858,8 +5858,8 @@
     "index": 2,
     "name": "docs-offchain-koios-client/the-story-this-serves-02",
     "pause_ms": 400,
-    "text": "As a user with a Koios account, I give the client my bearer token in a file. The token never appears on the command line, in a failure, in a log or in a recorded fixture.",
-    "v": "e07fddd111d1"
+    "text": "As a user with a Koios account, I give the client my bearer token in a file. After surrounding white space is stripped, it must contain at least 32 ASCII characters: letters, digits and -._~+/, with optional = padding at the end, and at least one character outside 0123456789abcdefABCDEF. An all-hexadecimal token could occur in a fixture's SHA-256 metadata even after its echoed copies were removed, so it is refused too. A short or empty token, a substring of the redaction marker <token>, or a token containing other characters is refused as TokenFileInvalid before any request, including the recorder's schema request. The refusal explains the restriction without printing the token. For an accepted token, the client replaces echoed copies in returned answers, failures and recorded fixtures; the command line names only its file, and the failure text printed to logs carries no echoed credential.",
+    "v": "218a023e8c46"
    },
    {
     "index": 3,
@@ -5906,6 +5906,13 @@
     "pause_ms": 400,
     "text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. Koios gives no bytes for a native (timelock) reference script, only a summary of it, so an output holding one cannot be decoded exactly: the client refuses it by name, as the recorded preprod answer in the set shows. A caller that reads such outputs cannot use this client for them. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
     "v": "dda2608f17bf"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-koios-client/what-the-evidence-establishes-and-what-it-does-not-03",
+    "pause_ms": 400,
+    "text": "The token checks generate accepted bearer credentials containing text from the redaction marker, header names and JSON literals, alongside arbitrary characters from the full accepted alphabet. Coverage checks require each adversarial family, padding, slashes and credentials that can also name HTTP headers to occur. A loopback server echoes each credential literally and through Unicode escapes; the checks inspect status, header names, header values, body bytes, failure and probe renderings, and the actual fixture files with their JSON encoding. Generated all-hexadecimal credentials are refused too. Refused credentials must produce zero server requests, both for the transport and for the recorder. The fixed credentials remain examples. These generated cases are local evidence over sampled inputs, not a formal proof over all credentials or evidence of public-service behavior.",
+    "v": "28be3d357177"
    }
   ],
   "why-a-call-stops": [

@@ -22,12 +22,24 @@ retried only when no answer arrived: unreachable or timed out.
 
 The transport returns the last raw answer and the attempt count; it
 neither pages nor decodes. The token is read once, before any request:
-a missing, unreadable or empty file is
-'Singular.Provider.Koios.Client.TokenFileUnreadable'. The token is sent
+a missing or unreadable file is
+'Singular.Provider.Koios.Client.TokenFileUnreadable'. After surrounding
+white space is stripped, a token must have at least 32 ASCII characters:
+letters, digits, @-._~+/@, then optional trailing @=@ padding. An empty,
+short or malformed token is 'Singular.Provider.Koios.Client.TokenFileInvalid',
+before any request. At least one character must be outside
+@0123456789abcdefABCDEF@: an all-hexadecimal credential could occur in a
+fixture's SHA-256 metadata even after echo redaction. Tokens contained in
+the redaction marker @<token>@
+are refused too. This domain admits long bearer credentials while excluding
+marker collisions, JSON syntax, escapes and HTTP control characters.
+The token is sent
 only in the request header. Failures are built from the exception's
 content, never from the request, and the token is replaced wherever an
 answer or a failure carries it — a server that echoes it back cannot put
-it into a failure, a log or a recorded fixture.
+it into a failure, a log or a recorded fixture. Redaction recognises literal
+and JSON-escaped ASCII characters, including mixed Unicode escapes, without
+requiring a body to be valid JSON or changing bytes outside the match.
 -}
 module Singular.Provider.Koios.Http
     ( HttpConfig (..)
@@ -43,6 +55,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (IOException, try)
 import Data.Aeson (encode)
 import Data.ByteString qualified as BS
+import Data.ByteString.Builder qualified as Builder
 import Data.ByteString.Lazy qualified as BSL
 import Data.CaseInsensitive qualified as CI
 import Data.Text (Text)
@@ -54,6 +67,7 @@ import Data.Time
     , getCurrentTime
     , nominalDiffTimeToSeconds
     )
+import Data.Word (Word8)
 import Network.HTTP.Client
     ( HttpException (..)
     , HttpExceptionContent (..)
@@ -174,10 +188,29 @@ readToken path =
             pure
                 (Left (TokenFileUnreadable path (T.pack (show (e :: IOException)))))
         Right bytes
-            | BS.null token -> pure (Left (TokenFileUnreadable path "empty"))
+            | BS.length token < 32 -> invalid "requires at least 32 characters"
+            | token `BS.isInfixOf` "<token>" ->
+                invalid "collides with the redaction marker"
+            | BS.null unpadded
+                || not (BS.all bearerByte unpadded)
+                || not (BS.all (== 61) padding) ->
+                invalid
+                    "requires ASCII letters, digits, -._~+/ and optional trailing = padding"
+            | BS.all (`BS.elem` "0123456789abcdefABCDEF") token ->
+                invalid
+                    "requires a non-hexadecimal character to avoid fixture hash collisions"
             | otherwise -> pure (Right token)
           where
             token = TE.encodeUtf8 (T.strip (TE.decodeUtf8Lenient bytes))
+            (unpadded, padding) = BS.break (== 61) token
+            invalid reason = pure (Left (TokenFileInvalid path reason))
+
+bearerByte :: Word8 -> Bool
+bearerByte w =
+    (w >= 65 && w <= 90)
+        || (w >= 97 && w <= 122)
+        || (w >= 48 && w <= 57)
+        || w `elem` [45, 46, 95, 126, 43, 47]
 
 -- | What to do after an attempt.
 data Next
@@ -268,14 +301,47 @@ redact (Just token) result = case result of
                 , answerBody = bytes (answerBody a)
                 }
   where
-    text = T.replace (TE.decodeUtf8Lenient token) "<token>"
+    text = TE.decodeUtf8Lenient . bytes . TE.encodeUtf8
     -- header names arrive lower-cased, so the token is matched lower-cased
-    name = T.replace (T.toLower (TE.decodeUtf8Lenient token)) "<token>"
-    bytes b = case BS.breakSubstring token b of
-        (before, rest)
-            | BS.null rest -> before
-            | otherwise ->
-                before <> "<token>" <> bytes (BS.drop (BS.length token) rest)
+    name =
+        TE.decodeUtf8Lenient
+            . redactBytes (TE.encodeUtf8 (T.toLower (TE.decodeUtf8Lenient token)))
+            . bytes
+            . TE.encodeUtf8
+    bytes = redactBytes token
+
+{- | Match an ASCII bearer literally or through JSON escapes, even in a
+malformed body. Copy bytes outside a match verbatim: no JSON reserialization
+or decoding changes the answer. The marker contains characters outside the
+accepted token alphabet, so replacement cannot recreate a credential.
+-}
+redactBytes :: BS.ByteString -> BS.ByteString -> BS.ByteString
+redactBytes token = BSL.toStrict . Builder.toLazyByteString . scan
+  where
+    scan input = case BS.uncons input of
+        Nothing -> mempty
+        Just (first, rest) -> case match token input 0 of
+            Just width -> Builder.byteString "<token>" <> scan (BS.drop width input)
+            Nothing -> Builder.word8 first <> scan rest
+    match expected input consumed = case BS.uncons expected of
+        Nothing -> Just consumed
+        Just (w, rest) -> do
+            width <- encodedWidth w input
+            match rest (BS.drop width input) (consumed + width)
+    encodedWidth w input
+        | Just (first, _) <- BS.uncons input, first == w = Just 1
+        | w == 47, "\\/" `BS.isPrefixOf` input = Just 2
+        | [92, 117, 48, 48, high, low] <- BS.unpack (BS.take 6 input)
+        , Just h <- hexDigit high
+        , Just l <- hexDigit low
+        , 16 * h + l == w =
+            Just 6
+        | otherwise = Nothing
+    hexDigit w
+        | w >= 48 && w <= 57 = Just (w - 48)
+        | w >= 65 && w <= 70 = Just (w - 55)
+        | w >= 97 && w <= 102 = Just (w - 87)
+        | otherwise = Nothing
 
 -- | A 429's requested wait, in whole seconds.
 retryAfter :: Answer -> Maybe NominalDiffTime
