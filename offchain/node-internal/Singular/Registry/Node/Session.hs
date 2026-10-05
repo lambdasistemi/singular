@@ -525,7 +525,7 @@ awaitConnection magic sock nodeThread prov =
     awaitConnectionQuery
         magic
         sock
-        nodeThread
+        (show <$> waitCatch nodeThread)
         (firstViewWithin originWaitPolls sock prov)
 
 {- | The handshake must answer before local time-source selection can refuse
@@ -533,20 +533,20 @@ the network. Query only a raw fact on this connection; the subsequent first
 public view retains the origin wait and all time validation.
 -}
 awaitRawConnection
-    :: (Show a) => NetworkMagic -> FilePath -> Async a -> LSQChannel -> IO ()
+    :: NetworkMagic -> FilePath -> Async a -> LSQChannel -> IO ()
 awaitRawConnection magic sock nodeThread channel =
     awaitConnectionQuery
         magic
         sock
-        nodeThread
+        (show . fmap (const ()) <$> waitCatch nodeThread)
         (withRawView (rawNodeProvider channel) rawSystemStart)
 
 awaitConnectionQuery
-    :: (Show a) => NetworkMagic -> FilePath -> Async a -> IO b -> IO ()
-awaitConnectionQuery (NetworkMagic magic) sock nodeThread query = do
+    :: NetworkMagic -> FilePath -> IO String -> IO b -> IO ()
+awaitConnectionQuery (NetworkMagic magic) sock ended query = do
     answered <-
         race
-            (waitCatch nodeThread)
+            ended
             query
     case answered of
         Right _ -> pure ()
@@ -561,7 +561,7 @@ awaitConnectionQuery (NetworkMagic magic) sock nodeThread query = do
                        \(preprod is 1, the factory devnet is 42); a node on \
                        \another network refuses the handshake. Underlying \
                        \failure: "
-                    <> show outcome
+                    <> outcome
 
 {- | How many tenth-of-a-second polls a fresh connection waits for a
 chain at its origin to make its first block: two minutes. A devnet makes
