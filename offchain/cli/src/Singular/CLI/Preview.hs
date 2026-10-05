@@ -72,7 +72,7 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.CLI.Command
     ( EntryArgs (..)
     , Key (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     )
 import Singular.CLI.Live
 import Singular.CLI.Node (withReads)
@@ -110,8 +110,9 @@ kindName KTerminate = "terminate"
 {- | Prepare one entry command against the saved registry, for the public
 address the caller named, and report what it would submit.
 -}
-runPreview :: Kind -> EntryArgs -> NodeSettings -> String -> IO Value
-runPreview kind a (NodeSettings sock magic) addrText = do
+runPreview
+    :: Kind -> EntryArgs -> ProviderSettings -> String -> IO Value
+runPreview kind a (ProviderSettings sock magic _ _) addrText = do
     addr <-
         either
             (failWith ClientRefusal)

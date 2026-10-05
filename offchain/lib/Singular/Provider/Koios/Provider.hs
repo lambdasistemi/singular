@@ -18,7 +18,6 @@ import Cardano.Ledger.Credential (Credential (ScriptHashObj))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Data.Bifunctor (first)
-import Data.ByteString (ByteString)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -30,12 +29,9 @@ import Singular.Provider.Koios.Wire qualified as Wire
 import Singular.Registry.Evidence
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTime
-    ( NetworkTimeManifest
-    , validateNetworkTime
+    ( validateNetworkTime
     )
-
--- | Public source bytes, validated at the same boundary that records them.
-data TimeSource = TimeSource NetworkTimeManifest ByteString ByteString
+import Singular.Registry.TimeSource (TimeSource (..))
 
 {- | Every exchange and local raw time read carries its acquisition identity.
 Authorization headers are removed before an observation leaves this module.
@@ -45,6 +41,7 @@ data ProviderEvent
     | SessionClosed SessionId
     | RawExchange SessionId Client.RawRequest Client.Exchange
     | RawTime SessionId TimeSource
+    | RawTimeFailure SessionId ReadFailure
 
 {- | Scope effects are explicit. Pure State implementations keep their open
 session set and events in State; IO implementations release on exceptions.
@@ -62,10 +59,10 @@ koiosProvider
     :: (Monad m)
     => ProviderRuntime m
     -> Network
-    -> TimeSource
+    -> m (Either ReadFailure TimeSource)
     -> Client.Koios m
     -> LedgerProvider NoWitness m
-koiosProvider runtime configured timeSource client =
+koiosProvider runtime configured loadSource client =
     LedgerProvider
         { acquire = \requested action -> case requested of
             AtPoint network point
@@ -80,7 +77,14 @@ koiosProvider runtime configured timeSource client =
                         runtime
                         ( \identity -> do
                             recordEvent runtime (SessionOpened identity configured)
-                            Right <$> action (session identity)
+                            source <-
+                                measureRead
+                                    runtime
+                                    identity
+                                    "network-time"
+                                    (timeEvent identity)
+                                    loadSource
+                            Right <$> action (session identity source)
                         )
                         (recordEvent runtime . SessionClosed)
         , submitTx = \network signed ->
@@ -96,7 +100,8 @@ koiosProvider runtime configured timeSource client =
                         Right (Client.SubmitRefused reason) -> SubmitRefused reason
         }
   where
-    session identity =
+    timeEvent identity = either (RawTimeFailure identity) (RawTime identity)
+    session identity source =
         let scopedClient =
                 client
                     { Client.koiosTransport = Client.Transport $ \request -> do
@@ -120,22 +125,13 @@ koiosProvider runtime configured timeSource client =
                         (first backendFailure . fmap (\value -> Evidenced value Nothing))
                         action
                     )
-            localTime =
+            localTime = pure $ do
+                TimeSource manifest genesis eras <- source
                 let Network magic = configured
-                    TimeSource manifest genesis eras = timeSource
-                in  measureRead
-                        runtime
-                        identity
-                        "network-time"
-                        (const (RawTime identity timeSource))
-                        $ pure
-                            ( first
-                                NetworkTimeRefusal
-                                ( fmap
-                                    (\value -> Evidenced value Nothing)
-                                    (validateNetworkTime magic manifest genesis eras)
-                                )
-                            )
+                first NetworkTimeRefusal $
+                    fmap
+                        (\value -> Evidenced value Nothing)
+                        (validateNetworkTime magic manifest genesis eras)
             readHistory asset range = do
                 open <- sessionOpen runtime identity
                 if not open

@@ -203,16 +203,17 @@ rawBlockFactsSpec = describe "required raw block facts" $ do
                 ]
                 $ \(name, change) ->
                     it
-                        (show call <> " refuses its " <> name <> " " <> show key <> " by name") $ do
-                        body <- recordedBody call
-                        let changed = case body of
-                                Array rows -> Array (fmap (\case Object o -> Object (change o); v -> v) rows)
-                                _ -> error "recorded answer is not rows"
-                        case decode changed of
-                            Left failure ->
-                                (decodePosition failure <> decodeReason failure)
-                                    `shouldSatisfy` T.isInfixOf (Key.toText key)
-                            Right () -> expectationFailure "malformed required raw field was accepted"
+                        (show call <> " refuses its " <> name <> " " <> show key <> " by name")
+                        $ do
+                            body <- recordedBody call
+                            let changed = case body of
+                                    Array rows -> Array (fmap (\case Object o -> Object (change o); v -> v) rows)
+                                    _ -> error "recorded answer is not rows"
+                            case decode changed of
+                                Left failure ->
+                                    (decodePosition failure <> decodeReason failure)
+                                        `shouldSatisfy` T.isInfixOf (Key.toText key)
+                                Right () -> expectationFailure "malformed required raw field was accepted"
   where
     voidRows decode = fmap (const ()) . decode
     recordedBody call = do

@@ -113,7 +113,10 @@ import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
-import Singular.CLI.Command (NodeSettings (..), WriteSettings (..))
+import Singular.CLI.Command
+    ( ProviderSettings (..)
+    , WriteSettings (..)
+    )
 import Singular.CLI.Node (Capabilities (..), withWrites)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -212,7 +215,7 @@ withSession
     -> (WriteContext -> IO Value)
     -> IO Value
 withSession dir command ws body = do
-    let NodeSettings sock magic = writeNode ws
+    let ProviderSettings sock magic _ _ = writeProvider ws
     wallet <- loadWallet magic (writeWalletKey ws)
     connected <- newIORef False
     before <- length <$> readJournal dir

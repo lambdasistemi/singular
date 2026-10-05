@@ -194,8 +194,8 @@ reconstruct client asset height rows = do
                         unless
                             ( Wire.txCborValid parent
                                 && Map.lookup reference produced == Just output
-                            ) $
-                            throwError
+                            )
+                            $ throwError
                                 ( HistoryMaterialMismatch
                                     (Wire.txInfoId info)
                                     "resolved earlier asset output"

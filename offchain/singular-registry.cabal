@@ -189,10 +189,13 @@ library local-services
     Singular.Registry.Provider
     Singular.Registry.Services
     Singular.Registry.SessionServices
+    Singular.Registry.SessionIO
+    Singular.Registry.SessionEvidence
     Singular.Registry.WaitTypes
     Singular.Registry.Signing
     Singular.Registry.Wallet
     Singular.Registry.TimeMaterial
+    Singular.Registry.TimeSource
 
   build-depends:
     , aeson
@@ -204,6 +207,7 @@ library local-services
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -211,6 +215,7 @@ library local-services
     , cardano-tx-tools:tx-build
     , containers
     , crypton
+    , directory
     , filepath
     , memory
     , microlens

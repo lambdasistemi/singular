@@ -73,7 +73,7 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     )
 import Singular.CLI.Live
 import Singular.CLI.Node (withReads)
@@ -131,7 +131,7 @@ runInspect :: InspectArgs -> IO Value
 runInspect a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
-        NodeSettings sock magic = inspectNode a
+        ProviderSettings sock magic _ _ = inspectProvider a
     complete <- doesFileExist (configPath dir)
     pending <- doesFileExist (pendingPath dir)
     if not complete && pending

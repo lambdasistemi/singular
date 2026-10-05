@@ -24,12 +24,10 @@ below happens before anything is read or submitted.
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all.
 
-Write commands take their node and wallet from three settings
-(@--node-socket@, @--network-magic@, @--wallet-skey@), read by
-'writeTarget' in "Singular.CLI.Node", so a partial set and mainnet are
-refused with the node module's own diagnostics.
-The CLI never spawns a node of its own: a registry that died with the
-process could not be attached to by the next one.
+Write commands name the Koios URL, network and wallet key. Partial settings
+and mainnet are refused before file reads or provider effects. Read commands
+carry a public wallet address instead of a signing key. Obsolete backend and
+socket settings are refused on every command, including --backend koios.
 -}
 module Singular.CLI.Command
     ( -- * Commands
@@ -39,7 +37,7 @@ module Singular.CLI.Command
     , EntryMode (..)
     , FoldArgs (..)
     , InspectArgs (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     , RejectArgs (..)
     , ReclaimArgs (..)
     , WriteSettings (..)
@@ -48,6 +46,7 @@ module Singular.CLI.Command
       -- * Parsing
     , CLIError (..)
     , parseCommand
+    , parseCommandWithEnvironment
     , renderCLIError
     , usage
     , maxKeyBytes
@@ -74,23 +73,24 @@ import Singular.Application.OpenDatum.Build
     , readDeposit
     , readKey
     )
-import Singular.CLI.Node (backendSetting, writeTarget)
 import Singular.Registry.Deployment (parseOutRef)
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
     deriving stock (Eq, Show)
 
--- | The node a command reads from.
-data NodeSettings = NodeSettings
-    { nodeSocket :: FilePath
-    , nodeMagic :: Word32
+-- | The sole Koios service and its explicit network/time inputs.
+data ProviderSettings = ProviderSettings
+    { providerUrl :: String
+    , providerMagic :: Word32
+    , providerTokenFile :: Maybe FilePath
+    , providerTimeDirectory :: Maybe FilePath
     }
     deriving stock (Eq, Show)
 
 -- | The node and the wallet a write command funds and signs from.
 data WriteSettings = WriteSettings
-    { writeNode :: NodeSettings
+    { writeProvider :: ProviderSettings
     , writeWalletKey :: FilePath
     -- ^ Path of the caller's payment signing key; read, never printed
     , writeConfirmTimeout :: Maybe Int
@@ -124,7 +124,7 @@ and submit nothing. A preview carries no signing key at all.
 data EntryMode
     = Submit WriteSettings
     | -- | The node to read, and the caller's enterprise address, bech32
-      Preview NodeSettings String
+      Preview ProviderSettings String
     deriving stock (Eq, Show)
 
 -- | @registry insert@, @registry update@ and @registry terminate@.
@@ -206,7 +206,7 @@ data ReclaimArgs = ReclaimArgs
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
     , inspectBlueprint :: FilePath
-    , inspectNode :: NodeSettings
+    , inspectProvider :: ProviderSettings
     , inspectKey :: Key
     , inspectOutputsAt :: Maybe String
     {- ^ @--outputs-at@: a public address whose outputs the receipt also lists, read
@@ -232,6 +232,7 @@ data Command
 -- | Why a command line was refused before anything ran.
 data CLIError
     = UnknownCommand [String]
+    | RemovedSetting String
     | MissingFlag String
     | BadValue String String
     | -- | the key reader's named reason
@@ -257,7 +258,6 @@ keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
 parseCommand :: [String] -> Either CLIError Command
 parseCommand args = do
     (words', flags) <- tokens args
-    _ <- either (Left . BadValue "--backend") Right (backendSetting args)
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
         else
@@ -512,18 +512,12 @@ parseCommand args = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
-        sock <- required "--node-socket" flags
-        magicText <- required "--network-magic" flags
-        magic <-
-            maybe
-                (Left (BadValue "--network-magic" "not a number"))
-                Right
-                (readMaybe magicText)
+        settings <- providerSettings flags
         pure
             InspectArgs
                 { inspectRegistry = dir
                 , inspectBlueprint = bp
-                , inspectNode = NodeSettings sock magic
+                , inspectProvider = settings
                 , inspectKey = key
                 , inspectOutputsAt = optional "--outputs-at" flags
                 , inspectReceipt = optional "--receipt" flags
@@ -537,40 +531,61 @@ parseCommand args = do
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
-        sock <- required "--node-socket" flags
+        settings <- providerSettings flags
+        addr <- required "--wallet-address" flags
+        pure (Preview settings addr)
+    providerSettings flags = do
+        url <- required "--koios-url" flags
+        when (null url) (Left (BadValue "--koios-url" "is empty"))
         magicText <- required "--network-magic" flags
         magic <-
             maybe
                 (Left (BadValue "--network-magic" "not a number"))
                 Right
                 (readMaybe magicText)
-        addr <- required "--wallet-address" flags
-        pure (Preview (NodeSettings sock magic) addr)
-    -- The three write settings go through the node module's own reader,
-    -- so its partial-setting and mainnet refusals are this command's.
-    writeSettings flags = case writeTarget args of
-        Left err -> Left (UnsafeSettings err)
-        Right Nothing ->
-            Left
-                ( UnsafeSettings
-                    "a write needs --node-socket, --network-magic and \
-                    \--wallet-skey: singular never starts a node of its own, \
-                    \because a registry booted on a chain that dies with the \
-                    \process could not be attached to again"
-                )
-        Right (Just (sock, magic, skey)) -> do
-            timeout <- case optional "--confirm-timeout" flags of
-                Nothing -> Right Nothing
-                Just s -> case readMaybe s of
-                    Just n | n >= 0 -> Right (Just n)
-                    _ ->
-                        Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
-            Right
-                WriteSettings
-                    { writeNode = NodeSettings sock magic
-                    , writeWalletKey = skey
-                    , writeConfirmTimeout = timeout
-                    }
+        pure
+            ProviderSettings
+                { providerUrl = url
+                , providerMagic = magic
+                , providerTokenFile = optional "--koios-token-file" flags
+                , providerTimeDirectory = optional "--network-time" flags
+                }
+    -- The caller names the service, network and signing key together.
+    -- Parsing precedes token-file reads, acquisition and key access.
+    writeSettings flags = do
+        forM_ ["--koios-url", "--network-magic", "--wallet-skey"] $ \name ->
+            when (isNothing (optional name flags)) $
+                Left
+                    ( UnsafeSettings
+                        ( "partially configured write: missing "
+                            <> name
+                            <> "; a write needs --koios-url, --network-magic and --wallet-skey"
+                        )
+                    )
+        settings <- case providerSettings flags of
+            Left (BadValue "--network-magic" _) ->
+                Left
+                    ( UnsafeSettings
+                        ( "network magic is not a number: "
+                            <> maybe "" id (optional "--network-magic" flags)
+                        )
+                    )
+            other -> other
+        when (providerMagic settings == 764824073) $
+            Left (UnsafeSettings "mainnet is not supported")
+        skey <- required "--wallet-skey" flags
+        confirmationTimeout <- case optional "--confirm-timeout" flags of
+            Nothing -> Right Nothing
+            Just value -> case readMaybe value of
+                Just n | n >= 0 -> Right (Just n)
+                _ ->
+                    Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
+        pure
+            WriteSettings
+                { writeProvider = settings
+                , writeWalletKey = skey
+                , writeConfirmTimeout = confirmationTimeout
+                }
     -- --key is the text of the key and --key-hex its base16: one of the two,
     -- read by the library, so no command keeps a decoder of its own.
     keyFrom flags = case [ (encoding, argument)
@@ -598,6 +613,16 @@ parseCommand args = do
         Just (Just v) -> Just v
         _ -> Nothing
 
+{- | The packaged entry point also refuses obsolete environment settings
+before any token/key file is read or any provider effect is run.
+-}
+parseCommandWithEnvironment
+    :: [(String, String)] -> [String] -> Either CLIError Command
+parseCommandWithEnvironment environment args = do
+    when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
+        Left (RemovedSetting "SINGULAR_NODE_SOCKET")
+    parseCommand args
+
 {- | Split a command line into its words and its flags, the first
 occurrence of a flag winning. A value flag takes the next token or its
 @=value@ spelling; a switch takes nothing.
@@ -610,15 +635,18 @@ tokens = go [] []
     go ws fs (a : rest)
         | "--" `isPrefixOf` a || a == "-h" =
             let (name, inline) = break (== '=') a
-            in  if name `elem` switches
-                    then go ws ((name, Nothing) : fs) rest
+            in  if name `elem` ["--backend", "--node-socket"]
+                    then Left (RemovedSetting name)
                     else
-                        if name `elem` valued
-                            then case (inline, rest) of
-                                ('=' : v, _) -> go ws (keep name v fs) rest
-                                (_, v : rest') -> go ws (keep name v fs) rest'
-                                (_, []) -> Left (BadValue name "needs a value")
-                            else Left (BadValue name "is not a flag singular reads")
+                        if name `elem` switches
+                            then go ws ((name, Nothing) : fs) rest
+                            else
+                                if name `elem` valued
+                                    then case (inline, rest) of
+                                        ('=' : v, _) -> go ws (keep name v fs) rest
+                                        (_, v : rest') -> go ws (keep name v fs) rest'
+                                        (_, []) -> Left (BadValue name "needs a value")
+                                    else Left (BadValue name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
         | isJust (lookup name fs) = fs
@@ -627,7 +655,9 @@ tokens = go [] []
     valued =
         [ "--registry"
         , "--blueprint"
-        , "--node-socket"
+        , "--koios-url"
+        , "--koios-token-file"
+        , "--network-time"
         , "--network-magic"
         , "--wallet-skey"
         , "--seed"
@@ -642,12 +672,14 @@ tokens = go [] []
         , "--deposit"
         , "--payload"
         , "--request"
-        , "--backend"
         ]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
 renderCLIError = \case
+    RemovedSetting name ->
+        name
+            <> " was removed: singular uses Koios through --koios-url and optional --koios-token-file"
     UnknownCommand ws ->
         "not a command singular supports: " <> unwords ws
     MissingFlag name -> "missing " <> name
@@ -689,49 +721,51 @@ usage =
         [ "usage:"
         , "  singular registry create --registry DIR --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview)"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      [--seed TXID#IX] --koios-url URL --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --payload DATUM_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      (--key KEY | --key-hex HEX)"
-        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reclaim --registry DIR --blueprint PLUTUS_JSON --request TXID#IX"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --node-socket PATH --network-magic N [--receipt FILE] [--outputs-at ADDR]"
+        , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
-        , "Every command also takes --backend node|indexer (default node): where its"
-        , "address reads come from, the node itself or an in-process index that"
-        , "follows the node's chain from its origin."
+        , "Every command uses Koios. --backend and --node-socket are removed."
+        , "Use --koios-token-file FILE for a bearer credential; the token is read"
+        , "through the shared HTTP client and is never a command-line token."
+        , "--network-time DIR supplies pinned time-manifest.json, shelley-genesis.json"
+        , "and era-history.cbor; preprod uses the reviewed package when omitted."
         , "insert and terminate book the request and leave it pending: the registry's"
         , "fold is its own command, registry fold, run by whichever wallet folds, before"
         , "the processing deadline the booking's receipt names. Given the fold switch,"

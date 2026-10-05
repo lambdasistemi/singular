@@ -68,7 +68,7 @@ import Singular.Application.OpenDatum.Script
 import Singular.CLI.Command
     ( CreateArgs (..)
     , EntryMode (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live (newStatePoint, receipt, txInText)
@@ -151,7 +151,7 @@ runCreate a = do
         loadRelease (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
     case createMode a of
-        Preview (NodeSettings sock magic) addrText -> do
+        Preview (ProviderSettings sock magic _ _) addrText -> do
             -- A preview for a public address reads the node and holds no key.
             addr <-
                 either
@@ -188,7 +188,7 @@ createWith a rel ws = do
                 -- The public identity, durable before the first submission:
                 -- an interrupted create stays inspectable and is refused a
                 -- second boot.
-                let NodeSettings _ magicNow = writeNode ws
+                let ProviderSettings _ magicNow _ _ = writeProvider ws
                 durableWrite
                     (pendingPath dir)
                     ( BL.toStrict
@@ -201,7 +201,7 @@ createWith a rel ws = do
                         )
                     )
                 booted <- boot wc cfg pinned seedIn
-                let NodeSettings _ magic = writeNode ws
+                let ProviderSettings _ magic _ _ = writeProvider ws
                     dep = deploymentOf magic cfg seedIn booted
                 point <- newStatePoint (bootedOutput booted)
                 let TokenId name = bootedToken booted

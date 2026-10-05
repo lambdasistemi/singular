@@ -37,6 +37,7 @@ import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Exception (Exception)
 import Data.ByteString (ByteString)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
@@ -68,6 +69,8 @@ data AcquireFailure
     | AcquisitionReadFailure ReadFailure
     deriving stock (Eq, Show)
 
+instance Exception AcquireFailure
+
 -- | Read refusals retain the missing/conflicting identity or backend reason.
 data ReadFailure
     = ReleasedSession SessionId
@@ -76,6 +79,8 @@ data ReadFailure
     | BackendReadFailure Text
     | NetworkTimeRefusal NetworkTimeFailure
     deriving stock (Eq, Show)
+
+instance Exception ReadFailure
 
 -- | Signed submission's actual backend outcome.
 data SubmitResult
@@ -125,6 +130,8 @@ data HistoryFailure
     | HistoryMaterialMismatch TxId Text
     | HistoryOrderMismatch Word64 Word64
     deriving stock (Eq, Show)
+
+instance Exception HistoryFailure
 
 {- | Complete CBOR plus resolved inputs, references and outputs, with validity.
 These are reconstruction material, without an evidence verdict.

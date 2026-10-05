@@ -2,15 +2,19 @@
 
 module Singular.Provider.Koios.ProviderSpec (spec) where
 
+import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, vldtTxBodyL)
+import Cardano.Ledger.Alonzo.Tx (IsValid (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
     , outputsTxBodyL
+    , referenceInputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
@@ -20,6 +24,7 @@ import Cardano.Ledger.Core
     , mkBasicTxBody
     , txIdTxBody
     )
+import Cardano.Ledger.Credential (Credential (ScriptHashObj))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -33,7 +38,15 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (finally, try)
 import Control.Monad (forM_, void)
 import Control.Monad.State.Strict (State, gets, modify', runState)
-import Data.Aeson (Value (..), decodeStrict', encode, object, (.=))
+import Data.Aeson
+    ( Value (..)
+    , decodeStrict'
+    , encode
+    , object
+    , toJSON
+    , (.=)
+    )
+import Data.Aeson.Key qualified as AesonKey
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -50,6 +63,7 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TE
 import Data.Time (UTCTime (..), fromGregorian)
+import Data.Word (Word64)
 import Lens.Micro ((&), (.~), (^.))
 import Singular.Provider.Koios.Client qualified as Client
 import Singular.Provider.Koios.FakeServer
@@ -87,6 +101,7 @@ import Singular.Registry.Evidence
     ( Evidenced (..)
     , SessionBinding (..)
     , SessionId (..)
+    , unverifiedVerifier
     )
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTime
@@ -96,7 +111,12 @@ import Singular.Registry.NetworkTime
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.PhaseLog (noPhaseLog, phaseLogAt)
+import Singular.Registry.SessionEvidence
+    ( FactRecord (..)
+    , observeProvider
+    )
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.TimeSource (loadPinnedSource)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
 import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
 import System.Directory (createDirectoryIfMissing, doesFileExist)
@@ -181,6 +201,499 @@ spec = describe "Koios ledger provider constructor" $ do
                 )
             result `shouldBe` Left (MissingInBlockParent r p)
 
+    describe "complete history reconstruction refusals" $ do
+        it
+            "retains full CBOR, resolved normal and reference inputs, outputs and validity"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    (funding, _, referenceOutput) = dependentPair False
+                    normal = (TxIn (keyOf parent) (TxIx 0), output)
+                    reference = (TxIn (keyOf funding) (TxIx 0), referenceOutput)
+                    readingChild =
+                        child
+                            & bodyTxL . referenceInputsTxBodyL .~ Set.singleton (fst reference)
+                    r = keyOf readingChild
+                    client =
+                        amendHistory
+                            Wire.CallTxInfo
+                            (map (amendRow r "reference_inputs" (toJSON [outputRow reference])))
+                            (synthetic [(parent, []), (readingChild, [normal])] [keyOf parent, r])
+                    provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+                    action = acquire provider (Latest (Network 1)) $ \session ->
+                        history session asset (HistoryRange Nothing Nothing) >>= \case
+                            Left failure -> pure (Left failure)
+                            Right stream -> fmap (fmap (fmap (\(block, _) -> block))) (nextBlock stream)
+                    (result, state) = runState action initialProviderState
+                persist "complete-history-material" $
+                    object
+                        ["events" .= map eventJson (providerEvents state)]
+                block <- case result of
+                    Right (Right (Just block)) -> pure block
+                    _ -> fail "complete history block did not reach the consumer"
+                let material = NE.last (blockTransactions block)
+                    expectedBytes = serialize' (eraProtVerHigh @ConwayEra) readingChild
+                    expectedOutputs =
+                        zipWith
+                            (\index out -> (TxIn r (TxIx index), out))
+                            [0 ..]
+                            (toList (readingChild ^. bodyTxL . outputsTxBodyL))
+                historicalId material `shouldBe` r
+                historicalCbor material `shouldBe` expectedBytes
+                historicalTx material `shouldBe` readingChild
+                spentOutputs material `shouldBe` [normal]
+                referenceOutputs material `shouldBe` [reference]
+                createdOutputs material `shouldBe` expectedOutputs
+                scriptValid material `shouldBe` True
+
+        it
+            "retains script-invalid material while excluding its attempted inputs from double-spend accounting"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    failed =
+                        (child & bodyTxL . feeTxBodyL .~ Coin 17)
+                            & isValidTxL .~ IsValid False
+                    reference = TxIn (keyOf parent) (TxIx 0)
+                    (result, state) =
+                        runHistory source $
+                            synthetic
+                                [ (parent, [])
+                                , (child, [(reference, output)])
+                                , (failed, [(reference, output)])
+                                ]
+                                [keyOf parent, keyOf child, keyOf failed]
+                retainHistory "script-invalid-spend-exclusion" result state
+                fmap Set.fromList result
+                    `shouldBe` Right (Set.fromList [keyOf parent, keyOf child, keyOf failed])
+
+        it "names a selected-asset dependency cycle before fetching bodies" $ do
+            source <- timeSource
+            let (parent, child, output) = dependentPair True
+                p = keyOf parent
+                r = keyOf child
+                client =
+                    amendHistory
+                        Wire.CallTxInfo
+                        ( map
+                            (amendRow p "inputs" (toJSON [outputRow (TxIn r (TxIx 0), output)]))
+                        )
+                        (synthetic [(parent, []), (child, [(TxIn p (TxIx 0), output)])] [p, r])
+                (result, state) = runHistory source client
+            retainHistory "dependency-cycle" result state
+            case result of
+                Left (HistoryDependencyCycle members) ->
+                    Set.fromList (NE.toList members) `shouldBe` Set.fromList [p, r]
+                _ ->
+                    expectationFailure
+                        "cyclic raw dependency graph did not refuse by name"
+            [ ()
+              | RawExchange _ request _ <- providerEvents state
+              , Client.rawCall request == Wire.CallTxCbor
+              ]
+                `shouldBe` []
+
+        it
+            "names a double spend within a complete block and across block continuations"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    other = child & bodyTxL . feeTxBodyL .~ Coin 17
+                    reference = TxIn (keyOf parent) (TxIx 0)
+                    run heights =
+                        runHistory source $
+                            syntheticAt
+                                heights
+                                [ (parent, [])
+                                , (child, [(reference, output)])
+                                , (other, [(reference, output)])
+                                ]
+                                [keyOf parent, keyOf child, keyOf other]
+                forM_ [("in-block", [20, 20, 20]), ("across-blocks", [20, 21, 22])] $ \(name, heights) -> do
+                    let (result, state) = run heights
+                    retainHistory ("duplicate-spend-" <> name) result state
+                    result `shouldBe` Left (DuplicateSpend reference)
+
+        it
+            "validates an earlier asset parent without adding it to a requested block"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    p = keyOf parent
+                    r = keyOf child
+                    client =
+                        syntheticAt
+                            [19, 20]
+                            [(parent, []), (child, [(TxIn p (TxIx 0), output)])]
+                            [r]
+                    (result, state) = runHistory source client
+                retainHistory "earlier-asset-parent" result state
+                result `shouldBe` Right [r]
+                [ asked request
+                  | RawExchange _ request _ <- providerEvents state
+                  , Client.rawCall request == Wire.CallTxCbor
+                  ]
+                    `shouldBe` [[Wire.txIdHex p], [Wire.txIdHex r]]
+
+        it
+            "refuses an earlier parent whose resolved asset bytes differ from its body"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    changed =
+                        output
+                            & valueTxOutL
+                                .~ MaryValue
+                                    (Coin 1)
+                                    (MultiAsset (Map.singleton (fst asset) (Map.singleton (snd asset) 1)))
+                    p = keyOf parent
+                    r = keyOf child
+                    (result, state) =
+                        runHistory source $
+                            syntheticAt
+                                [19, 20]
+                                [(parent, []), (child, [(TxIn p (TxIx 0), changed)])]
+                                [r]
+                retainHistory "earlier-parent-bytes" result state
+                result
+                    `shouldBe` Left (HistoryMaterialMismatch r "resolved earlier asset output")
+
+        it
+            "refuses conflicting resolved in-block bytes after validating both bodies"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    changed =
+                        output
+                            & valueTxOutL
+                                .~ MaryValue
+                                    (Coin 1)
+                                    (MultiAsset (Map.singleton (fst asset) (Map.singleton (snd asset) 1)))
+                    p = keyOf parent
+                    r = keyOf child
+                    (result, state) =
+                        runHistory source $
+                            synthetic [(parent, []), (child, [(TxIn p (TxIx 0), changed)])] [p, r]
+                retainHistory "in-block-resolved-bytes" result state
+                result
+                    `shouldBe` Left (HistoryMaterialMismatch r "resolved in-block output")
+
+        it
+            "refuses each inconsistent transaction material field by its identity"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    p = keyOf parent
+                    r = keyOf child
+                    original =
+                        synthetic [(parent, []), (child, [(TxIn p (TxIx 0), output)])] [p, r]
+                    corruptions =
+                        [ ("script-validity", "valid_contract", Bool False, "script validity")
+                        ,
+                            ( "spent-references"
+                            , "inputs"
+                            , toJSON ([] :: [Value])
+                            , "spent input references"
+                            )
+                        ,
+                            ( "reference-references"
+                            , "reference_inputs"
+                            , toJSON [outputRow (TxIn p (TxIx 0), output)]
+                            , "reference input references"
+                            )
+                        ,
+                            ( "produced-outputs"
+                            , "outputs"
+                            , toJSON ([] :: [Value])
+                            , "produced outputs"
+                            )
+                        ,
+                            ( "height"
+                            , "block_height"
+                            , toJSON (21 :: Int)
+                            , "listing and transaction heights disagree"
+                            )
+                        ]
+                forM_ corruptions $ \(name, field, changed, message) -> do
+                    let client =
+                            amendHistory Wire.CallTxInfo (map (amendRow r field changed)) original
+                        (result, state) = runHistory source client
+                    retainHistory ("material-" <> name) result state
+                    result `shouldBe` Left (HistoryMaterialMismatch r message)
+
+        it
+            "requires the requested complete CBOR rather than accepting missing material"
+            $ do
+                source <- timeSource
+                let (parent, _, _) = dependentPair True
+                    p = keyOf parent
+                    client =
+                        amendHistory Wire.CallTxCbor (const []) (synthetic [(parent, [])] [p])
+                    (result, state) = runHistory source client
+                retainHistory "missing-cbor" result state
+                case result of
+                    Left (HistoryReadFailure (BackendReadFailure reason)) -> do
+                        reason `shouldSatisfy` Text.isInfixOf "UnknownTransaction"
+                        reason `shouldSatisfy` Text.isInfixOf (Text.pack (show p))
+                    _ ->
+                        expectationFailure
+                            "absent complete CBOR did not preserve the named client refusal"
+
+        it
+            "keeps later block material deferred and applies inclusive height bounds"
+            $ do
+                source <- timeSource
+                let (parent, child, output) = dependentPair True
+                    p = keyOf parent
+                    r = keyOf child
+                    client =
+                        syntheticAt
+                            [19, 20]
+                            [(parent, []), (child, [(TxIn p (TxIx 0), output)])]
+                            [p, r]
+                    provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+                    firstOnly = acquire provider (Latest (Network 1)) $ \session ->
+                        history session asset (HistoryRange Nothing Nothing) >>= \case
+                            Left failure -> pure (Left failure)
+                            Right stream ->
+                                nextBlock stream >>= \case
+                                    Left failure -> pure (Left failure)
+                                    Right Nothing -> pure (Right [])
+                                    Right (Just (block, _)) ->
+                                        pure (Right (map historicalId (NE.toList (blockTransactions block))))
+                    (first, state) = runState firstOnly initialProviderState
+                    (ranged, rangeState) = runHistoryRange source client (HistoryRange (Just 20) (Just 20))
+                persist "deferred-block-material" $
+                    object
+                        [ "result" .= show first
+                        , "events" .= map eventJson (providerEvents state)
+                        ]
+                retainHistory "inclusive-history-range" ranged rangeState
+                first `shouldBe` Right (Right [p])
+                [ asked request
+                  | RawExchange _ request _ <- providerEvents state
+                  , Client.rawCall request == Wire.CallTxCbor
+                  ]
+                    `shouldBe` [[Wire.txIdHex p]]
+                ranged `shouldBe` Right [r]
+
+    it
+        "discovers actual consumed facts and their verdicts through one generic pure acquisition"
+        $ do
+            source <- timeSource
+            set <- recordedSet
+            let (parent, child, output) = dependentPair True
+                p = keyOf parent
+                r = keyOf child
+                fixtureClient =
+                    synthetic [(parent, []), (child, [(TxIn p (TxIx 0), output)])] [p, r]
+                scripted = Client.Transport $ \request -> case Client.rawCall request of
+                    Wire.CallTip -> Client.exchange (recordedTransport set) request
+                    Wire.CallCliProtocolParams -> Client.exchange (recordedTransport set) request
+                    Wire.CallAddressUtxos ->
+                        pure $
+                            pageAnswer [addressRow (TxIn p (TxIx 0), output)] (offsetOf request) 1
+                    Wire.CallAssetUtxos ->
+                        pure $
+                            pageAnswer [addressRow (TxIn p (TxIx 0), output)] (offsetOf request) 1
+                    Wire.CallAccountInfo ->
+                        pure $
+                            okJson [] $
+                                jsonBytes
+                                    [ object
+                                        [ "stake_address"
+                                            .= Wire.renderRewardAccount
+                                                ( AccountAddress
+                                                    Ledger.Testnet
+                                                    (AccountId (ScriptHashObj (scriptHashOfByte 11)))
+                                                )
+                                        , "status" .= ("registered" :: Text)
+                                        ]
+                                    ]
+                    _ -> Client.exchange (Client.koiosTransport fixtureClient) request
+                addressRow pair = case outputRow pair of
+                    Object fields ->
+                        Object
+                            (KM.insert "address" (String (Wire.renderAddress payer)) fields)
+                    _ -> error "synthetic output is not a JSON row"
+                offsetOf request = maybe 0 (read . Text.unpack) (queryParam "offset" request)
+                runtime =
+                    stateRuntimeIn
+                        fst
+                        (\providerState (_, observations) -> (providerState, observations))
+                sink fact =
+                    modify'
+                        ( \(providerState, observations) -> (providerState, observations <> [fact])
+                        )
+                provider =
+                    observeProvider unverifiedVerifier sink $
+                        koiosProvider
+                            runtime
+                            (Network 1)
+                            (pure (Right source))
+                            (Client.Koios (Client.ClientConfig 1 20) scripted)
+                action = acquire provider (Latest (Network 1)) $ \session -> do
+                    queries <-
+                        traverse
+                            (fmap (fmap value) . outputs session)
+                            [ AtAddress payer
+                            , HoldingAsset asset
+                            , AtTxIn (TxIn p (TxIx 0))
+                            , AnyOf (AtAddress payer NE.:| [HoldingAsset asset])
+                            , AllOf (AtAddress payer NE.:| [AtTxIn (TxIn p (TxIx 0))])
+                            ]
+                    pp <- fmap (fmap (const ())) (protocolParameters session)
+                    observedTip <- fmap (fmap (const ())) (tipObservation session)
+                    time <- fmap (fmap (const ())) (networkTime session)
+                    registration <-
+                        fmap (fmap value) (scriptRegistered session (scriptHashOfByte 11))
+                    historyResult <-
+                        history session asset (HistoryRange Nothing Nothing) >>= \case
+                            Left failure -> pure (Left failure)
+                            Right stream ->
+                                nextBlock stream >>= \case
+                                    Left failure -> pure (Left failure)
+                                    Right Nothing -> pure (Right [])
+                                    Right (Just (block, rest)) -> do
+                                        end <- nextBlock rest
+                                        pure $ case end of
+                                            Left failure -> Left failure
+                                            Right Nothing -> Right (map historicalId (NE.toList (blockTransactions block)))
+                                            Right (Just _) -> error "unexpected second block"
+                    pure (queries, pp, observedTip, time, registration, historyResult)
+                (result, (state, facts)) = runState action (initialProviderState, [])
+            persist "consumed-facts-pure" $
+                object
+                    [ "result" .= show result
+                    , "raw_events" .= map eventJson (providerEvents state)
+                    , "facts" .= facts
+                    ]
+            result
+                `shouldBe` Right
+                    ( replicate 5 (Right [(TxIn p (TxIx 0), output)])
+                    , Right ()
+                    , Right ()
+                    , Right ()
+                    , Right True
+                    , Right [p, r]
+                    )
+            length facts `shouldBe` 11
+            map factVerdict facts `shouldBe` replicate 11 "Unverified"
+            map factReason facts
+                `shouldBe` replicate 11 (Just "NoVerifierConfigured")
+            map factWitnessPresent facts `shouldBe` replicate 11 False
+            map factBinding facts `shouldBe` replicate 11 Unbound
+            Set.size (Set.fromList (map factSession facts)) `shouldBe` 1
+            nextSessionNumber state `shouldBe` 1
+            Set.null (openSessions state) `shouldBe` True
+
+    it
+        "pins one explicit source per acquisition and keeps later sources out of an earlier session"
+        $ do
+            TimeSource manifest genesis eras <- timeSource
+            set <- recordedSet
+            let runtime =
+                    stateRuntimeIn
+                        fst
+                        (\providerState (_, sourceCount) -> (providerState, sourceCount))
+                loader = do
+                    number <- gets snd
+                    modify'
+                        (\(providerState, sourceCount) -> (providerState, sourceCount + 1))
+                    pure
+                        ( Right
+                            ( TimeSource
+                                manifest{timeSourceIdentity = Text.pack (show number)}
+                                genesis
+                                eras
+                            )
+                        )
+                provider =
+                    koiosProvider
+                        runtime
+                        (Network 1)
+                        loader
+                        (Client.Koios recordedConfig (recordedTransport set))
+                readTimes session =
+                    traverse
+                        (const (fmap (fmap (networkMagic . value)) (networkTime session)))
+                        [1 .. 3 :: Int]
+                action = do
+                    wrong <- acquire provider (Latest (Network 42)) (const (pure ()))
+                    point <-
+                        acquire provider (AtPoint (Network 1) Genesis) (const (pure ()))
+                    first <- acquire provider (Latest (Network 1)) readTimes
+                    second <- acquire provider (Latest (Network 1)) readTimes
+                    pure (wrong, point, first, second)
+                (result, (state, count)) = runState action (initialProviderState, 0 :: Int)
+            persist "per-acquisition-pinned-time" $
+                object
+                    [ "result" .= show result
+                    , "source_loads" .= count
+                    , "events" .= map eventJson (providerEvents state)
+                    ]
+            result
+                `shouldBe` ( Left (WrongNetwork (Network 1) (Network 42))
+                           , Left (PointNotSupported Genesis)
+                           , Right (replicate 3 (Right 1))
+                           , Right (replicate 3 (Right 1))
+                           )
+            count `shouldBe` 2
+            [ timeSourceIdentity actual
+              | RawTime _ (TimeSource actual _ _) <- providerEvents state
+              ]
+                `shouldBe` ["0", "1"]
+            Set.null (openSessions state) `shouldBe` True
+
+    it
+        "preserves an unreadable pinned source as a named time refusal and guards it after release"
+        $ do
+            let failure = BackendReadFailure "public pinned source is unreadable"
+                client =
+                    Client.Koios
+                        recordedConfig
+                        ( Client.Transport
+                            (const (pure (Client.Exchange 1 (Left (Client.NoRecording "unused")))))
+                        )
+                provider = koiosProvider stateRuntime (Network 1) (pure (Left failure)) client
+                action = do
+                    acquired <- acquire provider (Latest (Network 1)) $ \session -> do
+                        during <- fmap (fmap (const ())) (networkTime session)
+                        pure (session, during)
+                    case acquired of
+                        Left refused -> pure (Left refused)
+                        Right (session, during) -> do
+                            releasedResult <- fmap (fmap (const ())) (networkTime session)
+                            pure (Right (sessionId session, during, releasedResult))
+                (result, state) = runState action initialProviderState
+            persist "pinned-source-refusal" $
+                object
+                    [ "result" .= show result
+                    , "events" .= map eventJson (providerEvents state)
+                    ]
+            case result of
+                Right (identity, during, releasedResult) -> do
+                    during `shouldBe` Left failure
+                    releasedResult `shouldBe` Left (ReleasedSession identity)
+                _ ->
+                    expectationFailure
+                        "source failure changed the acquisition or read refusal"
+            [f | RawTimeFailure _ f <- providerEvents state] `shouldBe` [failure]
+            [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` []
+
+    it
+        "loads the reviewed packaged time bytes and requires an explicit private network source"
+        $ do
+            TimeSource expectedManifest expectedGenesis expectedEras <- timeSource
+            actual <- loadPinnedSource 1 Nothing >>= requireRight
+            let TimeSource manifest genesis eras = actual
+            manifest `shouldBe` expectedManifest
+            genesis `shouldBe` expectedGenesis
+            eras `shouldBe` expectedEras
+            absent <- loadPinnedSource 42 Nothing
+            fmap (const ()) absent
+                `shouldBe` Left (NetworkTimeRefusal (UnknownTimeNetwork 42))
+
     it
         "uses the same constructor in pure State, refuses released reads and binds raw time and parameters"
         $ do
@@ -190,7 +703,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     koiosProvider
                         stateRuntime
                         (Network 1)
-                        source
+                        (pure (Right source))
                         (Client.Koios recordedConfig (recordedTransport set))
                 action = do
                     escaped <- acquire provider (Latest (Network 1)) $ \session -> do
@@ -228,7 +741,7 @@ spec = describe "Koios ledger provider constructor" $ do
             token = (TxIn (keyOf parent) (TxIx 0), tokenOutput)
             plain = (TxIn (keyOf funding) (TxIx 0), plainOutput)
             client = outputClient [token, plain] [token] [parent, funding]
-            provider = koiosProvider stateRuntime (Network 1) source client
+            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
             address = AtAddress payer
             holding = HoldingAsset asset
             reference = AtTxIn (fst token)
@@ -269,7 +782,7 @@ spec = describe "Koios ledger provider constructor" $ do
         let (parent, _, output) = dependentPair True
             token = (TxIn (keyOf parent) (TxIx 0), output)
             client = outputClient [token] [token] [parent]
-            provider = koiosProvider stateRuntime (Network 1) source client
+            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
             otherAsset = (PolicyID (scriptHashOfByte 12), snd asset)
             wanted = HoldingAsset asset
             other = HoldingAsset otherAsset
@@ -299,7 +812,7 @@ spec = describe "Koios ledger provider constructor" $ do
                         [(reference, output), (reference, conflicting)]
                         [(reference, output), (reference, conflicting)]
                         [parent]
-                provider = koiosProvider stateRuntime (Network 1) source client
+                provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
                 queries =
                     [ AtAddress payer
                     , HoldingAsset asset
@@ -332,7 +845,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     koiosProvider
                         stateRuntime
                         (Network 1)
-                        source
+                        (pure (Right source))
                         (Client.Koios recordedConfig (recordedTransport set))
                 requests =
                     [ Latest (Network 42)
@@ -362,7 +875,7 @@ spec = describe "Koios ledger provider constructor" $ do
                 synthetic
                     [(parent, []), (child, [(reference, output)])]
                     [keyOf child, keyOf parent]
-            provider = koiosProvider stateRuntime (Network 1) source client
+            provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
             action = do
                 acquired <- acquire provider (Latest (Network 1)) $ \session -> do
                     stream <- history session asset (HistoryRange Nothing Nothing)
@@ -420,7 +933,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             (\state (_, now, bounds) -> (state, now, bounds))
                         )
                         (Network 42)
-                        source
+                        (pure (Right source))
                         (pollingClient target visibleAt (timeSystemStartMs manifest))
             forM_ [Just (base + 10000), Nothing] $ \visibleAt -> do
                 let action =
@@ -473,7 +986,7 @@ spec = describe "Koios ledger provider constructor" $ do
                 koiosProvider
                     pollProviderRuntime
                     (Network 42)
-                    source
+                    (pure (Right source))
                     (pollingClient target Nothing (timeSystemStartMs manifest))
             (result, (state, now, bounds)) =
                 runState
@@ -516,7 +1029,7 @@ spec = describe "Koios ledger provider constructor" $ do
                 koiosProvider
                     pollProviderRuntime
                     (Network 42)
-                    source
+                    (pure (Right source))
                     (pollingClient target (Just base) (timeSystemStartMs manifest))
             (result, (state, now, bounds)) =
                 runState
@@ -560,7 +1073,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             koiosProvider
                                 (stateRuntimeIn fst (\state (_, requests) -> (state, requests)))
                                 (Network 1)
-                                source
+                                (pure (Right source))
                                 client
                     in  runState
                             ( do
@@ -617,7 +1130,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             >> pure (Client.Exchange 1 (Left (Client.NoRecording "stalled tip")))
                         )
                         `finally` writeIORef released True
-                provider = koiosProvider runtime (Network 1) source client
+                provider = koiosProvider runtime (Network 1) (pure (Right source)) client
                 (target, _, _) = dependentPair True
             result <-
                 try
@@ -669,7 +1182,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             koiosProvider
                                 runtime
                                 (Network 1)
-                                source
+                                (pure (Right source))
                                 (Client.Koios recordedConfig transport)
                     acquire
                         provider
@@ -746,7 +1259,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     newIORuntime
                         (if enabled then phaseLogAt (directory </> "phase.log") else noPhaseLog)
                         (const (pure ()))
-                let provider = koiosProvider runtime (Network 1) source client
+                let provider = koiosProvider runtime (Network 1) (pure (Right source)) client
                 result <-
                     acquire
                         provider
@@ -827,6 +1340,12 @@ eventJson = \case
                 , "genesis_hex" .= TE.decodeUtf8 (B16.encode genesis)
                 , "era_history_hex" .= TE.decodeUtf8 (B16.encode historyBytes)
                 ]
+    RawTimeFailure (SessionId identity) failure ->
+        object
+            [ "kind" .= ("raw-time-refusal" :: Text)
+            , "session" .= identity
+            , "refusal" .= show failure
+            ]
     RawExchange (SessionId identity) request exchange ->
         let response = case Client.exchangeResult exchange of
                 Left failure -> object ["no_answer" .= show failure]
@@ -914,19 +1433,30 @@ runHistory
     :: TimeSource
     -> Client.Koios (State ProviderState)
     -> (Either HistoryFailure [TxId], ProviderState)
-runHistory source client = runState action initialProviderState
+runHistory source client = runHistoryRange source client (HistoryRange Nothing Nothing)
+
+runHistoryRange
+    :: TimeSource
+    -> Client.Koios (State ProviderState)
+    -> HistoryRange
+    -> (Either HistoryFailure [TxId], ProviderState)
+runHistoryRange source client range = runState action initialProviderState
   where
-    provider = koiosProvider stateRuntime (Network 1) source client
+    provider = koiosProvider stateRuntime (Network 1) (pure (Right source)) client
+    consume stream =
+        nextBlock stream >>= \case
+            Left failure -> pure (Left failure)
+            Right Nothing -> pure (Right [])
+            Right (Just (block, rest)) ->
+                fmap
+                    (fmap (map historicalId (NE.toList (blockTransactions block)) <>))
+                    (consume rest)
     action = do
         result <- acquire provider (Latest (Network 1)) $ \session ->
-            history session asset (HistoryRange Nothing Nothing) >>= \case
+            history session asset range >>= \case
                 Left failure -> pure (Left failure)
-                Right stream ->
-                    nextBlock stream >>= \case
-                        Left failure -> pure (Left failure)
-                        Right Nothing -> pure (Right [])
-                        Right (Just (block, _)) ->
-                            pure (Right (map historicalId (NE.toList (blockTransactions block))))
+                Right stream -> consume stream
+
         pure
             ( either
                 ( Left
@@ -942,8 +1472,16 @@ runHistory source client = runState action initialProviderState
             )
 
 synthetic
-    :: [(ConwayTx, Outputs)] -> [TxId] -> Client.Koios (State ProviderState)
-synthetic transactions listed =
+    :: (Monad m) => [(ConwayTx, Outputs)] -> [TxId] -> Client.Koios m
+synthetic = syntheticAt []
+
+syntheticAt
+    :: (Monad m)
+    => [Word64]
+    -> [(ConwayTx, Outputs)]
+    -> [TxId]
+    -> Client.Koios m
+syntheticAt heights transactions listed =
     Client.Koios (Client.ClientConfig 1 20) (recordedTransport fixtures)
   where
     -- Synthetic recordings are explicit, with bytes derived independently
@@ -976,18 +1514,28 @@ synthetic transactions listed =
                 (bodySha256 (Client.answerBody response))
                 response
         _ -> error "synthetic recording generator has no answer"
-    ordered = sortOn Wire.txIdHex listed
+    heightOf key =
+        Map.findWithDefault 20 key $
+            Map.fromList
+                (zip (map (keyOf . fst) transactions) heights)
+    ordered = sortOn (\key -> (heightOf key, Wire.txIdHex key)) listed
     answer request = case Client.rawCall request of
         Wire.CallAssetTxs ->
             pageAnswer
-                [assetTxRow (Wire.txIdHex key) 500 20 | key <- ordered]
+                [ assetTxRow (Wire.txIdHex key) 500 (toInteger (heightOf key))
+                | key <- ordered
+                ]
                 (offset request)
                 1
         Wire.CallTxInfo ->
             okJson
                 []
                 ( jsonBytes
-                    [ infoRow tx inputs
+                    [ amendRow
+                        (keyOf tx)
+                        "block_height"
+                        (toJSON (heightOf (keyOf tx)))
+                        (infoRow tx inputs)
                     | (tx, inputs) <- transactions
                     , Wire.txIdHex (keyOf tx) `elem` asked request
                     ]
@@ -1000,7 +1548,7 @@ synthetic transactions listed =
                         [ "tx_hash" .= Wire.txIdHex (keyOf tx)
                         , "cbor"
                             .= TE.decodeUtf8 (B16.encode (serialize' (eraProtVerHigh @ConwayEra) tx))
-                        , "valid_contract" .= True
+                        , "valid_contract" .= let IsValid valid = tx ^. isValidTxL in valid
                         ]
                     | (tx, _) <- transactions
                     , Wire.txIdHex (keyOf tx) `elem` asked request
@@ -1177,7 +1725,7 @@ infoRow tx inputs =
                 (\index output -> outputRow (TxIn (keyOf tx) (TxIx index), output))
                 [0 ..]
                 (toList (tx ^. bodyTxL . outputsTxBodyL))
-        , "valid_contract" .= True
+        , "valid_contract" .= let IsValid valid = tx ^. isValidTxL in valid
         ]
 
 outputRow :: (TxIn, TxOut ConwayEra) -> Value
@@ -1197,4 +1745,43 @@ outputRow (TxIn key (TxIx index), output) =
                    | (policy, names) <- Map.toList assets
                    , (name, quantity) <- Map.toList names
                    ]
+            ]
+
+-- Changes here are explicit synthetic raw-source faults, never an override
+-- of decoded facts or of the constructor's invariant decision.
+amendHistory
+    :: Wire.Call
+    -> ([Value] -> [Value])
+    -> Client.Koios (State ProviderState)
+    -> Client.Koios (State ProviderState)
+amendHistory call amend client =
+    client
+        { Client.koiosTransport = Client.Transport $ \request -> do
+            response <- Client.exchange (Client.koiosTransport client) request
+            pure $
+                if Client.rawCall request /= call
+                    then response
+                    else
+                        response
+                            { Client.exchangeResult = fmap change (Client.exchangeResult response)
+                            }
+        }
+  where
+    change answer = case decodeStrict' (Client.answerBody answer) of
+        Just rows -> answer{Client.answerBody = jsonBytes (amend rows)}
+        Nothing -> error "synthetic history response is not a JSON row list"
+
+amendRow :: TxId -> AesonKey.Key -> Value -> Value -> Value
+amendRow key field replacement (Object fields)
+    | KM.lookup "tx_hash" fields == Just (String (Wire.txIdHex key)) =
+        Object (KM.insert field replacement fields)
+amendRow _ _ _ row = row
+
+retainHistory
+    :: FilePath -> Either HistoryFailure [TxId] -> ProviderState -> IO ()
+retainHistory name result state =
+    persist name $
+        object
+            [ "result" .= show result
+            , "events" .= map eventJson (providerEvents state)
             ]

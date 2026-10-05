@@ -37,7 +37,7 @@ import Data.Text qualified as T
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
-    ( NodeSettings (..)
+    ( ProviderSettings (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live
@@ -90,7 +90,7 @@ attached
 attached dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
     withWrite dir command ws $ \wc -> do
-        let NodeSettings _ magic = writeNode ws
+        let ProviderSettings _ magic _ _ = writeProvider ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
