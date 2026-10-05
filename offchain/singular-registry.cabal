@@ -16,12 +16,12 @@ maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
 data-files:
-  data/network/preprod/*.json
-  data/network/preprod/*.cbor
-  data/network/preprod/evaluation/*.json
-  data/network/preprod/evaluation/*.cbor
-  data/network/devnet/*.json
   data/network/devnet/*.cbor
+  data/network/devnet/*.json
+  data/network/preprod/*.cbor
+  data/network/preprod/*.json
+  data/network/preprod/evaluation/*.cbor
+  data/network/preprod/evaluation/*.json
 
 common warnings
   ghc-options:
@@ -38,27 +38,27 @@ common warnings
     StrictData
 
 library
-  import:           warnings
-  default-language: GHC2021
-  hs-source-dirs:   lib naming/src
+  import:             warnings
+  default-language:   GHC2021
+  hs-source-dirs:     lib naming/src
   build-depends:
-    , aeson                  >=2.1  && <2.3
+    , aeson                            >=2.1  && <2.3
     , aeson-pretty
-    , base                   >=4.14 && <5
+    , base                             >=4.14 && <5
     , base16-bytestring
-    , bytestring             >=0.11 && <0.13
+    , bytestring                       >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
-    , cardano-ledger-binary
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
-    , cardano-strict-containers
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-slotting
+    , cardano-strict-containers
     , cardano-tx-tools:tx-build
-    , containers             >=0.6  && <0.8
+    , containers                       >=0.6  && <0.8
     , crypton
     , directory
     , filepath
@@ -71,11 +71,17 @@ library
     , plutus-tx
     , process
     , singular-registry:node-internal
-    , text                   >=2.0  && <2.2
+    , text                             >=2.0  && <2.2
     , time
     , unix
 
   exposed-modules:
+    Naming.Datum
+    Naming.Register
+    Naming.Request
+    Naming.Verify
+    Naming.Wire
+    Naming.Wire.Vectors
     Singular.Application.OpenDatum.Book
     Singular.Application.OpenDatum.Build
     Singular.Application.OpenDatum.Envelope
@@ -102,6 +108,7 @@ library
     Singular.Registry.TrieState.Fixture
     Singular.Registry.TrieState.Mirror
     Singular.Registry.TxBuilder.Boot
+    Singular.Registry.TxBuilder.ConnectedFold
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
     Singular.Registry.TxBuilder.Internal.Edges
@@ -111,15 +118,8 @@ library
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
-    Singular.Registry.TxBuilder.ConnectedFold
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
-    Naming.Datum
-    Naming.Register
-    Naming.Request
-    Naming.Verify
-    Naming.Wire
-    Naming.Wire.Vectors
 
   -- #267: the fold's focused owners behind the Update facade. They are
   -- implementation modules of the existing public library: the facade
@@ -132,25 +132,25 @@ library
   -- encoding instances, and the generated API reference documents them
   -- here for the contributor while callers keep importing the facade.
   other-modules:
-    Singular.Registry.TrieState.Types
-    Singular.Registry.TrieState.Core
-    -- #269: the deployment record's focused owners behind the
-    -- Deployment facade. Same arrangement as the fold and wire owners
-    -- above: Singular.Registry.Deployment re-exports the unchanged
-    -- public surface from these three, each declaration beside its own
-    -- concern, and the generated API reference documents them here.
+    Singular.Registry.Deployment.Attach
     Singular.Registry.Deployment.Manifest
     Singular.Registry.Deployment.Mirror
-    Singular.Registry.Deployment.Attach
+    Singular.Registry.TrieState.Core
+    Singular.Registry.TrieState.Types
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
     Singular.Registry.Wire.Primitive
-    Singular.Registry.Wire.Request
-    Singular.Registry.Wire.State
     Singular.Registry.Wire.Proof
     Singular.Registry.Wire.Redeemer
+    Singular.Registry.Wire.Request
+    Singular.Registry.Wire.State
 
+  -- #269: the deployment record's focused owners behind the
+  -- Deployment facade. Same arrangement as the fold and wire owners
+  -- above: Singular.Registry.Deployment re-exports the unchanged
+  -- public surface from these three, each declaration beside its own
+  -- concern, and the generated API reference documents them here.
   reexported-modules:
     , Singular.Registry.Ledger
     , Singular.Registry.Provider
@@ -162,17 +162,18 @@ library local-services
   default-language: GHC2021
   hs-source-dirs:   local-services
   exposed-modules:
-    Singular.Registry.NetworkTime
     Singular.Registry.LocalEvaluation
+    Singular.Registry.NetworkTime
+
   build-depends:
     , aeson
-    , base >=4.14 && <5
+    , base                       >=4.14 && <5
     , bytestring
-    , cardano-slotting
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
+    , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
     , crypton
@@ -197,25 +198,26 @@ library node-internal
   hs-source-dirs:   node-internal
   exposed-modules:
     Singular.Registry.Ledger
-    Singular.Registry.Provider
-    Singular.Registry.Node.Memory
-    Singular.Registry.Node.View
-    Singular.Registry.Node.RawView
-    Singular.Registry.Node.Submit
-    Singular.Registry.Node.Options
-    Singular.Registry.Node.Wallet
-    Singular.Registry.Node.Wait
-    Singular.Registry.Node.Indexer
-    Singular.Registry.Node.IndexGate
-    Singular.Registry.Node.IndexerView
-    Singular.Registry.Node.Session
     Singular.Registry.Node.Confirmation
     Singular.Registry.Node.Funding
+    Singular.Registry.Node.Indexer
+    Singular.Registry.Node.IndexerView
+    Singular.Registry.Node.IndexGate
+    Singular.Registry.Node.Memory
+    Singular.Registry.Node.Options
     Singular.Registry.Node.PhaseLog
+    Singular.Registry.Node.RawView
+    Singular.Registry.Node.Session
+    Singular.Registry.Node.Submit
+    Singular.Registry.Node.View
+    Singular.Registry.Node.Wait
+    Singular.Registry.Node.Wallet
+    Singular.Registry.Provider
+
   build-depends:
     , aeson
     , async
-    , base                   >=4.14 && <5
+    , base                                   >=4.14 && <5
     , base16-bytestring
     , bech32
     , bytestring
@@ -225,15 +227,15 @@ library node-internal
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
-    , cardano-strict-containers
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-node-clients:utxo-indexer-lib
     , cardano-slotting
+    , cardano-strict-containers
     , cardano-tx-tools:tx-build
-    , containers             >=0.6  && <0.8
+    , containers                             >=0.6  && <0.8
     , contra-tracer
     , directory
     , filepath
@@ -242,8 +244,8 @@ library node-internal
     , ouroboros-consensus:cardano
     , ouroboros-network:api
     , process
-    , stm
     , serialise
+    , stm
     , text
     , time
     , unix
@@ -254,37 +256,44 @@ executable local-services-record
   default-language: GHC2021
   hs-source-dirs:   test/local-services-record
   main-is:          Main.hs
-  other-modules:    EvaluationFixture
+  other-modules:
+    ConfirmationProbe
+    EvaluationFixture
+
   build-depends:
     , aeson
     , async
-    , base >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bech32
     , bytestring
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
-    , cardano-ledger-alonzo
-    , cardano-ledger-api
     , cardano-ledger-mary
-    , cardano-strict-containers
-    , cardano-tx-tools:tx-build
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
-    , directory
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
+    , crypton
+    , directory
     , filepath
+    , memory
+    , microlens
     , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-network:api
-    , serialise
-    , microlens
     , plutus-core
     , plutus-ledger-api
     , process
+    , serialise
     , singular-registry
+    , singular-registry:local-services
     , text
     , time
 
@@ -300,13 +309,13 @@ executable cage-test-vectors
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , singular-registry
     , crypton
     , lens
     , memory
     , mts:mpf-write
     , plutus-core
     , plutus-tx
+    , singular-registry
     , text
 
 -- The bounded journey runner (D-012): narrates the registry
@@ -332,19 +341,19 @@ executable journey
 
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , mts:mpf-write
     , plutus-tx
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -363,18 +372,17 @@ executable li01
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
@@ -382,6 +390,7 @@ executable li01
     , microlens
     , plutus-core
     , plutus-tx
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -401,24 +410,24 @@ executable naming-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
     , memory
     , microlens
     , plutus-core
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -438,19 +447,18 @@ executable recovery-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
@@ -458,6 +466,7 @@ executable recovery-rows
     , microlens
     , mts:mpf-write
     , plutus-core
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -477,19 +486,18 @@ executable retirement-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
@@ -499,6 +507,7 @@ executable retirement-rows
     , microlens
     , mts:mpf-write
     , plutus-core
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -516,20 +525,18 @@ executable register-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-binary
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , plutus-tx
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
@@ -539,6 +546,8 @@ executable register-rows
     , microlens
     , mts:mpf-write
     , plutus-core
+    , plutus-tx
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -559,18 +568,17 @@ executable li-refusals
   build-depends:
     , aeson
     , async
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-crypto-class
     , cardano-strict-containers
     , containers
     , crypton
@@ -578,6 +586,7 @@ executable li-refusals
     , microlens
     , plutus-core
     , plutus-tx
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -596,7 +605,7 @@ executable repair-rows
   build-depends:
     , aeson
     , async
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -606,7 +615,6 @@ executable repair-rows
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
@@ -615,6 +623,7 @@ executable repair-rows
     , containers
     , microlens
     , plutus-tx
+    , singular-registry
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -629,24 +638,24 @@ executable retirement-verify
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                       >=4.14 && <5
     , base16-bytestring
     , bytestring
-    , cardano-ledger-api
+    , cardano-crypto-class
     , cardano-ledger-alonzo
+    , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
-    , cardano-crypto-class
+    , cardano-tx-tools:tx-build
     , containers
     , directory
     , filepath
     , microlens
     , plutus-core
     , plutus-tx
-    , cardano-tx-tools:tx-build
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -660,7 +669,7 @@ executable devnet
   build-depends:
     , aeson
     , async
-    , base                        >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
@@ -696,20 +705,20 @@ executable deployment
     Deployment.Verify
 
   build-depends:
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients:devnet
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , directory
     , microlens
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -721,23 +730,23 @@ executable connected-verifier
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base               >=4.14 && <5
+    , base                       >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-alonzo
-    , cardano-ledger-binary
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-tx-tools:tx-build
     , containers
     , directory
     , filepath
     , microlens
     , plutus-core
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -749,7 +758,7 @@ test-suite record-value-tests
   hs-source-dirs:   record-value-test
   main-is:          Main.hs
   build-depends:
-    , base >=4.14 && <5
+    , base               >=4.14 && <5
     , bytestring
     , hspec
     , plutus-core
@@ -764,119 +773,119 @@ test-suite cage-tests
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
+    Naming.CompleteVerifySpec
+    Naming.RecordValueSpec
+    Naming.RegisterSpec
+    Naming.RetireVerifySpec
     Paths_singular_registry
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
-    Singular.CLI.InsertEnvelopeSpec
-    Singular.CLISpec
-    Singular.CLI.Command
-    Singular.CLI.TrieTrace
-    Singular.CLI.TrieHistory
-    Singular.CLI.ReceiptBody
-    Singular.CLI.Reconcile
-    Singular.CLI.Plan
-    Singular.CLI.Live
-    Singular.CLI.Fold
     Singular.CLI.Attached
+    Singular.CLI.Command
+    Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope
-    Singular.CLI.OutlaySpec
-    Singular.CLI.Outlay
-    Singular.CLI.RejectRules
-    Singular.CLI.RejectSpec
-    Singular.CLI.ReclaimRules
-    Singular.CLI.ReclaimSpec
-    Singular.CLI.RequestWindow
+    Singular.CLI.InsertEnvelopeSpec
+    Singular.CLI.Live
     Singular.CLI.Node
+    Singular.CLI.Outlay
+    Singular.CLI.OutlaySpec
+    Singular.CLI.Plan
     Singular.CLI.Preimage
     Singular.CLI.Proof
     Singular.CLI.Receipt
+    Singular.CLI.ReceiptBody
+    Singular.CLI.ReclaimRules
+    Singular.CLI.ReclaimSpec
+    Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
+    Singular.CLI.RejectRules
+    Singular.CLI.RejectSpec
+    Singular.CLI.RequestWindow
     Singular.CLI.Session
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
+    Singular.CLISpec
+    Singular.PhaseLogFixture
     Singular.Registry.BlueprintParametersSpec
-    Singular.Registry.DeploymentSpec
-    Singular.Registry.TxBuilder.BookEdgeSpec
-    Singular.Registry.TxBuilder.BookingFixture
-    Singular.Registry.TxBuilder.CollateralJudgement
-    Singular.Registry.TxBuilder.RetractFundingSpec
-    Singular.Registry.TxBuilder.MeasuredBookingSpec
-    Singular.Registry.TxBuilder.BootSpec
-    Singular.Registry.TxBuilder.BurnSourceSpec
-    Singular.Registry.TxBuilder.SkipEvalUnitsSpec
-    Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.CandidateSpec
+    Singular.Registry.DeploymentSpec
     Singular.Registry.FailureMatchSpec
-    Singular.Registry.IndexerViewSpec
     Singular.Registry.IndexerRig
-    Singular.Registry.NodeCleanupSpec
-    Singular.Registry.NetworkTimeSpec
+    Singular.Registry.IndexerViewSpec
+    Singular.Registry.LifecycleSpec
     Singular.Registry.LocalEvaluationSpec
     Singular.Registry.LocalServicesCallerSpec
+    Singular.Registry.NetworkTimeSpec
+    Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
     Singular.Registry.NodeWaitSpec
     Singular.Registry.OneViewSpec
-    Singular.PhaseLogFixture
     Singular.Registry.PhaseLogSpec
     Singular.Registry.ProviderSpec
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
-    Singular.Registry.LifecycleSpec
-    Singular.Registry.TypesSpec
-    Singular.Registry.TrieStateSpec
     Singular.Registry.TrieStateContractSpec
-    Naming.CompleteVerifySpec
-    Naming.RegisterSpec
-    Naming.RetireVerifySpec
-    Naming.RecordValueSpec
+    Singular.Registry.TrieStateSpec
+    Singular.Registry.TxBuilder.BookEdgeSpec
+    Singular.Registry.TxBuilder.BookingFixture
+    Singular.Registry.TxBuilder.BootSpec
+    Singular.Registry.TxBuilder.BurnSourceSpec
+    Singular.Registry.TxBuilder.CollateralJudgement
+    Singular.Registry.TxBuilder.MeasuredBookingSpec
+    Singular.Registry.TxBuilder.RetractFundingSpec
+    Singular.Registry.TxBuilder.SkipEvalUnitsSpec
+    Singular.Registry.TxBuilder.UpperSlotSpec
+    Singular.Registry.TypesSpec
+
   build-depends:
     , aeson
+    , aeson-pretty
     , async
-    , cardano-ledger-binary
-    , cardano-slotting
-    , base               >=4.14 && <5
+    , base                                   >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
-    , cardano-ledger-alonzo
-    , cardano-ledger-allegra
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-crypto-class
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-node-clients:utxo-indexer-lib
+    , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , crypton
-    , memory
-    , serialise
-    , base16-bytestring
-    , bech32
-    , bytestring
-    , singular-registry
-    , singular-registry:local-services
-    , singular-registry:node-internal
     , directory
     , filepath
-    , aeson-pretty
     , hspec
+    , memory
     , microlens
     , mtl
     , mts:mpf-write
-    , ouroboros-network:api
     , ouroboros-consensus
+    , ouroboros-network:api
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
+    , prettyprinter
     , QuickCheck
+    , serialise
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:node-internal
     , stm
     , temporary
-    , prettyprinter
     , text
     , time
     , unix
@@ -896,17 +905,18 @@ test-suite contract-tests
     Singular.Registry.ContractNode
     Singular.Registry.ContractSuite
     Singular.Registry.IndexerRig
+
   build-depends:
     , aeson
     , async
     , base
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-crypto-class
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-node-clients:utxo-indexer-lib
@@ -941,26 +951,26 @@ test-suite e2e-tests
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
     Singular.Registry.E2E.Criterion3Spec
-    Singular.Registry.E2E.Fixture
     Singular.Registry.E2E.DriverSpec
+    Singular.Registry.E2E.Fixture
     Singular.Registry.E2E.Fork81Spec
-    Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.InsertActiveSpec
-    Singular.Registry.E2E.UpdateTerminalSpec
+    Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.OpenBootSpec
+    Singular.Registry.E2E.UpdateTerminalSpec
+
   build-depends:
     , async
     , base
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
-    , cardano-strict-containers
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , directory
@@ -968,8 +978,9 @@ test-suite e2e-tests
     , microlens
     , mts:mpf-write
     , ouroboros-network
-    , process
     , plutus-tx
+    , process
+    , singular-registry
     , temporary
     , text
 
@@ -996,18 +1007,18 @@ executable insert-active
   build-depends:
     , aeson
     , aeson-pretty
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
-    , cardano-crypto-class
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1036,19 +1047,19 @@ executable update-terminal
   build-depends:
     , aeson
     , aeson-pretty
-    , base               >=4.14 && <5
+    , base                         >=4.14 && <5
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
-    , cardano-crypto-class
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
+    , singular-registry
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1073,50 +1084,50 @@ executable singular
     Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.Node
     Singular.CLI.Outlay
     Singular.CLI.Plan
     Singular.CLI.Preimage
     Singular.CLI.Preview
-    Singular.CLI.Node
     Singular.CLI.Proof
     Singular.CLI.Receipt
-    Singular.CLI.Reconcile
     Singular.CLI.ReceiptBody
-    Singular.CLI.TrieHistory
-    Singular.CLI.TrieTrace
+    Singular.CLI.Reclaim
+    Singular.CLI.ReclaimRules
+    Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Reject
-    Singular.CLI.Reclaim
-    Singular.CLI.ReclaimRules
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
     Singular.CLI.Session
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
 
   build-depends:
     , aeson
-    , async
     , aeson-pretty
-    , bech32
-    , base               >=4.14 && <5
+    , async
+    , base                             >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring
-    , cardano-ledger-api
-    , cardano-ledger-core
-    , containers
-    , directory
-    , filepath
-    , mts:mpf-write
-    , singular-registry
-    , text
-    , unix
     , cardano-crypto-class
+    , cardano-ledger-api
     , cardano-ledger-binary
+    , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-slotting
     , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , filepath
     , microlens
+    , mts:mpf-write
     , plutus-core
+    , singular-registry
     , singular-registry:node-internal
+    , text
+    , unix
 
   ghc-options:      -threaded -with-rtsopts=-N

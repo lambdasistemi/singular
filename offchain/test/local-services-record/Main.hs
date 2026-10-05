@@ -13,6 +13,7 @@ genesis/configuration files; delegate keys stay in the generator's scratch.
 -}
 module Main (main) where
 
+import ConfirmationProbe (probeConfirmation)
 import Control.Concurrent.Async (withAsync)
 import Control.Exception (ErrorCall, displayException, try)
 import Control.Monad (forM, unless)
@@ -267,6 +268,17 @@ capture output sock magic@(NetworkMagic networkMagic) = do
                             <> show (length answers)
                             <> " time comparisons"
                         )
+                    probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
+                    case (probe, endBounds) of
+                        (Just "1", [horizon]) ->
+                            probeConfirmation
+                                output
+                                networkMagic
+                                observed
+                                start
+                                (LBS.toStrict historyBytes)
+                                (boundSlot horizon)
+                        _ -> pure ()
   where
     answer :: Either ErrorCall SlotNo -> Value
     answer =
