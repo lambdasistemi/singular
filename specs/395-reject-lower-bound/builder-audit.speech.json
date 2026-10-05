@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The table covers the registry builders, their two retraction entry points and callers, and the additional construction sites found by scanning Haskell and shell sources for lower and upper validity setters. An absent lower bound is unbounded below and satisfies this particular rule; that says nothing about an upper bound expiring, script correctness or complete lifecycle behavior. Source locations refer to this ticket's implementation after the corrections.",
+      "text": "The table covers the registry builders, their two retraction entry points and callers, and the additional construction sites found by scanning Haskell and shell sources for lower and upper validity setters. An absent lower bound is unbounded below and satisfies this particular rule; that says nothing about an upper bound expiring, script correctness or complete lifecycle behavior. Source links pin the corrected implementation at 6ce9a7c0; the model link pins the stated base revision.",
       "pause": 400
     },
     {
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "builder-audit.md",
-    "sha256": "0303413074f62598f32945be99cbe09a8df4a7413f7392a4743d3ff839d69cbc"
+    "sha256": "826ea0da594d8a7f7394a61a6fb53689de2d70e7b33abf53b899106ac9ee09b4"
   }
 }
