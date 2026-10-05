@@ -317,8 +317,16 @@ releases the same holding inside one, and refuses a second insertion of the
 Active key and an insertion of the Terminal key, each booked and then refused
 at its fold. Every insertion refusal leaves its request pending, and a
 registry's fold takes every pending request, so the take retracts each one as
-its owner inside the request's retract window (a processing window of 120
-seconds, then a retract window of 30). The retraction returns the bond and
+its owner inside the request's retract window. The take reads both windows
+from the attached registry's state datum and waits for the booked request's
+actual deadline. New registries default to a processing window of 600 000
+milliseconds and a retract window of 300 000 milliseconds (ten and five
+minutes); `registry create --process-time MS --retract-time MS` chooses
+positive integer millisecond values instead. The windows are fixed for the
+life of the registry, so attaching to an existing preprod registry does not
+change them. CI creates its throwaway registry with 45 000 and 15 000
+milliseconds, leaving the client's thirty-second fold guard plus fifteen
+seconds for preparation. The retraction returns the bond and
 costs its fee; the verdict requires the wallet to hold exactly that. A
 refusal's submission is refused by the node and its receipt says so; whether a
 node could ever collect collateral for one is not claimed, so every

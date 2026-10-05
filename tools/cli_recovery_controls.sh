@@ -305,9 +305,11 @@ insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/inser
 # ------------------------------------------------------------------
 # The registry
 # ------------------------------------------------------------------
-run preview registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
-run create registry create --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+run create registry create --process-time 45000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
+  || setup_fail "the recovery registry did not read back the short CI windows"
 outcome_is create success || setup_fail "create did not succeed"
 token="$(field create .token)"
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
@@ -360,7 +362,7 @@ signers_of() {
     decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
     "$(prepared_of "$1" | jq -r .journalBody)")
 }
-run bob-preview registry create --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
+run bob-preview registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -805,7 +807,8 @@ unbooked="$(submission_tx insert-i book)"
 clause "the insert stops partial naming its booking unknown" is_equal "$(field insert-i .outcome)/$(submission_case insert-i book)" partial/unknown
 clause "the unsent booking names a transaction" is_txid "$unbooked"
 # A booking carries no validity upper bound: no tip ever settles it.
-sleep 10
+processing_ms="$(field create .processTime)"
+sleep $((processing_ms / 1000 + 1))
 snap s6-refused
 run update-e registry update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 clause "the next write stops partial (exit 15)" exit_is update-e 15
@@ -938,9 +941,11 @@ done
 reg="$work/registry-rolled-back"
 journal="$reg/journal.jsonl"
 common=(--registry "$reg" --blueprint "$blueprint")
-run preview-rb registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview-rb registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
-run create-rb registry create --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+run create-rb registry create --process-time 45000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
+  || setup_fail "the rollback registry did not read back the short CI windows"
 outcome_is create-rb success || setup_fail "the second create did not succeed"
 insert_of 6c00
 run insert-rb0 "${args[@]}"
