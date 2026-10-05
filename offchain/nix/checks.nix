@@ -6,6 +6,21 @@
   ghc,
 }:
 let
+  # Recorded tests read fixtures relative to cwd and copy them for mutation.
+  # Stage writable copies so their corruption controls work from any cwd.
+  cageTestsWrapped = pkgs.writeShellApplication {
+    name = "cage-tests";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      fixture_dir=$(mktemp -d)
+      trap 'rm -rf "$fixture_dir"' EXIT
+      mkdir -p "$fixture_dir/test"
+      cp -R ${../test/fixtures} "$fixture_dir/test/fixtures"
+      chmod -R u+w "$fixture_dir/test/fixtures"
+      cd "$fixture_dir"
+      ${pkgs.lib.getExe components.tests.cage-tests} "$@"
+    '';
+  };
   # The devnet end-to-end spawns cardano-node as a subprocess via
   # System.Process.proc, which looks the binary up on PATH.
   # Wrap the test binary so it brings its own cardano-node —
@@ -73,7 +88,7 @@ in
 {
   inherit (components) library;
   signed-tx-control = signedTxControl;
-  inherit (components.tests) cage-tests;
+  cage-tests = cageTestsWrapped;
   inherit (components.tests) record-value-tests;
   cage-tests-e2e = e2eTestsWrapped;
   inherit (components.exes) cage-test-vectors;
