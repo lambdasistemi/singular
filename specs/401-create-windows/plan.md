@@ -23,7 +23,7 @@ flowchart TD
 | `Singular.CLI.Registry` | the fixed `economics` becomes defaults (600 000 and 300 000 ms); `registryConfigFor` takes the windows. |
 | `Singular.CLI.Create` | passes the parsed windows; the receipt reports them. |
 | `Singular.CLI.Inspect` | reports both windows from the state datum, if not already. |
-| journeys, controls, tests, docs | pass 120 000 and 30 000 explicitly where they relied on the old defaults; docs state the new defaults and that the windows are fixed. |
+| journeys, controls, tests, docs | choose short CI windows explicitly (45 000 and 15 000 ms), with at least three times measured fold preparation beyond the client guard; compute window waits from receipt/inspect readback; defaults and preprod stay unchanged, and docs state lifetime-fixed windows. |
 
 ## Function rows
 

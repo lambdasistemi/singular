@@ -13,6 +13,16 @@
       "pause": 400
     }
   ],
+  "the-request-keeps-its-registrys-windows": [
+    {
+      "text": "The request keeps its registry's windows.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+      "pause": 400
+    }
+  ],
   "the-case-each-submission-met": [
     {
       "text": "The case each submission met.",
@@ -119,6 +129,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "e6e7528e8c89678afefb4aabcb7575a9b3a707341dc7a81ee6c479fe89ca55ad"
+    "sha256": "607a93ad256fae57f37b9d40337a59f34eb603dba9e3ebcb9fe972b7daaaafb2"
   }
 }

@@ -55,13 +55,31 @@ and a retract window of 300 000 ms (ten and five minutes).
 The `create` receipt and `inspect` report both windows as stored in the state
 datum.
 
-### Journeys keep their timing
+### CI journeys use short windows
 
-Development-network journeys, controls and tests that relied on the old 120 000
-and 30 000 ms windows pass those values explicitly through the new flags, so
-their timing and CI duration are unchanged. Documentation that states the
-windows is updated to the new defaults and says they are fixed for the life of
-a registry.
+Development-network CI journeys, controls and the attach take create their
+throwaway registries with short windows through the new flags. The bounded
+devnet probe measured fold build phases of 535 ms on the node backend and
+558 ms on the indexer backend, and invocation-to-sign preparation of 1 147 ms
+and 1 322 ms. CI uses `--process-time 45000 --retract-time 15000`: after the
+client's thirty-second fold guard, fifteen seconds remain, more than three
+times the measured preparation. Twenty seconds cannot clear that guard;
+forty seconds leaves less than the observed journey's 6 431 ms of intervening
+commands plus three times 1 322 ms, so forty-five seconds is the first safe
+five-second increment for this probe. CI checks its own fold build phases
+against that preparation margin. These measurements describe this devnet
+probe, not a guarantee for every loaded runner.
+
+Every request-window wait is computed from the actual registry windows and
+booking deadlines read through inspect or receipts; there are no fixed
+hundred-second waits. The dedicated defaults readback creates and inspects a
+registry without booking a request, so it never waits out the ten-minute
+processing window. Defaults and existing preprod registries remain unchanged:
+new registry defaults are 600 000 and 300 000 ms, and an existing registry
+keeps the windows in its datum. Documentation states the defaults and that
+the windows are fixed for the life of a registry. The expected Demo 1 duration
+reduction from about fifty minutes to ten to fifteen minutes awaits exact-head
+CI measurement.
 
 ## Success
 
@@ -69,6 +87,6 @@ a registry.
   `inspect`, and a booking's fold deadline equals its submission time plus the
   chosen processing window.
 - Non-positive and non-integer values are refused at parse.
-- The defaults are documented; nothing in the tree still assumes the old
-  defaults without passing them.
+- The defaults are documented; CI callers choose their short windows
+  explicitly and compute window waits from readback.
 - PR CI is green on the exact head.

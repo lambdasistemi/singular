@@ -1,4 +1,14 @@
 {
+  "registry-windows-at-create-tasks": [
+    {
+      "text": "Registry windows at create: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Read the plan for the module rows. One commit per task, in order.",
+      "pause": 400
+    }
+  ],
   "slice-windows-at-create": [
     {
       "text": "Slice: windows at create.",
@@ -9,24 +19,24 @@
       "pause": 400
     },
     {
-      "text": "Flag tests: parse refusals for non-positive and non-integer values, and a journey assertion that explicit windows are read back and the fold deadline follows the processing window. Committed failing.",
-      "pause": 400
+      "text": "[ ] Flag tests: parse refusals for non-positive and non-integer values, and a journey assertion that explicit windows are read back and the fold deadline follows the processing window. Committed failing.",
+      "pause": 300
     },
     {
-      "text": "Flags and defaults: --process-time and --retract-time on create, defaults 600 000 and 300 000 ms, shown in the receipt and inspect.",
-      "pause": 400
+      "text": "[ ] Flags and defaults: --process-time and --retract-time on create, defaults 600 000 and 300 000 ms, shown in the receipt and inspect.",
+      "pause": 300
     },
     {
-      "text": "Callers keep their timing: journeys, controls and tests that relied on the old defaults pass them explicitly.",
-      "pause": 400
+      "text": "[ ] CI journeys use short windows: journeys, controls and the attach take choose them explicitly with at least three times measured fold preparation beyond the client guard; compute window waits from receipts/inspect, with defaults and existing preprod registries unchanged.",
+      "pause": 300
     },
     {
-      "text": "Documentation: the defaults and that the windows are fixed for the life of a registry, with speech and narration updated.",
-      "pause": 400
+      "text": "[ ] Documentation: the defaults and that the windows are fixed for the life of a registry, with speech and narration updated.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "f79cebfc92148f5b915a6c0aa5820871108d1a3447115a2e848a4fa858d9cbf3"
+    "sha256": "3b752f0d76c94febb66e083a29d1c645c9c0b5ac1c0f8fd1c29be9598da6d580"
   }
 }

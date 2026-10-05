@@ -1,4 +1,14 @@
 {
+  "registry-windows-at-create-plan": [
+    {
+      "text": "Registry windows at create: plan.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the windows to enter at one place, create, and to be read back from the chain everywhere else. Read the stories first. Base: main 9a95502d.",
+      "pause": 400
+    }
+  ],
   "module-rows": [
     {
       "text": "Module rows.",
@@ -37,6 +47,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c5b3848fd0e46cfcd4cadad7eeff86c7acc82d5f796a4ebefb9d290f53e542fa"
+    "sha256": "b78e95ca099031b62f613afc7b30a99e9a476cb554f051bc93dc6933c7a3913b"
   }
 }

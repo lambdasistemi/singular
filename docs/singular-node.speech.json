@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "You run the singular registry commands — create, insert, update, terminate, fold, reject and inspect — against a cardano node you already run: a public test network's node, or a development network you started yourself. You tell each command where the node is and which network it carries; the command reads the chain through that node, signs with your key, submits, waits for the chain to carry what it submitted, and leaves a journal entry that names exactly which chain state each transaction was built from. When a setting is missing, contradictory or points at the wrong network, the command refuses before it reads or submits anything.",
+      "text": "You run the singular registry commands — create, insert, update, terminate, fold, reclaim, reject and inspect — against a cardano node you already run: a public test network's node, or a development network you started yourself. You tell each command where the node is and which network it carries; the command reads the chain through that node, signs with your key, submits, waits for the chain to carry what it submitted, and leaves a journal entry that names exactly which chain state each transaction was built from. When a setting is missing, contradictory or points at the wrong network, the command refuses before it reads or submits anything.",
       "pause": 400
     }
   ],
@@ -16,6 +16,20 @@
     },
     {
       "text": "The three node settings travel together on a write: naming one or two of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
+      "pause": 400
+    }
+  ],
+  "choosing-a-registrys-windows": [
+    {
+      "text": "Choosing a registry's windows.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
+      "pause": 400
+    },
+    {
+      "text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
       "pause": 400
     }
   ],
@@ -51,16 +65,16 @@
       "pause": 500
     },
     {
-      "text": "As a requester, you can take back your own pending request after its processing deadline, while its retract window is still open. registry reclaim names the request and signs with the wallet you give it. It refuses before building when the request is not pending, belongs to another wallet, or names an edge that cannot be retracted.",
+      "text": "As a requester, you can take back your pending insertion or terminal-witness request after its processing deadline, while its retract window remains open. registry reclaim requires --request TXID#IX and signs with the wallet you give it. It refuses before building when that request is not pending, belongs to another wallet, or names an update or deletion edge that Lean cannot retract.",
       "pause": 400
     },
     {
-      "text": "The window is judged from the command's own view of the chain, exactly as reject judges it. The processing deadline must convert to a slot the tip has reached. The retract deadline stays open while its slot is ahead of the tip, or while it lies beyond what the node can convert. A reached retract deadline is closed, and the refusal points to registry reject. No host clock or estimated slot decides.",
+      "text": "The command judges the window from its own view's tip slot and converted processing deadline: that deadline must convert, and the tip must reach it. The retract deadline stays open while its converted slot is ahead of the tip, or while it is beyond the view's conversion horizon, exactly as reject judges it. An unconverted processing deadline does not prove opening and is refused before the window, naming the opening time. A known, reached retract deadline is closed; the refusal names registry reject as the way to clear expired requests. No host clock or estimated slot decides admission. The development node's short conversion horizon may still prevent the builder from providing a valid bound; a build failure is no evidence of a successful reclaim.",
       "pause": 400
     },
     {
-      "text": "Inside the window, the retract pays the owner all of the request's locked lovelace in one output tied to that request, and the command checks that output and the transaction's validity bounds before signing.",
-      "pause": 500
+      "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same view and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
+      "pause": 400
     }
   ],
   "rejecting-expired-requests": [
@@ -173,6 +187,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "5984fa5311d55e6839a1a609fd5fde023a5f025110d073b204cd55498ab54372"
+    "sha256": "ae7b3c616b729362c4ee18939210bc623abefb1188d3ef70a7f80d6951a6fb5b"
   }
 }
