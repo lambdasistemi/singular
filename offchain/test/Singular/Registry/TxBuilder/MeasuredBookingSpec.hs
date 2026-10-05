@@ -15,8 +15,8 @@ estimator charges for that body with the reference scripts it reads, and a
 collateral the transaction states — 'totalCollateral' at the protocol's
 percentage of that fee and a return carrying the rest of the output back.
 
-Every expected value here is obtained at run time from the stub evaluator
-the builder is given, from the wallet the generator drew, and from the
+Every expected budget here is obtained from the imported ledger on the final
+body, using the raw outputs and synthetic cost model supplied to the builder, from the wallet the generator drew, and from the
 ledger's own functions over the parameters the public preprod node reports
 (fee 155381 + 44 per byte, 150% collateral, 15 per reference-script byte,
 prices 0.0577 and 0.0000721). Nothing is typed from a builder's output.
@@ -88,19 +88,28 @@ import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
+import Cardano.Ledger.Alonzo.Scripts (AsIx)
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose)
 import Cardano.Ledger.Core (Script)
+import Cardano.Ledger.State (UTxO (..))
 import Singular.PhaseLogFixture
     ( logObjects
     , phaseLines
     , textField
     , withLogFile
     )
-import Singular.Registry.Blueprint (applyBytesParam)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.NetworkTime
+    ( networkEpochInfo
+    , networkSystemStart
+    )
 import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
 import Singular.Registry.Provider (Provider (..), View (..))
 import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SyntheticLedger (withCostCoefficients)
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
 import Singular.Registry.TxBuilder.CollateralJudgement
     ( Spend (..)
@@ -115,7 +124,6 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
-    , scriptFromBytes
     )
 import Singular.Registry.Types (Edge)
 
@@ -153,25 +161,22 @@ per byte, so a fee that ignores the bytes read is off by far more than the
 witness allowance below.
 -}
 publishedScript :: Script ConwayEra
-publishedScript =
-    scriptFromBytes
-        "t300-published"
-        (applyBytesParam (BS.replicate 9_000 0x61) program)
+publishedScript = applicationScript
 
 -- | The first of a list the fixture guarantees is not empty.
 first :: String -> [a] -> a
 first _ (x : _) = x
 first what [] = error ("MeasuredBookingSpec: no " <> what)
 
--- | What the booking is asked for, and what the stub evaluator measures.
+-- | The booking request and explicit synthetic ledger cost coefficients.
 data Scenario = Scenario
     { scWallet :: [Held]
     -- ^ ada-only outputs of the payer (n > 1 in general)
     , scUnits :: ExUnits
-    -- ^ what the evaluator measures for the booking's one purpose before any fee is set
+    -- ^ synthetic ledger startup memory and CPU coefficients
     , scSlope :: Integer
-    {- ^ how much memory the script costs more per hundred lovelace of the fee
-    its transaction states: a script reads its own transaction
+    {- ^ synthetic SHA256 CPU slope increment; the script hashes fee/100 bytes
+    after reading its actual V3 transaction context
     -}
     , scDeposit :: Integer
     , scByReference :: Bool
@@ -243,24 +248,40 @@ walletOuts sc =
     ]
         <> [(refIn, refOut) | scByReference sc]
 
-{- | What the evaluator measures on a transaction: the base units, and more
-memory for every hundred lovelace of fee the transaction states.
+{- | Independent expected budgets: invoke the imported ledger on the
+actual final body and the scenario's raw wallet/reference outputs, outside
+both the common service and the builder's convergence loop.
 -}
-evaluatedOn :: Scenario -> ConwayTx -> ExUnits
+evaluatedOn
+    :: Scenario
+    -> ConwayTx
+    -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) ExUnits
 evaluatedOn sc tx =
-    let ExUnits mem steps = scUnits sc
-        Coin fee = tx ^. bodyTxL . feeTxBodyL
-    in  ExUnits (mem + fromIntegral (scSlope sc * fee `div` 100)) steps
+    let actual =
+            evalTxExUnits
+                (viewProtocolParams (viewFor sc))
+                tx
+                (UTxO (Map.fromList (walletOuts sc)))
+                (networkEpochInfo syntheticTime)
+                (networkSystemStart syntheticTime)
+    in  Map.map
+            (either (error . ("independent booking evaluation: " <>) . show) id)
+            actual
 
--- | The one view a booking of this scenario is built from.
+-- | Raw facts from the one view; no provider-selected evaluator.
 viewFor :: Scenario -> View IO
 viewFor sc =
     stubView
         { viewUTxOsAt = \_ -> pure (walletOuts sc)
-        , viewProtocolParams = preprodParams
-        , viewEvaluateTx = \tx ->
-            let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-            in  pure (Map.map (const (Right (evaluatedOn sc tx))) m)
+        , viewProtocolParams =
+            withCostCoefficients (scUnits sc) (scSlope sc) preprodParams
+        , viewTimeContext = pure syntheticTime
+        , viewResolvedOutputs = \wanted ->
+            pure
+                [ (reference, output)
+                | (reference, output) <- walletOuts sc
+                , reference `Set.member` wanted
+                ]
         }
 
 -- | The provider every acquisition of which is that view.
@@ -349,7 +370,7 @@ findings sc tx =
         <> " but the evaluator measures "
         <> T.pack (show (evaluatedOn sc tx))
         <> " on the body as submitted"
-    | declared /= [evaluatedOn sc tx]
+    | declared /= evaluatedOn sc tx
     ]
         <> judgeCollateral
             Spend
@@ -361,7 +382,7 @@ findings sc tx =
   where
     declared =
         let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-        in  [u | (_, (_, u)) <- Map.toList m]
+        in  Map.map snd m
     funding = expectedFunding sc
     fundingValue =
         first "funding" [l | Held i l <- scWallet sc, i == funding]
@@ -420,7 +441,18 @@ mutations =
             let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
             in  tx
                     & witsTxL . rdmrsTxWitsL
-                        .~ Redeemers (Map.map (\(d, _) -> (d, scUnits sc)) m)
+                        .~ Redeemers
+                            ( Map.mapWithKey
+                                ( \purpose (d, _) ->
+                                    ( d
+                                    , Map.findWithDefault
+                                        (ExUnits 0 0)
+                                        purpose
+                                        (evaluatedOn sc (tx & bodyTxL . feeTxBodyL .~ Coin 0))
+                                    )
+                                )
+                                m
+                            )
         )
     ]
 
@@ -449,9 +481,9 @@ spec =
                 evaluations <- newIORef (0 :: Int)
                 let counted =
                         base
-                            { viewEvaluateTx = \tx ->
+                            { viewResolvedOutputs = \references ->
                                 atomicModifyIORef' evaluations (\n -> (n + 1, ()))
-                                    >> viewEvaluateTx base tx
+                                    >> viewResolvedOutputs base references
                             }
                 _ <-
                     withView (loggedProvider (phaseLogAt path) (servingView counted)) $ \v ->
@@ -499,7 +531,7 @@ spec =
             $ property
             $ forAll genTight
             $ \sc -> ioProperty $ do
-                let high = preprodParams & ppCollateralPercentageL .~ 1800
+                let high = viewProtocolParams (viewFor sc) & ppCollateralPercentageL .~ 1800
                     Held _ funding = first "funding" (scWallet sc)
                 built <-
                     try
@@ -560,8 +592,8 @@ spec =
                 -- one acquisition and must be the tree-change-requires-approval build; a booking built from a
                 -- P2 view must be dearer, so the parameters do reach the body.
                 acquired <- newIORef (0 :: Int)
-                let p1 = preprodParams
-                    p2 = preprodParams & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 440)
+                let p1 = viewProtocolParams (viewFor sc)
+                    p2 = p1 & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 440)
                     moving =
                         Provider $ \k -> do
                             n <- atomicModifyIORef' acquired (\c -> (c + 1, c))

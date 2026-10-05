@@ -31,6 +31,8 @@ import Data.ByteString.Short qualified as SBS
 import Data.Maybe (fromJust)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
+import PlutusCore.Default (DefaultFun (..))
+import PlutusCore.MkPlc (mkConstant)
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 (serialiseUPLC)
 import UntypedPlutusCore qualified as UPLC
@@ -84,31 +86,47 @@ import Singular.Registry.Types
 
 {- | A well-formed PlutusV3 program: the registry scripts are
 parameterized by applying one argument after another, so the fixture
-takes two (`applyRequestParams` applies the state policy and then the
-token name; `witnessPin` applies one). @\\x y -> x@ in DeBruijn
-indices.
+takes a byte parameter and the V3 context. It returns unit after a
+fee-dependent hash; these are synthetic application witnesses, not
+implementations of registry admission.
 -}
 program :: SBS.ShortByteString
-program =
-    serialiseUPLC
-        ( UPLC.Program
-            ()
-            plcVersion110
-            ( UPLC.LamAbs
-                ()
-                (UPLC.DeBruijn 0)
-                ( UPLC.LamAbs
-                    ()
-                    (UPLC.DeBruijn 0)
-                    (UPLC.Var () (UPLC.DeBruijn 2))
-                )
+program = serialiseUPLC (UPLC.Program () plcVersion110 term)
+  where
+    -- Applied byte parameter, then the actual V3 script context.
+    -- Extract txInfoFee and hash fee/100 bytes of the parameter. This
+    -- changes real execution cost when the final body acquires its fee.
+    term =
+        UPLC.LamAbs () (UPLC.DeBruijn 0) $
+            UPLC.LamAbs () (UPLC.DeBruijn 0) $
+                app (UPLC.LamAbs () (UPLC.DeBruijn 0) (mkConstant () ())) digest
+    app = UPLC.Apply ()
+    builtin = UPLC.Builtin ()
+    headOf = app (UPLC.Force () (builtin HeadList))
+    tailOf = app (UPLC.Force () (builtin TailList))
+    fields =
+        app (UPLC.Force () (UPLC.Force () (builtin SndPair)))
+            . app (builtin UnConstrData)
+    info = headOf (fields (UPLC.Var () (UPLC.DeBruijn 1)))
+    fee =
+        app
+            (builtin UnIData)
+            (headOf (tailOf (tailOf (tailOf (fields info)))))
+    count =
+        app (app (builtin DivideInteger) fee) (mkConstant () (100 :: Integer))
+    bytes =
+        app
+            ( app
+                (app (builtin SliceByteString) (mkConstant () (0 :: Integer)))
+                count
             )
-        )
+            (UPLC.Var () (UPLC.DeBruijn 2))
+    digest = app (builtin Sha2_256) bytes
 
 codes :: NamingCodes
 codes =
     NamingCodes
-        { ncApplication = applyBytesParam "t240-application" program
+        { ncApplication = applyBytesParam (BS.replicate 9_000 0x61) program
         , ncWitness = applyBytesParam "t240-witness" program
         }
 
