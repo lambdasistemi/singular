@@ -198,7 +198,13 @@ fundingOf sc =
 chainView :: Scenario -> Integer -> Maybe Integer -> View IO
 chainView sc submittedAt horizon =
     stubView
-        { viewUTxOsAt = \addr ->
+        { viewPoint =
+            (viewPoint stubView)
+                { cpSlot =
+                    SlotNo
+                        (fromInteger ((submittedAt + defaultProcessTime cfg + 999) `div` 1000))
+                }
+        , viewUTxOsAt = \addr ->
             pure $
                 if addr == requestAddrFromCfg cfg tokenId Testnet
                     then [(requestIn, requestOut submittedAt)]
@@ -268,22 +274,23 @@ than return a transaction the acquired ledger cannot accept yet.
 retractValidity :: Spec
 retractValidity = describe "a retraction never starts ahead of its acquired view" $ do
     it
-        "refuses when phase two opens after the view tip, through either entry point" $
-        property $
-            forAll (chooseInteger (0, 30)) $ \tip -> ioProperty $ do
-                let view = atTip (SlotNo (fromInteger tip))
-                mapM_
-                    refuses
-                    [ retractRequestImpl cfg view tokenId requestIn payer
-                    , retractRequestAtTipImpl
-                        (cpSlot (viewPoint view))
-                        cfg
-                        view
-                        tokenId
-                        requestIn
-                        payer
-                    ]
-                pure True
+        "refuses when phase two opens after the view tip, through either entry point"
+        $ property
+        $ forAll (chooseInteger (0, 30))
+        $ \tip -> ioProperty $ do
+            let view = atTip (SlotNo (fromInteger tip))
+            mapM_
+                refuses
+                [ retractRequestImpl cfg view tokenId requestIn payer
+                , retractRequestAtTipImpl
+                    (cpSlot (viewPoint view))
+                    cfg
+                    view
+                    tokenId
+                    requestIn
+                    payer
+                ]
+            pure True
     it "refuses a caller-supplied lower bound ahead of the acquired tip" $ do
         let view = atTip (SlotNo 40)
         refuses

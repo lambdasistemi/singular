@@ -15,6 +15,7 @@ module Singular.Registry.TxBuilder.Retract
     , retractRequestAtTipImpl
     ) where
 
+import Control.Monad (when)
 import Data.List (nub)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
@@ -73,7 +74,7 @@ import Singular.Registry.Ledger
     ( ConwayTxBody
     , TokenId
     )
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
@@ -102,8 +103,9 @@ retractRequestImpl
     -> IO ConwayTx
 retractRequestImpl = retractRequestAtTipImpl (SlotNo 0)
 
-{- | Use the submission-time tip as the lower validity bound, while
-staying inside the request's unchanged phase-2 window.
+{- | Use the caller's tip as the lower validity bound, while staying
+inside phase 2. Refuse @lower-bound-ahead-of-view@ if that bound or the
+phase-two opening is later than the acquired view's own tip.
 -}
 retractRequestAtTipImpl
     :: SlotNo
@@ -175,6 +177,9 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
         viewPosixMsCeilSlot view phase2Start
+    let lowerSlot = max tip phase2Slot
+    when (lowerSlot > cpSlot (viewPoint view)) $
+        fail "retractRequest: lower-bound-ahead-of-view"
     -- The window's end may lie past what the node can translate to a slot
     -- (its horizon). A validity upper bound anywhere inside the window is as
     -- correct as its end, so a nearer bound stands in: the window's end first,
@@ -190,8 +195,7 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
                 , min phase2End (nowMs + 3_000)
                 ]
             )
-    let lowerSlot = max tip phase2Slot
-        upperSlot = SlotNo (max 0 (s - 1))
+    let upperSlot = SlotNo (max 0 (s - 1))
         script = mkRequestScript cfg tid
         scriptHash = hashScript script
         allInputs =
