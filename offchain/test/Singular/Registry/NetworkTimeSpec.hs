@@ -186,15 +186,16 @@ matches (NodeRefusal reason) actual =
 spec :: Spec
 spec = describe "Validity conversions from recorded preprod network data" $ do
     it
-        "loads the production packaged source and retains all recorded answers" $ do
-        material <- loadTimeMaterial 1 "unused-for-packaged-preprod"
-        context <- case material of
-            PackagedTime reviewed -> pure reviewed
-            GeneratedGenesis _ -> fail "PackagedPreprodSelectedGeneratedSource"
-        (_, _, _, rows) <- loadFixture
-        forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
-            matches floorAnswer (posixMsFloorSlot context ms) `shouldBe` True
-            matches ceilAnswer (posixMsCeilingSlot context ms) `shouldBe` True
+        "loads the production packaged source and retains all recorded answers"
+        $ do
+            material <- loadTimeMaterial 1 "unused-for-packaged-preprod"
+            context <- case material of
+                PackagedTime reviewed -> pure reviewed
+                GeneratedGenesis _ -> fail "PackagedPreprodSelectedGeneratedSource"
+            (_, _, _, rows) <- loadFixture
+            forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
+                matches floorAnswer (posixMsFloorSlot context ms) `shouldBe` True
+                matches ceilAnswer (posixMsCeilingSlot context ms) `shouldBe` True
     forM_ [("preprod", 1), ("devnet", 42)] $ \(network, magic) ->
         it
             ( "matches independently recorded "

@@ -143,9 +143,10 @@ spec = describe "the chain a runner selects" $ do
             txUpperBoundSlot txWithoutBound `shouldBe` Nothing
 
         it
-            "waits for the bound's validated start plus two uncapped POSIX minutes" $ do
-            deadline <- confirmDeadline slotProv txPinningBound
-            deadline `shouldBe` 1120000
+            "waits for the bound's validated start plus two uncapped POSIX minutes"
+            $ do
+                deadline <- confirmDeadline slotProv txPinningBound
+                deadline `shouldBe` 1120000
 
         it "waits for the fixed window when no bound is pinned" $ do
             before <- getCurrentTime

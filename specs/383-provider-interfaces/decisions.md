@@ -238,3 +238,31 @@ owner and auditor arrangement. It does not establish implementation
 correspondence, exact-head CI, merge or release. Final evidence still requires
 the local gate, the devnet journey, controlled faults, honest public gaps and
 the approved audit checkpoint trail. The epic owner verifies and merges.
+
+
+## Local computations during the second slice
+
+As a builder author, I use one acquired view's raw parameters, validated time
+context and resolved spent, reference and collateral outputs. The public
+`local-services` component owns Ledger and Provider, together with fixed local
+execution and time services; the main library keeps the original Ledger and
+Provider import paths. An adapter supplies facts and cannot select an evaluator
+or time converter. The node and indexer remain the existing backends in this
+slice, and memory fixtures name an explicit finite synthetic context.
+
+| Choice | Alternative left out | Reader-visible limit |
+| --- | --- | --- |
+| Imported ledger execution on exact raw inputs | A provider-selected budget callback | Script failures and missing or conflicting inputs refuse; script budgets have no Lean counterpart. |
+| Reviewed preprod sources and each live devnet's exact generated sources | Estimated or silently extended ledger horizons | Ledger bounds beyond the validated finite range refuse. |
+| POSIX confirmation waits after validation of the ledger bound | Converting wait margins into future ledger slots | A finite upper bound retains its slot-start time plus two minutes; no upper bound retains five minutes from the local clock. Missing output waits compare the latest observed block time. |
+
+The behavioral model remains the accepted recovery revision
+`872c0ecf3c7cf1a10293793523c8521d5ef9aae9`; no Lean or registry admission law
+changes here. The existing reject-model discrepancy remains held and gains no
+acceptance from these computation checks. Recorded comparisons, reached faults,
+retained query and builder properties, compiler closure and the actual private
+journey and recovery are separate evidence obligations. The first approved
+checkpoint binds source comparisons and a reached caller fault; it does not
+accept the migrated callers. Final evidence and the second checkpoint remain
+pending. API source links follow the moved public owner; wider generated local
+service coverage and changed narration are explicit gaps, not implied passes.
