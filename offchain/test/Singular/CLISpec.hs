@@ -173,6 +173,8 @@ commandLine = describe "the command line" $ do
                         , createSeed = Just seedText
                         , createPreview = False
                         , createReceipt = Nothing
+                        , createProcessTime = 600_000
+                        , createRetractTime = 300_000
                         }
                 )
     describe "registry creation windows" $ do
@@ -187,10 +189,52 @@ commandLine = describe "the command line" $ do
                             <> wallet
                         )
                         `shouldSatisfy` either (const False) (const True)
+        it "retains both chosen values and defaults only the omitted window" $ do
+            let windows extra =
+                    fmap
+                        ( \case
+                            Create a -> Just (createProcessTime a, createRetractTime a)
+                            _ -> Nothing
+                        )
+                        ( parseCommand
+                            ( ["registry", "create", "--seed", seedText]
+                                <> reg
+                                <> node
+                                <> wallet
+                                <> extra
+                            )
+                        )
+            windows [] `shouldBe` Right (Just (600_000, 300_000))
+            windows ["--process-time", "120000", "--retract-time", "30000"]
+                `shouldBe` Right (Just (120_000, 30_000))
+            windows ["--process-time=1"] `shouldBe` Right (Just (1, 300_000))
+            windows ["--retract-time=1"] `shouldBe` Right (Just (600_000, 1))
+            windows ["--process-time=999999999999999999999999999999"]
+                `shouldBe` Right (Just (999999999999999999999999999999, 300_000))
+        it
+            "refuses creation windows on later commands instead of ignoring them" $
+            forM_
+                [ "insert"
+                , "update"
+                , "terminate"
+                , "fold"
+                , "reclaim"
+                , "reject"
+                , "inspect"
+                ] $ \command ->
+                forM_ ["--process-time", "--retract-time"] $ \flag ->
+                    parseCommand
+                        (["registry", command, flag, "1"] <> reg <> node <> wallet)
+                        `shouldBe` Left
+                            ( BadValue
+                                flag
+                                "is a registry create flag: windows are fixed for the life of a registry"
+                            )
         forM_ ["--process-time", "--retract-time"] $ \flag -> do
             it
-                ("refuses non-positive and non-integer " <> flag <> " before effects") $
-                forM_ ["0", "-1", "1.5", "lots", "", "1e3"] $ \argument ->
+                ("refuses non-positive and non-integer " <> flag <> " before effects")
+                $ forM_ ["0", "-1", "1.5", "lots", "", "1e3"]
+                $ \argument ->
                     parseCommand
                         ( ["registry", "create", "--seed", seedText, flag, argument]
                             <> reg

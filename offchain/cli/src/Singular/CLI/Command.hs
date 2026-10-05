@@ -75,6 +75,8 @@ import Singular.Application.OpenDatum.Build
     , readKey
     )
 import Singular.CLI.Node (backendSetting, writeTarget)
+import Singular.CLI.Registry (economics)
+import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 
 -- | A registry key: the bytes the leaf and the active token are named by.
@@ -114,6 +116,10 @@ data CreateArgs = CreateArgs
     -- ^ @txid#index@ of the wallet output the boot consumes
     , createPreview :: Bool
     , createReceipt :: Maybe FilePath
+    , createProcessTime :: Integer
+    -- ^ Positive processing window in milliseconds, fixed at creation
+    , createRetractTime :: Integer
+    -- ^ Positive retract window in milliseconds, fixed at creation
     }
     deriving stock (Eq, Show)
 
@@ -261,7 +267,7 @@ parseCommand args = do
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
         else
-            refuseOutputsAt words' flags >> case words' of
+            refuseWindows words' flags >> refuseOutputsAt words' flags >> case words' of
                 [] -> Right Help
                 ["registry"] -> Right Help
                 ["registry", "create"] ->
@@ -289,6 +295,15 @@ parseCommand args = do
                         >> (Inspect <$> inspectArgs flags)
                 _ -> Left (UnknownCommand words')
   where
+    refuseWindows words' flags =
+        unless (words' == ["registry", "create"]) $
+            forM_ ["--process-time", "--retract-time"] $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is a registry create flag: windows are fixed for the life of a registry"
+                        )
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
     -- than discard what the caller stated.
@@ -325,6 +340,10 @@ parseCommand args = do
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
     createArgs flags = do
+        processing <-
+            windowFrom "--process-time" (reProcessTime economics) flags
+        retracting <-
+            windowFrom "--retract-time" (reRetractTime economics) flags
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -350,7 +369,15 @@ parseCommand args = do
                 , createSeed = seed
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
+                , createProcessTime = processing
+                , createRetractTime = retracting
                 }
+    windowFrom name fallback flags = case optional name flags of
+        Nothing -> Right fallback
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all (\c -> c >= '0' && c <= '9') value -> Right n
+            _ ->
+                Left (BadValue name "needs a positive integer number of milliseconds")
     -- An insert is an entry command that also names the deposit its envelope
     -- protects: --deposit LOVELACE, else the minimum, read by the library.
     insertArgs flags = do
@@ -631,6 +658,8 @@ tokens = go [] []
         , "--network-magic"
         , "--wallet-skey"
         , "--seed"
+        , "--process-time"
+        , "--retract-time"
         , "--key"
         , "--key-hex"
         , "--receipt"
@@ -688,10 +717,11 @@ usage =
     unlines
         [ "usage:"
         , "  singular registry create --registry DIR --blueprint PLUTUS_JSON"
-        , "      (--seed TXID#IX | --preview)"
+        , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] --node-socket PATH --network-magic N --wallet-address ADDR"
+        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --node-socket PATH --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --node-socket PATH --network-magic N --wallet-skey FILE [--receipt FILE]"
@@ -727,6 +757,9 @@ usage =
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --node-socket PATH --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""
+        , "create takes positive integer windows in milliseconds: --process-time defaults"
+        , "to 600000 (ten minutes), --retract-time to 300000 (five minutes). Both are fixed"
+        , "for the life of the registry; create and inspect report them from the state datum."
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
         , "Every command also takes --backend node|indexer (default node): where its"

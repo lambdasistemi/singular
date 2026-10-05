@@ -466,6 +466,19 @@ jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   || fail "create did not report the chosen processing and retract windows"
 say "registry $token booted from $seed"
 
+# This registry exercises absent flags and never books a timed request.
+# The rest of the journey keeps its explicit development-network windows.
+run create-defaults success -- registry create --seed "$(field bob-preview .seed)" \
+  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+run inspect-defaults success -- registry inspect --key default-window-key \
+  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}"
+for name in create-defaults inspect-defaults; do
+  jq -e '.processTime == 600000 and .retractTime == 300000' "$receipts/$name.json" >/dev/null \
+    || fail "$name: the default registry did not read back ten-minute processing and five-minute retract windows"
+done
+say "default registry windows read back from create and inspect, without waiting them out"
+
+
 # ------------------------------------------------------------------
 # 2. insert (alice), with its refusals
 # ------------------------------------------------------------------
@@ -570,7 +583,6 @@ jq -e --argjson p "$process_time" --argjson r "$retract_time" --slurpfile b "$re
 ' "$receipts/inspect-pending.json" >/dev/null \
   || fail "inspect did not read the chosen windows, or the booking deadline differs from its live submission time plus the processing window"
 say "chosen registry windows read back; booking deadline is submission time plus the processing window"
-
 
 # A-001: an unconverted processing deadline cannot prove opening and is
 # refused before the window, naming when it opens.

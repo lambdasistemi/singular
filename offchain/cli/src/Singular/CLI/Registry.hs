@@ -37,6 +37,7 @@ module Singular.CLI.Registry
     , Release (..)
     , loadRelease
     , registryConfigFor
+    , economics
     , pinsOf
     , partsOf
     , hexT
@@ -223,8 +224,8 @@ loadRelease path = do
 economics :: RegistryEconomics
 economics =
     RegistryEconomics
-        { reProcessTime = 120_000
-        , reRetractTime = 30_000
+        { reProcessTime = 600_000
+        , reRetractTime = 300_000
         , reTip = Coin 1_000_000
         }
 
@@ -234,14 +235,17 @@ applied to the registry identity the seed determines, and
 @witness(kind, registry)@ at kinds 0, 1 and 2.
 -}
 registryConfigFor
-    :: Release -> OnChainTxOutRef -> (CageConfig, NamingCodes)
-registryConfigFor rel =
+    :: Release
+    -> RegistryEconomics
+    -> OnChainTxOutRef
+    -> (CageConfig, NamingCodes)
+registryConfigFor rel chosen =
     configForApplication
         OpenDatumApplication
         (releaseCodes rel)
         (releaseState rel)
         (releaseRequest rel)
-        economics
+        chosen
         Testnet
 
 -- | The pins a configuration carries, as a saved identity names them.
