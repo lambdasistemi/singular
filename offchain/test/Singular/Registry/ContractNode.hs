@@ -62,7 +62,7 @@ import System.Directory
     , doesFileExist
     , getTemporaryDirectory
     )
-import System.FilePath ((</>))
+import System.FilePath (takeDirectory, (</>))
 import System.IO (IOMode (..), hClose, openFile)
 import System.IO.Temp (createTempDirectory, withSystemTempDirectory)
 import System.Posix.Files (ownerReadMode, setFileMode)
@@ -145,7 +145,6 @@ import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
     )
-import System.FilePath (takeDirectory)
 
 -- | Who started the node the harness reaches.
 data Leg

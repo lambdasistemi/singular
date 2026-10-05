@@ -151,6 +151,7 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TimeMaterial (loadTimeMaterial)
 import System.FilePath (takeDirectory)
 
@@ -168,6 +169,8 @@ data NodeSession = NodeSession
     {- ^ Current chain tip, for confirmation deadlines; never a read an
     operation builds from (those go through a view of 'nsProvider')
     -}
+    , nsTipTime :: IO Integer
+    -- ^ Latest observed block start in POSIX milliseconds, for local waits
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
@@ -422,6 +425,8 @@ assembleSession lg mode magic network prov submitter n2c =
                 "tipSlot"
                 (const 1)
                 (N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c)
+        , nsTipTime = Cage.withView (loggedProvider lg prov) $ \view ->
+            Services.slotStart view (Cage.cpSlot (Cage.viewPoint view))
         , nsMode = mode
         }
 

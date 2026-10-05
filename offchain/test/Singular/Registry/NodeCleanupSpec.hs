@@ -184,6 +184,7 @@ stubSession =
         , nsMagic = NetworkMagic 42
         , nsNetwork = Testnet
         , nsTipSlot = pure (SlotNo 7)
+        , nsTipTime = pure 7000
         , nsMode = Devnet
         }
 

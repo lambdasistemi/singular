@@ -16,8 +16,10 @@ counts from the stub's own counters, the chain point from the view the
 body is handed, the ex-units from the answer the stub returned.
 
 'driveEveryQuery' matches the view's constructor positionally. Adding a
-read to 'View' breaks that pattern at compile time, so a new read cannot
-be left out of the rows.
+read to 'View' breaks that pattern at compile time. An independently
+enumerated read census starts every read at zero and requires a reached call;
+the log is compared with producer counts. A reached resolver bypass controls
+that comparison. Raw node-call reconciliation is a separate extent below.
 -}
 module Singular.Registry.PhaseLogSpec (spec) where
 
@@ -215,12 +217,44 @@ spec = describe "the phase log of the read interface (#363)" $ do
                         , named o == Just q
                         , Just s <- [field "answer_size" o :: Maybe Int]
                         ]
+                sizes "networkTime" `shouldBe` replicate timeCalls 1
+                sizes "resolvedOutputs" `shouldBe` replicate resolvedCalls 0
+                map fst counted `shouldBe` sort ("acquire" : queryExtent)
+                map snd counted `shouldSatisfy` all (> 0)
                 sizes "utxosAt" `shouldBe` replicate utxosCalls utxoAnswer
                 sizes "scriptRegistered" `shouldBe` replicate registeredCalls 1
                 sizes "evaluateTx"
                     `shouldBe` replicate evaluateCalls (Map.size evaluation)
                 sizes "posixMsToSlot" `shouldBe` replicate toSlotCalls 1
                 sizes "posixMsCeilSlot" `shouldBe` replicate ceilCalls 1
+        it "detects a reached raw resolver read that bypasses its query log" $
+            withSystemTempDirectory "phase-log" $ \dir -> do
+                let path = dir </> "phase.log"
+                counters <- newCounters
+                let bare = countingProvider counters
+                    wrapped = loggedProvider (phaseLogAt path) bare
+                    bypass = Cage.Provider $ \action ->
+                        Cage.withView bare $ \raw ->
+                            Cage.withView wrapped $ \loggedView ->
+                                action
+                                    loggedView{Cage.viewResolvedOutputs = Cage.viewResolvedOutputs raw}
+                Cage.withView bypass driveEveryQuery
+                counted <- readCounters counters
+                objects <- logLines path
+                let actual =
+                        Map.fromListWith
+                            (+)
+                            [ (name, 1 :: Int)
+                            | object <- objects
+                            , field "phase" object == Just ("query" :: Text)
+                            , Just name <- [field "query" object :: Maybe Text]
+                            ]
+                    expected =
+                        Map.fromList
+                            [(name, calls) | (name, calls) <- counted, name /= "acquire"]
+                lookup "resolvedOutputs" counted `shouldBe` Just resolvedCalls
+                Map.lookup "resolvedOutputs" actual `shouldBe` Nothing
+                actual `shouldNotBe` expected
         it
             "gives the caller the same answers as the provider it wraps"
             $ withSystemTempDirectory "phase-log"
@@ -502,12 +536,16 @@ utxosCalls
     , evaluateCalls
     , toSlotCalls
     , ceilCalls
+    , timeCalls
+    , resolvedCalls
         :: Int
 utxosCalls = 3
 registeredCalls = 2
 evaluateCalls = 4
 toSlotCalls = 1
 ceilCalls = 5
+timeCalls = 6
+resolvedCalls = 7
 
 -- | What the stub answers an address read with: three outputs.
 utxoAnswer :: Int
@@ -527,7 +565,19 @@ emptyTx = mkBasicTx mkBasicTxBody
 type Counters = IORef [(Text, Int)]
 
 newCounters :: IO Counters
-newCounters = newIORef []
+-- The independently enumerated read extent starts at zero, so an omitted
+-- read remains observable even when neither the driver nor log calls it.
+queryExtent :: [Text]
+queryExtent =
+    [ "networkTime"
+    , "resolvedOutputs"
+    , "utxosAt"
+    , "scriptRegistered"
+    , "evaluateTx"
+    , "posixMsToSlot"
+    , "posixMsCeilSlot"
+    ]
+newCounters = newIORef [(name, 0) | name <- queryExtent]
 
 bump :: Counters -> Text -> IO ()
 bump c q = atomicModifyIORef' c $ \m -> (m <> [(q, 1)], ())
@@ -544,7 +594,9 @@ countingProvider c = Cage.Provider $ \act -> do
     bump c "acquire"
     act
         stubView
-            { Cage.viewUTxOsAt = \_ -> do
+            { Cage.viewTimeContext = bump c "networkTime" >> pure syntheticTime
+            , Cage.viewResolvedOutputs = \_ -> bump c "resolvedOutputs" >> pure []
+            , Cage.viewUTxOsAt = \_ -> do
                 bump c "utxosAt"
                 pure [(outRef ch, out) | ch <- take utxoAnswer "abc"]
             , Cage.viewScriptRegistered = \_ -> bump c "scriptRegistered" >> pure True
@@ -576,14 +628,27 @@ driveEveryQuery
             evaluate
             toSlot
             ceil
-        ) = do
-        replicateM_ utxosCalls (void (utxos payer))
-        replicateM_
+        ) =
+        do
+                replicateM_ timeCalls (void time)
+            replicateM_
+            resolvedCalls
+            (void (resolved Set.empty))
+            replicateM_
+            utxosCalls
+            (void (utxos payer))
+            replicateM_
             registeredCalls
             (void (registered credential))
-        replicateM_ evaluateCalls (void (evaluate emptyTx))
-        replicateM_ toSlotCalls (void (toSlot 1_000))
-        replicateM_ ceilCalls (void (ceil 1_000))
+            replicateM_
+            evaluateCalls
+            (void (evaluate emptyTx))
+            replicateM_
+            toSlotCalls
+            (void (toSlot 1_000))
+            replicateM_
+            ceilCalls
+            (void (ceil 1_000))
 
 -- | An address and a script credential every read can be given.
 payer :: Addr

@@ -45,7 +45,7 @@ syntheticTime =
             , timeSystemStartMs = 0
             , timeGenesisSha256 = digest genesis
             , timeEraHistorySha256 = digest history
-            , timeHorizonSlot = boundSlot end
+            , timeHorizonSlot = boundSlot syntheticEnd
             , timeSourceIdentity =
                 "synthetic memory model: epoch 0 through 10000, one-second slots"
             }
@@ -54,14 +54,19 @@ syntheticTime =
 
 -- | Actual serialized finite summary for the synthetic raw-node fixture.
 syntheticHistory :: BS.ByteString
-syntheticHistory = LBS.toStrict (serialise [EraSummary initBound (EraEnd end) params])
-  where
-    params =
-        EraParams
-            { eraEpochSize = EpochSize 432_000
-            , eraSlotLength = mkSlotLength 1
-            , eraSafeZone = StandardSafeZone 432_000
-            , eraGenesisWin = GenesisWindow 432_000
-            , eraPerasRoundLength = NoPerasEnabled
-            }
-    end = mkUpperBound params initBound (EpochNo 10_000)
+syntheticHistory =
+    LBS.toStrict
+        (serialise [EraSummary initBound (EraEnd syntheticEnd) syntheticParams])
+
+syntheticParams :: EraParams
+syntheticParams =
+    EraParams
+        { eraEpochSize = EpochSize 432_000
+        , eraSlotLength = mkSlotLength 1
+        , eraSafeZone = StandardSafeZone 432_000
+        , eraGenesisWin = GenesisWindow 432_000
+        , eraPerasRoundLength = NoPerasEnabled
+        }
+
+syntheticEnd :: Bound
+syntheticEnd = mkUpperBound syntheticParams initBound (EpochNo 10_000)
