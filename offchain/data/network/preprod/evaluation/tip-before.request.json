@@ -1,0 +1,1 @@
+{"id": "tip-before", "jsonrpc": "2.0", "method": "queryLedgerState/tip"}

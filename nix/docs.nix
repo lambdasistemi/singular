@@ -41,10 +41,10 @@ let
   # can prove the reference describes this candidate (a ref label alone is
   # not a freshness witness).
   apiHaddock = offchain.packages.${pkgs.system}.library-haddock;
-  # The package-private ownership core's own Haddock tree: the only source
+  # The public local-services owner's own Haddock tree: the only source
   # of the re-exported Ledger/Provider generated page pairs. The manifest
   # step takes exactly those two pairs from it and nothing else.
-  apiReexportHaddock = offchain.packages.${pkgs.system}.node-internal-haddock;
+  apiReexportHaddock = offchain.packages.${pkgs.system}.local-services-haddock;
   # The build's own package database: positive evidence for which modules a
   # dependency owns, used to neutralize (never merely unlink) the generated
   # references to dependency documentation this site does not bundle.

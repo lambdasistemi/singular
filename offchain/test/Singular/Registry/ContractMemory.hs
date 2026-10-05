@@ -27,6 +27,7 @@ import Data.IORef (atomicModifyIORef', newIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Singular.Registry.SyntheticTime (syntheticTime)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
@@ -190,8 +191,7 @@ genesis =
         , csPParams = emptyPParams
         , csUTxO = Map.empty
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 -- | A source of distinct output indices, one per chain change.

@@ -50,6 +50,7 @@ let
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
+      "local-services-record"
       "cage-test-vectors"
       "journey"
       "insert-active"
@@ -70,15 +71,14 @@ let
       # nix run .#contract-tests and nix run .#contract-external.
       "contract-tests"
     ];
-    # #266 (epic answer A-005): the package-private ownership core —
-    # ledger, provider and the six Node children in one internal
-    # library. Built here because the public library itself links it;
-    # this is the compiled state-identity carrier for the facade, the
-    # cleanup brackets and the cage test observers.
-    # #389: koios-http, the live Koios transport and the fixture recorder,
-    # public so the Koios provider and the commands selecting it link it.
+    # #389: the inherited public Koios HTTP client and recorder stay active.
+    # The main library links both the private node runtime and public
+    # local services. The private runtime keeps the facade, cleanup and
+    # test observers on one compiled instance of process state; the public
+    # component owns Ledger, Provider and fixed local computations.
     sublibs = [
       "node-internal"
+      "local-services"
       "koios-http"
     ];
   };

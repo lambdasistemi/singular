@@ -71,7 +71,6 @@ import Cardano.Ledger.Api.Tx.Wits
     )
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
-    , SlotNo (..)
     , StrictMaybe (..)
     )
 import Cardano.Ledger.Core (Script, hashScript)
@@ -92,8 +91,6 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Data.Foldable (toList)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
-import PlutusCore.Version (plcVersion110)
-import PlutusLedgerApi.V3 (serialiseUPLC)
 import PlutusTx.Builtins (toBuiltin)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -107,9 +104,9 @@ import Singular.Application.OpenDatum.Release
     ( releaseOf
     , withApplication
     )
-import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.DeBruijn ()
 
+import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef, saveMirror)
 import Singular.Registry.Ledger
@@ -120,10 +117,16 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.Provider (View (..))
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.SyntheticLedger
+    ( unitProgram
+    , withSyntheticCosts
+    )
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Mirror qualified as Mirror
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
     , ConnectedSpend (..)
@@ -136,6 +139,7 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , leafActive
     , mkInlineDatum
+    , mkRequestScript
     , policyIdFromPin
     , requestAddrFromCfg
     , scriptFromBytes
@@ -203,9 +207,9 @@ cfg =
         , defaultRetractTime = 30000
         , defaultTip = Coin 1000000
         , cfgApplicationPolicy = pin 0xa1
-        , cfgActivePolicy = pin 0xa2
-        , cfgAbsentPolicy = pin 0xa3
-        , cfgTerminalPolicy = pin 0xa4
+        , cfgActivePolicy = witnessPin 1
+        , cfgAbsentPolicy = witnessPin 0
+        , cfgTerminalPolicy = witnessPin 2
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -260,9 +264,18 @@ requestFor edge =
             }
 
 {- | The three witness policies the fold mints under. Their BYTES do
-not matter to these rows — only that the builder has one per kind, so a
+return unit under actual evaluation; the builder has one per kind, so a
 `Left` below is about the burn source and never about a missing script.
 -}
+witnessPin :: Int -> SBS.ShortByteString
+witnessPin kind =
+    SBS.toShort
+        ( scriptHashBytes
+            ( computeScriptHash
+                (applyDataParam (PLC.I (fromIntegral kind)) (unitProgram 2))
+            )
+        )
+
 witnessScripts :: RegistryContext
 witnessScripts =
     emptyRegistryContext
@@ -271,7 +284,7 @@ witnessScripts =
                 [ ( k
                   , scriptFromBytes
                         "t177 witness"
-                        (SBS.toShort (BS.pack [0x59, fromIntegral k]))
+                        (applyDataParam (PLC.I (fromIntegral k)) (unitProgram 2))
                   )
                 | k <- [0, 1, 2]
                 ]
@@ -962,7 +975,7 @@ fullFoldContext =
 -- #267: the BUILT fold requires no signature
 -- ---------------------------------------------------------
 
-{- | A well-formed PlutusV3 program, the two-argument identity. The
+{- | A well-formed PlutusV3 program returning unit from its context. The
 request script's parameters are applied to ACTUAL UPLC
 (`applyDataParam` deserialises the configured bytes), so a config whose
 script fields carry arbitrary bytes cannot reach the fold's assertions:
@@ -970,21 +983,7 @@ it fails inside the build with a deserialisation error. The built-body
 row folds under `builtCfg`; every pure row keeps the shared `cfg`.
 -}
 program :: SBS.ShortByteString
-program =
-    serialiseUPLC
-        ( UPLC.Program
-            ()
-            plcVersion110
-            ( UPLC.LamAbs
-                ()
-                (UPLC.DeBruijn 0)
-                ( UPLC.LamAbs
-                    ()
-                    (UPLC.DeBruijn 0)
-                    (UPLC.Var () (UPLC.DeBruijn 2))
-                )
-            )
-        )
+program = unitProgram 1
 
 {- | The registry the built-body row folds under: the same census, with
 both script fields carrying the well-formed program and the script
@@ -994,7 +993,7 @@ builtCfg :: CageConfig
 builtCfg =
     cfg
         { cageScriptBytes = program
-        , requestScriptBytes = program
+        , requestScriptBytes = unitProgram 3
         , cfgScriptHash = computeScriptHash program
         }
 
@@ -1040,25 +1039,52 @@ stateUtxoFor =
 
 {- | A stub provider serving one registry: the state at the cage, the one
 pending request at the request address, an ada-only wallet output
-anywhere else. Evaluation is stubbed to succeed with no budgets and
-slot conversion to a constant — the row reads the BODY the builder
-assembled, which never depends on either stub's value.
+anywhere else. Explicit finite synthetic time, exact resolved outputs and
+unit-returning synthetic witnesses let the real local evaluator run. These
+rows inspect assembled bodies and do not establish registry script admission.
 -}
 foldProvider :: View IO
 foldProvider =
     stubView
         { viewUTxOsAt = pure . utxosAt
-        , viewEvaluateTx = \_ -> pure Map.empty
-        , viewPosixMsToSlot = \_ -> pure (SlotNo 100)
-        , viewPosixMsCeilSlot = \_ -> pure (SlotNo 100)
+        , viewProtocolParams = withSyntheticCosts preprodParams
+        , viewTimeContext = pure syntheticTime
+        , viewResolvedOutputs =
+            resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] []
         }
+
+-- | Actual script address for the request the built fixture owns.
+builtRequest :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
+builtRequest (reference, output) =
+    ( reference
+    , output & addrTxOutL .~ requestAddrFromCfg builtCfg foldTokenId Testnet
+    )
+
+{- | Resolve the full raw extent, including application inputs and publications.
+Explicit extra facts replace the default application output by reference.
+-}
+resolveBuilt
+    :: [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Set.Set TxIn
+    -> IO [(TxIn, TxOut ConwayEra)]
+resolveBuilt requests extra wanted =
+    let facts =
+            Map.fromList
+                ( stateUtxoFor
+                    : utxosAt payer
+                        <> [liveOutput, registryReference, requestReference, appReference]
+                        <> requests
+                        <> extra
+                )
+    in  pure (Map.toAscList (Map.restrictKeys facts wanted))
 
 -- | What the fold's own queries see at each address.
 utxosAt :: Addr -> [(TxIn, TxOut ConwayEra)]
 utxosAt a
     | a == cageAddrFromCfg builtCfg Testnet = [stateUtxoFor]
     | a == requestAddrFromCfg builtCfg foldTokenId Testnet =
-        [requestFor edgeInsertAbsent]
+        [builtRequest (requestFor edgeInsertAbsent)]
     | otherwise =
         [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
 
@@ -1073,7 +1099,7 @@ builtFoldUnder pp = do
     createTrie tm foldTokenId
     updateTokenWithDuties
         builtCfg
-        foldProvider{viewProtocolParams = pp}
+        foldProvider{viewProtocolParams = withSyntheticCosts pp}
         tm
         foldTokenId
         payer
@@ -1421,8 +1447,9 @@ providerWith request =
         { viewUTxOsAt = \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
-                    then [request]
+                    then [builtRequest request]
                     else utxosAt a
+        , viewResolvedOutputs = resolveBuilt [builtRequest request] []
         }
 
 -- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
@@ -1533,13 +1560,7 @@ openDatumFold =
 
 -- | An application program distinct from the registry's own `program`.
 appProgram :: SBS.ShortByteString
-appProgram =
-    serialiseUPLC
-        ( UPLC.Program
-            ()
-            plcVersion110
-            (UPLC.LamAbs () (UPLC.DeBruijn 0) (UPLC.Var () (UPLC.DeBruijn 1)))
-        )
+appProgram = applyDataParam (PLC.I 7) (unitProgram 2)
 
 appScript :: Script ConwayEra
 appScript = scriptFromBytes "open-datum" appProgram
@@ -1558,12 +1579,27 @@ referenceOf c script =
 registryReference :: (TxIn, TxOut ConwayEra)
 registryReference = referenceOf '8' (scriptFromBytes "state" program)
 
+{- | Both registry scripts must actually resolve when the fixture references
+them: the state and its token-specific applied request validator.
+-}
+requestReference :: (TxIn, TxOut ConwayEra)
+requestReference = referenceOf '7' (mkRequestScript builtCfg foldTokenId)
+
 appReference :: (TxIn, TxOut ConwayEra)
 appReference = referenceOf '9' appScript
 
 -- | Retire keyA with the registry's references in hand, and the app's if given.
 retireWithReferences :: Maybe (TxIn, TxOut ConwayEra) -> IO ConwayTx
 retireWithReferences app = do
+    let appLive =
+            second
+                ( addrTxOutL
+                    .~ Addr
+                        Testnet
+                        (ScriptHashObj (computeScriptHash appProgram))
+                        StakeRefNull
+                )
+                liveOutput
     tm <- trieWith (Just leafActive)
     ctx <-
         either
@@ -1573,12 +1609,15 @@ retireWithReferences app = do
                 appProgram
                 app
                 []
-                [liveOutput]
-                witnessScripts{rcRefUtxos = [registryReference]}
+                [appLive]
+                witnessScripts{rcRefUtxos = [registryReference, requestReference]}
             )
     updateTokenWithDuties
         builtCfg
         (providerWith (retirementAt 1 ownerKey keyA))
+            { viewResolvedOutputs =
+                resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive]
+            }
         tm
         foldTokenId
         payer

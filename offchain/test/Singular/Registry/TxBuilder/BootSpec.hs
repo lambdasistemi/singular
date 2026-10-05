@@ -1,6 +1,5 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.Registry.TxBuilder.BootSpec
@@ -13,17 +12,15 @@ it through a publication in the payer's wallet, and a wallet without
 one is refused `StateValidatorNotPublished` before anything is built.
 
 These rows run `bootTokenImpl` itself against a provider serving a
-chosen wallet. Evaluation is the first thing the builder asks the node
-for once it has a transaction, so the stub keeps the transaction it is
-handed and stops there: a refused boot never reaches it, an accepted one
-is read back from it. The reference input the control expects is the
+chosen wallet. The accepted boot uses real local evaluation over synthetic cost material
+and exact wallet outputs, then its completed body is inspected. A refused
+boot never builds a transaction. The reference input the control expects is the
 output the fixture put in the wallet.
 -}
 module Singular.Registry.TxBuilder.BootSpec (spec) where
 
 import Control.Exception
     ( ErrorCall (..)
-    , IOException
     , displayException
     , try
     )
@@ -31,7 +28,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Either (isRight)
 import Data.Foldable (toList)
-import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
+import Data.IORef (modifyIORef, newIORef, readIORef)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -55,8 +52,12 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
+import PlutusCore.MkPlc (mkConstant)
 import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 (serialiseUPLC)
+import Singular.Registry.SyntheticLedger (withSyntheticCosts)
+import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import UntypedPlutusCore qualified as UPLC
 
 import Singular.Registry.Config (CageConfig (..))
@@ -195,27 +196,24 @@ publish run wallet = do
     submitted <- readIORef kept
     pure (submitted, result)
 
-{- | Run the builder against a wallet and return the transaction it
-hands to evaluation. A refusal propagates; a builder that never asked
-for evaluation fails the row.
+{- | Run the builder against exact wallet outputs and synthetic ledger
+material, returning its completed transaction. A refusal propagates.
 -}
 boot :: [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
-boot wallet = do
-    kept <- newIORef Nothing
+boot wallet =
     let provider =
             stubView
                 { viewUTxOsAt = \_ -> pure wallet
-                , viewEvaluateTx = \tx -> do
-                    writeIORef kept (Just tx)
-                    fail "evaluated"
-                , viewPosixMsToSlot = \_ -> fail "boot queries no slot"
-                , viewPosixMsCeilSlot = \_ -> fail "boot queries no slot"
+                , viewProtocolParams = withSyntheticCosts preprodParams
+                , viewTimeContext = pure syntheticTime
+                , viewResolvedOutputs = \wanted ->
+                    pure
+                        [ (reference, output)
+                        | (reference, output) <- wallet
+                        , reference `Set.member` wanted
+                        ]
                 }
-    -- Only the stub's IO error is absorbed: a 'BootRefusal' propagates
-    -- to the row, and any earlier failure leaves nothing kept.
-    _ <- try @IOException (bootTokenImpl cfg provider payer)
-    readIORef kept
-        >>= maybe (fail "the boot never reached evaluation") pure
+    in  bootTokenImpl cfg provider payer
 
 -- | A well-formed PlutusV3 program, distinguished by its arity.
 lambdas :: Int -> SBS.ShortByteString
@@ -226,7 +224,7 @@ lambdas n =
             plcVersion110
             ( iterate
                 (UPLC.LamAbs () (UPLC.DeBruijn 0))
-                (UPLC.Var () (UPLC.DeBruijn 1))
+                (mkConstant () ())
                 !! n
             )
         )

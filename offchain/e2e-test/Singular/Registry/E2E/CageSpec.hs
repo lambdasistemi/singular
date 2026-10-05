@@ -98,6 +98,7 @@ import Singular.Registry.Node
     , submitSigned
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager
     ( mkPureTrieManager
@@ -735,7 +736,7 @@ builtIntervalMs prov startMs tx =
         ValidityInterval (SJust lower) (SJust upper) -> do
             let posixOf (SlotNo slot) = startMs + 100 * toInteger slot
             nodeLower <-
-                Cage.withView prov (\v -> Cage.viewPosixMsToSlot v (posixOf lower))
+                Cage.withView prov (\v -> Services.floorSlot v (posixOf lower))
             assertEqual "validity lower bound read by the node" lower nodeLower
             pure (posixOf lower, posixOf upper)
         other -> do

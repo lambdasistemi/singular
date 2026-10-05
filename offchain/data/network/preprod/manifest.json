@@ -1,0 +1,50 @@
+{
+  "networkMagic": 1,
+  "systemStart": "2022-06-01T00:00:00Z",
+  "recordedAt": "2026-10-04T17:31:15.711177+00:00",
+  "files": [
+    {
+      "path": "config.json",
+      "url": "https://book.world.dev.cardano.org/environments/preprod/config.json",
+      "sha256": "9d8b377123f2835b999d2a73c9b9466906deafdbc42b0f16af537bb9922c07c6",
+      "bytes": 2938,
+      "sourceRevision": "W/\"y1a04a5a16v8zzxmnnn29mkkns9nzkgz-b7a\"",
+      "lastModified": null
+    },
+    {
+      "path": "byron-genesis.json",
+      "url": "https://book.world.dev.cardano.org/environments/preprod/byron-genesis.json",
+      "sha256": "d88fbffdf78daaccfaddf504e95840c73ce527c06fa4140aefb55d3f91c00cef",
+      "bytes": 5607,
+      "sourceRevision": "W/\"y1a04a5a16v8zzxmnnn29mkkns9nzkgz-15e7\"",
+      "lastModified": null
+    },
+    {
+      "path": "shelley-genesis.json",
+      "url": "https://book.world.dev.cardano.org/environments/preprod/shelley-genesis.json",
+      "sha256": "4b9d32c09159c2948e4386ba1f59db5a249a89b43b84dfd8368f465e650095de",
+      "bytes": 2759,
+      "sourceRevision": "W/\"y1a04a5a16v8zzxmnnn29mkkns9nzkgz-ac7\"",
+      "lastModified": null
+    },
+    {
+      "path": "alonzo-genesis.json",
+      "url": "https://book.world.dev.cardano.org/environments/preprod/alonzo-genesis.json",
+      "sha256": "7333bfafe311589fa09e8bf59a47ec0d85a1959f00748cc0800591d2c7646408",
+      "bytes": 9459,
+      "sourceRevision": "W/\"y1a04a5a16v8zzxmnnn29mkkns9nzkgz-24f3\"",
+      "lastModified": null
+    },
+    {
+      "path": "conway-genesis.json",
+      "url": "https://book.world.dev.cardano.org/environments/preprod/conway-genesis.json",
+      "sha256": "c196814fe2e8f36ad1910e5c287184970339657729e7ad4fc354c34e149be3f8",
+      "bytes": 4168,
+      "sourceRevision": "W/\"y1a04a5a16v8zzxmnnn29mkkns9nzkgz-1048\"",
+      "lastModified": null
+    }
+  ],
+  "limits": [
+    "Official genesis/config only; node history and independent comparisons are separate recordings."
+  ]
+}

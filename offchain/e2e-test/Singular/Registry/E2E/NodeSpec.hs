@@ -103,6 +103,8 @@ import Singular.Registry.Node
     , withNodeMode
     , withNodeReads
     )
+import Singular.Registry.Node.Options (Backend (..))
+import Singular.Registry.Node.Session (withNodeReadsOn)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 
@@ -169,6 +171,10 @@ spec = aroundAll withDevnetSocket $ do
                     Left (ErrorCall msg) -> do
                         msg `shouldSatisfy` isInfixOf "network magic 999"
                         msg `shouldSatisfy` isInfixOf sock
+
+        it
+            "refuses a magic the node does not run for key-free reads, naming the magic and the socket"
+            $ \sock -> mapM_ (refuseReader sock) [NodeBackend, IndexerBackend]
 
         it
             "refuses an unfunded wallet before any transaction, naming \
@@ -257,6 +263,17 @@ spec = aroundAll withDevnetSocket $ do
                                 <> show (length utxos)
                                 <> " outputs"
                             )
+
+refuseReader :: FilePath -> Backend -> IO ()
+refuseReader sock backend = do
+    r <- try (withNodeReadsOn backend 999 sock (\_ -> pure ()))
+    case r of
+        Right () ->
+            fail
+                "key-free reads accepted magic 999 against a devnet running magic 42"
+        Left (ErrorCall msg) -> do
+            msg `shouldSatisfy` isInfixOf "network magic 999"
+            msg `shouldSatisfy` isInfixOf sock
 
 -- | Wallet decoding checks use local files and never connect to a node.
 walletSpec :: Spec

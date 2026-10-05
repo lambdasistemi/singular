@@ -37,7 +37,7 @@ import Test.QuickCheck
     )
 
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -45,7 +45,6 @@ import Cardano.Ledger.Api.Tx.Out
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
     , SlotNo (..)
@@ -58,21 +57,30 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 
+import Data.Set qualified as Set
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
+import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
 import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.SyntheticLedger
+    ( unitProgram
+    , withSyntheticCosts
+    )
+import Singular.Registry.SyntheticTime
+    ( syntheticTime
+    , syntheticTimeWith
+    )
 import Singular.Registry.TxBuilder.BookingFixture
     ( applicationScript
-    , cfg
     , payer
     , preprodParams
     , tokenId
     )
+import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
 import Singular.Registry.TxBuilder.CollateralJudgement
     ( Spend (..)
     , judgeCollateral
@@ -80,6 +88,7 @@ import Singular.Registry.TxBuilder.CollateralJudgement
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
+    , computeScriptHash
     , currentPosixMs
     , emptyRoot
     , mkInlineDatum
@@ -93,6 +102,17 @@ import Singular.Registry.TxBuilder.Retract
     , retractRequestImpl
     )
 import Singular.Registry.Types (CageDatum (..), OnChainRoot (..))
+
+-- The state witness consumes one V3 context; the request pin consumes two
+-- parameters followed by its context. These are explicit synthetic scripts,
+-- evaluated by the local ledger evaluator rather than mocked units.
+cfg :: CageConfig
+cfg =
+    Fixture.cfg
+        { cageScriptBytes = unitProgram 1
+        , cfgScriptHash = computeScriptHash (unitProgram 1)
+        , requestScriptBytes = unitProgram 3
+        }
 
 txIn :: Char -> Int -> TxIn
 txIn c i =
@@ -212,14 +232,17 @@ chainView sc submittedAt horizon =
                         if addr == cageAddrFromCfg cfg Testnet
                             then [(stateIn, stateOut)]
                             else wallet sc
-        , viewProtocolParams = preprodParams
-        , viewEvaluateTx = \tx ->
-            let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-            in  pure (Map.map (const (Right (ExUnits 400_000 150_000_000))) m)
-        , viewPosixMsToSlot = \ms -> case horizon of
-            Just limit | ms > limit -> fail "PastHorizon"
-            _ -> pure (SlotNo (fromIntegral (ms `div` 1000)))
-        , viewPosixMsCeilSlot = \ms -> pure (SlotNo (fromIntegral ((ms + 999) `div` 1000)))
+        , viewProtocolParams = withSyntheticCosts preprodParams
+        , viewTimeContext = pure $ case horizon of
+            Nothing -> syntheticTime
+            Just limit -> syntheticTimeWith 0 1 (fromIntegral (limit `div` 1000 + 1))
+        , viewResolvedOutputs = \wanted ->
+            pure
+                [ (reference, output)
+                | (reference, output) <-
+                    (requestIn, requestOut submittedAt) : (stateIn, stateOut) : wallet sc
+                , reference `Set.member` wanted
+                ]
         }
 
 spec :: Spec
@@ -262,6 +285,27 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
         lower `shouldBe` SJust (cpSlot (viewPoint view))
         upper `shouldSatisfy` (> lower)
         upper `shouldSatisfy` (<= SJust (slotOf (now + 10_000)))
+    it "refuses a view tip at the finite conversion horizon by name" $ do
+        now <- currentPosixMs
+        let tip = slotOf (now + 11_000)
+            view = rejectView tip (Just (now + 10_000))
+        result <-
+            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
+        case result of
+            Left failure -> failure `shouldBe` SlotPastHorizon tip
+            Right _ ->
+                expectationFailure "built a reject with a lower bound at the horizon"
+    it "refuses an upper bound raised to the horizon" $ do
+        now <- currentPosixMs
+        let tip = slotOf (now + 10_000)
+            view = rejectView tip (Just (now + 10_000))
+        result <-
+            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
+        case result of
+            Left failure -> failure `shouldBe` SlotPastHorizon (tip + 1)
+            Right _ ->
+                expectationFailure
+                    "built a reject with a raised upper bound at the horizon"
   where
     slotOf ms = SlotNo (fromInteger (ms `div` 1000))
     rejectView tip horizon =

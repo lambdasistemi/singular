@@ -18,6 +18,7 @@ module Singular.Registry.StubView
 import Data.ByteString qualified as BS
 
 import Cardano.Ledger.Api.PParams (emptyPParams)
+import Singular.Registry.PhaseLog (noPhaseLog)
 
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -38,11 +39,11 @@ stubView =
                 , cpBlockHash = BS.replicate 32 0
                 }
         , viewProtocolParams = emptyPParams
+        , viewTimeContext = fail "the stub view supplies no time context"
+        , viewResolvedOutputs = \_ -> fail "the stub view resolves no inputs"
+        , viewPhaseLog = noPhaseLog
         , viewUTxOsAt = \_ -> fail "the stub view reads no address"
         , viewScriptRegistered = \_ -> fail "the stub view reads no registration"
-        , viewEvaluateTx = \_ -> fail "the stub view evaluates nothing"
-        , viewPosixMsToSlot = \_ -> fail "the stub view converts no time"
-        , viewPosixMsCeilSlot = \_ -> fail "the stub view converts no time"
         }
 
 -- | A provider every acquisition of which is this view.

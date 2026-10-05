@@ -28,6 +28,8 @@ module Singular.Registry.Node.Confirmation
     ) where
 
 import Control.Concurrent (threadDelay)
+import Control.Exception (fromException, throwIO)
+import Control.Monad (void)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
@@ -51,6 +53,7 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.NetworkTime (NetworkTimeFailure)
 import Singular.Registry.Node.Indexer
     ( Following (..)
     , confirmationAttempts
@@ -72,6 +75,7 @@ import Singular.Registry.Node.Wait
     , tryOutcome
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 
 {- | Wait until a submitted transaction is visible on the chain.
 
@@ -177,16 +181,16 @@ txIdFromHex what txid = do
     pure (TxId (unsafeMakeSafeHash h))
 
 {- | Wait until the indexer following the session's chain reports the
-block that carries output zero of a transaction, or the chain's tip
-passes the deadline — the whole wait obeying the named wall-clock
+block that carries output zero of a transaction, or the latest observed block time
+reaches the POSIX deadline — the whole wait obeying the named wall-clock
 limit (in seconds), tip reads included. The node is asked only for its
 tip, and only while the output has not appeared. A tip that passes the
 deadline ends the wait earlier, as the same wait failure carrying the
-deadline slot; the limit is the backstop for a chain that never gets
+POSIX deadline in milliseconds; the limit is the backstop for a chain that never gets
 there.
 -}
 confirmWithin
-    :: Int -> NodeSession -> String -> TxId -> SlotNo -> IO ()
+    :: Int -> NodeSession -> String -> TxId -> Integer -> IO ()
 confirmWithin limit sess label tid deadline = do
     clock <- startWaitClock
     confirmSince clock limit sess label tid deadline
@@ -198,7 +202,7 @@ confirmSince
     -> NodeSession
     -> String
     -> TxId
-    -> SlotNo
+    -> Integer
     -> IO ()
 confirmSince clock limit sess label tid deadline =
     boundWaitClosingSince
@@ -209,12 +213,12 @@ confirmSince clock limit sess label tid deadline =
         (confirmOutputZero sess label tid deadline)
 
 {- | Wait until the indexer following the session's chain reports the
-block that carries output zero of a transaction, or the chain's tip
-passes the deadline, which it answers with the deadline slot. The node
+block that carries output zero of a transaction, or the latest observed block time
+reaches the POSIX deadline, which it answers with the POSIX deadline in milliseconds. The node
 is asked only for its tip, and only while the output has not appeared.
 -}
 confirmOutputZero
-    :: NodeSession -> String -> TxId -> SlotNo -> IO (Either SlotNo ())
+    :: NodeSession -> String -> TxId -> Integer -> IO (Either Integer ())
 confirmOutputZero sess label tid deadline = do
     lg <- phaseLogFromEnv
     currentFollower
@@ -233,27 +237,28 @@ confirmOutputZero sess label tid deadline = do
         case seen of
             Just _ -> pure (Right ())
             Nothing -> do
-                tip <- nsTipSlot sess
+                tip <- nsTipTime sess
                 if tip >= deadline
                     then pure (Left deadline)
                     else indexed lg idx
 
-{- | The poll-until deadline for a transaction and the wall-clock limit
-of its wait: its own validity upper bound plus a two-minute margin; the
-historical fixed window when it carries no upper bound. The margin is
-measured in slots through the node's own time-to-slot conversion, so it
-means two minutes on every network. If that conversion fails the run is
-dying anyway; the fixed window restated in slots keeps the deadline
-total.
+{- | The observed-block POSIX deadline, retaining the transaction's entire
+validity window. A ledger bound outside the validated finite context is
+refused. Other synchronous read failures retain the historical fallback;
+its block-time read still obeys the enclosing window-read bound.
 -}
-windowFor :: NodeSession -> ConwayTx -> IO (SlotNo, Int)
+windowFor :: NodeSession -> ConwayTx -> IO (Integer, Int)
 windowFor sess tx = do
-    r <- tryOutcome (confirmWindow (nsProvider sess) tx)
-    case r of
-        Right w -> pure w
-        Left _ -> do
-            tip <- nsTipSlot sess
-            pure (tip + fromIntegral fixedWindow, fixedLimit)
+    result <- tryOutcome (confirmWindow (nsProvider sess) tx)
+    case result of
+        Right window -> pure window
+        Left failure
+            | Just (_ :: NetworkTimeFailure) <- fromException failure ->
+                throwIO failure
+            | otherwise -> do
+                void (nsTipTime sess)
+                deadline <- (+ fromIntegral fixedWindow * 1000) <$> nowMs
+                pure (deadline, fixedLimit)
 
 {- | The bound on the node reads that derive a confirmation's window, in
 seconds: a healthy node answers them at once.
@@ -277,57 +282,38 @@ never gets there reaches the limit.
 backstop :: Int -> Int
 backstop window = window + 2 * confirmationPollSeconds
 
-{- | The slot of now and how many slots two minutes span, in the chain
-the provider talks to.
--}
-slotClock :: Cage.Provider IO -> IO (SlotNo, SlotNo)
-slotClock prov = do
-    now <- getCurrentTime
-    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-    (s0, s1) <- Cage.withView prov $ \v ->
-        (,)
-            <$> Cage.viewPosixMsToSlot v nowMs
-            <*> Cage.viewPosixMsToSlot v (nowMs + 120_000)
-    pure (s0, s1 - s0)
+-- | Current POSIX milliseconds; never converted into a future ledger slot.
+nowMs :: IO Integer
+nowMs = round . (* 1000) . utcTimeToPOSIXSeconds <$> getCurrentTime
 
-{- | The slot after which a submitted transaction can no longer land,
-and the wall-clock seconds from now until the chain reaches it: its
-validity upper bound plus a two-minute margin. A transaction with no
-upper bound never expires, so the historical fixed window
-('confirmationAttempts' polls) stays its deadline and its limit.
+{- | A finite validity bound is converted through the pinned context before
+adding an uncapped two-minute POSIX margin. An unbounded transaction retains
+an uncapped five-minute local wait. Neither margin extends the ledger horizon.
 -}
-confirmWindow :: Cage.Provider IO -> ConwayTx -> IO (SlotNo, Int)
-confirmWindow prov tx =
-    case txUpperBoundSlot tx of
-        Just bound -> do
-            (now, twoMinutes) <- slotClock prov
-            let ahead = toInteger (unSlotNo bound) - toInteger (unSlotNo now)
-                slots = max 1 (toInteger (unSlotNo twoMinutes))
-                seconds = ahead * 120 `div` slots + 120
-            pure (bound + twoMinutes, backstop (fromInteger (max 0 seconds)))
-        Nothing -> do
-            deadline <- fixedWindowDeadline prov
-            pure (deadline, fixedLimit)
+confirmWindow :: Cage.Provider IO -> ConwayTx -> IO (Integer, Int)
+confirmWindow prov tx = case txUpperBoundSlot tx of
+    Just upper -> do
+        start <- Cage.withView prov (`Services.slotStart` upper)
+        now <- nowMs
+        let deadline = start + 120_000
+            remaining = max 0 ((deadline - now + 999) `div` 1000)
+        pure (deadline, backstop (fromInteger remaining))
+    Nothing -> do
+        deadline <- fixedWindowDeadline prov
+        pure (deadline, fixedLimit)
 
-{- | The slot after which a submitted transaction can no longer land:
-its validity upper bound plus a two-minute margin. A transaction with
-no upper bound never expires, so the historical fixed window
-('confirmationAttempts' polls) stays its deadline.
--}
-confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO SlotNo
+-- | The POSIX wait deadline. It is never a transaction validity bound.
+confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO Integer
 confirmDeadline prov tx = fst <$> confirmWindow prov tx
 
--- | The slot the historical fixed confirmation window ends at, from now.
-fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
+{- | Retain the initial bounded chain/context read, then wait five minutes
+from the current POSIX time. No future time-to-slot conversion is performed.
+-}
+fixedWindowDeadline :: Cage.Provider IO -> IO Integer
 fixedWindowDeadline prov = do
-    now <- getCurrentTime
-    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-    Cage.withView prov $ \v ->
-        Cage.viewPosixMsToSlot
-            v
-            ( nowMs
-                + fromIntegral fixedWindow * 1000
-            )
+    void $ Cage.withView prov $ \view ->
+        Services.slotStart view (Cage.cpSlot (Cage.viewPoint view))
+    (+ fromIntegral fixedWindow * 1000) <$> nowMs
 
 {- | The validity upper bound a transaction carries, if any. The fold,
 update and retract builders pin one (request deadline, phase-2 end);

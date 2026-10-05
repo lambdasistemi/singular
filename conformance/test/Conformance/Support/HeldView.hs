@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 {- | A hand-built transaction takes its chain inputs from one view.
 
 Appendix material: a row reads the outputs a hand-built fold spends, then
@@ -9,7 +11,9 @@ assembly by name.
 module Conformance.Support.HeldView (spec) where
 
 import Control.Exception (ErrorCall (..))
+import Data.ByteString.Lazy qualified as LBS
 import Data.List (isInfixOf)
+import Data.Set qualified as Set
 import Lens.Micro ((^.))
 import Test.Hspec (Spec, describe, it, shouldReturn, shouldThrow)
 
@@ -21,8 +25,28 @@ import Cardano.Ledger.BaseTypes (Inject (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
+import Cardano.Slotting.Slot (EpochNo (..), EpochSize (..))
+import Cardano.Slotting.Time (mkSlotLength)
 import Cardano.Tx.Ledger (ConwayTx)
+import Codec.Serialise (serialise)
+import Ouroboros.Consensus.Block (GenesisWindow (..))
+import Ouroboros.Consensus.HardFork.History.EraParams
+    ( EraParams (..)
+    , SafeZone (..)
+    , pattern NoPerasEnabled
+    )
+import Ouroboros.Consensus.HardFork.History.Summary
+    ( EraEnd (..)
+    , EraSummary (..)
+    , initBound
+    , mkUpperBound
+    )
 import Singular.Registry.Ledger (ConwayEra, TxOut)
+import Singular.Registry.NetworkTime
+    ( NetworkTime
+    , generatedNetworkTime
+    )
+import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , SlotNo (..)
@@ -50,10 +74,33 @@ viewOf utxos =
         , viewProtocolParams = emptyPParams
         , viewUTxOsAt = \a -> pure [u | u@(_, o) <- utxos, o ^. addrTxOutL == a]
         , viewScriptRegistered = \_ -> pure False
-        , viewEvaluateTx = \_ -> pure mempty
-        , viewPosixMsToSlot = \_ -> pure (SlotNo 0)
-        , viewPosixMsCeilSlot = \_ -> pure (SlotNo 0)
+        , viewTimeContext = pure heldTime
+        , viewResolvedOutputs = \refs -> pure [u | u <- utxos, Set.member (fst u) refs]
+        , viewPhaseLog = noPhaseLog
         }
+
+{- | Explicit finite synthetic material; the held-input controls do not
+claim a live source or exercise ledger evaluation or time conversion.
+-}
+heldTime :: NetworkTime
+heldTime =
+    either (error . show) id $
+        generatedNetworkTime
+            42
+            "synthetic held-input control: one epoch, one-second slots"
+            "{\"networkMagic\":42,\"systemStart\":\"1970-01-01T00:00:00Z\"}"
+            history
+  where
+    params =
+        EraParams
+            { eraEpochSize = EpochSize 432_000
+            , eraSlotLength = mkSlotLength 1
+            , eraSafeZone = StandardSafeZone 432_000
+            , eraGenesisWin = GenesisWindow 432_000
+            , eraPerasRoundLength = NoPerasEnabled
+            }
+    end = mkUpperBound params initBound (EpochNo 1)
+    history = LBS.toStrict (serialise [EraSummary initBound (EraEnd end) params])
 
 refusedWith :: String -> ErrorCall -> Bool
 refusedWith fragment (ErrorCall message) = fragment `isInfixOf` message

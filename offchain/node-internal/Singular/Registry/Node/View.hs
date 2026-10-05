@@ -5,8 +5,9 @@ License     : Apache-2.0
 
 The node adapter: one 'withView' is one upstream @withAcquired@ of the
 pinned node client, so every read through the view — UTxOs,
-registration, time to slot, script evaluation — is answered from the
-one LocalStateQuery state the node acquired at entry. The view's chain
+registration, raw time and resolved inputs — is answered from the one
+LocalStateQuery state the node acquired at entry. Common services compute
+time conversions and script evaluation from those captured facts. The view's chain
 point is that state's own point and era; the protocol parameters are
 read once, inside it.
 
@@ -37,7 +38,12 @@ import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Singular.Registry.NetworkTime
+    ( NetworkTimeFailure (..)
+    , networkSystemStart
+    )
 import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
+import Singular.Registry.Node.RawView (RawProvider (..), RawView (..))
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -45,34 +51,50 @@ import Singular.Registry.Provider
     , ViewFailure (..)
     , scopedProvider
     )
+import Singular.Registry.TimeMaterial (TimeMaterial, timeFromRaw)
 
--- | The read interface over an upstream node-to-client provider.
-nodeProvider :: NetworkMagic -> N2C.Provider IO -> Provider IO
-nodeProvider magic n2c = scopedProvider $ \action ->
-    lost $ N2C.withAcquired n2c $ \h -> do
+-- | Raw facts and immutable time material from one held acquisition.
+nodeProvider
+    :: NetworkMagic -> TimeMaterial -> RawProvider IO -> Provider IO
+nodeProvider magic@(NetworkMagic magicWord) material raw = scopedProvider $ \action ->
+    lost $ withRawView raw $ \h -> do
         lg <- phaseLogFromEnv
-        snapshot <-
-            queryPhase lg "ledgerSnapshot" (const 1) (N2C.queryLedgerSnapshotH h)
+        snapshot <- queryPhase lg "ledgerSnapshot" (const 1) (rawSnapshot h)
         point <-
-            maybe
-                (throwIO AcquiredAtOrigin)
+            maybe (throwIO AcquiredAtOrigin) pure (chainPointOf magic snapshot)
+        pp <- queryPhase lg "protocolParams" (const 1) (rawParameters h)
+        start <- queryPhase lg "systemStart" (const 1) (rawSystemStart h)
+        history <- queryPhase lg "eraHistory" (const 1) (rawEraHistory h)
+        context <-
+            either
+                throwIO
                 pure
-                (chainPointOf magic snapshot)
-        pp <-
-            queryPhase lg "protocolParams" (const 1) (N2C.queryProtocolParamsH h)
-        action
-            View
-                { viewPoint = point
-                , viewProtocolParams = pp
-                , viewUTxOsAt = lost . N2C.queryUTxOsH h
-                , viewScriptRegistered = \sh -> lost $ do
-                    let credential = ScriptHashObj sh
-                    Map.member credential
-                        <$> N2C.queryStakeRewardsH h (Set.singleton credential)
-                , viewEvaluateTx = lost . N2C.evaluateTxH h
-                , viewPosixMsToSlot = lost . N2C.posixMsToSlotH h
-                , viewPosixMsCeilSlot = lost . N2C.posixMsCeilSlotH h
-                }
+                ( timeFromRaw
+                    magicWord
+                    "held private-devnet LSQ history"
+                    material
+                    start
+                    history
+                )
+        let view =
+                View
+                    { viewPoint = point
+                    , viewProtocolParams = pp
+                    , viewTimeContext = lost $ do
+                        -- The context stays immutable. The held raw read also
+                        -- detects connection loss before a local computation.
+                        observed <- queryPhase lg "systemStart" (const 1) (rawSystemStart h)
+                        if observed == networkSystemStart context
+                            then pure context
+                            else throwIO (TimeSourceMismatch "held system start changed")
+                    , viewResolvedOutputs = lost . rawUTxOsByRefs h
+                    , viewPhaseLog = lg
+                    , viewUTxOsAt = lost . rawUTxOsAt h
+                    , viewScriptRegistered = \sh -> lost $ do
+                        let credential = ScriptHashObj sh
+                        Map.member credential <$> rawRewards h (Set.singleton credential)
+                    }
+        action view
 
 {- | The chain point of an acquired snapshot under the session's magic;
 nothing at the chain origin.

@@ -18,6 +18,7 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 import Singular.Registry.Ledger (ExUnits (..))
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 
 newtype Fixture = Fixture (IORef Bool)
 
@@ -44,7 +45,7 @@ prepare (Fixture used) provider assemble submit declared = do
             let ExUnits maxMem maxCpu = pp ^. ppMaxTxExUnitsL
                 count = fromIntegral (length purposes)
             trial <- assemble (ExUnits (maxMem `div` count) (maxCpu `div` count))
-            measurements <- Cage.withView provider (`Cage.viewEvaluateTx` trial)
+            measurements <- Cage.withView provider (`Services.evaluateTx` trial)
             unless (sort (Map.keys measurements) == sort purposes) $
                 fail "A1 node evaluation map omits a redeemer purpose"
             measured <- traverse (either (fail . show) pure) measurements

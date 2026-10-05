@@ -49,6 +49,7 @@ PRIVATE_OWNER_GUIDE_ANCHORS = {
     "Singular.Registry.Node.Funding": "funding-owner",
     "Singular.Registry.Node.Wait": "wait-owner",
     "Singular.Registry.Node.View": "view-owner",
+    "Singular.Registry.Node.RawView": "raw-view-owner",
     "Singular.Registry.Node.Memory": "memory-owner",
     "Singular.Registry.Node.Submit": "submit-owner",
     "Singular.Registry.Node.PhaseLog": "phase-log-owner",
@@ -67,7 +68,7 @@ PRIVATE_OWNER_PERMALINK_URL = (
 class ReferenceLibrary(NamedTuple):
     """One Cabal library whose generated Haddock reference this site ships.
 
-    ``sublibrary`` names the package-private sublibrary that owns the
+    ``sublibrary`` names the sublibrary that owns the
     implementations behind the public facade's re-exports, when there is
     one; the re-export and private-owner provenance machinery runs only
     for libraries that declare it. ``guide_anchors`` and ``permalink_url``
@@ -83,6 +84,7 @@ class ReferenceLibrary(NamedTuple):
     guide_anchors: dict[str, str] | None = None
     permalink_url: str | None = None
     autolinks: tuple[str, ...] = ()
+    private_sublibrary: str | None = None
 
 
 OFFCHAIN = ReferenceLibrary(
@@ -91,7 +93,8 @@ OFFCHAIN = ReferenceLibrary(
     cabal_file="singular-registry.cabal",
     api_dir=("api", "offchain"),
     index_page="docs/offchain-api-reference",
-    sublibrary="node-internal",
+    sublibrary="local-services",
+    private_sublibrary="node-internal",
     guide_anchors=PRIVATE_OWNER_GUIDE_ANCHORS,
     permalink_url=PRIVATE_OWNER_PERMALINK_URL,
     # Prose autolinks Haddock emitted into the generated pages whose target
@@ -653,7 +656,7 @@ def _private_owner_links(
     rendered position, so the guide's authored entry order is free.
     """
     candidate_lib = library.name
-    candidate_sublib = library.sublibrary
+    candidate_sublib = library.private_sublibrary or library.sublibrary
 
     def is_candidate_sublib(record: dict) -> bool:
         return record["package"] == candidate_lib and record["lib"] == candidate_sublib
@@ -873,6 +876,16 @@ def copy_reference(
     dep_modules: set[str] = set()
     for record in db_records:
         if is_candidate_sublib(record):
+            # Public sublibrary modules outside the bundled main-library
+            # extent are positively owned but their pages are not shipped.
+            dep_modules |= set(record["modules"]) - set(modules)
+            continue
+        if (
+            library.private_sublibrary is not None
+            and record["package"] == candidate_lib
+            and record["lib"] == library.private_sublibrary
+        ):
+            # Private owner links keep the existing guide/provenance checks.
             continue
         dep_modules |= record["modules"]
     overlap = sorted(set(modules) & dep_modules)

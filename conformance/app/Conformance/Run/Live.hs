@@ -212,6 +212,7 @@ import Singular.Registry.Node
     , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrie)
@@ -1749,16 +1750,16 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                     require
                         "before-phase-2 request missed its processing window"
                         (now < phase2Start)
-                    lower <- Cage.withView prov (`Cage.viewPosixMsToSlot` submittedAt)
-                    upper <- Cage.withView prov (`Cage.viewPosixMsToSlot` phase2Start)
+                    lower <- Cage.withView prov (`Services.floorSlot` submittedAt)
+                    upper <- Cage.withView prov (`Services.floorSlot` phase2Start)
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
                         )
                 Just Live.AfterPhase2 -> do
-                    lower <- Cage.withView prov (`Cage.viewPosixMsCeilSlot` phase2End)
+                    lower <- Cage.withView prov (`Services.ceilingSlot` phase2End)
                     now <- currentPosixMs
-                    upper <- Cage.withView prov (`Cage.viewPosixMsToSlot` (now + 10_000))
+                    upper <- Cage.withView prov (`Services.floorSlot` (now + 10_000))
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
@@ -1827,11 +1828,11 @@ buildRetraction env cage tid named@(reqIn, reqOut) before = do
     lower <-
         Cage.withView
             prov
-            (`Cage.viewPosixMsCeilSlot` (submittedAt + stateProcessTime before))
+            (`Services.ceilingSlot` (submittedAt + stateProcessTime before))
     SlotNo upper <-
         Cage.withView
             prov
-            ( `Cage.viewPosixMsToSlot`
+            ( `Services.floorSlot`
                 (submittedAt + stateProcessTime before + stateRetractTime before)
             )
     let inputs = Set.fromList [reqIn, fst funder]
@@ -1946,31 +1947,11 @@ retractionWitness env state cage requestOut transaction = do
             ]
         )
 
-{- | The POSIX time, in milliseconds, at which a slot starts: the least time the
-node's era history places in that slot (@posixMsToSlot@ is its floor), found by
-bracketing the current time and halving.
+{- | The POSIX slot-start time from one acquired view's validated finite
+material, through the fixed common conversion.
 -}
 slotStartMs :: Cage.Provider IO -> SlotNo -> IO Integer
-slotStartMs prov slot = do
-    now <- currentPosixMs
-    lower <- before now 1000
-    upper <- from now 1000
-    search lower upper
-  where
-    inOrAfter ms = (>= slot) <$> Cage.withView prov (`Cage.viewPosixMsToSlot` ms)
-    before ms step = do
-        reached <- inOrAfter ms
-        if reached then before (ms - step) (step * 2) else pure ms
-    from ms step = do
-        reached <- inOrAfter ms
-        if reached then pure ms else from (ms + step) (step * 2)
-    -- The slot has not started at @lower@ and has at @upper@.
-    search lower upper
-        | upper - lower <= 1 = pure upper
-        | otherwise = do
-            let middle = (lower + upper) `div` 2
-            reached <- inOrAfter middle
-            if reached then search lower middle else search middle upper
+slotStartMs prov slot = Cage.withView prov (`Services.slotStart` slot)
 
 {- | Refuse to submit a placed reject whose validity interval does not lie in the
 window its placement names: a setup failure of the run, never a step outcome.

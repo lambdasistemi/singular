@@ -66,9 +66,6 @@ executionLimit = describe "live aggregate transaction execution limit" $ do
                 prov =
                     stubView
                         { viewUTxOsAt = \_ -> pure [(reserved, output 100000000), (free, output 5000000)]
-                        , viewEvaluateTx = \_ -> fail "unused evaluation"
-                        , viewPosixMsToSlot = \_ -> fail "unused slot query"
-                        , viewPosixMsCeilSlot = \_ -> fail "unused slot query"
                         }
             selected <- viewUTxOsAt (fundingView [reserved] prov) funderAddr
             map fst selected `shouldBe` [free]

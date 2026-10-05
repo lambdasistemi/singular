@@ -65,6 +65,7 @@ import Singular.Registry.Provider
     ( ChainPoint (..)
     , View (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -242,14 +243,19 @@ rejectValidity :: View IO -> IO (SlotNo, SlotNo)
 rejectValidity view = do
     now <- currentPosixMs
     let lowerSlot = cpSlot (viewPoint view)
+    -- A tip supplies the lower slot directly, but both ledger bounds must
+    -- remain inside this view's validated finite conversion context.
+    _ <- Services.slotStart view lowerSlot
     upperSlot <-
         tryUpperSlots view $
             map
                 (now +)
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
-    pure (lowerSlot, max (lowerSlot + 1) upperSlot)
+    let finalUpper = max (lowerSlot + 1) upperSlot
+    _ <- Services.slotStart view finalUpper
+    pure (lowerSlot, finalUpper)
 
--- | Wrap the Provider's viewEvaluateTx for the story language.
+-- | Wrap common local evaluation for the story language.
 mkRejectEvalTx
     :: View IO
     -> ConwayTx
@@ -259,7 +265,7 @@ mkRejectEvalTx
             (Either String ExUnits)
         )
 mkRejectEvalTx view tx = do
-    r <- viewEvaluateTx view tx
+    r <- Services.evaluateTx view tx
     pure $
         Map.map
             ( \case

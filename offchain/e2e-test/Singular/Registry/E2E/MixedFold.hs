@@ -73,6 +73,7 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
@@ -281,14 +282,14 @@ upperSlotFor v st appliedUtxos = do
     case deadlines of
         [] -> tryUpperSlots v [now + 30_000, now + 5_000]
         ds ->
-            trySync (Cage.viewPosixMsToSlot v (minimum ds)) >>= \case
+            trySync (Services.floorSlot v (minimum ds)) >>= \case
                 Right s -> pure s
                 Left _ -> tryUpperSlots v [now + 30_000, now + 5_000]
 
--- | The view's script evaluation, as the program's builder consumes it.
+-- | Fixed common script evaluation over the view's raw facts.
 evaluate
     :: Cage.View IO
     -> ConwayTx
     -> IO
         (Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits))
-evaluate v tx = Map.map (either (Left . show) Right) <$> Cage.viewEvaluateTx v tx
+evaluate v tx = Map.map (either (Left . show) Right) <$> Services.evaluateTx v tx

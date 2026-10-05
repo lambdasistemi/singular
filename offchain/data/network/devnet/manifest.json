@@ -1,0 +1,29 @@
+{
+  "generatorRevision": "cardano-node-clients 0e73121dc1df516b69d69bdd554b12bebd28d072",
+  "files": [
+    {
+      "path": "byron-genesis.json",
+      "sha256": "5c927b1f6d1b4fa9e5c4de5c73215906bd75c9825514dc8e36294623a8441d90"
+    },
+    {
+      "path": "shelley-genesis.json",
+      "sha256": "cb50881940a0ba821b6d13621f8471a8a8ff98401bd18008c056f3b33e14df77"
+    },
+    {
+      "path": "alonzo-genesis.json",
+      "sha256": "61f55920629f024f8956bb38ab1b2e335f7be57b4e91cf0e6b8c79d846577a64"
+    },
+    {
+      "path": "conway-genesis.json",
+      "sha256": "a28f6e1eaa684cd2fc9e420a9463c181ac64381cd9449ca4797c4e2dfd08edb3"
+    },
+    {
+      "path": "dijkstra-genesis.json",
+      "sha256": "66ba071d2fb5ad0757eb6674ad9e518f03ee9fa24c5b68077e5c86de8d7a71e0"
+    },
+    {
+      "path": "node-config.json",
+      "sha256": "6505859be16e07120bde2e9aad8865d34c8eca00ff1837e105ad530048937b2b"
+    }
+  ]
+}

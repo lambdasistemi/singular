@@ -41,6 +41,7 @@ import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider (View (..))
+import Singular.Registry.Services qualified as Services
 
 -- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
@@ -60,7 +61,7 @@ mkEvalTx
             (Either String ExUnits)
         )
 mkEvalTx view tx = do
-    r <- viewEvaluateTx view tx
+    r <- Services.evaluateTx view tx
     pure $
         Map.map
             ( \case

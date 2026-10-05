@@ -99,6 +99,7 @@ import Singular.Registry.Provider
     , Provider (..)
     , View (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -351,7 +352,7 @@ prepareLifecycleTx True v refs witnesses initial = go (4 :: Int) initial
     pp = viewProtocolParams v
     go 0 _ = fail "lifecycle evaluation and fee did not converge"
     go rounds tx = do
-        measured <- viewEvaluateTx v tx
+        measured <- Services.evaluateTx v tx
         let Redeemers original = tx ^. witsTxL . rdmrsTxWitsL
         unless (Map.keysSet measured == Map.keysSet original) $
             fail "lifecycle evaluation did not cover every redeemer"

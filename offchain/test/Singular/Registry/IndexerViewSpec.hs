@@ -53,6 +53,7 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Singular.Registry.SyntheticTime (syntheticTime)
 import System.Timeout (timeout)
 import Test.Hspec
 
@@ -933,8 +934,7 @@ genesis =
         , csPParams = emptyPParams
         , csUTxO = Map.empty
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 outRef :: Char -> TxIn

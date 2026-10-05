@@ -79,6 +79,7 @@ import Singular.Registry.Provider
     , View (..)
     , ViewFailure (..)
     )
+import Singular.Registry.Services qualified as Services
 
 -- | Where a run's evidence comes from. There is no public-chain class.
 data EvidenceClass
@@ -290,8 +291,8 @@ run c ch = case c of
                 outputs <- viewUTxOsAt v (chWatched ch)
                 registered <- viewScriptRegistered v (chUnregistered ch)
                 (outputs,registered,,)
-                    <$> viewPosixMsToSlot v ms
-                    <*> viewPosixMsCeilSlot v ms
+                    <$> Services.floorSlot v ms
+                    <*> Services.ceilingSlot v ms
         outputs `shouldSatisfy` (not . null)
         registered `shouldBe` False
         floorSlot `shouldSatisfy` (<= ceilSlot)
@@ -365,7 +366,7 @@ observe ch ms v =
     Observed (viewPoint v)
         <$> viewUTxOsAt v (chWatched ch)
         <*> viewScriptRegistered v (chUnregistered ch)
-        <*> viewPosixMsToSlot v ms
+        <*> Services.floorSlot v ms
         <*> pure (show (viewProtocolParams v))
 
 -- | The wall clock in POSIX milliseconds, inside every chain's horizon.
