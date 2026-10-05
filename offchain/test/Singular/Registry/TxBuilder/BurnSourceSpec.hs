@@ -1087,7 +1087,7 @@ builtFoldUnder pp = do
     createTrie tm foldTokenId
     updateTokenWithDuties
         builtCfg
-        foldProvider{viewProtocolParams = pp}
+        foldProvider{viewProtocolParams = withSyntheticCosts pp}
         tm
         foldTokenId
         payer

@@ -2,17 +2,22 @@
 module Singular.Registry.LocalServicesCallerSpec (spec) where
 
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
+import Cardano.Ledger.Alonzo.Scripts
+    ( costModelsValid
+    , getCostModelParams
+    , mkCostModel
+    , mkCostModels
+    )
+import Cardano.Ledger.Api.PParams (ppCostModelsL)
 import Cardano.Ledger.Api.Tx (witsTxL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, datumTxOutL)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Plutus (ExUnits (..))
 import Cardano.Ledger.State (UTxO (..))
-import Data.ByteString qualified as BS
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
-import PlutusLedgerApi.V3 qualified as PLC
 import Singular.Registry.LocalEvaluation
     ( EvaluationContext (..)
     )
@@ -25,10 +30,16 @@ import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Internal
     ( evaluateAndBalanceReferencing
-    , mkInlineDatum
     )
 import System.Environment (lookupEnv)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldNotBe
+    , shouldSatisfy
+    )
 
 spec :: Spec
 spec = describe "Common services through the existing transaction balancer"
@@ -40,23 +51,31 @@ spec = describe "Common services through the existing transaction balancer"
         calls <- newIORef (0 :: Int)
         let pp = evaluationParameters ctx
             time = evaluationNetworkTime ctx
+        supplied <-
+            if fault
+                then do
+                    -- A valid but corrupted raw cost model makes actual local
+                    -- execution undermeasure. No derived evaluator answer is injected.
+                    models <-
+                        either (fail . show) pure $
+                            Map.traverseWithKey
+                                ( \language model -> mkCostModel language (map (const 0) (getCostModelParams model))
+                                )
+                                (costModelsValid (pp ^. ppCostModelsL))
+                    let changed = pp & ppCostModelsL .~ mkCostModels models
+                    changed `shouldNotBe` pp
+                    pure changed
+                else pure pp
+        let
             view =
                 stubView
-                    { viewProtocolParams = pp
+                    { viewProtocolParams = supplied
                     , viewPoint = (viewPoint stubView){cpNetwork = 1}
                     , viewTimeContext = pure time
                     , viewResolvedOutputs = \wanted -> do
                         modifyIORef' calls (+ 1)
-                        -- Shrink the recorded datum facts so the builder
-                        -- measures fewer units than the independent ledger
-                        -- answer for the untouched actual inputs.
                         pure
-                            [ if fault
-                                then
-                                    ( reference
-                                    , output & datumTxOutL .~ mkInlineDatum (PLC.B BS.empty)
-                                    )
-                                else (reference, output)
+                            [ (reference, output)
                             | (reference, output) <- inputs
                             , reference `Set.member` wanted
                             ]
