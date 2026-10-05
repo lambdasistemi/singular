@@ -429,8 +429,8 @@
       in
       {
         packages = {
-          # The fixture recorder may spawn the pinned private node, but never
-          # sends a transaction. Its external socket mode is read-only too.
+          # Recording modes are read-only. The explicit private confirmation
+          # smoke submits generated-fixture key payments on the private node.
           local-services-record = pkgs.runCommand "local-services-record" {
             nativeBuildInputs = [ pkgs.makeWrapper ];
             meta.mainProgram = "local-services-record";

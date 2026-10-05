@@ -260,7 +260,7 @@ library node-internal
     , text
     , time
 
--- Read-only fixture capture for common local services. It has no submitter.
+-- Read-only capture plus explicit private generated-fixture confirmation smoke.
 executable local-services-record
   import:           warnings
   default-language: GHC2021
