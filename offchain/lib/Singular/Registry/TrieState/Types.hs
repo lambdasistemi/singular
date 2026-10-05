@@ -37,6 +37,10 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Exclusion (MPFExclusionProof)
+import Singular.Registry.Evidence
+    ( SessionBinding (..)
+    , SessionId (..)
+    )
 import Singular.Registry.Ledger (AssetName, Root, TxId, TxIn)
 import Singular.Registry.Types (ProofStep)
 
@@ -44,9 +48,6 @@ newtype StatePolicyId = StatePolicyId ByteString
     deriving stock (Eq, Ord, Show)
 data RegistryIdentity = RegistryIdentity StatePolicyId AssetName
     deriving stock (Eq, Ord, Show)
-newtype SessionId = SessionId Text deriving stock (Eq, Ord, Show)
-data SessionBinding = Unbound | Bound Integer ByteString
-    deriving stock (Eq, Show)
 data StatePoint = StatePoint
     { pointSession :: SessionId
     , pointBinding :: SessionBinding

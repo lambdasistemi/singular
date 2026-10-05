@@ -92,6 +92,10 @@ library
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
     Singular.Provider.Koios.Client
+    Singular.Provider.Koios.History
+    Singular.Provider.Koios.Provider
+    Singular.Provider.Koios.Runtime
+    Singular.Provider.Koios.State
     Singular.Provider.Koios.Recorded
     Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
@@ -160,7 +164,10 @@ library
   -- concern, and the generated API reference documents them here.
   reexported-modules:
     , Singular.Registry.Ledger
+    , Singular.Registry.LedgerProvider
+    , Singular.Registry.Evidence
     , Singular.Registry.Provider
+    , Singular.Registry.Signing
 
 -- Common derived services are public and independent of node transport.
 library local-services
@@ -171,12 +178,15 @@ library local-services
   autogen-modules:  Paths_singular_registry
   other-modules:    Paths_singular_registry
   exposed-modules:
+    Singular.Registry.Evidence
     Singular.Registry.Ledger
+    Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
     Singular.Registry.PhaseLog
     Singular.Registry.Provider
     Singular.Registry.Services
+    Singular.Registry.Signing
     Singular.Registry.TimeMaterial
 
   build-depends:
@@ -184,6 +194,7 @@ library local-services
     , base                       >=4.14 && <5
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
@@ -883,6 +894,7 @@ test-suite cage-tests
     Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
+    Singular.Provider.Koios.ProviderSpec
     Singular.Provider.Koios.FakeServer
     Singular.Provider.Koios.HttpSpec
     Singular.Provider.Koios.RecordedSpec

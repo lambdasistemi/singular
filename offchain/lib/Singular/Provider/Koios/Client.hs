@@ -59,6 +59,10 @@ module Singular.Provider.Koios.Client
     , addressUtxos
     , assetUtxos
     , assetTxs
+    , Page
+    , pageRows
+    , nextPage
+    , assetTxsPage
     , txInfo
     , txCbor
     , epochParams
@@ -123,7 +127,7 @@ import Singular.Provider.Koios.Wire
     , txInfoRequest
     , txStatusRequest
     )
-import Singular.Registry.Node (SignedTx, signedTx)
+import Singular.Registry.Signing (SignedTx, signedTx)
 
 -- | How a transport may retry a request.
 data Retry
@@ -354,14 +358,43 @@ single k req decode = do
         v <- first undecodable (parseBody (answerBody a))
         (,) attempts <$> first undecodable (decode v)
 
--- | Every page of a paged request, decoded and checked whole.
+{- | A checked page and its deferred continuation over the same request.
+No subsequent HTTP exchange happens until the continuation is executed.
+The continuation retains the first total and the configured page ceiling;
+it cannot turn a cut-off answer into a shorter successful history.
+-}
+data Page m a = Page
+    { pageRows :: [a]
+    -- ^ Rows on this page, after the shared decoder and range checks.
+    , nextPage :: Maybe (m (Either ClientFailure (Page m a)))
+    -- ^ Nothing only when this page reaches the exact advertised total.
+    }
+
+-- | Convenience join of the same checked, incremental pages.
 paged
     :: (Monad m)
     => Koios m
     -> Request a
     -> (Value -> Either DecodeFailure [b])
     -> m (Either ClientFailure [b])
-paged k req decode = go 0 0 Nothing []
+paged k req decode = firstPage k req decode >>= collect []
+  where
+    collect chunks = \case
+        Left failure -> pure (Left failure)
+        Right page ->
+            let chunks' = pageRows page : chunks
+            in  case nextPage page of
+                    Nothing -> pure (Right (concat (reverse chunks')))
+                    Just more -> more >>= collect chunks'
+
+-- | Start a paged request using the single shared decoder/checking path.
+firstPage
+    :: (Monad m)
+    => Koios m
+    -> Request a
+    -> (Value -> Either DecodeFailure [b])
+    -> m (Either ClientFailure (Page m b))
+firstPage k req decode = go 0 0 Nothing
   where
     ClientConfig{pageSize = size, pageCeiling = ceiling'} = koiosConfig k
     failure = failing (requestCall req)
@@ -377,7 +410,7 @@ paged k req decode = go 0 0 Nothing []
                            ]
                 , rawHeaders = ("prefer", "count=exact") : rawHeaders raw
                 }
-    go pages offset total acc
+    go pages offset total
         | pages >= ceiling' =
             pure (Left (failure 0 (IncompletePage (PageCeilingReached ceiling'))))
         | otherwise = do
@@ -409,10 +442,16 @@ paged k req decode = go 0 0 Nothing []
                                     pure (refuse (TotalChanged offset t0 t))
                                 | n < size || here == t ->
                                     if here == t
-                                        then pure (Right (acc <> rows))
+                                        then pure (Right (Page rows Nothing))
                                         else pure (refuse (RowsMissing t here))
                                 | otherwise ->
-                                    go (pages + 1) (offset + size) (Just t) (acc <> rows)
+                                    pure
+                                        ( Right
+                                            ( Page
+                                                rows
+                                                (Just (go (pages + 1) (offset + size) (Just t)))
+                                            )
+                                        )
     reasonOf = T.pack . show
     rangeText = fromMaybe "" . header "content-range"
 
@@ -511,6 +550,19 @@ assetTxs
     -> m (Either ClientFailure [AssetTx])
 assetTxs k p n = paged k (assetTxsRequest p n) decodeAssetTxs
 
+{- | Start the asset transaction listing without joining its entire history.
+Each continuation uses the same Wire decoder and range/total/refusal
+checks as 'assetTxs'. HTTP ordering is stable height/hash order; consumers
+must assemble a whole block and resolve spend dependencies before replay.
+-}
+assetTxsPage
+    :: (Monad m)
+    => Koios m
+    -> PolicyID
+    -> AssetName
+    -> m (Either ClientFailure (Page m AssetTx))
+assetTxsPage k p n = firstPage k (assetTxsRequest p n) decodeAssetTxs
+
 -- | The named transactions, in the order asked.
 txInfo
     :: (Monad m) => Koios m -> [TxId] -> m (Either ClientFailure [TxInfo])
@@ -552,7 +604,7 @@ data SubmitOutcome
     deriving stock (Eq, Show)
 
 {- | Submit a 'SignedTx', whose hidden constructor requires a payment-key
-witness through 'Singular.Registry.Node.signTx'. Serialize that
+witness through 'Singular.Registry.Signing.signTx'. Serialize that
 signed transaction as Conway CBOR without changing its body or witnesses.
 A 400 is the server's refusal of the transaction and is returned as its
 text; the transport retries the submission only when no answer arrived.

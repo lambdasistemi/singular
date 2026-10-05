@@ -13,6 +13,10 @@ record-value-test:
 haskell-build:
     nix develop --command cabal build -O0 all
 
+# Focused provider development loop; final evidence uses the frozen Nix gate.
+provider-tests:
+    nix develop --quiet --command cabal test -O0 cage-tests --test-option=--match=Koios
+
 # Run the devnet E2E (drives a real cardano-node subprocess). The recipe
 # builds the Aiken blueprint FIRST, from the onchain flake:
 # onchain/plutus.json is not a committed file, so the recipe must produce

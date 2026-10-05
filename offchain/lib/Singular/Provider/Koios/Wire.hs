@@ -458,6 +458,8 @@ data Tip = Tip
     , tipBlockHash :: ByteString
     , tipBlockHeight :: Word64
     , tipEpoch :: EpochNo
+    , tipBlockTime :: Word64
+    -- ^ Required raw UNIX/POSIX seconds, never inferred from the tip slot.
     }
     deriving stock (Eq, Show)
 
@@ -475,6 +477,8 @@ reference, and whether it is valid.
 -}
 data TxInfo = TxInfo
     { txInfoId :: TxId
+    , txInfoBlockHeight :: Word64
+    -- ^ Required raw block height, used to resolve omitted same-block creators.
     , txInfoInputs :: [(TxIn, TxOut ConwayEra)]
     , txInfoReferenceInputs :: [(TxIn, TxOut ConwayEra)]
     , txInfoOutputs :: [(TxIn, TxOut ConwayEra)]
@@ -544,7 +548,14 @@ rows p = withArray "rows" $ \arr ->
         [0 ..]
         (toList arr)
 
--- | Decode a @tip@ answer: empty when Koios returned no row.
+{- | Decode a @tip@ answer: empty when Koios returned no row.
+Koios API 1.4.2, cardano-community/koios-artifacts revision
+2e2eb57933e1e2528de5ca36ee961759841cf389,
+specs/results/koiosapi-preprod.yaml:
+#/components/schemas/tip/items/properties/block_time refers to
+#/components/schemas/blocks/items/properties/block_time, UNIX seconds.
+Missing, fractional, negative or overflowing raw seconds refuse by name.
+-}
 decodeTip :: Value -> Either DecodeFailure [Tip]
 decodeTip = runParser $ rows $ \o ->
     Tip . SlotNo
@@ -552,6 +563,7 @@ decodeTip = runParser $ rows $ \o ->
         <*> (o .: "hash" >>= hexSized 32)
         <*> o .: "block_height"
         <*> (EpochNo <$> o .: "epoch_no")
+        <*> (o .: "block_time" <?> Key "block_time")
 
 -- | Decode the rows of an @address_utxos@ or @asset_utxos@ page.
 decodeUtxos :: Value -> Either DecodeFailure [(TxIn, TxOut ConwayEra)]
@@ -651,10 +663,14 @@ decodeAssetTxs = runParser $ rows $ \o ->
         <*> o .: "block_height"
         <*> (EpochNo <$> o .: "epoch_no")
 
--- | Decode a @tx_info@ answer.
+{- | Decode a @tx_info@ answer. The same pinned schema's
+#/components/schemas/tx_info/items/properties/block_height refers to
+#/components/schemas/blocks/items/properties/block_height, a block height.
+-}
 decodeTxInfos :: Value -> Either DecodeFailure [TxInfo]
 decodeTxInfos = runParser $ rows $ \o -> do
     txId <- o .: "tx_hash" >>= txIdOf
+    height <- o .: "block_height" <?> Key "block_height"
     inputs <- o .: "inputs" >>= ioRows "inputs"
     references <-
         o .:? "reference_inputs"
@@ -667,6 +683,7 @@ decodeTxInfos = runParser $ rows $ \o -> do
     pure
         TxInfo
             { txInfoId = txId
+            , txInfoBlockHeight = height
             , txInfoInputs = inputs
             , txInfoReferenceInputs = references
             , txInfoOutputs = outputs
