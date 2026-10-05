@@ -103,6 +103,7 @@ import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Cardano.Slotting.Slot qualified as Cage
 import Singular.Application.OpenDatum.Envelope
     ( Envelope (..)
     , envelopeHash
@@ -152,6 +153,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session (failWith, failWithFields, harnessHoldAt)
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( Addr
     , AssetName (..)
@@ -159,7 +161,8 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     , TokenId (..)
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , mkInlineDatum
@@ -208,16 +211,20 @@ data Recovery = Recovery
 on behalf of the named command, which the lines it appends carry.
 -}
 reconcile
-    :: Text -> FilePath -> Saved -> Cage.View IO -> IO Reconciliation
+    :: Text
+    -> FilePath
+    -> Saved
+    -> Cage.Session Cage.NoWitness IO
+    -> IO Reconciliation
 reconcile command dir saved view = do
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
     recovered <- recoverInclusion command dir view liveAt
-    rewound <- rewindMirror dir saved
+    rewound <- rewindMirror view dir saved
     live <- attachLive view saved
     root <- either (failWith Partial) pure (observedRoot live)
     mirror <- openMirror saved
-    applied <- advanceMirror saved mirror root recovered
+    applied <- advanceMirror view saved mirror root recovered
     local <- mirrorRoot saved mirror
     followed <-
         if local == root
@@ -247,7 +254,10 @@ registry: rollback, inclusion, exclusion and the after-states that need
 no key; there is no mirror or @state.json@ yet.
 -}
 reconcileIncomplete
-    :: Text -> FilePath -> Cage.View IO -> IO Reconciliation
+    :: Text
+    -> FilePath
+    -> Cage.Session Cage.NoWitness IO
+    -> IO Reconciliation
 reconcileIncomplete command dir view = do
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
@@ -344,11 +354,11 @@ recoveryJson recovered =
         ]
 
 -- | A chain point as the journal writes it: slot, a dot, the block hash.
-renderPoint :: Cage.ChainPoint -> Text
+renderPoint :: Cage.TipObservation -> Text
 renderPoint p =
-    T.pack (show (Cage.unSlotNo (Cage.cpSlot p)))
+    T.pack (show (Cage.unSlotNo (Cage.observedSlot p)))
         <> "."
-        <> hexT (Cage.cpBlockHash p)
+        <> hexT (Cage.observedHash p)
 
 -- ---------------------------------------------------------
 -- 1 and 2. Rollback, inclusion and exclusion
@@ -357,7 +367,7 @@ renderPoint p =
 -- | The outputs live at an address, read once per address per view.
 type LiveAt = Addr -> IO (Set TxIn)
 
-liveReader :: Cage.View IO -> IO LiveAt
+liveReader :: Cage.Session Cage.NoWitness IO -> IO LiveAt
 liveReader view = do
     cache <- newIORef Map.empty
     pure $ \addr -> do
@@ -366,7 +376,7 @@ liveReader view = do
             Just found -> pure found
             Nothing -> do
                 found <-
-                    Set.fromList . map fst <$> Cage.viewUTxOsAt view addr
+                    Set.fromList . map fst <$> Cage.outputsAt view addr
                 modifyIORef' cache (Map.insert addr found)
                 pure found
 
@@ -388,8 +398,14 @@ inclusionAt liveAt tx = do
 {- | Journal @rolled-back@ for every transaction whose latest case is
 included but which a live input now shows off the chain. Returns them.
 -}
-rollBack :: Text -> FilePath -> Cage.View IO -> LiveAt -> IO [Text]
+rollBack
+    :: Text
+    -> FilePath
+    -> Cage.Session Cage.NoWitness IO
+    -> LiveAt
+    -> IO [Text]
 rollBack command dir view liveAt = do
+    observed <- Cage.tip view
     entries <- readJournal dir
     let included =
             [ t
@@ -419,7 +435,8 @@ rollBack command dir view liveAt = do
                                     <> (if isFold then "; the mirror returns to its root before" else "")
                                 )
                             )
-                                { journalChainPoint = Just (renderPoint (Cage.viewPoint view))
+                                { journalChainPoint = Nothing
+                                , journalObservedTip = Just (renderPoint observed)
                                 , journalInputs = Just (map txInText found)
                                 , journalRootBefore = if isFold then returnsTo else Nothing
                                 }
@@ -430,8 +447,13 @@ body bound to its @prepared@ line: journals @confirmed@ for an included
 one that lacked it, and @excluded@ for one that can never be included.
 -}
 recoverInclusion
-    :: Text -> FilePath -> Cage.View IO -> LiveAt -> IO [Recovery]
+    :: Text
+    -> FilePath
+    -> Cage.Session Cage.NoWitness IO
+    -> LiveAt
+    -> IO [Recovery]
 recoverInclusion command dir view liveAt = do
+    observed <- Cage.tip view
     entries <- readJournal dir
     let settled = ["observed", "rejected", "excluded"]
         open =
@@ -439,7 +461,7 @@ recoverInclusion command dir view liveAt = do
             | t <- nub (map journalTxId entries)
             , journalEvent (lastOf entries t) `notElem` settled
             ]
-        tip = Cage.cpSlot (Cage.viewPoint view)
+        tip = Cage.observedSlot observed
     forM open $ \e -> do
         let txid = journalTxId e
         (prepared, body) <- boundBody entries txid
@@ -498,7 +520,8 @@ recoverInclusion command dir view liveAt = do
                                         <> ": it can never be included"
                                     )
                                 )
-                                    { journalChainPoint = Just (renderPoint (Cage.viewPoint view))
+                                    { journalChainPoint = Nothing
+                                    , journalObservedTip = Just (renderPoint observed)
                                     , journalInputs = Just (map txInText found)
                                     }
                             pure
@@ -536,8 +559,9 @@ folds still on chain, and bring @state.json@ along. Returns the root
 when the mirror was rewritten; a replay that does not reach that root
 is stale local state, refused and never written.
 -}
-rewindMirror :: FilePath -> Saved -> IO (Maybe Text)
-rewindMirror dir saved = do
+rewindMirror
+    :: Cage.Session Cage.NoWitness IO -> FilePath -> Saved -> IO (Maybe Text)
+rewindMirror view dir saved = do
     entries <- readJournal dir
     case rewindOf entries of
         Nothing -> pure Nothing
@@ -556,7 +580,7 @@ rewindMirror dir saved = do
                     else do
                         harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND" Nothing
                         mirror <- openMirror saved
-                        rewindMirrorTo saved mirror target
+                        rewindMirrorTo view saved mirror target
                         pure (Just (rewindRoot rw))
             harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE" Nothing
             _ <- followState dir saved target
@@ -571,8 +595,13 @@ rewindMirror dir saved = do
 root. Returns the folds applied.
 -}
 advanceMirror
-    :: Saved -> Mirror -> ByteString -> [Recovery] -> IO [Text]
-advanceMirror saved mirror root recovered = fmap concat . forM recovered $ \r ->
+    :: Cage.Session Cage.NoWitness IO
+    -> Saved
+    -> Mirror
+    -> ByteString
+    -> [Recovery]
+    -> IO [Text]
+advanceMirror view saved mirror root recovered = fmap concat . forM recovered $ \r ->
     case recPrepared r of
         Just p
             | recIncluded r
@@ -587,7 +616,7 @@ advanceMirror saved mirror root recovered = fmap concat . forM recovered $ \r ->
                                 (failWith StaleState "the included fold has no bound signed body")
                                 pure
                                 (recBody r)
-                        recoverMirrorFold saved mirror key edge local root tx
+                        recoverMirrorFold view saved mirror key edge local root tx
                         now <- mirrorRoot saved mirror
                         if now /= root
                             then
@@ -728,6 +757,8 @@ recoveryLine command e event detail =
         , journalBody = Nothing
         , journalBodyHash = Nothing
         , journalChainPoint = Nothing
+        , journalSession = Nothing
+        , journalObservedTip = Nothing
         , journalKey = Nothing
         , journalExpect = Nothing
         , journalEdge = Nothing

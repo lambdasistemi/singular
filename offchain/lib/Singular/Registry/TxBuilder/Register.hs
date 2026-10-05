@@ -39,9 +39,11 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Address (Addr)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.SessionIO (outputsAt, parameters)
+import Singular.Registry.SessionIO qualified as Services
 
 -- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a
@@ -50,7 +52,7 @@ data NoCtx a
 here, but the story language still calls back through this interface).
 -}
 mkEvalTx
-    :: View IO
+    :: Session NoWitness IO
     -> ConwayTx
     -> IO
         ( Map.Map
@@ -76,13 +78,13 @@ same way). Registration only makes a credential withdrawable; it
 authorizes nothing by itself.
 -}
 registerScriptImpl
-    :: View IO
+    :: Session NoWitness IO
     -> Addr
     -> ScriptHash
     -> IO ConwayTx
 registerScriptImpl view fundAddr credHash = do
-    let pp = viewProtocolParams view
-    utxos <- viewUTxOsAt view fundAddr
+    pp <- parameters view
+    utxos <- outputsAt view fundAddr
     let funding =
             sortOn
                 (Down . (^. coinTxOutL) . snd)

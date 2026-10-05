@@ -59,15 +59,14 @@ import Cardano.Tx.Ledger
 import Singular.Registry.Config
     ( CageConfig (..)
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( ConwayEra
     , PParams
     , TxIn
     )
-import Singular.Registry.Provider
-    ( View (..)
-    )
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
     , ConnectedSpend (..)
@@ -88,7 +87,7 @@ data NoCtx a
 
 -- | Wrap the view's script evaluation for the story language.
 mkEvalTx
-    :: View IO
+    :: Session NoWitness IO
     -> ConwayTx
     -> IO
         ( Map.Map

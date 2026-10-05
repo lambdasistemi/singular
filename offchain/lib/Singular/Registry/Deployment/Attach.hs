@@ -58,13 +58,15 @@ import Singular.Registry.Deployment.Manifest
     , parseOutRef
     , renderOutRef
     )
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal.Identity
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -190,7 +192,7 @@ token under the recorded policy. The first claim that fails is raised
 by name.
 -}
 verifyDeployment
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> Deployment
     -> CageParts
     -> IO [String]
@@ -251,7 +253,7 @@ verifyDeployment view dep parts = do
 one by one against the hash the manifest pins.
 -}
 resolveReferenceScripts
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> Deployment
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
 resolveReferenceScripts view dep =
@@ -260,7 +262,7 @@ resolveReferenceScripts view dep =
     one r = do
         wanted <- either die pure (parseOutRef (refOutRef r))
         addr <- addrOf r
-        utxos <- Cage.viewUTxOsAt view addr
+        utxos <- Cage.outputsAt view addr
         case [u | u@(i, _) <- utxos, i == wanted] of
             [] ->
                 die
@@ -309,13 +311,13 @@ resolveReferenceScripts view dep =
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> CageConfig
     -> TokenId
     -> IO (TxIn, TxOut ConwayEra)
 resolveStateUtxo view cfg tok = do
     let stateAddr = cageAddrFromCfg cfg Testnet
-    utxos <- Cage.viewUTxOsAt view stateAddr
+    utxos <- Cage.outputsAt view stateAddr
     case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
         Just u -> pure u
         Nothing ->
@@ -347,7 +349,7 @@ and windows are not checked here; verification is the operation that
 reads them.
 -}
 attach
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> Deployment
     -> CageParts
     -> IO Attached

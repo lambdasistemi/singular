@@ -97,13 +97,7 @@ import Cardano.Tx.Balance
     , balanceTx
     )
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Exception
-    ( SomeAsyncException
-    , SomeException
-    , fromException
-    , throwIO
-    , try
-    )
+import Control.Exception (SomeException)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -111,6 +105,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -118,8 +113,8 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -130,6 +125,7 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , OnChainTokenId (..)
     )
+import Singular.Registry.Wait qualified as Wait
 
 {- | Placeholder execution units used in the initial
 unbalanced transaction.
@@ -141,7 +137,7 @@ placeholderExUnits = ExUnits 0 0
 a transaction.
 -}
 evaluateAndBalance
-    :: View IO
+    :: Session NoWitness IO
     -> PParams ConwayEra
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ All input UTxOs (fee + script)
@@ -159,7 +155,7 @@ which charges the ledger's per-byte tier for every reference-script byte the
 transaction references, exactly as the node will.
 -}
 evaluateAndBalanceReferencing
-    :: View IO
+    :: Session NoWitness IO
     -> PParams ConwayEra
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ All input UTxOs (fee + script)
@@ -325,15 +321,14 @@ currentPosixMs = do
 slots, returning the first that succeeds.
 -}
 trySlots
-    :: View IO -> [Integer] -> IO SlotNo
+    :: Session NoWitness IO -> [Integer] -> IO SlotNo
 trySlots _ [] =
     error
         "posixMsToSlot: all fallbacks \
         \past horizon"
 trySlots p (ms : rest) = do
     r <-
-        try @SomeException
-            (Services.ceilingSlot p ms)
+        trySync (Services.ceilingSlot p ms)
     case r of
         Right s -> pure s
         Left _ -> trySlots p rest
@@ -380,7 +375,7 @@ exclusive: the node cannot translate a bound there, and evaluation fails
 horizon whenever the time is.
 -}
 tryUpperSlots
-    :: View IO -> [Integer] -> IO SlotNo
+    :: Session NoWitness IO -> [Integer] -> IO SlotNo
 tryUpperSlots _ [] =
     error
         "posixMsToSlot: all fallbacks \
@@ -396,9 +391,4 @@ exception — a cancellation, a timeout — is rethrown, never taken for a
 conversion that failed and so never answered by a fallback.
 -}
 trySync :: IO a -> IO (Either SomeException a)
-trySync action = do
-    r <- try action
-    case r of
-        Left e
-            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-        _ -> pure r
+trySync = Wait.tryOutcome

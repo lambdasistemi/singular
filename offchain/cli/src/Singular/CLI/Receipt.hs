@@ -116,6 +116,10 @@ data JournalEntry = JournalEntry
     {- ^ At @prepared@: that view's chain point, @slot.headerhash@. At
     @rolled-back@ and @excluded@: the chain point the evidence was read at
     -}
+    , journalSession :: Maybe Aeson.Value
+    -- ^ Actual session identity, binding, consumed facts and raw source observations.
+    , journalObservedTip :: Maybe Text
+    -- ^ A latest observation; it does not bind the session to this point.
     , journalKey :: Maybe Text
     -- ^ At @prepared@: the registry key the step concerns, hex
     , journalExpect :: Maybe Text

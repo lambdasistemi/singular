@@ -24,6 +24,7 @@ refused before a node is contacted: create never overwrites a registry.
 -}
 module Singular.CLI.Create (runCreate) where
 
+import Control.Monad (unless)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -72,7 +73,6 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live (newStatePoint, receipt, txInText)
-import Singular.CLI.Node (Capabilities (..), withReads)
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( LocalState (..)
@@ -118,8 +118,8 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (Wallet (..), bech32Address)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Mirror (createStoredMirror)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -141,6 +141,7 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     , txInToRef
     )
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 runCreate :: CreateArgs -> IO Value
 runCreate a = do
@@ -151,15 +152,16 @@ runCreate a = do
         loadRelease (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
     case createMode a of
-        Preview (ProviderSettings sock magic _ _) addrText -> do
+        Preview settings addrText -> do
+            let magic = providerMagic settings
             -- A preview for a public address reads the node and holds no key.
             addr <-
                 either
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            withReads magic sock $ \prov -> do
-                utxos <- Cage.withView prov (`Cage.viewUTxOsAt` addr)
+            withReads settings $ \caps -> do
+                utxos <- Cage.withLatest (capReads caps) (`Cage.outputsAt` addr)
                 (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
         Submit ws -> createWith a rel ws
@@ -172,7 +174,7 @@ createWith a rel ws = do
     session dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
-            Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
+            Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
@@ -203,7 +205,14 @@ createWith a rel ws = do
                 booted <- boot wc cfg pinned seedIn
                 let ProviderSettings _ magic _ _ = writeProvider ws
                     dep = deploymentOf magic cfg seedIn booted
-                point <- newStatePoint (bootedOutput booted)
+                point <- Cage.withLatest (capReads (wcCapabilities wc)) $ \selectionSession -> do
+                    outputs <-
+                        Cage.outputsAt selectionSession (cageAddrFromCfg cfg (network cfg))
+                    unless (bootedOutput booted `elem` map fst outputs) $
+                        failWith
+                            Partial
+                            "the boot output is no longer live before mirror creation"
+                    pure (newStatePoint selectionSession (bootedOutput booted))
                 let TokenId name = bootedToken booted
                     who =
                         TS.RegistryIdentity
@@ -293,7 +302,7 @@ boot wc cfg pinned seedIn = do
     -- The state validator, published from outside the seed, unless the
     -- wallet already publishes it.
     existing <-
-        Cage.withView prov (\v -> stateRefIn cfg <$> Cage.viewUTxOsAt v addr)
+        Cage.withLatest prov (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
     stateRef@(stateIn, _) <-
         maybe
             ( publish
@@ -321,9 +330,9 @@ boot wc cfg pinned seedIn = do
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
             _ -> failWith LedgerRefusal "the boot minted no single registry token"
     stateUtxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     (seenOutput, seenRoot) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
@@ -383,7 +392,7 @@ observeReference
     -> IO ()
 observeReference wc step addr script (i, _) = do
     utxos <-
-        Cage.withView (capReads (wcCapabilities wc)) (`Cage.viewUTxOsAt` addr)
+        Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]

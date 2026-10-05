@@ -38,6 +38,7 @@ import Cardano.Ledger.BaseTypes
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 
+import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
 import Singular.CLI.Command (ReclaimArgs (..))
 import Singular.CLI.Fold (slotAt)
@@ -50,9 +51,9 @@ import Singular.CLI.ReclaimRules
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
-import Singular.Registry.Node (Wallet (..), bech32Address)
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , addrWitnessKeyHash
@@ -71,6 +72,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
 runReclaim :: ReclaimArgs -> IO Value
@@ -98,7 +100,7 @@ runReclaim a = attached
                 "reclaim"
                 (const (expecting ("reclaim:" <> txInText named)))
                 $ \v -> do
-                    allRequests <- Cage.viewUTxOsAt v requestAddr
+                    allRequests <- Cage.outputsAt v requestAddr
                     let pending = findRequestUtxos (savedToken s) allRequests
                     locked <-
                         maybe
@@ -112,12 +114,13 @@ runReclaim a = attached
                     st <- case extractCageDatum (snd (liveState live)) of
                         Just (StateDatum st) -> pure st
                         _ -> stop "the registry's state output carries no state datum"
+                    observed <- Cage.tip v
                     let b =
                             windowOf
                                 (requestSubmittedAt req)
                                 (stateProcessTime st)
                                 (stateRetractTime st)
-                        tip = Cage.cpSlot (Cage.viewPoint v)
+                        tip = Cage.observedSlot observed
                         tipSlot = toInteger (Cage.unSlotNo tip)
                     opens <-
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (processingEnds b)
@@ -168,7 +171,7 @@ runReclaim a = attached
                         $ stop
                             "not-phase2: the built reclaim has no nonempty validity interval inside the retract window; it is not signed"
                     -- Fees come from this wallet. No state or another request may be spent.
-                    walletOuts <- Cage.viewUTxOsAt funded wallet
+                    walletOuts <- Cage.outputsAt funded wallet
                     let spent = Set.fromList (toList (body ^. inputsTxBodyL))
                         allowed = Set.fromList (named : map fst walletOuts)
                     unless
@@ -197,9 +200,9 @@ runReclaim a = attached
                     pure
                         (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
         (pendingAfter, liveAfter, ownerOuts) <- reading at $ \v -> do
-            requests <- Cage.viewUTxOsAt v requestAddr
+            requests <- Cage.outputsAt v requestAddr
             live <- attachLive v s
-            ownerOuts <- Cage.viewUTxOsAt v recipient
+            ownerOuts <- Cage.outputsAt v recipient
             pure (requests, live, ownerOuts)
         when (named `elem` map fst pendingAfter) $
             failWith

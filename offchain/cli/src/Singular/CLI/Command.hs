@@ -60,7 +60,6 @@ import Data.Char (GeneralCategory (Surrogate), generalCategory)
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
-import Data.Word (Word32)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
@@ -74,18 +73,10 @@ import Singular.Application.OpenDatum.Build
     , readKey
     )
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
-    deriving stock (Eq, Show)
-
--- | The sole Koios service and its explicit network/time inputs.
-data ProviderSettings = ProviderSettings
-    { providerUrl :: String
-    , providerMagic :: Word32
-    , providerTokenFile :: Maybe FilePath
-    , providerTimeDirectory :: Maybe FilePath
-    }
     deriving stock (Eq, Show)
 
 -- | The node and the wallet a write command funds and signs from.

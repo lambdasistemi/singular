@@ -92,6 +92,7 @@ library
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
     Singular.Provider.Koios.Client
+    Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History
     Singular.Provider.Koios.Provider
     Singular.Provider.Koios.Runtime
@@ -104,6 +105,8 @@ library
     Singular.Registry.Blueprint.Params
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
+    Singular.Registry.Capabilities
+    Singular.Registry.Funding
     Singular.Registry.Config
     Singular.Registry.Config.Application
     Singular.Registry.Deployment
@@ -196,6 +199,7 @@ library local-services
     Singular.Registry.Wallet
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
+    Singular.Registry.ProviderSettings
 
   build-depends:
     , aeson
@@ -362,6 +366,7 @@ library koios-http
   exposed-modules:
     Singular.Provider.Koios.Http
     Singular.Provider.Koios.Recorder
+    Singular.Registry.Terminal
 
   build-depends:
     , aeson
@@ -383,6 +388,7 @@ library koios-http
     , microlens
     , random
     , singular-registry
+    , singular-registry:local-services
     , text
     , time
 
@@ -880,7 +886,6 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLI.Live
-    Singular.CLI.Node
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Plan
@@ -1214,7 +1219,6 @@ executable singular
     Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
-    Singular.CLI.Node
     Singular.CLI.Outlay
     Singular.CLI.Plan
     Singular.CLI.Preimage
@@ -1257,7 +1261,7 @@ executable singular
     , plutus-core
     , singular-registry
     , singular-registry:local-services
-    , singular-registry:node-internal
+    , singular-registry:koios-http
     , text
     , unix
 

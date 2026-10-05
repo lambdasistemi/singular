@@ -30,7 +30,7 @@ import Singular.Registry.LedgerProvider
     , Network
     , OutputQuery (..)
     , Outputs
-    , ReadFailure
+    , ReadFailure (..)
     , Session (..)
     , TipObservation
     )
@@ -51,7 +51,10 @@ withLatest (network, provider) action =
     acquire provider (Latest network) action >>= either throwIO pure
 
 requireFact :: IO (Either ReadFailure (Evidenced w a)) -> IO a
-requireFact action = action >>= either throwIO (pure . value)
+requireFact action = action >>= either refused (pure . value)
+  where
+    refused (NetworkTimeRefusal failure) = throwIO failure
+    refused failure = throwIO failure
 
 outputsAt :: Session w IO -> Addr -> IO Outputs
 outputsAt session address = requireFact (outputs session (AtAddress address))
@@ -68,6 +71,7 @@ registered session script = requireFact (scriptRegistered session script)
 requireService :: IO (Either Services.ServiceFailure a) -> IO a
 requireService action = action >>= either refused pure
   where
+    refused (Services.ServiceReadFailure (NetworkTimeRefusal failure)) = throwIO failure
     refused (Services.ServiceReadFailure failure) = throwIO failure
     refused (Services.ServiceEvaluationFailure failure) = throwIO failure
     refused (Services.ServiceTimeFailure failure) = throwIO failure

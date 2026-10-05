@@ -70,12 +70,17 @@ import PlutusTx.Builtins.Internal
 import Singular.Registry.Config
     ( CageConfig (..)
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( ConwayTxBody
     , TokenId
     )
-import Singular.Registry.Provider (ChainPoint (..), View (..))
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider
+    ( Session (..)
+    , TipObservation (..)
+    )
+import Singular.Registry.SessionIO (outputsAt, parameters)
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
@@ -94,7 +99,7 @@ Wallet funding pays fees separately. Requires Phase 2 validity.
 -}
 retractRequestImpl
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -- ^ Token the request belongs to
     -> TxIn
@@ -111,7 +116,7 @@ phase-two opening is later than the acquired view's own tip.
 retractRequestAtTipImpl
     :: SlotNo
     -> CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -> TxIn
     -> Addr
@@ -121,8 +126,8 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
             requestAddrFromCfg cfg tid (network cfg)
         stateAddr =
             cageAddrFromCfg cfg (network cfg)
-    requestUtxos <- viewUTxOsAt view reqAddr
-    stateUtxos <- viewUTxOsAt view stateAddr
+    requestUtxos <- outputsAt view reqAddr
+    stateUtxos <- outputsAt view stateAddr
     let reqUtxo =
             findUtxoByTxIn reqTxIn requestUtxos
     reqUtxoPair <- case reqUtxo of
@@ -144,8 +149,8 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
                     \not found"
             Just x -> pure x
     let (stateIn, stateOut) = stateUtxo
-    let pp = viewProtocolParams view
-    walletUtxos <- viewUTxOsAt view addr
+    pp <- parameters view
+    walletUtxos <- outputsAt view addr
     -- The funding output is also the collateral, so it must hold ada and
     -- nothing else, and must not be a published reference script.
     feeUtxo <- case selectFunding Nothing walletUtxos of
@@ -179,7 +184,8 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     phase2Slot <-
         Services.ceilingSlot view phase2Start
     let lowerSlot = max tip phase2Slot
-    when (lowerSlot > cpSlot (viewPoint view)) $
+    observed <- Services.tip view
+    when (lowerSlot > observedSlot observed) $
         fail "retractRequest: lower-bound-ahead-of-view"
     _ <- Services.slotStart view lowerSlot
     -- The window's end may lie past what the node can translate to a slot

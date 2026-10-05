@@ -93,8 +93,9 @@ import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
-import Singular.Registry.Node (Wallet (..))
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
@@ -105,16 +106,17 @@ import Singular.Registry.Types
     , OnChainRequest
     , OnChainTokenState
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 -- | The state a request's deadline is read under, and the request it names.
 requestAndState
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> Saved
     -> TxIn
     -> IO (Maybe (OnChainRequest, OnChainTokenState))
 requestAndState v s request = do
     reqs <-
-        Cage.viewUTxOsAt
+        Cage.outputsAt
             v
             (requestAddrFromCfg (savedCfg s) (savedToken s) Testnet)
     live <- attachLive v s
@@ -139,7 +141,7 @@ book
     :: Attached
     -> EntryArgs
     -> ByteString
-    -> (Cage.View IO -> Live -> IO (Booked, r))
+    -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
     -> IO (ConwayTx, r, Deadline)
 book at a key plan = do
@@ -167,9 +169,10 @@ book at a key plan = do
                         (bookedApproval b)
                         (liveRefs live)
                         (entryFund a)
+                pp <- Cage.parameters v
                 refuseOver
                     (entryMaxOutlay a)
-                    (bookingOutlay (Cage.viewProtocolParams v) (liveRefs live) tx)
+                    (bookingOutlay pp (liveRefs live) tx)
                 forM_ (bookedPreimage b) (storePreimage (savedDir s))
                 pure (tx, decided)
             )
@@ -177,7 +180,7 @@ book at a key plan = do
     deadline <-
         reading at $ \v -> do
             reqs <-
-                Cage.viewUTxOsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
+                Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
             unless (any ((== request) . fst) reqs) $
                 failWith
                     Partial

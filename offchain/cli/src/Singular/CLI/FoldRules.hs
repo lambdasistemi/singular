@@ -48,7 +48,9 @@ import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.Types
     ( Edge
@@ -281,19 +283,24 @@ none named the view is the fold's own.
 fundedView
     :: Maybe TxIn
     -> Addr
-    -> Cage.View IO
-    -> IO (Either String (Cage.View IO))
+    -> Cage.Session Cage.NoWitness IO
+    -> IO (Either String (Cage.Session Cage.NoWitness IO))
 fundedView Nothing _ v = pure (Right v)
 fundedView chosen addr v = do
-    wallet <- Cage.viewUTxOsAt v addr
+    wallet <- Cage.outputsAt v addr
     pure $ case selectFunding chosen wallet of
         Left why -> Left why
         Right one ->
             Right
                 v
-                    { Cage.viewUTxOsAt = \a ->
-                        if a == addr then pure [one] else Cage.viewUTxOsAt v a
+                    { Cage.outputs = \query ->
+                        fmap (fmap (select query one)) (Cage.outputs v query)
                     }
+  where
+    select (Cage.AtAddress address) one fact
+        | address == addr =
+            fact{Cage.value = filter ((== fst one) . fst) (Cage.value fact)}
+    select _ _ fact = fact
 
 {- | The time at which a built fold's upper-bound slot begins, as the view
 that built it converts times; nothing when it cannot place the bound.

@@ -83,6 +83,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Blueprint.Load (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( Addr
     , AssetName (..)
@@ -93,7 +94,8 @@ import Singular.Registry.Ledger
     , TxIn
     , TxOut
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges (SubmitSigned)
@@ -122,7 +124,7 @@ creates the trie.
 data Registry = Registry
     { regCfg :: CageConfig
     , regCodes :: NamingCodes
-    , regProv :: Cage.Provider IO
+    , regProv :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     , regSubmit :: SubmitSigned
     , regPayer :: Addr
     , regTm :: TrieManager IO
@@ -161,15 +163,15 @@ wallet, and is refused `StateValidatorNotPublished` without one.
 bootRegistry
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -- ^ The payer, which is also where boot outputs land
     -> TrieManager IO
     -> IO Registry
 bootRegistry cfg codes prov submit payer tm = do
-    (bootWallet, unsignedBoot) <- Cage.withView prov $ \v ->
-        (,) <$> Cage.viewUTxOsAt v payer <*> bootTokenImpl cfg v payer
+    (bootWallet, unsignedBoot) <- Cage.withLatest prov $ \v ->
+        (,) <$> Cage.outputsAt v payer <*> bootTokenImpl cfg v payer
     let bootScripts = unsignedBoot ^. witsTxL . scriptTxWitsL
         bootRefs = unsignedBoot ^. bodyTxL . referenceInputsTxBodyL
         bootBytes =
@@ -203,9 +205,9 @@ bootRegistry cfg codes prov submit payer tm = do
     refs <- Edges.publishCageRefs cfg codes prov submit payer tid
     -- The boot is not booted until the chain holds its state UTxO.
     stateUtxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     when (null stateUtxos) $
         error "bootRegistry: the cage address holds no UTxO after the boot"
     pure
@@ -311,7 +313,7 @@ foldEdgeWith reg key edge mDest = do
                 key
                 edge
                 dest
-    unsigned <- Cage.withView (regProv reg) $ \v -> do
+    unsigned <- Cage.withLatest (regProv reg) $ \v -> do
         ctx <-
             Edges.registryContextFor
                 (regCfg reg)
@@ -369,9 +371,9 @@ chainRoot :: Registry -> IO OnChainRoot
 chainRoot reg = do
     let cfg = regCfg reg
     utxos <-
-        Cage.withView
+        Cage.withLatest
             (regProv reg)
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid reg) utxos of
         Nothing ->
             error "chainRoot: no state UTxO carrying the policy token"
