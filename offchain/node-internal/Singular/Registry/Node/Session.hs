@@ -210,6 +210,7 @@ withNodeReadsOn backend magicWord sock k = do
                 (mkN2CProvider lsqCh)
                 (mkN2CSubmitter ltxsCh)
                 (rawNodeProvider lsqCh)
+        awaitRawConnection magic sock nodeThread lsqCh
         material <- loadTimeMaterial magicWord (takeDirectory sock)
         let prov = adaptProvider magic material raw
         awaitConnection magic sock nodeThread (loggedProvider lg prov)
@@ -300,6 +301,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                         (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
                         (rawNodeProvider lsqCh)
                 let (n2c, _, raw) = connection
+                awaitRawConnection magic sock nodeThread lsqCh
                 material <-
                     loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
                 awaitConnection
@@ -519,11 +521,33 @@ awaitConnection
     -> Async a
     -> Cage.Provider IO
     -> IO ()
-awaitConnection (NetworkMagic magic) sock nodeThread prov = do
+awaitConnection magic sock nodeThread prov =
+    awaitConnectionQuery
+        magic
+        sock
+        nodeThread
+        (firstViewWithin originWaitPolls sock prov)
+
+{- | The handshake must answer before local time-source selection can refuse
+the network. Query only a raw fact on this connection; the subsequent first
+public view retains the origin wait and all time validation.
+-}
+awaitRawConnection
+    :: (Show a) => NetworkMagic -> FilePath -> Async a -> LSQChannel -> IO ()
+awaitRawConnection magic sock nodeThread channel =
+    awaitConnectionQuery
+        magic
+        sock
+        nodeThread
+        (withRawView (rawNodeProvider channel) rawSystemStart)
+
+awaitConnectionQuery
+    :: (Show a) => NetworkMagic -> FilePath -> Async a -> IO b -> IO ()
+awaitConnectionQuery (NetworkMagic magic) sock nodeThread query = do
     answered <-
         race
             (waitCatch nodeThread)
-            (firstViewWithin originWaitPolls sock prov)
+            query
     case answered of
         Right _ -> pure ()
         Left outcome ->
@@ -624,6 +648,7 @@ guardNodeConnection
 guardNodeConnection client magic sock channel upstream submit = do
     (node, guardedSubmit, raw) <-
         guardRawConnection client upstream submit (rawNodeProvider channel)
+    awaitRawConnection magic sock client channel
     material <-
         loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
     pure (node, guardedSubmit, adaptProvider magic material raw)

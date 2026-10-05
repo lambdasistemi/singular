@@ -47,6 +47,7 @@ import Test.Hspec
     , shouldBe
     , shouldNotBe
     , shouldSatisfy
+    , shouldThrow
     )
 
 data TimeRow = TimeRow Integer NodeAnswer NodeAnswer
@@ -185,6 +186,9 @@ matches (NodeRefusal reason) actual =
 
 spec :: Spec
 spec = describe "Validity conversions from recorded preprod network data" $ do
+    it "refuses an unsupported local time network by name" $
+        loadTimeMaterial 999 "unused-for-unsupported-network"
+            `shouldThrow` (== UnknownTimeNetwork 999)
     it
         "loads the production packaged source and retains all recorded answers"
         $ do
