@@ -1,0 +1,42 @@
+{
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    },
+    {
+      "text": "As a creator, I need the flags to reach the state datum without any other command learning about them.",
+      "pause": 400
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    }
+  ],
+  "slice": [
+    {
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice, one commit owner, one commit per task in tasks.",
+      "pause": 400
+    }
+  ],
+  "live-boundary": [
+    {
+      "text": "Live boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No preprod writes and no new registry from this lane. The operator creates the new preprod registry with longer windows after merge.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "c5b3848fd0e46cfcd4cadad7eeff86c7acc82d5f796a4ebefb9d290f53e542fa"
+  }
+}

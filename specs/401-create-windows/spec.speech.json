@@ -1,0 +1,102 @@
+{
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator on preprod, I choose how long a booked request waits for its fold (the processing window) and how long its owner may then reclaim it (the retract window), so a slow network or slow reads do not make every fold expire.",
+      "pause": 400
+    },
+    {
+      "text": "As a registry creator, I see both windows in the create receipt and in inspect, and I read in the documentation that they are fixed for the life of the registry.",
+      "pause": 400
+    },
+    {
+      "text": "As a maintainer, I see a development-network journey create a registry with explicit windows, read them back, and find each booking's fold deadline at the booking's submission time plus the chosen processing window.",
+      "pause": 400
+    }
+  ],
+  "where-the-windows-live": [
+    {
+      "text": "Where the windows live.",
+      "pause": 500
+    },
+    {
+      "text": "The windows are written once into the state datum at creation and the validator keeps them unchanged afterwards. Every later command reads them from the datum, so only create takes them as input. The model carries them as configuration (processTime, retractTime in lean/Singular/Model.lean); this ticket changes no model rule.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "create-takes-both-windows": [
+    {
+      "text": "Create takes both windows.",
+      "pause": 500
+    },
+    {
+      "text": "singular registry create accepts --process-time MS and --retract-time MS, both optional. A value that is not a positive integer number of milliseconds is refused at parse, before anything is built or signed.",
+      "pause": 400
+    }
+  ],
+  "defaults-for-a-public-network": [
+    {
+      "text": "Defaults for a public network.",
+      "pause": 500
+    },
+    {
+      "text": "Without the flags, a registry is created with a processing window of 600 000 ms and a retract window of 300 000 ms (ten and five minutes).",
+      "pause": 400
+    }
+  ],
+  "the-windows-are-shown": [
+    {
+      "text": "The windows are shown.",
+      "pause": 500
+    },
+    {
+      "text": "The create receipt and inspect report both windows as stored in the state datum.",
+      "pause": 400
+    }
+  ],
+  "journeys-keep-their-timing": [
+    {
+      "text": "Journeys keep their timing.",
+      "pause": 500
+    },
+    {
+      "text": "Development-network journeys, controls and tests that relied on the old 120 000 and 30 000 ms windows pass those values explicitly through the new flags, so their timing and CI duration are unchanged. Documentation that states the windows is updated to the new defaults and says they are fixed for the life of a registry.",
+      "pause": 400
+    }
+  ],
+  "success": [
+    {
+      "text": "Success.",
+      "pause": 500
+    },
+    {
+      "text": "A journey creates a registry with explicit windows, reads them back through inspect, and a booking's fold deadline equals its submission time plus the chosen processing window.",
+      "pause": 400
+    },
+    {
+      "text": "Non-positive and non-integer values are refused at parse.",
+      "pause": 400
+    },
+    {
+      "text": "The defaults are documented; nothing in the tree still assumes the old defaults without passing them.",
+      "pause": 400
+    },
+    {
+      "text": "PR CI is green on the exact head.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "3df99a334bd51e39fa983d306973794a4fd18cfec3be58ea10244f65c4408605"
+  }
+}
