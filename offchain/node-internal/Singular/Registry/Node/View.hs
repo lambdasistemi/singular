@@ -38,6 +38,7 @@ import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
+import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -64,6 +65,10 @@ nodeProvider magic n2c = scopedProvider $ \action ->
             View
                 { viewPoint = point
                 , viewProtocolParams = pp
+                , viewTimeContext = fail "LegacyNodeViewHasNoRawTimeContext"
+                , viewResolvedOutputs = \refs ->
+                    Map.toList <$> lost (N2C.queryUTxOByTxInH h refs)
+                , viewPhaseLog = noPhaseLog
                 , viewUTxOsAt = lost . N2C.queryUTxOsH h
                 , viewScriptRegistered = \sh -> lost $ do
                     let credential = ScriptHashObj sh

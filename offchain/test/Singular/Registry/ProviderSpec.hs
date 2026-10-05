@@ -67,8 +67,10 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
+import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
 import Singular.Registry.Node.Memory
     ( ChainState (..)
+    , loseConnection
     , memoryProvider
     , mutate
     , newMemoryChain
@@ -86,6 +88,7 @@ import Singular.Registry.Provider
     , View (..)
     , ViewFailure (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -112,6 +115,38 @@ memorySpec = describe "in-memory adapter" $ do
         p2 <- withView (memoryProvider chain) (pure . viewPoint)
         cpSlot p2 `shouldBe` succ (cpSlot p1)
         cpBlockHash p2 `shouldNotBe` cpBlockHash p1
+    it
+        "common services read the memory view's finite context with both rounding directions" $ do
+        chain <- newMemoryChain genesis
+        mutate chain id
+        withView (memoryProvider chain) $ \view -> do
+            Services.floorSlot view 5_010 `shouldReturn` SlotNo 5
+            Services.ceilingSlot view 5_010 `shouldReturn` SlotNo 6
+            Services.slotStart view (SlotNo 6) `shouldReturn` 6_000
+            try @NetworkTimeFailure (Services.floorSlot view 4_320_000_000_000)
+                `shouldReturn` Left (TimePastHorizon 4_320_000_000_000)
+    it
+        "common services refuse a released memory view before reading its context" $ do
+        chain <- newMemoryChain genesis
+        mutate chain id
+        released <- withView (memoryProvider chain) pure
+        try @ViewFailure (Services.floorSlot released 5_000)
+            `shouldReturn` Left ViewOutOfScope
+        try @ViewFailure (viewResolvedOutputs released Set.empty)
+            `shouldReturn` Left ViewOutOfScope
+    it
+        "common time keeps connection loss and network mismatch distinct from horizon refusal" $ do
+        chain <- newMemoryChain genesis
+        mutate chain id
+        withView (memoryProvider chain) $ \view -> do
+            loseConnection chain
+            try @ViewFailure (Services.floorSlot view 5_000)
+                `shouldReturn` Left ViewConnectionLost
+        wrongNetwork <- newMemoryChain genesis{csNetwork = 1}
+        mutate wrongNetwork id
+        withView (memoryProvider wrongNetwork) $ \view ->
+            try @NetworkTimeFailure (Services.floorSlot view 5_000)
+                `shouldReturn` Left (WrongTimeNetwork 1 42)
 genesis :: ChainState
 genesis =
     ChainState

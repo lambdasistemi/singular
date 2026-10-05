@@ -19,6 +19,7 @@ module Singular.Registry.NetworkTime
     , slotStartMs
     , networkEpochInfo
     , networkSystemStart
+    , networkMagic
     ) where
 
 import Control.Exception (Exception)
@@ -101,6 +102,7 @@ type NetworkEras = '[(), (), (), (), (), (), (), ()]
 data NetworkTime = NetworkTime
     { timeInterpreter :: Interpreter NetworkEras
     , networkSystemStart :: SystemStart
+    , networkMagic :: Word32
     }
 
 data GenesisIdentity = GenesisIdentity Word32 SystemStart
@@ -182,7 +184,7 @@ validateNetworkTime requested manifest genesis history = do
     unless
         (horizon == timeHorizonSlot manifest)
         (Left (TimeSourceMismatch "conversion horizon"))
-    pure (NetworkTime (mkInterpreter summary) start)
+    pure (NetworkTime (mkInterpreter summary) start requested)
   where
     skippedAtGenesis era =
         boundSlot (eraStart era) == 0

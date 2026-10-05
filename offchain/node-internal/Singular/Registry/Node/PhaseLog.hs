@@ -77,6 +77,10 @@ logged :: PhaseLog -> View IO -> View IO
 logged lg v =
     v
         { viewUTxOsAt = query "utxosAt" length . viewUTxOsAt v
+        , viewTimeContext = query "networkTime" (const 1) (viewTimeContext v)
+        , viewResolvedOutputs =
+            query "resolvedOutputs" length . viewResolvedOutputs v
+        , viewPhaseLog = lg
         , viewScriptRegistered =
             query "scriptRegistered" (const 1) . viewScriptRegistered v
         , viewEvaluateTx = \tx -> do

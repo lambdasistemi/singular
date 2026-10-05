@@ -168,6 +168,7 @@ library local-services
     Singular.Registry.NetworkTime
     Singular.Registry.PhaseLog
     Singular.Registry.Provider
+    Singular.Registry.Services
 
   build-depends:
     , aeson

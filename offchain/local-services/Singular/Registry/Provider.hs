@@ -45,6 +45,7 @@ import Control.Exception (Exception, finally, throwIO)
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.Set (Set)
 import Data.Text (Text)
 import Data.Word (Word32)
 
@@ -61,6 +62,8 @@ import Singular.Registry.Ledger
     )
 
 import Singular.Registry.LocalEvaluation (EvaluateTxResult)
+import Singular.Registry.NetworkTime (NetworkTime)
+import Singular.Registry.PhaseLog (PhaseLog)
 
 {- | A point on a chain: the network it belongs to, the era of the
 ledger state there, its slot and the hash of the block header at that
@@ -86,6 +89,12 @@ data View m = View
     -- ^ The point this view was acquired at
     , viewProtocolParams :: PParams ConwayEra
     -- ^ Protocol parameters, captured once at acquisition
+    , viewTimeContext :: m NetworkTime
+    -- ^ The acquired view's immutable validated network time material
+    , viewResolvedOutputs :: Set TxIn -> m [(TxIn, TxOut ConwayEra)]
+    -- ^ Exact raw outputs for spent, collateral and reference inputs
+    , viewPhaseLog :: PhaseLog
+    -- ^ Observations for common local computations; no evaluation policy
     , viewUTxOsAt
         :: Addr
         -> m [(TxIn, TxOut ConwayEra)]
@@ -144,6 +153,8 @@ guarded :: IORef Bool -> View IO -> View IO
 guarded open v =
     v
         { viewUTxOsAt = inScope . viewUTxOsAt v
+        , viewTimeContext = inScope (viewTimeContext v)
+        , viewResolvedOutputs = inScope . viewResolvedOutputs v
         , viewScriptRegistered = inScope . viewScriptRegistered v
         , viewEvaluateTx = inScope . viewEvaluateTx v
         , viewPosixMsToSlot = inScope . viewPosixMsToSlot v

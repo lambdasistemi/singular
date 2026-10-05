@@ -44,6 +44,7 @@ import Singular.Registry.NetworkTime
     , validateNetworkTime
     )
 import Singular.Registry.Node (confirmDeadline)
+import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider (..)
@@ -99,6 +100,9 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
             View
                 { viewPoint = point
                 , viewProtocolParams = pp
+                , viewTimeContext = pure context
+                , viewResolvedOutputs = const unused
+                , viewPhaseLog = noPhaseLog
                 , viewUTxOsAt = const unused
                 , viewScriptRegistered = const unused
                 , viewEvaluateTx = const unused

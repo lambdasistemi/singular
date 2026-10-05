@@ -53,15 +53,8 @@ import Singular.Registry.Ledger
     , PParams
     , TxIn
     )
-import Singular.Registry.LocalEvaluation
-    ( EvaluationContext (..)
-    , localEvaluation
-    )
-import Singular.Registry.NetworkTime
-    ( NetworkTime
-    , posixMsCeilingSlot
-    , posixMsFloorSlot
-    )
+import Singular.Registry.NetworkTime (NetworkTime)
+import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -70,6 +63,7 @@ import Singular.Registry.Provider
     , ViewFailure (..)
     , scopedProvider
     )
+import Singular.Registry.Services qualified as Services
 
 -- | Everything the in-memory chain holds.
 data ChainState = ChainState
@@ -121,31 +115,30 @@ memoryProvider chain = scopedProvider $ \action -> do
     let reading :: IO a -> IO a
         reading answer = connected >> answer
         utxo = csUTxO s
-        context = EvaluationContext (csPParams s) (csNetworkTime s)
         resolved refs = reading (pure (Map.toList (Map.restrictKeys utxo refs)))
-    action
-        View
-            { viewPoint =
-                ChainPoint
-                    { cpNetwork = csNetwork s
-                    , cpEra = csEra s
-                    , cpSlot = slot
-                    , cpBlockHash = hash
-                    }
-            , viewProtocolParams = csPParams s
-            , viewUTxOsAt = \addr ->
-                reading . pure $
-                    [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]
-            , viewScriptRegistered = \sh ->
-                reading . pure $ Set.member sh (csRegistered s)
-            , viewEvaluateTx = \tx ->
-                localEvaluation context resolved tx >>= either throwIO pure
-            , viewPosixMsToSlot = \ms ->
-                reading (either throwIO pure (posixMsFloorSlot (csNetworkTime s) ms))
-            , viewPosixMsCeilSlot = \ms ->
-                reading
-                    (either throwIO pure (posixMsCeilingSlot (csNetworkTime s) ms))
-            }
+        view =
+            View
+                { viewPoint =
+                    ChainPoint
+                        { cpNetwork = csNetwork s
+                        , cpEra = csEra s
+                        , cpSlot = slot
+                        , cpBlockHash = hash
+                        }
+                , viewProtocolParams = csPParams s
+                , viewTimeContext = reading (pure (csNetworkTime s))
+                , viewResolvedOutputs = resolved
+                , viewPhaseLog = noPhaseLog
+                , viewUTxOsAt = \addr ->
+                    reading . pure $
+                        [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]
+                , viewScriptRegistered = \sh ->
+                    reading . pure $ Set.member sh (csRegistered s)
+                , viewEvaluateTx = Services.evaluateTx view
+                , viewPosixMsToSlot = Services.floorSlot view
+                , viewPosixMsCeilSlot = Services.ceilingSlot view
+                }
+    action view
   where
     connected = do
         up <- readIORef (mcConnected chain)
