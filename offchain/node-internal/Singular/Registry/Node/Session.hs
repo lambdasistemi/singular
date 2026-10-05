@@ -50,6 +50,7 @@ module Singular.Registry.Node.Session
       -- * No node call inside a view (#326)
     , NodeCallInView (..)
     , guardConnection
+    , guardRawConnection
     ) where
 
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
@@ -135,6 +136,11 @@ import Singular.Registry.Node.PhaseLog
     , queryPhase
     , startTimer
     )
+import Singular.Registry.Node.RawView
+    ( RawProvider (..)
+    , RawView (..)
+    , rawNodeProvider
+    )
 import Singular.Registry.Node.Wait
     ( boundedSubmitter
     , submissionBound
@@ -145,6 +151,8 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import System.FilePath (takeDirectory)
 
 -- | Everything a runner needs from the chain it runs against.
 data NodeSession = NodeSession
@@ -192,12 +200,14 @@ withNodeReadsOn backend magicWord sock k = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
-        (n2c, _) <-
-            guardConnection
+        (_, _, raw) <-
+            guardRawConnection
                 nodeThread
                 (mkN2CProvider lsqCh)
                 (mkN2CSubmitter ltxsCh)
-        let prov = adaptProvider magic n2c
+                (rawNodeProvider lsqCh)
+        material <- loadTimeMaterial magicWord (takeDirectory sock)
+        let prov = adaptProvider magic material raw
         awaitConnection magic sock nodeThread (loggedProvider lg prov)
         case backend of
             NodeBackend -> do
@@ -271,6 +281,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
             withDevnetIndexer sock (connect devnetMagic sock)
     External e -> connect (NetworkMagic (extMagic e)) (extSocket e)
   where
+    middle (_, submitter, _) = submitter
     connect magic sock = do
         lg <- phaseLogFromEnv
         opened <- startTimer
@@ -279,16 +290,19 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
                 connection <-
-                    guardConnection
+                    guardRawConnection
                         nodeThread
                         (mkN2CProvider lsqCh)
                         (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
-                let n2c = fst connection
+                        (rawNodeProvider lsqCh)
+                let (n2c, _, raw) = connection
+                material <-
+                    loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
                 awaitConnection
                     magic
                     sock
                     nodeThread
-                    (loggedProvider lg (adaptProvider magic n2c))
+                    (loggedProvider lg (adaptProvider magic material raw))
                 case mode of
                     Devnet ->
                         serveSession
@@ -299,7 +313,8 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                             mode
                             magic
                             sock
-                            connection
+                            (adaptProvider magic material raw)
+                            (n2c, middle connection)
                             k
                     External _ -> do
                         start <- followerStart lg backend n2c
@@ -312,7 +327,8 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                                 mode
                                 magic
                                 sock
-                                connection
+                                (adaptProvider magic material raw)
+                                (n2c, middle connection)
                                 k
 
 {- | A session over a connected node client and its submitter: the wallet
@@ -330,12 +346,12 @@ serveSession
     -> NodeMode
     -> NetworkMagic
     -> FilePath
+    -> Cage.Provider IO
     -> (N2C.Provider IO, Submitter IO)
     -> (NodeSession -> IO a)
     -> IO a
-serveSession lg opened fundingFloor backend mode magic sock (n2c, submitter) k = do
+serveSession lg opened fundingFloor backend mode magic sock nodeProv (n2c, submitter) k = do
     wallet <- walletForMode mode
-    let nodeProv = adaptProvider magic n2c
     -- A devnet session reads addresses through its indexer; an external
     -- node through the node adapter, or through the indexer backend
     -- when that is the backend asked for.
@@ -579,6 +595,22 @@ guardConnection
     -> Submitter IO
     -> IO (N2C.Provider IO, Submitter IO)
 guardConnection client p0 s = do
+    (p, submitter, _) <-
+        guardRawConnection
+            client
+            p0
+            s
+            (RawProvider (\_ -> fail "raw view not supplied"))
+    pure (p, submitter)
+
+-- | Raw and legacy routes share the same holder set and connection lifetime.
+guardRawConnection
+    :: Async b
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> RawProvider IO
+    -> IO (N2C.Provider IO, Submitter IO, RawProvider IO)
+guardRawConnection client p0 s raw = do
     let p = whileConnected client p0
     holders <- newIORef (Set.empty :: Set ThreadId)
     let outside :: String -> IO a -> IO a
@@ -619,7 +651,23 @@ guardConnection client p0 s = do
                 outside "queryUpperBoundSlot" . N2C.queryUpperBoundSlot p
             }
         , Submitter (outside "submitTx" . connected client . submitTx s)
+        , RawProvider $ \k -> outside "withAcquired" $ do
+            me <- myThreadId
+            acquiredWhileConnected
+                client
+                (withRawView raw)
+                (holding me . k . liveRaw)
         )
+  where
+    liveRaw (RawView snapshot params address refs rewards start history) =
+        RawView
+            (connected client snapshot)
+            (connected client params)
+            (connected client . address)
+            (connected client . refs)
+            (connected client . rewards)
+            (connected client start)
+            (connected client history)
 
 {- | Each call of the provider, and each read of every view it acquires,
 ends with the client.
@@ -627,7 +675,7 @@ ends with the client.
 whileConnected :: Async b -> N2C.Provider IO -> N2C.Provider IO
 whileConnected client p =
     N2C.Provider
-        { N2C.withAcquired = \k -> acquiredWhileConnected client p (k . handleOf)
+        { N2C.withAcquired = \k -> acquiredWhileConnected client (N2C.withAcquired p) (k . handleOf)
         , N2C.queryUTxOs = live . N2C.queryUTxOs p
         , N2C.queryUTxOByTxIn = live . N2C.queryUTxOByTxIn p
         , N2C.queryProtocolParams = live (N2C.queryProtocolParams p)
@@ -675,11 +723,11 @@ waited for only while the client lives, so neither waits forever on a
 connection that has ended.
 -}
 acquiredWhileConnected
-    :: Async b -> N2C.Provider IO -> (N2C.QueryHandle IO -> IO a) -> IO a
-acquiredWhileConnected client p body = do
+    :: Async b -> ((h -> IO ()) -> IO ()) -> (h -> IO a) -> IO a
+acquiredWhileConnected client acquire body = do
     acquired <- newEmptyMVar
     done <- newEmptyMVar
-    let holding = N2C.withAcquired p (\h -> putMVar acquired h >> takeMVar done)
+    let holding = acquire (\h -> putMVar acquired h >> takeMVar done)
     withAsync holding $ \holder -> do
         h <-
             connected client (race (waitCatch holder) (takeMVar acquired))

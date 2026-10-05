@@ -14,6 +14,7 @@ module Singular.Registry.NetworkTime
     , NetworkTimeManifest (..)
     , NetworkTimeFailure (..)
     , validateNetworkTime
+    , generatedNetworkTime
     , posixMsFloorSlot
     , posixMsCeilingSlot
     , slotStartMs
@@ -35,9 +36,11 @@ import Data.Aeson
 import Data.Bifunctor (first)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as LBS
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding (encodeUtf8)
 import Data.Time.Clock (NominalDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Word (Word32)
@@ -82,6 +85,18 @@ data NetworkTimeManifest = NetworkTimeManifest
     }
     deriving stock (Eq, Show)
 
+instance FromJSON NetworkTimeManifest where
+    parseJSON = withObject "network time source manifest" $ \value ->
+        NetworkTimeManifest
+            <$> value .: "networkMagic"
+            <*> value .: "systemStartMs"
+            <*> (value .: "genesisSha256" >>= hashBytes)
+            <*> (value .: "eraHistorySha256" >>= hashBytes)
+            <*> value .: "horizonSlot"
+            <*> value .: "sourceIdentity"
+      where
+        hashBytes = either fail pure . B16.decode . encodeUtf8
+
 -- | Named validation and range refusals; never an estimated answer.
 data NetworkTimeFailure
     = UnknownTimeNetwork Word32
@@ -112,6 +127,41 @@ instance FromJSON GenesisIdentity where
         GenesisIdentity
             <$> value .: "networkMagic"
             <*> (SystemStart <$> value .: "systemStart")
+
+{- | Bind exact generated genesis and the held node's raw history. This
+factory is solely for magic 42; public preprod uses its reviewed package.
+The source determines the finite end; no caller supplies a larger horizon.
+-}
+generatedNetworkTime
+    :: Word32
+    -> Text
+    -> ByteString
+    -> ByteString
+    -> Either NetworkTimeFailure NetworkTime
+generatedNetworkTime requested source genesis history = do
+    unless (requested == 42) (Left (UnknownTimeNetwork requested))
+    GenesisIdentity actual (SystemStart start) <-
+        first (InvalidTimeGenesis . Text.pack) (eitherDecodeStrict' genesis)
+    summary <-
+        first
+            (InvalidEraHistory . Text.pack . show)
+            ( deserialiseOrFail (LBS.fromStrict history)
+                :: Either DeserialiseFailure (Summary NetworkEras)
+            )
+    horizon <- case snd (summaryBounds summary) of
+        EraUnbounded -> Left MissingTimeHorizon
+        EraEnd end -> Right (boundSlot end)
+    let digest bytes = convert (hash bytes :: Digest SHA256)
+        manifest =
+            NetworkTimeManifest
+                { timeNetworkMagic = actual
+                , timeSystemStartMs = floor (utcTimeToPOSIXSeconds start * 1000)
+                , timeGenesisSha256 = digest genesis
+                , timeEraHistorySha256 = digest history
+                , timeHorizonSlot = horizon
+                , timeSourceIdentity = source
+                }
+    validateNetworkTime requested manifest genesis history
 
 -- | Validate every advertised byte identity before decoding the history.
 validateNetworkTime

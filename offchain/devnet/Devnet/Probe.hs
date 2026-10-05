@@ -43,6 +43,9 @@ import Singular.Registry.Ledger (TxIn)
 
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Node (adaptProvider, awaitConnection)
+import Singular.Registry.Node.RawView (rawNodeProvider)
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import System.FilePath (takeDirectory)
 
 {- | Ask the node at a socket and magic, from one acquired ledger state,
 for its tip and which of the named outputs are unspent, and print both
@@ -55,7 +58,12 @@ probe sock magicWord txIns = do
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \thread -> do
         let n2c = mkN2CProvider lsqCh
-        awaitConnection magic sock thread (adaptProvider magic n2c)
+        material <- loadTimeMaterial magicWord (takeDirectory sock)
+        awaitConnection
+            magic
+            sock
+            thread
+            (adaptProvider magic material (rawNodeProvider lsqCh))
         (snapshot, unspent) <- N2C.withAcquired n2c $ \h ->
             (,)
                 <$> N2C.queryLedgerSnapshotH h

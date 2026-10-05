@@ -119,6 +119,10 @@ import Singular.Registry.Node.Session
     )
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.RawNodeFixture
+    ( recordingRawFixture
+    , syntheticMaterial
+    )
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -325,7 +329,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let prov =
                         loggedProvider
                             (phaseLogAt path)
-                            (nodeProvider (NetworkMagic 42) node)
+                            ( nodeProvider
+                                (NetworkMagic 42)
+                                syntheticMaterial
+                                ( recordingRawFixture
+                                    (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                    node
+                                )
+                            )
                 replicateM_ 3 (Cage.withView prov driveEveryQuery)
                 recorded <- readIORef asked
                 objects <- logObjects path
@@ -400,6 +411,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                         (External (ExternalNode "node.socket" 42 skey))
                         (NetworkMagic 42)
                         "node.socket"
+                        ( nodeProvider
+                            (NetworkMagic 42)
+                            syntheticMaterial
+                            ( recordingRawFixture
+                                (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                node
+                            )
+                        )
                         (node, Submitter (\_ -> fail "no submission here"))
                         $ \sess -> do
                             replicateM_ 2 (Cage.withView (nsProvider sess) driveEveryQuery)
@@ -445,6 +464,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                             (External (ExternalNode "node.socket" 42 skey))
                             (NetworkMagic 42)
                             "node.socket"
+                            ( nodeProvider
+                                (NetworkMagic 42)
+                                syntheticMaterial
+                                ( recordingRawFixture
+                                    (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                    node
+                                )
+                            )
                             (node, Submitter (\_ -> fail "no submission here"))
                         $ \sess ->
                             replicateM_ 2 $
@@ -537,25 +564,26 @@ countingProvider' answer = Cage.Provider $ \act ->
 positional pattern fails to compile when the view gains a read.
 -}
 driveEveryQuery :: Cage.View IO -> IO ()
-driveEveryQuery ( Cage.View
-                        _point
-                        _params
-                        _time
-                        _resolved
-                        _log
-                        utxos
-                        registered
-                        evaluate
-                        toSlot
-                        ceil
-                    ) = do
-    replicateM_ utxosCalls (void (utxos payer))
-    replicateM_
-        registeredCalls
-        (void (registered credential))
-    replicateM_ evaluateCalls (void (evaluate emptyTx))
-    replicateM_ toSlotCalls (void (toSlot 1_000))
-    replicateM_ ceilCalls (void (ceil 1_000))
+driveEveryQuery
+    ( Cage.View
+            _point
+            _params
+            _time
+            _resolved
+            _log
+            utxos
+            registered
+            evaluate
+            toSlot
+            ceil
+        ) = do
+        replicateM_ utxosCalls (void (utxos payer))
+        replicateM_
+            registeredCalls
+            (void (registered credential))
+        replicateM_ evaluateCalls (void (evaluate emptyTx))
+        replicateM_ toSlotCalls (void (toSlot 1_000))
+        replicateM_ ceilCalls (void (ceil 1_000))
 
 -- | An address and a script credential every read can be given.
 payer :: Addr
@@ -601,7 +629,7 @@ recordingNodeWith held = do
                     { N2C.backendQueryUTxOs = \_ ->
                         note "h:queryUTxOs" >> pure held
                     , N2C.backendQueryUTxOsAt = \_ -> unused "h:queryUTxOsAt"
-                    , N2C.backendQueryUTxOByTxIn = \_ -> unused "h:queryUTxOByTxIn"
+                    , N2C.backendQueryUTxOByTxIn = \_ -> note "h:queryUTxOByTxIn" >> pure Map.empty
                     , N2C.backendQueryProtocolParams =
                         note "h:queryProtocolParams" >> pure emptyPParams
                     , N2C.backendQueryLedgerSnapshot =

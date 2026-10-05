@@ -78,7 +78,7 @@ import Singular.Registry.Node.Memory
 import Singular.Registry.Node.Session
     ( NodeCallInView (..)
     , firstViewWithin
-    , guardConnection
+    , guardRawConnection
     )
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider
@@ -87,6 +87,10 @@ import Singular.Registry.Provider
     , SlotNo (..)
     , View (..)
     , ViewFailure (..)
+    )
+import Singular.Registry.RawNodeFixture
+    ( rawFixture
+    , syntheticMaterial
     )
 import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal
@@ -116,37 +120,40 @@ memorySpec = describe "in-memory adapter" $ do
         cpSlot p2 `shouldBe` succ (cpSlot p1)
         cpBlockHash p2 `shouldNotBe` cpBlockHash p1
     it
-        "common services read the memory view's finite context with both rounding directions" $ do
-        chain <- newMemoryChain genesis
-        mutate chain id
-        withView (memoryProvider chain) $ \view -> do
-            Services.floorSlot view 5_010 `shouldReturn` SlotNo 5
-            Services.ceilingSlot view 5_010 `shouldReturn` SlotNo 6
-            Services.slotStart view (SlotNo 6) `shouldReturn` 6_000
-            try @NetworkTimeFailure (Services.floorSlot view 4_320_000_000_000)
-                `shouldReturn` Left (TimePastHorizon 4_320_000_000_000)
+        "common services read the memory view's finite context with both rounding directions"
+        $ do
+            chain <- newMemoryChain genesis
+            mutate chain id
+            withView (memoryProvider chain) $ \view -> do
+                Services.floorSlot view 5_010 `shouldReturn` SlotNo 5
+                Services.ceilingSlot view 5_010 `shouldReturn` SlotNo 6
+                Services.slotStart view (SlotNo 6) `shouldReturn` 6_000
+                try @NetworkTimeFailure (Services.floorSlot view 4_320_000_000_000)
+                    `shouldReturn` Left (TimePastHorizon 4_320_000_000_000)
     it
-        "common services refuse a released memory view before reading its context" $ do
-        chain <- newMemoryChain genesis
-        mutate chain id
-        released <- withView (memoryProvider chain) pure
-        try @ViewFailure (Services.floorSlot released 5_000)
-            `shouldReturn` Left ViewOutOfScope
-        try @ViewFailure (viewResolvedOutputs released Set.empty)
-            `shouldReturn` Left ViewOutOfScope
+        "common services refuse a released memory view before reading its context"
+        $ do
+            chain <- newMemoryChain genesis
+            mutate chain id
+            released <- withView (memoryProvider chain) pure
+            try @ViewFailure (Services.floorSlot released 5_000)
+                `shouldReturn` Left ViewOutOfScope
+            try @ViewFailure (viewResolvedOutputs released Set.empty)
+                `shouldReturn` Left ViewOutOfScope
     it
-        "common time keeps connection loss and network mismatch distinct from horizon refusal" $ do
-        chain <- newMemoryChain genesis
-        mutate chain id
-        withView (memoryProvider chain) $ \view -> do
-            loseConnection chain
-            try @ViewFailure (Services.floorSlot view 5_000)
-                `shouldReturn` Left ViewConnectionLost
-        wrongNetwork <- newMemoryChain genesis{csNetwork = 1}
-        mutate wrongNetwork id
-        withView (memoryProvider wrongNetwork) $ \view ->
-            try @NetworkTimeFailure (Services.floorSlot view 5_000)
-                `shouldReturn` Left (WrongTimeNetwork 1 42)
+        "common time keeps connection loss and network mismatch distinct from horizon refusal"
+        $ do
+            chain <- newMemoryChain genesis
+            mutate chain id
+            withView (memoryProvider chain) $ \view -> do
+                loseConnection chain
+                try @ViewFailure (Services.floorSlot view 5_000)
+                    `shouldReturn` Left ViewConnectionLost
+            wrongNetwork <- newMemoryChain genesis{csNetwork = 1}
+            mutate wrongNetwork id
+            withView (memoryProvider wrongNetwork) $ \view ->
+                try @NetworkTimeFailure (Services.floorSlot view 5_000)
+                    `shouldReturn` Left (WrongTimeNetwork 1 42)
 genesis :: ChainState
 genesis =
     ChainState
@@ -180,7 +187,8 @@ nodeSpec = describe "node adapter over withAcquired" $ do
         (fake, acquisitions) <-
             fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
         (point, utxos, registered) <-
-            withView (nodeProvider (NetworkMagic 42) fake) $ \v -> do
+            withView
+                (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake)) $ \v -> do
                 utxos <- viewUTxOsAt v payer
                 registered <- viewScriptRegistered v credential
                 _ <- viewPosixMsToSlot v 5_000
@@ -202,7 +210,10 @@ nodeSpec = describe "node adapter over withAcquired" $ do
             fakeNode (Just (7, BS.replicate 32 0xab)) (Just ConnectionLost)
         r <-
             try
-                (withView (nodeProvider (NetworkMagic 42) fake) (pure . viewPoint))
+                ( withView
+                    (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake))
+                    (pure . viewPoint)
+                )
         r `shouldBe` Left ViewConnectionLost
 
 {- | An upstream provider whose acquired session serves a fixed chain
@@ -221,7 +232,7 @@ fakeNode tip failure = do
                 N2C.QueryHandleBackend
                     { N2C.backendQueryUTxOs = \_ -> pure [(outRef '3', ada 100_000_000)]
                     , N2C.backendQueryUTxOsAt = \_ -> oneShot "queryUTxOsAt"
-                    , N2C.backendQueryUTxOByTxIn = \_ -> oneShot "queryUTxOByTxIn"
+                    , N2C.backendQueryUTxOByTxIn = \_ -> pure Map.empty
                     , N2C.backendQueryProtocolParams = pure (params 155_381)
                     , N2C.backendQueryLedgerSnapshot =
                         pure
@@ -336,8 +347,8 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         "a one-shot query issued inside a view fails as NodeCallInView; \
         \outside the view it answers"
         $ do
-            (n2c, _, _) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) n2c
+            (n2c, _, _, raw) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
             inside <- withView prov $ \_ -> try (N2C.queryLedgerSnapshot n2c)
             either
                 (\e -> e `shouldBe` NodeCallInView "queryLedgerSnapshot")
@@ -349,8 +360,8 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         "a second acquisition inside a view fails as NodeCallInView; after \
         \the view it is acquired"
         $ do
-            (n2c, _, _) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) n2c
+            (_, _, _, raw) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
             inside <- withView prov $ \_ -> try (withView prov (pure . viewPoint))
             either
                 (\e -> e `shouldBe` NodeCallInView "withAcquired")
@@ -362,8 +373,8 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         "a submission inside a view fails as NodeCallInView and never \
         \reaches the node; outside the view it does"
         $ do
-            (n2c, submitter, sent) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) n2c
+            (_, submitter, sent, raw) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
                 tx = mkBasicTx mkBasicTxBody
             inside <- withView prov $ \_ -> try (submitTx submitter tx)
             either
@@ -376,8 +387,8 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
     it
         "a query another thread issues while a view is held is not refused"
         $ do
-            (n2c, _, _) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) n2c
+            (n2c, _, _, raw) <- guarded
+            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
             answered <- newEmptyMVar
             withView prov $ \_ -> do
                 _ <- forkIO (try (N2C.queryLedgerSnapshot n2c) >>= putMVar answered)
@@ -392,15 +403,18 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
             (fake, _) <- fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
             stop <- newEmptyMVar
             client <- async (takeMVar stop)
-            (n2c, _) <-
-                guardConnection
+            (_, _, raw) <-
+                guardRawConnection
                     client
                     (silent fake)
                     (Submitter (const (fail "unused")))
+                    (rawFixture (silent fake))
             let readAfterEnd v = putMVar stop () >> viewUTxOsAt v payer
             r <-
                 timeout 5_000_000 . try $
-                    withView (nodeProvider (NetworkMagic 42) n2c) readAfterEnd
+                    withView
+                        (nodeProvider (NetworkMagic 42) syntheticMaterial raw)
+                        readAfterEnd
             r `shouldBe` Just (Left ViewConnectionLost)
   where
     guarded = do
@@ -415,8 +429,9 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
                 modifyIORef' sent (+ 1)
                 pure (Submitted (txIdTx tx))
         client <- async (forever (threadDelay 1_000_000))
-        (n2c, s) <- guardConnection client answering submitter
-        pure (n2c, s, sent)
+        (n2c, s, raw) <-
+            guardRawConnection client answering submitter (rawFixture answering)
+        pure (n2c, s, sent, raw)
 
 {- | The fake node with an acquired state whose reads never answer, as a
 node's do once the connection to it has ended.

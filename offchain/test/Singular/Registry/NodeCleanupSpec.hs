@@ -80,6 +80,10 @@ import Singular.Registry.Node.Indexer
     )
 import Singular.Registry.Node.Session (withOpenSession)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.RawNodeFixture
+    ( rawFixture
+    , syntheticMaterial
+    )
 import Singular.Registry.StubFollowing (withStubFollowing)
 
 spec :: Spec
@@ -124,7 +128,11 @@ spec = describe "what a runner leaves behind when its body ends" $ do
                 withStubFollowing idx $ do
                     markFundingIndexed
                     Cage.withView
-                        (adaptProvider (NetworkMagic 42) unusedNode)
+                        ( adaptProvider
+                            (NetworkMagic 42)
+                            syntheticMaterial
+                            (rawFixture unusedNode)
+                        )
                         (`Cage.viewUTxOsAt` zeroHashAddr)
                         `shouldThrow` guardRefuses
 
@@ -135,7 +143,11 @@ spec = describe "what a runner leaves behind when its body ends" $ do
                     throwIO (userError "the runner body failed")
                 before <- nodeAddressReads
                 Cage.withView
-                    (adaptProvider (NetworkMagic 42) unusedNode)
+                    ( adaptProvider
+                        (NetworkMagic 42)
+                        syntheticMaterial
+                        (rawFixture unusedNode)
+                    )
                     (`Cage.viewUTxOsAt` zeroHashAddr)
                     `shouldReturn` []
                 after <- nodeAddressReads

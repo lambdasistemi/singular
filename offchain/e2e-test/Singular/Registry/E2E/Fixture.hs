@@ -22,9 +22,12 @@ import Cardano.Node.Client.N2C.Connection
     , newLTxSChannel
     , runNodeClient
     )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Ouroboros.Network.Magic (NetworkMagic (..))
+
+import Singular.Registry.Node.RawView (rawNodeProvider)
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import System.FilePath (takeDirectory)
 
 import Singular.Registry.Node
     ( Capabilities (..)
@@ -55,7 +58,8 @@ withDevnetCapabilities action = do
                     sock
                     lsqCh
                     ltxsCh
-        let nodeProv = adaptProvider (NetworkMagic 42) (mkN2CProvider lsqCh)
+        material <- loadTimeMaterial 42 (takeDirectory sock)
+        let nodeProv = adaptProvider (NetworkMagic 42) material (rawNodeProvider lsqCh)
         awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
         let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
         -- Address reads from here on are the indexer's.

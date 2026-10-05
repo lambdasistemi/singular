@@ -162,6 +162,8 @@ library local-services
   visibility:       public
   default-language: GHC2021
   hs-source-dirs:   local-services
+  autogen-modules:  Paths_singular_registry
+  other-modules:    Paths_singular_registry
   exposed-modules:
     Singular.Registry.Ledger
     Singular.Registry.LocalEvaluation
@@ -169,10 +171,12 @@ library local-services
     Singular.Registry.PhaseLog
     Singular.Registry.Provider
     Singular.Registry.Services
+    Singular.Registry.TimeMaterial
 
   build-depends:
     , aeson
     , base                       >=4.14 && <5
+    , base16-bytestring
     , bytestring
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
@@ -184,6 +188,7 @@ library local-services
     , cardano-tx-tools:tx-build
     , containers
     , crypton
+    , filepath
     , memory
     , microlens
     , ouroboros-consensus
@@ -833,6 +838,7 @@ test-suite cage-tests
     Singular.Registry.OneViewSpec
     Singular.Registry.PhaseLogSpec
     Singular.Registry.ProviderSpec
+    Singular.Registry.RawNodeFixture
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
     Singular.Registry.SyntheticTime
