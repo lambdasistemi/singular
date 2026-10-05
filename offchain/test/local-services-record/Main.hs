@@ -7,13 +7,15 @@ Module      : Main
 Description : Read-only node inputs and independent time answers
 License     : Apache-2.0
 
-This recorder captures raw node data before the common services exist. It
-never signs or submits a transaction. Generated devnet runs retain only public
-genesis/configuration files; delegate keys stay in the generator's scratch.
+Recording modes read raw node data without signing or submitting. The
+explicit confirmation-smoke mode submits fixture key payments only on its
+generated private devnet. Runs retain public genesis/configuration files;
+delegate keys stay in the generator's scratch.
 -}
 module Main (main) where
 
 import ConfirmationProbe (probeConfirmation)
+import ConfirmationSmoke (confirmationSmoke)
 import Control.Concurrent.Async (withAsync)
 import Control.Exception (ErrorCall, displayException, try)
 import Control.Monad (forM, unless)
@@ -120,9 +122,10 @@ captureNode output = do
                     , "node-config.json"
                     ]
                 probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
-                if probe == Just "1"
-                    then captureConfirmation output sock (NetworkMagic 42)
-                    else capture output sock (NetworkMagic 42)
+                case probe of
+                    Just "1" -> captureConfirmation output sock (NetworkMagic 42)
+                    Just "smoke" -> confirmationSmoke output sock
+                    _ -> capture output sock (NetworkMagic 42)
 
 -- Only the missing caller context is recorded here; completed independent
 -- floor/ceiling and evaluator recordings are never recaptured by this probe.

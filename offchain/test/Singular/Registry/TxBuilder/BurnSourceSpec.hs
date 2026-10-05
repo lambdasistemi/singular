@@ -68,7 +68,6 @@ import Cardano.Ledger.Api.Tx.Wits
     )
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
-    , SlotNo (..)
     , StrictMaybe (..)
     )
 import Cardano.Ledger.Core (Script, hashScript)
@@ -963,7 +962,7 @@ fullFoldContext =
 -- #267: the BUILT fold requires no signature
 -- ---------------------------------------------------------
 
-{- | A well-formed PlutusV3 program, the two-argument identity. The
+{- | A well-formed PlutusV3 program returning unit from its context. The
 request script's parameters are applied to ACTUAL UPLC
 (`applyDataParam` deserialises the configured bytes), so a config whose
 script fields carry arbitrary bytes cannot reach the fold's assertions:
