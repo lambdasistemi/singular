@@ -25,9 +25,11 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 57 modules in
-three kinds: 44 explicitly exposed modules and two re-exported modules
-are what a caller imports; the three fold owners behind the `Update`
+re-exports under its own name. That complete extent is 62 modules in
+three kinds: 47 explicitly exposed modules and two re-exported modules
+are what a caller imports; the two trie capability owners behind the
+`TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
+the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
 `.Duties` — the five wire owners behind the `Types` facade —
 `Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof` and
@@ -85,6 +87,11 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="module">Singular.Registry.Trie</a> — <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="module">Singular.Registry.Trie.Pure</a> — <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="module">Singular.Registry.Trie.PureManager</a> — <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState.hs" data-api="module">Singular.Registry.TrieState</a> — <a href="../offchain/lib/Singular/Registry/TrieState.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState/Core.hs" data-api="module">Singular.Registry.TrieState.Core</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Core.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="module">Singular.Registry.TrieState.Fixture</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState/Mirror.hs" data-api="module">Singular.Registry.TrieState.Mirror</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Mirror.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="module">Singular.Registry.TrieState.Types</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="module">Singular.Registry.TxBuilder.Boot</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="module">Singular.Registry.TxBuilder.ConnectedFold</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Edges</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Edges.hs" data-api="source">source</a>

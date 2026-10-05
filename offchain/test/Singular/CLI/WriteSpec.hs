@@ -37,6 +37,7 @@ import Data.Bifunctor (first)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Short qualified as SBS
 import Data.Char (toUpper)
 import Data.IORef
     ( IORef
@@ -92,14 +93,21 @@ import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     , vldtTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.Api.Tx.Wits (addrTxWitsL)
-import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , SlotNo (..)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
+import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
@@ -107,14 +115,36 @@ import Cardano.Node.Client.Submitter
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
 
+import Singular.CLI.Attached (Attached (..))
+import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
+import Singular.CLI.Live
+    ( Live (..)
+    , Mirror
+    , Saved (..)
+    , newStatePoint
+    , openMirror
+    , requireMirrorSelection
+    , savedIdentity
+    , txInText
+    )
 import Singular.CLI.Node (Capabilities (..))
+import Singular.CLI.Plan (planTerminate, planUpdate)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
+    , OutcomeClass (..)
     , appendJournal
     , outcomeName
     , readJournal
     , unresolved
     )
+import Singular.CLI.Registry
+    ( configPath
+    , hexT
+    , mkRegistryConfig
+    , pinsOf
+    )
+import Singular.CLI.RejectRules (rejectGate, renderRejectRefusal)
+import Singular.CLI.RequestWindow (retractEnds, windowOf)
 import Singular.CLI.Session
     ( CommandFailure (..)
     , WriteContext (..)
@@ -123,8 +153,13 @@ import Singular.CLI.Session
     , submitBuilt
     , txIdHex
     )
-import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (Coin (..), TxIn)
+import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Deployment
+    ( Deployment (..)
+    , mirrorPathFor
+    , parseOutRef
+    )
+import Singular.Registry.Ledger (Coin (..), Root (..), TokenId (..))
 import Singular.Registry.Node (Wallet (..), loadWallet)
 import Singular.Registry.Node.Memory
     ( ChainState (..)
@@ -144,9 +179,27 @@ import Singular.Registry.Node.Submit
     , signedTx
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.TrieState qualified as TS
+import Singular.Registry.TrieState.Mirror qualified as TrieMirror
+import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
+import Singular.Registry.TxBuilder.Internal
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , mkInlineDatum
+    , mkRequestDatumWith
+    , requestAddrFromCfg
+    , scriptHashBytes
+    , toPlcData
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , edgeName
+    )
 
 spec :: Spec
-spec = writeRows >> phaseLogRows
+spec = writeRows >> phaseLogRows >> inputRows
 
 writeRows :: Spec
 writeRows = describe "a singular write on injected capabilities (#323)" $ do
@@ -200,6 +253,190 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
 -- ---------------------------------------------------------
 -- Fixture
 -- ---------------------------------------------------------
+
+-- Execute the command's actual early refusal on an injected pending output.
+-- The boot is signed and recorded through submitBuilt, so selection checks the
+-- real saved body and empty MPF nodes. Confirmation here is a recording test
+-- capability: these cases establish command behavior, never ledger admission.
+inputRows :: Spec
+inputRows = describe "TrieState command input refusals on injected capabilities" $ do
+    forM_ [0, 2, 4, 5, 6, 7, 42] $ \edge ->
+        forM_ [False, True] $ \combined ->
+            it
+                ( "names pending "
+                    <> edgeName edge
+                    <> " before speculation, combined="
+                    <> show combined
+                )
+                $ withInputFixture
+                $ \fx saved live mirror boot -> do
+                    let request = TxIn (txIdTx boot) (TxIx 0)
+                        requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
+                        requestOut =
+                            mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
+                                & datumTxOutL
+                                    .~ mkInlineDatum
+                                        ( mkRequestDatumWith
+                                            (savedToken saved)
+                                            (walletAddr (fxWallet fx))
+                                            "missing-key"
+                                            edge
+                                            2_000_000
+                                            0
+                                            ("", "")
+                                        )
+                        ctx =
+                            (writeContext fx)
+                                { wcCommand = "fold"
+                                , wcCapabilities =
+                                    (wcCapabilities (writeContext fx))
+                                        { capReads =
+                                            servingView
+                                                stubView
+                                                    { Cage.viewUTxOsAt = \addr ->
+                                                        if addr == requestAddr
+                                                            then pure [(request, requestOut)]
+                                                            else fail "an inadmissible request reached a later provider read"
+                                                    }
+                                        }
+                                }
+                        action =
+                            foldPending
+                                (Attached ctx live mirror)
+                                FoldSpec
+                                    { fsOrigin = if combined then Combined boot else Standalone
+                                    , fsRequest = Just request
+                                    , fsFund = Nothing
+                                    , fsAllowance = Nothing
+                                    }
+                    journalBefore <- readJournal (fxDir fx)
+                    nodesBefore <- BS.readFile (mirrorPathFor (configPath (fxDir fx)))
+                    sentBefore <- readIORef (fxSent fx)
+                    confirmedBefore <- readIORef (fxConfirmed fx)
+                    result <- try @CommandFailure action
+                    case result of
+                        Left (CommandFailure cls why fields) -> do
+                            cls `shouldBe` if combined then Partial else ClientRefusal
+                            why `shouldSatisfy` isInfixOf (edgeName edge)
+                            why `shouldSatisfy` isInfixOf "registry fold does not fold"
+                            lookup "pendingRequest" fields
+                                `shouldBe` Just (Aeson.toJSON (txInText request))
+                        Right _ -> expectationFailure "an unsupported pending edge folded"
+                    readJournal (fxDir fx) `shouldReturn` journalBefore
+                    BS.readFile (mirrorPathFor (configPath (fxDir fx)))
+                        `shouldReturn` nodesBefore
+                    readIORef (fxSent fx) `shouldReturn` sentBefore
+                    readIORef (fxConfirmed fx) `shouldReturn` confirmedBefore
+                    let bounds =
+                            windowOf
+                                0
+                                (defaultProcessTime (savedCfg saved))
+                                (defaultRetractTime (savedCfg saved))
+                        deadline = retractEnds bounds
+                        booked = [(request, bounds, Just deadline)]
+                    -- Reject's unchanged shared gate depends on the windows,
+                    -- not on whether this edge has a fold route. It still
+                    -- names this retained request early and takes it later.
+                    case rejectGate 0 booked of
+                        Left why ->
+                            renderRejectRefusal why
+                                `shouldSatisfy` isInfixOf (T.unpack (txInText request))
+                        Right _ -> expectationFailure "an open request was rejected"
+                    rejectGate deadline booked `shouldBe` Right [(request, bounds)]
+    it
+        "refuses an absent source holding in the shared write/preview update and termination plans"
+        $ withInputFixture
+        $ \fx _ live _ _ -> do
+            let key = "missing-key"
+                controller = BS.replicate 28 0x5a
+                check action = do
+                    result <- try @CommandFailure action
+                    case result of
+                        Left (CommandFailure cls why _) -> do
+                            cls `shouldBe` ClientRefusal
+                            why `shouldBe` "no live output holds key 0x6d697373696e672d6b6579"
+                        Right _ -> expectationFailure "an absent holding produced a plan"
+            entries <- readJournal (fxDir fx)
+            check (planUpdate live controller key [])
+            check (planTerminate live controller key [])
+            readJournal (fxDir fx) `shouldReturn` entries
+
+withInputFixture
+    :: (Fixture -> Saved -> Live -> Mirror -> ConwayTx -> IO a) -> IO a
+withInputFixture use = withFixture $ \fx -> do
+    let cfg = Booking.cfg
+        tid@(TokenId name) = Booking.tokenId
+        policy = cagePolicyIdFromCfg cfg
+        emptyRoot = BS.replicate 32 0
+        stateOut =
+            mkBasicTxOut
+                (cageAddrFromCfg cfg Testnet)
+                ( MaryValue
+                    (Coin 2_000_000)
+                    (MultiAsset (Map.singleton policy (Map.singleton name 1)))
+                )
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))))
+        unsigned =
+            mkBasicTx
+                ( mkBasicTxBody
+                    & outputsTxBodyL .~ StrictSeq.fromList [stateOut]
+                    & mintTxBodyL
+                        .~ MultiAsset (Map.singleton policy (Map.singleton name 1))
+                )
+        deployment =
+            Deployment
+                { depRelease = "injected-command-fixture"
+                , depLeanRevision = "no-ledger-admission-claim"
+                , depNetworkMagic = magic
+                , depSeedOutRef = T.pack (replicate 64 '1' <> "#0")
+                , depCageToken = "743234302d7265676973747279"
+                , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
+                , depRequestHash = ""
+                , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
+                , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
+                , depProcessTime = defaultProcessTime cfg
+                , depRetractTime = defaultRetractTime cfg
+                , depTip = 1_000_000
+                , depReferenceScripts = []
+                , depBootstrapTxs = []
+                }
+        saved =
+            Saved
+                (fxDir fx)
+                ( mkRegistryConfig
+                    magic
+                    (walletAddr (fxWallet fx))
+                    (pinsOf cfg)
+                    deployment
+                )
+                cfg
+                Booking.codes
+                tid
+    (boot, ()) <-
+        submitBuilt
+            (writeContext fx)
+            "boot"
+            (const (expecting "state"))
+            (const (pure (unsigned, ())))
+    journalObserved
+        (writeContext fx)
+        "boot"
+        boot
+        "fixture state output recorded"
+    let live = Live saved [] (TxIn (txIdTx boot) (TxIx 0), stateOut)
+    point <- newStatePoint (fst (liveState live))
+    let chosen = TS.TrieSelection (savedIdentity saved) point (Root emptyRoot)
+    TrieMirror.createStoredMirror
+        (configPath (fxDir fx))
+        chosen
+        boot
+        (const (pure ()))
+        `shouldReturn` Right ()
+    mirror <- openMirror saved
+    requireMirrorSelection saved live mirror
+    use fx saved live mirror boot
 
 data Fixture = Fixture
     { fxDir :: FilePath

@@ -28,6 +28,7 @@ import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.Key qualified as Key
+import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
@@ -37,6 +38,11 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 import System.Directory (createDirectoryIfMissing)
 
 import Cardano.Ledger.Address (Addr)
@@ -52,9 +58,8 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import Data.Word (Word32)
-
-import MPF.Backend.Pure (emptyMPFInMemoryDB)
 
 import Singular.Application.OpenDatum.Script
     ( Application (..)
@@ -66,7 +71,7 @@ import Singular.CLI.Command
     , NodeSettings (..)
     , WriteSettings (..)
     )
-import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.Live (newStatePoint, receipt, txInText)
 import Singular.CLI.Node (Capabilities (..), withReads)
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
@@ -97,6 +102,7 @@ import Singular.CLI.Session
     , withSession
     , withWrite
     )
+import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
@@ -104,15 +110,17 @@ import Singular.Registry.Deployment
     , ReferenceScript (..)
     , parseOutRef
     , renderAddrBytes
-    , saveMirror
     )
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
+    , Root (..)
     , TokenId (..)
     )
 import Singular.Registry.Node (Wallet (..), bech32Address)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TrieState qualified as TS
+import Singular.Registry.TrieState.Mirror (createStoredMirror)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
@@ -125,6 +133,7 @@ import Singular.Registry.TxBuilder.Internal
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , emptyRoot
+    , extractCageDatum
     , findStateUtxo
     , mkRequestScript
     , scriptFromBytes
@@ -193,9 +202,19 @@ createWith a rel ws = do
                 booted <- boot wc cfg pinned seedIn
                 let NodeSettings _ magic = writeNode ws
                     dep = deploymentOf magic cfg seedIn booted
-                saveMirror
+                point <- newStatePoint (bootedOutput booted)
+                let TokenId name = bootedToken booted
+                    who =
+                        TS.RegistryIdentity
+                            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
+                            name
+                    chosen = TS.TrieSelection who point (Root (bootedRoot booted))
+                createStoredMirror
                     (configPath dir)
-                    (Map.singleton (bootedToken booted) emptyMPFInMemoryDB)
+                    chosen
+                    (bootedBody booted)
+                    observeTrie
+                    >>= either (failWith StaleState . ("TrieState " <>) . show) pure
                 writeLocalState
                     dir
                     LocalState
@@ -235,6 +254,9 @@ createWith a rel ws = do
 -- | What a boot made.
 data Booted = Booted
     { bootedToken :: TokenId
+    , bootedBody :: ConwayTx
+    , bootedOutput :: TxIn
+    , bootedRoot :: ByteString
     , bootedBoot :: Text
     -- ^ The boot's transaction id
     , bootedRefs :: [ReferenceScript]
@@ -294,15 +316,19 @@ boot wc cfg pinned seedIn = do
         Cage.withView
             prov
             (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
-    case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+    (seenOutput, seenRoot) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
-        Just _ ->
+        Just (output, out) -> do
+            root <- case extractCageDatum out of
+                Just (StateDatum state) -> pure (unOnChainRoot (stateRoot state))
+                _ -> failWith Partial "the boot's state output carries no state datum"
             journalObserved
                 wc
                 "boot"
                 signedBoot
                 "the state output holds the registry token"
+            pure (output, root)
     -- The references every later command resolves its scripts through.
     let scripts =
             [ ("request", mkRequestScript cfg tid)
@@ -323,6 +349,9 @@ boot wc cfg pinned seedIn = do
     pure
         Booted
             { bootedToken = tid
+            , bootedBody = signedBoot
+            , bootedOutput = seenOutput
+            , bootedRoot = seenRoot
             , bootedBoot = txIdHex signedBoot
             , bootedRefs = reference "state" addr stateScript stateRef : published
             , bootedTxs =

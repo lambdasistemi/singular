@@ -18,12 +18,18 @@ module Singular.Registry.Trie.Pure
 
       -- * Internals (for TrieManager)
     , getRootFromDb
+    , rootFromDb
+    , stateTrie
+    , membershipFromDb
+    , exclusionFromDb
+    , verifyExclusion
 
       -- * Proofs against a trusted root
     , provesMember
     , provesAbsent
     ) where
 
+import Control.Monad.State.Strict (State, get, gets, put)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
 import Data.IORef
@@ -169,6 +175,53 @@ provesAbsent db trusted key =
         | trusted == renderMPFHash nullHash = Nothing
         | otherwise = parseMPFHash trusted
 
+-- | The serialized membership proof produced from the authenticated nodes.
+membershipFromDb :: MPFInMemoryDB -> ByteString -> Maybe ByteString
+membershipFromDb db key =
+    serializeProof <$> fst (runMPFPure db (proofMPFM (hashKeyPath key)))
+
+-- | An exclusion proof produced from the same authenticated nodes.
+exclusionFromDb
+    :: MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
+exclusionFromDb db key = fst (runMPFPure db (exclusionMPFM (hashKeyPath key)))
+
+-- | Check an exclusion proof against its key and the caller's selected root.
+verifyExclusion :: MPFExclusionProof MPFHash -> ByteString -> Bool
+verifyExclusion proof trusted
+    | trusted == renderMPFHash nullHash =
+        verifyMPFExclusionProof mpfHashing Nothing proof
+    | otherwise = case parseMPFHash trusted of
+        Nothing -> False
+        Just rootHash -> verifyMPFExclusionProof mpfHashing (Just rootHash) proof
+
+-- | The pure root computation shared with the existing IO facade.
+rootFromDb :: MPFInMemoryDB -> Root
+rootFromDb db =
+    case fst (runMPFPure db rootHashM) of
+        Nothing -> Root (B.replicate 32 0)
+        Just h -> Root h
+
+-- | The existing MPF operations in genuine State, with no IORef or IO.
+stateTrie :: Trie (State MPFInMemoryDB)
+stateTrie =
+    Trie
+        { insert = \key value -> mutate (insertByteStringM key value)
+        , delete = mutate . deleteMPFM . hashKeyPath
+        , lookup = \key -> gets $ \db ->
+            case membershipFromDb db key of
+                Nothing -> Nothing
+                Just _ -> Just (renderMPFHash (mkMPFHash key))
+        , getRoot = gets rootFromDb
+        , getProofSteps = \key -> gets $ \db ->
+            toProofSteps <$> fst (runMPFPure db (proofMPFM (hashKeyPath key)))
+        }
+  where
+    mutate action = do
+        db <- get
+        let ((), changed) = runMPFPure db action
+        put changed
+        pure (rootFromDb changed)
+
 rootHashM :: MPFPure (Maybe ByteString)
 rootHashM =
     runMPFPureTransaction mpfHashCodecs $
@@ -248,11 +301,7 @@ pureGetRoot ref = readIORef ref >>= getRootFromDb
 
 -- | Get root hash from a database snapshot.
 getRootFromDb :: MPFInMemoryDB -> IO Root
-getRootFromDb db =
-    let (mHash, _) = runMPFPure db rootHashM
-    in  pure $ case mHash of
-            Nothing -> Root (B.replicate 32 0)
-            Just h -> Root h
+getRootFromDb = pure . rootFromDb
 
 -- | Generate on-chain proof steps for a key.
 pureGetProofSteps

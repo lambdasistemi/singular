@@ -34,10 +34,20 @@ module Singular.CLI.Live
     , valueJson
 
       -- * The mirror
-    , Mirror (..)
+    , Mirror
+    , mirrorStore
     , openMirror
-    , saveOpenMirror
     , mirrorRoot
+    , selectMirror
+    , requireMirrorSelection
+    , withMirror
+    , selectedMirrorRoot
+    , mirrorLeaf
+    , acceptMirrorFold
+    , recoverMirrorFold
+    , rewindMirrorTo
+    , savedIdentity
+    , newStatePoint
 
       -- * Receipts
     , receipt
@@ -45,15 +55,21 @@ module Singular.CLI.Live
     , applied
     ) where
 
+import Control.Monad (when)
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Unique (hashUnique, newUnique)
 import Lens.Micro ((^.))
+import System.Posix.Process (getProcessID)
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
@@ -76,7 +92,7 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn)
 
-import MPF.Backend.Pure (MPFInMemoryDB)
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
@@ -89,6 +105,7 @@ import Singular.Application.OpenDatum.Script
     ( Application (..)
     , applicationTitle
     )
+import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
 import Singular.CLI.Receipt qualified as Receipt
 import Singular.CLI.Registry
@@ -104,6 +121,8 @@ import Singular.CLI.Registry
     , renderIdentityError
     )
 import Singular.CLI.Session (failWith)
+import Singular.CLI.TrieHistory (historyAtRoot, readTrieHistory)
+import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -112,11 +131,9 @@ import Singular.Registry.Deployment
     ( Attached (..)
     , Deployment (..)
     , attach
-    , loadMirror
     , mirrorPathFor
     , parseOutRef
     , renderOutRef
-    , saveMirror
     )
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -125,8 +142,8 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
+import Singular.Registry.TrieState qualified as TS
+import Singular.Registry.TrieState.Mirror qualified as TrieMirror
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
@@ -296,40 +313,227 @@ applicationReference l =
         (u : _) -> Just u
         [] -> Nothing
 
--- | The saved mirror, opened as a trie manager for this registry.
+{- | The durable store and one independently observed caller selection.
+Commands receive snapshots, never the underlying nodes or TrieManager.
+-}
 data Mirror = Mirror
-    { mirrorTries :: TrieManager IO
-    , mirrorDump :: IO (Map.Map TokenId MPFInMemoryDB)
+    { mirrorStore :: TrieMirror.MirrorStore
+    , mirrorSelected
+        :: IORef (Either TS.TrieFailure (TS.TrieState IO, TS.TrieSelection))
     }
 
-{- | The saved mirror of an attached registry. Missing proof material is
-refused @proof-missing@ — no file, or no trie for this registry's token —
-and never replaced by a new empty trie: only @create@ initialises one.
--}
+savedIdentity :: Saved -> TS.RegistryIdentity
+savedIdentity saved =
+    let TokenId name = savedToken saved
+    in  TS.RegistryIdentity
+            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash (savedCfg saved))))
+            name
+
+newStatePoint :: TxIn -> IO TS.StatePoint
+newStatePoint output = do
+    unique <- hashUnique <$> newUnique
+    process <- getProcessID
+    pure
+        ( TS.StatePoint
+            (TS.SessionId (T.pack (show process <> "." <> show unique)))
+            TS.Unbound
+            output
+        )
+
 openMirror :: Saved -> IO Mirror
-openMirror s = do
-    let path = mirrorPathFor (configPath (savedDir s))
+openMirror saved = do
+    let path = mirrorPathFor (configPath (savedDir saved))
     there <- doesFileExist path
     if there
         then pure ()
         else failWith Receipt.ProofMissing ("no saved mirror at " <> path)
-    saved <- loadMirror (configPath (savedDir s))
-    if Map.member (savedToken s) saved
-        then pure ()
-        else
-            failWith
-                Receipt.ProofMissing
-                "the saved mirror holds no trie for this registry's token"
-    (tm, dump) <- mkPureTrieManagerFrom saved
-    pure (Mirror tm dump)
+    store <-
+        TrieMirror.openStoredMirror
+            (configPath (savedDir saved))
+            (savedIdentity saved)
+            >>= either
+                ( const
+                    ( failWith
+                        Receipt.ProofMissing
+                        "the saved mirror holds no trie for this registry's token"
+                    )
+                )
+                pure
+    Mirror store <$> newIORef (Left TS.StaleState)
 
-saveOpenMirror :: Saved -> Mirror -> IO ()
-saveOpenMirror s m = mirrorDump m >>= saveMirror (configPath (savedDir s))
-
+-- Only adapter/recovery setup uses this stored root before it has a current
+-- observed selection. Ordinary command reads use selectedMirrorRoot instead.
 mirrorRoot :: Saved -> Mirror -> IO ByteString
-mirrorRoot s m = do
-    Root r <- withTrie (mirrorTries m) (savedToken s) getRoot
-    pure r
+mirrorRoot _ mirror = do
+    Root root <-
+        TrieMirror.storedRoot (mirrorStore mirror) >>= either failTrie pure
+    pure root
+
+selectMirror
+    :: Saved -> Live -> Mirror -> IO (Either TS.TrieFailure ())
+selectMirror saved live mirror = do
+    point <- newStatePoint (fst (liveState live))
+    case observedRoot live of
+        Left _ -> refuse TS.StaleState
+        Right root -> do
+            let chosen = TS.TrieSelection (savedIdentity saved) point (Root root)
+            history <-
+                readTrieHistory
+                    (savedDir saved)
+                    (TS.pointSession point)
+                    (savedIdentity saved)
+            case history of
+                Left why -> refuse why
+                Right (create, events) -> do
+                    cap <-
+                        TrieMirror.mirrorTrieState
+                            (mirrorStore mirror)
+                            chosen
+                            create
+                            events
+                            observeTrie
+                    writeIORef (mirrorSelected mirror) (Right (cap, chosen))
+                    TS.withTrieState cap chosen (const (pure ()))
+  where
+    refuse why = do
+        writeIORef (mirrorSelected mirror) (Left why)
+        pure (Left why)
+
+requireMirrorSelection :: Saved -> Live -> Mirror -> IO ()
+requireMirrorSelection saved live mirror = selectMirror saved live mirror >>= either failTrie pure
+
+withMirror :: Mirror -> (TS.TrieSnapshot IO -> IO a) -> IO a
+withMirror mirror use = do
+    context <- readIORef (mirrorSelected mirror)
+    case context of
+        Left why -> failTrie why
+        Right (cap, chosen) -> TS.withTrieState cap chosen use >>= either failTrie pure
+
+selectedMirrorRoot :: Mirror -> IO ByteString
+selectedMirrorRoot mirror = withMirror mirror (pure . unRoot . TS.trieRoot)
+
+-- Preserve the existing leaf/root error vocabulary at the receipt boundary.
+mirrorLeaf
+    :: Mirror
+    -> ByteString
+    -> ByteString
+    -> IO (Either Proof.AuthError TS.Leaf)
+mirrorLeaf mirror key observed = do
+    context <- readIORef (mirrorSelected mirror)
+    result <- case context of
+        Left why -> pure (Left why)
+        Right (cap, chosen) ->
+            fmap
+                (>>= id)
+                (TS.withTrieState cap chosen (`TS.leafAt` key))
+    case result of
+        Right leaf -> pure (Right leaf)
+        Left TS.RootDoesNotChain -> do
+            Root local <-
+                TrieMirror.storedRoot (mirrorStore mirror) >>= either failTrie pure
+            if local /= observed
+                then pure (Left (Proof.RootMismatch local observed))
+                else pure (Left (Proof.TrieRefusal TS.RootDoesNotChain))
+        Left TS.MissingProof -> pure (Left (Proof.ProofInconsistent key))
+        Left why -> pure (Left (Proof.TrieRefusal why))
+
+acceptMirrorFold
+    :: Mirror
+    -> ByteString
+    -> Integer
+    -> ByteString
+    -> ByteString
+    -> ConwayTx
+    -> IO ()
+acceptMirrorFold mirror key edge beforeRoot afterRoot tx = do
+    context <- readIORef (mirrorSelected mirror)
+    case context of
+        Left why -> failTrie why
+        Right (cap, chosen) -> do
+            event@(TS.ObservedFold from after _) <-
+                either
+                    failTrie
+                    pure
+                    ( TrieMirror.checkedFoldRecord
+                        (TS.pointSession (TS.trieSelectionPoint chosen))
+                        (TS.trieSelectionIdentity chosen)
+                        (Root beforeRoot)
+                        (Root afterRoot)
+                        ((key, edge) :| [])
+                        tx
+                    )
+            when (from /= chosen) (failTrie TS.StaleState)
+            TS.acceptObservedFold cap event >>= either failTrie pure
+            writeIORef (mirrorSelected mirror) (Right (cap, after))
+
+-- Recovery has independently established inclusion. Its before-output is
+-- decoded from the actual bound signed body's Modify input, not invented.
+recoverMirrorFold
+    :: Saved
+    -> Mirror
+    -> ByteString
+    -> Integer
+    -> ByteString
+    -> ByteString
+    -> ConwayTx
+    -> IO ()
+recoverMirrorFold saved mirror key edge beforeRoot afterRoot tx = do
+    unique <- hashUnique <$> newUnique
+    process <- getProcessID
+    let sid = TS.SessionId (T.pack (show process <> "." <> show unique))
+    event@(TS.ObservedFold from after _) <-
+        either
+            failTrie
+            pure
+            ( TrieMirror.checkedFoldRecord
+                sid
+                (savedIdentity saved)
+                (Root beforeRoot)
+                (Root afterRoot)
+                ((key, edge) :| [])
+                tx
+            )
+    (create, events) <-
+        readTrieHistory (savedDir saved) sid (savedIdentity saved)
+            >>= either failTrie pure
+    cap <-
+        TrieMirror.mirrorTrieState
+            (mirrorStore mirror)
+            from
+            create
+            (historyAtRoot (Root beforeRoot) events)
+            observeTrie
+    TS.acceptObservedFold cap event >>= either failTrie pure
+    writeIORef (mirrorSelected mirror) (Right (cap, after))
+
+rewindMirrorTo :: Saved -> Mirror -> ByteString -> IO ()
+rewindMirrorTo saved mirror target = do
+    -- The prefix supplies actual historical output references. A fresh live
+    -- selection is required later, before any command can read a snapshot.
+    unique <- hashUnique <$> newUnique
+    process <- getProcessID
+    let sid = TS.SessionId (T.pack (show process <> "." <> show unique))
+    (create@(TS.CreateRecord _ output), events) <-
+        readTrieHistory (savedDir saved) sid (savedIdentity saved)
+            >>= either failTrie pure
+    let kept = historyAtRoot (Root target) events
+        historicalPoint = case reverse kept of
+            TS.ObservedFold _ to _ : _ -> TS.trieSelectionPoint to
+            [] -> TS.StatePoint sid TS.Unbound output
+        chosen =
+            TS.TrieSelection (savedIdentity saved) historicalPoint (Root target)
+    TrieMirror.replaceFromHistory (mirrorStore mirror) chosen create kept
+        >>= either failTrie pure
+    writeIORef (mirrorSelected mirror) (Left TS.StaleState)
+
+failTrie :: TS.TrieFailure -> IO a
+failTrie why = failWith outcome ("TrieState " <> show why)
+  where
+    outcome = case why of
+        TS.MissingProof -> Receipt.ProofMissing
+        TS.WrongRegistry -> Receipt.ClientRefusal
+        TS.UndecodableRequest -> Receipt.ClientRefusal
+        _ -> Receipt.StaleState
 
 -- | One command's printed receipt.
 receipt :: Text -> OutcomeClass -> [(Text, Value)] -> Value

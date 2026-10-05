@@ -58,6 +58,7 @@ library
     , filepath
     , memory
     , microlens
+    , mtl
     , mts:mpf-write
     , plutus-core
     , plutus-ledger-api
@@ -95,6 +96,9 @@ library
     Singular.Registry.Trie
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
+    Singular.Registry.TrieState
+    Singular.Registry.TrieState.Fixture
+    Singular.Registry.TrieState.Mirror
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
@@ -126,6 +130,8 @@ library
   -- encoding instances, and the generated API reference documents them
   -- here for the contributor while callers keep importing the facade.
   other-modules:
+    Singular.Registry.TrieState.Types
+    Singular.Registry.TrieState.Core
     -- #269: the deployment record's focused owners behind the
     -- Deployment facade. Same arrangement as the fold and wire owners
     -- above: Singular.Registry.Deployment re-exports the unchanged
@@ -739,6 +745,14 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLISpec
     Singular.CLI.Command
+    Singular.CLI.TrieTrace
+    Singular.CLI.TrieHistory
+    Singular.CLI.ReceiptBody
+    Singular.CLI.Reconcile
+    Singular.CLI.Plan
+    Singular.CLI.Live
+    Singular.CLI.Fold
+    Singular.CLI.Attached
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope
@@ -783,6 +797,8 @@ test-suite cage-tests
     Singular.Registry.StubView
     Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
+    Singular.Registry.TrieStateSpec
+    Singular.Registry.TrieStateContractSpec
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
@@ -830,6 +846,7 @@ test-suite cage-tests
     , aeson-pretty
     , hspec
     , microlens
+    , mtl
     , mts:mpf-write
     , ouroboros-network:api
     , ouroboros-consensus
@@ -1046,6 +1063,9 @@ executable singular
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.Reconcile
+    Singular.CLI.ReceiptBody
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
     Singular.CLI.Recovery
     Singular.CLI.Registry
     Singular.CLI.Reject

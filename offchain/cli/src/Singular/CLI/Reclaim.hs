@@ -90,7 +90,7 @@ runReclaim a = attached
             boundDatum = mkInlineDatum (toPlcData (txInToRef named))
             requestField = [("request", toJSON (txInText named))]
             stop why = failWithFields ClientRefusal why requestField
-        root <- mirrorRoot s (atMirror at)
+        root <- selectedMirrorRoot (atMirror at)
         (tx, (locked, req, bounds, tipSlot, opens, closes, returned)) <-
             submitBuilt
                 wc

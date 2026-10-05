@@ -68,6 +68,9 @@ work="$(cd "$work" && pwd)"
 receipts="$work/receipts"
 snaps="$work/snapshots"
 mkdir -p "$receipts" "$snaps"
+export SINGULAR_HARNESS_TRIE_TRACE="$work/direct-processes.trie.jsonl"
+: >"$SINGULAR_HARNESS_TRIE_TRACE"
+: >"$work/trie-command-invocations"
 reg="$work/registry"
 journal="$reg/journal.jsonl"
 verdicts="$work/verdicts.md"
@@ -137,7 +140,10 @@ run() {
   local name="$1"
   shift
   local status=0
-  "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  : >"$receipts/$name.trie.jsonl"
+  SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
   say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
 }
@@ -149,7 +155,10 @@ held() {
   shift 2
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
-  env "$var=$go" "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+  : >"$receipts/$name.trie.jsonl"
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
+  env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -175,7 +184,10 @@ paused() {
   shift 3
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
-  env "$var=$go" "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+  : >"$receipts/$name.trie.jsonl"
+  printf '%s\n' "$name" >>"$work/trie-command-invocations"
+  env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
+    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -197,6 +209,44 @@ paused() {
 field() { jq -r "$2" "$receipts/$1.json"; }
 outcome_is() { [ "$(field "$1" .outcome)" = "$2" ]; }
 exit_is() { [ "$(cat "$receipts/$1.exit")" = "$2" ]; }
+
+# Content bound to actual completed commands, including their recovered
+# folds. Held/killed processes keep their raw operation traces alongside
+# the existing hold-point evidence; no synthetic receipt is supplied.
+trie_extent() {
+  local name receipt trace
+  : >"$work/trie-command-extent.jsonl"
+  while IFS= read -r name; do
+    receipt="$receipts/$name.json"
+    trace="$receipts/$name.trie.jsonl"
+    if jq -e '.outcome == "success" and .preview != true' "$receipt" >/dev/null 2>&1; then
+      jq -s -e --slurpfile r "$receipt" '
+        $r[0] as $r
+        | [.[] | select(.operation == "select" or .operation == "create")] as $selected
+        | ($selected | length > 0)
+          and ($selected | all(
+            (.identity.policy | test("^[0-9a-f]{56}$"))
+            and (.identity.name | test("^[0-9a-f]+$"))
+            and (.output | test("^[0-9a-f]{64}#[0-9]+$"))
+            and (.root | test("^[0-9a-f]{64}$"))))
+          and (if $r.command == "inspect" then
+            any(.[]; .operation == "leafAt" and .key == $r.key
+              and .root == $r.root and .leaf == $r.leaf)
+          elif $r.fold? != null then
+            any(.[]; .operation == "accept" and .rootAfter == $r.root
+              and .output == ($r.fold + "#0"))
+            and any(.[]; .operation == "speculateEdges" and .rootAfter == $r.root
+              and .proofCount > 0 and (.proofs | type == "string"))
+          elif $r.root? != null then any($selected[]; .root == $r.root)
+          else true end)' "$trace" >/dev/null || return 1
+      jq -c --slurpfile trace "$trace" \
+        '{command, key, root, operations: ($trace | map(.operation)), executions: ($trace | length)}' \
+        "$receipt" >>"$work/trie-command-extent.jsonl"
+    fi
+  done <"$work/trie-command-invocations"
+  jq -s -e 'length > 1 and all(.executions > 0)
+    and (map(.command) | unique | length > 1)' "$work/trie-command-extent.jsonl" >/dev/null
+}
 
 # The registry's local files, as a later clause compares them.
 snap() {
@@ -264,6 +314,29 @@ jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-pay
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
 
+# An absent application source is refused by the ordinary write and shared
+# preview planner, before a request or transaction can be left pending.
+control="absent source"
+absent_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+for command in update terminate; do
+  extra=()
+  [ "$command" != update ] || extra=(--payload "$work/payload.json")
+  run "$command-absent" registry "$command" --key-hex 6d697373696e672d6b6579 \
+    "${extra[@]}" "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "$command of an absent key is refused before signing" exit_is "$command-absent" 10
+  clause "$command names the absent source holding" is_equal \
+    "$(field "$command-absent" '.outcome + "/" + .reason')" \
+    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+  run "$command-absent-preview" registry "$command" --preview --key-hex 6d697373696e672d6b6579 \
+    "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
+  clause "$command preview names the same absent source holding" is_equal \
+    "$(field "$command-absent-preview" '.outcome + "/" + .reason')" \
+    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+  clause "$command preview is refused" exit_is "$command-absent-preview" 10
+done
+clause "absent-source write and preview refusals leave every registry file unchanged" is_equal \
+  "$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$absent_before"
+
 # Reuse the journey's CBOR reader for the signed bodies, rather than add
 # another decoder. Only the witness projection below is recovery-specific.
 copying=0
@@ -314,6 +387,44 @@ run inspect-a registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the key active at that root" \
   is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
 clause "the journal was only appended to and no body changed" appended_only s0
+
+# Preview deliberately stays untraced in the release journey's ordinary
+# process control. Here its separate actual trace binds the selected root to
+# the measured receipt, and a missing checked create must refuse the same read.
+control="preview trie access"
+preview_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+for command in update terminate; do
+  extra=()
+  [ "$command" != update ] || extra=(--payload "$work/payload.json")
+  name="$command-active-preview"
+  run "$name" registry "$command" --preview --key-hex 6b0a \
+    "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
+  clause "$command preview succeeds on the active source" outcome_is "$name" success
+  clause "$command preview consumes the capability selection at its reported root" \
+    jq -s -e --slurpfile r "$receipts/$name.json" --arg root "$(root_after_of "$fold")" '
+      $r[0].preview == true and $r[0].stateRoot == $root
+      and any(.[]; .operation == "select" and .root == $root
+        and (.identity.policy | test("^[0-9a-f]{56}$"))
+        and (.identity.name | test("^[0-9a-f]+$"))
+        and (.output | test("^[0-9a-f]{64}#[0-9]+$")))
+    ' "$receipts/$name.trie.jsonl"
+done
+preview_copy="$work/preview-incomplete"
+cp -a "$reg" "$preview_copy"
+boot_ids="$(jq -sc '[.[] | select(.journalStep == "boot") | .journalTxId] | unique' "$journal")"
+jq -c --argjson ids "$boot_ids" 'select(.journalTxId as $id | $ids | index($id) | not)' \
+  "$preview_copy/journal.jsonl" >"$work/preview-incomplete-journal"
+mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
+preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
+  --registry "$preview_copy" --blueprint "$blueprint" "${node[@]}" --wallet-address "$(field preview .wallet)"
+clause "preview refuses missing create rather than trusting the matching root" exit_is preview-incomplete 14
+clause "preview names HistoryIncomplete" is_equal \
+  "$(field preview-incomplete '.outcome + "/" + .reason')" 'stale-state/TrieState HistoryIncomplete'
+clause "preview leaves its incomplete copy unchanged" is_equal \
+  "$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_copy_before"
+clause "successful previews leave every original registry file unchanged" is_equal \
+  "$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_before"
 
 # ------------------------------------------------------------------
 # lost answer
@@ -975,6 +1086,9 @@ clause "at the end too, the adoption record covers every block the node forged" 
   forged_pair "$(forged_adopted_after "$snap_mark")"
 say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
 jq -r '.journalEvent' "$journal" | sort | uniq -c
+
+control="trie capability"
+clause "completed real recovery commands have nonempty trie evidence bound to their key, leaf and root" trie_extent
 
 cat "$verdicts"
 if [ "$failed" -ne 0 ]; then

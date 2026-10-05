@@ -146551,17 +146551,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-02": {
-   "audio_sha256": "00714ae3c2c57438c5bcfa0c445a9daba011527fcb7c71a0d91e154ddfd702ba",
-   "characters": 1545,
-   "cost": 0.0009579,
-   "duration": 105.7,
+   "audio_sha256": "7746ee1ca680128aa66cef82aece0cd5e8625857f747a9a3733a4478ce235567",
+   "characters": 1651,
+   "cost": 0.00102362,
+   "duration": 113.15,
    "index": 2,
-   "key": "8e5d63c1b7a7daef4ab79881e314296aa4c358d32130248b8deec81c8e81eb35",
+   "key": "e8c0d2b20a17d3946da7a56bd546acbccce469754917a52484900ec24bde4e4d",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 57 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 57 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 62 modules in three kinds: 47 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 62 modules in three kinds: 47 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
    "words": [
     {
      "end": 0.325,
@@ -146729,1203 +146729,1308 @@
      "text": "That"
     },
     {
-     "end": 12.788,
+     "end": 12.762,
      "start": 12.4,
      "text": "complete"
     },
     {
-     "end": 13.275,
-     "start": 12.788,
+     "end": 13.262,
+     "start": 12.762,
      "text": "extent"
     },
     {
-     "end": 13.438,
-     "start": 13.275,
+     "end": 13.413,
+     "start": 13.262,
      "text": "is"
     },
     {
-     "end": 14.075,
-     "start": 13.438,
-     "text": "57"
+     "end": 13.975,
+     "start": 13.413,
+     "text": "62"
     },
     {
-     "end": 14.525,
-     "start": 14.075,
+     "end": 14.425,
+     "start": 13.975,
      "text": "modules"
     },
     {
-     "end": 14.675,
-     "start": 14.525,
+     "end": 14.575,
+     "start": 14.425,
      "text": "in"
     },
     {
-     "end": 14.925,
-     "start": 14.675,
+     "end": 14.8,
+     "start": 14.575,
      "text": "three"
     },
     {
-     "end": 15.875,
-     "start": 14.925,
+     "end": 15.75,
+     "start": 14.8,
      "text": "kinds"
     },
     {
-     "end": 16.075,
-     "start": 15.875,
+     "end": 15.95,
+     "start": 15.75,
      "text": ":"
     },
     {
-     "end": 16.95,
-     "start": 16.275,
-     "text": "44"
+     "end": 16.875,
+     "start": 16.15,
+     "text": "47"
     },
     {
-     "end": 17.625,
-     "start": 16.95,
+     "end": 17.55,
+     "start": 16.875,
      "text": "explicitly"
     },
     {
-     "end": 18.2,
-     "start": 17.625,
+     "end": 18.125,
+     "start": 17.55,
      "text": "exposed"
     },
     {
-     "end": 18.812,
-     "start": 18.2,
+     "end": 18.737,
+     "start": 18.125,
      "text": "modules"
     },
     {
-     "end": 18.975,
-     "start": 18.812,
+     "end": 18.9,
+     "start": 18.737,
      "text": "and"
     },
     {
-     "end": 19.263,
-     "start": 18.975,
+     "end": 19.188,
+     "start": 18.9,
      "text": "two"
     },
     {
-     "end": 19.975,
-     "start": 19.263,
+     "end": 19.9,
+     "start": 19.188,
      "text": "re-exported"
     },
     {
-     "end": 20.612,
-     "start": 19.975,
+     "end": 20.513,
+     "start": 19.9,
      "text": "modules"
     },
     {
-     "end": 20.75,
-     "start": 20.612,
+     "end": 20.65,
+     "start": 20.513,
      "text": "are"
     },
     {
-     "end": 20.888,
-     "start": 20.75,
+     "end": 20.788,
+     "start": 20.65,
      "text": "what"
     },
     {
-     "end": 20.95,
-     "start": 20.888,
+     "end": 20.85,
+     "start": 20.788,
      "text": "a"
     },
     {
-     "end": 21.325,
-     "start": 20.95,
+     "end": 21.225,
+     "start": 20.85,
      "text": "caller"
     },
     {
-     "end": 22.475,
-     "start": 21.325,
+     "end": 22.425,
+     "start": 21.225,
      "text": "imports"
     },
     {
-     "end": 22.675,
-     "start": 22.475,
+     "end": 22.625,
+     "start": 22.425,
      "text": ";"
     },
     {
-     "end": 22.987,
-     "start": 22.875,
+     "end": 22.938,
+     "start": 22.825,
      "text": "the"
     },
     {
-     "end": 23.288,
-     "start": 22.987,
-     "text": "three"
+     "end": 23.212,
+     "start": 22.938,
+     "text": "two"
     },
     {
-     "end": 23.663,
-     "start": 23.288,
-     "text": "fold"
+     "end": 23.475,
+     "start": 23.212,
+     "text": "trie"
     },
     {
-     "end": 24.075,
-     "start": 23.663,
+     "end": 24.163,
+     "start": 23.475,
+     "text": "capability"
+    },
+    {
+     "end": 24.625,
+     "start": 24.163,
      "text": "owners"
     },
     {
-     "end": 24.462,
-     "start": 24.075,
+     "end": 25.038,
+     "start": 24.625,
      "text": "behind"
     },
     {
-     "end": 24.575,
-     "start": 24.462,
+     "end": 25.138,
+     "start": 25.038,
      "text": "the"
     },
     {
-     "end": 25.025,
-     "start": 24.575,
-     "text": "Update"
+     "end": 25.775,
+     "start": 25.138,
+     "text": "TrieState"
     },
     {
-     "end": 25.625,
-     "start": 25.025,
+     "end": 26.375,
+     "start": 25.775,
      "text": "facade"
     },
     {
-     "end": 25.712,
-     "start": 25.625,
-     "text": "—"
+     "end": 26.45,
+     "start": 26.375,
+     "text": "("
     },
     {
-     "end": 26.25,
-     "start": 25.712,
+     "end": 27.025,
+     "start": 26.45,
      "text": "Singular"
     },
     {
-     "end": 26.35,
-     "start": 26.25,
+     "end": 27.125,
+     "start": 27.025,
      "text": "."
     },
     {
-     "end": 27.0,
-     "start": 26.35,
+     "end": 27.725,
+     "start": 27.125,
      "text": "Registry"
     },
     {
-     "end": 27.1,
-     "start": 27.0,
+     "end": 27.8,
+     "start": 27.725,
      "text": "."
     },
     {
-     "end": 27.85,
-     "start": 27.1,
-     "text": "TxBuilder"
+     "end": 28.425,
+     "start": 27.8,
+     "text": "TrieState"
     },
     {
-     "end": 27.9,
-     "start": 27.85,
+     "end": 28.5,
+     "start": 28.425,
      "text": "."
     },
     {
-     "end": 28.275,
-     "start": 27.9,
-     "text": "Update"
+     "end": 28.737,
+     "start": 28.5,
+     "text": "Core"
     },
     {
-     "end": 28.35,
-     "start": 28.275,
-     "text": "."
-    },
-    {
-     "end": 29.3,
-     "start": 28.35,
-     "text": "Build"
-    },
-    {
-     "end": 29.525,
-     "start": 29.3,
-     "text": ","
-    },
-    {
-     "end": 30.425,
-     "start": 29.725,
-     "text": ".Context"
-    },
-    {
-     "end": 30.575,
-     "start": 30.425,
+     "end": 28.85,
+     "start": 28.737,
      "text": "and"
     },
     {
-     "end": 31.15,
-     "start": 30.575,
-     "text": ".Duties"
+     "end": 29.9,
+     "start": 28.85,
+     "text": ".Types"
     },
     {
-     "end": 31.212,
-     "start": 31.15,
-     "text": "—"
+     "end": 30.075,
+     "start": 29.9,
+     "text": ")"
     },
     {
-     "end": 31.337,
-     "start": 31.212,
+     "end": 30.125,
+     "start": 30.075,
+     "text": ","
+    },
+    {
+     "end": 30.438,
+     "start": 30.325,
      "text": "the"
     },
     {
-     "end": 31.7,
-     "start": 31.337,
-     "text": "five"
+     "end": 30.737,
+     "start": 30.438,
+     "text": "three"
     },
     {
-     "end": 32.088,
-     "start": 31.7,
-     "text": "wire"
+     "end": 31.112,
+     "start": 30.737,
+     "text": "fold"
     },
     {
-     "end": 32.475,
-     "start": 32.088,
+     "end": 31.525,
+     "start": 31.112,
      "text": "owners"
     },
     {
-     "end": 32.862,
-     "start": 32.475,
+     "end": 31.913,
+     "start": 31.525,
      "text": "behind"
     },
     {
-     "end": 32.95,
-     "start": 32.862,
+     "end": 32.025,
+     "start": 31.913,
      "text": "the"
     },
     {
-     "end": 33.3,
-     "start": 32.95,
-     "text": "Types"
+     "end": 32.475,
+     "start": 32.025,
+     "text": "Update"
     },
     {
-     "end": 33.9,
-     "start": 33.3,
+     "end": 33.075,
+     "start": 32.475,
      "text": "facade"
     },
     {
-     "end": 33.975,
-     "start": 33.9,
+     "end": 33.162,
+     "start": 33.075,
      "text": "—"
     },
     {
-     "end": 34.45,
-     "start": 33.975,
+     "end": 33.7,
+     "start": 33.162,
      "text": "Singular"
     },
     {
-     "end": 34.525,
+     "end": 33.8,
+     "start": 33.7,
+     "text": "."
+    },
+    {
+     "end": 34.45,
+     "start": 33.8,
+     "text": "Registry"
+    },
+    {
+     "end": 34.55,
      "start": 34.45,
      "text": "."
     },
     {
-     "end": 35.125,
-     "start": 34.525,
-     "text": "Registry"
+     "end": 35.3,
+     "start": 34.55,
+     "text": "TxBuilder"
     },
     {
-     "end": 35.225,
-     "start": 35.125,
+     "end": 35.35,
+     "start": 35.3,
      "text": "."
     },
     {
-     "end": 35.55,
-     "start": 35.225,
-     "text": "Wire"
+     "end": 35.725,
+     "start": 35.35,
+     "text": "Update"
     },
     {
-     "end": 35.625,
-     "start": 35.55,
+     "end": 35.8,
+     "start": 35.725,
      "text": "."
     },
     {
-     "end": 36.725,
-     "start": 35.625,
-     "text": "Primitive"
+     "end": 36.75,
+     "start": 35.8,
+     "text": "Build"
     },
     {
-     "end": 36.95,
-     "start": 36.725,
+     "end": 36.975,
+     "start": 36.75,
      "text": ","
     },
     {
-     "end": 37.5,
-     "start": 37.125,
-     "text": ".Request"
+     "end": 37.875,
+     "start": 37.175,
+     "text": ".Context"
     },
     {
-     "end": 37.55,
-     "start": 37.5,
-     "text": ","
-    },
-    {
-     "end": 38.225,
-     "start": 37.55,
-     "text": ".State"
-    },
-    {
-     "end": 38.425,
-     "start": 38.225,
-     "text": ","
-    },
-    {
-     "end": 38.975,
-     "start": 38.625,
-     "text": ".Proof"
-    },
-    {
-     "end": 39.1,
-     "start": 38.975,
+     "end": 38.025,
+     "start": 37.875,
      "text": "and"
     },
     {
-     "end": 39.725,
-     "start": 39.1,
-     "text": ".Redeemer"
+     "end": 38.6,
+     "start": 38.025,
+     "text": ".Duties"
     },
     {
-     "end": 39.812,
-     "start": 39.725,
+     "end": 38.662,
+     "start": 38.6,
      "text": "—"
     },
     {
-     "end": 39.938,
-     "start": 39.812,
-     "text": "and"
-    },
-    {
-     "end": 40.062,
-     "start": 39.938,
+     "end": 38.787,
+     "start": 38.662,
      "text": "the"
     },
     {
-     "end": 40.3,
-     "start": 40.062,
-     "text": "three"
+     "end": 39.15,
+     "start": 38.787,
+     "text": "five"
     },
     {
-     "end": 40.888,
-     "start": 40.3,
-     "text": "deployment"
+     "end": 39.537,
+     "start": 39.15,
+     "text": "wire"
     },
     {
-     "end": 41.325,
-     "start": 40.888,
+     "end": 39.925,
+     "start": 39.537,
      "text": "owners"
     },
     {
-     "end": 41.737,
-     "start": 41.325,
+     "end": 40.312,
+     "start": 39.925,
      "text": "behind"
     },
     {
-     "end": 41.825,
-     "start": 41.737,
+     "end": 40.4,
+     "start": 40.312,
      "text": "the"
     },
     {
-     "end": 42.425,
-     "start": 41.825,
-     "text": "Deployment"
+     "end": 40.75,
+     "start": 40.4,
+     "text": "Types"
     },
     {
-     "end": 43.037,
-     "start": 42.425,
+     "end": 41.35,
+     "start": 40.75,
      "text": "facade"
     },
     {
-     "end": 43.138,
-     "start": 43.037,
+     "end": 41.425,
+     "start": 41.35,
      "text": "—"
     },
     {
-     "end": 43.725,
-     "start": 43.138,
+     "end": 41.9,
+     "start": 41.425,
      "text": "Singular"
     },
     {
-     "end": 43.825,
-     "start": 43.725,
+     "end": 41.975,
+     "start": 41.9,
      "text": "."
     },
     {
-     "end": 44.425,
-     "start": 43.825,
+     "end": 42.575,
+     "start": 41.975,
      "text": "Registry"
     },
     {
-     "end": 44.5,
-     "start": 44.425,
+     "end": 42.675,
+     "start": 42.575,
      "text": "."
     },
     {
-     "end": 45.1,
-     "start": 44.5,
-     "text": "Deployment"
+     "end": 43.0,
+     "start": 42.675,
+     "text": "Wire"
     },
     {
-     "end": 45.2,
-     "start": 45.1,
+     "end": 43.075,
+     "start": 43.0,
      "text": "."
     },
     {
-     "end": 46.5,
-     "start": 45.2,
-     "text": "Manifest"
+     "end": 44.175,
+     "start": 43.075,
+     "text": "Primitive"
     },
     {
-     "end": 46.725,
-     "start": 46.5,
+     "end": 44.4,
+     "start": 44.175,
      "text": ","
     },
     {
-     "end": 47.5,
-     "start": 47.0,
-     "text": ".Mirror"
+     "end": 44.95,
+     "start": 44.575,
+     "text": ".Request"
     },
     {
-     "end": 47.675,
-     "start": 47.5,
+     "end": 45.0,
+     "start": 44.95,
+     "text": ","
+    },
+    {
+     "end": 45.675,
+     "start": 45.0,
+     "text": ".State"
+    },
+    {
+     "end": 45.875,
+     "start": 45.675,
+     "text": ","
+    },
+    {
+     "end": 46.425,
+     "start": 46.075,
+     "text": ".Proof"
+    },
+    {
+     "end": 46.55,
+     "start": 46.425,
      "text": "and"
+    },
+    {
+     "end": 47.175,
+     "start": 46.55,
+     "text": ".Redeemer"
+    },
+    {
+     "end": 47.263,
+     "start": 47.175,
+     "text": "—"
+    },
+    {
+     "end": 47.388,
+     "start": 47.263,
+     "text": "and"
+    },
+    {
+     "end": 47.513,
+     "start": 47.388,
+     "text": "the"
     },
     {
      "end": 47.75,
-     "start": 47.675,
-     "text": "."
+     "start": 47.513,
+     "text": "three"
     },
     {
-     "end": 48.375,
+     "end": 48.338,
      "start": 47.75,
-     "text": "Attach"
+     "text": "deployment"
     },
     {
-     "end": 48.463,
-     "start": 48.375,
-     "text": "—"
-    },
-    {
-     "end": 48.638,
-     "start": 48.463,
-     "text": "are"
-    },
-    {
-     "end": 49.55,
-     "start": 48.638,
-     "text": "package-internal"
-    },
-    {
-     "end": 50.4,
-     "start": 49.55,
-     "text": "other-modules"
-    },
-    {
-     "end": 50.588,
-     "start": 50.4,
-     "text": "with"
-    },
-    {
-     "end": 51.213,
-     "start": 50.588,
-     "text": "generated"
-    },
-    {
-     "end": 51.675,
-     "start": 51.213,
-     "text": "pages"
-    },
-    {
-     "end": 51.95,
-     "start": 51.675,
-     "text": "here"
-    },
-    {
-     "end": 52.075,
-     "start": 51.95,
-     "text": "for"
-    },
-    {
-     "end": 52.175,
-     "start": 52.075,
-     "text": "the"
-    },
-    {
-     "end": 52.838,
-     "start": 52.175,
-     "text": "contributor"
-    },
-    {
-     "end": 53.25,
-     "start": 52.838,
-     "text": "reading"
-    },
-    {
-     "end": 53.35,
-     "start": 53.25,
-     "text": "the"
-    },
-    {
-     "end": 53.925,
-     "start": 53.35,
-     "text": "facades'"
-    },
-    {
-     "end": 55.6,
-     "start": 53.925,
-     "text": "implementations"
-    },
-    {
-     "end": 55.8,
-     "start": 55.6,
-     "text": ","
-    },
-    {
-     "end": 56.088,
-     "start": 55.975,
-     "text": "but"
-    },
-    {
-     "end": 56.25,
-     "start": 56.088,
-     "text": "no"
-    },
-    {
-     "end": 56.537,
-     "start": 56.25,
-     "text": "caller"
-    },
-    {
-     "end": 56.825,
-     "start": 56.537,
-     "text": "import"
-    },
-    {
-     "end": 57.575,
-     "start": 56.825,
-     "text": "path"
-    },
-    {
-     "end": 57.8,
-     "start": 57.575,
-     "text": ":"
-    },
-    {
-     "end": 58.075,
-     "start": 58.0,
-     "text": "a"
-    },
-    {
-     "end": 58.45,
-     "start": 58.075,
-     "text": "caller"
-    },
-    {
-     "end": 59.025,
-     "start": 58.45,
-     "text": "compiles"
-    },
-    {
-     "end": 59.362,
-     "start": 59.025,
-     "text": "against"
-    },
-    {
-     "end": 59.45,
-     "start": 59.362,
-     "text": "the"
-    },
-    {
-     "end": 59.95,
-     "start": 59.45,
-     "text": "facades'"
-    },
-    {
-     "end": 60.575,
-     "start": 59.95,
-     "text": "exports"
-    },
-    {
-     "end": 60.65,
-     "start": 60.575,
-     "text": ","
-    },
-    {
-     "end": 60.862,
-     "start": 60.65,
-     "text": "not"
-    },
-    {
-     "end": 61.188,
-     "start": 60.862,
-     "text": "against"
-    },
-    {
-     "end": 61.4,
-     "start": 61.188,
-     "text": "these"
-    },
-    {
-     "end": 62.5,
-     "start": 61.4,
-     "text": "modules"
-    },
-    {
-     "end": 62.7,
-     "start": 62.5,
-     "text": "."
-    },
-    {
-     "end": 63.375,
-     "start": 62.925,
-     "text": "Singular"
-    },
-    {
-     "end": 63.425,
-     "start": 63.375,
-     "text": "."
-    },
-    {
-     "end": 63.975,
-     "start": 63.425,
-     "text": "Registry"
-    },
-    {
-     "end": 64.075,
-     "start": 63.975,
-     "text": "."
-    },
-    {
-     "end": 64.438,
-     "start": 64.075,
-     "text": "Ledger"
-    },
-    {
-     "end": 64.613,
-     "start": 64.438,
-     "text": "and"
-    },
-    {
-     "end": 65.125,
-     "start": 64.613,
-     "text": "Singular"
-    },
-    {
-     "end": 65.2,
-     "start": 65.125,
-     "text": "."
-    },
-    {
-     "end": 65.725,
-     "start": 65.2,
-     "text": "Registry"
-    },
-    {
-     "end": 65.8,
-     "start": 65.725,
-     "text": "."
-    },
-    {
-     "end": 66.275,
-     "start": 65.8,
-     "text": "Provider"
-    },
-    {
-     "end": 66.387,
-     "start": 66.275,
-     "text": "are"
-    },
-    {
-     "end": 66.475,
-     "start": 66.387,
-     "text": "the"
-    },
-    {
-     "end": 67.775,
-     "start": 66.475,
-     "text": "re-exports"
-    },
-    {
-     "end": 67.975,
-     "start": 67.775,
-     "text": ":"
-    },
-    {
-     "end": 68.375,
-     "start": 68.2,
-     "text": "their"
-    },
-    {
-     "end": 69.338,
-     "start": 68.375,
-     "text": "implementations"
-    },
-    {
-     "end": 69.713,
-     "start": 69.338,
-     "text": "moved"
-    },
-    {
-     "end": 69.925,
-     "start": 69.713,
-     "text": "into"
-    },
-    {
-     "end": 70.037,
-     "start": 69.925,
-     "text": "the"
-    },
-    {
-     "end": 70.688,
-     "start": 70.037,
-     "text": "package's"
-    },
-    {
-     "end": 71.137,
-     "start": 70.688,
-     "text": "private"
-    },
-    {
-     "end": 71.713,
-     "start": 71.137,
-     "text": "ownership"
-    },
-    {
-     "end": 72.15,
-     "start": 71.713,
-     "text": "core"
-    },
-    {
-     "end": 72.25,
-     "start": 72.15,
-     "text": "("
-    },
-    {
-     "end": 74.725,
-     "start": 72.25,
-     "text": "offchain/node-internal/"
-    },
-    {
-     "end": 74.825,
-     "start": 74.725,
-     "text": ")"
-    },
-    {
-     "end": 74.938,
-     "start": 74.825,
-     "text": "and"
-    },
-    {
-     "end": 75.025,
-     "start": 74.938,
-     "text": "the"
-    },
-    {
-     "end": 75.425,
-     "start": 75.025,
-     "text": "public"
-    },
-    {
-     "end": 75.95,
-     "start": 75.425,
-     "text": "library"
-    },
-    {
-     "end": 76.6,
-     "start": 75.95,
-     "text": "re-exports"
-    },
-    {
-     "end": 77.525,
-     "start": 76.6,
-     "text": "them"
-    },
-    {
-     "end": 77.725,
-     "start": 77.525,
-     "text": ","
-    },
-    {
-     "end": 78.012,
-     "start": 77.925,
-     "text": "so"
-    },
-    {
-     "end": 78.175,
-     "start": 78.012,
-     "text": "their"
-    },
-    {
-     "end": 78.625,
-     "start": 78.175,
-     "text": "import"
-    },
-    {
-     "end": 79.15,
-     "start": 78.625,
-     "text": "paths"
-    },
-    {
-     "end": 79.262,
-     "start": 79.15,
-     "text": "and"
-    },
-    {
-     "end": 79.425,
-     "start": 79.262,
-     "text": "their"
-    },
-    {
-     "end": 79.887,
-     "start": 79.425,
-     "text": "entries"
-    },
-    {
-     "end": 79.963,
-     "start": 79.887,
-     "text": "in"
-    },
-    {
-     "end": 80.15,
-     "start": 79.963,
-     "text": "this"
-    },
-    {
-     "end": 80.625,
-     "start": 80.15,
-     "text": "reference"
-    },
-    {
-     "end": 80.775,
-     "start": 80.625,
-     "text": "are"
-    },
-    {
-     "end": 82.0,
-     "start": 80.775,
-     "text": "unchanged"
-    },
-    {
-     "end": 82.225,
-     "start": 82.0,
-     "text": "."
-    },
-    {
-     "end": 82.6,
-     "start": 82.475,
-     "text": "The"
-    },
-    {
-     "end": 82.938,
-     "start": 82.6,
-     "text": "six"
-    },
-    {
-     "end": 83.3,
-     "start": 82.938,
-     "text": "node"
-    },
-    {
-     "end": 83.775,
-     "start": 83.3,
-     "text": "runtime"
-    },
-    {
-     "end": 84.225,
-     "start": 83.775,
+     "end": 48.775,
+     "start": 48.338,
      "text": "owners"
     },
     {
-     "end": 84.35,
-     "start": 84.225,
-     "text": "in"
+     "end": 49.188,
+     "start": 48.775,
+     "text": "behind"
     },
     {
-     "end": 84.575,
-     "start": 84.35,
-     "text": "that"
-    },
-    {
-     "end": 84.988,
-     "start": 84.575,
-     "text": "private"
-    },
-    {
-     "end": 85.412,
-     "start": 84.988,
-     "text": "core"
-    },
-    {
-     "end": 85.588,
-     "start": 85.412,
-     "text": "are"
-    },
-    {
-     "end": 86.25,
-     "start": 85.588,
-     "text": "deliberately"
-    },
-    {
-     "end": 86.512,
-     "start": 86.25,
-     "text": "not"
-    },
-    {
-     "end": 86.812,
-     "start": 86.512,
-     "text": "part"
-    },
-    {
-     "end": 86.9,
-     "start": 86.812,
-     "text": "of"
-    },
-    {
-     "end": 87.137,
-     "start": 86.9,
-     "text": "this"
-    },
-    {
-     "end": 87.825,
-     "start": 87.137,
-     "text": "reference"
-    },
-    {
-     "end": 87.9,
-     "start": 87.825,
-     "text": "—"
-    },
-    {
-     "end": 88.05,
-     "start": 87.9,
-     "text": "they"
-    },
-    {
-     "end": 88.2,
-     "start": 88.05,
-     "text": "are"
-    },
-    {
-     "end": 88.425,
-     "start": 88.2,
-     "text": "not"
-    },
-    {
-     "end": 89.075,
-     "start": 88.425,
-     "text": "importable"
-    },
-    {
-     "end": 89.238,
-     "start": 89.075,
-     "text": "from"
-    },
-    {
-     "end": 89.325,
-     "start": 89.238,
+     "end": 49.275,
+     "start": 49.188,
      "text": "the"
     },
     {
-     "end": 89.725,
-     "start": 89.325,
-     "text": "public"
+     "end": 49.875,
+     "start": 49.275,
+     "text": "Deployment"
     },
     {
-     "end": 90.488,
-     "start": 89.725,
-     "text": "library"
+     "end": 50.487,
+     "start": 49.875,
+     "text": "facade"
     },
     {
-     "end": 90.575,
-     "start": 90.488,
+     "end": 50.588,
+     "start": 50.487,
      "text": "—"
     },
     {
-     "end": 90.7,
-     "start": 90.575,
-     "text": "and"
+     "end": 51.175,
+     "start": 50.588,
+     "text": "Singular"
     },
     {
-     "end": 90.863,
-     "start": 90.7,
-     "text": "are"
-    },
-    {
-     "end": 91.55,
-     "start": 90.863,
-     "text": "documented"
-    },
-    {
-     "end": 91.738,
-     "start": 91.55,
-     "text": "with"
-    },
-    {
-     "end": 92.1,
-     "start": 91.738,
-     "text": "source"
-    },
-    {
-     "end": 92.475,
-     "start": 92.1,
-     "text": "links"
-    },
-    {
-     "end": 92.637,
-     "start": 92.475,
-     "text": "in"
-    },
-    {
-     "end": 93.012,
-     "start": 92.637,
-     "text": "Node"
-    },
-    {
-     "end": 93.4,
-     "start": 93.012,
-     "text": "module"
-    },
-    {
-     "end": 94.7,
-     "start": 93.4,
-     "text": "ownership"
-    },
-    {
-     "end": 94.95,
-     "start": 94.7,
+     "end": 51.275,
+     "start": 51.175,
      "text": "."
     },
     {
-     "end": 95.275,
-     "start": 95.15,
-     "text": "The"
+     "end": 51.875,
+     "start": 51.275,
+     "text": "Registry"
     },
     {
-     "end": 95.675,
-     "start": 95.275,
-     "text": "extent"
+     "end": 51.95,
+     "start": 51.875,
+     "text": "."
     },
     {
-     "end": 96.137,
-     "start": 95.675,
-     "text": "below"
+     "end": 52.55,
+     "start": 51.95,
+     "text": "Deployment"
     },
     {
-     "end": 96.3,
-     "start": 96.137,
-     "text": "is"
+     "end": 52.65,
+     "start": 52.55,
+     "text": "."
     },
     {
-     "end": 96.4,
-     "start": 96.3,
-     "text": "the"
+     "end": 53.95,
+     "start": 52.65,
+     "text": "Manifest"
     },
     {
-     "end": 96.963,
-     "start": 96.4,
-     "text": "complete"
-    },
-    {
-     "end": 97.625,
-     "start": 96.963,
-     "text": "documented"
-    },
-    {
-     "end": 98.012,
-     "start": 97.625,
-     "text": "module"
-    },
-    {
-     "end": 98.675,
-     "start": 98.012,
-     "text": "surface"
-    },
-    {
-     "end": 98.75,
-     "start": 98.675,
-     "text": "—"
-    },
-    {
-     "end": 99.5,
-     "start": 98.75,
-     "text": "exposed"
-    },
-    {
-     "end": 99.588,
-     "start": 99.5,
+     "end": 54.175,
+     "start": 53.95,
      "text": ","
     },
     {
-     "end": 100.325,
-     "start": 99.588,
-     "text": "re-exported"
+     "end": 54.95,
+     "start": 54.45,
+     "text": ".Mirror"
     },
     {
-     "end": 100.45,
-     "start": 100.325,
+     "end": 55.125,
+     "start": 54.95,
      "text": "and"
     },
     {
-     "end": 101.3,
-     "start": 100.45,
+     "end": 55.2,
+     "start": 55.125,
+     "text": "."
+    },
+    {
+     "end": 55.825,
+     "start": 55.2,
+     "text": "Attach"
+    },
+    {
+     "end": 55.912,
+     "start": 55.825,
+     "text": "—"
+    },
+    {
+     "end": 56.088,
+     "start": 55.912,
+     "text": "are"
+    },
+    {
+     "end": 57.0,
+     "start": 56.088,
      "text": "package-internal"
     },
     {
-     "end": 102.325,
-     "start": 101.3,
-     "text": "alike"
+     "end": 57.85,
+     "start": 57.0,
+     "text": "other-modules"
     },
     {
-     "end": 102.55,
-     "start": 102.325,
-     "text": ";"
+     "end": 58.037,
+     "start": 57.85,
+     "text": "with"
     },
     {
-     "end": 102.8,
-     "start": 102.725,
+     "end": 58.662,
+     "start": 58.037,
+     "text": "generated"
+    },
+    {
+     "end": 59.125,
+     "start": 58.662,
+     "text": "pages"
+    },
+    {
+     "end": 59.4,
+     "start": 59.125,
+     "text": "here"
+    },
+    {
+     "end": 59.525,
+     "start": 59.4,
+     "text": "for"
+    },
+    {
+     "end": 59.625,
+     "start": 59.525,
      "text": "the"
     },
     {
-     "end": 103.025,
-     "start": 102.8,
-     "text": "site"
+     "end": 60.287,
+     "start": 59.625,
+     "text": "contributor"
     },
     {
-     "end": 103.275,
-     "start": 103.025,
-     "text": "check"
+     "end": 60.7,
+     "start": 60.287,
+     "text": "reading"
     },
     {
-     "end": 103.588,
-     "start": 103.275,
-     "text": "fails"
+     "end": 60.8,
+     "start": 60.7,
+     "text": "the"
     },
     {
-     "end": 103.95,
-     "start": 103.588,
-     "text": "until"
+     "end": 61.375,
+     "start": 60.8,
+     "text": "facades'"
     },
     {
-     "end": 104.1,
-     "start": 103.95,
-     "text": "it"
+     "end": 63.05,
+     "start": 61.375,
+     "text": "implementations"
     },
     {
-     "end": 104.213,
-     "start": 104.1,
+     "end": 63.25,
+     "start": 63.05,
+     "text": ","
+    },
+    {
+     "end": 63.537,
+     "start": 63.425,
+     "text": "but"
+    },
+    {
+     "end": 63.7,
+     "start": 63.537,
+     "text": "no"
+    },
+    {
+     "end": 63.987,
+     "start": 63.7,
+     "text": "caller"
+    },
+    {
+     "end": 64.275,
+     "start": 63.987,
+     "text": "import"
+    },
+    {
+     "end": 65.025,
+     "start": 64.275,
+     "text": "path"
+    },
+    {
+     "end": 65.25,
+     "start": 65.025,
+     "text": ":"
+    },
+    {
+     "end": 65.525,
+     "start": 65.45,
+     "text": "a"
+    },
+    {
+     "end": 65.9,
+     "start": 65.525,
+     "text": "caller"
+    },
+    {
+     "end": 66.475,
+     "start": 65.9,
+     "text": "compiles"
+    },
+    {
+     "end": 66.812,
+     "start": 66.475,
+     "text": "against"
+    },
+    {
+     "end": 66.9,
+     "start": 66.812,
+     "text": "the"
+    },
+    {
+     "end": 67.4,
+     "start": 66.9,
+     "text": "facades'"
+    },
+    {
+     "end": 68.025,
+     "start": 67.4,
+     "text": "exports"
+    },
+    {
+     "end": 68.1,
+     "start": 68.025,
+     "text": ","
+    },
+    {
+     "end": 68.312,
+     "start": 68.1,
+     "text": "not"
+    },
+    {
+     "end": 68.637,
+     "start": 68.312,
+     "text": "against"
+    },
+    {
+     "end": 68.85,
+     "start": 68.637,
+     "text": "these"
+    },
+    {
+     "end": 69.95,
+     "start": 68.85,
+     "text": "modules"
+    },
+    {
+     "end": 70.15,
+     "start": 69.95,
+     "text": "."
+    },
+    {
+     "end": 70.825,
+     "start": 70.375,
+     "text": "Singular"
+    },
+    {
+     "end": 70.875,
+     "start": 70.825,
+     "text": "."
+    },
+    {
+     "end": 71.425,
+     "start": 70.875,
+     "text": "Registry"
+    },
+    {
+     "end": 71.525,
+     "start": 71.425,
+     "text": "."
+    },
+    {
+     "end": 71.887,
+     "start": 71.525,
+     "text": "Ledger"
+    },
+    {
+     "end": 72.062,
+     "start": 71.887,
      "text": "and"
     },
     {
-     "end": 104.4,
-     "start": 104.213,
+     "end": 72.575,
+     "start": 72.062,
+     "text": "Singular"
+    },
+    {
+     "end": 72.65,
+     "start": 72.575,
+     "text": "."
+    },
+    {
+     "end": 73.175,
+     "start": 72.65,
+     "text": "Registry"
+    },
+    {
+     "end": 73.25,
+     "start": 73.175,
+     "text": "."
+    },
+    {
+     "end": 73.725,
+     "start": 73.25,
+     "text": "Provider"
+    },
+    {
+     "end": 73.838,
+     "start": 73.725,
+     "text": "are"
+    },
+    {
+     "end": 73.925,
+     "start": 73.838,
+     "text": "the"
+    },
+    {
+     "end": 75.225,
+     "start": 73.925,
+     "text": "re-exports"
+    },
+    {
+     "end": 75.425,
+     "start": 75.225,
+     "text": ":"
+    },
+    {
+     "end": 75.825,
+     "start": 75.65,
+     "text": "their"
+    },
+    {
+     "end": 76.787,
+     "start": 75.825,
+     "text": "implementations"
+    },
+    {
+     "end": 77.162,
+     "start": 76.787,
+     "text": "moved"
+    },
+    {
+     "end": 77.375,
+     "start": 77.162,
+     "text": "into"
+    },
+    {
+     "end": 77.488,
+     "start": 77.375,
+     "text": "the"
+    },
+    {
+     "end": 78.137,
+     "start": 77.488,
+     "text": "package's"
+    },
+    {
+     "end": 78.588,
+     "start": 78.137,
+     "text": "private"
+    },
+    {
+     "end": 79.162,
+     "start": 78.588,
+     "text": "ownership"
+    },
+    {
+     "end": 79.6,
+     "start": 79.162,
+     "text": "core"
+    },
+    {
+     "end": 79.7,
+     "start": 79.6,
+     "text": "("
+    },
+    {
+     "end": 82.175,
+     "start": 79.7,
+     "text": "offchain/node-internal/"
+    },
+    {
+     "end": 82.275,
+     "start": 82.175,
+     "text": ")"
+    },
+    {
+     "end": 82.387,
+     "start": 82.275,
+     "text": "and"
+    },
+    {
+     "end": 82.475,
+     "start": 82.387,
+     "text": "the"
+    },
+    {
+     "end": 82.875,
+     "start": 82.475,
+     "text": "public"
+    },
+    {
+     "end": 83.4,
+     "start": 82.875,
+     "text": "library"
+    },
+    {
+     "end": 84.05,
+     "start": 83.4,
+     "text": "re-exports"
+    },
+    {
+     "end": 84.975,
+     "start": 84.05,
+     "text": "them"
+    },
+    {
+     "end": 85.175,
+     "start": 84.975,
+     "text": ","
+    },
+    {
+     "end": 85.463,
+     "start": 85.375,
+     "text": "so"
+    },
+    {
+     "end": 85.625,
+     "start": 85.463,
+     "text": "their"
+    },
+    {
+     "end": 86.075,
+     "start": 85.625,
+     "text": "import"
+    },
+    {
+     "end": 86.6,
+     "start": 86.075,
+     "text": "paths"
+    },
+    {
+     "end": 86.713,
+     "start": 86.6,
+     "text": "and"
+    },
+    {
+     "end": 86.875,
+     "start": 86.713,
+     "text": "their"
+    },
+    {
+     "end": 87.338,
+     "start": 86.875,
+     "text": "entries"
+    },
+    {
+     "end": 87.412,
+     "start": 87.338,
+     "text": "in"
+    },
+    {
+     "end": 87.6,
+     "start": 87.412,
      "text": "this"
     },
     {
-     "end": 104.625,
-     "start": 104.4,
+     "end": 88.075,
+     "start": 87.6,
+     "text": "reference"
+    },
+    {
+     "end": 88.225,
+     "start": 88.075,
+     "text": "are"
+    },
+    {
+     "end": 89.45,
+     "start": 88.225,
+     "text": "unchanged"
+    },
+    {
+     "end": 89.675,
+     "start": 89.45,
+     "text": "."
+    },
+    {
+     "end": 90.05,
+     "start": 89.925,
+     "text": "The"
+    },
+    {
+     "end": 90.387,
+     "start": 90.05,
+     "text": "six"
+    },
+    {
+     "end": 90.75,
+     "start": 90.387,
+     "text": "node"
+    },
+    {
+     "end": 91.225,
+     "start": 90.75,
+     "text": "runtime"
+    },
+    {
+     "end": 91.675,
+     "start": 91.225,
+     "text": "owners"
+    },
+    {
+     "end": 91.8,
+     "start": 91.675,
+     "text": "in"
+    },
+    {
+     "end": 92.025,
+     "start": 91.8,
+     "text": "that"
+    },
+    {
+     "end": 92.438,
+     "start": 92.025,
+     "text": "private"
+    },
+    {
+     "end": 92.863,
+     "start": 92.438,
+     "text": "core"
+    },
+    {
+     "end": 93.037,
+     "start": 92.863,
+     "text": "are"
+    },
+    {
+     "end": 93.7,
+     "start": 93.037,
+     "text": "deliberately"
+    },
+    {
+     "end": 93.963,
+     "start": 93.7,
+     "text": "not"
+    },
+    {
+     "end": 94.262,
+     "start": 93.963,
+     "text": "part"
+    },
+    {
+     "end": 94.35,
+     "start": 94.262,
+     "text": "of"
+    },
+    {
+     "end": 94.588,
+     "start": 94.35,
+     "text": "this"
+    },
+    {
+     "end": 95.275,
+     "start": 94.588,
+     "text": "reference"
+    },
+    {
+     "end": 95.35,
+     "start": 95.275,
+     "text": "—"
+    },
+    {
+     "end": 95.5,
+     "start": 95.35,
+     "text": "they"
+    },
+    {
+     "end": 95.65,
+     "start": 95.5,
+     "text": "are"
+    },
+    {
+     "end": 95.875,
+     "start": 95.65,
+     "text": "not"
+    },
+    {
+     "end": 96.525,
+     "start": 95.875,
+     "text": "importable"
+    },
+    {
+     "end": 96.688,
+     "start": 96.525,
+     "text": "from"
+    },
+    {
+     "end": 96.775,
+     "start": 96.688,
+     "text": "the"
+    },
+    {
+     "end": 97.175,
+     "start": 96.775,
+     "text": "public"
+    },
+    {
+     "end": 97.938,
+     "start": 97.175,
+     "text": "library"
+    },
+    {
+     "end": 98.025,
+     "start": 97.938,
+     "text": "—"
+    },
+    {
+     "end": 98.15,
+     "start": 98.025,
+     "text": "and"
+    },
+    {
+     "end": 98.312,
+     "start": 98.15,
+     "text": "are"
+    },
+    {
+     "end": 99.0,
+     "start": 98.312,
+     "text": "documented"
+    },
+    {
+     "end": 99.188,
+     "start": 99.0,
+     "text": "with"
+    },
+    {
+     "end": 99.55,
+     "start": 99.188,
+     "text": "source"
+    },
+    {
+     "end": 99.925,
+     "start": 99.55,
+     "text": "links"
+    },
+    {
+     "end": 100.088,
+     "start": 99.925,
+     "text": "in"
+    },
+    {
+     "end": 100.463,
+     "start": 100.088,
+     "text": "Node"
+    },
+    {
+     "end": 100.85,
+     "start": 100.463,
+     "text": "module"
+    },
+    {
+     "end": 102.15,
+     "start": 100.85,
+     "text": "ownership"
+    },
+    {
+     "end": 102.4,
+     "start": 102.15,
+     "text": "."
+    },
+    {
+     "end": 102.725,
+     "start": 102.6,
+     "text": "The"
+    },
+    {
+     "end": 103.125,
+     "start": 102.725,
+     "text": "extent"
+    },
+    {
+     "end": 103.588,
+     "start": 103.125,
+     "text": "below"
+    },
+    {
+     "end": 103.75,
+     "start": 103.588,
+     "text": "is"
+    },
+    {
+     "end": 103.85,
+     "start": 103.75,
+     "text": "the"
+    },
+    {
+     "end": 104.412,
+     "start": 103.85,
+     "text": "complete"
+    },
+    {
+     "end": 105.075,
+     "start": 104.412,
+     "text": "documented"
+    },
+    {
+     "end": 105.463,
+     "start": 105.075,
+     "text": "module"
+    },
+    {
+     "end": 106.125,
+     "start": 105.463,
+     "text": "surface"
+    },
+    {
+     "end": 106.2,
+     "start": 106.125,
+     "text": "—"
+    },
+    {
+     "end": 106.95,
+     "start": 106.2,
+     "text": "exposed"
+    },
+    {
+     "end": 107.037,
+     "start": 106.95,
+     "text": ","
+    },
+    {
+     "end": 107.775,
+     "start": 107.037,
+     "text": "re-exported"
+    },
+    {
+     "end": 107.9,
+     "start": 107.775,
+     "text": "and"
+    },
+    {
+     "end": 108.75,
+     "start": 107.9,
+     "text": "package-internal"
+    },
+    {
+     "end": 109.775,
+     "start": 108.75,
+     "text": "alike"
+    },
+    {
+     "end": 110.0,
+     "start": 109.775,
+     "text": ";"
+    },
+    {
+     "end": 110.25,
+     "start": 110.175,
+     "text": "the"
+    },
+    {
+     "end": 110.475,
+     "start": 110.25,
+     "text": "site"
+    },
+    {
+     "end": 110.725,
+     "start": 110.475,
+     "text": "check"
+    },
+    {
+     "end": 111.037,
+     "start": 110.725,
+     "text": "fails"
+    },
+    {
+     "end": 111.4,
+     "start": 111.037,
+     "text": "until"
+    },
+    {
+     "end": 111.55,
+     "start": 111.4,
+     "text": "it"
+    },
+    {
+     "end": 111.662,
+     "start": 111.55,
+     "text": "and"
+    },
+    {
+     "end": 111.85,
+     "start": 111.662,
+     "text": "this"
+    },
+    {
+     "end": 112.075,
+     "start": 111.85,
      "text": "list"
     },
     {
-     "end": 105.475,
-     "start": 104.625,
+     "end": 112.925,
+     "start": 112.075,
      "text": "agree"
     },
     {
-     "end": 105.7,
-     "start": 105.475,
+     "end": 113.15,
+     "start": 112.925,
      "text": "."
     }
    ]
@@ -149861,11 +149966,301 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-39": {
-   "audio_sha256": "0df9602ffa5c2acf3a6f921fe872959843fc41f19a90b15873703af1298177f9",
+   "audio_sha256": "bbc0953cfb663db996066c0e83367d83ad26dbf4a125759b9b9c814737be4dab",
+   "characters": 36,
+   "cost": 2.232e-05,
+   "duration": 2.4,
+   "index": 39,
+   "key": "35ebc82f5662ce247717f25550dafc2546086173786eb4518fb40acdbbcdbd46",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Singular.Registry.TrieState — source",
+   "text": "Singular.Registry.TrieState — source",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.2,
+     "text": "Singular"
+    },
+    {
+     "end": 0.625,
+     "start": 0.575,
+     "text": "."
+    },
+    {
+     "end": 1.075,
+     "start": 0.625,
+     "text": "Registry"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": "."
+    },
+    {
+     "end": 1.612,
+     "start": 1.125,
+     "text": "TrieState"
+    },
+    {
+     "end": 1.675,
+     "start": 1.612,
+     "text": "—"
+    },
+    {
+     "end": 2.4,
+     "start": 1.675,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-this-reference-contains-40": {
+   "audio_sha256": "2a23bd7e94a4ffcf8f3288ab8347c578b1ebf99fb09767b5080207833ca6b8be",
+   "characters": 41,
+   "cost": 2.542e-05,
+   "duration": 2.675,
+   "index": 40,
+   "key": "24950a724bb6146fab82245cf709a6afde7714f335aa5f274ac3a644953bb956",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Singular.Registry.TrieState.Core — source",
+   "text": "Singular.Registry.TrieState.Core — source",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.2,
+     "text": "Singular"
+    },
+    {
+     "end": 0.625,
+     "start": 0.575,
+     "text": "."
+    },
+    {
+     "end": 1.075,
+     "start": 0.625,
+     "text": "Registry"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": "."
+    },
+    {
+     "end": 1.575,
+     "start": 1.125,
+     "text": "TrieState"
+    },
+    {
+     "end": 1.625,
+     "start": 1.575,
+     "text": "."
+    },
+    {
+     "end": 1.837,
+     "start": 1.625,
+     "text": "Core"
+    },
+    {
+     "end": 1.913,
+     "start": 1.837,
+     "text": "—"
+    },
+    {
+     "end": 2.675,
+     "start": 1.913,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-this-reference-contains-41": {
+   "audio_sha256": "f36e6154cedfd036a12529a6ca48160988a51e46abe9045e0c28311a2e1c6433",
+   "characters": 44,
+   "cost": 2.728e-05,
+   "duration": 2.9,
+   "index": 41,
+   "key": "7dd164b941081c6599327120656d77203651daab61cebebc8fcfb97f5c19656c",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Singular.Registry.TrieState.Fixture — source",
+   "text": "Singular.Registry.TrieState.Fixture — source",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.2,
+     "text": "Singular"
+    },
+    {
+     "end": 0.625,
+     "start": 0.575,
+     "text": "."
+    },
+    {
+     "end": 1.075,
+     "start": 0.625,
+     "text": "Registry"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": "."
+    },
+    {
+     "end": 1.625,
+     "start": 1.125,
+     "text": "TrieState"
+    },
+    {
+     "end": 1.675,
+     "start": 1.625,
+     "text": "."
+    },
+    {
+     "end": 2.037,
+     "start": 1.675,
+     "text": "Fixture"
+    },
+    {
+     "end": 2.112,
+     "start": 2.037,
+     "text": "—"
+    },
+    {
+     "end": 2.9,
+     "start": 2.112,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-this-reference-contains-42": {
+   "audio_sha256": "bf2c6c28478b41a23e7e161720b1e40d2ebc05711d7c30afa9a31f68e363e435",
+   "characters": 43,
+   "cost": 2.666e-05,
+   "duration": 2.75,
+   "index": 42,
+   "key": "4e9d277f0e3c36c01f710d1309cfab3f4b9840337b321524b7206dbc2ceec4a3",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Singular.Registry.TrieState.Mirror — source",
+   "text": "Singular.Registry.TrieState.Mirror — source",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.2,
+     "text": "Singular"
+    },
+    {
+     "end": 0.625,
+     "start": 0.575,
+     "text": "."
+    },
+    {
+     "end": 1.075,
+     "start": 0.625,
+     "text": "Registry"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": "."
+    },
+    {
+     "end": 1.625,
+     "start": 1.125,
+     "text": "TrieState"
+    },
+    {
+     "end": 1.675,
+     "start": 1.625,
+     "text": "."
+    },
+    {
+     "end": 1.987,
+     "start": 1.675,
+     "text": "Mirror"
+    },
+    {
+     "end": 2.062,
+     "start": 1.987,
+     "text": "—"
+    },
+    {
+     "end": 2.75,
+     "start": 2.062,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-this-reference-contains-43": {
+   "audio_sha256": "ff8126f9ebd52c3451f95a3d00ecac477f79c2b216dfc0a70aaf2ea287ffa10c",
+   "characters": 42,
+   "cost": 2.604e-05,
+   "duration": 2.75,
+   "index": 43,
+   "key": "21ac922d4fc18774e0491be2b3faa219536239c7789abf44cf4d4cf488fefd09",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Singular.Registry.TrieState.Types — source",
+   "text": "Singular.Registry.TrieState.Types — source",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.2,
+     "text": "Singular"
+    },
+    {
+     "end": 0.625,
+     "start": 0.575,
+     "text": "."
+    },
+    {
+     "end": 1.075,
+     "start": 0.625,
+     "text": "Registry"
+    },
+    {
+     "end": 1.125,
+     "start": 1.075,
+     "text": "."
+    },
+    {
+     "end": 1.65,
+     "start": 1.125,
+     "text": "TrieState"
+    },
+    {
+     "end": 1.725,
+     "start": 1.65,
+     "text": "."
+    },
+    {
+     "end": 1.987,
+     "start": 1.725,
+     "text": "Types"
+    },
+    {
+     "end": 2.05,
+     "start": 1.987,
+     "text": "—"
+    },
+    {
+     "end": 2.75,
+     "start": 2.05,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-this-reference-contains-44": {
+   "audio_sha256": "5cc90a8ee178475e19e664037e215e09eb29f873d0cca3d4c7953e452677eb0f",
    "characters": 41,
    "cost": 2.542e-05,
    "duration": 3.075,
-   "index": 39,
+   "index": 44,
    "key": "196e50b66e37cf3b1b4f6a7efdf71132d390ad48fc222a8af22c3fae4d1b4f72",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -149920,12 +150315,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-40": {
-   "audio_sha256": "03d53c65656b5dc8d6a7eb3775bf156817b36c2493bfa15c533f20758b0e2b18",
+  "docs-offchain-api-reference/what-this-reference-contains-45": {
+   "audio_sha256": "7e1b42649524691c5c28192b2cca7caadd125c8ec41dbfac1ab395d42f093abc",
    "characters": 50,
    "cost": 3.1e-05,
    "duration": 3.625,
-   "index": 40,
+   "index": 45,
    "key": "3cb91afd2d23e1616d0049a8e4239104d33b8146ed19d73046c302899353f5ca",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -149980,12 +150375,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-41": {
-   "audio_sha256": "52e9bb079293ad7902a421f7eb3cc1a1e07e42a846b298ddaf5445e70d294e57",
+  "docs-offchain-api-reference/what-this-reference-contains-46": {
+   "audio_sha256": "0c60d385b7b5bc23157bd3df431fda4cede3bd6323a50479e6367ba6ce71153b",
    "characters": 42,
    "cost": 2.604e-05,
    "duration": 3.1,
-   "index": 41,
+   "index": 46,
    "key": "73c1a1efea829d50fcc31a45d723d4a12b9b28f29dc4929c32a90c66e08dd705",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150040,12 +150435,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-42": {
-   "audio_sha256": "4d7454069d40e2bfd02e3664fe13f097504bbb8dd19a95d20921924424f499bd",
+  "docs-offchain-api-reference/what-this-reference-contains-47": {
+   "audio_sha256": "23d1bb8929e741fcaff9bd769ce3d2d43386b6585434890c489ff053fdfcb5f4",
    "characters": 45,
    "cost": 2.79e-05,
    "duration": 3.325,
-   "index": 42,
+   "index": 47,
    "key": "ac8e28131a9e900c40708ca47fe1793c339f9fcf44a2fcef42500e90c92677cc",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150100,12 +150495,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-43": {
-   "audio_sha256": "d477e0a47d3f579db8ef4922d5abfdc4240227817f908d6f34501792aa1caef0",
+  "docs-offchain-api-reference/what-this-reference-contains-48": {
+   "audio_sha256": "0f58e05eab1b6d37ec0a63b525eead6172983b9337b7d67937f0595c1bf29d95",
    "characters": 51,
    "cost": 3.1620000000000006e-05,
    "duration": 3.65,
-   "index": 43,
+   "index": 48,
    "key": "d9ffda8ab6f13693cff8e4afd97056123751726ceab044786d09320fc83c231a",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150170,12 +150565,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-44": {
-   "audio_sha256": "a5207aadee1e7bf99b3c6405ea56f52b4786fa78cdc0d1bbecb84f7cda21b663",
+  "docs-offchain-api-reference/what-this-reference-contains-49": {
+   "audio_sha256": "72e59ed67e1fae5e5efd47e1e9c4ed3bfb45808e31dbbf7be6682dfb33db88c1",
    "characters": 54,
    "cost": 3.3480000000000005e-05,
    "duration": 3.975,
-   "index": 44,
+   "index": 49,
    "key": "85bccca01d9be6c21718624276965beb65e2229b5d1d83ba6a06590b10674736",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150240,12 +150635,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-45": {
-   "audio_sha256": "f3c33847f5bc3d876948868e60a10e494f94db6e669ba8e6d81d4c8056cb7ac0",
+  "docs-offchain-api-reference/what-this-reference-contains-50": {
+   "audio_sha256": "e74c5a3db0d5d7a1847ce1a78bdb2b756a76d073772b7148f19a325b4c508b93",
    "characters": 52,
    "cost": 3.224e-05,
    "duration": 3.725,
-   "index": 45,
+   "index": 50,
    "key": "3510dbd7f454355183e9a5f923ead2b6d42eb5336d8d773211714eea48d39407",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150310,12 +150705,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-46": {
-   "audio_sha256": "8b58712b09695a8afcd3b85129b26626203afd94648b72ae3111326f976e0826",
+  "docs-offchain-api-reference/what-this-reference-contains-51": {
+   "audio_sha256": "da4cba4a43611e52d2ec8328878afc5c58302a6d26b1fc6685e504c474ea125b",
    "characters": 45,
    "cost": 2.79e-05,
    "duration": 3.3,
-   "index": 46,
+   "index": 51,
    "key": "2fcf9bb9396dbad91a9391fe91bf1d92b8bfae202cf367bda7b562ce9f9e9eb8",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150370,12 +150765,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-47": {
-   "audio_sha256": "afa95c6110f5a0f1fa9dcb78c80ad8370de4b3e8b872e7de93b4239260880203",
+  "docs-offchain-api-reference/what-this-reference-contains-52": {
+   "audio_sha256": "282441f3ad5d72122975ced04d9df2ab03e569697f76e97f17e4cee10397859f",
    "characters": 43,
    "cost": 2.666e-05,
    "duration": 3.25,
-   "index": 47,
+   "index": 52,
    "key": "98c7f40fb6b73fda85090e4e4cfc7ebb8c03190e031d8f5c3e0e481c55e9d753",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150430,12 +150825,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-48": {
-   "audio_sha256": "af6db6af0a9cd69d4ccc7c99e5a5cc2c4fc34ac8d3628089c1d87f7fc8117798",
+  "docs-offchain-api-reference/what-this-reference-contains-53": {
+   "audio_sha256": "d953610a27ae71b673c4d505541caa93f93d21ac36526bafb42cb95040b76ee9",
    "characters": 44,
    "cost": 2.728e-05,
    "duration": 3.2,
-   "index": 48,
+   "index": 53,
    "key": "95eceea47c349e6bd0885ffc28df312aacc3ae708299960833b1fcd2eaf759be",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150490,12 +150885,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-49": {
-   "audio_sha256": "7f36e9a5c4ee3aec2c3706aaf8354900e65ba0891ba9e824244b13925c1d2a0b",
+  "docs-offchain-api-reference/what-this-reference-contains-54": {
+   "audio_sha256": "969d33c9823a3a6c568a8048fec5292101016b45a5ba2eb4ffe7184aa64f552c",
    "characters": 44,
    "cost": 2.728e-05,
    "duration": 3.225,
-   "index": 49,
+   "index": 54,
    "key": "216953383713948417081b817473ed1fe77087b212331126a41815f55353ba4c",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150550,12 +150945,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-50": {
-   "audio_sha256": "1a4d5b69418a58aa49137a3dfbebf7a7cceac7c2a78c66fa58b3246eb80d1103",
+  "docs-offchain-api-reference/what-this-reference-contains-55": {
+   "audio_sha256": "331e5d687b7802b2bff3214741bc2a290e65e905d2e972926fe5f896454def14",
    "characters": 43,
    "cost": 2.666e-05,
    "duration": 3.125,
-   "index": 50,
+   "index": 55,
    "key": "315edd5ed60915ff855fcece5107c54c4682682dbadc69360e3b4a26f092c3cf",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150610,12 +151005,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-51": {
-   "audio_sha256": "9c995d5699f11b198105e2d33dea6464586c80c9a8ea24cc060a5a9f1540388c",
+  "docs-offchain-api-reference/what-this-reference-contains-56": {
+   "audio_sha256": "a5fad6344e8a84efd02e3b2845900cd0f404b73ef58472d4f7dc8985149f03f5",
    "characters": 49,
    "cost": 3.0380000000000004e-05,
    "duration": 3.575,
-   "index": 51,
+   "index": 56,
    "key": "672171cce0ca008ba5afff7898b471cea7420b8ab229b787abe80f074ec65f7c",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150680,12 +151075,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-52": {
-   "audio_sha256": "a272f0f9862039a3ed33c2476dd597fc004a25f8c8586d9d2ecdf080fe65ae6f",
+  "docs-offchain-api-reference/what-this-reference-contains-57": {
+   "audio_sha256": "fb2f51d141e18ab1cfbdd6370a56cf8c7066fc5a09c4cd8da197a2cd07c12841",
    "characters": 51,
    "cost": 3.1620000000000006e-05,
    "duration": 3.75,
-   "index": 52,
+   "index": 57,
    "key": "e61b76014841706a8886cea0a1d02d51f55464c4d4f8591eea4ba84715a81ca8",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150750,12 +151145,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-53": {
-   "audio_sha256": "82111e4b5ec6288762c4ddf9763847d439a436ed5ece0a52d6a7fddcbaf0b41f",
+  "docs-offchain-api-reference/what-this-reference-contains-58": {
+   "audio_sha256": "6ebedbe828eeea5eaa37fa62ae3d37c8b72b295bdda973397e2c16187f0851ea",
    "characters": 50,
    "cost": 3.1e-05,
    "duration": 3.55,
-   "index": 53,
+   "index": 58,
    "key": "3700a7142c999ffa31cee54a0952fe66a713033ca50228e4eb94118e69c171fa",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150820,12 +151215,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-54": {
-   "audio_sha256": "2ea7d9e6c38c1a09d821edd06c0fb425d83ec2b57ab612929a803aead04efd2f",
+  "docs-offchain-api-reference/what-this-reference-contains-59": {
+   "audio_sha256": "9f5c2797bccaac3386b8ee61ab20b3ba6e962a57defc69a9238c0a963a1da2a7",
    "characters": 32,
    "cost": 1.984e-05,
    "duration": 2.075,
-   "index": 54,
+   "index": 59,
    "key": "ac473fdc46a2ed6f2e9abf8b48ad277a28fcfd8e0589d37a7a2d1612f487a4a2",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150870,12 +151265,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-55": {
-   "audio_sha256": "d33836fd7d09eacd28c3cc4f059297d934edc038dc2607a84c7c4bef1db7a3f1",
+  "docs-offchain-api-reference/what-this-reference-contains-60": {
+   "audio_sha256": "866922d232ed5f386927641278a6cfc4a561f8a71b19018d24660a9d874229df",
    "characters": 41,
    "cost": 2.542e-05,
    "duration": 2.675,
-   "index": 55,
+   "index": 60,
    "key": "a4dc4ae065a0371358227c4062251086d768ecc8c2ba4dc24abf369010059598",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150930,12 +151325,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-56": {
-   "audio_sha256": "d24258a3450d54b625fd586250bbb1f1e8e3a6ad5191ac19a7c16e21e59cb52f",
+  "docs-offchain-api-reference/what-this-reference-contains-61": {
+   "audio_sha256": "ddb928969ad79b3663a2cc45a375ac38ee01da8efb4b5fd9bb97c1a813ff4a5d",
    "characters": 37,
    "cost": 2.294e-05,
    "duration": 2.425,
-   "index": 56,
+   "index": 61,
    "key": "0443b025b94e50cfa7a5f0ec7e9d76c65a2b52327b2df4ac07ab258123738186",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -150990,12 +151385,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-57": {
-   "audio_sha256": "6e715d91a3e18b4cb2519d47084355eae08cd90fc9f45611f008742a11c8466a",
+  "docs-offchain-api-reference/what-this-reference-contains-62": {
+   "audio_sha256": "4eae6d8f0758ff15c84d545fad8c33981b9580be16a452849d10bbcf9440351d",
    "characters": 40,
    "cost": 2.48e-05,
    "duration": 2.65,
-   "index": 57,
+   "index": 62,
    "key": "993d6c086bbe886abf7cedf21b377fba84239eee5fd8d0f1c63b5fcac5a275b1",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -151050,12 +151445,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-58": {
-   "audio_sha256": "79d91005be992569c0c156e4f58bc588386b35d27606426e8114817516b734de",
+  "docs-offchain-api-reference/what-this-reference-contains-63": {
+   "audio_sha256": "4862beb6001ab0a2e70399331b2634f61212ac472e73135a22a34cef331e5bc0",
    "characters": 39,
    "cost": 2.418e-05,
    "duration": 2.575,
-   "index": 58,
+   "index": 63,
    "key": "b5803ad304e5558be22995d02588a82e294276a3c5e1cdce298c4a57acbe7420",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -151110,12 +151505,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-59": {
-   "audio_sha256": "dfcd62f887167ebbc5a446934b144b2935a4b05c0497d50da60b9247767b8674",
+  "docs-offchain-api-reference/what-this-reference-contains-64": {
+   "audio_sha256": "791319d2a5aa5cd9766b919dd484bf43108078e26f865516e263a0a53768cb91",
    "characters": 37,
    "cost": 2.294e-05,
    "duration": 2.475,
-   "index": 59,
+   "index": 64,
    "key": "896a4a387f305831d1c5a108e07324c41b852a9c46c8e558cddaf85703e8fa63",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
@@ -151170,12 +151565,12 @@
     }
    ]
   },
-  "docs-offchain-api-reference/what-this-reference-contains-60": {
-   "audio_sha256": "ec4adb3c1a046936787536cb5edf211f79363628aecbf230b3add2ca60fadfd1",
+  "docs-offchain-api-reference/what-this-reference-contains-65": {
+   "audio_sha256": "1726e09e11509c11862af64654f44d635292ceec3c86d8b736f5548cf2eb9480",
    "characters": 237,
    "cost": 0.00014694,
    "duration": 14.5,
-   "index": 60,
+   "index": 65,
    "key": "8750595b312ac6e56c04c73a43d1c94c835e4269728a2e03a24ca92db6678a72",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,

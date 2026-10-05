@@ -283,7 +283,7 @@ runUpdate a = case entryMode a of
             let s = savedOf at
                 wc = atWrite at
                 addr = walletAddr (wcWallet wc)
-            rootBefore <- mirrorRoot s (atMirror at)
+            rootBefore <- selectedMirrorRoot (atMirror at)
             -- The live output, its controller, the funding output, the
             -- parameters, the script evaluation and the outlay judged against
             -- the allowance all come from the update's one view.
