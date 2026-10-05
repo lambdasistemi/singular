@@ -188,13 +188,14 @@ nodeSpec = describe "node adapter over withAcquired" $ do
             fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
         (point, utxos, registered) <-
             withView
-                (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake)) $ \v -> do
-                utxos <- viewUTxOsAt v payer
-                registered <- viewScriptRegistered v credential
-                _ <- viewPosixMsToSlot v 5_000
-                _ <- viewPosixMsCeilSlot v 5_000
-                _ <- viewEvaluateTx v (mkBasicTx mkBasicTxBody)
-                pure (viewPoint v, utxos, registered)
+                (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake))
+                $ \v -> do
+                    utxos <- viewUTxOsAt v payer
+                    registered <- viewScriptRegistered v credential
+                    _ <- Services.floorSlot v 5_000
+                    _ <- Services.ceilingSlot v 5_000
+                    _ <- Services.evaluateTx v (mkBasicTx mkBasicTxBody)
+                    pure (viewPoint v, utxos, registered)
         readIORef acquisitions `shouldReturn` 1
         point
             `shouldBe` ChainPoint

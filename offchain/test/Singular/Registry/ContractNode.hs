@@ -140,6 +140,7 @@ import Singular.Registry.Node.Session
 import Singular.Registry.Node.Submit (signTx, signedTx)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider (Provider (..), View (..))
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TimeMaterial (loadTimeMaterial)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -548,7 +549,7 @@ phaseLogOnDevnet =
                         _ <-
                             withNodeReads devnetMagicWord sock $ \r ->
                                 withView (nrProvider r) $ \v ->
-                                    viewPosixMsToSlot v 1_000_000
+                                    Services.floorSlot v 1_000_000
                         objects <- logObjects path
                         length (phaseLines "session-open" objects) `shouldBe` 1
                         length (filter (== "posixMsToSlot") (queryNames objects))

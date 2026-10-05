@@ -9,16 +9,13 @@ module Singular.Registry.Node.PhaseLog
     , loggedProvider
     ) where
 
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Exception (SomeException (..), finally, throwIO, try)
 import Control.Monad (unless)
 import Data.Aeson ((.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
-import Data.Either (rights)
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text.Encoding qualified as TE
 import Data.Typeable (typeOf)
@@ -83,26 +80,10 @@ logged lg v =
         , viewPhaseLog = lg
         , viewScriptRegistered =
             query "scriptRegistered" (const 1) . viewScriptRegistered v
-        , viewEvaluateTx = \tx -> do
-            r <- query "evaluateTx" Map.size (viewEvaluateTx v tx)
-            logPhase lg "eval" (exUnitFields r)
-            pure r
-        , viewPosixMsToSlot =
-            query "posixMsToSlot" (const 1) . viewPosixMsToSlot v
-        , viewPosixMsCeilSlot =
-            query "posixMsCeilSlot" (const 1) . viewPosixMsCeilSlot v
         }
   where
     query :: Text -> (a -> Int) -> IO a -> IO a
     query = queryPhase lg
-    exUnitFields r =
-        let done = rights (Map.elems r)
-            total f = sum [toInteger (f u) | u <- done]
-        in  [ "redeemers" .= Map.size r
-            , "failed" .= (Map.size r - length done)
-            , "mem" .= total (\(ExUnits m _) -> m)
-            , "steps" .= total (\(ExUnits _ s) -> s)
-            ]
 
 hexText :: ByteString -> Text
 hexText = TE.decodeUtf8 . B16.encode

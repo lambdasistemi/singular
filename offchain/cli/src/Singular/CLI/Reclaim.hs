@@ -52,6 +52,7 @@ import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
 import Singular.Registry.Node (Wallet (..), bech32Address)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , addrWitnessKeyHash
@@ -135,7 +136,7 @@ runReclaim a = attached
                         _ -> stop "the view cannot establish the opening of the retract window"
                     ceilStart <-
                         toInteger . Cage.unSlotNo
-                            <$> Cage.viewPosixMsCeilSlot v (processingEnds bounds)
+                            <$> Services.ceilingSlot v (processingEnds bounds)
                     funded <-
                         fundedView (reclaimFund a) wallet v
                             >>= either (stop . ("the wallet cannot fund the reclaim: " <>)) pure

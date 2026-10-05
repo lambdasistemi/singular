@@ -50,7 +50,6 @@ import Singular.Registry.Provider
     , ViewFailure (..)
     , scopedProvider
     )
-import Singular.Registry.Services qualified as Services
 import Singular.Registry.TimeMaterial (TimeMaterial, timeFromRaw)
 
 -- | Raw facts and immutable time material from one held acquisition.
@@ -93,9 +92,6 @@ nodeProvider magic@(NetworkMagic magicWord) material raw = scopedProvider $ \act
                     , viewScriptRegistered = \sh -> lost $ do
                         let credential = ScriptHashObj sh
                         Map.member credential <$> rawRewards h (Set.singleton credential)
-                    , viewEvaluateTx = Services.evaluateTx view
-                    , viewPosixMsToSlot = Services.floorSlot view
-                    , viewPosixMsCeilSlot = Services.ceilingSlot view
                     }
         action view
 

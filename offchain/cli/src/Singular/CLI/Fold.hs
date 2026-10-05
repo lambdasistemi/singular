@@ -112,6 +112,7 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.Node (Wallet (..))
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Edges (registryContextFor)
 import Singular.Registry.TxBuilder.Internal
@@ -170,7 +171,7 @@ deadlineOf v r st = do
 
 slotAt :: Cage.View IO -> Integer -> IO (Maybe SlotNo)
 slotAt v ms = do
-    placed <- try (Cage.viewPosixMsToSlot v ms)
+    placed <- try (Services.floorSlot v ms)
     case placed of
         Right slot -> pure (Just slot)
         Left (e :: SomeException)

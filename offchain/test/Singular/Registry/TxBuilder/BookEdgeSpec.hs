@@ -103,9 +103,6 @@ provider =
             { viewUTxOsAt = \_ ->
                 pure
                     [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
-            , viewEvaluateTx = \_ -> fail "bookEdge evaluates nothing"
-            , viewPosixMsToSlot = \_ -> fail "bookEdge queries no slot"
-            , viewPosixMsCeilSlot = \_ -> fail "bookEdge queries no slot"
             }
 
 -- | Run the builder and keep the transaction it submits.

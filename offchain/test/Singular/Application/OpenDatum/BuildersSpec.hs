@@ -30,9 +30,18 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import Test.Hspec
 
-import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -280,7 +289,10 @@ updates = describe "a payload update" $ do
                                 ]
                         }
                 funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
-                held = liveWith 1 (Just (envelopeToData envelope))
+                held =
+                    liveWith 1 (Just (envelopeToData envelope))
+                        & addrTxOutL
+                            .~ Addr Testnet (ScriptHashObj (computeScriptHash applied)) StakeRefNull
             built <-
                 withView (loggedProvider (phaseLogAt path) (servingView view)) $ \v ->
                     updatePayloadTx

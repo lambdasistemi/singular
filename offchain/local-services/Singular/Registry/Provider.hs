@@ -7,8 +7,10 @@ The only way to read the chain is to acquire a 'View' with 'withView'
 and read through it. A view is one acquired ledger state: it names the
 chain point it was acquired at ('viewPoint'), carries the protocol
 parameters captured once at acquisition ('viewProtocolParams'), and
-answers every other read — UTxOs, script-credential registration, time
-to slot, script evaluation — from that same state. Building one
+answers raw UTxO and script-credential reads from that state. Its immutable
+validated time material and exact resolved outputs feed the common local
+services in "Singular.Registry.Services"; a provider selects neither an
+evaluator nor a conversion. Building one
 transaction is one operation: its preview, its fee and outlay decisions
 and its body come from one view, and a change the chain makes after the
 acquisition never reaches them.
@@ -53,7 +55,6 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Slotting.Slot (SlotNo (..))
 
-import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger
     ( Addr
     , ConwayEra
@@ -105,18 +106,6 @@ data View m = View
     {- ^ Whether a script credential has a registered reward account,
     including a zero balance
     -}
-    , viewEvaluateTx
-        :: ConwayTx
-        -> m (EvaluateTxResult ConwayEra)
-    -- ^ Script execution units of a transaction
-    , viewPosixMsToSlot
-        :: Integer
-        -> m SlotNo
-    -- ^ POSIX time (ms) to slot, floor
-    , viewPosixMsCeilSlot
-        :: Integer
-        -> m SlotNo
-    -- ^ POSIX time (ms) to slot, ceiling
     }
 
 -- | The chain read interface: acquire a view and read through it.
@@ -156,9 +145,6 @@ guarded open v =
         , viewTimeContext = inScope (viewTimeContext v)
         , viewResolvedOutputs = inScope . viewResolvedOutputs v
         , viewScriptRegistered = inScope . viewScriptRegistered v
-        , viewEvaluateTx = inScope . viewEvaluateTx v
-        , viewPosixMsToSlot = inScope . viewPosixMsToSlot v
-        , viewPosixMsCeilSlot = inScope . viewPosixMsCeilSlot v
         }
   where
     inScope :: IO a -> IO a

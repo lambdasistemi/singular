@@ -39,8 +39,6 @@ import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
 import Ouroboros.Network.Block qualified as Chain
 import Singular.Registry.NetworkTime
     ( NetworkTimeManifest (..)
-    , posixMsCeilingSlot
-    , posixMsFloorSlot
     , validateNetworkTime
     )
 import Singular.Registry.Node (confirmDeadline)
@@ -89,25 +87,18 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                     slot
                     (SBS.fromShort header)
                 )
-    requests <- newIORef []
-    let convertTime operation ms = do
-            let result = operation context ms
-            modifyIORef' requests (<> [(ms, show result)])
-            either (fail . show) pure result
-        unused :: IO a
+    requests <- newIORef (0 :: Int)
+    let unused :: IO a
         unused = fail "ConfirmationProbeUnexpectedRawRead"
         view =
             View
                 { viewPoint = point
                 , viewProtocolParams = pp
-                , viewTimeContext = pure context
+                , viewTimeContext = modifyIORef' requests (+ 1) >> pure context
                 , viewResolvedOutputs = const unused
                 , viewPhaseLog = noPhaseLog
                 , viewUTxOsAt = const unused
                 , viewScriptRegistered = const unused
-                , viewEvaluateTx = const unused
-                , viewPosixMsToSlot = convertTime posixMsFloorSlot
-                , viewPosixMsCeilSlot = convertTime posixMsCeilingSlot
                 }
         tx =
             mkBasicTx
@@ -124,10 +115,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                 , "genesisSha256" .= hexDigest genesis
                 , "eraHistorySha256" .= hexDigest history
                 , "horizonSlot" .= horizon
-                , "requests"
-                    .= [ object ["posixMs" .= ms, "localResult" .= answer]
-                       | (ms, answer) <- calls
-                       ]
+                , "rawContextReads" .= calls
                 , "callerResult" .= either displayException show result
                 , "limits"
                     .= ( "Existing caller through common time only; raw adapter migration and journey not established"

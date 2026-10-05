@@ -63,7 +63,6 @@ import Singular.Registry.Provider
     , ViewFailure (..)
     , scopedProvider
     )
-import Singular.Registry.Services qualified as Services
 
 -- | Everything the in-memory chain holds.
 data ChainState = ChainState
@@ -134,9 +133,6 @@ memoryProvider chain = scopedProvider $ \action -> do
                         [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]
                 , viewScriptRegistered = \sh ->
                     reading . pure $ Set.member sh (csRegistered s)
-                , viewEvaluateTx = Services.evaluateTx view
-                , viewPosixMsToSlot = Services.floorSlot view
-                , viewPosixMsCeilSlot = Services.ceilingSlot view
                 }
     action view
   where

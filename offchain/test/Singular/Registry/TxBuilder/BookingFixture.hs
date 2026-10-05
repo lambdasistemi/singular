@@ -120,7 +120,7 @@ program = serialiseUPLC (UPLC.Program () plcVersion110 term)
                 (app (builtin SliceByteString) (mkConstant () (0 :: Integer)))
                 count
             )
-            (UPLC.Var () (UPLC.DeBruijn 2))
+            (app (builtin UnBData) (UPLC.Var () (UPLC.DeBruijn 2)))
     digest = app (builtin Sha2_256) bytes
 
 codes :: NamingCodes
