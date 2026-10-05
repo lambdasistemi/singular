@@ -29,7 +29,6 @@ module Singular.Registry.TxBuilder.MeasuredBookingSpec (spec) where
 
 import Control.Exception (ErrorCall, evaluate, try)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.List (maximumBy)
 import Data.Map.Strict qualified as Map

@@ -36,7 +36,7 @@ import Test.QuickCheck
     )
 
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -44,7 +44,6 @@ import Cardano.Ledger.Api.Tx.Out
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
     , SlotNo (..)
@@ -57,21 +56,29 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 
+import Data.Set qualified as Set
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
 import Singular.Registry.Provider (View (..))
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.SyntheticLedger
+    ( unitProgram
+    , withSyntheticCosts
+    )
+import Singular.Registry.SyntheticTime
+    ( syntheticTime
+    , syntheticTimeWith
+    )
 import Singular.Registry.TxBuilder.BookingFixture
     ( applicationScript
-    , cfg
     , payer
     , preprodParams
     , tokenId
     )
+import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
 import Singular.Registry.TxBuilder.CollateralJudgement
     ( Spend (..)
     , judgeCollateral
@@ -88,6 +95,10 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (CageDatum (..), OnChainRoot (..))
+
+-- The request pin consumes two parameters followed by its V3 context.
+cfg :: CageConfig
+cfg = Fixture.cfg{requestScriptBytes = unitProgram 3}
 
 txIn :: Char -> Int -> TxIn
 txIn c i =
@@ -201,14 +212,17 @@ chainView sc submittedAt horizon =
                         if addr == cageAddrFromCfg cfg Testnet
                             then [(stateIn, stateOut)]
                             else wallet sc
-        , viewProtocolParams = preprodParams
-        , viewEvaluateTx = \tx ->
-            let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-            in  pure (Map.map (const (Right (ExUnits 400_000 150_000_000))) m)
-        , viewPosixMsToSlot = \ms -> case horizon of
-            Just limit | ms > limit -> fail "PastHorizon"
-            _ -> pure (SlotNo (fromIntegral (ms `div` 1000)))
-        , viewPosixMsCeilSlot = \ms -> pure (SlotNo (fromIntegral ((ms + 999) `div` 1000)))
+        , viewProtocolParams = withSyntheticCosts preprodParams
+        , viewTimeContext = pure $ case horizon of
+            Nothing -> syntheticTime
+            Just limit -> syntheticTimeWith 0 1 (fromIntegral (limit `div` 1000 + 1))
+        , viewResolvedOutputs = \wanted ->
+            pure
+                [ (reference, output)
+                | (reference, output) <-
+                    (requestIn, requestOut submittedAt) : (stateIn, stateOut) : wallet sc
+                , reference `Set.member` wanted
+                ]
         }
 
 spec :: Spec

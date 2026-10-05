@@ -4,12 +4,14 @@ default model, in the language's ledger order, never a live recording.
 module Singular.Registry.SyntheticLedger
     ( withSyntheticCosts
     , withCostCoefficients
+    , unitProgram
     ) where
 
 import Cardano.Ledger.Alonzo.Scripts (mkCostModel, mkCostModels)
 import Cardano.Ledger.Api.PParams (ppCostModelsL)
 import Cardano.Ledger.Core (PParams)
 import Cardano.Ledger.Plutus (ExUnits (..), Language (PlutusV3))
+import Data.ByteString.Short qualified as SBS
 import Data.Int (Int64)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -18,9 +20,12 @@ import Lens.Micro ((&), (.~))
 import PlutusCore.Evaluation.Machine.ExBudgetingDefaults
     ( defaultCostModelParamsForTesting
     )
+import PlutusCore.MkPlc (mkConstant)
+import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.Common (showParamName)
 import PlutusLedgerApi.V3 qualified as PLC
 import Singular.Registry.Ledger (ConwayEra)
+import UntypedPlutusCore qualified as UPLC
 
 withSyntheticCosts :: PParams ConwayEra -> PParams ConwayEra
 withSyntheticCosts = withModel (\_ value -> value)
@@ -60,3 +65,11 @@ withModel change params =
                 id
                 (mkCostModel PlutusV3 ordered)
     in  params & ppCostModelsL .~ mkCostModels (Map.singleton PlutusV3 model)
+
+-- | Synthetic V3 witnesses must return unit after their actual parameters.
+unitProgram :: Int -> SBS.ShortByteString
+unitProgram parameters =
+    PLC.serialiseUPLC $
+        UPLC.Program () plcVersion110 $
+            iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) (mkConstant () ())
+                !! parameters

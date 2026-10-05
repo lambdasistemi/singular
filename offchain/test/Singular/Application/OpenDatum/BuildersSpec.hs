@@ -31,9 +31,7 @@ import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -41,13 +39,10 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import PlutusCore.Data qualified as PLC
-import PlutusCore.Version (plcVersion110)
-import PlutusLedgerApi.V3 (serialiseUPLC)
-import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.DeBruijn ()
 
+import Data.Set qualified as Set
 import Singular.Application.OpenDatum.Book
 import Singular.Application.OpenDatum.Envelope
 import Singular.Application.OpenDatum.Script
@@ -71,6 +66,11 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
 import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
 import Singular.Registry.Provider (View (..), withView)
 import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SyntheticLedger
+    ( unitProgram
+    , withSyntheticCosts
+    )
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
@@ -96,13 +96,7 @@ spec = describe "the open-datum builders" $ do
 
 -- | A well-formed one-parameter program, so parameters can be applied.
 program :: SBS.ShortByteString
-program =
-    serialiseUPLC
-        ( UPLC.Program
-            ()
-            plcVersion110
-            (UPLC.LamAbs () (UPLC.DeBruijn 0) (UPLC.Var () (UPLC.DeBruijn 1)))
-        )
+program = unitProgram 2
 
 registryId, otherRegistryId :: ByteString
 registryId = BS.replicate 28 0x1f <> "cage-token"
@@ -276,11 +270,15 @@ updates = describe "a payload update" $ do
             evaluations <- newIORef (0 :: Int)
             let view =
                     stubView
-                        { viewProtocolParams = preprodParams
-                        , viewEvaluateTx = \tx -> do
+                        { viewProtocolParams = withSyntheticCosts preprodParams
+                        , viewTimeContext = pure syntheticTime
+                        , viewResolvedOutputs = \wanted -> do
                             atomicModifyIORef' evaluations (\n -> (n + 1, ()))
-                            let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-                            pure (Map.map (const (Right (ExUnits 500_000 200_000_000))) m)
+                            pure
+                                [ (reference, output)
+                                | (reference, output) <- [(ref '4' 1, held), (ref '6' 0, funding)]
+                                , reference `Set.member` wanted
+                                ]
                         }
                 funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
                 held = liveWith 1 (Just (envelopeToData envelope))
