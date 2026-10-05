@@ -368,11 +368,10 @@ computeRefund pp net tipAmount reqOut =
 return the first that succeeds: an upper validity bound.
 
 'trySlots' rounds up, which is right for a lower bound but not for an upper
-one. A time in the horizon's last slot converts, since the time is inside
-the horizon, and rounding up then yields the horizon slot itself, which is
-exclusive: the node cannot translate a bound there, and evaluation fails
-@TimeTranslationPastHorizon@. Rounding down keeps the bound inside the
-horizon whenever the time is.
+one. Rounding down never puts the upper bound later than its chosen POSIX
+candidate. NOTE030 opens the pinned final era, preserving this rounding rule
+and the caller's candidate windows. Synchronous conversion failures still
+try the next candidate; cancellation escapes.
 -}
 tryUpperSlots
     :: Session NoWitness IO -> [Integer] -> IO SlotNo

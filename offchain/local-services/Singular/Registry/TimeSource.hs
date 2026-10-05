@@ -1,6 +1,7 @@
 {- | Public pinned source bytes. The terminal reads one immutable directory
 per acquisition. A private facade may publish a new directory for a later
-acquisition; a session never changes its source or extends its horizon.
+acquisition; a session never changes its source. The common interpreter opens
+the pinned final era under NOTE030, with a major-version guard before building.
 -}
 module Singular.Registry.TimeSource
     ( TimeSource (..)

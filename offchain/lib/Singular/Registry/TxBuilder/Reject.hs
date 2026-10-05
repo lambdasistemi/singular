@@ -255,7 +255,9 @@ rejectValidity view = do
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
     let finalUpper = max (lowerSlot + 1) upperSlot
     _ <- Services.slotStart view finalUpper
-    pure (lowerSlot, finalUpper)
+    capped <-
+        Services.validityUpper view lowerSlot (Just lowerSlot) finalUpper
+    pure (lowerSlot, capped)
 
 -- | Wrap common local evaluation for the story language.
 mkRejectEvalTx

@@ -203,8 +203,13 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
                 , min phase2End (nowMs + 3_000)
                 ]
             )
-    let upperSlot = SlotNo (max 0 (s - 1))
-        script = mkRequestScript cfg tid
+    upperSlot <-
+        Services.validityUpper
+            view
+            (observedSlot observed)
+            (Just lowerSlot)
+            (SlotNo (max 0 (s - 1)))
+    let script = mkRequestScript cfg tid
         scriptHash = hashScript script
         allInputs =
             Set.fromList [reqIn, fst feeUtxo]

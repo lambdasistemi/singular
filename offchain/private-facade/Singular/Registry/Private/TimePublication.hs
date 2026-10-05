@@ -1,12 +1,18 @@
 {- | Immutable private-devnet time publications. The symlink changes only
 after all three public files have been written and validated. A command's
 loadPinnedSource resolves that link once per acquisition. Neither a held
-session nor this publisher extends the node's finite era-history horizon.
+session rewrites the captured node history. Conversion opens its final era,
+with safety supplied by the pinned protocol major checked before building.
 -}
 module Singular.Registry.Private.TimePublication
     ( publishTime
     ) where
 
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
+import Cardano.Ledger.BaseTypes (ProtVer (..))
+import Cardano.Ledger.Binary (getVersion, serialize')
+import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Slotting.Time (SystemStart (..))
 import Codec.Serialise (DeserialiseFailure, deserialiseOrFail)
 import Control.Exception (throwIO)
@@ -21,6 +27,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Unique (hashUnique, newUnique)
+import Lens.Micro ((^.))
 import Ouroboros.Consensus.HardFork.History.Summary
     ( Bound (..)
     , EraEnd (..)
@@ -61,6 +68,7 @@ publishTime root genesis source = do
                 (digest genesis)
                 (digest history)
                 horizon
+                major
                 identity
         value =
             object
@@ -69,6 +77,8 @@ publishTime root genesis source = do
                 , "genesisSha256" .= hex (digest genesis)
                 , "eraHistorySha256" .= hex (digest history)
                 , "horizonSlot" .= horizon
+                , "protocolMajor" .= major
+                , "protocolParametersCBOR" .= hex parameterBytes
                 , "sourceIdentity" .= identity
                 ]
     context <-
@@ -88,5 +98,10 @@ publishTime root genesis source = do
     pure context
   where
     history = timeSourceEraHistory source
+    parameterBytes =
+        serialize' (eraProtVerHigh @ConwayEra) (timeSourceParameters source)
+    major =
+        getVersion
+            (pvMajor (timeSourceParameters source ^. ppProtocolVersionL))
     digest bytes = convert (hash bytes :: Digest SHA256)
     hex = decodeUtf8 . B16.encode

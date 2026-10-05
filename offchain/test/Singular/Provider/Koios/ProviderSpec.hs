@@ -1048,46 +1048,44 @@ spec = describe "Koios ledger provider constructor" $ do
                     "the finite validity window did not end at its validated deadline"
         Set.null (openSessions state) `shouldBe` True
 
-    it "refuses a ledger upper bound outside the horizon before polling" $ do
-        (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
-        let source = TimeSource manifest genesis eras
-            base = timeSystemStartMs manifest + 1000
-            upper = SlotNo 501
-            (original, _, _) = dependentPair True
-            target =
-                original
-                    & bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust upper)
-            provider =
-                koiosProvider
-                    pollProviderRuntime
-                    (Network 42)
-                    (pure (Right source))
-                    (pollingClient target (Just base) (timeSystemStartMs manifest))
-            (result, (state, now, bounds)) =
-                runState
-                    ( Confirmation.confirmTransaction
-                        (pollingRuntime base)
-                        provider
+    it
+        "confirms an exact output with an upper bound beyond the old horizon"
+        $ do
+            (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
+            let source = TimeSource manifest genesis eras
+                base = timeSystemStartMs manifest + 1000
+                upper = SlotNo 501
+                (original, _, _) = dependentPair True
+                target =
+                    original
+                        & bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust upper)
+                provider =
+                    koiosProvider
+                        pollProviderRuntime
                         (Network 42)
-                        target
-                    )
-                    (initialProviderState, base, [])
-        persist "pure-upper-bound-refused" $
-            object
-                [ "result" .= show result
-                , "events" .= map eventJson (providerEvents state)
-                ]
-        case result of
-            Left (Confirmation.ConfirmationTimeFailure (SlotPastHorizon observed)) -> do
-                observed `shouldBe` upper
-            _ ->
-                expectationFailure
-                    "a ledger horizon refusal was weakened into a fallback"
-        bounds `shouldBe` [30]
-        now `shouldBe` base
-        length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 0
-        nextSessionNumber state `shouldBe` 1
-        Set.null (openSessions state) `shouldBe` True
+                        (pure (Right source))
+                        (pollingClient target (Just base) (timeSystemStartMs manifest))
+                (result, (state, now, bounds)) =
+                    runState
+                        ( Confirmation.confirmTransaction
+                            (pollingRuntime base)
+                            provider
+                            (Network 42)
+                            target
+                        )
+                        (initialProviderState, base, [])
+            persist "pure-upper-bound-extended" $
+                object
+                    [ "result" .= show result
+                    , "events" .= map eventJson (providerEvents state)
+                    ]
+            either (Left . show) Right result `shouldBe` Right ()
+            bounds `shouldBe` [30, 180]
+            now `shouldBe` base
+            length [() | RawExchange _ _ _ <- providerEvents state]
+                `shouldSatisfy` (> 0)
+            nextSessionNumber state `shouldBe` 2
+            Set.null (openSessions state) `shouldBe` True
 
     it
         "uses signed-only submission in pure State with network and verdict preservation"

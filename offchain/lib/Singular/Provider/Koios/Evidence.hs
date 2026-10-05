@@ -51,6 +51,7 @@ providerEventJson = \case
             , "genesisSha256" .= hex (timeGenesisSha256 manifest)
             , "eraHistorySha256" .= hex (timeEraHistorySha256 manifest)
             , "horizonSlot" .= timeHorizonSlot manifest
+            , "protocolMajor" .= timeProtocolMajor manifest
             , "sourceIdentity" .= timeSourceIdentity manifest
             , "genesisHex" .= hex genesis
             , "eraHistoryCbor" .= hex eras

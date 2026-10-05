@@ -11,9 +11,11 @@ holds the actual generated node context. It neither signs nor submits.
 module ConfirmationProbe (probeConfirmation) where
 
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
 import Cardano.Ledger.Api.Tx (mkBasicTx, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (ProtVer (..), StrictMaybe (..))
+import Cardano.Ledger.Binary (getVersion)
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams)
 import Cardano.Node.Client.Provider qualified as Node
@@ -32,7 +34,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Word (Word32)
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
     ( OneEraHash (..)
     )
@@ -69,6 +71,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                 , timeGenesisSha256 = digest genesis
                 , timeEraHistorySha256 = digest history
                 , timeHorizonSlot = horizon
+                , timeProtocolMajor = getVersion (pvMajor (pp ^. ppProtocolVersionL))
                 , timeSourceIdentity =
                     "exact generated context; same held recorder acquisition"
                 }

@@ -3,11 +3,19 @@ module Singular.Registry.SessionServicesSpec (spec) where
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.State (UTxO (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Slotting.Time (getRelativeTime, getSlotLength)
+import Codec.Serialise (DeserialiseFailure, deserialiseOrFail)
 import Control.Monad (forM_)
 import Control.Monad.State.Strict (State, modify', runState)
+import Data.ByteString.Lazy qualified as LBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Ouroboros.Consensus.HardFork.History.EraParams (EraParams (..))
+import Ouroboros.Consensus.HardFork.History.Summary
+    ( Bound (..)
+    , EraSummary (..)
+    )
 import Singular.Registry.Evidence
     ( Evidenced (..)
     , NoWitness
@@ -22,10 +30,12 @@ import Singular.Registry.LocalEvaluation
 import Singular.Registry.LocalEvaluationSpec (fixture)
 import Singular.Registry.NetworkTime
     ( NetworkTimeFailure (..)
+    , NetworkTimeManifest (..)
     , networkEpochInfo
     , networkSystemStart
     , slotStartMs
     )
+import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.SessionServices qualified as Services
 import Test.Hspec
     ( Spec
@@ -123,7 +133,7 @@ spec = describe "Generic local services" $ do
             `shouldBe` Left (Services.ServiceTimeFailure (WrongTimeNetwork 42 1))
         calls `shouldBe` ["network-time"]
     it
-        "keeps floor, ceiling and slot start in the validated finite context"
+        "keeps rounding and far-future slot starts in the pinned final era"
         $ do
             (context, resolved, _, _, _, _) <- fixture
             start <-
@@ -131,6 +141,32 @@ spec = describe "Generic local services" $ do
                     (fail . show)
                     pure
                     (slotStartMs (evaluationNetworkTime context) (SlotNo 100))
+            (manifest, _, rawHistory, _) <- loadNetworkFixture "preprod"
+            eras <-
+                either
+                    (fail . show)
+                    pure
+                    ( deserialiseOrFail (LBS.fromStrict rawHistory)
+                        :: Either DeserialiseFailure [EraSummary]
+                    )
+            finalEra <- case reverse eras of
+                era : _ -> pure era
+                [] -> fail "EmptyRawHistory"
+            -- Earlier eras use different slot lengths. Extrapolate only the
+            -- raw final era, preserving its recorded start and offset.
+            let finalStart = eraStart finalEra
+                remaining =
+                    toInteger (unSlotNo (SlotNo maxBound))
+                        - toInteger (unSlotNo (boundSlot finalStart))
+                farStart =
+                    timeSystemStartMs manifest
+                        + floor
+                            ( ( getRelativeTime (boundTime finalStart)
+                                    + fromInteger remaining
+                                        * getSlotLength (eraSlotLength (eraParams finalEra))
+                              )
+                                * 1000
+                            )
             let session = rawSession context resolved
                 action = do
                     below <- Services.floorSlot session (start + 1)
@@ -143,7 +179,7 @@ spec = describe "Generic local services" $ do
                 `shouldBe` ( Right (SlotNo 100)
                            , Right (SlotNo 101)
                            , Right start
-                           , Left (Services.ServiceTimeFailure (SlotPastHorizon (SlotNo maxBound)))
+                           , Right farStart
                            )
             calls `shouldBe` replicate 4 "network-time"
     it "preserves raw read refusal without starting derived work" $ do

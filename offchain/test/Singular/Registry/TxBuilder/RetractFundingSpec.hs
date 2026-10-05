@@ -269,6 +269,18 @@ fixtures, so this establishes builder bounds rather than node acceptance.
 -}
 rejectValidity :: Spec
 rejectValidity = describe "a reject's validity starts at the acquired view's tip" $ do
+    it "caps the reached tip-868 build window before the ledger horizon" $ do
+        now <- currentPosixMs
+        let start = now - 86_800
+            view =
+                withTime
+                    (pure (syntheticTimeWith start (1 / 10) 500))
+                    (rejectView (SlotNo 868) Nothing)
+        tx <- rejectRequestsImpl cfg view tokenId payer
+        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+        lower `shouldBe` SJust (SlotNo 868)
+        -- k=10, f=1, epoch 500: the first boundary at/after 868+30 is 1000.
+        upper `shouldBe` SJust (SlotNo 999)
     it "never starts ahead of a tip lagging the host clock" $
         property $
             forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
@@ -283,44 +295,50 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
                         , lower === SJust tip
                         , property (upper > lower)
                         ]
-    it "keeps a nonempty interval when the host clock is behind the tip" $ do
+    it
+        "refuses a window with no usable slot after a tip ahead of the host clock" $ do
         now <- currentPosixMs
         let view = rejectView (slotOf (now + 300_000)) Nothing
         actualTip <- SessionIO.tip view
-        tx <- rejectRequestsImpl cfg view tokenId payer
-        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-        lower `shouldBe` SJust (observedSlot actualTip)
-        upper `shouldSatisfy` (> lower)
-    it "keeps the upper-bound fallback inside the conversion horizon" $ do
-        now <- currentPosixMs
-        let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
-        actualTip <- SessionIO.tip view
-        tx <- rejectRequestsImpl cfg view tokenId payer
-        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-        lower `shouldBe` SJust (observedSlot actualTip)
-        upper `shouldSatisfy` (> lower)
-        upper `shouldSatisfy` (<= SJust (slotOf (now + 10_000)))
-    it "refuses a view tip at the finite conversion horizon by name" $ do
-        now <- currentPosixMs
-        let tip = slotOf (now + 11_000)
-            view = rejectView tip (Just (now + 10_000))
-        result <-
-            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
-        case result of
-            Left failure -> failure `shouldBe` SlotPastHorizon tip
-            Right _ ->
-                expectationFailure "built a reject with a lower bound at the horizon"
-    it "refuses an upper bound raised to the horizon" $ do
-        now <- currentPosixMs
-        let tip = slotOf (now + 10_000)
-            view = rejectView tip (Just (now + 10_000))
-        result <-
-            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
-        case result of
-            Left failure -> failure `shouldBe` SlotPastHorizon (tip + 1)
-            Right _ ->
-                expectationFailure
-                    "built a reject with a raised upper bound at the horizon"
+        rejectRequestsImpl cfg view tokenId payer
+            `shouldThrow` ( \failure -> case failure of
+                                WindowPastLedgerHorizon tip _ lower upper ->
+                                    tip == observedSlot actualTip && lower == Just tip && upper == tip + 1
+                                _ -> False
+                          )
+    it
+        "caps the requested upper-bound window at the ledger horizon from its observed tip"
+        $ do
+            now <- currentPosixMs
+            let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
+            actualTip <- SessionIO.tip view
+            tx <- rejectRequestsImpl cfg view tokenId payer
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SJust (observedSlot actualTip)
+            upper `shouldSatisfy` (> lower)
+            -- Here tip+30s is still in the synthetic epoch ending just
+            -- beyond now+10s, so the moving cap is its last slot.
+            upper `shouldBe` SJust (slotOf (now + 10_000))
+    it
+        "builds a nonempty reject interval when the tip is beyond the captured horizon"
+        $ do
+            now <- currentPosixMs
+            let tip = slotOf (now + 11_000)
+                view = rejectView tip (Just (now + 10_000))
+            tx <- rejectRequestsImpl cfg view tokenId payer
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SJust tip
+            upper `shouldSatisfy` (> lower)
+    it
+        "allows an upper bound raised past the captured horizon while preserving a nonempty interval"
+        $ do
+            now <- currentPosixMs
+            let tip = slotOf (now + 10_000)
+                view = rejectView tip (Just (now + 10_000))
+            tx <- rejectRequestsImpl cfg view tokenId payer
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SJust tip
+            upper `shouldSatisfy` (> lower)
   where
     slotOf ms = SlotNo (fromInteger (ms `div` 1000))
     rejectView tip horizon =

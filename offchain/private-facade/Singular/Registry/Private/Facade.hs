@@ -24,6 +24,7 @@ import Cardano.Ledger.Alonzo.Scripts
     , plutusScriptLanguage
     , toPlutusScript
     )
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -39,11 +40,16 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (EpochNo (..), TxIx (..))
+import Cardano.Ledger.BaseTypes
+    ( EpochNo (..)
+    , ProtVer (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Binary
     ( DecoderError
     , decCBOR
     , decodeFullAnnotator
+    , getVersion
     , serialize'
     )
 import Cardano.Ledger.Coin (Coin (..))
@@ -553,6 +559,7 @@ answer server request body
                 pure
                 ( generatedNetworkTime
                     42
+                    (getVersion (pvMajor (sourceParameters source ^. ppProtocolVersionL)))
                     "private HTTP LSQ"
                     (serverGenesis server)
                     (sourceEraHistory source)
@@ -968,6 +975,9 @@ timeSourceValue source =
         [ "point" .= show (timeSourcePoint source)
         , "systemStart" .= show (timeSourceSystemStart source)
         , "eraHistoryCBOR" .= hex (timeSourceEraHistory source)
+        , "protocolParametersCBOR"
+            .= hex
+                (serialize' (eraProtVerHigh @ConwayEra) (timeSourceParameters source))
         ]
 
 pointHash :: Chain.Point Block -> IO Text

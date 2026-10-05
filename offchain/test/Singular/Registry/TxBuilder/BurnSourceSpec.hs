@@ -50,10 +50,12 @@ import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.PParams (PParams, emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
-    ( inputsTxBodyL
+    ( ValidityInterval (..)
+    , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -106,6 +108,7 @@ import Singular.Application.OpenDatum.Release
     )
 import UntypedPlutusCore.DeBruijn ()
 
+import Cardano.Slotting.Slot (SlotNo (..))
 import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef, saveMirror)
@@ -116,13 +119,17 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.LedgerProvider (Session, TipObservation (..))
+import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
     )
-import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.SyntheticTime
+    ( syntheticTime
+    , syntheticTimeWith
+    )
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TrieState qualified as TS
@@ -174,7 +181,7 @@ import Singular.Registry.Types
     , edgeWitnessTerminal
     )
 
-import Control.Monad (void)
+import Control.Monad (forM_, void)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Text qualified as T
@@ -318,6 +325,7 @@ spec = do
     requestOrder
     noFoldSigner
     builtFoldBody
+    upperOnlyWindow
     builderRefusals
     applicationRelease
     openDatumFold
@@ -1046,12 +1054,12 @@ rows inspect assembled bodies and do not establish registry script admission.
 -}
 foldProvider :: Session NoWitness IO
 foldProvider =
-    ( withAddressOutputs (pure . utxosAt) $
-        withParameters (withSyntheticCosts preprodParams) $
-            withTime (pure syntheticTime) $
-                withResolvedOutputs
-                    (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] []) $
-                    stubSession
+    ( withAddressOutputs (pure . utxosAt)
+        $ withParameters (withSyntheticCosts preprodParams)
+        $ withTime (pure syntheticTime)
+        $ withResolvedOutputs
+            (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] [])
+        $ stubSession
     )
 
 -- | Actual script address for the request the built fixture owns.
@@ -1135,6 +1143,66 @@ builtFoldBody =
                 `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
             case body ^. mintTxBodyL of
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
+
+{- | The public fold builder supplies an unsigned body only when a future
+slot remains. Its original omitted lower bound must stay omitted. Synthetic
+scripts establish construction/refusal here, not actual registry admission.
+-}
+upperOnlyWindow :: Spec
+upperOnlyWindow = describe "upper-only folds remain usable after their observed tip" $ do
+    forM_ [868, 869] $ \upper ->
+        it
+            ( "refuses upper "
+                <> show upper
+                <> " before returning a body for signing"
+            ) $
+            build upper `shouldThrow` refused upper
+    it "builds the accepting upper-999 twin with no lower bound" $ do
+        tx <- build 999
+        let body = tx ^. bodyTxL
+            ValidityInterval lower upper = body ^. vldtTxBodyL
+        lower `shouldBe` SNothing
+        upper `shouldBe` SJust (SlotNo 999)
+        body ^. inputsTxBodyL
+            `shouldSatisfy` (\inputs -> Set.member stateIn inputs && Set.member requestIn inputs)
+        body ^. mintTxBodyL `shouldSatisfy` (/= mempty)
+  where
+    build upper = do
+        let (reference, output) = requestFor edgeInsertAbsent
+            requested = case extractCageDatum output of
+                Just (RequestDatum request) ->
+                    ( reference
+                    , output
+                        & datumTxOutL
+                            .~ mkInlineDatum
+                                ( toPlcData
+                                    ( RequestDatum
+                                        request
+                                            { requestSubmittedAt = upper * 100 - stateProcessTime tokenState
+                                            }
+                                    )
+                                )
+                    )
+                _ -> error "upper-only fixture: request datum absent"
+            view =
+                withTip (TipObservation (SlotNo 868) (BS.replicate 32 0) 1 0) $
+                    withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) $
+                        providerWith requested
+        tm <- trieWith Nothing
+        updateTokenWithDuties
+            builtCfg
+            view
+            tm
+            foldTokenId
+            payer
+            witnessScripts
+    refused upper failure = case failure of
+        WindowPastLedgerHorizon tip horizon lower windowUpper ->
+            tip == SlotNo 868
+                && horizon == SlotNo 1000
+                && lower == Nothing
+                && windowUpper == SlotNo (fromInteger upper)
+        _ -> False
 
 -- The fold command includes the builder exception in its printed refusal.
 -- Drive the public builder, then read that exception's first line: no name
@@ -1624,8 +1692,8 @@ retireWithReferences app = do
     updateTokenWithDuties
         builtCfg
         ( withResolvedOutputs
-            (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive]) $
-            (providerWith (retirementAt 1 ownerKey keyA))
+            (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive])
+            $ (providerWith (retirementAt 1 ownerKey keyA))
         )
         tm
         foldTokenId

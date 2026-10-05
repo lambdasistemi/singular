@@ -92,13 +92,14 @@ readLedgerSource channel = withAcquiredLSQ channel $ \handle -> do
     pure
         (LedgerSource point height epoch parameters outputs start history)
 
-{- | Time publication needs these three raw facts, not a fresh whole UTxO
-and parameter dump for every empty block. They still share one acquisition.
+{- | Time publication pins raw history and the protocol major from parameters,
+without reading a whole UTxO for every empty block. Facts share one acquisition.
 -}
 data TimeSourceFacts = TimeSourceFacts
     { timeSourcePoint :: Point Block
     , timeSourceSystemStart :: SystemStart
     , timeSourceEraHistory :: ByteString
+    , timeSourceParameters :: PParams ConwayEra
     }
 
 timeFactsOf :: LedgerSource -> TimeSourceFacts
@@ -107,6 +108,7 @@ timeFactsOf source =
         (sourcePoint source)
         (sourceSystemStart source)
         (sourceEraHistory source)
+        (sourceParameters source)
 
 readTimeSourceFacts :: LSQChannel -> IO TimeSourceFacts
 readTimeSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
@@ -115,7 +117,12 @@ readTimeSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
     history <-
         LBS.toStrict . serialise
             <$> queryAcquiredLSQ handle (BlockQuery (QueryHardFork GetInterpreter))
-    pure (TimeSourceFacts point start history)
+    parameters <-
+        expectConway "parameters"
+            =<< queryAcquiredLSQ
+                handle
+                (BlockQuery (QueryIfCurrentConway GetCurrentPParams))
+    pure (TimeSourceFacts point start history parameters)
 
 -- | A current output response needs the exact acquired point and full UTxO.
 data OutputSourceFacts = OutputSourceFacts

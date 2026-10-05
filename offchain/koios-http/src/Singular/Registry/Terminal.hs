@@ -32,8 +32,6 @@ import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.LedgerProvider
     ( Network (..)
-    , ReadFailure (..)
-    , Session (..)
     , SubmitResult (..)
     , submitTx
     )
@@ -41,6 +39,7 @@ import Singular.Registry.PhaseLog (phaseLogFromEnv)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO (withLatest)
+import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TimeSource (loadPinnedSource)
 import Singular.Registry.Wait (boundedSignedSubmission)
@@ -90,11 +89,8 @@ withReads settings action = do
     -- Startup validates the pinned network context in its own logged scope,
     -- as the former composition did. It is never spliced into a built body.
     withLatest (capReads capabilities) $ \session ->
-        networkTime session >>= either refusedTime (const (pure ()))
+        SessionIO.parameters session >> pure ()
     action capabilities
-  where
-    refusedTime (NetworkTimeRefusal failure) = throwIO failure
-    refusedTime failure = throwIO failure
 
 withWrites
     :: ProviderSettings

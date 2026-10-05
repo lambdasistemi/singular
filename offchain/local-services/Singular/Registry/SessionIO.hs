@@ -12,11 +12,12 @@ module Singular.Registry.SessionIO
     , floorSlot
     , ceilingSlot
     , slotStart
+    , validityUpper
     ) where
 
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Plutus (ExUnits (..))
-import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (throwIO)
 import Data.Aeson ((.=))
@@ -60,7 +61,10 @@ outputsAt :: Session w IO -> Addr -> IO Outputs
 outputsAt session address = requireFact (outputs session (AtAddress address))
 
 parameters :: Session w IO -> IO (PParams ConwayEra)
-parameters = requireFact . protocolParameters
+parameters session = do
+    logHandle <- phaseLogFromEnv
+    queryPhase logHandle "protocolMajorGuard" (const 1) $
+        requireService (Services.parameters session)
 
 tip :: Session w IO -> IO TipObservation
 tip = requireFact . tipObservation
@@ -127,3 +131,26 @@ slotStart session slot = do
         "slotStart"
         (const 1)
         (requireService (Services.slotStart session slot))
+
+-- | Preserve the selected tip explicitly; later Unbound reads cannot replace it.
+validityUpper
+    :: Session w IO -> SlotNo -> Maybe SlotNo -> SlotNo -> IO SlotNo
+validityUpper session observed lower upper = do
+    logHandle <- phaseLogFromEnv
+    (horizon, capped) <-
+        queryPhase logHandle "ledgerHorizon" (const 1) $
+            requireService (Services.validityUpper session observed lower upper)
+    logPhase
+        logHandle
+        "validityUpper"
+        [ "tip" .= observed
+        , "horizon" .= horizon
+        , "lower" .= lower
+        , "effectiveLower"
+            .= max
+                (maybe 0 (toInteger . unSlotNo) lower)
+                (toInteger (unSlotNo observed) + 1)
+        , "windowUpper" .= upper
+        , "upper" .= capped
+        ]
+    pure capped

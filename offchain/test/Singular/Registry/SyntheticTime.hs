@@ -6,6 +6,10 @@ ends at epoch 10,000 (2106); this is never claimed as a live node recording.
 -}
 module Singular.Registry.SyntheticTime (syntheticTime, syntheticHistory, syntheticTimeWith) where
 
+import Cardano.Ledger.Api.PParams (emptyPParams, ppProtocolVersionL)
+import Cardano.Ledger.BaseTypes (ProtVer (..))
+import Cardano.Ledger.Binary (getVersion)
+import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Slotting.Slot (EpochNo (..), EpochSize (..))
 import Cardano.Slotting.Time (mkSlotLength)
 import Codec.Serialise (serialise)
@@ -16,6 +20,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Word (Word64)
+import Lens.Micro ((^.))
 import Ouroboros.Consensus.Block (GenesisWindow (..))
 import Ouroboros.Consensus.HardFork.History.EraParams
     ( EraParams (..)
@@ -40,7 +45,8 @@ syntheticTime =
     either (error . ("synthetic time material: " <>) . show) id $
         validateNetworkTime 42 manifest genesis history
   where
-    genesis = "{\"networkMagic\":42,\"systemStart\":\"1970-01-01T00:00:00Z\"}"
+    genesis =
+        "{\"networkMagic\":42,\"systemStart\":\"1970-01-01T00:00:00Z\",\"securityParam\":2160,\"activeSlotsCoeff\":0.05,\"epochLength\":432000}"
     history = syntheticHistory
     manifest =
         NetworkTimeManifest
@@ -49,6 +55,7 @@ syntheticTime =
             , timeGenesisSha256 = digest genesis
             , timeEraHistorySha256 = digest history
             , timeHorizonSlot = boundSlot syntheticEnd
+            , timeProtocolMajor = syntheticMajor
             , timeSourceIdentity =
                 "synthetic memory model: epoch 0 through 10000, one-second slots"
             }
@@ -88,6 +95,9 @@ syntheticTimeWith startMs seconds slots =
                 object
                     [ "networkMagic" .= (42 :: Int)
                     , "systemStart" .= posixSecondsToUTCTime (fromInteger startMs / 1000)
+                    , "securityParam" .= (10 :: Int)
+                    , "activeSlotsCoeff" .= (1 :: Int)
+                    , "epochLength" .= slots
                     ]
     params =
         EraParams
@@ -107,4 +117,10 @@ syntheticTimeWith startMs seconds slots =
             (digest genesis)
             (digest history)
             (boundSlot end)
+            syntheticMajor
             "synthetic finite horizon control, not live network material"
+
+-- | The synthetic parameter fixtures start from the ledger's empty parameters.
+syntheticMajor :: Word64
+syntheticMajor =
+    getVersion (pvMajor (emptyPParams @ConwayEra ^. ppProtocolVersionL))

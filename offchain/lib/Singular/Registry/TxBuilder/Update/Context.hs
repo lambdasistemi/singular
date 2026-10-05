@@ -64,7 +64,7 @@ import Singular.Registry.Ledger
     , TokenId
     , TxIn
     )
-import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.LedgerProvider (Session, TipObservation (..))
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Trie
@@ -319,7 +319,7 @@ computeUpperSlot view oldState reqUtxos = do
                     )
                     reqUtxos
     mUpperSlot <- trySync (Services.floorSlot view earliestDeadline)
-    case mUpperSlot of
+    candidate <- case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
@@ -332,6 +332,12 @@ computeUpperSlot view oldState reqUtxos = do
                             ((posixSec + d) * 1000)
                     )
                     [30, 5, 2]
+    observed <- Services.tip view
+    Services.validityUpper
+        view
+        (observedSlot observed)
+        Nothing
+        candidate
 
 -- | Process a single request.
 processRequest
