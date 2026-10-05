@@ -1,0 +1,68 @@
+{
+  "what-changes": [
+    {
+      "text": "What changes.",
+      "pause": 500
+    },
+    {
+      "text": "--backend already selects where the commands' address reads come from: node (the default) or indexer. This slice adds a third value, koios, and two options that go with it: --koios-url <url> and an optional --koios-token-file <path>.",
+      "pause": 400
+    },
+    {
+      "text": "A diagram is shown here.",
+      "pause": 400
+    },
+    {
+      "text": "A table with 3 rows is shown here.",
+      "pause": 400
+    },
+    {
+      "text": "The default stays node. The token is read from its file by the #392 client's rules and never printed. A Koios failure is the client's named failure, surfaced by the command, never an empty answer.",
+      "pause": 400
+    }
+  ],
+  "the-two-moments": [
+    {
+      "text": "The two moments.",
+      "pause": 500
+    },
+    {
+      "text": "The node view is taken at the node's tip, and Koios answers at its own tip. This is the interim already accepted for the indexer backend (#376): the command may read the two sources at different blocks. It stays safe because the ledger refuses a transaction built on a coin that is gone, and the command reports that refusal by name. This slice keeps that interim and states it in the docs. It adds one check of its own: when Koios's tip is behind the node's view point by more than a stated bound, the command refuses by name before building anything.",
+      "pause": 400
+    }
+  ],
+  "boundary-with-383": [
+    {
+      "text": "Boundary with #383.",
+      "pause": 500
+    },
+    {
+      "text": "#383's provider switch will replace this backend selection. This slice keeps the selection in one seam, the command composition that already chooses between node and indexer, so the switch can absorb it. There is one Koios client and one set of decoders, the #392 ones.",
+      "pause": 400
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "A table with 5 rows is shown here.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "Every command of every hosted CI job at the pushed head, with the journey's koios run added to the demo1-cli job in this ticket, plus a repository-wide search showing that nothing renamed still appears under its old name.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "koios-reads.md",
+    "sha256": "935d1dcba4c94849cc1e8f650220fe3ff6cc8e015c07e2199b42ccc6ebecc799"
+  }
+}
