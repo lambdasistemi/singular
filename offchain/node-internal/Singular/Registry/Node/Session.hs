@@ -77,6 +77,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (void)
 import Data.Aeson ((.=))
 import Data.Foldable (for_)
 import Data.IORef
@@ -538,7 +539,7 @@ awaitRawConnection magic sock nodeThread channel =
     awaitConnectionQuery
         magic
         sock
-        (show . fmap (const ()) <$> waitCatch nodeThread)
+        (show . void <$> waitCatch nodeThread)
         (withRawView (rawNodeProvider channel) rawSystemStart)
 
 awaitConnectionQuery
