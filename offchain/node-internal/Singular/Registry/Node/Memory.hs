@@ -13,8 +13,9 @@ slot, with a block hash derived from that slot.
 The chain starts at its origin when 'csTip' is empty, and acquiring
 there is 'AcquiredAtOrigin'. 'loseConnection' makes every later
 acquisition and read 'ViewConnectionLost'. Script evaluation is the
-ledger's own, over the snapshot's parameters and UTxO, with the chain's
-fixed slot length.
+ledger's own, through common resolved-input evaluation over the snapshot's
+parameters and UTxO. Evaluation and conversion use the same explicitly
+validated finite synthetic network-time context.
 
 Library code rather than test code: interleaving controls and contract
 suites use it to drive builders deterministically.
@@ -41,15 +42,9 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Word (Word32)
 
-import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.State (UTxO (..))
-import Cardano.Slotting.EpochInfo (fixedEpochInfo)
-import Cardano.Slotting.Slot (EpochSize (..))
-import Cardano.Slotting.Time (SystemStart (..), mkSlotLength)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL)
@@ -58,6 +53,8 @@ import Singular.Registry.Ledger
     , PParams
     , TxIn
     )
+import Singular.Registry.NetworkTime (NetworkTime)
+import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -81,10 +78,8 @@ data ChainState = ChainState
     -- ^ Unspent outputs
     , csRegistered :: Set ScriptHash
     -- ^ Script credentials with a registered reward account
-    , csSystemStartMs :: Integer
-    -- ^ POSIX time (ms) of slot zero
-    , csSlotLengthMs :: Integer
-    -- ^ Length of every slot (ms)
+    , csNetworkTime :: NetworkTime
+    -- ^ Explicit validated, finite synthetic time material
     }
 
 -- | A mutable in-memory chain.
@@ -119,47 +114,27 @@ memoryProvider chain = scopedProvider $ \action -> do
     let reading :: IO a -> IO a
         reading answer = connected >> answer
         utxo = csUTxO s
-        slotOf ms =
-            SlotNo
-                ( fromInteger
-                    (max 0 (ms - csSystemStartMs s) `div` csSlotLengthMs s)
-                )
-        ceilSlotOf ms =
-            let SlotNo floor' = slotOf ms
-                exact = (ms - csSystemStartMs s) `mod` csSlotLengthMs s == 0
-            in  SlotNo
-                    (if ms <= csSystemStartMs s || exact then floor' else floor' + 1)
-    action
-        View
-            { viewPoint =
-                ChainPoint
-                    { cpNetwork = csNetwork s
-                    , cpEra = csEra s
-                    , cpSlot = slot
-                    , cpBlockHash = hash
-                    }
-            , viewProtocolParams = csPParams s
-            , viewUTxOsAt = \addr ->
-                reading . pure $
-                    [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]
-            , viewScriptRegistered = \sh ->
-                reading . pure $ Set.member sh (csRegistered s)
-            , viewEvaluateTx = \tx ->
-                reading . pure $
-                    evalTxExUnits
-                        (csPParams s)
-                        tx
-                        (UTxO utxo)
-                        ( fixedEpochInfo
-                            (EpochSize 432_000)
-                            (mkSlotLength (fromInteger (csSlotLengthMs s) / 1000))
-                        )
-                        ( SystemStart
-                            (posixSecondsToUTCTime (fromInteger (csSystemStartMs s) / 1000))
-                        )
-            , viewPosixMsToSlot = reading . pure . slotOf
-            , viewPosixMsCeilSlot = reading . pure . ceilSlotOf
-            }
+        resolved refs = reading (pure (Map.toList (Map.restrictKeys utxo refs)))
+        view =
+            View
+                { viewPoint =
+                    ChainPoint
+                        { cpNetwork = csNetwork s
+                        , cpEra = csEra s
+                        , cpSlot = slot
+                        , cpBlockHash = hash
+                        }
+                , viewProtocolParams = csPParams s
+                , viewTimeContext = reading (pure (csNetworkTime s))
+                , viewResolvedOutputs = resolved
+                , viewPhaseLog = noPhaseLog
+                , viewUTxOsAt = \addr ->
+                    reading . pure $
+                        [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]
+                , viewScriptRegistered = \sh ->
+                    reading . pure $ Set.member sh (csRegistered s)
+                }
+    action view
   where
     connected = do
         up <- readIORef (mcConnected chain)

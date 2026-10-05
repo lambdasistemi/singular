@@ -40,6 +40,7 @@ import Singular.Registry.Ledger
     , ExUnits (..)
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
 
 import Conformance.Mirror
     ( emit
@@ -51,13 +52,13 @@ import Conformance.Mirror
 -- ---------------------------------------------------------
 
 {- | Measure a fold's execution units: summed over the node's
-per-script evaluation of the unsigned transaction, while its
-inputs are still unspent. Units come from the running node, never
-hardcoded.
+raw parameters, time context and exact unspent inputs, through fixed
+common ledger evaluation of the unsigned transaction. Units are computed,
+never hardcoded.
 -}
 measurePurposeUnits :: Env -> ConwayTx -> IO PurposeMeasurements
 measurePurposeUnits env tx = do
-    evalMap <- Cage.withView (envProv env) (`Cage.viewEvaluateTx` tx)
+    evalMap <- Cage.withView (envProv env) (`Services.evaluateTx` tx)
     pure $
         Map.fromList
             [ ( T.pack (show purpose)

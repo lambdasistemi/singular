@@ -31,6 +31,7 @@ import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word64)
 import Lens.Micro ((&), (.~), (^.))
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
@@ -93,8 +94,7 @@ initial =
         , csPParams = params 44 4_310
         , csUTxO = Map.fromList [(outRef '3', ada 100_000_000)]
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 {- | The change made between preview and build: dearer bytes and a new,

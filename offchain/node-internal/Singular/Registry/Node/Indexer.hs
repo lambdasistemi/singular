@@ -92,7 +92,6 @@ import Cardano.Node.Client.E2E.Setup
     )
 import Cardano.Node.Client.N2C.Probe (defaultProbeConfig)
 import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter
@@ -130,6 +129,7 @@ import Singular.Registry.Node.IndexerView
     )
 import Singular.Registry.Node.Options (NodeMode (..), die)
 import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
+import Singular.Registry.Node.RawView (RawProvider)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Node.Wait
     ( WaitStage (..)
@@ -142,6 +142,7 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TimeMaterial (TimeMaterial)
 
 {- | The indexer this process follows its chain with, installed by
 'followChain'. 'awaitIndexed', 'confirmOutputZero' and
@@ -436,9 +437,10 @@ its address reads being the node's @GetUTxOByAddress@ in the acquired
 state, refused once 'followedProvider' has handed the reads of a
 followed devnet to its indexer.
 -}
-adaptProvider :: NetworkMagic -> N2C.Provider IO -> Cage.Provider IO
-adaptProvider magic p =
-    Cage.Provider $ \action -> Cage.withView (nodeProvider magic p) $ \v ->
+adaptProvider
+    :: NetworkMagic -> TimeMaterial -> RawProvider IO -> Cage.Provider IO
+adaptProvider magic material p =
+    Cage.Provider $ \action -> Cage.withView (nodeProvider magic material p) $ \v ->
         action
             v
                 { Cage.viewUTxOsAt = \addr -> do

@@ -23,6 +23,7 @@ import Test.Hspec
 
 import Singular.Registry.Provider (SlotNo (..), View (..))
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.SyntheticTime (syntheticTimeWith)
 import Singular.Registry.TxBuilder.Internal (trySlots, tryUpperSlots)
 
 -- | The exclusive horizon, and the slot length in milliseconds.
@@ -34,16 +35,8 @@ slotMs = 100
 horizonView :: View IO
 horizonView =
     stubView
-        { viewPosixMsToSlot = floorSlot
-        , viewPosixMsCeilSlot = \ms -> do
-            SlotNo s <- floorSlot ms
-            pure (SlotNo (if ms `mod` slotMs == 0 then s else s + 1))
+        { viewTimeContext = pure (syntheticTimeWith 0 (1 / 10) 500)
         }
-  where
-    floorSlot ms
-        | ms `div` slotMs < horizon =
-            pure (SlotNo (fromIntegral (ms `div` slotMs)))
-        | otherwise = throwIO (userError "PastHorizon")
 
 -- | Inside the horizon: strictly below it.
 inside :: SlotNo -> Bool
@@ -79,7 +72,7 @@ spec = describe "A fold's validity upper bound and the node's horizon" $ do
 cancelledView :: IORef Int -> View IO
 cancelledView calls =
     horizonView
-        { viewPosixMsToSlot = \_ -> do
+        { viewTimeContext = do
             modifyIORef' calls (+ 1)
             throwIO ThreadKilled
         }

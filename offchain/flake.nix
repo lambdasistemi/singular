@@ -429,6 +429,19 @@
       in
       {
         packages = {
+          # Recording modes are read-only. The explicit private confirmation
+          # smoke submits generated-fixture key payments on the private node.
+          local-services-record =
+            pkgs.runCommand "local-services-record"
+              {
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+                meta.mainProgram = "local-services-record";
+              }
+              ''
+                mkdir -p $out/bin
+                makeWrapper ${pkgs.lib.getExe components.exes.local-services-record} $out/bin/local-services-record \
+                  --prefix PATH : ${cardanoNode}/bin
+              '';
           # #264 T264-05: the classified supported off-chain component build
           # carrier (epic answer A-005; classification and inventory gate in
           # ./nix/component-inventory.nix). CI builds it with
@@ -465,10 +478,9 @@
                 }
               ];
             }).hsPkgs.singular-registry.components.library.haddock;
-          # The package-private ownership core's generated reference: the
-          # root documentation build takes only the re-exported Ledger and
-          # Provider page pairs from it; the private Node owners stay out
-          # of the public reference.
+          # The root reference takes only Ledger/Provider page pairs from
+          # their public local-services owner; private Node pages stay out.
+          local-services-haddock = components.sublibs.local-services.haddock;
           node-internal-haddock = components.sublibs.node-internal.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package

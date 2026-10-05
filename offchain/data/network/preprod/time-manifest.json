@@ -1,0 +1,18 @@
+{
+  "networkMagic": 1,
+  "systemStartMs": 1654041600000,
+  "genesisSha256": "4b9d32c09159c2948e4386ba1f59db5a249a89b43b84dfd8368f465e650095de",
+  "eraHistorySha256": "2e842a42ea27d53d5bbfcc5529e8c72ba5bd9e64c49d618b8b67b6cd38f43406",
+  "horizonSlot": 135734400,
+  "sourceIdentity": "cardano-node-clients 0e73121dc1df516b69d69bdd554b12bebd28d072; Point (At (Block {blockPointSlot = SlotNo 135454388, blockPointHash = 47720a6738fe3fc672d54aa95392112f28b32d98a86a25f7b4ff73e36445c915}))",
+  "nodeAnswerSha256": "e3eac610f68110140568057fa25376e7cc411ddce032d23fc652059f6b311e16",
+  "nodeSlotStartSha256": "5ad3b76fce04415bf80b1e5637189d921feed719161d5d3ce234808a15ace331",
+  "nodeSourceSha256": "50cef377dc425ccae2754595420a7a256d0369ecdf563ff6aa020917bb7c9654",
+  "sourceManifestSha256": "68dc400abd93dd26a9dd835bb9ab388bfbdd3960fa0040837c3f4cd950b90022",
+  "evaluationManifestSha256": "ec6d2063c1d97a12119ee638aa057268e0a7b69e0462fea5e61de1c21072092d",
+  "limits": [
+    "Floor/ceiling answers use the pinned acquired node provider; slot starts invert its floor answers by binary search.",
+    "Exact immutable recording; a later connected devnet build requires its own generated/node context.",
+    "No transaction submission, inclusion or whole-spec acceptance claim."
+  ]
+}

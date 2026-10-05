@@ -62,7 +62,7 @@ import System.Directory
     , doesFileExist
     , getTemporaryDirectory
     )
-import System.FilePath ((</>))
+import System.FilePath (takeDirectory, (</>))
 import System.IO (IOMode (..), hClose, openFile)
 import System.IO.Temp (createTempDirectory, withSystemTempDirectory)
 import System.Posix.Files (ownerReadMode, setFileMode)
@@ -100,7 +100,6 @@ import Cardano.Node.Client.N2C.Connection
     , newLTxSChannel
     , runNodeClient
     )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.Submitter
     ( SubmitResult (..)
     , Submitter (..)
@@ -133,6 +132,7 @@ import Singular.Registry.Node
     , withNodeReads
     )
 import Singular.Registry.Node.Options (Backend (..))
+import Singular.Registry.Node.RawView (rawNodeProvider)
 import Singular.Registry.Node.Session
     ( NodeCallInView (..)
     , withNodeModeOn
@@ -140,6 +140,8 @@ import Singular.Registry.Node.Session
 import Singular.Registry.Node.Submit (signTx, signedTx)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider (Provider (..), View (..))
+import Singular.Registry.Services qualified as Services
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -355,7 +357,9 @@ atOrigin use = withDevnetNode False 1 $ \sock _ -> do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \_ ->
-        use (nodeProvider magic (mkN2CProvider lsqCh))
+        do
+            material <- loadTimeMaterial devnetMagicWord (takeDirectory sock)
+            use (nodeProvider magic material (rawNodeProvider lsqCh))
 
 {- | A development node from the pinned genesis, its start @offset@ seconds
 ahead, in a directory of its own, producing blocks or not; the action that stops it is handed
@@ -545,7 +549,7 @@ phaseLogOnDevnet =
                         _ <-
                             withNodeReads devnetMagicWord sock $ \r ->
                                 withView (nrProvider r) $ \v ->
-                                    viewPosixMsToSlot v 1_000_000
+                                    Services.floorSlot v 1_000_000
                         objects <- logObjects path
                         length (phaseLines "session-open" objects) `shouldBe` 1
                         length (filter (== "posixMsToSlot") (queryNames objects))

@@ -51,7 +51,6 @@ import GHC.Clock (getMonotonicTime)
 
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Api.Tx (txIdTx)
-import Cardano.Ledger.BaseTypes (SlotNo (..))
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Node.Client.Submitter
@@ -90,8 +89,8 @@ data WaitFailure = WaitFailure
     -}
     , waitBound :: Int
     -- ^ The bound the wait was under, in seconds
-    , waitClosedAt :: Maybe SlotNo
-    {- ^ The deadline slot the chain's tip passed, when a session
+    , waitClosedAt :: Maybe Integer
+    {- ^ The POSIX deadline in milliseconds reached by the latest observed block, when a session
     confirmation ended because its window closed before the bound
     -}
     }
@@ -126,7 +125,7 @@ stageLabel = \case
     SessionConfirmationWait -> "session confirmation"
 
 -- | What the stage's wait was still waiting for when it gave up.
-stageDetail :: WaitStage -> Maybe SlotNo -> String
+stageDetail :: WaitStage -> Maybe Integer -> String
 stageDetail stage closedAt = case (stage, closedAt) of
     (SubmissionWait, _) ->
         "the node returned no verdict for the transaction"
@@ -136,10 +135,10 @@ stageDetail stage closedAt = case (stage, closedAt) of
     (SessionConfirmationWait, Nothing) ->
         "the chain neither showed the transaction's first output nor \
         \closed its confirmation window in time"
-    (SessionConfirmationWait, Just slot) ->
+    (SessionConfirmationWait, Just deadline) ->
         "the transaction was accepted by the node but has not appeared \
-        \in a block: its confirmation window closed at slot "
-            <> show (unSlotNo slot)
+        \in a block: its confirmation window closed at POSIX milliseconds "
+            <> show deadline
 
 -- | A transaction id's hex rendering.
 txIdHex :: TxId -> String
@@ -186,8 +185,8 @@ boundWaitSince clock stage tid bound action =
 
 {- | 'boundWaitSince' for a wait that can also give up on its own: an
 action that finds the confirmation window closed returns 'Left' the
-deadline slot, and the wait ends at once with the same failure,
-carrying that slot. The failure a closed window raises is the one a
+POSIX deadline in milliseconds, and the wait ends at once with the same failure,
+carrying that POSIX deadline. The failure a closed window raises is the one a
 bound raises, so no caller can read it as a refusal.
 -}
 boundWaitClosingSince
@@ -195,7 +194,7 @@ boundWaitClosingSince
     -> WaitStage
     -> TxId
     -> Int
-    -> IO (Either SlotNo a)
+    -> IO (Either Integer a)
     -> IO a
 boundWaitClosingSince (WaitClock start) stage tid bound action = do
     outcome <- race (threadDelay (bound * 1_000_000)) action
@@ -211,7 +210,7 @@ boundWaitClosingSince (WaitClock start) stage tid bound action = do
                     }
     case outcome of
         Left () -> giveUp Nothing
-        Right (Left slot) -> giveUp (Just slot)
+        Right (Left deadline) -> giveUp (Just deadline)
         Right (Right a) -> pure a
 
 {- | The production bound on a submission, in seconds: the widest the

@@ -169,6 +169,7 @@ common live-runner
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry
+    , singular-registry:local-services
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-strict-containers
@@ -336,6 +337,7 @@ test-suite conformance-tests
     , cardano-tx-tools:tx-build
     , microlens
     , singular-registry
+    , singular-registry:local-services
     , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
     , plutus-ledger-api

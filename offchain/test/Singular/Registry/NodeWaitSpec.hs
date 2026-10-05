@@ -127,6 +127,7 @@ import Singular.Registry.Node.Wait
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.StubFollowing (withStubFollowing)
 import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SyntheticTime (syntheticTime)
 
 spec :: Spec
 spec =
@@ -259,7 +260,7 @@ spec =
                                 stubSession
                                 "a stalled tip"
                                 basicTxId
-                                (SlotNo 100)
+                                100_000
                     waitStage w `shouldBe` SessionConfirmationWait
                     waitTxId w `shouldBe` basicTxId
                     waitBound w `shouldBe` 3
@@ -279,7 +280,7 @@ spec =
                                 (blockedTipSession released)
                                 "a blocked tip read"
                                 basicTxId
-                                (SlotNo 100)
+                                100_000
                     waitStage w `shouldBe` SessionConfirmationWait
                     waitBound w `shouldBe` 4
                     readIORef released `shouldReturn` True
@@ -295,13 +296,13 @@ spec =
                                 stubSession
                                 "an observed output"
                                 basicTxId
-                                (SlotNo 100)
+                                100_000
                             )
                     r `shouldBe` Just ()
 
             it
                 "ends at the window the tip deadline closes, as the wait \
-                \failure carrying the deadline slot"
+                \failure carrying the POSIX deadline"
                 $ withFollowedIndexer
                 $ \_ -> do
                     w <-
@@ -311,17 +312,17 @@ spec =
                                 pastDeadlineSession
                                 "a closed window"
                                 basicTxId
-                                (SlotNo 100)
+                                100_000
                     waitStage w `shouldBe` SessionConfirmationWait
                     waitTxId w `shouldBe` basicTxId
                     waitBound w `shouldBe` 10
-                    waitClosedAt w `shouldBe` Just (SlotNo 100)
+                    waitClosedAt w `shouldBe` Just 100_000
                     waitElapsed w `shouldSatisfy` (< 5)
-                    show w `shouldSatisfy` isInfixOf "closed at slot 100"
+                    show w `shouldSatisfy` isInfixOf "closed at POSIX milliseconds 100000"
 
             it
                 "ends the public awaitTx on a closed window as the wait \
-                \failure naming its deadline slot"
+                \failure naming its POSIX deadline"
                 $ withFollowedIndexer
                 $ \_ ->
                     withOpenSession pastWindowSession $ do
@@ -330,8 +331,9 @@ spec =
                                 awaitTx txWithBoundOutput
                         waitStage w `shouldBe` SessionConfirmationWait
                         waitTxId w `shouldBe` txIdTx txWithBoundOutput
-                        waitClosedAt w `shouldBe` Just (SlotNo 1120)
-                        show w `shouldSatisfy` isInfixOf "closed at slot 1120"
+                        waitClosedAt w `shouldBe` Just 1_120_000
+                        show w
+                            `shouldSatisfy` isInfixOf "closed at POSIX milliseconds 1120000"
 
             it "does not let a closed window read as a refusal" $
                 withFollowedIndexer $ \_ ->
@@ -344,7 +346,7 @@ spec =
                                 )
                         case r of
                             Left w ->
-                                waitClosedAt w `shouldBe` Just (SlotNo 1120)
+                                waitClosedAt w `shouldBe` Just 1_120_000
                             Right Nothing ->
                                 fail "the closed window never ended"
                             Right (Just (Left e)) ->
@@ -378,7 +380,7 @@ spec =
                         r `shouldBe` Nothing
 
         describe "the reads that derive a confirmation's window" $ do
-            it "ends awaitTx when the time-to-slot read never returns" $
+            it "ends awaitTx when the raw time-context read never returns" $
                 withFollowedIndexer $ \_ ->
                     withOpenSession blockedSlotSession $ do
                         w <-
@@ -387,7 +389,7 @@ spec =
                         theReadFailure w (txIdTx txWithBoundOutput)
 
             it
-                "ends awaitTxWindow when the time-to-slot read never \
+                "ends awaitTxWindow when the raw time-context read never \
                 \returns"
                 $ withFollowedIndexer
                 $ \_ ->
@@ -410,7 +412,7 @@ spec =
                         theReadFailure w (txIdTx txWithBoundOutput)
                         readIORef released `shouldReturn` True
 
-            it "ends awaitTxId when the time-to-slot read never returns" $
+            it "ends awaitTxId when the raw time-context read never returns" $
                 withFollowedIndexer $ \_ ->
                     withOpenSession blockedSlotSession $ do
                         w <-
@@ -435,7 +437,7 @@ spec =
                             theWaitFailure 15_000_000 "awaitTxId" $
                                 awaitTxId (txIdHex basicTxId)
                         waitStage w `shouldBe` SessionConfirmationWait
-                        show w `shouldSatisfy` isInfixOf "closed at slot"
+                        show w `shouldSatisfy` isInfixOf "closed at POSIX milliseconds"
                         waitElapsed w
                             `shouldSatisfy` (\s -> s >= 3.9 && s < 10)
 
@@ -452,7 +454,7 @@ spec =
                                 pastDeadlineSession
                                 "a closed window"
                                 basicTxId
-                                (SlotNo 100)
+                                100_000
                     objects <- logObjects path
                     let polls = awaitPolls objects
                     length polls `shouldSatisfy` (>= 1)
@@ -466,7 +468,7 @@ spec =
                         stubSession
                         "an indexed output"
                         basicTxId
-                        (SlotNo 100)
+                        100_000
                     objects <- logObjects path
                     map (numberField "answer_size") (awaitPolls objects)
                         `shouldBe` [Just 1]
@@ -646,6 +648,7 @@ stubSession =
         , nsMagic = NetworkMagic 42
         , nsNetwork = Testnet
         , nsTipSlot = pure (SlotNo 7)
+        , nsTipTime = pure 7_000
         , nsMode = Devnet
         }
 
@@ -655,17 +658,17 @@ the read is cancelled.
 blockedTipSession :: IORef Bool -> NodeSession
 blockedTipSession released =
     stubSession
-        { nsTipSlot =
+        { nsTipTime =
             finally
-                (threadDelay 600_000_000 >> pure (SlotNo 7))
+                (threadDelay 600_000_000 >> pure 7_000)
                 (writeIORef released True)
         }
 
 -- | A session whose tip has already passed any deadline it is given.
 pastDeadlineSession :: NodeSession
-pastDeadlineSession = stubSession{nsTipSlot = pure (SlotNo 200)}
+pastDeadlineSession = stubSession{nsTipTime = pure 200_000}
 
-{- | The one-slot-per-second session whose time-to-slot conversion never
+{- | The one-slot-per-second session whose raw time-context read never
 returns.
 -}
 blockedSlotSession :: NodeSession
@@ -674,12 +677,11 @@ blockedSlotSession =
         { nsProvider =
             servingView
                 slotView
-                    { Cage.viewPosixMsToSlot =
-                        \_ -> threadDelay 600_000_000 >> pure (SlotNo 0)
+                    { Cage.viewTimeContext = threadDelay 600_000_000 >> pure syntheticTime
                     }
         }
 
-{- | A session whose time-to-slot conversion fails at once, so the wait
+{- | A session whose raw time-context read fails at once, so the wait
 falls back to the tip, and whose tip read never returns, releasing the
 marker when the read is cancelled.
 -}
@@ -689,13 +691,13 @@ unconvertibleBlockedTipSession released =
         { nsProvider =
             servingView
                 slotView
-                    { Cage.viewPosixMsToSlot =
-                        \_ -> throwIO (userError "the time cannot be converted")
+                    { Cage.viewTimeContext =
+                        throwIO (userError "the time context cannot be read")
                     }
         }
 
-{- | The one-slot-per-second session whose time-to-slot conversion
-answers only after two seconds.
+{- | The one-slot-per-second session whose raw time-context read
+answers after four seconds, preserving the former two two-second reads.
 -}
 slowSlotSession :: NodeSession
 slowSlotSession =
@@ -703,24 +705,19 @@ slowSlotSession =
         { nsProvider =
             servingView
                 slotView
-                    { Cage.viewPosixMsToSlot =
-                        \ms -> threadDelay 2_000_000 >> pure (slotOfMs ms)
+                    { Cage.viewTimeContext = threadDelay 4_000_000 >> pure syntheticTime
                     }
         }
 
 -- | The slow session with its tip long past any confirmation window.
 slowPastSession :: NodeSession
-slowPastSession = slowSlotSession{nsTipSlot = pure (SlotNo 4_000_000_000)}
-
--- | The slot of a POSIX time in milliseconds on the one-slot-per-second chain.
-slotOfMs :: Integer -> SlotNo
-slotOfMs = SlotNo . fromIntegral . (`div` 1000)
+slowPastSession = slowSlotSession{nsTipTime = pure 4_000_000_000_000}
 
 {- | The one-slot-per-second session whose tip is long past the window
 of a transaction valid until slot 1000.
 -}
 pastWindowSession :: NodeSession
-pastWindowSession = slotSession{nsTipSlot = pure (SlotNo 5000)}
+pastWindowSession = slotSession{nsTipTime = pure 5_000_000}
 
 {- | The stub session over the one-slot-per-second provider: the
 public confirmation path derives its window through it.
@@ -729,14 +726,12 @@ slotSession :: NodeSession
 slotSession = stubSession{nsProvider = servingView slotView}
 
 {- | A view whose chain numbers one slot per second. Only the
-time-to-slot conversion is ever read.
+raw time-context read is ever read.
 -}
 slotView :: Cage.View IO
 slotView =
     stubView
-        { Cage.viewPosixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
-        , Cage.viewPosixMsCeilSlot =
-            pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
+        { Cage.viewTimeContext = pure syntheticTime
         }
 
 -- | The provider of the stub sessions, never queried.

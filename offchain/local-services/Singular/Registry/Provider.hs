@@ -7,8 +7,10 @@ The only way to read the chain is to acquire a 'View' with 'withView'
 and read through it. A view is one acquired ledger state: it names the
 chain point it was acquired at ('viewPoint'), carries the protocol
 parameters captured once at acquisition ('viewProtocolParams'), and
-answers every other read — UTxOs, script-credential registration, time
-to slot, script evaluation — from that same state. Building one
+answers raw UTxO and script-credential reads from that state. Its immutable
+validated time material and exact resolved outputs feed the common local
+services in "Singular.Registry.Services"; a provider selects neither an
+evaluator nor a conversion. Building one
 transaction is one operation: its preview, its fee and outlay decisions
 and its body come from one view, and a change the chain makes after the
 acquisition never reaches them.
@@ -45,23 +47,14 @@ import Control.Exception (Exception, finally, throwIO)
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Map.Strict (Map)
+import Data.Set (Set)
 import Data.Text (Text)
 import Data.Word (Word32)
 
-import Cardano.Ledger.Alonzo.Plutus.Evaluate
-    ( TransactionScriptFailure
-    )
-import Cardano.Ledger.Alonzo.Scripts
-    ( AsIx
-    , PlutusPurpose
-    )
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Plutus (ExUnits)
 import Cardano.Slotting.Slot (SlotNo (..))
 
-import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger
     ( Addr
     , ConwayEra
@@ -69,14 +62,9 @@ import Singular.Registry.Ledger
     , TxIn
     )
 
--- | Per-script evaluation result.
-type EvaluateTxResult era =
-    Map
-        (PlutusPurpose AsIx era)
-        ( Either
-            (TransactionScriptFailure era)
-            ExUnits
-        )
+import Singular.Registry.LocalEvaluation (EvaluateTxResult)
+import Singular.Registry.NetworkTime (NetworkTime)
+import Singular.Registry.PhaseLog (PhaseLog)
 
 {- | A point on a chain: the network it belongs to, the era of the
 ledger state there, its slot and the hash of the block header at that
@@ -102,6 +90,12 @@ data View m = View
     -- ^ The point this view was acquired at
     , viewProtocolParams :: PParams ConwayEra
     -- ^ Protocol parameters, captured once at acquisition
+    , viewTimeContext :: m NetworkTime
+    -- ^ The acquired view's immutable validated network time material
+    , viewResolvedOutputs :: Set TxIn -> m [(TxIn, TxOut ConwayEra)]
+    -- ^ Exact raw outputs for spent, collateral and reference inputs
+    , viewPhaseLog :: PhaseLog
+    -- ^ Observations for common local computations; no evaluation policy
     , viewUTxOsAt
         :: Addr
         -> m [(TxIn, TxOut ConwayEra)]
@@ -112,18 +106,6 @@ data View m = View
     {- ^ Whether a script credential has a registered reward account,
     including a zero balance
     -}
-    , viewEvaluateTx
-        :: ConwayTx
-        -> m (EvaluateTxResult ConwayEra)
-    -- ^ Script execution units of a transaction
-    , viewPosixMsToSlot
-        :: Integer
-        -> m SlotNo
-    -- ^ POSIX time (ms) to slot, floor
-    , viewPosixMsCeilSlot
-        :: Integer
-        -> m SlotNo
-    -- ^ POSIX time (ms) to slot, ceiling
     }
 
 -- | The chain read interface: acquire a view and read through it.
@@ -160,10 +142,9 @@ guarded :: IORef Bool -> View IO -> View IO
 guarded open v =
     v
         { viewUTxOsAt = inScope . viewUTxOsAt v
+        , viewTimeContext = inScope (viewTimeContext v)
+        , viewResolvedOutputs = inScope . viewResolvedOutputs v
         , viewScriptRegistered = inScope . viewScriptRegistered v
-        , viewEvaluateTx = inScope . viewEvaluateTx v
-        , viewPosixMsToSlot = inScope . viewPosixMsToSlot v
-        , viewPosixMsCeilSlot = inScope . viewPosixMsCeilSlot v
         }
   where
     inScope :: IO a -> IO a

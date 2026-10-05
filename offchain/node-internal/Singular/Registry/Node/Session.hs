@@ -50,6 +50,8 @@ module Singular.Registry.Node.Session
       -- * No node call inside a view (#326)
     , NodeCallInView (..)
     , guardConnection
+    , guardNodeConnection
+    , guardRawConnection
     ) where
 
 import Control.Concurrent (ThreadId, myThreadId, threadDelay)
@@ -75,6 +77,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (void)
 import Data.Aeson ((.=))
 import Data.Foldable (for_)
 import Data.IORef
@@ -102,7 +105,7 @@ import Cardano.Node.Client.N2C.Connection
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
+import Cardano.Node.Client.N2C.Types (ConnectionLost (..), LSQChannel)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter (..))
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
@@ -135,6 +138,11 @@ import Singular.Registry.Node.PhaseLog
     , queryPhase
     , startTimer
     )
+import Singular.Registry.Node.RawView
+    ( RawProvider (..)
+    , RawView (..)
+    , rawNodeProvider
+    )
 import Singular.Registry.Node.Wait
     ( boundedSubmitter
     , submissionBound
@@ -145,6 +153,9 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Services qualified as Services
+import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import System.FilePath (takeDirectory)
 
 -- | Everything a runner needs from the chain it runs against.
 data NodeSession = NodeSession
@@ -160,6 +171,8 @@ data NodeSession = NodeSession
     {- ^ Current chain tip, for confirmation deadlines; never a read an
     operation builds from (those go through a view of 'nsProvider')
     -}
+    , nsTipTime :: IO Integer
+    -- ^ Latest observed block start in POSIX milliseconds, for local waits
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
@@ -192,12 +205,15 @@ withNodeReadsOn backend magicWord sock k = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \nodeThread -> do
-        (n2c, _) <-
-            guardConnection
+        (_, _, raw) <-
+            guardRawConnection
                 nodeThread
                 (mkN2CProvider lsqCh)
                 (mkN2CSubmitter ltxsCh)
-        let prov = adaptProvider magic n2c
+                (rawNodeProvider lsqCh)
+        awaitRawConnection magic sock nodeThread lsqCh
+        material <- loadTimeMaterial magicWord (takeDirectory sock)
+        let prov = adaptProvider magic material raw
         awaitConnection magic sock nodeThread (loggedProvider lg prov)
         case backend of
             NodeBackend -> do
@@ -271,6 +287,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
             withDevnetIndexer sock (connect devnetMagic sock)
     External e -> connect (NetworkMagic (extMagic e)) (extSocket e)
   where
+    middle (_, submitter, _) = submitter
     connect magic sock = do
         lg <- phaseLogFromEnv
         opened <- startTimer
@@ -279,16 +296,20 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
                 connection <-
-                    guardConnection
+                    guardRawConnection
                         nodeThread
                         (mkN2CProvider lsqCh)
                         (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
-                let n2c = fst connection
+                        (rawNodeProvider lsqCh)
+                let (n2c, _, raw) = connection
+                awaitRawConnection magic sock nodeThread lsqCh
+                material <-
+                    loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
                 awaitConnection
                     magic
                     sock
                     nodeThread
-                    (loggedProvider lg (adaptProvider magic n2c))
+                    (loggedProvider lg (adaptProvider magic material raw))
                 case mode of
                     Devnet ->
                         serveSession
@@ -299,7 +320,8 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                             mode
                             magic
                             sock
-                            connection
+                            (adaptProvider magic material raw)
+                            (n2c, middle connection)
                             k
                     External _ -> do
                         start <- followerStart lg backend n2c
@@ -312,7 +334,8 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                                 mode
                                 magic
                                 sock
-                                connection
+                                (adaptProvider magic material raw)
+                                (n2c, middle connection)
                                 k
 
 {- | A session over a connected node client and its submitter: the wallet
@@ -330,12 +353,12 @@ serveSession
     -> NodeMode
     -> NetworkMagic
     -> FilePath
+    -> Cage.Provider IO
     -> (N2C.Provider IO, Submitter IO)
     -> (NodeSession -> IO a)
     -> IO a
-serveSession lg opened fundingFloor backend mode magic sock (n2c, submitter) k = do
+serveSession lg opened fundingFloor backend mode magic sock nodeProv (n2c, submitter) k = do
     wallet <- walletForMode mode
-    let nodeProv = adaptProvider magic n2c
     -- A devnet session reads addresses through its indexer; an external
     -- node through the node adapter, or through the indexer backend
     -- when that is the backend asked for.
@@ -406,6 +429,8 @@ assembleSession lg mode magic network prov submitter n2c =
                 "tipSlot"
                 (const 1)
                 (N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c)
+        , nsTipTime = Cage.withView (loggedProvider lg prov) $ \view ->
+            Services.slotStart view (Cage.cpSlot (Cage.viewPoint view))
         , nsMode = mode
         }
 
@@ -497,11 +522,33 @@ awaitConnection
     -> Async a
     -> Cage.Provider IO
     -> IO ()
-awaitConnection (NetworkMagic magic) sock nodeThread prov = do
+awaitConnection magic sock nodeThread prov =
+    awaitConnectionQuery
+        magic
+        sock
+        (show <$> waitCatch nodeThread)
+        (firstViewWithin originWaitPolls sock prov)
+
+{- | The handshake must answer before local time-source selection can refuse
+the network. Query only a raw fact on this connection; the subsequent first
+public view retains the origin wait and all time validation.
+-}
+awaitRawConnection
+    :: NetworkMagic -> FilePath -> Async a -> LSQChannel -> IO ()
+awaitRawConnection magic sock nodeThread channel =
+    awaitConnectionQuery
+        magic
+        sock
+        (show . void <$> waitCatch nodeThread)
+        (withRawView (rawNodeProvider channel) rawSystemStart)
+
+awaitConnectionQuery
+    :: NetworkMagic -> FilePath -> IO String -> IO b -> IO ()
+awaitConnectionQuery (NetworkMagic magic) sock ended query = do
     answered <-
         race
-            (waitCatch nodeThread)
-            (firstViewWithin originWaitPolls sock prov)
+            ended
+            query
     case answered of
         Right _ -> pure ()
         Left outcome ->
@@ -515,7 +562,7 @@ awaitConnection (NetworkMagic magic) sock nodeThread prov = do
                        \(preprod is 1, the factory devnet is 42); a node on \
                        \another network refuses the handshake. Underlying \
                        \failure: "
-                    <> show outcome
+                    <> outcome
 
 {- | How many tenth-of-a-second polls a fresh connection waits for a
 chain at its origin to make its first block: two minutes. A devnet makes
@@ -579,6 +626,42 @@ guardConnection
     -> Submitter IO
     -> IO (N2C.Provider IO, Submitter IO)
 guardConnection client p0 s = do
+    (p, submitter, _) <-
+        guardRawConnection
+            client
+            p0
+            s
+            (RawProvider (\_ -> fail "raw view not supplied"))
+    pure (p, submitter)
+
+{- | Compose a runner's existing connection into guarded upstream reads,
+submission and acquired public reads. The raw adapter and exact time-source
+selection stay behind the public node facade; no second connection is opened.
+-}
+guardNodeConnection
+    :: Async b
+    -> NetworkMagic
+    -> FilePath
+    -> LSQChannel
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> IO (N2C.Provider IO, Submitter IO, Cage.Provider IO)
+guardNodeConnection client magic sock channel upstream submit = do
+    (node, guardedSubmit, raw) <-
+        guardRawConnection client upstream submit (rawNodeProvider channel)
+    awaitRawConnection magic sock client channel
+    material <-
+        loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
+    pure (node, guardedSubmit, adaptProvider magic material raw)
+
+-- | Raw and legacy routes share the same holder set and connection lifetime.
+guardRawConnection
+    :: Async b
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> RawProvider IO
+    -> IO (N2C.Provider IO, Submitter IO, RawProvider IO)
+guardRawConnection client p0 s raw = do
     let p = whileConnected client p0
     holders <- newIORef (Set.empty :: Set ThreadId)
     let outside :: String -> IO a -> IO a
@@ -619,7 +702,23 @@ guardConnection client p0 s = do
                 outside "queryUpperBoundSlot" . N2C.queryUpperBoundSlot p
             }
         , Submitter (outside "submitTx" . connected client . submitTx s)
+        , RawProvider $ \k -> outside "withAcquired" $ do
+            me <- myThreadId
+            acquiredWhileConnected
+                client
+                (withRawView raw)
+                (holding me . k . liveRaw)
         )
+  where
+    liveRaw (RawView snapshot params address refs rewards start history) =
+        RawView
+            (connected client snapshot)
+            (connected client params)
+            (connected client . address)
+            (connected client . refs)
+            (connected client . rewards)
+            (connected client start)
+            (connected client history)
 
 {- | Each call of the provider, and each read of every view it acquires,
 ends with the client.
@@ -627,7 +726,7 @@ ends with the client.
 whileConnected :: Async b -> N2C.Provider IO -> N2C.Provider IO
 whileConnected client p =
     N2C.Provider
-        { N2C.withAcquired = \k -> acquiredWhileConnected client p (k . handleOf)
+        { N2C.withAcquired = \k -> acquiredWhileConnected client (N2C.withAcquired p) (k . handleOf)
         , N2C.queryUTxOs = live . N2C.queryUTxOs p
         , N2C.queryUTxOByTxIn = live . N2C.queryUTxOByTxIn p
         , N2C.queryProtocolParams = live (N2C.queryProtocolParams p)
@@ -675,11 +774,11 @@ waited for only while the client lives, so neither waits forever on a
 connection that has ended.
 -}
 acquiredWhileConnected
-    :: Async b -> N2C.Provider IO -> (N2C.QueryHandle IO -> IO a) -> IO a
-acquiredWhileConnected client p body = do
+    :: Async b -> ((h -> IO ()) -> IO ()) -> (h -> IO a) -> IO a
+acquiredWhileConnected client acquire body = do
     acquired <- newEmptyMVar
     done <- newEmptyMVar
-    let holding = N2C.withAcquired p (\h -> putMVar acquired h >> takeMVar done)
+    let holding = acquire (\h -> putMVar acquired h >> takeMVar done)
     withAsync holding $ \holder -> do
         h <-
             connected client (race (waitCatch holder) (takeMVar acquired))

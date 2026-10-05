@@ -36,6 +36,7 @@ import Singular.Registry.Node
 import Singular.Registry.Node.Options (Backend (..), backendFromArgs)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SyntheticTime (syntheticTime)
 
 external :: FilePath -> Word -> FilePath -> NodeMode
 external sock magic skey =
@@ -141,16 +142,19 @@ spec = describe "the chain a runner selects" $ do
         it "sees no bound on a transaction that never expires" $
             txUpperBoundSlot txWithoutBound `shouldBe` Nothing
 
-        it "waits for the bound plus two minutes of the chain's own slots" $ do
-            deadline <- confirmDeadline slotProv txPinningBound
-            deadline `shouldBe` SlotNo 1120
+        it
+            "waits for the bound's validated start plus two uncapped POSIX minutes"
+            $ do
+                deadline <- confirmDeadline slotProv txPinningBound
+                deadline `shouldBe` 1120000
 
         it "waits for the fixed window when no bound is pinned" $ do
+            before <- getCurrentTime
             deadline <- confirmDeadline slotProv txWithoutBound
-            now <- getCurrentTime
-            let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+            after <- getCurrentTime
+            let ms = round . (* 1000) . utcTimeToPOSIXSeconds
             deadline
-                `shouldBe` SlotNo (fromIntegral (nowMs `div` 1000 + 300))
+                `shouldSatisfy` (\value -> value >= ms before + 300000 && value <= ms after + 300000)
 
     describe "the read backend a command line names (#324)" $ do
         it "is the node when the command line names none" $
@@ -178,9 +182,7 @@ slotProv :: Cage.Provider IO
 slotProv =
     servingView
         stubView
-            { Cage.viewPosixMsToSlot = pure . SlotNo . fromIntegral . (`div` 1000)
-            , Cage.viewPosixMsCeilSlot =
-                pure . SlotNo . fromIntegral . (\ms -> (ms + 999) `div` 1000)
+            { Cage.viewTimeContext = pure syntheticTime
             }
 
 txPinningBound :: Tx TopTx ConwayEra

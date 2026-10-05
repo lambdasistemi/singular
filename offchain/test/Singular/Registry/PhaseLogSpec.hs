@@ -13,11 +13,13 @@ a counting provider through it and compare the log with what the provider
 itself counted, so a query that bypasses the log is a count that does not
 match. Every compared value comes from the producer at run time: the
 counts from the stub's own counters, the chain point from the view the
-body is handed, the ex-units from the answer the stub returned.
+body is handed, the ex-units from an independent direct ledger evaluation.
 
 'driveEveryQuery' matches the view's constructor positionally. Adding a
-read to 'View' breaks that pattern at compile time, so a new read cannot
-be left out of the rows.
+read to 'View' breaks that pattern at compile time. An independently
+enumerated read census starts every read at zero and requires a reached call;
+the log is compared with producer counts. A reached resolver bypass controls
+that comparison. Raw node-call reconciliation is a separate extent below.
 -}
 module Singular.Registry.PhaseLogSpec (spec) where
 
@@ -46,32 +48,58 @@ import Data.Time
     , getCurrentTime
     , parseTimeM
     )
+import Singular.Registry.SyntheticTime (syntheticTime)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.PParams (emptyPParams)
-import Cardano.Ledger.Api.Tx (mkBasicTx)
-import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
+import Cardano.Ledger.Api.Scripts.Data (Data (..))
+import Cardano.Ledger.Api.Tx (mkBasicTx, witsTxL)
+import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, mkBasicTxBody)
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet), SlotNo (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.State (UTxO (..))
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter (..))
 import Cardano.Node.Client.UTxOIndexer.Indexer (applyAtSlot)
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
+import Lens.Micro ((&), (.~))
 import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
     ( OneEraHash (..)
     )
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
+import PlutusLedgerApi.V3 qualified as PLC
+import Singular.Registry.Blueprint (applyBytesParam)
+import Singular.Registry.NetworkTime
+    ( networkEpochInfo
+    , networkSystemStart
+    )
+import Singular.Registry.Services qualified as Services
+import Singular.Registry.SyntheticLedger
+    ( unitProgram
+    , withSyntheticCosts
+    )
 
 import Singular.PhaseLogFixture
     ( logObjects
@@ -88,7 +116,7 @@ import Singular.Registry.IndexerRig
     , readinessOf
     , withRigAt
     )
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
+import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TxIn)
 import Singular.Registry.Node (Wallet (..), loadWallet)
 import Singular.Registry.Node.Indexer (Following (..), withFollowing)
 import Singular.Registry.Node.Memory
@@ -118,10 +146,16 @@ import Singular.Registry.Node.Session
     )
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.RawNodeFixture
+    ( recordingRawFixture
+    , syntheticMaterial
+    )
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , scriptFromBytes
     )
 
 spec :: Spec
@@ -196,7 +230,9 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let queries = [o | o <- lines', field "phase" o == Just ("query" :: Text)]
                     named o = field "query" o :: Maybe Text
                 -- the producer's own counts are the expectation
-                Map.fromListWith (+) [(q, 1 :: Int) | Just q <- map named queries]
+                Map.fromListWith
+                    (+)
+                    [(q, 1 :: Int) | Just q <- map named queries, q `elem` queryExtent]
                     `shouldBe` Map.fromList [(q, n) | (q, n) <- counted, q /= "acquire"]
                 -- at n > 1 per query and distinct counts, a hand-count cannot coincide
                 sort (map snd counted) `shouldNotBe` replicate (length counted) 1
@@ -210,12 +246,51 @@ spec = describe "the phase log of the read interface (#363)" $ do
                         , named o == Just q
                         , Just s <- [field "answer_size" o :: Maybe Int]
                         ]
+                sizes "networkTime"
+                    `shouldBe` replicate
+                        (timeCalls + evaluateCalls + toSlotCalls + ceilCalls + startCalls)
+                        1
+                sizes "resolvedOutputs"
+                    `shouldBe` replicate (resolvedCalls + evaluateCalls) 0
+                map fst counted `shouldBe` sort ("acquire" : queryExtent)
+                map snd counted `shouldSatisfy` all (> 0)
                 sizes "utxosAt" `shouldBe` replicate utxosCalls utxoAnswer
                 sizes "scriptRegistered" `shouldBe` replicate registeredCalls 1
                 sizes "evaluateTx"
                     `shouldBe` replicate evaluateCalls (Map.size evaluation)
                 sizes "posixMsToSlot" `shouldBe` replicate toSlotCalls 1
                 sizes "posixMsCeilSlot" `shouldBe` replicate ceilCalls 1
+                sizes "slotStart" `shouldBe` replicate startCalls 1
+        it "detects a reached raw resolver read that bypasses its query log" $
+            withSystemTempDirectory "phase-log" $ \dir -> do
+                let path = dir </> "phase.log"
+                counters <- newCounters
+                let bare = countingProvider counters
+                    wrapped = loggedProvider (phaseLogAt path) bare
+                    bypass = Cage.Provider $ \action ->
+                        Cage.withView bare $ \raw ->
+                            Cage.withView wrapped $ \loggedView ->
+                                action
+                                    loggedView{Cage.viewResolvedOutputs = Cage.viewResolvedOutputs raw}
+                Cage.withView bypass driveEveryQuery
+                counted <- readCounters counters
+                objects <- logLines path
+                let actual =
+                        Map.fromListWith
+                            (+)
+                            [ (name, 1 :: Int)
+                            | object <- objects
+                            , field "phase" object == Just ("query" :: Text)
+                            , Just name <- [field "query" object :: Maybe Text]
+                            , name `elem` queryExtent
+                            ]
+                    expected =
+                        Map.fromList
+                            [(name, calls) | (name, calls) <- counted, name /= "acquire"]
+                lookup "resolvedOutputs" counted
+                    `shouldBe` Just (resolvedCalls + evaluateCalls)
+                Map.lookup "resolvedOutputs" actual `shouldBe` Nothing
+                actual `shouldNotBe` expected
         it
             "gives the caller the same answers as the provider it wraps"
             $ withSystemTempDirectory "phase-log"
@@ -223,8 +298,8 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 counters <- newCounters
                 let bare = countingProvider counters
                     wrapped = loggedProvider (phaseLogAt (dir </> "phase.log")) bare
-                a <- Cage.withView bare (`Cage.viewPosixMsToSlot` 5_000)
-                b <- Cage.withView wrapped (`Cage.viewPosixMsToSlot` 5_000)
+                a <- Cage.withView bare (`Services.floorSlot` 5_000)
+                b <- Cage.withView wrapped (`Services.floorSlot` 5_000)
                 b `shouldBe` a
         it
             "still logs the query that failed, once, and throws what it threw; \
@@ -292,7 +367,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let prov = loggedProvider (phaseLogAt path) (memoryProvider chain)
                 replicateM_
                     2
-                    (Cage.withView prov (\v -> void (Cage.viewPosixMsToSlot v 1_000)))
+                    (Cage.withView prov (\v -> void (Services.floorSlot v 1_000)))
                 lines' <- logLines path
                 let held = [o | o <- lines', field "phase" o == Just ("view-release" :: Text)]
                 length held `shouldBe` 2
@@ -303,12 +378,16 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ withSystemTempDirectory "phase-log"
             $ \dir -> do
                 let path = dir </> "phase.log"
-                    prov = loggedProvider (phaseLogAt path) (countingProvider' evaluation)
-                _ <- Cage.withView prov (`Cage.viewEvaluateTx` emptyTx)
+                    prov = loggedProvider (phaseLogAt path) evaluationProvider
+                _ <- Cage.withView prov (`Services.evaluateTx` evaluationTx)
                 lines' <- logLines path
                 let evals = [o | o <- lines', field "phase" o == Just ("eval" :: Text)]
                     returned = rights (Map.elems evaluation)
                     total f = sum (map (fromIntegral . f) returned) :: Integer
+                Map.size evaluation `shouldBe` 2
+                length returned `shouldBe` Map.size evaluation
+                returned
+                    `shouldSatisfy` all (\(ExUnits memory steps) -> memory > 0 && steps > 0)
                 map (field "redeemers") evals
                     `shouldBe` [Just (Map.size evaluation :: Int)]
                 map (field "mem") evals `shouldBe` [Just (total exUnitsMem')]
@@ -324,13 +403,19 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let prov =
                         loggedProvider
                             (phaseLogAt path)
-                            (nodeProvider (NetworkMagic 42) node)
+                            ( nodeProvider
+                                (NetworkMagic 42)
+                                syntheticMaterial
+                                ( recordingRawFixture
+                                    (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                    node
+                                )
+                            )
                 replicateM_ 3 (Cage.withView prov driveEveryQuery)
                 recorded <- readIORef asked
                 objects <- logObjects path
                 -- the node's own count is the expectation
-                length (phaseLines "query" objects)
-                    `shouldBe` length (filter (/= "acquire") recorded)
+                rawLogCounts objects `shouldBe` rawNodeCounts recorded
                 length (filter (== "ledgerSnapshot") (queryNames objects))
                     `shouldBe` length (filter (== "h:queryLedgerSnapshot") recorded)
                 length (filter (== "protocolParams") (queryNames objects))
@@ -352,13 +437,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                             (External (ExternalNode "node.socket" 42 "payment.skey"))
                             (NetworkMagic 42)
                             Testnet
-                            (countingProvider' evaluation)
+                            evaluationProvider
                             (Submitter (\_ -> fail "no submission here"))
                             node
                 _ <- nsTipSlot sess
                 _ <- nsTipSlot sess
                 _ <- nsTipSlot sess
-                _ <- Cage.withView (nsProvider sess) (`Cage.viewEvaluateTx` emptyTx)
+                _ <-
+                    Cage.withView (nsProvider sess) (`Services.evaluateTx` evaluationTx)
                 recorded <- readIORef asked
                 objects <- logObjects path
                 length (filter (== "queryLedgerSnapshot") recorded) `shouldBe` 3
@@ -399,6 +485,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                         (External (ExternalNode "node.socket" 42 skey))
                         (NetworkMagic 42)
                         "node.socket"
+                        ( nodeProvider
+                            (NetworkMagic 42)
+                            syntheticMaterial
+                            ( recordingRawFixture
+                                (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                node
+                            )
+                        )
                         (node, Submitter (\_ -> fail "no submission here"))
                         $ \sess -> do
                             replicateM_ 2 (Cage.withView (nsProvider sess) driveEveryQuery)
@@ -444,6 +538,14 @@ spec = describe "the phase log of the read interface (#363)" $ do
                             (External (ExternalNode "node.socket" 42 skey))
                             (NetworkMagic 42)
                             "node.socket"
+                            ( nodeProvider
+                                (NetworkMagic 42)
+                                syntheticMaterial
+                                ( recordingRawFixture
+                                    (\n -> atomicModifyIORef' asked (\m -> (m <> [n], ())))
+                                    node
+                                )
+                            )
                             (node, Submitter (\_ -> fail "no submission here"))
                         $ \sess ->
                             replicateM_ 2 $
@@ -458,7 +560,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 Cage.withView (nrProvider reads') driveEveryQuery
                 counted <- readCounters counters
                 objects <- logObjects path
-                length (phaseLines "query" objects)
+                length [name | name <- queryNames objects, name `elem` queryExtent]
                     `shouldBe` sum [n | (q, n) <- counted, q /= "acquire"]
                 length (phaseLines "view" objects) `shouldBe` 1
   where
@@ -474,32 +576,73 @@ utxosCalls
     , evaluateCalls
     , toSlotCalls
     , ceilCalls
+    , timeCalls
+    , resolvedCalls
+    , startCalls
         :: Int
 utxosCalls = 3
 registeredCalls = 2
 evaluateCalls = 4
 toSlotCalls = 1
 ceilCalls = 5
+timeCalls = 6
+resolvedCalls = 7
+startCalls = 2
 
 -- | What the stub answers an address read with: three outputs.
 utxoAnswer :: Int
 utxoAnswer = 3
 
--- | What the stub answers an evaluation with: two redeemers.
+{- | Two executable mint witnesses, in a non-submitted synthetic context.
+Expected per-purpose units are computed by the imported ledger directly,
+independently of both Services.evaluateTx and its phase aggregation.
+-}
 evaluation :: Cage.EvaluateTxResult ConwayEra
 evaluation =
-    Map.fromList
-        [ (ConwaySpending (AsIx 0), Right (ExUnits 7 11))
-        , (ConwaySpending (AsIx 1), Right (ExUnits 13 17))
-        ]
+    evalTxExUnits
+        evaluationParameters
+        evaluationTx
+        (UTxO Map.empty)
+        (networkEpochInfo syntheticTime)
+        (networkSystemStart syntheticTime)
 
-emptyTx :: ConwayTx
-emptyTx = mkBasicTx mkBasicTxBody
+evaluationParameters :: PParams ConwayEra
+evaluationParameters = withSyntheticCosts preprodParams
+
+evaluationTx :: ConwayTx
+evaluationTx =
+    let firstBytes = unitProgram 1
+        secondBytes = applyBytesParam "phase-distinct-witness" (unitProgram 2)
+        scripts =
+            [ (computeScriptHash bytes, scriptFromBytes "synthetic-phase" bytes)
+            | bytes <- [firstBytes, secondBytes]
+            ]
+        minted =
+            MultiAsset
+                ( Map.fromList
+                    [ (PolicyID hash, Map.singleton (AssetName "phase") 1)
+                    | (hash, _) <- scripts
+                    ]
+                )
+        redeemers =
+            Redeemers
+                ( Map.fromList
+                    [ (ConwayMinting (AsIx index), (Data (PLC.I 0), ExUnits 1 1))
+                    | index <- [0, 1]
+                    ]
+                )
+    in  mkBasicTx (mkBasicTxBody & mintTxBodyL .~ minted)
+            & witsTxL . scriptTxWitsL .~ Map.fromList scripts
+            & witsTxL . rdmrsTxWitsL .~ redeemers
 
 type Counters = IORef [(Text, Int)]
 
 newCounters :: IO Counters
-newCounters = newIORef []
+-- The independently enumerated read extent starts at zero, so an omitted
+-- read remains observable even when neither the driver nor log calls it.
+queryExtent :: [Text]
+queryExtent = ["networkTime", "resolvedOutputs", "utxosAt", "scriptRegistered"]
+newCounters = newIORef [(name, 0) | name <- queryExtent]
 
 bump :: Counters -> Text -> IO ()
 bump c q = atomicModifyIORef' c $ \m -> (m <> [(q, 1)], ())
@@ -516,34 +659,41 @@ countingProvider c = Cage.Provider $ \act -> do
     bump c "acquire"
     act
         stubView
-            { Cage.viewUTxOsAt = \_ -> do
+            { Cage.viewProtocolParams = evaluationParameters
+            , Cage.viewTimeContext = bump c "networkTime" >> pure syntheticTime
+            , Cage.viewResolvedOutputs = \_ -> bump c "resolvedOutputs" >> pure []
+            , Cage.viewUTxOsAt = \_ -> do
                 bump c "utxosAt"
                 pure [(outRef ch, out) | ch <- take utxoAnswer "abc"]
             , Cage.viewScriptRegistered = \_ -> bump c "scriptRegistered" >> pure True
-            , Cage.viewEvaluateTx = \_ -> bump c "evaluateTx" >> pure evaluation
-            , Cage.viewPosixMsToSlot = \_ -> bump c "posixMsToSlot" >> pure (Cage.SlotNo 9)
-            , Cage.viewPosixMsCeilSlot = \_ -> bump c "posixMsCeilSlot" >> pure (Cage.SlotNo 9)
             }
   where
     out = mkBasicTxOut (error "address unused") (MaryValue (Coin 1) mempty)
 
-countingProvider'
-    :: Cage.EvaluateTxResult ConwayEra -> Cage.Provider IO
-countingProvider' answer = Cage.Provider $ \act ->
-    act stubView{Cage.viewEvaluateTx = \_ -> pure answer}
+evaluationProvider :: Cage.Provider IO
+evaluationProvider = Cage.Provider $ \action ->
+    action
+        stubView
+            { Cage.viewProtocolParams = evaluationParameters
+            , Cage.viewTimeContext = pure syntheticTime
+            , Cage.viewResolvedOutputs = const (pure [])
+            }
 
 {- | Call every read of a view, each a different number of times. The
 positional pattern fails to compile when the view gains a read.
 -}
 driveEveryQuery :: Cage.View IO -> IO ()
-driveEveryQuery (Cage.View _point _params utxos registered evaluate toSlot ceil) = do
+driveEveryQuery view@(Cage.View _point _params time resolved _log utxos registered) = do
+    replicateM_ timeCalls (void time)
+    replicateM_ resolvedCalls (void (resolved Set.empty))
     replicateM_ utxosCalls (void (utxos payer))
+    replicateM_ registeredCalls (void (registered credential))
     replicateM_
-        registeredCalls
-        (void (registered credential))
-    replicateM_ evaluateCalls (void (evaluate emptyTx))
-    replicateM_ toSlotCalls (void (toSlot 1_000))
-    replicateM_ ceilCalls (void (ceil 1_000))
+        evaluateCalls
+        (void (Services.evaluateTx view evaluationTx))
+    replicateM_ toSlotCalls (void (Services.floorSlot view 1_000))
+    replicateM_ ceilCalls (void (Services.ceilingSlot view 1_000))
+    replicateM_ startCalls (void (Services.slotStart view (SlotNo 1)))
 
 -- | An address and a script credential every read can be given.
 payer :: Addr
@@ -589,9 +739,9 @@ recordingNodeWith held = do
                     { N2C.backendQueryUTxOs = \_ ->
                         note "h:queryUTxOs" >> pure held
                     , N2C.backendQueryUTxOsAt = \_ -> unused "h:queryUTxOsAt"
-                    , N2C.backendQueryUTxOByTxIn = \_ -> unused "h:queryUTxOByTxIn"
+                    , N2C.backendQueryUTxOByTxIn = \_ -> note "h:queryUTxOByTxIn" >> pure Map.empty
                     , N2C.backendQueryProtocolParams =
-                        note "h:queryProtocolParams" >> pure emptyPParams
+                        note "h:queryProtocolParams" >> pure evaluationParameters
                     , N2C.backendQueryLedgerSnapshot =
                         note "h:queryLedgerSnapshot" >> pure snapshot
                     , N2C.backendQueryStakeRewards = \s ->
@@ -600,13 +750,9 @@ recordingNodeWith held = do
                     , N2C.backendQueryVoteDelegatees = \_ -> unused "h:queryVoteDelegatees"
                     , N2C.backendQueryTreasury = unused "h:queryTreasury"
                     , N2C.backendQueryGovernanceState = unused "h:queryGovernanceState"
-                    , N2C.backendEvaluateTx = \_ -> note "h:evaluateTx" >> pure evaluation
-                    , N2C.backendPosixMsToSlot = \ms ->
-                        note "h:posixMsToSlot"
-                            >> pure (SlotNo (fromIntegral (ms `div` 1_000)))
-                    , N2C.backendPosixMsCeilSlot = \ms ->
-                        note "h:posixMsCeilSlot"
-                            >> pure (SlotNo (fromIntegral ((ms + 999) `div` 1_000)))
+                    , N2C.backendEvaluateTx = \_ -> unused "h:evaluateTx"
+                    , N2C.backendPosixMsToSlot = \_ -> unused "h:posixMsToSlot"
+                    , N2C.backendPosixMsCeilSlot = \_ -> unused "h:posixMsCeilSlot"
                     }
         node =
             N2C.Provider
@@ -630,17 +776,62 @@ recordingNodeWith held = do
 {- | The log against the node's own record: one view line for each
 acquisition the node served, one query line for each query it answered.
 -}
+
+{- | Raw live node calls, excluding cached context and common computations.
+Unknown producer reads fail rather than silently dropping from the extent.
+-}
+rawNodeCounts :: [Text] -> Map.Map Text Int
+rawNodeCounts recorded =
+    Map.fromListWith
+        (+)
+        [(named readName, 1) | readName <- recorded, readName /= "acquire"]
+  where
+    named "h:queryLedgerSnapshot" = "ledgerSnapshot"
+    named "h:queryProtocolParams" = "protocolParams"
+    named "h:systemStart" = "systemStart"
+    named "h:eraHistory" = "eraHistory"
+    named "h:queryUTxOs" = "utxosAt"
+    named "h:queryUTxOByTxIn" = "resolvedOutputs"
+    named "h:queryStakeRewards" = "scriptRegistered"
+    named "queryLedgerSnapshot" = "tipSlot"
+    named other = error ("unmapped live node read: " <> T.unpack other)
+
+rawLogCounts :: [Aeson.Object] -> Map.Map Text Int
+rawLogCounts objects =
+    Map.fromListWith
+        (+)
+        [ (name, 1)
+        | object <- objects
+        , field "phase" object == Just ("query" :: Text)
+        , Just name <- [field "query" object :: Maybe Text]
+        , name
+            `notElem` [ "networkTime"
+                      , "evaluateTx"
+                      , "posixMsToSlot"
+                      , "posixMsCeilSlot"
+                      , "slotStart"
+                      , "indexedUTxOs"
+                      ]
+        ]
+
 reconcile :: FilePath -> IORef [Text] -> Expectation
 reconcile path asked = do
     recorded <- readIORef asked
     objects <- logObjects path
     length (phaseLines "view" objects)
         `shouldBe` length (filter (== "acquire") recorded)
-    let named n = length (filter (== n) (queryNames objects))
-        asked' n = length (filter (== n) recorded)
-    named "ledgerSnapshot" `shouldBe` asked' "h:queryLedgerSnapshot"
-    named "protocolParams" `shouldBe` asked' "h:queryProtocolParams"
-    named "tipSlot" `shouldBe` asked' "queryLedgerSnapshot"
+    -- Address reads may be supplied by the indexer in this session row;
+    -- complete node-backend extent is checked separately above.
+    let nodeOwned name =
+            name
+                `elem` [ "ledgerSnapshot"
+                       , "protocolParams"
+                       , "systemStart"
+                       , "eraHistory"
+                       , "tipSlot"
+                       ]
+    Map.filterWithKey (\name _ -> nodeOwned name) (rawLogCounts objects)
+        `shouldBe` Map.filterWithKey (\name _ -> nodeOwned name) (rawNodeCounts recorded)
 
 -- | A signing-key file the wallet loads, for the length of an action.
 withKeyFile :: (FilePath -> IO a) -> IO a
@@ -658,8 +849,7 @@ memoryState =
         , csPParams = emptyPParams
         , csUTxO = Map.empty
         , csRegistered = Set.empty
-        , csSystemStartMs = 0
-        , csSlotLengthMs = 1_000
+        , csNetworkTime = syntheticTime
         }
 
 outRef :: Char -> TxIn

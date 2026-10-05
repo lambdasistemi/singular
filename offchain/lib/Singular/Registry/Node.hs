@@ -5,7 +5,7 @@ License     : Apache-2.0
 
 The single import every runner keeps: the node's public surface. This
 module is a compatibility facade — it owns no state and no definition,
-only the exact export list callers have always imported, re-exported
+preserves the original caller exports and re-exports connection composition
 from the focused owners behind it:
 
 * "Singular.Registry.Node.Options" — the mode, resolved once from the
@@ -94,6 +94,7 @@ module Singular.Registry.Node
     , withDevnetIndexer
     , awaitIndexed
     , adaptProvider
+    , guardNodeConnection
     , followedProvider
     , nodeAddressReads
     , awaitConnection
@@ -163,6 +164,7 @@ import Singular.Registry.Node.Session
     , awaitConnection
     , currentTipSlot
     , devnetGenesis
+    , guardNodeConnection
     , withNode
     , withNodeForPlannedFunding
     , withNodeMode

@@ -67,6 +67,7 @@ import Singular.Registry.Ledger
 import Singular.Registry.Provider
     ( View (..)
     )
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
     , ConnectedSpend (..)
@@ -98,7 +99,7 @@ mkEvalTx
             (Either String ExUnits)
         )
 mkEvalTx view tx = do
-    r <- viewEvaluateTx view tx
+    r <- Services.evaluateTx view tx
     pure $
         Map.map
             ( \case

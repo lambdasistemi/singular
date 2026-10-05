@@ -40,10 +40,10 @@ here for the contributor reading the facades' implementations, but no
 caller import path: a caller compiles against the facades' exports, not
 against these modules. `Singular.Registry.Ledger` and
 `Singular.Registry.Provider` are the re-exports: their implementations
-moved into the package's private ownership core
-(`offchain/node-internal/`) and the public library re-exports them, so
+are owned by the public `local-services` component
+(`offchain/local-services/`) and the main library re-exports them, so
 their import paths and their entries in this reference are unchanged.
-The six node runtime owners in that private core are deliberately not
+The private node runtime owners are deliberately not
 part of this reference — they are not importable from the public library
 — and are documented with source links in
 [Node module ownership](offchain-node-ownership.md). The extent below is
@@ -79,12 +79,12 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="module">Singular.Registry.Deployment.Manifest</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
-- <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/node-internal/Singular/Registry/Ledger.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a> — <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Provider.hs" data-api="module">Singular.Registry.Provider</a> — <a href="../offchain/local-services/Singular/Registry/Provider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="module">Singular.Registry.Replay</a> — <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="source">source</a>
-- <a href="../offchain/node-internal/Singular/Registry/Provider.hs" data-api="module">Singular.Registry.Provider</a> — <a href="../offchain/node-internal/Singular/Registry/Provider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="module">Singular.Registry.Trie</a> — <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="module">Singular.Registry.Trie.Pure</a> — <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="module">Singular.Registry.Trie.PureManager</a> — <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="source">source</a>
@@ -180,11 +180,15 @@ suite's own library now has its own generated reference — the
 and checked by the same discipline from the Conformance tree. Together
 the two references cover the documented module surfaces of the two
 public libraries, no more: this reference's extent is the off-chain
-public library's, with the six private node runtime owners staying
+main library's, with the private node runtime owners staying
 outside it in [Node module ownership](offchain-node-ownership.md), and
 the conformance reference's extent is the conformance library's. The
 package-private node-internal library, the executables and the on-chain
-Aiken validators remain outside the generated references; wider
+Aiken validators remain outside the generated references. The public
+`local-services` component also exposes `LocalEvaluation`, `NetworkTime`,
+`PhaseLog`, `Services` and `TimeMaterial`; their sources live under
+`offchain/local-services/Singular/Registry/`. Their generated pages are not
+in this main-library reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a
 claim this page makes. Nothing on
 this page is a publication or release claim — the reference ships with

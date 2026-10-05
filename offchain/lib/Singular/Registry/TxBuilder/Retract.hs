@@ -75,6 +75,7 @@ import Singular.Registry.Ledger
     , TokenId
     )
 import Singular.Registry.Provider (ChainPoint (..), View (..))
+import Singular.Registry.Services qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
@@ -176,10 +177,11 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
     let phase2Start = submAt + procTime
         phase2End = submAt + procTime + retrTime
     phase2Slot <-
-        viewPosixMsCeilSlot view phase2Start
+        Services.ceilingSlot view phase2Start
     let lowerSlot = max tip phase2Slot
     when (lowerSlot > cpSlot (viewPoint view)) $
         fail "retractRequest: lower-bound-ahead-of-view"
+    _ <- Services.slotStart view lowerSlot
     -- The window's end may lie past what the node can translate to a slot
     -- (its horizon). A validity upper bound anywhere inside the window is as
     -- correct as its end, so a nearer bound stands in: the window's end first,

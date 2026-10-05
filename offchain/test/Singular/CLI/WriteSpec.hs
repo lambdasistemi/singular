@@ -64,6 +64,7 @@ import Data.Time
     )
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
+import Singular.Registry.SyntheticTime (syntheticTime)
 import System.Directory
     ( doesDirectoryExist
     , doesFileExist
@@ -569,8 +570,7 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
                         (outRef 'f')
                         (mkBasicTxOut (walletAddr w) (MaryValue (Coin 50_000_000) mempty))
                 , csRegistered = Set.empty
-                , csSystemStartMs = 0
-                , csSlotLengthMs = 1_000
+                , csNetworkTime = syntheticTime
                 }
     mutate chain id
     Fixture (dir </> "registry") chain w
