@@ -131,6 +131,7 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestScriptBytesFromCfg
     , scriptFromBytes
     , scriptHashBytes
     , toPlcData
@@ -1060,7 +1061,7 @@ resolveBuilt requests extra wanted =
             Map.fromList
                 ( stateUtxoFor
                     : utxosAt payer
-                        <> [liveOutput, registryReference, appReference]
+                        <> [liveOutput, registryReference, requestReference, appReference]
                         <> requests
                         <> extra
                 )
@@ -1405,6 +1406,18 @@ referenceOf c script =
 registryReference :: (TxIn, TxOut ConwayEra)
 registryReference = referenceOf '8' (scriptFromBytes "state" program)
 
+{- | Both registry scripts must actually resolve when the fixture references
+them: the state and its token-specific applied request validator.
+-}
+requestReference :: (TxIn, TxOut ConwayEra)
+requestReference =
+    referenceOf
+        '7'
+        ( scriptFromBytes
+            "request"
+            (requestScriptBytesFromCfg builtCfg foldTokenId)
+        )
+
 appReference :: (TxIn, TxOut ConwayEra)
 appReference = referenceOf '9' appScript
 
@@ -1430,7 +1443,7 @@ retireWithReferences app = do
                 app
                 []
                 [appLive]
-                witnessScripts{rcRefUtxos = [registryReference]}
+                witnessScripts{rcRefUtxos = [registryReference, requestReference]}
             )
     updateTokenWithDuties
         builtCfg

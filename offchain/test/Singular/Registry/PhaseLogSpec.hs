@@ -151,6 +151,7 @@ import Singular.Registry.RawNodeFixture
     , syntheticMaterial
     )
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -606,7 +607,7 @@ evaluation =
         (networkSystemStart syntheticTime)
 
 evaluationParameters :: PParams ConwayEra
-evaluationParameters = withSyntheticCosts emptyPParams
+evaluationParameters = withSyntheticCosts preprodParams
 
 evaluationTx :: ConwayTx
 evaluationTx =
