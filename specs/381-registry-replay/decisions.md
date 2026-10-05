@@ -100,6 +100,26 @@ the provider ticket brings, over the compiled validator. Building such a fold
 needs a test-only builder variant; production builders are unchanged. No model
 correspondence is claimed for mixed folds as one transaction.
 
+## Failed transactions and named refusals land first
+
+As a registry user, I need the replay to ignore a transaction that failed its
+scripts. A provider lists every transaction that carried the state token, and a
+transaction whose `isValid` flag is false spent only its collateral, whatever
+its body inputs name. Read as a spend, it would look like a fork. The replay
+leaves it out of the lineage, so the lineage and the trie are those of the same
+history without it.
+
+As a person reading a refusal, I need it to say which registry, which
+transaction and what went wrong. The epic owner ruled on October 4 that the shared
+`TrieFailure` type carries that payload, and that this ticket makes the change:
+incomplete history names its reason, roots that part name both roots or the record
+that cannot be read, and a wrong registry, a stale state or a missing proof name what
+a person needs to act. An instance passes only what it knows. Existing commands keep
+their refusal names, outcome classes and exit statuses.
+
+Both changes land on main before the commands move onto the replay, so the provider
+ticket builds on the payload-carrying type rather than rebasing across it.
+
 ## Sequencing and staffing
 
 As this ticket's owner, I implement only against published code. Both slices that
@@ -109,8 +129,9 @@ the pure replay and its chain oracles first, against nothing unpublished.
 The epic owner forwards each as an inbox note. If the published contract does not
 fit lineage reconstruction, that is a question, not a change to the provider ticket.
 
-After acceptance of the intake head, this window runs one commit owner, Claude
-claude-opus-5-5 with high effort, and one mute persistent auditor, Codex
-gpt-6.1-sol with high reasoning, in its own detached audit worktree. No gate
-authors or draft seats are authorised. Merge readiness is the auditor's
-approval of every checkpoint and exact-head CI green; the epic owner merges.
+After acceptance of the intake head, this window runs one commit owner and one
+mute persistent auditor, in its own detached audit worktree, with the models the
+operator names. Until October 4 these were Claude claude-opus-5-5 and Codex
+gpt-6.1-sol; from October 5, Codex gpt-6.1-sol and Grok grok-4.7. No gate authors or
+draft seats are authorised. Merge readiness is the auditor's approval of every
+checkpoint and exact-head CI green; the epic owner merges.
