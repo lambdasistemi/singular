@@ -63,7 +63,7 @@ import Cardano.Ledger.TxIn (TxIn)
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.TxBuilder.BookingFixture
     ( applicationScript
@@ -86,6 +86,7 @@ import Singular.Registry.TxBuilder.Internal
     , requestAddrFromCfg
     , toPlcData
     )
+import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (CageDatum (..), OnChainRoot (..))
 
@@ -212,7 +213,52 @@ chainView sc submittedAt horizon =
         }
 
 spec :: Spec
-spec =
+spec = do
+    rejectValidity
+    retractFunding
+
+{- | These rows inspect the actual reject body. Scripts and evaluation are
+fixtures, so this establishes builder bounds rather than node acceptance.
+-}
+rejectValidity :: Spec
+rejectValidity = describe "a reject's validity starts at the acquired view's tip" $ do
+    it "never starts ahead of a tip lagging the host clock" $
+        property $
+            forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
+                now <- currentPosixMs
+                let view = rejectView (slotOf (now - lag * 1000)) Nothing
+                    tip = cpSlot (viewPoint view)
+                tx <- rejectRequestsImpl cfg view tokenId payer
+                let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                pure $
+                    conjoin
+                        [ property (lower <= SJust tip)
+                        , lower === SJust tip
+                        , property (upper > lower)
+                        ]
+    it "keeps a nonempty interval when the host clock is behind the tip" $ do
+        now <- currentPosixMs
+        let view = rejectView (slotOf (now + 300_000)) Nothing
+        tx <- rejectRequestsImpl cfg view tokenId payer
+        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        upper `shouldSatisfy` (> lower)
+    it "keeps the upper-bound fallback inside the conversion horizon" $ do
+        now <- currentPosixMs
+        let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
+        tx <- rejectRequestsImpl cfg view tokenId payer
+        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        upper `shouldSatisfy` (> lower)
+        upper `shouldSatisfy` (<= SJust (slotOf (now + 10_000)))
+  where
+    slotOf ms = SlotNo (fromInteger (ms `div` 1000))
+    rejectView tip horizon =
+        let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 horizon
+        in  view{viewPoint = (viewPoint view){cpSlot = tip}}
+
+retractFunding :: Spec
+retractFunding =
     describe
         "a retraction is funded and collateralised by an output that can carry it (#300)"
         $ do
