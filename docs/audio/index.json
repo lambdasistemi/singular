@@ -4505,8 +4505,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain public library's, with the six private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-    "v": "854dd0c13755"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, PhaseLog, Services and TimeMaterial; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+    "v": "b02fcf0dda5a"
    }
   ],
   "what-this-reference-contains": [
@@ -4528,8 +4528,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 59 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "c3afc77c93c2"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 59 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "05b0cf816a0b"
    },
    {
     "index": 3,
@@ -5745,8 +5745,8 @@
     "index": 1,
     "name": "docs-offchain-node-ownership/facade-callers-and-the-private-boundary-01",
     "pause_ms": 400,
-    "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The ten owners themselves are not importable from the public library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. Two of them do: the public library, whose facade re-exports the owners, and the cage test component, whose own dependency binds its observers to the same compiled instance the facade re-exports from — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
-    "v": "a8f2534938d8"
+    "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+    "v": "3789562f875f"
    }
   ],
   "node-module-ownership": [
@@ -5777,15 +5777,15 @@
     "index": 1,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-01",
     "pause_ms": 400,
-    "text": "The ten owners and the two chain-facing types they read live in one package-private internal library: seven for the runner's session, and three for reading and writing the chain through one interface. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the export list the library had before the split, adds only the five wait names, and every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
-    "v": "aed029be1293"
+    "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the export list the library had before the split, adds only the five wait names, and every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+    "v": "20e354332cc5"
    },
    {
     "index": 2,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-02",
     "pause_ms": 400,
-    "text": "The dependency direction is acyclic and downward: options and the wait owner depend on nothing local, wallet reads options, the indexer and the funding check read wallet and options, the session brackets the indexer and the funding check, and confirmation reads the session and the indexer — all three wait under the wait owner's bound — never the other way. Ledger and provider sit beside the owners in the private library because the owners read them; the public library re-exports both under their original import paths, so a module that imported Singular.Registry.Ledger before the split still does.",
-    "v": "ca70d2f380a2"
+    "text": "The dependency direction is acyclic and downward: options and the wait owner depend on nothing local, wallet reads options, the indexer and the funding check read wallet and options, the session brackets the indexer and the funding check, and confirmation reads the session and the indexer — all three wait under the wait owner's bound — never the other way. The runtime owners read Ledger and Provider from public local-services; the main library re-exports both under their original import paths, so a module that imported Singular.Registry.Ledger before the split still does.",
+    "v": "a97208524767"
    },
    {
     "index": 3,
@@ -5798,8 +5798,8 @@
     "index": 4,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-04",
     "pause_ms": 400,
-    "text": "Each owner is package-private — not importable from the public library — so it has no page in the generated API reference: the reference documents the public library, and Haddock is not run over the owners on their own. Each owner's implementation is one source file, linked below on the default branch, and the generated public pages that re-export an owner's names link to its entry here:",
-    "v": "bedca04f92cd"
+    "text": "Each owner is package-private — not importable from the public library — so it has no page in the generated API reference: the reference documents the main library, and the site does not publish the private owners' pages. Each owner's implementation is one source file, linked below on the default branch, and the generated public pages that re-export an owner's names link to its entry here:",
+    "v": "1ecee15cee54"
    },
    {
     "index": 5,
@@ -5875,22 +5875,29 @@
     "index": 15,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-15",
     "pause_ms": 300,
-    "text": "Memory — the deterministic in-memory chain behind the same read interface — source.",
-    "v": "707b94b97f35"
+    "text": "RawView — raw reads through one held LocalStateQuery channel; adapters supply facts for fixed common computations — source.",
+    "v": "829a337c1e85"
    },
    {
     "index": 16,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-16",
     "pause_ms": 300,
-    "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-    "v": "1d84a0c6f666"
+    "text": "Memory — the deterministic in-memory chain behind the same read interface — source.",
+    "v": "9a1baa7b10f8"
    },
    {
     "index": 17,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-17",
     "pause_ms": 300,
+    "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
+    "v": "c1c47dc30868"
+   },
+   {
+    "index": 18,
+    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-18",
+    "pause_ms": 300,
     "text": "Submit — the write capability, which takes signed transactions only — source.",
-    "v": "ca2d45046e5c"
+    "v": "cccd3ecced5b"
    }
   ],
   "process-state-and-its-lifetimes": [
