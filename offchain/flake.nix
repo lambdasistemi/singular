@@ -431,14 +431,17 @@
         packages = {
           # Recording modes are read-only. The explicit private confirmation
           # smoke submits generated-fixture key payments on the private node.
-          local-services-record = pkgs.runCommand "local-services-record" {
-            nativeBuildInputs = [ pkgs.makeWrapper ];
-            meta.mainProgram = "local-services-record";
-          } ''
-            mkdir -p $out/bin
-            makeWrapper ${pkgs.lib.getExe components.exes.local-services-record} $out/bin/local-services-record \
-              --prefix PATH : ${cardanoNode}/bin
-          '';
+          local-services-record =
+            pkgs.runCommand "local-services-record"
+              {
+                nativeBuildInputs = [ pkgs.makeWrapper ];
+                meta.mainProgram = "local-services-record";
+              }
+              ''
+                mkdir -p $out/bin
+                makeWrapper ${pkgs.lib.getExe components.exes.local-services-record} $out/bin/local-services-record \
+                  --prefix PATH : ${cardanoNode}/bin
+              '';
           # #264 T264-05: the classified supported off-chain component build
           # carrier (epic answer A-005; classification and inventory gate in
           # ./nix/component-inventory.nix). CI builds it with

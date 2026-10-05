@@ -69,12 +69,14 @@ let
       # nix run .#contract-tests and nix run .#contract-external.
       "contract-tests"
     ];
-    # #266 (epic answer A-005): the package-private ownership core —
-    # ledger, provider and the six Node children in one internal
-    # library. Built here because the public library itself links it;
-    # this is the compiled state-identity carrier for the facade, the
-    # cleanup brackets and the cage test observers.
-    sublibs = [ "node-internal" "local-services" ];
+    # The main library links both the private node runtime and public
+    # local services. The private runtime keeps the facade, cleanup and
+    # test observers on one compiled instance of process state; the public
+    # component owns Ledger, Provider and fixed local computations.
+    sublibs = [
+      "node-internal"
+      "local-services"
+    ];
   };
 
   # Each entry carries its own kind and names the job and its verbatim
