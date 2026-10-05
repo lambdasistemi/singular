@@ -31,11 +31,6 @@ import Control.Concurrent.Async (async, cancel)
 import Control.Exception (bracket)
 import Data.Text (Text)
 import GHC.Clock (getMonotonicTime)
-import Ouroboros.Network.Magic (unNetworkMagic)
-import Singular.Registry.Node.RawView (rawNodeProvider)
-import Singular.Registry.Node.Session (guardRawConnection)
-import Singular.Registry.TimeMaterial (loadTimeMaterial)
-import System.FilePath (takeDirectory)
 
 import Cardano.Node.Client.N2C.Connection
     ( newLSQChannel
@@ -51,12 +46,12 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Node
     ( Capabilities (..)
     , NodeMode (..)
-    , adaptProvider
     , awaitConnection
     , awaitIndexed
     , boundedSubmitter
     , devnetGenesis
     , followedProvider
+    , guardNodeConnection
     , runMode
     , sessionMagic
     , signedSubmitter
@@ -124,15 +119,14 @@ openHarnessNode wrap body = withNodeSocket $ \sock -> do
         (async (runNodeClient sessionMagic sock lsqCh ltxsCh))
         cancel
         $ \nodeThread -> do
-            (n2c, guardedSubmit, raw) <-
-                guardRawConnection
+            (n2c, guardedSubmit, nodeProv) <-
+                guardNodeConnection
                     nodeThread
+                    sessionMagic
+                    sock
+                    lsqCh
                     (mkN2CProvider lsqCh)
                     (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
-                    (rawNodeProvider lsqCh)
-            material <-
-                loadTimeMaterial (unNetworkMagic sessionMagic) (takeDirectory sock)
-            let nodeProv = adaptProvider sessionMagic material raw
             awaitConnection sessionMagic sock nodeThread nodeProv
             (submit, extra) <- wrap n2c lsqCh guardedSubmit
             prov <- followedProvider nodeProv submit

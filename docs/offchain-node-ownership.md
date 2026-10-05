@@ -15,8 +15,8 @@ The node runtime owners live in the package-private `node-internal`
 library. Ledger and Provider have public ownership in `local-services`,
 which also owns fixed local evaluation and validated time conversion. The public module
 <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a>
-is a facade: it owns nothing, keeps the export list the library had
-before the split, adds only the five wait names, and every original caller — the focused node tests, the
+is a facade: it owns nothing, keeps the original exports, and adds the
+five wait names and `guardNodeConnection` for existing-connection composition. Every original caller — the focused node tests, the
 journey runner, the end-to-end suite, the shipped commands — keeps
 compiling against it unchanged.
 
@@ -270,9 +270,9 @@ named library without public visibility can be depended on only by
 components of this same package. The main library's facade and each test
 or tool importing private seams bind to the same compiled instance —
 one build, one memory, no second copy.
-Nothing outside the package can name the private library; a downstream
-reader keeps the facade and the two re-exported modules, exactly as
-before the split.
+Nothing outside the package can name the private library. A downstream runner
+uses `guardNodeConnection` to compose its existing connection and common services
+without importing raw adapter types; the original facade imports remain valid.
 
 ## Decisions this split recorded
 

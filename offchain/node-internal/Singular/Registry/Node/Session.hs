@@ -50,6 +50,7 @@ module Singular.Registry.Node.Session
       -- * No node call inside a view (#326)
     , NodeCallInView (..)
     , guardConnection
+    , guardNodeConnection
     , guardRawConnection
     ) where
 
@@ -103,7 +104,7 @@ import Cardano.Node.Client.N2C.Connection
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
+import Cardano.Node.Client.N2C.Types (ConnectionLost (..), LSQChannel)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter (..))
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
@@ -607,6 +608,25 @@ guardConnection client p0 s = do
             s
             (RawProvider (\_ -> fail "raw view not supplied"))
     pure (p, submitter)
+
+{- | Compose a runner's existing connection into guarded upstream reads,
+submission and acquired public reads. The raw adapter and exact time-source
+selection stay behind the public node facade; no second connection is opened.
+-}
+guardNodeConnection
+    :: Async b
+    -> NetworkMagic
+    -> FilePath
+    -> LSQChannel
+    -> N2C.Provider IO
+    -> Submitter IO
+    -> IO (N2C.Provider IO, Submitter IO, Cage.Provider IO)
+guardNodeConnection client magic sock channel upstream submit = do
+    (node, guardedSubmit, raw) <-
+        guardRawConnection client upstream submit (rawNodeProvider channel)
+    material <-
+        loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
+    pure (node, guardedSubmit, adaptProvider magic material raw)
 
 -- | Raw and legacy routes share the same holder set and connection lifetime.
 guardRawConnection

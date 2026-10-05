@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the export list the library had before the split, adds only the five wait names, and every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+      "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
       "pause": 400
     },
     {
@@ -175,7 +175,7 @@
       "pause": 500
     },
     {
-      "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library; a downstream reader keeps the facade and the two re-exported modules, exactly as before the split.",
+      "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
       "pause": 400
     }
   ],
@@ -191,6 +191,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "a31c2d543e7d9446e81113d8823173035c6e5a1f38f7b680857a41bc0d06a447"
+    "sha256": "cdb71dc286e349ecaea826541464d635e7bacf1a7dc8f85c8502fed438f44c58"
   }
 }
