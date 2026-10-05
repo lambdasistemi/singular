@@ -11,6 +11,7 @@ import Singular.Registry.E2E.Fork81Spec qualified
 import Singular.Registry.E2E.InsertActiveSpec qualified
 import Singular.Registry.E2E.NodeSpec qualified
 import Singular.Registry.E2E.OpenBootSpec qualified
+import Singular.Registry.E2E.ReplaySpec qualified
 import Singular.Registry.E2E.UpdateTerminalSpec qualified
 
 -- | Run all end-to-end test specs.
@@ -36,6 +37,7 @@ main = do
                 Singular.Registry.E2E.Criterion3Spec.spec blueprint
                 Singular.Registry.E2E.CageSpec.spec blueprint
                 Singular.Registry.E2E.DriverSpec.spec blueprint
+                Singular.Registry.E2E.ReplaySpec.spec blueprint
         describe
             "Live node checks (devnet queries, submission and connection refusals)"
             Singular.Registry.E2E.NodeSpec.spec

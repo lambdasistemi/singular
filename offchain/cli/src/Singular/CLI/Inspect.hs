@@ -80,6 +80,7 @@ import Singular.CLI.Node (withReads)
 import Singular.CLI.Proof
     ( AuthError (RootMismatch)
     , Leaf (..)
+    , authErrorFields
     , leafName
     , renderAuthError
     )
@@ -348,12 +349,18 @@ inspectSaved dir key sock magic a = do
                     receipt
                         "inspect"
                         StaleState
-                        (labels <> [("refusal", toJSON (renderAuthError err))])
+                        ( labels
+                            <> [("refusal", toJSON (renderAuthError err))]
+                            <> authErrorFields err
+                        )
                 (Nothing, Left err) ->
                     receipt
                         "inspect"
                         ProofInconsistent
-                        (labels <> [("refusal", toJSON (renderAuthError err))])
+                        ( labels
+                            <> [("refusal", toJSON (renderAuthError err))]
+                            <> authErrorFields err
+                        )
                 (Nothing, Right l)
                     | agrees l ->
                         receipt "inspect" Success (labels <> [("leaf", toJSON (leafName l))])

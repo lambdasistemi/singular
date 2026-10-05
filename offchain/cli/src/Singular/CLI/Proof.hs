@@ -20,14 +20,18 @@ module Singular.CLI.Proof
     , leafName
     , AuthError (..)
     , renderAuthError
+    , authErrorFields
     , authenticatedLeaf
     , rootOfDb
     ) where
 
+import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Map.Strict qualified as Map
+import Data.Text (Text)
+import Data.Text qualified as T
 
 import MPF.Backend.Pure (MPFInMemoryDB)
 
@@ -68,9 +72,17 @@ renderAuthError = \case
         "no leaf at 0x"
             <> hexS key
             <> " makes the saved trie commit to its own root"
-    TrieRefusal why -> "TrieState " <> show why
+    TrieRefusal why -> "TrieState " <> T.unpack (TrieState.trieFailureName why)
   where
     hexS = BC.unpack . B16.encode
+
+{- | The receipt fields printed beside the rendered error: a trie refusal's
+registry, the transaction where one is known, and its cause.
+-}
+authErrorFields :: AuthError -> [(Text, Value)]
+authErrorFields = \case
+    TrieRefusal why -> TrieState.trieFailureFields why
+    _ -> []
 
 -- | The root the saved trie commits to.
 rootOfDb :: MPFInMemoryDB -> IO ByteString

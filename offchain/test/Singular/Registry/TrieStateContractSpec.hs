@@ -219,6 +219,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
         $ do
             (chosen, create, events, nodes) <-
                 history identity [("first", 1), ("first", 3), ("first", 6)]
+            (_, emptyRoot, _) <- produced token []
             let query c es db =
                     evalState
                         ( withTrieState
@@ -228,20 +229,32 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         )
                         (fixtureStore [(chosen, c, es, db)])
             query (Just create) events nodes `shouldBe` Right 2
-            query Nothing events nodes `shouldBe` Left HistoryIncomplete
+            query Nothing events nodes
+                `shouldBe` Left (HistoryIncomplete identity Nothing MissingTransaction)
             query
                 (Just (CreateRecord otherIdentity (pointOutput (point 0))))
                 events
                 nodes
-                `shouldBe` Left WrongRegistry
+                `shouldBe` Left (WrongRegistry identity Nothing (OtherRegistry otherIdentity))
             query (Just create) (init events) nodes
                 `shouldBe` Right 2
             query (Just create) (take 1 events) nodes
-                `shouldBe` Left HistoryIncomplete
+                `shouldBe` Left (HistoryIncomplete identity Nothing MissingTransaction)
+            secondFrom <- case drop 1 events of
+                ObservedFold from _ _ : _ -> pure (trieSelectionRoot from)
+                [] ->
+                    expectationFailure "the producer emitted one transition"
+                        >> fail "short history"
             query (Just create) (drop 1 events) nodes
-                `shouldBe` Left RootDoesNotChain
+                `shouldBe` Left
+                    (RootDoesNotChain identity Nothing (RootsPart emptyRoot secondFrom))
             query (Just create) events emptyMPFInMemoryDB
-                `shouldBe` Left RootDoesNotChain
+                `shouldBe` Left
+                    ( RootDoesNotChain
+                        identity
+                        Nothing
+                        (RootsPart emptyRoot (trieSelectionRoot chosen))
+                    )
             ObservedFold from to edges <- case events of
                 first : _ -> pure first
                 [] ->
@@ -254,17 +267,27 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                         (to{trieSelectionRoot = Root (BS.replicate 32 9)})
                         edges
             query (Just create) (broken : drop 1 events) nodes
-                `shouldBe` Left RootDoesNotChain
+                `shouldBe` Left
+                    ( RootDoesNotChain
+                        identity
+                        Nothing
+                        (RootsPart (trieSelectionRoot to) (Root (BS.replicate 32 9)))
+                    )
             let discontinuous =
                     ObservedFold
                         (from{trieSelectionRoot = trieSelectionRoot chosen})
                         to
                         edges
             query (Just create) (discontinuous : drop 1 events) nodes
-                `shouldBe` Left RootDoesNotChain
+                `shouldBe` Left
+                    ( RootDoesNotChain
+                        identity
+                        Nothing
+                        (RootsPart emptyRoot (trieSelectionRoot chosen))
+                    )
             let undecodable = ObservedFold from to (("first", 99) :| [])
             query (Just create) (undecodable : drop 1 events) nodes
-                `shouldBe` Left UndecodableRequest
+                `shouldBe` Left (UndecodableRequest identity Nothing (EdgeOutOfRange 99))
     it
         "reads authenticated nodes after the uncommitted key index is erased"
         $ do
@@ -324,7 +347,8 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                 let action = withTrieState fixtureTrieState chosen $ \snap ->
                         speculateEdges snap (("never-bound", edge) :| [])
                     (answer, unchanged) = runState action fixture
-                answer `shouldBe` Right (Left MissingProof)
+                answer
+                    `shouldBe` Right (Left (MissingProof identity (NoProofFor "never-bound")))
                 fixtureNodes unchanged `shouldBe` fixtureNodes fixture
                 fixtureFolds unchanged `shouldBe` fixtureFolds fixture
     it
@@ -359,7 +383,8 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             walkProofs walk `shouldBe` drop 1 proofs
             fixtureNodes unchanged `shouldBe` fixtureNodes fixture
             let (bad, afterBad) = runState (action (("first", 99) :| [])) fixture
-            bad `shouldBe` Right (Left UndecodableRequest)
+            bad
+                `shouldBe` Right (Left (UndecodableRequest identity Nothing (EdgeOutOfRange 99)))
             fixtureNodes afterBad `shouldBe` fixtureNodes fixture
             after@(afterChosen, _, _, _) <-
                 history identity [("neighbour", 1), ("first", 0), ("first", 2)]
@@ -373,7 +398,8 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             fixtureFolds repeated `shouldBe` fixtureFolds committed
             let reordered = ObservedFold chosen afterChosen (("first", 2) :| [("first", 0)])
                 (reorderedAnswer, refused) = runState (acceptObservedFold fixtureTrieState reordered) fixture
-            reorderedAnswer `shouldBe` Left MissingProof
+            reorderedAnswer
+                `shouldBe` Left (MissingProof identity (NoProofFor "first"))
             fixtureNodes refused `shouldBe` fixtureNodes fixture
             fixtureFolds refused `shouldBe` fixtureFolds fixture
 

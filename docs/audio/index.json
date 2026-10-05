@@ -4528,8 +4528,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 62 modules in three kinds: 47 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "7746ee1ca680"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "2ccce30bae43"
    },
    {
     "index": 3,
@@ -4759,218 +4759,225 @@
     "index": 35,
     "name": "docs-offchain-api-reference/what-this-reference-contains-35",
     "pause_ms": 300,
-    "text": "Singular.Registry.Provider — source",
-    "v": "7e9abf272d62"
+    "text": "Singular.Registry.Replay — source",
+    "v": "b1038c3551ed"
    },
    {
     "index": 36,
     "name": "docs-offchain-api-reference/what-this-reference-contains-36",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie — source",
-    "v": "26ae84b82299"
+    "text": "Singular.Registry.Provider — source",
+    "v": "6a5be851a1e6"
    },
    {
     "index": 37,
     "name": "docs-offchain-api-reference/what-this-reference-contains-37",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie.Pure — source",
-    "v": "bbc895c82a1b"
+    "text": "Singular.Registry.Trie — source",
+    "v": "896627d8e4dd"
    },
    {
     "index": 38,
     "name": "docs-offchain-api-reference/what-this-reference-contains-38",
     "pause_ms": 300,
-    "text": "Singular.Registry.Trie.PureManager — source",
-    "v": "bc8e3eabaae5"
+    "text": "Singular.Registry.Trie.Pure — source",
+    "v": "7f5ce5124dce"
    },
    {
     "index": 39,
     "name": "docs-offchain-api-reference/what-this-reference-contains-39",
     "pause_ms": 300,
-    "text": "Singular.Registry.TrieState — source",
-    "v": "bbc0953cfb66"
+    "text": "Singular.Registry.Trie.PureManager — source",
+    "v": "201d6e8a622a"
    },
    {
     "index": 40,
     "name": "docs-offchain-api-reference/what-this-reference-contains-40",
     "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Core — source",
-    "v": "2a23bd7e94a4"
+    "text": "Singular.Registry.TrieState — source",
+    "v": "b3b35df3724c"
    },
    {
     "index": 41,
     "name": "docs-offchain-api-reference/what-this-reference-contains-41",
     "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Fixture — source",
-    "v": "f36e6154cedf"
+    "text": "Singular.Registry.TrieState.Core — source",
+    "v": "998595ac868a"
    },
    {
     "index": 42,
     "name": "docs-offchain-api-reference/what-this-reference-contains-42",
     "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Mirror — source",
-    "v": "bf2c6c28478b"
+    "text": "Singular.Registry.TrieState.Fixture — source",
+    "v": "d706a489850c"
    },
    {
     "index": 43,
     "name": "docs-offchain-api-reference/what-this-reference-contains-43",
     "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Types — source",
-    "v": "ff8126f9ebd5"
+    "text": "Singular.Registry.TrieState.Mirror — source",
+    "v": "b42922d687dc"
    },
    {
     "index": 44,
     "name": "docs-offchain-api-reference/what-this-reference-contains-44",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Boot — source",
-    "v": "5cc90a8ee178"
+    "text": "Singular.Registry.TrieState.Types — source",
+    "v": "0fe49d35a3de"
    },
    {
     "index": 45,
     "name": "docs-offchain-api-reference/what-this-reference-contains-45",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
-    "v": "7e1b42649524"
+    "text": "Singular.Registry.TxBuilder.Boot — source",
+    "v": "2a01b1decc58"
    },
    {
     "index": 46,
     "name": "docs-offchain-api-reference/what-this-reference-contains-46",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Edges — source",
-    "v": "0c60d385b7b5"
+    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
+    "v": "73939f481704"
    },
    {
     "index": 47,
     "name": "docs-offchain-api-reference/what-this-reference-contains-47",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal — source",
-    "v": "23d1bb8929e7"
+    "text": "Singular.Registry.TxBuilder.Edges — source",
+    "v": "9e29ddc4e6ba"
    },
    {
     "index": 48,
     "name": "docs-offchain-api-reference/what-this-reference-contains-48",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
-    "v": "0f58e05eab1b"
+    "text": "Singular.Registry.TxBuilder.Internal — source",
+    "v": "a9976b602fed"
    },
    {
     "index": 49,
     "name": "docs-offchain-api-reference/what-this-reference-contains-49",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
-    "v": "72e59ed67e1f"
+    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
+    "v": "b4f6a0f807bc"
    },
    {
     "index": 50,
     "name": "docs-offchain-api-reference/what-this-reference-contains-50",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
-    "v": "e74c5a3db0d5"
+    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
+    "v": "68d7f780e502"
    },
    {
     "index": 51,
     "name": "docs-offchain-api-reference/what-this-reference-contains-51",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Register — source",
-    "v": "da4cba4a4361"
+    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
+    "v": "740bdcb65207"
    },
    {
     "index": 52,
     "name": "docs-offchain-api-reference/what-this-reference-contains-52",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Reject — source",
-    "v": "282441f3ad5d"
+    "text": "Singular.Registry.TxBuilder.Register — source",
+    "v": "19458c2901f0"
    },
    {
     "index": 53,
     "name": "docs-offchain-api-reference/what-this-reference-contains-53",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Request — source",
-    "v": "d953610a27ae"
+    "text": "Singular.Registry.TxBuilder.Reject — source",
+    "v": "d0646a49f573"
    },
    {
     "index": 54,
     "name": "docs-offchain-api-reference/what-this-reference-contains-54",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Retract — source",
-    "v": "969d33c9823a"
+    "text": "Singular.Registry.TxBuilder.Request — source",
+    "v": "231500954217"
    },
    {
     "index": 55,
     "name": "docs-offchain-api-reference/what-this-reference-contains-55",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update — source",
-    "v": "331e5d687b78"
+    "text": "Singular.Registry.TxBuilder.Retract — source",
+    "v": "215b12615bd8"
    },
    {
     "index": 56,
     "name": "docs-offchain-api-reference/what-this-reference-contains-56",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Build — source",
-    "v": "a5fad6344e8a"
+    "text": "Singular.Registry.TxBuilder.Update — source",
+    "v": "75b2b2d081b5"
    },
    {
     "index": 57,
     "name": "docs-offchain-api-reference/what-this-reference-contains-57",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Context — source",
-    "v": "fb2f51d141e1"
+    "text": "Singular.Registry.TxBuilder.Update.Build — source",
+    "v": "636cbdd7a640"
    },
    {
     "index": 58,
     "name": "docs-offchain-api-reference/what-this-reference-contains-58",
     "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
-    "v": "6ebedbe828ee"
+    "text": "Singular.Registry.TxBuilder.Update.Context — source",
+    "v": "2af590c6c786"
    },
    {
     "index": 59,
     "name": "docs-offchain-api-reference/what-this-reference-contains-59",
     "pause_ms": 300,
-    "text": "Singular.Registry.Types — source",
-    "v": "9f5c2797bcca"
+    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
+    "v": "43deb2ab59e6"
    },
    {
     "index": 60,
     "name": "docs-offchain-api-reference/what-this-reference-contains-60",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Primitive — source",
-    "v": "866922d232ed"
+    "text": "Singular.Registry.Types — source",
+    "v": "27bdac4bbc9e"
    },
    {
     "index": 61,
     "name": "docs-offchain-api-reference/what-this-reference-contains-61",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Proof — source",
-    "v": "ddb928969ad7"
+    "text": "Singular.Registry.Wire.Primitive — source",
+    "v": "74698d0cfd0b"
    },
    {
     "index": 62,
     "name": "docs-offchain-api-reference/what-this-reference-contains-62",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Redeemer — source",
-    "v": "4eae6d8f0758"
+    "text": "Singular.Registry.Wire.Proof — source",
+    "v": "17276a91e32d"
    },
    {
     "index": 63,
     "name": "docs-offchain-api-reference/what-this-reference-contains-63",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Request — source",
-    "v": "4862beb6001a"
+    "text": "Singular.Registry.Wire.Redeemer — source",
+    "v": "64b23439768f"
    },
    {
     "index": 64,
     "name": "docs-offchain-api-reference/what-this-reference-contains-64",
     "pause_ms": 300,
-    "text": "Singular.Registry.Wire.State — source",
-    "v": "791319d2a5aa"
+    "text": "Singular.Registry.Wire.Request — source",
+    "v": "b10b245a4499"
    },
    {
     "index": 65,
     "name": "docs-offchain-api-reference/what-this-reference-contains-65",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wire.State — source",
+    "v": "107b9298263b"
+   },
+   {
+    "index": 66,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-66",
     "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
-    "v": "1726e09e1150"
+    "v": "1680408caa68"
    }
   ]
  },
