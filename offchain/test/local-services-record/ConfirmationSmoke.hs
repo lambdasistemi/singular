@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -36,6 +37,7 @@ import Control.Monad (unless)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
+import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
@@ -211,7 +213,7 @@ payment session wallet upper = Cage.withView (nsProvider session) $ \view -> do
 sendAndConfirm :: NodeSession -> Wallet -> ConwayTx -> IO ConwayTx
 sendAndConfirm session wallet tx = do
     let signed = signTx (walletSignKey wallet) tx
-    submitSigned (signedSubmitter (nsSubmitter session)) signed >>= \result -> case result of
+    submitSigned (signedSubmitter (nsSubmitter session)) signed >>= \case
         Submitted _ -> awaitTx (signedTx signed) >> pure (signedTx signed)
         Rejected reason -> fail ("ConfirmationSmokePrivatePaymentRejected " <> show reason)
 
@@ -227,13 +229,12 @@ expectTimeout session tx exact initialEnd = do
             (const (fail "ConfirmationSmokeMissingTransactionAppeared"))
             result
     tip <- nsTipTime session
-    let expected = maybe (before + 300_000) id exact
+    let expected = fromMaybe (before + 300_000) exact
         -- The no-upper clock is read after the bounded acquired-context
         -- read. Bracket it by that public bound, including acquisition time.
         upperExpected =
-            maybe
+            fromMaybe
                 (before + fromIntegral windowReadBound * 1000 + 300_000)
-                id
                 exact
     unless
         ( waitStage failure == SessionConfirmationWait

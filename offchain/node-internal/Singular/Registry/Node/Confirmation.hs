@@ -293,7 +293,7 @@ an uncapped five-minute local wait. Neither margin extends the ledger horizon.
 confirmWindow :: Cage.Provider IO -> ConwayTx -> IO (Integer, Int)
 confirmWindow prov tx = case txUpperBoundSlot tx of
     Just upper -> do
-        start <- Cage.withView prov (\view -> Services.slotStart view upper)
+        start <- Cage.withView prov (`Services.slotStart` upper)
         now <- nowMs
         let deadline = start + 120_000
             remaining = max 0 ((deadline - now + 999) `div` 1000)

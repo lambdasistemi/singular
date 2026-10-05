@@ -18,7 +18,7 @@ import ConfirmationProbe (probeConfirmation)
 import ConfirmationSmoke (confirmationSmoke)
 import Control.Concurrent.Async (withAsync)
 import Control.Exception (ErrorCall, displayException, try)
-import Control.Monad (forM, unless)
+import Control.Monad (forM, unless, when)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.ByteString.Lazy qualified as LBS
 import Data.Foldable (toList)
@@ -94,7 +94,7 @@ main :: IO ()
 main = do
     output <- getEnv "LOCAL_SERVICES_OUTPUT"
     exists <- doesDirectoryExist output
-    unless (not exists) (fail "RecordingAlreadyExists")
+    when exists (fail "RecordingAlreadyExists")
     createDirectory output
     fixture <- lookupEnv "LOCAL_SERVICES_FIXTURE_PARAMETERS"
     case fixture of

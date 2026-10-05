@@ -1419,14 +1419,14 @@ appReference = referenceOf '9' appScript
 retireWithReferences :: Maybe (TxIn, TxOut ConwayEra) -> IO ConwayTx
 retireWithReferences app = do
     let appLive =
-            ( fst liveOutput
-            , snd liveOutput
-                & addrTxOutL
+            second
+                ( addrTxOutL
                     .~ Addr
                         Testnet
                         (ScriptHashObj (computeScriptHash appProgram))
                         StakeRefNull
-            )
+                )
+                liveOutput
     tm <- trieWith (Just leafActive)
     ctx <-
         either

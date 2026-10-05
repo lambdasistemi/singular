@@ -81,7 +81,7 @@ spec = describe "Common services through the existing transaction balancer"
                             ]
                     }
         case inputs of
-            funding : collateral : reference : [] -> do
+            [funding, collateral, reference] -> do
                 balanced <-
                     evaluateAndBalanceReferencing
                         view

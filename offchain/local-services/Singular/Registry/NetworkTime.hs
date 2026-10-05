@@ -24,7 +24,7 @@ module Singular.Registry.NetworkTime
     ) where
 
 import Control.Exception (Exception)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Control.Monad.Trans.Except (runExcept)
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson
@@ -177,8 +177,8 @@ validateNetworkTime requested manifest genesis history = do
     unless
         (requested == timeNetworkMagic manifest)
         (Left (WrongTimeNetwork requested (timeNetworkMagic manifest)))
-    unless
-        (not (Text.null (timeSourceIdentity manifest)))
+    when
+        (Text.null (timeSourceIdentity manifest))
         (Left (TimeSourceMismatch "source identity is absent"))
     checkHash "genesis" (timeGenesisSha256 manifest) genesis
     checkHash "era history" (timeEraHistorySha256 manifest) history
@@ -212,8 +212,8 @@ validateNetworkTime requested manifest genesis history = do
     -- summary invariant expects every era to be nonempty. Validate the
     -- remaining eras with that invariant, without changing the interpreter.
     let activeEras = dropWhile skippedAtGenesis eras
-    unless
-        (not (null activeEras))
+    when
+        (null activeEras)
         (Left (InvalidEraHistory "history contains no active era"))
     activeSummary <-
         first

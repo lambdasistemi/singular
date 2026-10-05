@@ -3,7 +3,7 @@
 -- | Exact recorded evaluation answers and reachable context corruptions.
 module Singular.Registry.LocalEvaluationSpec (spec, fixture) where
 
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Control.Monad.State.Strict (modify', runState)
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson
@@ -69,7 +69,7 @@ import Singular.Registry.TxBuilder.Internal (mkInlineDatum)
 
 data Answer = Units ExUnits | ScriptFailure Text [Text]
     deriving stock (Eq, Show)
-data Recorded = Recorded [(ConwayPlutusPurpose AsIx ConwayEra, Answer)]
+newtype Recorded = Recorded [(ConwayPlutusPurpose AsIx ConwayEra, Answer)]
 data RecordIdentity = RecordIdentity FilePath ByteString
 newtype Manifest = Manifest [RecordIdentity]
 
@@ -144,7 +144,7 @@ instance FromJSON Recorded where
                                 values
                         )
             _ -> fail "UnexpectedRecordedResponseIdentity"
-        unless (not (null rows)) (fail "EmptyScriptEvaluationExtent")
+        when (null rows) (fail "EmptyScriptEvaluationExtent")
         pure (Recorded rows)
       where
         pointer = withObject "script purpose" $ \v -> do
