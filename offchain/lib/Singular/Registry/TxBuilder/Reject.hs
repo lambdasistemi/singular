@@ -62,7 +62,8 @@ import Singular.Registry.Ledger
     , TxIn
     )
 import Singular.Registry.Provider
-    ( View (..)
+    ( ChainPoint (..)
+    , View (..)
     )
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -232,20 +233,21 @@ prepareRejectState cfg stateOut =
         script = mkCageScript cfg
     in  (oldState, newStateOut, script)
 
-{- | The reject's validity interval: from the current slot, for as long
-as the node can convert, up to two minutes. It is bound to no request's
-deadline; a reject is admitted in every window.
+{- | The reject's validity starts at its acquired view's tip. The clock
+chooses only the upper bound, with shorter horizons tried as needed.
+Keep that bound after the tip even when the clock is behind it. No
+request deadline selects the interval: a reject is admitted in every window.
 -}
 rejectValidity :: View IO -> IO (SlotNo, SlotNo)
 rejectValidity view = do
     now <- currentPosixMs
-    lowerSlot <- viewPosixMsToSlot view now
+    let lowerSlot = cpSlot (viewPoint view)
     upperSlot <-
         tryUpperSlots view $
             map
                 (now +)
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
-    pure (lowerSlot, upperSlot)
+    pure (lowerSlot, max (lowerSlot + 1) upperSlot)
 
 -- | Wrap the Provider's viewEvaluateTx for the story language.
 mkRejectEvalTx

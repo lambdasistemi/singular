@@ -1,0 +1,114 @@
+{
+  "rule-and-model": [
+    {
+      "text": "Rule and model.",
+      "pause": 500
+    },
+    {
+      "text": "A reject starts at cpSlot (viewPoint view) and ends strictly later. Its clock chooses only the upper bound. Lean exitAdmission admits .reject without reading time (lean/Singular/Model.lean:1201); the state-validator property prop_reject_admitted_for_every_validity_range (onchain/validators/cage.props.ak:201) names the corresponding script rule. No retract deadline is a premise of reject admission. The client command's policy about when to offer rejection is a separate concern.",
+      "pause": 400
+    },
+    {
+      "text": "A retraction still needs its finite interval inside phase two. If its phase-two opening or its caller's chosen lower bound is ahead of the acquired tip, the library now refuses lower-bound-ahead-of-view before balancing or evaluation. It does not move the opening earlier or change the validator's phase rule.",
+      "pause": 400
+    },
+    {
+      "text": "The model and census are bound to base 22637d46; the reject correction is 877a04f3; the retraction correction is c2b44133. Lean, scripts, corpus and consumer expectations are unchanged. A source verdict below means inspection of interval construction, not independent ledger execution or acceptance of a retained journey.",
+      "pause": 400
+    }
+  ],
+  "builder-census": [
+    {
+      "text": "Builder census.",
+      "pause": 500
+    },
+    {
+      "text": "The table covers the registry builders, their two retraction entry points and callers, and the additional construction sites found by scanning Haskell and shell sources for lower and upper validity setters. An absent lower bound is unbounded below and satisfies this particular rule; that says nothing about an upper bound expiring, script correctness or complete lifecycle behavior. Source locations name repository paths and lines in the corrected implementation. The model revision is stated above.",
+      "pause": 400
+    },
+    {
+      "text": "A table with 19 rows is shown here.",
+      "pause": 400
+    }
+  ],
+  "further-work": [
+    {
+      "text": "Further work.",
+      "pause": 500
+    },
+    {
+      "text": "Two larger lower-bound findings are tracked as open issues:",
+      "pause": 400
+    },
+    {
+      "text": "Legacy repair validity (#400): the unsigned-owner control has no acquired view and cannot establish its intended validator refusal while its lower bound is still ahead. Repair is already classified unverified in the component inventory; this ticket does not revive it..",
+      "pause": 300
+    },
+    {
+      "text": "Conformance lower bounds against the acquired view (#399): placed rejects and hand-built retracts use time-derived openings across multiple acquisitions without comparing the resulting lower with a single acquired tip. Fixing their view and placement lifecycle exceeds the product builder repair..",
+      "pause": 300
+    },
+    {
+      "text": "These are source-derived counterexamples, not executed live failures. Their interval contract and dependent acceptance remain open. A completed census means every construction class was accounted for; it does not mean every retained builder is safe or verified.",
+      "pause": 400
+    }
+  ],
+  "release-failure": [
+    {
+      "text": "Release failure.",
+      "pause": 500
+    },
+    {
+      "text": "The release job failed for a different timing cause: its untampered conformance reject batch's upper bound had expired. The job ran at 2a77ebbaf4ca30f2cda6c2fa29f10aad646e04b5. Its archived node outcome for transaction 38a71ec287ea38fc50d5623f3c5f452e8e3d136771556e8e40be47446c17bae9 reports OutsideValidityIntervalUTxO: lower slot 1062, exclusive upper slot 1348, current slot 1372. The lower was behind the current slot; 1372 was already past 1348. This settles the distinction from the product reject's future lower.",
+      "pause": 400
+    },
+    {
+      "text": "The generic row built and submitted three controls within one request window. The first submitted at 10:30:39, the second at 10:30:51 and the untampered third at 10:31:00 UTC on 2026-10-05. They reused the reported validity interval 1791196229200,1791196257800). The third became chain unsupported versus model accepted, then the runner failed “record 2 does not agree with the model”. The separate split-refund disagreement was explicitly recorded as the known refund-position divergence under [#361; it remains a disagreement and is not evidence of a successful consumer promise.",
+      "pause": 400
+    },
+    {
+      "text": "This conformance assembly uses its own Run/Fold.hs:376–379 interval writer, not the product reject builder. The conformance reject-window expiry issue (#398) asks for enough time per control and a named setup failure before submission when a placement expires. No local reproduction or conformance expectation change is claimed.",
+      "pause": 400
+    },
+    {
+      "text": "The archived job log has SHA-256 60fb96eb4663fb8ff29442e31c2d5b17be101ac4ece85a2dfa8c457af30b15ed, lines 2929–2942 and 2995–2999; downloaded artifact conformance-receipts, conformance-receipts.FW80GS/replay/38a71ec287ea38fc50d5623f3c5f452e8e3d136771556e8e40be47446c17bae9/outcome.json SHA-256 760f92c00e51d945a141b29d2ef6c571826a4df3df7d0486aacc19f75526c87e.",
+      "pause": 400
+    }
+  ],
+  "sparse-blocks-and-verification-limits": [
+    {
+      "text": "Sparse blocks and verification limits.",
+      "pause": 500
+    },
+    {
+      "text": "The sparse-block reject check (#403) continues separately. The attempted CI job reached the phase-three reject test and was cancelled after its 60-minute limit without an acceptance result. The sparse job and its genesis variant have been removed from this change. Sparse-block ledger acceptance remains unverified; this page claims neither a local sparse run nor a preprod write.",
+      "pause": 400
+    },
+    {
+      "text": "The focused reject test executed a built body with a controlled view whose tip lags the host clock: three checks passed, including 100 generated lag cases. Its test-only commit failed against the unchanged base implementation. The retraction tests passed five checks, including the existing funding and horizon properties, and independently exercised both public builders, a future caller slot and phase-two opening equality. Separate failing and passing command receipts record these results. Mock script evaluation is a builder boundary, not script or live-ledger evidence. Broad checks and all PR checks are owed by exact-head CI.",
+      "pause": 400
+    }
+  ],
+  "harness-and-retained-source-appendix": [
+    {
+      "text": "Harness and retained-source appendix.",
+      "pause": 500
+    },
+    {
+      "text": "These additional builders carry test or retained-journey evidence. They do not expand the claim about product acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "A table with 15 rows is shown here.",
+      "pause": 400
+    },
+    {
+      "text": "The census excludes third-party transaction builders and fixture bodies in unit specs. Imported builders are not declared verified by this source census. No shell source in this tree supplied another validity-bound construction site.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "builder-audit.md",
+    "sha256": "4c5058e6300ae3ded373497e24166cfe8f5edff429662c75cd1e6072fcece78a"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder on preprod, I run singular registry reject on a pending request and the node accepts the transaction. Today the node refuses it with OutsideValidityIntervalUTxO, because its lower validity bound is taken from the host clock, which runs ahead of the slot of the last block.",
+      "pause": 400
+    },
+    {
+      "text": "As a maintainer, I see a test fail whenever any builder sets a lower validity bound ahead of the tip slot of the view it was built from.",
+      "pause": 400
+    },
+    {
+      "text": "As a maintainer, I see one CI development-network run produce blocks sparsely, as preprod does, so a bug that confuses the host clock with the last block fails in CI and not first on preprod.",
+      "pause": 400
+    }
+  ],
+  "the-bug": [
+    {
+      "text": "The bug.",
+      "pause": 500
+    },
+    {
+      "text": "The ledger judges the lower bound against its current slot, which is the last block's slot plus one. On preprod a block arrives about every twenty seconds, so the host clock is usually ahead of that slot.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "reject-takes-its-lower-bound-from-the-view": [
+    {
+      "text": "Reject takes its lower bound from the view.",
+      "pause": 500
+    },
+    {
+      "text": "The reject transaction's lower validity bound is the tip slot of the view it was built from, never a slot derived from the host clock.",
+      "pause": 400
+    },
+    {
+      "text": "Admissibility does not depend on that bound. The model reads no time for a reject: exitAdmission answers none for .reject (lean/Singular/Model.lean, exitAdmission), and the validator property prop_reject_admitted_for_every_validity_range (onchain/validators/cage.props.ak) admits a reject under every validity range. So a reject built at the tip is admitted in every window, and the claim in the issue that the tip is already past the retract deadline is not needed for correctness.",
+      "pause": 400
+    },
+    {
+      "text": "The reject's upper bound stays strictly after its lower bound.",
+      "pause": 400
+    }
+  ],
+  "no-builder-sets-a-lower-bound-ahead-of-its-views-tip": [
+    {
+      "text": "No builder sets a lower bound ahead of its view's tip.",
+      "pause": 500
+    },
+    {
+      "text": "For every transaction builder that sets a lower validity bound, the bound is at or before the tip slot of the view the transaction was built from. A builder whose rules require a later lower bound refuses with a named reason instead of building a transaction the node will refuse.",
+      "pause": 400
+    },
+    {
+      "text": "A test exercises this for the reject builder with a view whose tip slot lags the host clock, and fails on the base commit 22637d46.",
+      "pause": 400
+    }
+  ],
+  "every-builder-audited": [
+    {
+      "text": "Every builder audited.",
+      "pause": 500
+    },
+    {
+      "text": "Each builder's validity interval is listed with its source location and its verdict against the rule above: reject, retract and reclaim, fold, booking, update, boot, register and the repair journey. A further violation is fixed in this ticket, or filed as its own bug when the fix is larger than this ticket.",
+      "pause": 400
+    }
+  ],
+  "sparse-blocks-in-ci": [
+    {
+      "text": "Sparse blocks in CI.",
+      "pause": 500
+    },
+    {
+      "text": "One CI development-network run uses an active-slot coefficient below one, so blocks arrive sparsely. If that needs more than a genesis configuration change and one CI job, it is split into its own ticket, and this ticket links it.",
+      "pause": 400
+    }
+  ],
+  "the-release-pr-conformance-failure": [
+    {
+      "text": "The release-PR conformance failure.",
+      "pause": 500
+    },
+    {
+      "text": "The intermittent release-PR failure \"reject-before-deadline-consumer-requirement record 2 does not agree with the model\" (job 111713723071) is investigated. The finding states whether it shares this cause, with the evidence that settles it. A different cause is filed as its own bug.",
+      "pause": 400
+    }
+  ],
+  "success": [
+    {
+      "text": "Success.",
+      "pause": 500
+    },
+    {
+      "text": "On a view whose tip lags the host clock, the built reject's lower bound equals the tip slot; the same test fails on 22637d46.",
+      "pause": 400
+    },
+    {
+      "text": "The builder audit table is complete, each row with file and line.",
+      "pause": 400
+    },
+    {
+      "text": "CI carries a sparse-block development-network run, or a linked ticket does.",
+      "pause": 400
+    },
+    {
+      "text": "The release-PR failure has a stated verdict with evidence.",
+      "pause": 400
+    },
+    {
+      "text": "The full just ci passes, and the PR CI is green on the exact head.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "132bb66238c0efda17dac6c6eec3c39ca4e75721bf81b23b6bef3910602ad63e"
+  }
+}
