@@ -61,7 +61,9 @@ def capture(args):
     start = rpc("system-start", "queryNetwork/startTime")
     eras = rpc("era-history", "queryLedgerState/eraSummaries")
     parameters = rpc("parameters", "queryLedgerState/protocolParameters")
-    genesis = rpc("shelley-genesis", "queryNetwork/genesisConfiguration", {"era": "shelley"})
+    genesis = rpc(
+        "shelley-genesis", "queryNetwork/genesisConfiguration", {"era": "shelley"}
+    )
     if genesis.get("networkMagic") != args.network_magic:
         raise ValueError("WrongNetwork: source genesis magic differs")
     if not eras or "end" not in eras[-1]:
@@ -70,7 +72,9 @@ def capture(args):
     after_parameters = rpc("parameters-after", "queryLedgerState/protocolParameters")
     after = rpc("tip-after", "queryLedgerState/tip")
     if before != after:
-        raise ValueError("SourcePointMoved: retain this refused capture and retry at a new path")
+        raise ValueError(
+            "SourcePointMoved: retain this refused capture and retry at a new path"
+        )
     if eras != after_eras or parameters != after_parameters:
         raise ValueError("SourceContextMoved: retained observations disagree")
 
