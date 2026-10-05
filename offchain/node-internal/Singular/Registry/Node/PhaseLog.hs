@@ -21,6 +21,7 @@ import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text.Encoding qualified as TE
+import Data.Typeable (typeOf)
 import Singular.Registry.PhaseLog
 import Singular.Registry.Provider
     ( ChainPoint (..)
