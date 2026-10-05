@@ -1,0 +1,60 @@
+{
+  "slice-reject-at-the-tip": [
+    {
+      "text": "Slice: reject at the tip.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, I want the reject accepted by the node, and the rule held by a test.",
+      "pause": 400
+    },
+    {
+      "text": "Reject lower bound test: on a view whose tip lags the host clock, the built reject's lower bound is at or before the tip slot. Committed failing on 22637d46.",
+      "pause": 400
+    },
+    {
+      "text": "Reject lower bound fix: rejectValidity takes the lower bound from the view's tip slot; the test passes; the upper bound stays after the lower bound.",
+      "pause": 400
+    }
+  ],
+  "slice-builder-audit": [
+    {
+      "text": "Slice: builder audit.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want every builder's validity interval checked against the same rule.",
+      "pause": 400
+    },
+    {
+      "text": "Builder audit page: builder-audit.md with one row per builder, file and line, and its verdict, with its speech companion.",
+      "pause": 400
+    },
+    {
+      "text": "Further violations: fixed here, each with its own test, or filed as a bug and linked from the audit page.",
+      "pause": 400
+    }
+  ],
+  "slice-evidence-from-ci": [
+    {
+      "text": "Slice: evidence from CI.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want CI to see what preprod sees.",
+      "pause": 400
+    },
+    {
+      "text": "Release-PR failure verdict: whether job 111713723071 shares this cause, with the evidence, recorded in the audit page; a different cause filed.",
+      "pause": 400
+    },
+    {
+      "text": "Sparse-block development network: one CI run with an active-slot coefficient below one, or a linked ticket when larger than a configuration change and one job.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "422aa240633c0af247d44668e108566bbbad808516a3316104f44c9854caebc0"
+  }
+}
