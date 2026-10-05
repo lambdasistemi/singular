@@ -37,15 +37,15 @@
       "pause": 500
     },
     {
-      "text": "Two larger lower-bound findings have been drafted for the ticket owner:",
+      "text": "Two larger lower-bound findings are tracked as open issues:",
       "pause": 400
     },
     {
-      "text": "Legacy repair validity draft: the unsigned-owner control has no acquired view and cannot establish its intended validator refusal while its lower bound is still ahead. Repair is already classified unverified in the component inventory; this ticket does not revive it..",
+      "text": "Legacy repair validity (#400): the unsigned-owner control has no acquired view and cannot establish its intended validator refusal while its lower bound is still ahead. Repair is already classified unverified in the component inventory; this ticket does not revive it..",
       "pause": 300
     },
     {
-      "text": "Conformance lower-bound draft: placed rejects and hand-built retracts use time-derived openings across multiple acquisitions without comparing the resulting lower with a single acquired tip. Fixing their view and placement lifecycle exceeds the product builder repair..",
+      "text": "Conformance lower bounds against the acquired view (#399): placed rejects and hand-built retracts use time-derived openings across multiple acquisitions without comparing the resulting lower with a single acquired tip. Fixing their view and placement lifecycle exceeds the product builder repair..",
       "pause": 300
     },
     {
@@ -67,11 +67,11 @@
       "pause": 400
     },
     {
-      "text": "This conformance assembly uses its own Run/Fold.hs:376–379 interval writer, not the product reject builder. The expiry bug draft asks for enough time per control and a named setup failure before submission when a placement expires. No local reproduction or conformance expectation change is claimed.",
+      "text": "This conformance assembly uses its own Run/Fold.hs:376–379 interval writer, not the product reject builder. The conformance reject-window expiry issue (#398) asks for enough time per control and a named setup failure before submission when a placement expires. No local reproduction or conformance expectation change is claimed.",
       "pause": 400
     },
     {
-      "text": "Evidence retained under the commit-owner runtime: evidence/release-job.log SHA-256 60fb96eb4663fb8ff29442e31c2d5b17be101ac4ece85a2dfa8c457af30b15ed, lines 2929–2942 and 2995–2999; downloaded artifact conformance-receipts, conformance-receipts.FW80GS/replay/38a71ec287ea38fc50d5623f3c5f452e8e3d136771556e8e40be47446c17bae9/outcome.json SHA-256 760f92c00e51d945a141b29d2ef6c571826a4df3df7d0486aacc19f75526c87e.",
+      "text": "The archived job log has SHA-256 60fb96eb4663fb8ff29442e31c2d5b17be101ac4ece85a2dfa8c457af30b15ed, lines 2929–2942 and 2995–2999; downloaded artifact conformance-receipts, conformance-receipts.FW80GS/replay/38a71ec287ea38fc50d5623f3c5f452e8e3d136771556e8e40be47446c17bae9/outcome.json SHA-256 760f92c00e51d945a141b29d2ef6c571826a4df3df7d0486aacc19f75526c87e.",
       "pause": 400
     }
   ],
@@ -81,11 +81,11 @@
       "pause": 500
     },
     {
-      "text": "One proposed Registry CI job runs the existing connected phase-three reject on a genesis variant with active-slot coefficient 0.05, one-second slots and an epoch of 2000 slots. It changes only the supplied genesis and adds one job. The existing E2E_GENESIS_DIR input selects it; ordinary fast-window rows retain their current genesis. The sparse job's ledger acceptance is pending exact-head CI, and this page claims neither a local sparse run nor a preprod write.",
+      "text": "The Registry CI job added in 6ce9a7c0 runs the existing connected phase-three reject on a genesis variant with active-slot coefficient 0.05, one-second slots and an epoch of 2000 slots. It changes only the supplied genesis and adds one job. The existing E2E_GENESIS_DIR input selects it; ordinary fast-window rows retain their current genesis. The sparse job's ledger acceptance is pending exact-head CI, and this page claims neither a local sparse run nor a preprod write.",
       "pause": 400
     },
     {
-      "text": "The focused reject test executed a built body with a controlled view whose tip lags the host clock: three checks passed, including 100 generated lag cases. Its test-only commit failed against the unchanged base implementation. The retraction tests passed five checks, including the existing funding and horizon properties, and independently exercised both public builders, a future caller slot and phase-two opening equality; their separate RED/GREEN receipts belong to the commit checkpoints. Mock script evaluation is a builder boundary, not script or live-ledger evidence. Broad checks and all PR checks are owed by exact-head CI under the ticket's frozen gate.",
+      "text": "The focused reject test executed a built body with a controlled view whose tip lags the host clock: three checks passed, including 100 generated lag cases. Its test-only commit failed against the unchanged base implementation. The retraction tests passed five checks, including the existing funding and horizon properties, and independently exercised both public builders, a future caller slot and phase-two opening equality. Separate failing and passing command receipts record these results. Mock script evaluation is a builder boundary, not script or live-ledger evidence. Broad checks and all PR checks are owed by exact-head CI.",
       "pause": 400
     }
   ],
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "builder-audit.md",
-    "sha256": "c40d03cb4d4d3705d5504b4057eb1834186ca12fe6d3b19c981d119760119b81"
+    "sha256": "0303413074f62598f32945be99cbe09a8df4a7413f7392a4743d3ff839d69cbc"
   }
 }
