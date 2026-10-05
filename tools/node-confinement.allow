@@ -3,6 +3,7 @@
 # A spec is exempt only as a backend's own test: "<spec path>: own test of
 # <backend session or adapter module path> — <why>"; it must name what that
 # module defines.
+offchain/lib/Singular/Provider/Koios/Client.hs: Koios backend — implements submission of signed transactions as CBOR for provider composition; never imported by commands
 offchain/cli/src/Singular/CLI/Node.hs: composition — resolves the node settings once and opens the read interface, the signed-only write and the confirmation the commands are handed
 offchain/lib/Singular/Registry/Node.hs: runner startup — opens the session a runner's mode names and hands the runner its capabilities (withCapabilities, withExternalCapabilities); re-exports session opening for the fixtures below
 offchain/devnet/Devnet/Probe.hs: composition — the devnet probe reads a node's raw ledger snapshot and its UTxO by output reference, which the read interface does not answer, over its own node-to-client connection

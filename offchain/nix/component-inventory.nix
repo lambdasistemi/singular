@@ -59,6 +59,8 @@ let
       # #299: the packaged `singular registry` commands the release
       # archive documents and the demo1-cli-check CI step runs.
       "singular"
+      # #389: the read-only Koios probe and fixture recorder.
+      "singular-koios"
     ];
     tests = [
       "record-value-tests"
@@ -73,7 +75,12 @@ let
     # library. Built here because the public library itself links it;
     # this is the compiled state-identity carrier for the facade, the
     # cleanup brackets and the cage test observers.
-    sublibs = [ "node-internal" ];
+    # #389: koios-http, the live Koios transport and the fixture recorder,
+    # public so the Koios provider and the commands selecting it link it.
+    sublibs = [
+      "node-internal"
+      "koios-http"
+    ];
   };
 
   # Each entry carries its own kind and names the job and its verbatim

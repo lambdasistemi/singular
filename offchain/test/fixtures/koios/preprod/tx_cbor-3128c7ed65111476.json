@@ -1,0 +1,64 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"a1f349ee77852ad5692edec1ee3cea93e9088bf90a61b63559329bf6c7b35a07\",\"block_hash\":\"16c66de27dd3f75851713992b8663f88d6d3f9e8b1b84d231b014932310f713a\",\"block_height\":5179948,\"epoch_no\":313,\"absolute_slot\":133795447,\"tx_timestamp\":1789478647,\"cbor\":\"84a300d9010281825820801a215bd2f86d8a87d73f3819ea848f3666739a57b13d3af9bf30c5164b72c701018382581d60915b5072c5f3c9fbd1adadbbe8dba78ed10a98c1bb747a8a6013174c1a004989cb82581d60915b5072c5f3c9fbd1adadbbe8dba78ed10a98c1bb747a8a6013174c1a00438da682581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711b000000023bbe88cf021a00028e0da100d90102818258202758c4adbf8fb7c532dc6db4ecd2a208f7e7e5cb97c0944639e8ae137d147bab58401def197d7b01f4cdfd0c5f5fbd1e9a2c79fa3d26e7f6e771d11eb34eddafb7875e73562da491ac5e0a31f94f1f518f5cb32b645cc80f2c5c665d83a56e6a6e03f5f6\"}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:37 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:37.729760708Z",
+    "request": {
+        "body": {
+            "json": {
+                "_tx_hashes": [
+                    "a1f349ee77852ad5692edec1ee3cea93e9088bf90a61b63559329bf6c7b35a07"
+                ]
+            }
+        },
+        "call": "tx_cbor",
+        "method": "POST",
+        "path": "/tx_cbor",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "088b9d9c48ec7d685763331d769094c22dd76124aace56426a2437b435466e63"
+}

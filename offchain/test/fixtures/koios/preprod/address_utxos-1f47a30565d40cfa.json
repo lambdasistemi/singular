@@ -1,0 +1,82 @@
+{
+    "answer": {
+        "body": "[]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:13 GMT"
+            ],
+            [
+                "content-range",
+                "*/0"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:13.984757404Z",
+    "request": {
+        "body": {
+            "json": {
+                "_addresses": [
+                    "addr_test1vrm7e5nmgm9yul7dsl7l6v6ate6lpjjjnq6wqvkz0tpcweghrtrk6"
+                ],
+                "_extended": true
+            }
+        },
+        "call": "address_utxos",
+        "method": "POST",
+        "path": "/address_utxos",
+        "query": [
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "tx_hash.asc,tx_index.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

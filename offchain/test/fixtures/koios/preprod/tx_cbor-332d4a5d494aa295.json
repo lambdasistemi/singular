@@ -1,0 +1,64 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"79ef71008b3068aeac8cc67e805ad356b34f3292cb86bdb4a77959574843d6f2\",\"block_hash\":\"11d09c6a7356af7804c0688a9cd1d5cd62a6190be9564a1868aef5ed6d1e3266\",\"block_height\":5179626,\"epoch_no\":313,\"absolute_slot\":133787687,\"tx_timestamp\":1789470887,\"cbor\":\"84a800d901028282582000541f9cbbef3cb8ad660f70d378d425d4497e4bf626af2b1bf64cb73816268300825820dcc4f28d42fd1bc490efea5b188d4c8ead1578f197f2941715fc6936d6fd3ceb050dd9010281825820dcc4f28d42fd1bc490efea5b188d4c8ead1578f197f2941715fc6936d6fd3ceb0612d90102868258202d066edca694b72a081a0bf347f123c2e62a447110b818b690c51b5b1dc8168a008258204f1abb9fce9f863e8f37011d494b48f8d4e4402b32eaa65e0c14f279931cdb1f0082582058a62fb57763d35b205d2c740c57c8dfa38c7afe761a03929c702ed8a65abee40082582074ce24b5f15f6a06251aa65b686bccf93aab3f4add4d4c4ae5f823739a6c8e4b00825820b5d47346405cb0dd38c4add6a30afa57f4169c04ac905f794a1901250205ca4500825820ec79c9dd851e09cd2f93806b414d9f07d2a18562ae745939577377fc40ef02ad00018382581d7089ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09821a00206c6ea1581ce457c8649e957f2c5625de1d2881187491db940ba949564f6f09c99fa15820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c01a300581d70dc2c5923ea8591546ae2b363bcd4872af193ef11af518907ed2c7a40011a002b35d6028201d81858aed8799fd8799fd8799f5820e82f5e34833d7a74ad0359788dfa31d7879d851d2af6c5d4f0f88518f11433b9ff581c4b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad714772742d6f766572d87b9f5820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c58246f766572de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7cff1a000f42401b000001a0a4c6c460ffff82581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a0040928c021a0008f73f05a1581df0e457c8649e957f2c5625de1d2881187491db940ba949564f6f09c99f000ed9010281581c02d9fc41005743a35748c58afcd038909b17fd4ac701fdaeed78df480b58208979fc8b06c1c5423528d74ee01cfdd4ff7319d101dedbbf276b9a2a9d350f8aa200d9010282825820942be04bfa2e76e6c3b39b57cf06a1834626c6e6db509862f35959c1e391f01258400b9e29b7c8caed398a45dad3c9031a8aa305483e2cc81b94d7e686887caae6724e93d0f636243a81fb2098521f66d626a167f38f8c220d260ab8f516471e790f8258202758c4adbf8fb7c532dc6db4ecd2a208f7e7e5cb97c0944639e8ae137d147bab5840e4985b2b4794f27bcd737a8c912f766fcf75733d549741a4b7c7cfc6581036b17b40c1b540a300922a00825b7080d4a24d57e3b3854f9b2dae09883c0612e70205a282000082d87c9f9f5820de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7cff4772742d6f766572ff821a000717da1a091b7d7b82030082d87980821a000243461a02f76c3af5f6\"}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:36 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:36.965138508Z",
+    "request": {
+        "body": {
+            "json": {
+                "_tx_hashes": [
+                    "79ef71008b3068aeac8cc67e805ad356b34f3292cb86bdb4a77959574843d6f2"
+                ]
+            }
+        },
+        "call": "tx_cbor",
+        "method": "POST",
+        "path": "/tx_cbor",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "52dbcedb528997e04d20e9ca1559c199556a824c1c81e0d71752c9855e5b0999"
+}

@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 59 modules in three kinds: 44 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 62 modules in three kinds: 47 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations moved into the package's private ownership core (offchain/node-internal/) and the public library re-exports them, so their import paths and their entries in this reference are unchanged. The six node runtime owners in that private core are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
       "pause": 400
     },
     {
@@ -68,6 +68,18 @@
     },
     {
       "text": "Naming.Wire.Vectors — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Client — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Recorded — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Wire — source",
       "pause": 300
     },
     {
@@ -301,6 +313,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "f39933832c2e0f723cafe0d35da009399925934fc15a047d62355b74b357d365"
+    "sha256": "61f19da406781093df648c3bffcfda842b04064cd44d39096fb1aa6042e0764d"
   }
 }
