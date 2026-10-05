@@ -47,11 +47,14 @@ spec = describe "Common services through the existing transaction balancer"
                     , viewTimeContext = pure time
                     , viewResolvedOutputs = \wanted -> do
                         modifyIORef' calls (+ 1)
+                        -- Shrink the recorded datum facts so the builder
+                        -- measures fewer units than the independent ledger
+                        -- answer for the untouched actual inputs.
                         pure
                             [ if fault
                                 then
                                     ( reference
-                                    , output & datumTxOutL .~ mkInlineDatum (PLC.B (BS.replicate 1000 0x61))
+                                    , output & datumTxOutL .~ mkInlineDatum (PLC.B BS.empty)
                                     )
                                 else (reference, output)
                             | (reference, output) <- inputs

@@ -5,8 +5,9 @@ License     : Apache-2.0
 
 The node adapter: one 'withView' is one upstream @withAcquired@ of the
 pinned node client, so every read through the view — UTxOs,
-registration, time to slot, script evaluation — is answered from the
-one LocalStateQuery state the node acquired at entry. The view's chain
+registration, raw time and resolved inputs — is answered from the one
+LocalStateQuery state the node acquired at entry. Common services compute
+time conversions and script evaluation from those captured facts. The view's chain
 point is that state's own point and era; the protocol parameters are
 read once, inside it.
 

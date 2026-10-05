@@ -681,7 +681,7 @@ executable devnet
   build-depends:
     , aeson
     , async
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
@@ -697,6 +697,8 @@ executable devnet
     , ouroboros-consensus
     , ouroboros-network:api
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:node-internal
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -996,6 +998,7 @@ test-suite e2e-tests
     , cardano-tx-tools:tx-build
     , containers
     , directory
+    , filepath
     , hspec
     , microlens
     , mts:mpf-write
@@ -1003,6 +1006,8 @@ test-suite e2e-tests
     , plutus-tx
     , process
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:node-internal
     , temporary
     , text
 
@@ -1130,7 +1135,7 @@ executable singular
     , aeson
     , aeson-pretty
     , async
-    , base                             >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bech32
     , bytestring
@@ -1148,6 +1153,7 @@ executable singular
     , mts:mpf-write
     , plutus-core
     , singular-registry
+    , singular-registry:local-services
     , singular-registry:node-internal
     , text
     , unix
