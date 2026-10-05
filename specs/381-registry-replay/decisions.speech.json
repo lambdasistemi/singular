@@ -1,0 +1,128 @@
+{
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry user, I get the operator's rulings of October 2 to 4 unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "A table with 5 rows is shown here.",
+      "pause": 400
+    }
+  ],
+  "which-edges-the-two-actor-journey-covers": [
+    {
+      "text": "Which edges the two-actor journey covers.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice and Bob, we operate the two edges the CLI books from public data alone: insert books insertActive and terminate books updateTerminal (offchain/cli/src/Singular/CLI/Plan.hs:138,195). registry fold refuses every other edge by name (CLI/FoldRules.hs:264-273). The intake asked which edges the acceptance must cover. The operator ruled on October 4: the CLI's two edges, plus the existing reject and reclaim. The other five edges are outside the Koios demonstration. There is no library-built seven-edge history and no CLI booking for them.",
+      "pause": 400
+    },
+    {
+      "text": "The replay stays edge-generic. It applies whatever edge a request datum names, through walkEdge, and claims no coverage for edges no test history contains. The mixed-fold and root-check tests are unchanged. A mixed fold still needs a test-only builder variant, because the connected fold applies every request and reject rejects every one.",
+      "pause": 400
+    }
+  ],
+  "each-key-is-changed-only-by-its-controller": [
+    {
+      "text": "Each key is changed only by its controller.",
+      "pause": 500
+    },
+    {
+      "text": "As a key's controller, I alone update and terminate it. The CLI refuses anyone else (Plan.hs:96-103), and the open-datum application requires the controller's signature for insertion, update and termination (onchain/validators/open_datum.ak:44,54,58,213-216). So the cross-actor step is the fold. Alice folds the termination of a key Bob created, with the membership proof from her own replay, and Bob folds Alice's likewise. Each actor inspects the other's keys from their own replay. The journey keeps its not-the-controller refusals. This is the operator-corrected acceptance wording of October 4.",
+      "pause": 400
+    }
+  ],
+  "joining-a-registry-from-public-data": [
+    {
+      "text": "Joining a registry from public data.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I need a registry directory before any command will run, and today only create makes one. The saved identity, registry.json, is documented as public: network, pins and the deployment record, with no key (offchain/cli/src/Singular/CLI/Registry.hs:11-15). Its reference outputs sit at the creator's wallet and are not in the state token's history.",
+      "pause": 400
+    },
+    {
+      "text": "Proposed: a read-only joining path takes the published identity record and the blueprint the actor brings. It checks the record against public data before writing anything: the create transaction found through the state token's history spends the seed, mints assetName(seed) and carries the pins; every reference output is live and holds the script whose hash the record names. It then writes a fresh directory holding that identity and an empty journal. A creator's mirror, journal and envelopes are never needed.",
+      "pause": 400
+    },
+    {
+      "text": "Rejected alternative: deriving the identity from the seed and blueprint alone, then scanning the creator's address for reference outputs. Those outputs are ordinary wallet outputs the creator may spend, so the scan cannot be complete.",
+      "pause": 400
+    }
+  ],
+  "the-directory-keeps-nothing-the-replay-replaces": [
+    {
+      "text": "The directory keeps nothing the replay replaces.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry owner, I keep the identity, my own journal and my own envelopes. The mirror file and the saved root commitment are retired with the mirror adapter in the commands slice, and the slice receipt names every caller removed. No cache survives. A directory written by an earlier release still holds those files; they are not read. The lineage backend's accepted-fold call persists nothing, because the next selection replays from history.",
+      "pause": 400
+    },
+    {
+      "text": "Rejected alternative: keeping the mirror as a cache checked against the replay. The operator places caching in a later backend, and two trie sources in one release would need a reconciliation rule no ticket specifies.",
+      "pause": 400
+    }
+  ],
+  "only-the-booker-folds-an-insertion": [
+    {
+      "text": "Only the booker folds an insertion.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, I can fold any request whose fold needs only public data. An insertion's request names the hash of its envelope, which the booker alone holds (offchain/cli/src/Singular/CLI/Preimage.hs:9-14). In the journey, each actor folds its own insertions. A cross-actor insertion fold is a control that must be refused by its existing name. A termination fold needs no envelope and runs across actors. Publishing envelopes, or a fold that takes an envelope file, is a separate change already named in the recovery ticket's limits.",
+      "pause": 400
+    }
+  ],
+  "mixed-folds-are-evidenced-by-the-chain": [
+    {
+      "text": "Mixed folds are evidenced by the chain.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I need a mixed fold's expected root to come from somewhere other than the replay. The model composes per-request exits, and a reject leaves the state unchanged (lean/Singular/Model.lean:1068-1075), but it has no single transaction mixing the two. The test's oracle is the state validator accepting the fold: on the development network, or under the ledger evaluator the provider ticket brings, over the compiled validator. Building such a fold needs a test-only builder variant; production builders are unchanged. No model correspondence is claimed for mixed folds as one transaction.",
+      "pause": 400
+    }
+  ],
+  "sequencing-and-staffing": [
+    {
+      "text": "Sequencing and staffing.",
+      "pause": 500
+    },
+    {
+      "text": "As this ticket's owner, I implement only against published code. Both slices that consume history start when the provider ticket's provider switch slice is pushed, since Session.history arrives with it. A preparation slice builds the pure replay and its chain oracles first, against nothing unpublished. The epic owner forwards each as an inbox note. If the published contract does not fit lineage reconstruction, that is a question, not a change to the provider ticket.",
+      "pause": 400
+    },
+    {
+      "text": "After acceptance of the intake head, this window runs one commit owner and one mute persistent auditor, in its own detached audit worktree, with the models the operator names. Until October 4 these were Claude claude-opus-5-5 and Codex gpt-6.1-sol; from October 5, Codex gpt-6.1-sol and Grok grok-4.7. No gate authors or draft seats are authorised. Merge readiness is the auditor's approval of every checkpoint and exact-head CI green; the epic owner merges.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "282a79f43ee8882e684616cb5479692bfc586e1354732ebc300673a4316d1e5c"
+  },
+  "failed-transactions-and-named-refusals-land-first": [
+    {
+      "text": "Failed transactions and named refusals land first.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry user, I need the replay to ignore a transaction that failed its scripts. A provider lists every transaction that carried the state token, and a transaction whose isValid flag is false spent only its collateral, whatever its body inputs name. Read as a spend, it would look like a fork. The replay leaves it out of the lineage, so the lineage and the trie are those of the same history without it.",
+      "pause": 400
+    },
+    {
+      "text": "As a person reading a refusal, I need it to say which registry, which transaction and what went wrong. The epic owner ruled on October 4 that the shared TrieFailure type carries that payload, and that this ticket makes the change: incomplete history names its reason, roots that part name both roots or the record that cannot be read, and a wrong registry, a stale state or a missing proof name what a person needs to act. An instance passes only what it knows. Existing commands keep their refusal names, outcome classes and exit statuses.",
+      "pause": 400
+    },
+    {
+      "text": "Both changes land on main before the commands move onto the replay, so the provider ticket builds on the payload-carrying type rather than rebasing across it.",
+      "pause": 400
+    }
+  ]
+}

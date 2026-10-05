@@ -60,6 +60,8 @@ let
       # #299: the packaged `singular registry` commands the release
       # archive documents and the demo1-cli-check CI step runs.
       "singular"
+      # #389: the read-only Koios probe and fixture recorder.
+      "singular-koios"
     ];
     tests = [
       "record-value-tests"
@@ -69,6 +71,7 @@ let
       # nix run .#contract-tests and nix run .#contract-external.
       "contract-tests"
     ];
+    # #389: the inherited public Koios HTTP client and recorder stay active.
     # The main library links both the private node runtime and public
     # local services. The private runtime keeps the facade, cleanup and
     # test observers on one compiled instance of process state; the public
@@ -76,6 +79,7 @@ let
     sublibs = [
       "node-internal"
       "local-services"
+      "koios-http"
     ];
   };
 

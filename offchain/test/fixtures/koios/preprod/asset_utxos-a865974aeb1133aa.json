@@ -1,0 +1,85 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3\",\"tx_index\":0,\"address\":\"addr_test1wz9vj430t7mtaxumjyaw9tfvc8v7qw8h7upey4h34j0h5cse3nw6r\",\"value\":\"2000000\",\"stake_address\":null,\"payment_cred\":\"8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62\",\"epoch_no\":313,\"block_height\":5179950,\"block_time\":1789478771,\"datum_hash\":\"2be89f9a32b315f737b882c19b6ed73b90477925f3b5538de648393fdf2faaa0\",\"inline_datum\":{\"bytes\": \"d87a9fd8799f5820b203676facaa35f6fa5fdb8c7373595f52715f3af335fc201bcac96bacfa329b1a000f42401a000927c01a000493e0581c64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88581cbbe166ffb706d3f7e05b941ddc7615de39575af2ab2b3cca2a25bc70ffff\", \"value\": {\"fields\": [{\"fields\": [{\"bytes\": \"b203676facaa35f6fa5fdb8c7373595f52715f3af335fc201bcac96bacfa329b\"}, {\"int\": 1000000}, {\"int\": 600000}, {\"int\": 300000}, {\"bytes\": \"64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88\"}, {\"bytes\": \"bbe166ffb706d3f7e05b941ddc7615de39575af2ab2b3cca2a25bc70\"}], \"constructor\": 0}], \"constructor\": 1}},\"reference_script\":null,\"asset_list\":[{\"decimals\": 0, \"quantity\": \"1\", \"policy_id\": \"8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62\", \"asset_name\": \"bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778\", \"fingerprint\": \"asset1s32xew27j78gr5hkgpyrekrandpg9fvarqnxzq\"}],\"is_spent\":false}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:14 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/1"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:14.338677247Z",
+    "request": {
+        "body": {
+            "json": {
+                "_asset_list": [
+                    [
+                        "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62",
+                        "bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778"
+                    ]
+                ],
+                "_extended": true
+            }
+        },
+        "call": "asset_utxos",
+        "method": "POST",
+        "path": "/asset_utxos",
+        "query": [
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "tx_hash.asc,tx_index.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "63c5b66e6101cfd4e1f39b4acfebe1082e08f578e534cdd88ab1bfc39a9d7216"
+}

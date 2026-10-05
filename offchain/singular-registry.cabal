@@ -46,6 +46,7 @@ library
     , aeson-pretty
     , base                              >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring                        >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -70,6 +71,7 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
+    , scientific
     , singular-registry:local-services
     , singular-registry:node-internal
     , text                              >=2.0  && <2.2
@@ -89,6 +91,9 @@ library
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
+    Singular.Provider.Koios.Client
+    Singular.Provider.Koios.Recorded
+    Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -102,6 +107,7 @@ library
     Singular.Registry.Lifecycle
     Singular.Registry.Node
     Singular.Registry.Proof
+    Singular.Registry.Replay
     Singular.Registry.Trie
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
@@ -306,6 +312,56 @@ executable local-services-record
     , singular-registry
     , singular-registry:local-services
     , singular-registry:node-internal
+    , text
+    , time
+
+-- #389: the read-only Koios probe and fixture recorder over koios-http.
+executable singular-koios
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   koios-http/app
+  main-is:          Main.hs
+  build-depends:
+    , base                          >=4.14 && <5
+    , optparse-applicative
+    , singular-registry
+    , singular-registry:koios-http
+    , text
+
+  ghc-options:      -threaded
+
+-- #389: the live Koios transport and the read-only fixture recorder.
+-- Public so the Koios ledger-provider instance and the commands that select
+-- Koios link it; the main library carries no HTTP dependency.
+library koios-http
+  import:           warnings
+  default-language: GHC2021
+  visibility:       public
+  hs-source-dirs:   koios-http/src
+  exposed-modules:
+    Singular.Provider.Koios.Http
+    Singular.Provider.Koios.Recorder
+
+  build-depends:
+    , aeson
+    , base                   >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , case-insensitive
+    , directory
+    , filepath
+    , http-client
+    , http-client-tls
+    , http-types
+    , microlens
+    , random
+    , singular-registry
     , text
     , time
 
@@ -821,10 +877,17 @@ test-suite cage-tests
     Singular.CLI.RequestWindow
     Singular.CLI.Session
     Singular.CLI.TrieHistory
+    Singular.CLI.TrieRefusalSpec
     Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
     Singular.CLISpec
     Singular.PhaseLogFixture
+    Singular.Provider.Koios.ClientSpec
+    Singular.Provider.Koios.FakeServer
+    Singular.Provider.Koios.HttpSpec
+    Singular.Provider.Koios.RecordedSpec
+    Singular.Provider.Koios.RecorderSpec
+    Singular.Provider.Koios.Scripted
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.DeploymentSpec
@@ -881,15 +944,18 @@ test-suite cage-tests
     , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
+    , case-insensitive
     , containers
     , crypton
     , directory
     , filepath
     , hspec
+    , http-types
     , memory
     , microlens
     , mtl
     , mts:mpf-write
+    , network
     , ouroboros-consensus
     , ouroboros-network:api
     , plutus-core
@@ -897,8 +963,10 @@ test-suite cage-tests
     , plutus-tx
     , prettyprinter
     , QuickCheck
+    , scientific
     , serialise
     , singular-registry
+    , singular-registry:koios-http
     , singular-registry:local-services
     , singular-registry:node-internal
     , stm
@@ -906,6 +974,11 @@ test-suite cage-tests
     , text
     , time
     , unix
+    , wai
+    , warp
+
+  -- #389: the loopback Koios server (warp) needs the threaded runtime.
+  ghc-options:      -threaded
 
 -- #326: the backend contract suite, one case list over every adapter —
 -- in-memory, indexer over the in-memory node, node and indexer on generated
@@ -979,8 +1052,11 @@ test-suite e2e-tests
     Singular.Registry.E2E.Fixture
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.InsertActiveSpec
+    Singular.Registry.E2E.MixedFold
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.OpenBootSpec
+    Singular.Registry.E2E.ReplayHistory
+    Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.UpdateTerminalSpec
 
   build-depends:
@@ -989,7 +1065,10 @@ test-suite e2e-tests
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
+    , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-node-clients

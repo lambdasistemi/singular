@@ -37,12 +37,13 @@ data TrieEntry = TrieEntry
     }
 
 walkNodes
-    :: MPFInMemoryDB
+    :: RegistryIdentity
+    -> MPFInMemoryDB
     -> NonEmpty (ByteString, Integer)
     -> Either TrieFailure (MPFInMemoryDB, SpeculativeWalk)
-walkNodes db moves
-    | any (\(_, edge) -> edge < 0 || edge > 6) moves =
-        Left UndecodableRequest
+walkNodes who db moves
+    | (_, edge) : _ <- filter (\(_, e) -> e < 0 || e > 6) (NE.toList moves) =
+        Left (UndecodableRequest who Nothing (EdgeOutOfRange edge))
     | otherwise = do
         (changed, reversed) <- foldM step (db, []) (NE.toList moves)
         Right
@@ -54,19 +55,23 @@ walkNodes db moves
         -- A singleton's legitimate proof has zero steps. Check the actual
         -- producer's Maybe instead of treating every empty list as missing.
         case membershipFromDb proofNodes key of
-            Nothing -> Left MissingProof
+            Nothing -> Left (MissingProof who (NoProofFor key))
             Just _ -> Right (after, proof : proofs)
 
 provenLeaf
-    :: MPFInMemoryDB -> Root -> ByteString -> Either TrieFailure Leaf
-provenLeaf db (Root root) key =
+    :: RegistryIdentity
+    -> MPFInMemoryDB
+    -> Root
+    -> ByteString
+    -> Either TrieFailure Leaf
+provenLeaf who db (Root root) key =
     case [ leaf
          | leaf <- [Absent, Active, Terminal]
          , provesMember db root key (leafBytes leaf)
          ] of
         [leaf] -> Right leaf
         [] | provesAbsent db root key -> Right Unknown
-        _ -> Left MissingProof
+        _ -> Left (MissingProof who (NoProofFor key))
 
 {- | Replay starts from the actual empty MPF database. Root-preserving history
 records are neither required nor counted. The selected output is a separate
@@ -75,28 +80,50 @@ caller-session observation; coverage does not claim output-reference lineage.
 checkedCoverage :: TrieEntry -> Either TrieFailure CompleteFromCreate
 checkedCoverage TrieEntry{..} = do
     case entryCreate of
-        Nothing -> Left HistoryIncomplete
-        Just (CreateRecord who _) | who /= trieSelectionIdentity entrySelection -> Left WrongRegistry
+        Nothing -> Left (HistoryIncomplete who Nothing MissingTransaction)
+        Just (CreateRecord other _)
+            | other /= who ->
+                Left (WrongRegistry who Nothing (OtherRegistry other))
         Just _ -> Right ()
     (replayed, count) <- foldM replay (emptyMPFInMemoryDB, 0) entryFolds
-    if rootFromDb replayed /= trieSelectionRoot entrySelection
-        then Left HistoryIncomplete
+    if rootFromDb replayed /= selected
+        then Left (HistoryIncomplete who Nothing MissingTransaction)
         else
-            if rootFromDb entryNodes /= trieSelectionRoot entrySelection
-                then Left RootDoesNotChain
+            if rootFromDb entryNodes /= selected
+                then
+                    Left
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (rootFromDb entryNodes) selected)
+                        )
                 else Right (CompleteFromCreate count)
   where
+    who = trieSelectionIdentity entrySelection
+    selected = trieSelectionRoot entrySelection
     replay (db, count) (ObservedFold from to edges)
         | trieSelectionRoot from == trieSelectionRoot to = Right (db, count)
-        | trieSelectionIdentity from /= trieSelectionIdentity entrySelection
-            || trieSelectionIdentity to /= trieSelectionIdentity entrySelection =
-            Left WrongRegistry
-        | trieSelectionRoot from /= rootFromDb db = Left RootDoesNotChain
+        | other : _ <-
+            filter (/= who) [trieSelectionIdentity from, trieSelectionIdentity to] =
+            Left (WrongRegistry who Nothing (OtherRegistry other))
+        | trieSelectionRoot from /= rootFromDb db =
+            Left
+                ( RootDoesNotChain
+                    who
+                    Nothing
+                    (RootsPart (rootFromDb db) (trieSelectionRoot from))
+                )
         | otherwise = do
-            (changed, walked) <- walkNodes db edges
+            (changed, walked) <- walkNodes who db edges
             if walkRoot walked == trieSelectionRoot to
                 then Right (changed, count + 1)
-                else Left RootDoesNotChain
+                else
+                    Left
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
+                        )
 
 capability
     :: (Monad m)
@@ -123,55 +150,63 @@ capabilityObserved fetch persist emit = TrieState select accept
                 emit (Selected (entrySelection entry))
                 Right <$> use (snapshot entry coverage)
     validate chosen entry
-        | chosen /= entrySelection entry = Left StaleState
+        | chosen /= entrySelection entry =
+            Left
+                ( StaleState
+                    (trieSelectionIdentity chosen)
+                    Nothing
+                    (StaleSelection chosen (entrySelection entry))
+                )
         | otherwise = (entry,) <$> checkedCoverage entry
     snapshot TrieEntry{..} coverage =
-        TrieSnapshot
-            { snapshotTrieIdentity = trieSelectionIdentity entrySelection
-            , snapshotTriePoint = trieSelectionPoint entrySelection
-            , snapshotTrieRoot = trieSelectionRoot entrySelection
-            , snapshotTrieCoverage = coverage
-            , snapshotLeafAt = \key ->
-                recordResult
-                    emit
-                    (provenLeaf entryNodes (trieSelectionRoot entrySelection) key)
-                    (LeafRead entrySelection key)
-            , snapshotMembership = \key leaf ->
-                recordResult
-                    emit
-                    ( do
-                        bytes <-
-                            maybe (Left MissingProof) Right (membershipFromDb entryNodes key)
-                        if leaf /= Unknown
-                            && verifyAikenInclusionProof
+        let who = trieSelectionIdentity entrySelection
+            noProof key = Left (MissingProof who (NoProofFor key))
+        in  TrieSnapshot
+                { snapshotTrieIdentity = trieSelectionIdentity entrySelection
+                , snapshotTriePoint = trieSelectionPoint entrySelection
+                , snapshotTrieRoot = trieSelectionRoot entrySelection
+                , snapshotTrieCoverage = coverage
+                , snapshotLeafAt = \key ->
+                    recordResult
+                        emit
+                        (provenLeaf who entryNodes (trieSelectionRoot entrySelection) key)
+                        (LeafRead entrySelection key)
+                , snapshotMembership = \key leaf ->
+                    recordResult
+                        emit
+                        ( do
+                            bytes <-
+                                maybe (noProof key) Right (membershipFromDb entryNodes key)
+                            if leaf /= Unknown
+                                && verifyAikenInclusionProof
+                                    (unRoot (trieSelectionRoot entrySelection))
+                                    key
+                                    (leafBytes leaf)
+                                    bytes
+                                then Right (MembershipProof bytes)
+                                else noProof key
+                        )
+                        (MemberProved entrySelection key leaf . membershipBytes)
+                , snapshotNonMembership = \key ->
+                    recordResult
+                        emit
+                        ( do
+                            if provesAbsent
+                                entryNodes
                                 (unRoot (trieSelectionRoot entrySelection))
                                 key
-                                (leafBytes leaf)
-                                bytes
-                            then Right (MembershipProof bytes)
-                            else Left MissingProof
-                    )
-                    (MemberProved entrySelection key leaf . membershipBytes)
-            , snapshotNonMembership = \key ->
-                recordResult
-                    emit
-                    ( do
-                        if provesAbsent
-                            entryNodes
-                            (unRoot (trieSelectionRoot entrySelection))
-                            key
-                            then
-                                NonMembershipProof key
-                                    <$> maybe (Left MissingProof) Right (exclusionFromDb entryNodes key)
-                            else Left MissingProof
-                    )
-                    (const (AbsenceProved entrySelection key))
-            , snapshotSpeculateEdges = \moves ->
-                recordResult
-                    emit
-                    (fmap snd (walkNodes entryNodes moves))
-                    (Speculated entrySelection)
-            }
+                                then
+                                    NonMembershipProof key
+                                        <$> maybe (noProof key) Right (exclusionFromDb entryNodes key)
+                                else noProof key
+                        )
+                        (const (AbsenceProved entrySelection key))
+                , snapshotSpeculateEdges = \moves ->
+                    recordResult
+                        emit
+                        (fmap snd (walkNodes who entryNodes moves))
+                        (Speculated entrySelection)
+                }
     accept event@(ObservedFold from to edges) = do
         found <- fetch (trieSelectionIdentity from)
         case found >>= advance event from to edges of
@@ -183,15 +218,33 @@ capabilityObserved fetch persist emit = TrieState select accept
                 pure (Right ())
     advance event from to edges entry
         | trieSelectionIdentity from /= trieSelectionIdentity to =
-            Left WrongRegistry
+            Left
+                ( WrongRegistry
+                    (trieSelectionIdentity from)
+                    Nothing
+                    (OtherRegistry (trieSelectionIdentity to))
+                )
         | event `elem` entryFolds entry && entrySelection entry == to =
             Right Nothing
-        | entrySelection entry /= from = Left StaleState
+        | entrySelection entry /= from =
+            Left
+                ( StaleState
+                    (trieSelectionIdentity from)
+                    Nothing
+                    (StaleSelection from (entrySelection entry))
+                )
         | otherwise = do
             _ <- checkedCoverage entry
-            (nodes, walked) <- walkNodes (entryNodes entry) edges
+            (nodes, walked) <-
+                walkNodes (trieSelectionIdentity from) (entryNodes entry) edges
             if walkRoot walked /= trieSelectionRoot to
-                then Left RootDoesNotChain
+                then
+                    Left
+                        ( RootDoesNotChain
+                            (trieSelectionIdentity from)
+                            Nothing
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
+                        )
                 else
                     Right
                         ( Just

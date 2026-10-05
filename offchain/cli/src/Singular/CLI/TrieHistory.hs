@@ -1,8 +1,12 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- | Existing accepted local records for application trie coverage. No
 provider queries or invented output lineage: equal-root records are ignored.
 -}
-module Singular.CLI.TrieHistory (readTrieHistory, historyAtRoot) where
+module Singular.CLI.TrieHistory (readTrieHistory, journalRoot, historyAtRoot) where
 
+import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.TxIn (TxId)
 import Control.Monad (forM)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -37,11 +41,11 @@ readTrieHistory dir sid who = do
             , submissionCase entries (journalTxId p) == Just CaseIncluded
             ]
     create <- case listToMaybe [p | p <- accepted, journalStep p == "boot"] of
-        Nothing -> pure (Left HistoryIncomplete)
+        Nothing -> pure (Left missing)
         Just p -> do
             (_, body) <- boundBody entries (journalTxId p)
             pure $
-                either (const (Left HistoryIncomplete)) (checkedCreateRecord who) body
+                either (const (Left missing)) (checkedCreateRecord who) body
     folds <- forM
         [ p
         | p <- accepted
@@ -52,25 +56,49 @@ readTrieHistory dir sid who = do
         $ \p -> do
             (_, body) <- boundBody entries (journalTxId p)
             pure $ do
-                tx <- either (const (Left HistoryIncomplete)) Right body
-                before <- rootField (journalRootBefore p)
-                after <- rootField (journalRootAfter p)
+                tx <- either (const (Left missing)) Right body
+                before <- journalRoot who (Just (txIdTx tx)) (journalRootBefore p)
+                after <- journalRoot who (Just (txIdTx tx)) (journalRootAfter p)
                 key <- case journalKey p of
-                    Nothing -> Left UndecodableRequest
+                    Nothing -> Left (unreadable tx "an accepted fold names no key")
                     Just text ->
                         either
-                            (const (Left UndecodableRequest))
+                            (const (Left (unreadable tx "an accepted fold's key is not hex")))
                             Right
                             (B16.decode (BC.pack (T.unpack text)))
-                edge <- maybe (Left UndecodableRequest) Right (journalEdge p)
+                edge <-
+                    maybe
+                        (Left (unreadable tx "an accepted fold names no edge"))
+                        Right
+                        (journalEdge p)
                 checkedFoldRecord sid who before after ((key, edge) :| []) tx
     pure ((,) <$> create <*> sequence folds)
   where
-    rootField Nothing = Left HistoryIncomplete
-    rootField (Just text) =
+    missing = HistoryIncomplete who Nothing MissingTransaction
+    unreadable tx = UndecodableRequest who (Just (txIdTx tx)) . UnreadableRecord
+
+{- | A root an accepted fold's journal entry records: none is an incomplete
+history, and text that is not hex is a root that does not chain.
+-}
+journalRoot
+    :: RegistryIdentity
+    -> Maybe TxId
+    -> Maybe T.Text
+    -> Either TrieFailure Root
+journalRoot who transaction = \case
+    Nothing -> Left (HistoryIncomplete who transaction MissingTransaction)
+    Just text ->
         Root
             <$> either
-                (const (Left RootDoesNotChain))
+                ( const
+                    ( Left
+                        ( RootDoesNotChain
+                            who
+                            transaction
+                            (UnreadableRoot "an accepted fold's journal root is not hex")
+                        )
+                    )
+                )
                 Right
                 (B16.decode (BC.pack (T.unpack text)))
 

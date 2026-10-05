@@ -33,7 +33,11 @@ fixtureFolds (FixtureStore entries) = entryFolds <$> entries
 fixtureTrieState :: TrieState (State FixtureStore)
 fixtureTrieState = capability fetch persist
   where
-    fetch who = gets $ \(FixtureStore entries) -> maybe (Left WrongRegistry) Right (Map.lookup who entries)
+    fetch who = gets $ \(FixtureStore entries) ->
+        maybe
+            (Left (WrongRegistry who Nothing UnknownRegistry))
+            Right
+            (Map.lookup who entries)
     persist entry = modify' $ \(FixtureStore entries) ->
         FixtureStore
             ( Map.insert

@@ -92,3 +92,47 @@ vectors-check:
         echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
         exit 1
     fi
+
+# #389: record the public preprod Koios fixtures the recorded-answer tests
+# replay, with read calls only (the recorder cannot submit). The arguments
+# select what is recorded and match test/Singular/Provider/Koios/RecordedSpec.hs;
+# every producing transaction of a recorded output is recorded with
+# tx_cbor, one per request, so each output can be compared with its
+# producer. Page size 20 makes the reference address span several pages.
+
+# Record the preprod Koios fixtures (reads only).
+koios-fixtures:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    url=https://preprod.koios.rest/api/v1
+    out=test/fixtures/koios/preprod
+    reference=addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v
+    hashed=addr_test1wzzgcnajyue9szkgn73z5h2emj3c67p09msxx9anyumwcfg9479va
+    empty=addr_test1vrm7e5nmgm9yul7dsl7l6v6ate6lpjjjnq6wqvkz0tpcweghrtrk6
+    cage=8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62.bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778
+    unknown=a8a5d4ad3c8a3c43c2ab28b5c36ff94a3e0bf3d0b8f2b1fd4a0f1ecb.
+    fold=c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3
+    native=31cdc475b235445842377aa64e323ad70cacb2dd3c4c2aabf88e89b31ac66258
+    absent=0000000000000000000000000000000000000000000000000000000000000000
+    koios() { nix develop --quiet --command cabal run -O0 -v0 exe:singular-koios -- "$@" --koios-url "$url" --page-size 20; }
+    jq() { nix run --quiet --inputs-from . nixpkgs#jq -- "$@"; }
+    epoch="$(koios probe tip | awk '{print $NF}')"
+    rm -rf "$out"
+    koios record --out "$out" \
+        tip "epoch_params:$epoch" cli_protocol_params \
+        "address_utxos:$reference" "address_utxos:$hashed" "address_utxos:$empty" \
+        "asset_utxos:$cage" "asset_txs:$cage" "asset_txs:$unknown" \
+        "tx_info:$fold" "tx_info:$fold,$absent" "tx_info:$native" "tx_cbor:$absent" \
+        "tx_status:$fold,$absent" \
+        account_info:stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl \
+        account_info:stake_test17r5ar06gltlpcvvtuv7e7p06x9cn0mqaqsazsllqgwu32jss2sprr \
+        account_info:stake_test17z9vj430t7mtaxumjyaw9tfvc8v7qw8h7upey4h34j0h5cseedkdf
+    producers="$(
+        for f in "$out"/address_utxos-*.json "$out"/asset_utxos-*.json "$out"/asset_txs-*.json "$out"/tx_info-*.json; do
+            jq -r '.answer.body | fromjson | .[] | (.tx_hash, (.inputs // [] | .[].tx_hash), (.reference_inputs // [] | .[].tx_hash))' "$f"
+        done | sort -u
+    )"
+    requests=()
+    for h in $producers; do requests+=("tx_cbor:$h"); done
+    koios record --out "$out" "${requests[@]}"
+    echo "koios-fixtures: $(ls "$out" | wc -l) fixtures in $out"

@@ -1,0 +1,58 @@
+{
+    "answer": {
+        "body": "[{\"hash\":\"76e1e4c9ade35d8c76e62237fc63c89653242bb189441ab3cb8b567c0c434c0d\",\"epoch_no\":317,\"era\":\"Conway\",\"abs_slot\":135453946,\"epoch_slot\":151546,\"block_height\":5253680,\"block_no\":5253680,\"block_time\":1791137146}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:11 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:11.660871264Z",
+    "request": {
+        "body": null,
+        "call": "tip",
+        "method": "GET",
+        "path": "/tip",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "72b4a3582a108336e26599d574f312c7086af06a32f88794f278235f2e4fed72"
+}

@@ -48,6 +48,7 @@ module Singular.CLI.Live
     , rewindMirrorTo
     , savedIdentity
     , newStatePoint
+    , failTrie
 
       -- * Receipts
     , receipt
@@ -72,6 +73,7 @@ import Lens.Micro ((^.))
 import System.Posix.Process (getProcessID)
 
 import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , coinTxOutL
@@ -120,7 +122,7 @@ import Singular.CLI.Registry
     , readConfig
     , renderIdentityError
     )
-import Singular.CLI.Session (failWith)
+import Singular.CLI.Session (failWith, failWithFields)
 import Singular.CLI.TrieHistory (historyAtRoot, readTrieHistory)
 import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.AssetName (deriveAssetName)
@@ -359,7 +361,7 @@ openMirror saved = do
                     )
                 )
                 pure
-    Mirror store <$> newIORef (Left TS.StaleState)
+    Mirror store <$> newIORef (Left (noSelection saved))
 
 -- Only adapter/recovery setup uses this stored root before it has a current
 -- observed selection. Ordinary command reads use selectedMirrorRoot instead.
@@ -374,7 +376,7 @@ selectMirror
 selectMirror saved live mirror = do
     point <- newStatePoint (fst (liveState live))
     case observedRoot live of
-        Left _ -> refuse TS.StaleState
+        Left _ -> refuse (noSelection saved)
         Right root -> do
             let chosen = TS.TrieSelection (savedIdentity saved) point (Root root)
             history <-
@@ -428,13 +430,13 @@ mirrorLeaf mirror key observed = do
                 (TS.withTrieState cap chosen (`TS.leafAt` key))
     case result of
         Right leaf -> pure (Right leaf)
-        Left TS.RootDoesNotChain -> do
+        Left why@TS.RootDoesNotChain{} -> do
             Root local <-
                 TrieMirror.storedRoot (mirrorStore mirror) >>= either failTrie pure
             if local /= observed
                 then pure (Left (Proof.RootMismatch local observed))
-                else pure (Left (Proof.TrieRefusal TS.RootDoesNotChain))
-        Left TS.MissingProof -> pure (Left (Proof.ProofInconsistent key))
+                else pure (Left (Proof.TrieRefusal why))
+        Left TS.MissingProof{} -> pure (Left (Proof.ProofInconsistent key))
         Left why -> pure (Left (Proof.TrieRefusal why))
 
 acceptMirrorFold
@@ -462,7 +464,13 @@ acceptMirrorFold mirror key edge beforeRoot afterRoot tx = do
                         ((key, edge) :| [])
                         tx
                     )
-            when (from /= chosen) (failTrie TS.StaleState)
+            when (from /= chosen) $
+                failTrie
+                    ( TS.StaleState
+                        (TS.trieSelectionIdentity chosen)
+                        (Just (txIdTx tx))
+                        (TS.StaleSelection from chosen)
+                    )
             TS.acceptObservedFold cap event >>= either failTrie pure
             writeIORef (mirrorSelected mirror) (Right (cap, after))
 
@@ -524,16 +532,29 @@ rewindMirrorTo saved mirror target = do
             TS.TrieSelection (savedIdentity saved) historicalPoint (Root target)
     TrieMirror.replaceFromHistory (mirrorStore mirror) chosen create kept
         >>= either failTrie pure
-    writeIORef (mirrorSelected mirror) (Left TS.StaleState)
+    writeIORef (mirrorSelected mirror) (Left (noSelection saved))
 
+-- | No selection is held yet for the saved registry.
+noSelection :: Saved -> TS.TrieFailure
+noSelection saved = TS.StaleState (savedIdentity saved) Nothing TS.NoSelection
+
+{- | Stop with a trie refusal: its name as the reason, and the registry, the
+transaction where one is known and the cause as receipt fields.
+-}
 failTrie :: TS.TrieFailure -> IO a
-failTrie why = failWith outcome ("TrieState " <> show why)
+failTrie why =
+    failWithFields
+        outcome
+        ("TrieState " <> T.unpack (TS.trieFailureName why))
+        (TS.trieFailureFields why)
   where
     outcome = case why of
-        TS.MissingProof -> Receipt.ProofMissing
-        TS.WrongRegistry -> Receipt.ClientRefusal
-        TS.UndecodableRequest -> Receipt.ClientRefusal
-        _ -> Receipt.StaleState
+        TS.MissingProof{} -> Receipt.ProofMissing
+        TS.WrongRegistry{} -> Receipt.ClientRefusal
+        TS.UndecodableRequest{} -> Receipt.ClientRefusal
+        TS.HistoryIncomplete{} -> Receipt.StaleState
+        TS.RootDoesNotChain{} -> Receipt.StaleState
+        TS.StaleState{} -> Receipt.StaleState
 
 -- | One command's printed receipt.
 receipt :: Text -> OutcomeClass -> [(Text, Value)] -> Value

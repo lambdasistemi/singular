@@ -12,8 +12,13 @@ import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
+import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.WriteSpec qualified
 import Singular.CLISpec qualified
+import Singular.Provider.Koios.ClientSpec qualified
+import Singular.Provider.Koios.HttpSpec qualified
+import Singular.Provider.Koios.RecordedSpec qualified
+import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
@@ -79,6 +84,11 @@ main = hspec $ do
     Singular.CLISpec.spec
     Singular.CLI.OutlaySpec.spec
     Singular.CLI.FoldSpec.spec
+    Singular.CLI.TrieRefusalSpec.spec
     Singular.CLI.RejectSpec.spec
     Singular.CLI.ReclaimSpec.spec
     Singular.CLI.WriteSpec.spec
+    Singular.Provider.Koios.ClientSpec.spec
+    Singular.Provider.Koios.HttpSpec.spec
+    Singular.Provider.Koios.RecorderSpec.spec
+    Singular.Provider.Koios.RecordedSpec.spec

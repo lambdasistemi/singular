@@ -411,7 +411,12 @@ foldPending at FoldSpec{..} = do
                     walked <-
                         TS.speculateEdges snap ((key, requestEdge req) :| [])
                             >>= either
-                                (\why -> stop' ClientRefusal ("TrieState " <> show why) [])
+                                ( \why ->
+                                    stop'
+                                        ClientRefusal
+                                        ("TrieState " <> T.unpack (TS.trieFailureName why))
+                                        (TS.trieFailureFields why)
+                                )
                                 pure
                     pure (TS.walkRoot walked)
                 ctx0 <-

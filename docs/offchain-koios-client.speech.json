@@ -1,0 +1,152 @@
+{
+  "the-koios-client": [
+    {
+      "text": "The Koios client.",
+      "pause": 500
+    },
+    {
+      "text": "A provider author building the Koios instance of the ledger provider wants one Koios client that the recorded answers in continuous integration and the live public service both go through, so that a test that passes on a recording says something about the live service. A user on a busy public endpoint wants every command to finish or to stop with a named reason, never to continue on half an answer presented as a whole one. This page shows how the client is put together, what each call returns, how pages are read, why a call stops, and what the recorded evidence does and does not establish.",
+      "pause": 400
+    }
+  ],
+  "the-story-this-serves": [
+    {
+      "text": "The story this serves.",
+      "pause": 500
+    },
+    {
+      "text": "As a provider author, I import a Koios client that knows nothing of registries or of the ledger-provider interface, and I choose its transport: recorded answers for the test suite, or the live HTTP service. Both hand the client the same raw answers — status, headers and body — so the same code pages and decodes both, and a fixture and a live answer cannot be read two different ways.",
+      "pause": 400
+    },
+    {
+      "text": "As a user with a Koios account, I give the client my bearer token in a file. After surrounding white space is stripped, it must contain at least 32 ASCII characters: letters, digits and -._~+/, with optional = padding at the end, and at least one character outside 0123456789abcdefABCDEF. An all-hexadecimal token could occur in a fixture's SHA-256 metadata even after its echoed copies were removed, so it is refused too. A short or empty token, a substring of the redaction marker <token>, or a token containing other characters is refused as TokenFileInvalid before any request, including the recorder's schema request. The refusal explains the restriction without printing the token. For an accepted token, the client replaces echoed copies in returned answers, failures and recorded fixtures; the command line names only its file, and the failure text printed to logs carries no echoed credential.",
+      "pause": 400
+    },
+    {
+      "text": "As a user on a busy endpoint, I see a call either answer or stop with one named reason: unreachable, timed out, rate limited, server failing, refused by the server, an incomplete page, an unknown fact, or an answer that does not decode at a named position. An address with no outputs is an empty answer, not a failure.",
+      "pause": 400
+    }
+  ],
+  "the-modules": [
+    {
+      "text": "The modules.",
+      "pause": 500
+    },
+    {
+      "text": "The client is three modules of the public off-chain library and one public sublibrary, koios-http, that holds everything touching the network. The main library gains no network dependency.",
+      "pause": 400
+    },
+    {
+      "text": "Singular.Provider.Koios.Wire describes one request per Koios call and decodes each answer into Conway ledger types. It performs no request.",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Client defines the transport — one request in, one raw answer and its attempt count out — and builds every typed call on it: it pages, classifies the status and decodes, once, for every transport.",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Recorded answers from a fixture directory. A request with no fixture is named as not recorded.",
+      "pause": 300
+    },
+    {
+      "text": "The HTTP transport, Singular.Provider.Koios.Http in the koios-http sublibrary (source), sends requests to a base URL with an optional bearer token, a timeout on every attempt and bounded retries.",
+      "pause": 300
+    },
+    {
+      "text": "The recorder and probe, Singular.Provider.Koios.Recorder in the same sublibrary (source), run read requests named on the command line and either print their decoded facts or write every raw answer as a fixture.",
+      "pause": 300
+    },
+    {
+      "text": "The two koios-http modules are documented here by their source, because the generated reference covers the main library only.",
+      "pause": 400
+    }
+  ],
+  "what-each-call-returns": [
+    {
+      "text": "What each call returns.",
+      "pause": 500
+    },
+    {
+      "text": "Submission through submitTx takes the existing SignedTx type, whose hidden constructor is reached through signTx with a payment signing key. The client serializes that signed transaction as Conway CBOR, preserving its body and witnesses. It accepts no unsigned transaction or raw byte string through this call. The type establishes that a payment-key witness was added; the ledger still decides whether the transaction is valid.",
+      "pause": 400
+    },
+    {
+      "text": "Koios reports a datum hash for an output that carries an inline datum too; the inline datum wins. A reference script must hash to the script hash Koios names. A transaction that failed its scripts is returned with its validity false, never dropped. The order of asset_txs makes pages stable; it is not the order in which the asset was passed on, because Koios gives no position within a block and a transaction that included an asset need not have spent it.",
+      "pause": 400
+    }
+  ],
+  "how-pages-are-read": [
+    {
+      "text": "How pages are read.",
+      "pause": 500
+    },
+    {
+      "text": "The listing calls are read page by page, each page asking for an exact row total, in a stable order: output reference for the output listings, block height then transaction id for the asset history.",
+      "pause": 400
+    },
+    {
+      "text": "The client stops when the rows read reach the total, or at the first page shorter than the limit, and then requires the rows read to equal the total. Each of these refuses the whole call as an incomplete page, and never returns a shorter answer as a whole one: a body cut off or not one JSON document, a page with more rows than the limit, a range that does not name the rows at the offset asked for, an answer with no exact total, a total that changes between pages, fewer rows than the total, and more pages than the configured ceiling. The public preprod service answers an exact total on every listing call when asked for one.",
+      "pause": 400
+    }
+  ],
+  "why-a-call-stops": [
+    {
+      "text": "Why a call stops.",
+      "pause": 500
+    },
+    {
+      "text": "Every failure names the call, the attempts the transport made and the evidence. Retries live in the HTTP transport, so a recorded replay never sleeps. A submission is retried only when no answer arrived — unreachable or timed out — because resending the same signed bytes cannot apply them twice; a 400 at submission is the server's refusal of that transaction and is returned as its text after one attempt.",
+      "pause": 400
+    },
+    {
+      "text": "The HTTP transport's bounds are configuration values. Their defaults are a 20 second timeout per attempt, five attempts, delays doubling from a quarter second up to eight seconds with jitter, a rate-limit wait honoured up to 30 seconds, and 60 seconds for a whole request, retries included. That ceiling bounds the elapsed time: no retry starts past it, and each attempt's timeout is cut to what remains of it.",
+      "pause": 400
+    }
+  ],
+  "recorded-answers-and-the-recorder": [
+    {
+      "text": "Recorded answers and the recorder.",
+      "pause": 500
+    },
+    {
+      "text": "singular-koios probe runs read requests against a Koios URL and prints the decoded facts of each, or the named failure. singular-koios record runs the same requests and writes every raw answer they take, page by page, as one fixture file holding the request, the Koios schema revision, the time and the SHA-256 of the body. Its requests name read calls only; submission is not one of them, and the recording transport refuses one without sending it. The token file is read before anything is sent, the schema document included, and the schema document is fetched under the same timeout and retry bounds as every call. Request headers are not recorded; answer headers are, and the live transport replaces the token in header names, header values, bodies and exception text before returning an exchange. It recognises literal characters and JSON escapes, including mixed Unicode escapes and escaped slashes, even in an incomplete JSON body. Bytes outside each match are preserved. A server that echoes an accepted token back therefore cannot put that copy into a fixture, a failure or its printed log text. An answer the client refuses for its content — an absent fact, an answer that does not decode — is recorded all the same, and recording goes on: the tests judge it. A directory or file that cannot be written is a named refusal.",
+      "pause": 400
+    },
+    {
+      "text": "The schema revision is the info.version of the koiosapi.yaml document Koios serves at the origin of the base URL. Loading a fixture directory refuses a fixture whose body does not match its hash, fixtures recorded under different schema revisions, two fixtures for one request, and an empty directory.",
+      "pause": 400
+    },
+    {
+      "text": "The preprod set under offchain/test/fixtures/koios/preprod/ is recorded by just koios-fixtures from https://preprod.koios.rest/api/v1 with read calls only. The tests replay it through the recorded transport and through the HTTP transport pointed at a loopback server serving the same answers, and both must decode identically. A loopback server in the test suite also produces rate limiting, slow answers, cut-off and missing pages, server errors, refused tokens and refused submissions on demand, and the tests count the attempts it receives.",
+      "pause": 400
+    }
+  ],
+  "what-the-evidence-establishes-and-what-it-does-not": [
+    {
+      "text": "What the evidence establishes, and what it does not.",
+      "pause": 500
+    },
+    {
+      "text": "Each recorded output is compared with the output at the same index of its producing transaction, decoded by the ledger from that transaction's recorded bytes, and the set of output references is compared with the producer's — the raw recorded rows for a listing, the transaction's own inputs, reference inputs and outputs for tx_info — so a decoder that changes, drops or adds an output fails. The protocol parameters decoded from epoch_params must equal the ledger's own reading of the node-form parameters Koios serves for the same epoch.",
+      "pause": 400
+    },
+    {
+      "text": "The recorded set is one day's snapshot of public preprod and covers the shapes it holds: key and script addresses, ada-only and multi-asset values, inline datums, datum hashes and Plutus V3 reference scripts. Plutus V1 or V2 reference scripts, Byron addresses and pointer addresses are not in it. Koios gives no bytes for a native (timelock) reference script, only a summary of it, so an output holding one cannot be decoded exactly: the client refuses it by name, as the recorded preprod answer in the set shows. A caller that reads such outputs cannot use this client for them. No transaction that failed its scripts was found on preprod, so a recorded transaction with its validity flag cleared stands in for one; its id hashes the body alone and is unchanged. The live preprod service does not send the valid_contract field its published schema lists for tx_cbor and tx_info; validity comes from the transaction's own bytes and from the per-script flags Koios does send. A body cut off on the connection is retried and named in code, but the loopback server cannot produce one, so only the client's mapping of it is tested.",
+      "pause": 400
+    },
+    {
+      "text": "The token checks generate accepted bearer credentials containing text from the redaction marker, header names and JSON literals, alongside arbitrary characters from the full accepted alphabet. Coverage checks require each adversarial family, padding, slashes and credentials that can also name HTTP headers to occur. A loopback server echoes each credential literally and through Unicode escapes; the checks inspect status, header names, header values, body bytes, failure and probe renderings, and the actual fixture files with their JSON encoding. Generated all-hexadecimal credentials are refused too. Refused credentials must produce zero server requests, both for the transport and for the recorder. The fixed credentials remain examples. These generated cases are local evidence over sampled inputs, not a formal proof over all credentials or evidence of public-service behavior.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "offchain-koios-client.md",
+    "sha256": "dac22be36bfd460d792f85113a748bedca577c02e6ead62529163f02c5edae66"
+  }
+}

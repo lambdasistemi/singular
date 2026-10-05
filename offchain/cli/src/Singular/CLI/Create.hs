@@ -95,6 +95,7 @@ import Singular.CLI.Session
     ( WriteContext (..)
     , expecting
     , failWith
+    , failWithFields
     , journalObserved
     , journalObservedId
     , submitBuilt
@@ -214,7 +215,14 @@ createWith a rel ws = do
                     chosen
                     (bootedBody booted)
                     observeTrie
-                    >>= either (failWith StaleState . ("TrieState " <>) . show) pure
+                    >>= either
+                        ( \why ->
+                            failWithFields
+                                StaleState
+                                ("TrieState " <> T.unpack (TS.trieFailureName why))
+                                (TS.trieFailureFields why)
+                        )
+                        pure
                 writeLocalState
                     dir
                     LocalState

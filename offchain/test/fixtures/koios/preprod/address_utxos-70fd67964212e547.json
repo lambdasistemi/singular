@@ -1,0 +1,82 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"53312411ecf213afce7ac280316678a4e8d0185d8cf8f26e5aa6c18670582f44\",\"tx_index\":0,\"address\":\"addr_test1wzzgcnajyue9szkgn73z5h2emj3c67p09msxx9anyumwcfg9479va\",\"value\":\"2000000\",\"stake_address\":null,\"payment_cred\":\"848c4fb22732580ac89fa22a5d59dca38d782f2ee06317b32736ec25\",\"epoch_no\":29,\"block_height\":208494,\"block_time\":1666983008,\"datum_hash\":\"f98d0aac6b803cf3cc990f8c38b56bf5d63ad72112c19142e8c29250aa9a6150\",\"inline_datum\":null,\"reference_script\":null,\"asset_list\":[{\"decimals\": 0, \"quantity\": \"1\", \"policy_id\": \"0cb0904753b3eefe00907b3efef424a59364cf89026ea1be6f75ea65\", \"asset_name\": \"\", \"fingerprint\": \"asset1a5hhae922t7dp0m6factfur88wjjllq226p2xk\"}, {\"decimals\": 0, \"quantity\": \"20\", \"policy_id\": \"71c4a89b64e89aab4fabac7f04aa1fa6512d90086e645e53d5db6eb5\", \"asset_name\": \"726577617264\", \"fingerprint\": \"asset1sk4ts3tptvm2kqlzd39kfxzss689ku5jeuf4vs\"}],\"is_spent\":false}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:13 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/1"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:13.720566911Z",
+    "request": {
+        "body": {
+            "json": {
+                "_addresses": [
+                    "addr_test1wzzgcnajyue9szkgn73z5h2emj3c67p09msxx9anyumwcfg9479va"
+                ],
+                "_extended": true
+            }
+        },
+        "call": "address_utxos",
+        "method": "POST",
+        "path": "/address_utxos",
+        "query": [
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "tx_hash.asc,tx_index.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "69ec9c9145a6f14a4a03f0855555f647e573ab13de368a18cb73c89047945acd"
+}

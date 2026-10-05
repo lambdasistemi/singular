@@ -37,6 +37,7 @@ import Data.Bifunctor (first)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Char (toUpper)
 import Data.IORef
@@ -71,6 +72,7 @@ import System.Directory
     , withCurrentDirectory
     )
 import System.Environment (lookupEnv, setEnv, unsetEnv)
+import System.Exit (ExitCode (..))
 import System.FilePath (takeDirectory, (</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -134,6 +136,7 @@ import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
     , appendJournal
+    , exitCodeOf
     , outcomeName
     , readJournal
     , unresolved
@@ -154,6 +157,7 @@ import Singular.CLI.Session
     , submitBuilt
     , txIdHex
     )
+import Singular.CLI.TrieHistory (readTrieHistory)
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment
     ( Deployment (..)
@@ -261,6 +265,93 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
 -- capability: these cases establish command behavior, never ledger admission.
 inputRows :: Spec
 inputRows = describe "TrieState command input refusals on injected capabilities" $ do
+    it
+        "invalid included-fold journal records keep their refusal class and name the decoded transaction"
+        $ withInputFixture
+        $ \fx saved live mirror _ -> do
+            (foldTx, ()) <- write fx
+            journalObserved
+                (writeContext fx)
+                "fold"
+                foldTx
+                "fixture fold recorded"
+            entries <- readJournal (fxDir fx)
+            let who = savedIdentity saved
+                sid = TS.SessionId "journal-root-control"
+                emptyHex = hexT (BS.replicate 32 0)
+                corrupt corruptBefore text entry
+                    | journalEvent entry == "prepared"
+                    , journalStep entry == "fold" =
+                        entry
+                            { journalEdge = Just 1
+                            , journalKey = Just (hexT "fixture-key")
+                            , journalRootBefore = Just (if corruptBefore then text else emptyHex)
+                            , journalRootAfter = Just (if corruptBefore then emptyHex else text)
+                            }
+                    | otherwise = entry
+                writeEntries es =
+                    BS.writeFile
+                        (fxDir fx </> "journal.jsonl")
+                        (BL.toStrict (foldMap (\e -> Aeson.encode e <> "\n") es))
+            baseline <- readTrieHistory (fxDir fx) sid who
+            case baseline of
+                Right (_, folds) -> folds `shouldBe` []
+                Left why -> expectationFailure ("baseline history refused: " <> show why)
+            forM_ [True, False] $ \corruptBefore ->
+                forM_ ["not-a-hex-root", "abc", "gg"] $ \text -> do
+                    writeEntries (map (corrupt corruptBefore text) entries)
+                    history <- readTrieHistory (fxDir fx) sid who
+                    case history of
+                        Left why ->
+                            why
+                                `shouldBe` TS.RootDoesNotChain
+                                    who
+                                    (Just (txIdTx foldTx))
+                                    (TS.UnreadableRoot "an accepted fold's journal root is not hex")
+                        Right _ -> expectationFailure "a malformed fold root was accepted"
+                    result <-
+                        try @CommandFailure (requireMirrorSelection saved live mirror)
+                    case result of
+                        Left (CommandFailure cls why _) -> do
+                            outcomeName cls `shouldBe` "stale-state"
+                            exitCodeOf cls `shouldBe` ExitFailure 14
+                            why `shouldBe` "TrieState RootDoesNotChain"
+                        Right _ -> expectationFailure "a malformed fold root served a mirror"
+            txIdHex foldTx `shouldNotBe` emptyHex
+            forM_ [Nothing, Just "not-a-hex-key"] $ \key -> do
+                let badKey entry
+                        | journalEvent entry == "prepared"
+                        , journalStep entry == "fold" =
+                            entry
+                                { journalEdge = Just 1
+                                , journalKey = key
+                                , journalRootBefore = Just emptyHex
+                                , journalRootAfter = Just (txIdHex foldTx)
+                                }
+                        | otherwise = entry
+                    record = case key of
+                        Nothing -> "an accepted fold names no key"
+                        Just _ -> "an accepted fold's key is not hex"
+                writeEntries (map badKey entries)
+                history <- readTrieHistory (fxDir fx) sid who
+                case history of
+                    Left why ->
+                        why
+                            `shouldBe` TS.UndecodableRequest
+                                who
+                                (Just (txIdTx foldTx))
+                                (TS.UnreadableRecord record)
+                    Right _ -> expectationFailure "an invalid fold key was accepted"
+                result <-
+                    try @CommandFailure (requireMirrorSelection saved live mirror)
+                case result of
+                    Left (CommandFailure cls why _) -> do
+                        outcomeName cls `shouldBe` "client-refusal"
+                        exitCodeOf cls `shouldBe` ExitFailure 10
+                        why `shouldBe` "TrieState UndecodableRequest"
+                    Right _ -> expectationFailure "an invalid fold key served a mirror"
+            writeEntries entries
+            requireMirrorSelection saved live mirror
     forM_ [0, 2, 4, 5, 6, 7, 42] $ \edge ->
         forM_ [False, True] $ \combined ->
             it

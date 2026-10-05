@@ -1,0 +1,64 @@
+{
+    "answer": {
+        "body": "[{\"stake_address\":\"stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl\",\"status\":\"registered\",\"delegated_pool\":null,\"delegated_drep\":null,\"total_balance\":\"0\",\"utxo\":\"0\",\"rewards\":\"0\",\"withdrawals\":\"0\",\"rewards_available\":\"0\",\"deposit\":\"2000000\",\"reserves\":\"0\",\"treasury\":\"0\",\"proposal_refund\":\"0\"}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:15 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:15.780353554Z",
+    "request": {
+        "body": {
+            "json": {
+                "_stake_addresses": [
+                    "stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl"
+                ]
+            }
+        },
+        "call": "account_info",
+        "method": "POST",
+        "path": "/account_info",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "26922a5afe5cef8a5c931a25732fac8b3593f935b8554386214a80121bd65420"
+}

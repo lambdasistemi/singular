@@ -1,0 +1,64 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"dcc4f28d42fd1bc490efea5b188d4c8ead1578f197f2941715fc6936d6fd3ceb\",\"block_hash\":\"ff52b5d2481d82f93f859aec554852a19e6f785fd343751e8cc7a87723b3e55d\",\"block_height\":5179610,\"epoch_no\":313,\"absolute_slot\":133787386,\"tx_timestamp\":1789470586,\"cbor\":\"84a300d90102818258202cb29c992252ac9cb64fa1152347fb2b0f183cb1d96ab66a1f46f574752c5efb01018882581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a0067b47082581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a00438da682581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a004989cb82581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a004989cb82581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a00438da682581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a0074bfa182581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711a00438da682581d604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad711b000000024999da26021a0002add9a100d90102818258202758c4adbf8fb7c532dc6db4ecd2a208f7e7e5cb97c0944639e8ae137d147bab58407d86ee78e7f0afadcc632833d5963bb4751fb0dc03d027097d9bc9e4e21e0ca6f8965eee51ce473cae6dc4f8b65a30235f941211c9333956cb018297b9e5e607f5f6\"}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:38 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:39.429500765Z",
+    "request": {
+        "body": {
+            "json": {
+                "_tx_hashes": [
+                    "dcc4f28d42fd1bc490efea5b188d4c8ead1578f197f2941715fc6936d6fd3ceb"
+                ]
+            }
+        },
+        "call": "tx_cbor",
+        "method": "POST",
+        "path": "/tx_cbor",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "c64a2237a0320c3f21b7858858bbb7bd47c2bf4d60dddf43432ebe87706b2072"
+}

@@ -95,19 +95,19 @@ openStoredMirror
 openStoredMirror path who = do
     there <- doesFileExist (mirrorPathFor path)
     if not there
-        then pure (Left MissingProof)
+        then pure (Left (MissingProof who NoLocalTrie))
         else do
             nodes <- loadMirror path
             if Map.member (tokenOf who) nodes
                 then Right . MirrorStore path who <$> newIORef nodes
-                else pure (Left MissingProof)
+                else pure (Left (MissingProof who NoLocalTrie))
 
 storedRoot :: MirrorStore -> IO (Either TrieFailure Root)
 storedRoot (MirrorStore _ who ref) = do
     nodes <- readIORef ref
     pure
         ( maybe
-            (Left MissingProof)
+            (Left (MissingProof who NoLocalTrie))
             (Right . rootFromDb)
             (Map.lookup (tokenOf who) nodes)
         )
@@ -125,12 +125,13 @@ mirrorTrieState
 mirrorTrieState (MirrorStore path who ref) chosen create events observe = do
     context <- newIORef (chosen, events)
     let fetch wanted
-            | wanted /= who = pure (Left WrongRegistry)
+            | wanted /= who =
+                pure (Left (WrongRegistry wanted Nothing (OtherRegistry who)))
             | otherwise = do
                 nodes <- readIORef ref
                 (current, history) <- readIORef context
                 pure $ case Map.lookup (tokenOf who) nodes of
-                    Nothing -> Left MissingProof
+                    Nothing -> Left (MissingProof who NoLocalTrie)
                     Just db -> Right (TrieEntry current (Just create) history db)
         persist entry = do
             nodes <- readIORef ref
@@ -151,7 +152,14 @@ createStoredMirror path chosen tx observe = case checkedCreateRecord (trieSelect
     Left why -> pure (Left why)
     Right create@(CreateRecord _ output)
         | pointOutput (trieSelectionPoint chosen) /= output ->
-            pure (Left StaleState)
+            pure
+                ( Left
+                    ( StaleState
+                        (trieSelectionIdentity chosen)
+                        (Just (txIdTx tx))
+                        (StaleOutput (pointOutput (trieSelectionPoint chosen)) output)
+                    )
+                )
         | otherwise -> case checkedCoverage (TrieEntry chosen (Just create) [] emptyMPFInMemoryDB) of
             Left why -> pure (Left why)
             Right _ -> do
@@ -174,7 +182,15 @@ replaceFromHistory
     -> [ObservedFold]
     -> IO (Either TrieFailure ())
 replaceFromHistory (MirrorStore path who ref) chosen create events
-    | trieSelectionIdentity chosen /= who = pure (Left WrongRegistry)
+    | trieSelectionIdentity chosen /= who =
+        pure
+            ( Left
+                ( WrongRegistry
+                    (trieSelectionIdentity chosen)
+                    Nothing
+                    (OtherRegistry who)
+                )
+            )
     | otherwise = case foldM replay emptyMPFInMemoryDB events of
         Left why -> pure (Left why)
         Right db -> case checkedCoverage (TrieEntry chosen (Just create) events db) of
@@ -188,12 +204,24 @@ replaceFromHistory (MirrorStore path who ref) chosen create events
   where
     replay db (ObservedFold from to moves)
         | trieSelectionRoot from == trieSelectionRoot to = Right db
-        | trieSelectionRoot from /= rootFromDb db = Left RootDoesNotChain
+        | trieSelectionRoot from /= rootFromDb db =
+            Left
+                ( RootDoesNotChain
+                    who
+                    Nothing
+                    (RootsPart (rootFromDb db) (trieSelectionRoot from))
+                )
         | otherwise = do
-            (changed, walked) <- walkNodes db moves
+            (changed, walked) <- walkNodes who db moves
             if walkRoot walked == trieSelectionRoot to
                 then Right changed
-                else Left RootDoesNotChain
+                else
+                    Left
+                        ( RootDoesNotChain
+                            who
+                            Nothing
+                            (RootsPart (walkRoot walked) (trieSelectionRoot to))
+                        )
 
 {- | A checked create comes from the actual accepted boot's state output and
 mint, not a caller-supplied empty-root assertion.
@@ -202,10 +230,16 @@ checkedCreateRecord
     :: RegistryIdentity -> ConwayTx -> Either TrieFailure CreateRecord
 checkedCreateRecord who tx = do
     (_, root) <- stateOutput who tx
-    when (root /= rootFromDb emptyMPFInMemoryDB) (Left RootDoesNotChain)
+    when (root /= rootFromDb emptyMPFInMemoryDB) $
+        Left
+            ( RootDoesNotChain
+                who
+                (Just (txIdTx tx))
+                (RootsPart (rootFromDb emptyMPFInMemoryDB) root)
+            )
     let MultiAsset minted = tx ^. bodyTxL . mintTxBodyL
     if quantity who minted /= 1
-        then Left WrongRegistry
+        then Left (WrongRegistry who (Just (txIdTx tx)) CreateMint)
         else Right (CreateRecord who (TxIn (txIdTx tx) (TxIx 0)))
 
 {- | Bind the recorded after-root and old state input to the real signed body.
@@ -221,7 +255,8 @@ checkedFoldRecord
     -> Either TrieFailure ObservedFold
 checkedFoldRecord sid who before after moves tx = do
     (output, root) <- stateOutput who tx
-    when (root /= after) (Left RootDoesNotChain)
+    when (root /= after) $
+        Left (RootDoesNotChain who (Just (txIdTx tx)) (RootsPart after root))
     let Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
         inputs = Set.toAscList (tx ^. bodyTxL . inputsTxBodyL)
         candidates =
@@ -235,7 +270,13 @@ checkedFoldRecord sid who before after moves tx = do
             ]
     input <- case candidates of
         [one] -> Right one
-        _ -> Left UndecodableRequest
+        _ ->
+            Left
+                ( UndecodableRequest
+                    who
+                    (Just (txIdTx tx))
+                    (UnreadableRecord "no single Modify spend applies the recorded moves")
+                )
     pure
         ( ObservedFold
             (TrieSelection who (StatePoint sid Unbound input) before)
@@ -253,7 +294,7 @@ stateOutput who tx = case toList (tx ^. bodyTxL . outputsTxBodyL) of
         | holdsIdentity who first
         , Just (StateDatum st) <- extractCageDatum first ->
             Right (TxIn (txIdTx tx) (TxIx 0), Root (unOnChainRoot (stateRoot st)))
-    _ -> Left WrongRegistry
+    _ -> Left (WrongRegistry who (Just (txIdTx tx)) SelectionNotState)
 
 holdsIdentity :: RegistryIdentity -> TxOut ConwayEra -> Bool
 holdsIdentity who out =

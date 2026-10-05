@@ -1,0 +1,65 @@
+{
+    "answer": {
+        "body": "[{\"tx_hash\":\"c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3\",\"num_confirmations\":73730}, \n {\"tx_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"num_confirmations\":null}]",
+        "headers": [
+            [
+                "date",
+                "Sun, 04 Oct 2026 18:06:15 GMT"
+            ],
+            [
+                "content-range",
+                "0-1/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-04T18:06:15.517909486Z",
+    "request": {
+        "body": {
+            "json": {
+                "_tx_hashes": [
+                    "c8c5be03023b828cffd1dc623b345c3ef061f73b0d7ddb1b8b4d924d2a1c57a3",
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                ]
+            }
+        },
+        "call": "tx_status",
+        "method": "POST",
+        "path": "/tx_status",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "4a1f1d348323db6a06b3689aad144203f3ae599a0c4dc5fb295c07cab4871ec5"
+}
