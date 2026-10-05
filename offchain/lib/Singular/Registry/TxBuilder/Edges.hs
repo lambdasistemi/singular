@@ -132,7 +132,7 @@ import Singular.Registry.Blueprint.Params
     )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
+import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)

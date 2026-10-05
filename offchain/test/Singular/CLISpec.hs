@@ -95,7 +95,6 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (Wallet (..), bech32Address, loadWallet)
 import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
@@ -110,6 +109,11 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( edgeInsertActive
     , edgeUpdateTerminal
+    )
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
     )
 
 spec :: Spec

@@ -165,7 +165,6 @@ import Singular.Registry.Deployment
     , parseOutRef
     )
 import Singular.Registry.Ledger (Coin (..), Root (..), TokenId (..))
-import Singular.Registry.Node (Wallet (..), loadWallet)
 import Singular.Registry.Node.Memory
     ( ChainState (..)
     , MemoryChain
@@ -202,6 +201,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , edgeName
     )
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
 spec = writeRows >> phaseLogRows >> inputRows

@@ -42,7 +42,7 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
+import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
 import Singular.Registry.Provider (View (..))
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal

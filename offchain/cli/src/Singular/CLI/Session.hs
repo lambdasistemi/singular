@@ -126,21 +126,21 @@ import Singular.CLI.Receipt
     , submissionCase
     )
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Node (Wallet (..), loadWallet)
-import Singular.Registry.Node.PhaseLog
-    ( PhaseLog
-    , phaseLogEnabled
-    , phaseLogFromEnv
-    , timedPhase
-    , validityFields
-    )
 import Singular.Registry.Node.Submit
     ( SubmitResult (..)
     , signTx
     , signedTx
     , submitSigned
     )
+import Singular.Registry.PhaseLog
+    ( PhaseLog
+    , phaseLogEnabled
+    , phaseLogFromEnv
+    , timedPhase
+    , validityFields
+    )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 {- | Why a command stopped, in its outcome class, with any receipt fields
 that name what it left behind.

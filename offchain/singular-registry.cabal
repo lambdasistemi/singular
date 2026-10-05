@@ -191,12 +191,14 @@ library local-services
     Singular.Registry.SessionServices
     Singular.Registry.WaitTypes
     Singular.Registry.Signing
+    Singular.Registry.Wallet
     Singular.Registry.TimeMaterial
 
   build-depends:
     , aeson
     , base                       >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -251,7 +253,6 @@ library node-internal
     , async
     , base                                   >=4.14 && <5
     , base16-bytestring
-    , bech32
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra
