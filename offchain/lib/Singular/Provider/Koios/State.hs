@@ -7,6 +7,7 @@ module Singular.Provider.Koios.State
     ( ProviderState (..)
     , initialProviderState
     , stateRuntime
+    , stateRuntimeIn
     ) where
 
 import Control.Monad.State.Strict (MonadState, gets, modify')
@@ -31,12 +32,22 @@ initialProviderState = ProviderState 0 Set.empty []
 returning. No IORef, external clock or process state is involved.
 -}
 stateRuntime :: (MonadState ProviderState m) => ProviderRuntime m
-stateRuntime =
+stateRuntime = stateRuntimeIn id const
+
+{- | Compose the same pure lifecycle into a caller's larger State value, such
+as a logical clock or wallet model, without hiding external effects.
+-}
+stateRuntimeIn
+    :: (MonadState s m)
+    => (s -> ProviderState)
+    -> (ProviderState -> s -> s)
+    -> ProviderRuntime m
+stateRuntimeIn select replace =
     ProviderRuntime
         { scopedSession = \action release -> do
-            number <- gets nextSessionNumber
+            number <- gets (nextSessionNumber . select)
             let identity = SessionId ("koios-" <> Text.pack (show number))
-            modify'
+            update
                 ( \state ->
                     state
                         { nextSessionNumber = number + 1
@@ -45,18 +56,20 @@ stateRuntime =
                 )
             result <- action identity
             release identity
-            modify'
+            update
                 ( \state -> state{openSessions = Set.delete identity (openSessions state)}
                 )
             pure result
-        , sessionOpen = \identity -> gets (Set.member identity . openSessions)
+        , sessionOpen = \identity -> gets (Set.member identity . openSessions . select)
         , recordEvent = \event ->
-            modify'
+            update
                 (\state -> state{providerEvents = providerEvents state <> [event]})
         , measureRead = \_ _ event action -> do
             result <- action
-            modify'
+            update
                 ( \state -> state{providerEvents = providerEvents state <> [event result]}
                 )
             pure result
         }
+  where
+    update change = modify' (\whole -> replace (change (select whole)) whole)

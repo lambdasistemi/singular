@@ -2,14 +2,15 @@
 
 module Singular.Provider.Koios.ProviderSpec (spec) where
 
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
     , outputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
@@ -26,9 +27,12 @@ import Cardano.Ledger.Mary.Value
     , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Concurrent (threadDelay)
+import Control.Exception (finally, try)
 import Control.Monad (forM_, void)
-import Control.Monad.State.Strict (State, runState)
+import Control.Monad.State.Strict (State, gets, modify', runState)
 import Data.Aeson (Value (..), decodeStrict', encode, object, (.=))
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
@@ -36,7 +40,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy qualified as LBS
 import Data.Foldable (toList)
-import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (permutations, sort, sortOn, subsequences)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
@@ -74,23 +78,32 @@ import Singular.Provider.Koios.Scripted
     , pageAnswer
     , queryParam
     , scriptHashOfByte
+    , signedTransaction
     )
 import Singular.Provider.Koios.State
 import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Registry.Confirmation qualified as Confirmation
 import Singular.Registry.Evidence
     ( Evidenced (..)
     , SessionBinding (..)
     , SessionId (..)
     )
 import Singular.Registry.LedgerProvider
-import Singular.Registry.NetworkTime (networkMagic)
+import Singular.Registry.NetworkTime
+    ( NetworkTimeFailure (..)
+    , NetworkTimeManifest (..)
+    , networkMagic
+    )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
 import Singular.Registry.PhaseLog (noPhaseLog, phaseLogAt)
+import Singular.Registry.Signing (signedTx)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
+import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
+import System.Timeout (timeout)
 import Test.Hspec
 
 spec :: Spec
@@ -392,6 +405,251 @@ spec = describe "Koios ledger provider constructor" $ do
         -- Acquiring the cursor fetches its first page. Released continuation
         -- refuses before fetching another page or reconstruction material.
         length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 1
+
+    it
+        "polls exact output visibility past the finite horizon in pure State"
+        $ do
+            (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
+            let source = TimeSource manifest genesis eras
+                base = timeSystemStartMs manifest + 1000
+                (target, _, _) = dependentPair True
+                makeProvider visibleAt =
+                    koiosProvider
+                        ( stateRuntimeIn
+                            (\(state, _, _) -> state)
+                            (\state (_, now, bounds) -> (state, now, bounds))
+                        )
+                        (Network 42)
+                        source
+                        (pollingClient target visibleAt (timeSystemStartMs manifest))
+            forM_ [Just (base + 10000), Nothing] $ \visibleAt -> do
+                let action =
+                        Confirmation.confirmTransaction
+                            (pollingRuntime base)
+                            (makeProvider visibleAt)
+                            (Network 42)
+                            target
+                    (result, (state, now, bounds)) = runState action (initialProviderState, base, [])
+                persist
+                    ( if visibleAt == Nothing
+                        then "pure-poll-expired"
+                        else "pure-poll-visible"
+                    )
+                    ( object
+                        [ "result" .= show result
+                        , "clock_ms" .= now
+                        , "bounds_seconds" .= bounds
+                        , "events" .= map eventJson (providerEvents state)
+                        ]
+                    )
+                bounds `shouldBe` [30, 310]
+                Set.null (openSessions state) `shouldBe` True
+                case (visibleAt, result) of
+                    (Just wantedAt, Right ()) -> now `shouldBe` wantedAt
+                    (Nothing, Left (Confirmation.ConfirmationWaitFailure failure)) -> do
+                        waitStage failure `shouldBe` SessionConfirmationWait
+                        waitTxId failure `shouldBe` keyOf target
+                        waitClosedAt failure `shouldBe` Just (base + 300000)
+                        waitBound failure `shouldBe` 310
+                    _ ->
+                        expectationFailure
+                            "bounded output visibility produced another outcome"
+                nextSessionNumber state `shouldSatisfy` (> 2)
+                [ Client.rawCall request
+                  | RawExchange _ request _ <- providerEvents state
+                  ]
+                    `shouldSatisfy` all (/= Wire.CallTxStatus)
+
+    it "retains the validated upper-bound start and uncapped margin" $ do
+        (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
+        let source = TimeSource manifest genesis eras
+            base = timeSystemStartMs manifest + 1000
+            (original, _, _) = dependentPair True
+            target =
+                original
+                    & bodyTxL . vldtTxBodyL
+                        .~ ValidityInterval SNothing (SJust (SlotNo 400))
+            provider =
+                koiosProvider
+                    pollProviderRuntime
+                    (Network 42)
+                    source
+                    (pollingClient target Nothing (timeSystemStartMs manifest))
+            (result, (state, now, bounds)) =
+                runState
+                    ( Confirmation.confirmTransaction
+                        (pollingRuntime base)
+                        provider
+                        (Network 42)
+                        target
+                    )
+                    (initialProviderState, base, [])
+        persist "pure-upper-bound-expired" $
+            object
+                [ "result" .= show result
+                , "clock_ms" .= now
+                , "bounds_seconds" .= bounds
+                , "events" .= map eventJson (providerEvents state)
+                ]
+        bounds `shouldBe` [30, 169]
+        case result of
+            Left (Confirmation.ConfirmationWaitFailure failure) -> do
+                waitClosedAt failure
+                    `shouldBe` Just (timeSystemStartMs manifest + 160000)
+                waitBound failure `shouldBe` 169
+                now `shouldBe` base + 160000
+            _ ->
+                expectationFailure
+                    "the finite validity window did not end at its validated deadline"
+        Set.null (openSessions state) `shouldBe` True
+
+    it "refuses a ledger upper bound outside the horizon before polling" $ do
+        (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
+        let source = TimeSource manifest genesis eras
+            base = timeSystemStartMs manifest + 1000
+            upper = SlotNo 501
+            (original, _, _) = dependentPair True
+            target =
+                original
+                    & bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust upper)
+            provider =
+                koiosProvider
+                    pollProviderRuntime
+                    (Network 42)
+                    source
+                    (pollingClient target (Just base) (timeSystemStartMs manifest))
+            (result, (state, now, bounds)) =
+                runState
+                    ( Confirmation.confirmTransaction
+                        (pollingRuntime base)
+                        provider
+                        (Network 42)
+                        target
+                    )
+                    (initialProviderState, base, [])
+        persist "pure-upper-bound-refused" $
+            object
+                [ "result" .= show result
+                , "events" .= map eventJson (providerEvents state)
+                ]
+        case result of
+            Left (Confirmation.ConfirmationTimeFailure (SlotPastHorizon observed)) -> do
+                observed `shouldBe` upper
+            _ ->
+                expectationFailure
+                    "a ledger horizon refusal was weakened into a fallback"
+        bounds `shouldBe` [30]
+        now `shouldBe` base
+        length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 0
+        nextSessionNumber state `shouldBe` 1
+        Set.null (openSessions state) `shouldBe` True
+
+    it
+        "uses signed-only submission in pure State with network and verdict preservation"
+        $ do
+            source <- timeSource
+            let expectedId = keyOf (signedTx signedTransaction)
+                accepted = okJson [] (LBS.toStrict (encode (Wire.txIdHex expectedId)))
+                refused = Client.Exchange 1 (Right (Client.Answer 400 [] "BadInputsUTxO"))
+                unavailable = Client.Exchange 1 (Left (Client.NoRecording "unavailable submit"))
+                run response =
+                    let client = Client.Koios recordedConfig $ Client.Transport $ \request -> do
+                            modify' (\(state, requests) -> (state, requests <> [request]))
+                            pure response
+                        provider =
+                            koiosProvider
+                                (stateRuntimeIn fst (\state (_, requests) -> (state, requests)))
+                                (Network 1)
+                                source
+                                client
+                    in  runState
+                            ( do
+                                wrong <- submitTx provider (Network 42) signedTransaction
+                                answer <- submitTx provider (Network 1) signedTransaction
+                                pure (wrong, answer)
+                            )
+                            (initialProviderState, [])
+            forM_
+                [ ("accepted", accepted)
+                , ("refused", refused)
+                , ("unavailable", unavailable)
+                ]
+                $ \(name, response) -> do
+                    let ((wrong, answer), (state, requests)) = run response
+                    persist ("pure-submit-" <> name) $
+                        object
+                            [ "result" .= show answer
+                            , "wrong_network" .= show wrong
+                            , "signed_cbor_hex"
+                                .= TE.decodeUtf8
+                                    ( B16.encode
+                                        (serialize' (eraProtVerHigh @ConwayEra) (signedTx signedTransaction))
+                                    )
+                            , "requests" .= map (show . Client.rawBody) requests
+                            ]
+                    wrong `shouldBe` SubmitWrongNetwork (Network 1) (Network 42)
+                    case (name, answer) of
+                        ("accepted", SubmitAccepted key) -> key `shouldBe` expectedId
+                        ("refused", SubmitRefused reason) -> reason `shouldBe` "BadInputsUTxO"
+                        ("unavailable", SubmitFailed reason) -> reason `shouldSatisfy` Text.isInfixOf "unavailable submit"
+                        _ -> expectationFailure "the actual raw submit verdict changed class"
+                    map Client.rawCall requests `shouldBe` [Wire.CallSubmitTx]
+                    map Client.rawBody requests
+                        `shouldBe` [ Wire.requestBody
+                                        ( Wire.submitTxRequest
+                                            (serialize' (eraProtVerHigh @ConwayEra) (signedTx signedTransaction))
+                                        )
+                                   ]
+                    nextSessionNumber state `shouldBe` 0
+
+    it
+        "cancels a stalled constructor window read under the public IO confirmation bound"
+        $ do
+            source <- timeSource
+            events <- newIORef []
+            requests <- newIORef []
+            released <- newIORef False
+            runtime <-
+                newIORuntime noPhaseLog (\event -> modifyIORef' events (<> [event]))
+            let client = Client.Koios recordedConfig $ Client.Transport $ \request -> do
+                    modifyIORef' requests (<> [request])
+                    ( threadDelay 60000000
+                            >> pure (Client.Exchange 1 (Left (Client.NoRecording "stalled tip")))
+                        )
+                        `finally` writeIORef released True
+                provider = koiosProvider runtime (Network 1) source client
+                (target, _, _) = dependentPair True
+            result <-
+                try
+                    ( timeout
+                        35000000
+                        (Confirmation.awaitTransaction provider (Network 1) target)
+                    )
+            observations <- readIORef events
+            seen <- readIORef requests
+            wasReleased <- readIORef released
+            persist "io-window-cancelled" $
+                object
+                    [ "result" .= show (result :: Either WaitFailure (Maybe ()))
+                    , "raw_read_cancelled" .= wasReleased
+                    , "requests" .= map (show . Client.rawCall) seen
+                    , "events" .= map eventJson observations
+                    ]
+            case result of
+                Left failure -> do
+                    waitStage failure `shouldBe` SessionConfirmationWait
+                    waitTxId failure `shouldBe` keyOf target
+                    waitBound failure `shouldBe` 30
+                    waitClosedAt failure `shouldBe` Nothing
+                    waitElapsed failure
+                        `shouldSatisfy` (\seconds -> seconds >= 29.9 && seconds < 35)
+                _ ->
+                    expectationFailure
+                        "the public IO confirmation did not preserve its cancellation failure"
+            wasReleased `shouldBe` True
+            map Client.rawCall seen `shouldBe` [Wire.CallTip]
+            length [() | SessionOpened _ _ <- observations] `shouldBe` 1
+            length [() | SessionClosed _ <- observations] `shouldBe` 1
 
     it
         "reconciles every real constructor HTTP read, time and parameters with phase logging"
@@ -810,6 +1068,92 @@ outputClient addressOutputs assetOutputs producers =
             answer
         | (request, Client.Exchange _ (Right answer)) <- answers
         ]
+
+type PollState = (ProviderState, Integer, [Int])
+
+pollProviderRuntime :: ProviderRuntime (State PollState)
+pollProviderRuntime =
+    stateRuntimeIn
+        (\(state, _, _) -> state)
+        (\state (_, now, bounds) -> (state, now, bounds))
+
+-- A logical clock and bounds interpreter; no real sleep or external State
+-- effects. The IO cancellation boundary is checked separately.
+pollingRuntime
+    :: Integer -> Confirmation.ConfirmationRuntime (State PollState)
+pollingRuntime origin =
+    Confirmation.ConfirmationRuntime
+        { Confirmation.currentPosixMs = gets (\(_, now, _) -> now)
+        , Confirmation.attemptWindowRead = fmap Right
+        , Confirmation.pausePolling = \seconds ->
+            modify'
+                ( \(state, now, bounds) -> (state, now + toInteger seconds * 1000, bounds)
+                )
+        , Confirmation.boundedConfirmation = \tid bound action -> do
+            started <- gets (\(_, now, _) -> now)
+            modify' (\(state, now, bounds) -> (state, now, bounds <> [bound]))
+            outcome <- action
+            ended <- gets (\(_, now, _) -> now)
+            let failure closedAt =
+                    WaitFailure
+                        SessionConfirmationWait
+                        tid
+                        (fromInteger (ended - origin) / 1000)
+                        bound
+                        closedAt
+            pure $ case outcome of
+                Left deadline -> Left (failure (Just deadline))
+                Right answer
+                    | ended - started >= toInteger bound * 1000 -> Left (failure Nothing)
+                    | otherwise -> Right answer
+        }
+
+-- Synthetic time-dependent raw responses pass through the actual shared
+-- client/Wire and shipping constructor. An unrelated output is visible first.
+pollingClient
+    :: ConwayTx -> Maybe Integer -> Integer -> Client.Koios (State PollState)
+pollingClient target visibleAt genesisMs = Client.Koios recordedConfig (Client.Transport answer)
+  where
+    reference = TxIn (keyOf target) (TxIx 0)
+    output = case toList (target ^. bodyTxL . outputsTxBodyL) of
+        first : _ -> first
+        [] -> error "empty polling control body"
+    (other, _, otherOutput) = dependentPair False
+    row pair = case outputRow pair of
+        Object fields ->
+            Object
+                (KM.insert "address" (String (Wire.renderAddress payer)) fields)
+        _ -> error "output row is not an object"
+    answer request = do
+        now <- gets (\(_, clock, _) -> clock)
+        pure $ case Client.rawCall request of
+            Wire.CallTip ->
+                okJson
+                    []
+                    ( jsonBytes
+                        [ object
+                            [ "abs_slot" .= ((now - genesisMs) `div` 100)
+                            , "hash" .= Text.replicate 32 "ab"
+                            , "block_height" .= (1 :: Int)
+                            , "epoch_no" .= (0 :: Int)
+                            , "block_time" .= (now `div` 1000)
+                            ]
+                        ]
+                    )
+            Wire.CallTxInfo -> okJson [] (jsonBytes [infoRow target []])
+            Wire.CallAddressUtxos ->
+                pageAnswer
+                    [ row pair
+                    | pair <-
+                        (TxIn (keyOf other) (TxIx 0), otherOutput)
+                            : [(reference, output) | maybe False (now >=) visibleAt]
+                    ]
+                    0
+                    20
+            _ ->
+                Client.Exchange
+                    1
+                    (Left (Client.NoRecording "unexpected polling endpoint"))
 
 asked :: Client.RawRequest -> [Text]
 asked request = case Client.rawBody request of

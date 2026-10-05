@@ -109,6 +109,8 @@ library
     Singular.Registry.Deployment
     Singular.Registry.Driver
     Singular.Registry.Lifecycle
+    Singular.Registry.Wait
+    Singular.Registry.Confirmation
     Singular.Registry.Node
     Singular.Registry.Proof
     Singular.Registry.Replay
@@ -186,6 +188,8 @@ library local-services
     Singular.Registry.PhaseLog
     Singular.Registry.Provider
     Singular.Registry.Services
+    Singular.Registry.SessionServices
+    Singular.Registry.WaitTypes
     Singular.Registry.Signing
     Singular.Registry.TimeMaterial
 
@@ -909,6 +913,8 @@ test-suite cage-tests
     Singular.Registry.LifecycleSpec
     Singular.Registry.LocalEvaluationSpec
     Singular.Registry.LocalServicesCallerSpec
+    Singular.Registry.SessionServicesSpec
+    Singular.Registry.WaitSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec

@@ -35,6 +35,7 @@ import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.ProviderSpec qualified
+import Singular.Registry.SessionServicesSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
@@ -45,6 +46,7 @@ import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
+import Singular.Registry.WaitSpec qualified
 import Test.Hspec (hspec)
 
 main :: IO ()
@@ -63,6 +65,8 @@ main = hspec $ do
     Singular.Registry.NodeCleanupSpec.spec
     Singular.Registry.NetworkTimeSpec.spec
     Singular.Registry.LocalEvaluationSpec.spec
+    Singular.Registry.SessionServicesSpec.spec
+    Singular.Registry.WaitSpec.spec
     Singular.Registry.LocalServicesCallerSpec.spec
     Singular.Registry.NodeSpec.spec
     Singular.Registry.NodeWaitSpec.spec
