@@ -478,10 +478,9 @@
                 }
               ];
             }).hsPkgs.singular-registry.components.library.haddock;
-          # The package-private ownership core's generated reference: the
-          # root documentation build takes only the re-exported Ledger and
-          # Provider page pairs from it; the private Node owners stay out
-          # of the public reference.
+          # The root reference takes only Ledger/Provider page pairs from
+          # their public local-services owner; private Node pages stay out.
+          local-services-haddock = components.sublibs.local-services.haddock;
           node-internal-haddock = components.sublibs.node-internal.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package

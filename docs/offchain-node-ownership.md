@@ -11,9 +11,9 @@ keeps, and what the checks establish about the split.
 
 ## One owner per runtime concern
 
-The ten owners and the two chain-facing types they read live in one
-package-private internal library: seven for the runner's session, and three
-for reading and writing the chain through one interface. The public module
+The node runtime owners live in the package-private `node-internal`
+library. Ledger and Provider have public ownership in `local-services`,
+which also owns fixed local evaluation and validated time conversion. The public module
 <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a>
 is a facade: it owns nothing, keeps the export list the library had
 before the split, adds only the five wait names, and every original caller — the focused node tests, the
@@ -53,8 +53,8 @@ The dependency direction is acyclic and downward: options and the wait
 owner depend on nothing local, wallet reads options, the indexer and the funding check
 read wallet and options, the session brackets the indexer and the
 funding check, and confirmation reads the session and the indexer — all three wait
-under the wait owner's bound — never the other way. Ledger and provider sit beside the owners in the
-private library because the owners read them; the public library
+under the wait owner's bound — never the other way. The runtime owners
+read Ledger and Provider from public `local-services`; the main library
 re-exports both under their original import paths, so a module that
 imported `Singular.Registry.Ledger` before the split still does.
 
@@ -92,7 +92,7 @@ flowchart TD
 
 Each owner is package-private — not importable from the public library —
 so it has no page in the generated API reference: the reference documents
-the public library, and Haddock is not run over the owners on their own.
+the main library, and the site does not publish the private owners' pages.
 Each owner's implementation is one source file, linked below on the
 default branch, and the generated public pages that re-export an owner's
 names link to its entry here:
@@ -131,6 +131,9 @@ names link to its entry here:
 - <span id="view-owner"></span>**View** — the node adapter: one read view per
   acquired LocalStateQuery state —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/View.hs">source</a>.
+- <span id="raw-view-owner"></span>**RawView** — raw reads through one held
+  LocalStateQuery channel; adapters supply facts for fixed common computations —
+  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/RawView.hs">source</a>.
 - <span id="memory-owner"></span>**Memory** — the deterministic in-memory chain
   behind the same read interface —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Memory.hs">source</a>.
@@ -261,13 +264,12 @@ bounded waits then added five names, which the facade re-exports from
 `boundedSubmitter` and `tryOutcome`. Modules that
 imported `Singular.Registry.Ledger` or `Singular.Registry.Provider`
 keep their import paths through the public library's re-exports. The
-ten owners themselves are not importable from the public library: they
+runtime owners themselves are not importable from the main library: they
 live in the package's private internal library. By Cabal's own rule a
 named library without public visibility can be depended on only by
-components of this same package. Two of them do: the public library,
-whose facade re-exports the owners, and the cage test component, whose
-own dependency binds its observers to the same compiled instance the
-facade re-exports from — one build, one memory, no second copy.
+components of this same package. The main library's facade and each test
+or tool importing private seams bind to the same compiled instance —
+one build, one memory, no second copy.
 Nothing outside the package can name the private library; a downstream
 reader keeps the facade and the two re-exported modules, exactly as
 before the split.

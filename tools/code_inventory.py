@@ -557,6 +557,12 @@ CODE_RULES: list[dict] = [
 
 NONCODE_CLASSES: list[dict] = [
     {
+        "id": "local-services-cbor-recordings",
+        "pattern": "offchain/data/network/**/*.cbor",
+        "note": "immutable network, transaction and input recordings; "
+        "source hashes and actual comparisons are checked by cage-tests",
+    },
+    {
         "id": "lean-mutation-evidence",
         "pattern": "lean/insert-absent-mutations.json",
         "note": "recorded results of the bounded insert-absent mutation campaign",
@@ -771,6 +777,7 @@ SHEBANG_FAMILIES = {
 # Extensions that carry no code signal but are recognized artifact data;
 # a shebang on one of these is a finding, not a script.
 KNOWN_NONCODE_EXTENSIONS = {
+    "cbor",
     "md",
     "json",
     "txt",
