@@ -67,6 +67,7 @@ import Singular.Registry.Node
     , walletForMode
     , withDevnetIndexer
     )
+import Singular.Registry.Node.Confirmation (windowReadBound)
 import Singular.Registry.Node.Options (Backend (NodeBackend))
 import Singular.Registry.Node.RawView
     ( RawProvider (..)
@@ -227,8 +228,13 @@ expectTimeout session tx exact initialEnd = do
             result
     tip <- nsTipTime session
     let expected = maybe (before + 300_000) id exact
+        -- The no-upper clock is read after the bounded acquired-context
+        -- read. Bracket it by that public bound, including acquisition time.
         upperExpected =
-            maybe (after - floor (waitElapsed failure * 1000) + 300_100) id exact
+            maybe
+                (before + fromIntegral windowReadBound * 1000 + 300_000)
+                id
+                exact
     unless
         ( waitStage failure == SessionConfirmationWait
             && waitTxId failure == txIdTx tx
@@ -242,6 +248,10 @@ expectTimeout session tx exact initialEnd = do
                 )
                 (waitClosedAt failure)
             && after >= expected
+            && maybe
+                (waitBound failure == 304 && waitElapsed failure >= 300)
+                (const True)
+                exact
         )
         (fail ("ConfirmationSmokeTimeoutMismatch " <> show failure))
     pure failure

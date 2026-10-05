@@ -129,9 +129,9 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , leafActive
     , mkInlineDatum
+    , mkRequestScript
     , policyIdFromPin
     , requestAddrFromCfg
-    , requestScriptBytesFromCfg
     , scriptFromBytes
     , scriptHashBytes
     , toPlcData
@@ -1410,13 +1410,7 @@ registryReference = referenceOf '8' (scriptFromBytes "state" program)
 them: the state and its token-specific applied request validator.
 -}
 requestReference :: (TxIn, TxOut ConwayEra)
-requestReference =
-    referenceOf
-        '7'
-        ( scriptFromBytes
-            "request"
-            (requestScriptBytesFromCfg builtCfg foldTokenId)
-        )
+requestReference = referenceOf '7' (mkRequestScript builtCfg foldTokenId)
 
 appReference :: (TxIn, TxOut ConwayEra)
 appReference = referenceOf '9' appScript
