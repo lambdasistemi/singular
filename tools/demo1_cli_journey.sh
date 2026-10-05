@@ -227,15 +227,15 @@ run() {
     tail -20 "$receipts/$name.err" >&2 || true
     fail "$name: no address read was answered by the index"
   fi
-  if [ "$class" = success ] && [ -s "$receipts/$name.phases.jsonl" ]; then
+  if [ "$class" = success ] && jq -e 'any(.submissions[]?; .step == "fold")' "$receipts/$name.json" >/dev/null; then
+    [ -s "$receipts/$name.phases.jsonl" ] || setup_fail "$name: the fold produced no phase log"
     local build_ms
     build_ms="$(jq -s '[.[] | select(.phase == "build" and .step == "fold") | .duration_ms] | max // empty' "$receipts/$name.phases.jsonl")"
-    if [ -n "$build_ms" ]; then
-      jq -n -e --argjson build "$build_ms" --argjson window "$(field create .processTime)" \
-        '$build * 3 < $window - 30000' >/dev/null \
-        || fail "$name: the processing window leaves less than three times the measured fold build beyond the CLI margin"
-      say "$name: fold build ${build_ms} ms, processing window $(field create .processTime) ms"
-    fi
+    [ -n "$build_ms" ] || setup_fail "$name: the fold phase log has no build duration"
+    jq -n -e --argjson build "$build_ms" --argjson window "$(field create .processTime)" \
+      '$build * 3 < $window - 30000' >/dev/null \
+      || fail "$name: the processing window leaves less than three times the measured fold build beyond the CLI margin"
+    say "$name: fold build ${build_ms} ms, processing window $(field create .processTime) ms"
   fi
   say "$name: $class"
 }

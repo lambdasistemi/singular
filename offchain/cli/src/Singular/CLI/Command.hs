@@ -57,7 +57,11 @@ module Singular.CLI.Command
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
-import Data.Char (GeneralCategory (Surrogate), generalCategory)
+import Data.Char
+    ( GeneralCategory (Surrogate)
+    , generalCategory
+    , isDigit
+    )
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
@@ -375,7 +379,7 @@ parseCommand args = do
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
         Just value -> case readMaybe value of
-            Just n | n > 0 && all (\c -> c >= '0' && c <= '9') value -> Right n
+            Just n | n > 0 && all isDigit value -> Right n
             _ ->
                 Left (BadValue name "needs a positive integer number of milliseconds")
     -- An insert is an entry command that also names the deposit its envelope

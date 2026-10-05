@@ -1246,6 +1246,15 @@ runCommand env c target key r = do
     let journal = targetDir env target </> "journal.jsonl"
     before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
+    when
+        ( c == Create
+            && printedField "outcome" printed == Just (String "success")
+        )
+        $ unless
+            ( printedField "processTime" printed == Just (Number 45_000)
+                && printedField "retractTime" printed == Just (Number 15_000)
+            )
+            (fail "the throwaway registry did not read back the short CI windows")
     ls <- journalLines' journal
     let gained = drop before ls
     (submissions, resolved) <- journalledSubmissions env (pure gained)

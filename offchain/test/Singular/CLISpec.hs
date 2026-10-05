@@ -210,10 +210,10 @@ commandLine = describe "the command line" $ do
             windows ["--process-time=1"] `shouldBe` Right (Just (1, 300_000))
             windows ["--retract-time=1"] `shouldBe` Right (Just (600_000, 1))
             windows ["--process-time=999999999999999999999999999999"]
-                `shouldBe` Right (Just (999999999999999999999999999999, 300_000))
+                `shouldBe` Right (Just (999_999_999_999_999_999_999_999_999_999, 300_000))
         it
-            "refuses creation windows on later commands instead of ignoring them" $
-            forM_
+            "refuses creation windows on later commands instead of ignoring them"
+            $ forM_
                 [ "insert"
                 , "update"
                 , "terminate"
@@ -221,7 +221,8 @@ commandLine = describe "the command line" $ do
                 , "reclaim"
                 , "reject"
                 , "inspect"
-                ] $ \command ->
+                ]
+            $ \command ->
                 forM_ ["--process-time", "--retract-time"] $ \flag ->
                     parseCommand
                         (["registry", command, flag, "1"] <> reg <> node <> wallet)
