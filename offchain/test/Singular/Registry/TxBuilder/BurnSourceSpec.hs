@@ -33,6 +33,7 @@ built body, not only the duties the fold accumulated.
 -}
 module Singular.Registry.TxBuilder.BurnSourceSpec (spec, builtFoldUnder) where
 
+import Control.Exception (ErrorCall, displayException, try)
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -40,6 +41,8 @@ import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
 import Data.Set qualified as Set
 import Data.Word (Word8)
+import MPF.Backend.Pure (emptyMPFInMemoryDB)
+import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
@@ -108,12 +111,19 @@ import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.DeBruijn ()
 
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Deployment (parseOutRef, saveMirror)
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , Root (..)
+    , TokenId (..)
+    )
 import Singular.Registry.Provider (View (..))
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TrieState qualified as TS
+import Singular.Registry.TrieState.Mirror qualified as Mirror
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
     , ConnectedSpend (..)
@@ -140,6 +150,7 @@ import Singular.Registry.TxBuilder.Update
     , emptyRegistryContext
     , registryDuties
     , updateTokenWithDuties
+    , updateTokenWithTrieState
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -293,6 +304,7 @@ spec = do
     requestOrder
     noFoldSigner
     builtFoldBody
+    builderRefusals
     applicationRelease
     openDatumFold
     releaseResolution
@@ -1096,6 +1108,167 @@ builtFoldBody =
                 `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
             case body ^. mintTxBodyL of
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
+
+-- The fold command includes the builder exception in its printed refusal.
+-- Drive the public builder, then read that exception's first line: no name
+-- is obtained from a refusal renderer or from the implementation under test.
+builderRefusals :: Spec
+builderRefusals = describe "the fold builder preserves its printed refusal names" $ do
+    it "names another registry WrongRegistry" $
+        check
+            "TrieState WrongRegistry"
+            otherWho
+            stateIn
+            validState
+            [requestFor edgeInsertAbsent]
+    it "names another selected output StaleState" $
+        check
+            "TrieState StaleState"
+            who
+            requestIn
+            validState
+            [requestFor edgeInsertAbsent]
+    it "names a different recorded root StaleState" $
+        check
+            "TrieState StaleState"
+            who
+            stateIn
+            ( const $
+                snd stateUtxoFor
+                    & datumTxOutL
+                        .~ mkInlineDatum
+                            ( toPlcData
+                                (StateDatum tokenState{stateRoot = OnChainRoot "different-root"})
+                            )
+            )
+            [requestFor edgeInsertAbsent]
+    it "names an undecodable state datum StaleState" $
+        check
+            "TrieState StaleState"
+            who
+            stateIn
+            (const (snd stateUtxoFor & datumTxOutL .~ mkInlineDatum (PLC.I 42)))
+            [requestFor edgeInsertAbsent]
+    it "names a request datum in the state output StaleState" $
+        check
+            "TrieState StaleState"
+            who
+            stateIn
+            ( const $
+                snd stateUtxoFor
+                    & datumTxOutL .~ (snd (requestFor edgeInsertAbsent) ^. datumTxOutL)
+            )
+            [requestFor edgeInsertAbsent]
+    it "names a missing state datum StaleState" $
+        check
+            "TrieState StaleState"
+            who
+            stateIn
+            ( const $
+                mkBasicTxOut
+                    (snd stateUtxoFor ^. addrTxOutL)
+                    (snd stateUtxoFor ^. valueTxOutL)
+            )
+            [requestFor edgeInsertAbsent]
+    it "prints the speculative refusal with its subject and cause" $
+        check
+            ( "TrieState "
+                <> show (TS.UndecodableRequest who Nothing (TS.EdgeOutOfRange 99))
+            )
+            who
+            stateIn
+            validState
+            [requestFor 99]
+    it "still refuses a view without the state output" $
+        checkView
+            "updateToken: state UTxO not found"
+            foldProvider
+                { viewUTxOsAt = \a ->
+                    pure (if a == cageAddrFromCfg builtCfg Testnet then [] else utxosAt a)
+                }
+    it "still refuses a view without pending requests" $
+        checkView
+            "updateToken: no pending requests"
+            foldProvider
+                { viewUTxOsAt = \a ->
+                    pure
+                        ( if a == requestAddrFromCfg builtCfg foldTokenId Testnet
+                            then []
+                            else utxosAt a
+                        )
+                }
+    it "still refuses a view without an ada-only funding output" $
+        checkView
+            "updateToken: no ada-only UTxO to fund the fold"
+            foldProvider
+                { viewUTxOsAt = \a -> pure (if a == payer then [] else utxosAt a)
+                }
+  where
+    who =
+        TS.RegistryIdentity
+            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash builtCfg)))
+            (AssetName "t177-registry")
+    otherWho =
+        TS.RegistryIdentity
+            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
+            (AssetName "t177-registry")
+    validState root =
+        snd stateUtxoFor
+            & datumTxOutL
+                .~ mkInlineDatum
+                    ( toPlcData
+                        (StateDatum tokenState{stateRoot = OnChainRoot (unRoot root)})
+                    )
+    check name identity output state requests =
+        checkWith name identity output $ \root ->
+            foldProvider
+                { viewUTxOsAt = \a ->
+                    pure $
+                        if a == cageAddrFromCfg builtCfg Testnet
+                            then [(stateIn, state root)]
+                            else
+                                if a == requestAddrFromCfg builtCfg foldTokenId Testnet
+                                    then requests
+                                    else utxosAt a
+                }
+    checkView name view = checkWith name who stateIn (const view)
+    checkWith name identity output viewAt = withSystemTempDirectory "fold-builder-refusals" $ \path -> do
+        saveMirror path (Map.singleton foldTokenId emptyMPFInMemoryDB)
+        opened <- Mirror.openStoredMirror path identity
+        store <-
+            either
+                (\why -> expectationFailure (show why) >> fail "mirror setup")
+                pure
+                opened
+        observedRoot <- Mirror.storedRoot store
+        root <-
+            either
+                (\why -> expectationFailure (show why) >> fail "root setup")
+                pure
+                observedRoot
+        let point = TS.StatePoint (TS.SessionId "builder-fixture") TS.Unbound output
+            chosen = TS.TrieSelection identity point root
+        capability <-
+            Mirror.mirrorTrieState
+                store
+                chosen
+                (TS.CreateRecord identity output)
+                []
+                (const (pure ()))
+        result <- TS.withTrieState capability chosen $ \snap ->
+            try @ErrorCall
+                ( updateTokenWithTrieState
+                    builtCfg
+                    (viewAt root)
+                    snap
+                    foldTokenId
+                    payer
+                    emptyRegistryContext
+                )
+        case result of
+            Right (Left err) -> takeWhile (/= '\n') (displayException err) `shouldBe` name
+            Right (Right _) -> expectationFailure "the builder accepted the invalid input"
+            Left why -> expectationFailure ("the snapshot was not reached: " <> show why)
 
 -- ---------------------------------------------------------
 -- #299: a burn sourced from an application's holding
