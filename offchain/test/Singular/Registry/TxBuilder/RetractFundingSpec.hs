@@ -18,7 +18,8 @@ ledger's own functions under the public preprod parameters.
 -}
 module Singular.Registry.TxBuilder.RetractFundingSpec (spec) where
 
-import Data.List (maximumBy)
+import Control.Exception (SomeException, displayException, try)
+import Data.List (isInfixOf, maximumBy)
 import Data.Map.Strict qualified as Map
 import Data.Ord (comparing)
 import Data.Text qualified as T
@@ -62,7 +63,8 @@ import Data.Set qualified as Set
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
+import Singular.Registry.Provider (ChainPoint (..), View (..))
 import Singular.Registry.StubView (stubView)
 import Singular.Registry.SyntheticLedger
     ( unitProgram
@@ -86,6 +88,7 @@ import Singular.Registry.TxBuilder.CollateralJudgement
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
+    , computeScriptHash
     , currentPosixMs
     , emptyRoot
     , mkInlineDatum
@@ -93,12 +96,23 @@ import Singular.Registry.TxBuilder.Internal
     , requestAddrFromCfg
     , toPlcData
     )
-import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
+import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
+import Singular.Registry.TxBuilder.Retract
+    ( retractRequestAtTipImpl
+    , retractRequestImpl
+    )
 import Singular.Registry.Types (CageDatum (..), OnChainRoot (..))
 
--- The request pin consumes two parameters followed by its V3 context.
+-- The state witness consumes one V3 context; the request pin consumes two
+-- parameters followed by its context. These are explicit synthetic scripts,
+-- evaluated by the local ledger evaluator rather than mocked units.
 cfg :: CageConfig
-cfg = Fixture.cfg{requestScriptBytes = unitProgram 3}
+cfg =
+    Fixture.cfg
+        { cageScriptBytes = unitProgram 1
+        , cfgScriptHash = computeScriptHash (unitProgram 1)
+        , requestScriptBytes = unitProgram 3
+        }
 
 txIn :: Char -> Int -> TxIn
 txIn c i =
@@ -204,7 +218,13 @@ fundingOf sc =
 chainView :: Scenario -> Integer -> Maybe Integer -> View IO
 chainView sc submittedAt horizon =
     stubView
-        { viewUTxOsAt = \addr ->
+        { viewPoint =
+            (viewPoint stubView)
+                { cpSlot =
+                    SlotNo
+                        (fromInteger ((submittedAt + defaultProcessTime cfg + 999) `div` 1000))
+                }
+        , viewUTxOsAt = \addr ->
             pure $
                 if addr == requestAddrFromCfg cfg tokenId Testnet
                     then [(requestIn, requestOut submittedAt)]
@@ -226,7 +246,133 @@ chainView sc submittedAt horizon =
         }
 
 spec :: Spec
-spec =
+spec = do
+    rejectValidity
+    retractValidity
+    retractFunding
+
+{- | These rows inspect the actual reject body. Scripts and evaluation are
+fixtures, so this establishes builder bounds rather than node acceptance.
+-}
+rejectValidity :: Spec
+rejectValidity = describe "a reject's validity starts at the acquired view's tip" $ do
+    it "never starts ahead of a tip lagging the host clock" $
+        property $
+            forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
+                now <- currentPosixMs
+                let view = rejectView (slotOf (now - lag * 1000)) Nothing
+                    tip = cpSlot (viewPoint view)
+                tx <- rejectRequestsImpl cfg view tokenId payer
+                let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                pure $
+                    conjoin
+                        [ property (lower <= SJust tip)
+                        , lower === SJust tip
+                        , property (upper > lower)
+                        ]
+    it "keeps a nonempty interval when the host clock is behind the tip" $ do
+        now <- currentPosixMs
+        let view = rejectView (slotOf (now + 300_000)) Nothing
+        tx <- rejectRequestsImpl cfg view tokenId payer
+        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        upper `shouldSatisfy` (> lower)
+    it "keeps the upper-bound fallback inside the conversion horizon" $ do
+        now <- currentPosixMs
+        let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
+        tx <- rejectRequestsImpl cfg view tokenId payer
+        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+        lower `shouldBe` SJust (cpSlot (viewPoint view))
+        upper `shouldSatisfy` (> lower)
+        upper `shouldSatisfy` (<= SJust (slotOf (now + 10_000)))
+    it "refuses a view tip at the finite conversion horizon by name" $ do
+        now <- currentPosixMs
+        let tip = slotOf (now + 11_000)
+            view = rejectView tip (Just (now + 10_000))
+        result <-
+            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
+        case result of
+            Left failure -> failure `shouldBe` SlotPastHorizon tip
+            Right _ ->
+                expectationFailure "built a reject with a lower bound at the horizon"
+    it "refuses an upper bound raised to the horizon" $ do
+        now <- currentPosixMs
+        let tip = slotOf (now + 10_000)
+            view = rejectView tip (Just (now + 10_000))
+        result <-
+            try @NetworkTimeFailure (rejectRequestsImpl cfg view tokenId payer)
+        case result of
+            Left failure -> failure `shouldBe` SlotPastHorizon (tip + 1)
+            Right _ ->
+                expectationFailure
+                    "built a reject with a raised upper bound at the horizon"
+  where
+    slotOf ms = SlotNo (fromInteger (ms `div` 1000))
+    rejectView tip horizon =
+        let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 horizon
+        in  view{viewPoint = (viewPoint view){cpSlot = tip}}
+
+{- | Both public entry points must refuse a future lower bound rather
+than return a transaction the acquired ledger cannot accept yet.
+-}
+retractValidity :: Spec
+retractValidity = describe "a retraction never starts ahead of its acquired view" $ do
+    it
+        "refuses when phase two opens after the view tip, through either entry point"
+        $ property
+        $ forAll (chooseInteger (0, 30))
+        $ \tip -> ioProperty $ do
+            let view = atTip (SlotNo (fromInteger tip))
+            mapM_
+                refuses
+                [ retractRequestImpl cfg view tokenId requestIn payer
+                , retractRequestAtTipImpl
+                    (cpSlot (viewPoint view))
+                    cfg
+                    view
+                    tokenId
+                    requestIn
+                    payer
+                ]
+            pure True
+    it "refuses a caller-supplied lower bound ahead of the acquired tip" $ do
+        let view = atTip (SlotNo 40)
+        refuses
+            (retractRequestAtTipImpl (SlotNo 41) cfg view tokenId requestIn payer)
+    it "admits phase two's opening slot through either entry point" $ do
+        let view = atTip (SlotNo 31)
+        mapM_
+            ( \build -> do
+                tx <- build
+                let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                lower `shouldBe` SJust (cpSlot (viewPoint view))
+                upper `shouldSatisfy` (> lower)
+            )
+            [ retractRequestImpl cfg view tokenId requestIn payer
+            , retractRequestAtTipImpl
+                (cpSlot (viewPoint view))
+                cfg
+                view
+                tokenId
+                requestIn
+                payer
+            ]
+  where
+    atTip tip =
+        let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 Nothing
+        in  view{viewPoint = (viewPoint view){cpSlot = tip}}
+    refuses build = do
+        result <- try @SomeException build
+        case result of
+            Left err ->
+                displayException err
+                    `shouldSatisfy` isInfixOf "lower-bound-ahead-of-view"
+            Right tx -> do
+                let interval = tx ^. bodyTxL . vldtTxBodyL
+                expectationFailure ("built a future retraction: " <> show interval)
+
+retractFunding :: Spec
+retractFunding =
     describe
         "a retraction is funded and collateralised by an output that can carry it (#300)"
         $ do

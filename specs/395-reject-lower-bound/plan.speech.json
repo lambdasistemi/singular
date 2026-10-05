@@ -1,0 +1,62 @@
+{
+  "where-the-bound-comes-from": [
+    {
+      "text": "Where the bound comes from.",
+      "pause": 500
+    },
+    {
+      "text": "As a folder, I need the bound read from the chain state the command acquired, because that is the state the node judges against.",
+      "pause": 400
+    },
+    {
+      "text": "The view already carries its tip: viewPoint is the chain point it was acquired at, and cpSlot is that point's slot (offchain/node-internal/Singular/Registry/Provider.hs). No interface changes.",
+      "pause": 400
+    }
+  ],
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    }
+  ],
+  "builders-to-audit": [
+    {
+      "text": "Builders to audit.",
+      "pause": 500
+    },
+    {
+      "text": "The starting points found at intake. The commit owner confirms each, adds any missed, and writes the verdicts in the builder audit page, builder-audit.md.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "Slice.",
+      "pause": 500
+    },
+    {
+      "text": "One slice, one commit owner, one commit per task in tasks. The release-PR investigation and the CI realism check report their verdicts before any code for them is written; a verdict that needs more than this ticket becomes its own bug.",
+      "pause": 400
+    }
+  ],
+  "live-boundary": [
+    {
+      "text": "Live boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No preprod writes and no new registry. The fix is proved on the development network and by the unit test; the stale preprod request is rejected by the operator after merge.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "45d242de077c49cc2c8db2373e16eba7ea33284a5702c18590b7e6be50b11234"
+  }
+}
