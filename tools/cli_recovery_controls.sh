@@ -864,10 +864,20 @@ chained_after() {
   tail -n +"$(($1 + 1))" "$nlog" | sed -nE 's/.*(Chain extended|Switched to a fork), new tip: ([0-9a-f]{64}).*/\2/p'
 }
 # Blocks the node forged and adopted after LINE: both counts, "F/A".
+# The node keeps forging while this reads its log, and each forge line is
+# followed a few milliseconds later by its adoption line (#404). So the log
+# is read once and cut after its last adoption record: a block forged after
+# that line is still being adopted, not missing from the record.
 forged_adopted_after() {
-  local forged adopted
-  forged="$(tail -n +"$(($1 + 1))" "$nlog" | grep -c 'Forged block in slot' || true)"
-  adopted="$(tail -n +"$(($1 + 1))" "$nlog" | grep -cF '"ns":"Forge.Loop.AdoptedBlock"' || true)"
+  local window forged adopted
+  window="$(
+    tail -n +"$(($1 + 1))" "$nlog" | awk '
+      { line[NR] = $0 }
+      index($0, "\"ns\":\"Forge.Loop.AdoptedBlock\"") { last = NR }
+      END { for (i = 1; i <= last; i++) print line[i] }'
+  )"
+  forged="$(grep -c 'Forged block in slot' <<<"$window" || true)"
+  adopted="$(grep -cF '"ns":"Forge.Loop.AdoptedBlock"' <<<"$window" || true)"
   echo "$forged/$adopted"
 }
 # HASH is the restored tip or a block the node chained since the restore;
