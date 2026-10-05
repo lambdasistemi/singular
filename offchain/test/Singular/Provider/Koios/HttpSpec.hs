@@ -14,10 +14,13 @@ The timings are configuration values, so the suite runs in seconds.
 module Singular.Provider.Koios.HttpSpec (spec) where
 
 import Control.Exception (bracket)
-import Control.Monad (forM)
-import Data.Aeson (Value, encode)
+import Control.Monad (forM, forM_)
+import Data.Aeson (Value (..), decodeStrict', encode)
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
+import Data.Char (ord)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -35,14 +38,22 @@ import Network.Socket
     , socketPort
     )
 import Network.Wai (Response)
+import Numeric (showHex)
 import System.Directory (getTemporaryDirectory)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
+import Test.QuickCheck qualified as QC
 
 import Singular.Provider.Koios.Client
 import Singular.Provider.Koios.FakeServer
 import Singular.Provider.Koios.Http
+import Singular.Provider.Koios.Recorder
+    ( ReadRequest (..)
+    , RecorderConfig (..)
+    , probe
+    , recordFixtures
+    )
 import Singular.Provider.Koios.Scripted
     ( assetTxRow
     , pageAnswer
@@ -95,6 +106,7 @@ spec = describe "Koios HTTP transport" $ do
     pageSpec
     tokenSpec
     echoSpec
+    tokenDomainSpec
     submitSpec
 
 retrySpec :: Spec
@@ -363,6 +375,236 @@ echoSpec = describe "a server echoing the token" $
                 `shouldBe` []
   where
     token = "Echoed-Token-5d1E"
+
+{- | Generate the entire chosen bearer alphabet, independently of readToken.
+Adversarial branches extend marker, header and JSON-literal substrings;
+invalid JSON syntax and escapes belong to the refused domain below.
+-}
+genAcceptedToken :: QC.Gen Text
+genAcceptedToken = do
+    stem <- QC.elements ["", "token", "authorization", "nulltruefalse"]
+    size <- QC.chooseInt (32, 128)
+    headerSafe <- QC.elements [True, False]
+    let alphabet =
+            if headerSafe then filter (/= '/') bearerAlphabet else bearerAlphabet
+    chars <- QC.vectorOf size (QC.elements alphabet)
+    padding <- if headerSafe then pure 0 else QC.chooseInt (0, 3)
+    pure (stem <> T.pack chars <> T.replicate padding "=")
+
+bearerAlphabet :: String
+bearerAlphabet = ['a' .. 'z'] <> ['A' .. 'Z'] <> ['0' .. '9'] <> "-._~+/"
+
+genRefusedToken :: QC.Gen Text
+genRefusedToken =
+    QC.oneof
+        [ do
+            start <- QC.chooseInt (0, 6)
+            size <- QC.chooseInt (1, 7 - start)
+            pure (T.take size (T.drop start "<token>"))
+        , do
+            size <- QC.chooseInt (0, 31)
+            T.pack <$> QC.vectorOf size (QC.elements bearerAlphabet)
+        , do
+            token <- genAcceptedToken
+            syntax <-
+                QC.elements
+                    ["<token>", "\"", "\\", "{", "}", ":", "\n", "\r", "\t", "é", "=x"]
+            pure (T.take 16 token <> syntax <> T.drop 16 token)
+        ]
+
+tokenDomainSpec :: Spec
+tokenDomainSpec = describe "token domain and absence properties" $ do
+    it "refuses 31 characters and accepts 32 without exposing them" $ do
+        assertRefusedToken (T.replicate 31 "x")
+        assertAcceptedTokenAbsent (T.replicate 32 "x")
+    it "refuses every marker substring before any request" $
+        forM_ markerSubstrings assertRefusedToken
+    it
+        "refuses arbitrary short, syntax, escape and non-bearer tokens before any request"
+        $ QC.forAll
+            genRefusedToken
+            (QC.ioProperty . fmap (const True) . assertRefusedToken)
+    it
+        "clears every accepted token from answers, failures, probe rendering and fixture bytes"
+        $ QC.checkCoverage
+        $ QC.forAll genAcceptedToken
+        $ \token ->
+            QC.cover 10 ("token" `T.isPrefixOf` token) "marker extension"
+                $ QC.cover
+                    10
+                    ("authorization" `T.isPrefixOf` token)
+                    "header-name extension"
+                $ QC.cover
+                    10
+                    ("nulltruefalse" `T.isPrefixOf` token)
+                    "JSON-literal extension"
+                $ QC.cover 10 ("=" `T.isSuffixOf` token) "bearer padding"
+                $ QC.cover 10 ("/" `T.isInfixOf` token) "JSON slash"
+                $ QC.cover
+                    10
+                    (T.all (`notElem` ("/=" :: String)) token)
+                    "token-named HTTP header"
+                $ QC.ioProperty (assertAcceptedTokenAbsent token >> pure True)
+  where
+    markerSubstrings =
+        [ T.take size (T.drop start "<token>")
+        | start <- [0 .. 6]
+        , size <- [1 .. 7 - start]
+        ]
+
+assertRefusedToken :: Text -> IO ()
+assertRefusedToken token =
+    withSystemTempDirectory "koios-domain" $ \dir ->
+        withFakeKoios (\_ _ -> respond 200 [] tipBody) $ \base logOf -> do
+            let file = dir </> "credential"
+            BS.writeFile file (TE.encodeUtf8 token)
+            result <- newHttpTransport (fast base){httpTokenFile = Just file}
+            case result of
+                Left failure ->
+                    T.pack (show failure) `shouldSatisfy` T.isPrefixOf "TokenFileInvalid "
+                Right transport -> do
+                    _ <- exchange transport (rawRequest tipRequest)
+                    length <$> logOf `shouldReturn` 0
+                    expectationFailure "a refused token reached the transport"
+            length <$> logOf `shouldReturn` 0
+            recorded <-
+                recordFixtures
+                    RecorderConfig
+                        { recorderHttp = (fast base){httpTokenFile = Just file}
+                        , recorderClient = ClientConfig 2 10
+                        , recorderDirectory = dir </> "fixtures"
+                        }
+                    [TipOf]
+            case recorded of
+                Left failure ->
+                    T.pack (show failure)
+                        `shouldSatisfy` T.isPrefixOf "RecordTransport (TokenFileInvalid "
+                Right _ -> expectationFailure "a refused token reached the recorder"
+            length <$> logOf `shouldReturn` 0
+
+assertAcceptedTokenAbsent :: Text -> IO ()
+assertAcceptedTokenAbsent token =
+    withSystemTempDirectory "koios-absence" $ \dir -> do
+        let file = dir </> "credential"
+            cfg base = (fast base){httpTokenFile = Just file, httpAttempts = 1}
+        BS.writeFile file (TE.encodeUtf8 token)
+        forM_ [200, 401, 503, 400] $ \code ->
+            withFakeKoios (adversarialEcho code) $ \base logOf -> do
+                transport <- transportFor (cfg base)
+                ex <- exchange transport (rawRequest tipRequest)
+                case exchangeResult ex of
+                    Left none -> expectationFailure (show none)
+                    Right a -> do
+                        answerStatus a `shouldBe` code
+                        assertAbsent token (answerBody a)
+                        forM_ (answerHeaders a) $ \(name, value) -> do
+                            assertAbsent (T.toLower token) (TE.encodeUtf8 name)
+                            assertAbsent token (TE.encodeUtf8 value)
+                let k = Koios (ClientConfig 2 10) transport
+                rendered <-
+                    sequence
+                        [ show <$> tip k
+                        , show <$> submitTx k "synthetic"
+                        , show <$> probe k TipOf
+                        ]
+                -- These are the failure and result renderings the CLI prints.
+                forM_
+                    (show ex : rendered)
+                    (assertAbsent token . TE.encodeUtf8 . T.pack)
+                seen <- logOf
+                length seen `shouldBe` 4
+                map (lookup "authorization" . seenHeaders) seen
+                    `shouldBe` replicate 4 (Just ("Bearer " <> token))
+        withFakeKoios (adversarialEcho 200) $ \base logOf -> do
+            files <-
+                recordFixtures
+                    RecorderConfig
+                        { recorderHttp = cfg base
+                        , recorderClient = ClientConfig 2 10
+                        , recorderDirectory = dir </> "fixtures"
+                        }
+                    [TipOf]
+                    >>= either (fail . show) pure
+            length files `shouldBe` 1
+            forM_ files $ \path -> BS.readFile path >>= assertAbsent token
+            seen <- logOf
+            length seen `shouldBe` 2
+            map (lookup "authorization" . seenHeaders) seen
+                `shouldBe` replicate 2 (Just ("Bearer " <> token))
+
+{- | Echo raw and JSON-unicode-escaped credentials, in values and object keys.
+A bearer containing '/' or '=' cannot name a legal HTTP header; those
+still reach header values and every body channel.
+-}
+adversarialEcho :: Int -> Scene
+adversarialEcho code s _ = do
+    let bearer = fromMaybe "" (lookup "authorization" (seenHeaders s))
+        bare = fromMaybe bearer (T.stripPrefix "Bearer " bearer)
+        names = [(bare, bare) | T.all (`notElem` ("/=" :: String)) bare]
+        body =
+            "[{\"raw\":"
+                <> BSL.toStrict (encode bare)
+                <> ",\"escaped\":\""
+                <> unicodeEscaped bare
+                <> "\",\""
+                <> unicodeEscaped bare
+                <> "\":\"echo\"}]"
+    if seenPath s == "/koiosapi.yaml"
+        then
+            respond
+                200
+                [("x-echo", bearer)]
+                "openapi: 3.1.0\ninfo:\n  version: synthetic\n"
+        else
+            respond
+                code
+                ( [ ("x-echo", bearer)
+                  , ("x-escaped", TE.decodeUtf8 (unicodeEscaped bare))
+                  ]
+                    <> names
+                )
+                ( if code == 401
+                    then "denied " <> unicodeEscaped bare <> TE.encodeUtf8 bare
+                    else body
+                )
+
+unicodeEscaped :: Text -> BS.ByteString
+unicodeEscaped =
+    TE.encodeUtf8
+        . T.concatMap
+            (\c -> "\\u" <> T.justifyRight 4 '0' (T.pack (showHex (ord c) "")))
+
+{- | Inspect bytes as carried, plus JSON strings after decoding each layer.
+This reaches unicode escapes in a body and JSON-escaped body in a fixture.
+-}
+assertAbsent :: Text -> BS.ByteString -> IO ()
+assertAbsent token = inspect (3 :: Int)
+  where
+    inspect depth bytes = do
+        let needles =
+                [ TE.encodeUtf8 token
+                , unicodeEscaped token
+                , BS.drop
+                    1
+                    ( BS.dropEnd
+                        1
+                        (BSL.toStrict (encode (TE.decodeUtf8 (unicodeEscaped token))))
+                    )
+                ]
+        forM_ needles $ \needle ->
+            T.toLower (TE.decodeUtf8 needle)
+                `T.isInfixOf` T.toLower (TE.decodeUtf8Lenient bytes)
+                `shouldBe` False
+        if depth <= 0
+            then pure ()
+            else case decodeStrict' bytes of
+                Nothing -> pure ()
+                Just value -> forM_ (strings value) (inspect (depth - 1) . TE.encodeUtf8)
+    strings = \case
+        String t -> [t]
+        Object pairs -> concat [Key.toText k : strings v | (k, v) <- KeyMap.toList pairs]
+        Array values -> foldMap strings values
+        _ -> []
 
 submitSpec :: Spec
 submitSpec = describe "submission" $ do
