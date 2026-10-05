@@ -253,7 +253,6 @@ library node-internal
     , stm
     , text
     , time
-    , unix
 
 -- Read-only fixture capture for common local services. It has no submitter.
 executable local-services-record
