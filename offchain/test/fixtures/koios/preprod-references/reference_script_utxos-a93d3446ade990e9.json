@@ -1,0 +1,81 @@
+{
+    "answer": {
+        "body": "[{\"script_hash\":\"4d31c0bffb84f13bc885c4ccd55e70eab8cdb0e9a36a64115eafd0e3\",\"tx_hash\":\"e8f6921d3f3ed0d8b1f4a1f1b171fb181b5373665eae2af9412f041e97f7a2ff\",\"tx_index\":0}]",
+        "headers": [
+            [
+                "date",
+                "Tue, 06 Oct 2026 12:36:17 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/1"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-06T12:36:17.350310353Z",
+    "request": {
+        "body": {
+            "json": {
+                "_script_hashes": [
+                    "4d31c0bffb84f13bc885c4ccd55e70eab8cdb0e9a36a64115eafd0e3"
+                ]
+            }
+        },
+        "call": "reference_script_utxos",
+        "method": "POST",
+        "path": "/reference_script_utxos",
+        "query": [
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "tx_hash.asc,tx_index.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "7143b5b7fcaac6e3df64ed0a0867b4c6c2fd2c57d0229dd25102c23f9ef54673"
+}

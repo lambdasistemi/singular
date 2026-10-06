@@ -118,6 +118,7 @@ library
     Singular.Registry.Node
     Singular.Registry.Proof
     Singular.Registry.Replay
+    Singular.Registry.StateToken
     Singular.Registry.Trie
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
@@ -947,6 +948,7 @@ test-suite cage-tests
     Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
+    Singular.CLI.StateTokenSpec
     Singular.CLI.RequestWindow
     Singular.CLI.Root
     Singular.CLI.Session
@@ -965,6 +967,7 @@ test-suite cage-tests
     Singular.Provider.Koios.HttpSpec
     Singular.Provider.Koios.RecordedSpec
     Singular.Provider.Koios.RecorderSpec
+    Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
@@ -991,6 +994,8 @@ test-suite cage-tests
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
     Singular.Registry.StubSession
+    Singular.Registry.StateTokenFixture
+    Singular.Registry.StateTokenSpec
     Singular.Registry.RawChainFixture
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime

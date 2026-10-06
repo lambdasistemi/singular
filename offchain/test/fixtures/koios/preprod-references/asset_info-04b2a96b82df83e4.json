@@ -1,0 +1,67 @@
+{
+    "answer": {
+        "body": "[]",
+        "headers": [
+            [
+                "date",
+                "Tue, 06 Oct 2026 12:36:17 GMT"
+            ],
+            [
+                "content-range",
+                "*/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-06T12:36:18.74064489Z",
+    "request": {
+        "body": {
+            "json": {
+                "_asset_list": [
+                    [
+                        "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c",
+                        "0000000000000000000000000000000000000000000000000000000000000000"
+                    ]
+                ]
+            }
+        },
+        "call": "asset_info",
+        "method": "POST",
+        "path": "/asset_info",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

@@ -584,6 +584,20 @@ jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   || fail "create did not report the chosen processing and retract windows"
 say "registry $token booted from $seed"
 
+# A registry is its state token: create prints it and keeps no identity file,
+# and an actor whose directory is empty runs a command on the token alone.
+state_token="$(field create .stateToken)"
+[ "$state_token" = "$state.$token" ] || fail "create did not print the state token $state.$token"
+[ ! -e "$reg/registry.json" ] || fail "create wrote a registry.json"
+empty_actor="$work/empty-actor"
+mkdir -p "$empty_actor"
+[ -z "$(ls -A "$empty_actor")" ] || setup_fail "the second actor's directory is not empty at start"
+run empty-actor-inspect success -- registry inspect --key keyEmpty --state-token "$state_token" \
+  --registry "$empty_actor" --blueprint "$blueprint" "${node[@]}"
+[ "$(field empty-actor-inspect .leaf)" = unknown ] \
+  || fail "an actor starting from an empty directory did not read the registry from its state token"
+say "an actor with an empty directory read the registry from its state token alone"
+
 # This registry exercises absent flags and never books a timed request.
 # The rest of the journey keeps its explicit development-network windows.
 run create-defaults success -- registry create --seed "$(field bob-preview .seed)" \

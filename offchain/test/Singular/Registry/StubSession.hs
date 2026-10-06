@@ -57,6 +57,9 @@ stubSession =
         , scriptRegistered =
             const
                 (pure (Left (BackendReadFailure "fixture supplies no registration")))
+        , mintRecord =
+            const
+                (pure (Left (BackendReadFailure "fixture supplies no mint record")))
         , history = \_ _ ->
             pure
                 ( Left
@@ -170,6 +173,7 @@ servingSession supplied = (configured, provider)
                                 , tipObservation = guarded (tipObservation supplied)
                                 , networkTime = guarded (networkTime supplied)
                                 , scriptRegistered = guarded . scriptRegistered supplied
+                                , mintRecord = guarded . mintRecord supplied
                                 , history = \asset range ->
                                     guardedHistory $
                                         fmap (fmap guardedStream) (history supplied asset range)

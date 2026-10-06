@@ -25,10 +25,15 @@ import Cardano.Ledger.Api.Tx.Body
     , outputsTxBodyL
     , referenceInputsTxBodyL
     )
-import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, valueTxOutL)
-import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Binary (serialize)
-import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -244,6 +249,14 @@ selectOutputs allOutputs = fmap Map.toAscList . selected
         AtTxIn reference -> case Map.lookup reference allOutputs of
             Nothing -> Left (MissingOutput reference)
             Just out -> Right (Map.singleton reference out)
+        CarryingReferenceScript script ->
+            Right $
+                Map.filter
+                    ( \out -> case out ^. referenceScriptTxOutL of
+                        SJust carried -> hashScript carried == script
+                        SNothing -> False
+                    )
+                    allOutputs
         AnyOf queries -> Map.unions <$> traverse selected (NE.toList queries)
         AllOf queries -> do
             results <- traverse selected queries

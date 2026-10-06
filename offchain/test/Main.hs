@@ -14,6 +14,7 @@ import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RecoverySpec qualified
 import Singular.CLI.RejectSpec qualified
+import Singular.CLI.StateTokenSpec qualified
 import Singular.CLI.TraceSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.WriteSpec qualified
@@ -23,6 +24,7 @@ import Singular.Provider.Koios.HttpSpec qualified
 import Singular.Provider.Koios.ProviderSpec qualified
 import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
+import Singular.Provider.Koios.ReferenceScriptsSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
@@ -41,6 +43,7 @@ import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
+import Singular.Registry.StateTokenSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
@@ -133,6 +136,9 @@ main = hspec $ do
         (tagged "Singular.Registry.PhaseLog" [History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
+        (tagged "Singular.Registry.StateToken" [Provider])
+        Singular.Registry.StateTokenSpec.spec
+    describe
         (tagged "Singular.Registry.Provider" [Provider])
         Singular.Registry.ProviderSpec.spec
     describe
@@ -198,6 +204,9 @@ main = hspec $ do
         (tagged "Singular.CLI.Reject" [Cli])
         Singular.CLI.RejectSpec.spec
     describe
+        (tagged "Singular.CLI.StateToken" [Cli, Wallet])
+        Singular.CLI.StateTokenSpec.spec
+    describe
         (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
         Singular.CLI.ReclaimSpec.spec
     describe
@@ -227,3 +236,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Provider.Koios.Recorded" [Provider, History])
         Singular.Provider.Koios.RecordedSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.ReferenceScripts" [Provider])
+        Singular.Provider.Koios.ReferenceScriptsSpec.spec

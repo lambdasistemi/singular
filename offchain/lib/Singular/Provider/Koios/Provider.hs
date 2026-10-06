@@ -166,6 +166,9 @@ koiosProvider runtime configured loadSource client =
                         . AccountAddress Ledger.Testnet
                         . AccountId
                         . ScriptHashObj
+                , mintRecord =
+                    const
+                        (pure (Left (BackendReadFailure "mint record: not implemented")))
                 , history = readHistory
                 }
     guarded identity action = do
@@ -225,6 +228,9 @@ queryOutputs client = \case
             , missing == key =
                 MissingOutput reference
             | otherwise = backendFailure failure
+    CarryingReferenceScript _ ->
+        throwError
+            (BackendReadFailure "reference script query: not implemented")
     AnyOf queries ->
         traverse (queryOutputs client) (NE.toList queries)
             >>= mergeOutputs . concat

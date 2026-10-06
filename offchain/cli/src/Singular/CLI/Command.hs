@@ -41,7 +41,9 @@ module Singular.CLI.Command
     , RejectArgs (..)
     , ReclaimArgs (..)
     , WriteSettings (..)
+    , RegistryAccess (..)
     , Key (..)
+    , neededRoles
 
       -- * Parsing
     , CLIError (..)
@@ -66,6 +68,8 @@ import Data.Char
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Maybe qualified
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
@@ -90,7 +94,9 @@ import Singular.CLI.Trace
     )
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.StateToken (ReferenceRole)
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
@@ -107,6 +113,16 @@ data WriteSettings = WriteSettings
     submission. On expiry the command stops with the submission
     journalled, never resubmitting.
     -}
+    }
+    deriving stock (Eq, Show)
+
+{- | The registry a command acts on: its state token (@--state-token@, or
+@SINGULAR_STATE_TOKEN@) and the outputs the caller suggests as carriers of
+its reference scripts (@--reference-hint@, repeatable).
+-}
+data RegistryAccess = RegistryAccess
+    { accessToken :: Asset
+    , accessHints :: [TxIn]
     }
     deriving stock (Eq, Show)
 
@@ -142,6 +158,7 @@ data EntryMode
 -- | @registry insert@, @registry update@ and @registry terminate@.
 data EntryArgs = EntryArgs
     { entryRegistry :: FilePath
+    , entryAccess :: RegistryAccess
     , entryBlueprint :: FilePath
     , entryMode :: EntryMode
     , entryKey :: Key
@@ -171,6 +188,7 @@ data EntryArgs = EntryArgs
 -- | @registry fold@: the registry's pending request, folded by this wallet.
 data FoldArgs = FoldArgs
     { foldRegistry :: FilePath
+    , foldAccess :: RegistryAccess
     , foldBlueprint :: FilePath
     , foldWrite :: WriteSettings
     , foldRequest :: Maybe TxIn
@@ -188,6 +206,7 @@ data FoldArgs = FoldArgs
 -- | @registry reject@: every pending request, rejected by this wallet.
 data RejectArgs = RejectArgs
     { rejectRegistry :: FilePath
+    , rejectAccess :: RegistryAccess
     , rejectBlueprint :: FilePath
     , rejectWrite :: WriteSettings
     , rejectFund :: Maybe TxIn
@@ -201,6 +220,7 @@ data RejectArgs = RejectArgs
 -- | @registry reclaim@: take back this wallet's own pending request.
 data ReclaimArgs = ReclaimArgs
     { reclaimRegistry :: FilePath
+    , reclaimAccess :: RegistryAccess
     , reclaimBlueprint :: FilePath
     , reclaimWrite :: WriteSettings
     , reclaimRequest :: TxIn
@@ -217,6 +237,10 @@ data ReclaimArgs = ReclaimArgs
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
+    , inspectAccess :: Maybe RegistryAccess
+    {- ^ Required, except to read back a create interrupted before its
+    registry existed
+    -}
     , inspectBlueprint :: FilePath
     , inspectProvider :: ProviderSettings
     , inspectKey :: Key
@@ -424,9 +448,11 @@ parseCommand args = do
         doc <- traverse (`required` flags) document
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess flags
         pure
             EntryArgs
                 { entryRegistry = dir
+                , entryAccess = access
                 , entryBlueprint = bp
                 , entryMode = mode
                 , entryKey = key
@@ -459,9 +485,11 @@ parseCommand args = do
                 Left err -> Left (BadValue "--request" err)
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess flags
         pure
             FoldArgs
                 { foldRegistry = dir
+                , foldAccess = access
                 , foldBlueprint = bp
                 , foldWrite = settings
                 , foldRequest = request
@@ -489,9 +517,11 @@ parseCommand args = do
         settings <- writeSettings flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess flags
         pure
             RejectArgs
                 { rejectRegistry = dir
+                , rejectAccess = access
                 , rejectBlueprint = bp
                 , rejectWrite = settings
                 , rejectFund = fund
@@ -517,9 +547,11 @@ parseCommand args = do
         request <- first (BadValue "--request") (parseOutRef (T.pack named))
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess flags
         pure
             ReclaimArgs
                 { reclaimRegistry = dir
+                , reclaimAccess = access
                 , reclaimBlueprint = bp
                 , reclaimWrite = settings
                 , reclaimRequest = request
@@ -527,6 +559,7 @@ parseCommand args = do
                 , reclaimMaxOutlay = outlay
                 , reclaimReceipt = optional "--receipt" flags
                 }
+    registryAccess _ = Left (MissingFlag "--state-token")
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -549,6 +582,7 @@ parseCommand args = do
         pure
             InspectArgs
                 { inspectRegistry = dir
+                , inspectAccess = Nothing
                 , inspectBlueprint = bp
                 , inspectProvider = settings
                 , inspectKey = key
@@ -902,3 +936,9 @@ usage =
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]
+
+{- | The reference roles a command's transactions run, and so the only
+references it looks up.
+-}
+neededRoles :: Command -> Set ReferenceRole
+neededRoles _ = Set.empty

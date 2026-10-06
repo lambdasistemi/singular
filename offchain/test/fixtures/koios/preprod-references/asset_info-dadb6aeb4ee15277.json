@@ -1,0 +1,67 @@
+{
+    "answer": {
+        "body": "[{\"policy_id\":\"7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c\",\"asset_name\":\"1ffd2d0deb7896e08eda018f071f4fe15e542d3c603a430e974730358a1de516\",\"asset_name_ascii\":\"\\u001f\\\\375-\\r\\\\353x\\\\226\\\\340\\\\216\\\\332\\u0001\\\\217\\u0007\\u001fO\\\\341^T-<`:C\\u000e\\\\227G05\\\\212\\u001d\\\\345\\u0016\",\"fingerprint\":\"asset1p2f49wdqnqdh9mj7p28m7npy29euuss4kv0g5c\",\"minting_tx_hash\":\"f6176eace63a9ce49e3e71630dd64b7400cc391888539f970b56ffd3b6930551\",\"total_supply\":\"1\",\"mint_cnt\":1,\"burn_cnt\":0,\"creation_time\":1790932946,\"minting_tx_metadata\":null,\"token_registry_metadata\":null,\"cip68_metadata\":null}]",
+        "headers": [
+            [
+                "date",
+                "Tue, 06 Oct 2026 12:36:18 GMT"
+            ],
+            [
+                "content-range",
+                "0-0/*"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-06T12:36:18.673304385Z",
+    "request": {
+        "body": {
+            "json": {
+                "_asset_list": [
+                    [
+                        "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c",
+                        "1ffd2d0deb7896e08eda018f071f4fe15e542d3c603a430e974730358a1de516"
+                    ]
+                ]
+            }
+        },
+        "call": "asset_info",
+        "method": "POST",
+        "path": "/asset_info",
+        "query": []
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "b1e3b0512d671fcd49d8ebd814389d41e12334dc2fa541068ef5b2e55ac516a6"
+}

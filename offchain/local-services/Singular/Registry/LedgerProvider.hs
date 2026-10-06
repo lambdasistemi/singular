@@ -19,6 +19,7 @@ module Singular.Registry.LedgerProvider
     , ReadFailure (..)
     , SubmitResult (..)
     , OutputQuery (..)
+    , MintRecord (..)
     , Outputs
     , Asset
     , TipObservation (..)
@@ -103,8 +104,23 @@ data OutputQuery
     = AtAddress Addr
     | HoldingAsset Asset
     | AtTxIn TxIn
+    | {- | Live outputs carrying this reference script. An empty answer
+      means not found by this provider, never not on chain; a consumer
+      checks each candidate's script itself.
+      -}
+      CarryingReferenceScript ScriptHash
     | AnyOf (NonEmpty OutputQuery)
     | AllOf (NonEmpty OutputQuery)
+    deriving stock (Eq, Show)
+
+{- | How an asset came to be: the transaction that minted it, every input
+that transaction spent, and the asset's current total supply.
+-}
+data MintRecord = MintRecord
+    { mintTransaction :: TxId
+    , mintSpentInputs :: [TxIn]
+    , mintSupply :: Integer
+    }
     deriving stock (Eq, Show)
 
 -- | Latest observed block facts, with raw POSIX seconds independent of slots.
@@ -181,6 +197,9 @@ data Session w m = Session
     , networkTime :: m (Either ReadFailure (Evidenced w NetworkTime))
     , scriptRegistered
         :: ScriptHash -> m (Either ReadFailure (Evidenced w Bool))
+    , mintRecord
+        :: Asset -> m (Either ReadFailure (Evidenced w (Maybe MintRecord)))
+    -- ^ No record for an asset the provider does not know
     , history
         :: Asset -> HistoryRange -> m (Either HistoryFailure (HistoryStream m))
     }
