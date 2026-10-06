@@ -568,6 +568,63 @@ jobs:
             )
           ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
           echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."
+  demo1-archive:
+    name: Demo 1 journey from the release archive
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #299: the release archive is built and, #326, verified by
+      # verify-release exactly as a published release is, the assembled
+      # assets presented as its download input: sums, the stated model
+      # revision, members, then the archive extracted OUTSIDE the checkout
+      # and its DEMO1.md journey run as separate `singular` processes —
+      # create, insert, inspect, update, inspect, terminate, inspect —
+      # against ONE development node, asserting the receipts' identity
+      # continuity and ledger reads and every refusal control at its
+      # boundary; the retained insert-active and update-terminal archive
+      # controls run from the same extraction.
+      #
+      # Falsification: on any ancestor without the command or its page
+      # this step fails at the page check or at the first invocation.
+      - name: Run the Demo 1 singular journey from the extracted release archive
+        run: nix run --quiet .#demo1-cli-check
+  demo1-readback:
+    name: Demo 1 public-indexer readback
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #300: the readback of a key's token output from a public indexer, from
+      # policy id and asset name alone, against a local indexer answering with
+      # the public services' shapes: each alteration fails for its own reason, and
+      # the credential reaches the indexer and appears nowhere else.
+      - name: Run the public-indexer readback against a local indexer
+        run: nix run --quiet .#demo1-readback-check
   cli-recovery-accepting:
     name: CLI recovery — the accepting path
     needs: blueprint
