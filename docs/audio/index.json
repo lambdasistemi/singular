@@ -2305,373 +2305,200 @@
   ]
  },
  "docs/consumer-onboarding.md": {
-  "attaching-to-a-deployment-and-what-has-to-travel-with-it": [
+  "check-the-archive-and-build-its-commands": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-00",
+    "name": "docs-consumer-onboarding/check-the-archive-and-build-its-commands-00",
     "pause_ms": 500,
-    "text": "Attaching to a deployment, and what has to travel with it.",
-    "v": "e6b53105aa01"
+    "text": "Check the archive and build its commands.",
+    "v": "807710587a53"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-01",
+    "name": "docs-consumer-onboarding/check-the-archive-and-build-its-commands-01",
     "pause_ms": 400,
-    "text": "Everything above stands up a registry of its own for the run. A deployment is the other way round: the registry and the reference scripts are created once, recorded in a manifest, and used by every run afterwards.",
-    "v": "5ec3e4aa9f09"
+    "text": "For an existing published archive, verify the bytes and validator identities before using it:",
+    "v": "7f873333127b"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-02",
+    "name": "docs-consumer-onboarding/check-the-archive-and-build-its-commands-02",
     "pause_ms": 400,
-    "text": "An availability note before you rely on this section: the deployment tool itself builds from the current source, but no required workflow exercises it today — what it does on your chain is documented here and was exercised when the preprod record below was made, not on every candidate. The attached claim command shown names register-rows, which is a retained legacy command: not currently buildable or verified against the released source, repair owned by #283. Until that repair lands, treat the attached-claim walkthrough as documentation of the design rather than a runnable runbook.",
-    "v": "115ca156d015"
+    "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies.",
+    "v": "f120057f553d"
+   }
+  ],
+  "choose-the-network-and-api": [
+   {
+    "index": 0,
+    "name": "docs-consumer-onboarding/choose-the-network-and-api-00",
+    "pause_ms": 500,
+    "text": "Choose the network and API.",
+    "v": "08ed3a00500a"
+   },
+   {
+    "index": 1,
+    "name": "docs-consumer-onboarding/choose-the-network-and-api-01",
+    "pause_ms": 400,
+    "text": "The packaged journey defaults to a private generated development chain behind the project's HTTP facade. Supplying external settings runs the same registry steps through the requested API with your wallet. The launcher checks those settings before starting a private fixture.",
+    "v": "4816dbbae39b"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-onboarding/choose-the-network-and-api-02",
+    "pause_ms": 400,
+    "text": "The private fixture exposes its node through the facade; the journey uses the API and an ephemeral fixture wallet. Your external configuration supplies your own API, local payment key and pinned time instead:",
+    "v": "141e333f04f8"
    },
    {
     "index": 3,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-03",
+    "name": "docs-consumer-onboarding/choose-the-network-and-api-03",
     "pause_ms": 400,
-    "text": "The register runner claims the exact UTF-8 spelling supplied with --spelling, defaulting to alice. It never appends a run suffix. On an attached rerun where that spelling is already held, it submits the duplicate, checks the state-validator refusal and unchanged registry root, reports that the spelling is already held, and finishes without rerunning the other fixture rows. Recovery and retirement retain their explicit fixture spellings.",
-    "v": "f0a3a6416b11"
+    "text": "Flags override the matching environment variable. An external run requires URL, magic and signing-key file together; a missing setting refuses by name. Preprod magic is 1, and the reviewed packaged preprod recording is the default time source there. The generated network's magic is 42, and its launcher supplies its exact published time directory. A supplied directory contains time-manifest.json, shelley-genesis.json and era-history.cbor; their raw identities, network, system start and protocol-major pin are validated. Unsupported time networks refuse rather than borrowing another recording. These submitting runners refuse mainnet.",
+    "v": "dfe47d2f99f7"
    },
    {
     "index": 4,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-04",
+    "name": "docs-consumer-onboarding/choose-the-network-and-api-04",
     "pause_ms": 400,
-    "text": "deploy runs once. Given a manifest the node still agrees with it names the registry that already exists and stops, rather than making a second one nobody recorded. nix run .#deployment -- verify --deployment ./preprod.json asks the node whether it still agrees, claim by claim.",
-    "v": "d78922737157"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-05",
-    "pause_ms": 400,
-    "text": "One thing has to travel with the manifest. Writing to a registry — folding a claim in — means proving the key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. Nothing on chain hands you the trie in one query, so this deployment carries it as a file beside the manifest: preprod.json is accompanied by preprod.mirror.json, which each run reads and writes. Copy the manifest to a second machine and you must copy the mirror with it; without it that machine can read the deployment but cannot fold into it. The runners do not guess about this — a run whose mirror root disagrees with the registry's root stops and says so, rather than building proofs against a history the chain does not have.",
-    "v": "52b2c6af7e6b"
-   },
-   {
-    "index": 6,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-06",
-    "pause_ms": 400,
-    "text": "Reading is unaffected. Proving a name is alive and finding where its application state lives needs the registry entry and the NFT, and no trie at all — a resolver needs nothing from the mirror.",
-    "v": "a7ba241876be"
-   },
-   {
-    "index": 7,
-    "name": "docs-consumer-onboarding/attaching-to-a-deployment-and-what-has-to-travel-with-it-07",
-    "pause_ms": 400,
-    "text": "Rebuilding the trie from the chain instead of carrying it — following the registry token from the bootstrap transaction and replaying each fold's request datums — is the next milestone's work, not this release's.",
-    "v": "233ef2eba442"
+    "text": "The old --backend, --node-socket and SINGULAR_NODE_SOCKET settings refuse before wallet or provider access. A socket accepted by a separate private probe is a test-harness setting, not an ordinary provider route.",
+    "v": "65edd107ecc5"
    }
   ],
-  "other-refusals-you-may-see": [
+  "deployment-and-naming-availability": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/other-refusals-you-may-see-00",
+    "name": "docs-consumer-onboarding/deployment-and-naming-availability-00",
     "pause_ms": 500,
-    "text": "Other refusals you may see.",
-    "v": "c97fd3ca6115"
-   }
-  ],
-  "run-singular-against-your-own-preprod-node": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/run-singular-against-your-own-preprod-node-00",
-    "pause_ms": 500,
-    "text": "Run Singular against your own preprod node.",
-    "v": "5f535b33da76"
+    "text": "Deployment and naming availability.",
+    "v": "9f80144db9d3"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/run-singular-against-your-own-preprod-node-01",
+    "name": "docs-consumer-onboarding/deployment-and-naming-availability-01",
     "pause_ms": 400,
-    "text": "As a cardano-keri integrator, I want to take a published Singular release, point it at the preprod node I already run, fund it with a wallet whose key never leaves my machine, and watch a name be claimed, recovered, retired and completed to Over on a public test network — without reconstructing the factory's devnet, its genesis keys or its worktrees.",
-    "v": "cd6b3d07fa6c"
+    "text": "The deployment tool uses the same provider/wallet configuration. From offchain, these are its current command forms:",
+    "v": "25926ae5268f"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/run-singular-against-your-own-preprod-node-02",
+    "name": "docs-consumer-onboarding/deployment-and-naming-availability-02",
     "pause_ms": 400,
-    "text": "That is what this page walks through. Everything on it runs from a downloaded release archive; nothing needs a checkout of this repository.",
-    "v": "aaf8deef15c0"
-   }
-  ],
-  "running-it-again": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/running-it-again-00",
-    "pause_ms": 500,
-    "text": "Running it again.",
-    "v": "93053d6175c4"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/running-it-again-01",
-    "pause_ms": 400,
-    "text": "Without --deployment, each run boots its own registry from a seed it designates out of your wallet's own outputs, so a second run does not collide with the first and does not depend on it having finished. Nothing in the archive holds state between runs; what persists lives on chain, under identities each run derives and prints.",
-    "v": "c93e14a60684"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/running-it-again-02",
-    "pause_ms": 400,
-    "text": "In this fresh-registry mode, if a run fails part way, rerun it. Its on-chain leftovers are inert: they belong to that run's own registry token and no later run reads them.",
-    "v": "e4ce7889fe62"
-   }
-  ],
-  "step-1-download-the-release-and-check-it": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/step-1-download-the-release-and-check-it-00",
-    "pause_ms": 500,
-    "text": "Step 1 — download the release and check it.",
-    "v": "bdc72ca84a69"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/step-1-download-the-release-and-check-it-01",
-    "pause_ms": 400,
-    "text": "Take the archive and its checksum manifest from the release page, extract it, and verify both the bytes and the compiled validator identities:",
-    "v": "18129f0d2d77"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/step-1-download-the-release-and-check-it-02",
-    "pause_ms": 400,
-    "text": "verify-identities.sh re-derives every validator hash from the compiled blueprints the archive carries and compares them with the pinned manifest. It needs only bash and jq. If it exits non-zero, stop: the archive does not carry the validators the release claims, and nothing below is meaningful.",
-    "v": "e54914190f6e"
+    "text": "No required hosted workflow currently exercises the legacy deployment-attach script. A compiler or scoped deployment pass does not establish that attached naming is runnable. The retained register-rows, recovery-rows and retirement-rows commands remain unverified under #172 and #283. The recovery and retirement guide documents that design, and the preprod record preserves its historical executed values. This page does not present those naming commands as a current accepted runbook.",
+    "v": "9c9e0f0ab7d1"
    },
    {
     "index": 3,
-    "name": "docs-consumer-onboarding/step-1-download-the-release-and-check-it-03",
+    "name": "docs-consumer-onboarding/deployment-and-naming-availability-03",
     "pause_ms": 400,
-    "text": "The release archive guide describes what else the archive contains and how to replay evidence from it.",
-    "v": "7d0d334f2219"
+    "text": "A deployment manifest and its mirror travel together. Writing a proof needs the trie, not only the root an API reports; a root mismatch must stop rather than build against the wrong registry. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+    "v": "ed9be9c969d1"
    }
   ],
-  "step-2-point-at-your-preprod-node": [
+  "fund-a-wallet-you-control": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-00",
+    "name": "docs-consumer-onboarding/fund-a-wallet-you-control-00",
     "pause_ms": 500,
-    "text": "Step 2 — point at your preprod node.",
-    "v": "a47e8d642bb2"
+    "text": "Fund a wallet you control.",
+    "v": "5aefa53b0941"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-01",
+    "name": "docs-consumer-onboarding/fund-a-wallet-you-control-01",
     "pause_ms": 400,
-    "text": "You need a cardano-node synced to preprod and its node-to-client socket path. The socket is the one the node's own configuration names — typically something like /run/cardano-node/node.socket or ~/cardano/preprod/node.socket.",
-    "v": "80ff4d23ee88"
+    "text": "Create a payment key and derive its preprod address locally:",
+    "v": "c5fdafdac84a"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-02",
+    "name": "docs-consumer-onboarding/fund-a-wallet-you-control-02",
     "pause_ms": 400,
-    "text": "Two facts the runners check for you, so you do not have to:",
-    "v": "dfbbb0f20ca7"
+    "text": "Fund the address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
+    "v": "617c588e5a62"
    },
    {
     "index": 3,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-03",
-    "pause_ms": 300,
-    "text": "The network magic must be the one the node runs. Preprod is 1. The node-to-client handshake negotiates it, and a node on another network refuses the connection; the runner turns that refusal into a message naming the socket and the magic you asked for rather than a bare protocol error.",
-    "v": "a2f5b693a96d"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-04",
-    "pause_ms": 300,
-    "text": "Protocol parameters come from the node. Fees, execution-unit prices and size limits are queried from the running node on every session, never taken from a devnet constant. A preprod parameter change is picked up on the next run with no code change.",
-    "v": "addb8a6e7220"
-   },
-   {
-    "index": 5,
-    "name": "docs-consumer-onboarding/step-2-point-at-your-preprod-node-05",
+    "name": "docs-consumer-onboarding/fund-a-wallet-you-control-03",
     "pause_ms": 400,
-    "text": "Mainnet's magic is refused outright. These runners submit live transactions to demonstrate a lifecycle; they are for test networks.",
-    "v": "9ec3516f15a2"
+    "text": "The retained funding checks name the wallet address, available outputs and required amount. They catch an empty or inadequately funded wallet; their initial floor does not guarantee that a long run can finish with that balance.",
+    "v": "3f0792ba5740"
    }
   ],
-  "step-3-create-and-fund-a-wallet": [
+  "run-the-bounded-registry-journey": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/step-3-create-and-fund-a-wallet-00",
+    "name": "docs-consumer-onboarding/run-the-bounded-registry-journey-00",
     "pause_ms": 500,
-    "text": "Step 3 — create and fund a wallet.",
-    "v": "388054f2f1d6"
+    "text": "Run the bounded registry journey.",
+    "v": "cc9300ee6144"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/step-3-create-and-fund-a-wallet-01",
+    "name": "docs-consumer-onboarding/run-the-bounded-registry-journey-01",
     "pause_ms": 400,
-    "text": "The wallet is yours. Its key is read from a file on your machine, used to sign, and never printed, logged or transmitted anywhere but into a transaction witness.",
-    "v": "1c96a9188d35"
+    "text": "From offchain, supply your chosen API URL, test-network magic and wallet:",
+    "v": "fbce1c758a65"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/step-3-create-and-fund-a-wallet-02",
+    "name": "docs-consumer-onboarding/run-the-bounded-registry-journey-02",
     "pause_ms": 400,
-    "text": "The runners accept the cardano-cli signing-key file as written — the JSON text envelope with its cborHex field. A file holding the same key as bare hex, or as the 32 raw bytes, works too. The address the runner uses is derived from the key in that file, so there is no way for the address you fund and the address that pays to disagree.",
-    "v": "a6d3aa22bb0b"
+    "text": "For an explicitly supplied time recording, add --network-time \"$time_dir\". The journey publishes the needed reference, boots a registry, books and folds an insertion, checks exclusion and inclusion proofs against the state read back, and attempts the retained forged-identity, changed-output and missing- witness controls. It reports the pinned and actually applied script identities. These are registry protocol steps; they do not claim a naming lifecycle.",
+    "v": "d8d4079ac3a4"
    },
    {
     "index": 3,
-    "name": "docs-consumer-onboarding/step-3-create-and-fund-a-wallet-03",
+    "name": "docs-consumer-onboarding/run-the-bounded-registry-journey-03",
     "pause_ms": 400,
-    "text": "Fund the address from the preprod faucet at https://docs.cardano.org/cardano-testnets/tools/faucet — then send one self-payment of a few ada back to the same address. The faucet pays a single output; the second payment leaves the wallet holding a small ada-only output, which is what a Plutus transaction spends as collateral.",
-    "v": "861b3bee9e7b"
+    "text": "A successful submission answer alone is not confirmation. Confirmation requires the exact output. With a validity upper bound the provider deadline is that slot's POSIX start plus 120 seconds; without one it is now plus 300 seconds. Latest-block observation can establish expiry. A refusal, unavailable answer, timeout or mismatching proof stops the run; it is never counted as its intended accepting step.",
+    "v": "ded0c1291748"
    }
   ],
-  "step-4-run-a-journey": [
+  "run-the-registry-journey-with-your-own-provider-and-wallet": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/step-4-run-a-journey-00",
+    "name": "docs-consumer-onboarding/run-the-registry-journey-with-your-own-provider-and-wallet-00",
     "pause_ms": 500,
-    "text": "Step 4 — run a journey.",
-    "v": "2be30eea9044"
+    "text": "Run the registry journey with your own provider and wallet.",
+    "v": "7ac3954dc4be"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/step-4-run-a-journey-01",
+    "name": "docs-consumer-onboarding/run-the-registry-journey-with-your-own-provider-and-wallet-01",
     "pause_ms": 400,
-    "text": "Build the two compiled blueprints from the archive's own flakes and export them the way the release archive guide describes, then run the one lifecycle command the current release ships verified: the bounded registry journey. The release pipeline runs it on a real devnet on every candidate and asserts what it observes on chain, and the same binary takes the three external settings to run against your node instead:",
-    "v": "06cec90da35e"
+    "text": "As a Cardano KERI integrator, you want to run the bounded Singular registry journey on a test network using an API you choose and a wallet whose signing key stays on your machine. The current ordinary path uses Koios for raw reads and signed submission, pinned genesis/history for time, and local construction and evaluation. It does not require an ordinary node socket.",
+    "v": "8f2c72a28a57"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/step-4-run-a-journey-02",
+    "name": "docs-consumer-onboarding/run-the-registry-journey-with-your-own-provider-and-wallet-02",
     "pause_ms": 400,
-    "text": "It boots a registry on your chain, folds a request, applies it and reads the resulting state back — the registry protocol, end to end, funded from your wallet.",
-    "v": "6aebe86be7c6"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/step-4-run-a-journey-03",
-    "pause_ms": 400,
-    "text": "The naming-lifecycle runners an older release walked through here — the canonical initialization row and the register, recovery and retirement trios that claim a name, rotate its control and end it in Over — are retained legacy commands today: they stay declared in the archive, but they are not currently buildable or verified against the released source, so this runbook cannot carry you through the full naming lifecycle until their re-cut lands in #172 and #283. The recovery and retirement guide keeps their behaviour documented, and the preprod record shows the lifecycle as it was executed on chain when those commands were current.",
-    "v": "bfc4ca3a1150"
+    "text": "This page describes the current source's configuration. A candidate's local checks, hosted gates, release archive and public-network results are separate receipts; these instructions do not claim that a new release or connected preprod run has been accepted.",
+    "v": "ce2c1eb748f6"
    }
   ],
-  "waiting-for-confirmations": [
+  "understand-the-provider-boundary": [
    {
     "index": 0,
-    "name": "docs-consumer-onboarding/waiting-for-confirmations-00",
+    "name": "docs-consumer-onboarding/understand-the-provider-boundary-00",
     "pause_ms": 500,
-    "text": "Waiting for confirmations.",
-    "v": "0b364e438225"
+    "text": "Understand the provider boundary.",
+    "v": "8e823be9689d"
    },
    {
     "index": 1,
-    "name": "docs-consumer-onboarding/waiting-for-confirmations-01",
+    "name": "docs-consumer-onboarding/understand-the-provider-boundary-01",
     "pause_ms": 400,
-    "text": "A public test network makes a block about every twenty seconds; the factory devnet makes one about every second. The runners do not assume either. After a submission they poll the node for an output the transaction actually created and continue the moment it appears, giving up after five minutes with a message naming the transaction that never landed.",
-    "v": "9b8ca5f0400d"
+    "text": "The logical session is Unbound. Its multiple reads may observe different chain states. Facts are Unverified with no configured witness. Raw-source receipts identify what was consumed, but they do not prove the API answered honestly or that all reads were a coherent snapshot. Ledger acceptance remains an independent boundary.",
+    "v": "5a459408e116"
    },
    {
     "index": 2,
-    "name": "docs-consumer-onboarding/waiting-for-confirmations-02",
+    "name": "docs-consumer-onboarding/understand-the-provider-boundary-02",
     "pause_ms": 400,
-    "text": "So a preprod run is slower than a devnet run — minutes rather than seconds per journey — and it is slow in proportion to the network, not to a constant someone guessed.",
-    "v": "6290f977ed26"
-   }
-  ],
-  "what-a-run-looks-like": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/what-a-run-looks-like-00",
-    "pause_ms": 500,
-    "text": "What a run looks like.",
-    "v": "03d421514741"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/what-a-run-looks-like-01",
-    "pause_ms": 400,
-    "text": "Each runner narrates what it did and what it then observed on chain. The first line names the chain and the wallet:",
-    "v": "ae8d8e44bdcf"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/what-a-run-looks-like-02",
-    "pause_ms": 400,
-    "text": "Then one line per step, each stating the observation rather than the intent — the transaction identifier, the datum read back, the hash that matched. A zero exit is the claim: every runner exits non-zero on any mismatch, and it checks by reading state back from the node, never by assuming its own submission worked.",
-    "v": "739a7de07838"
-   }
-  ],
-  "what-changes-when-you-bring-your-own-node": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/what-changes-when-you-bring-your-own-node-00",
-    "pause_ms": 500,
-    "text": "What changes when you bring your own node.",
-    "v": "f119f46a6c25"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/what-changes-when-you-bring-your-own-node-01",
-    "pause_ms": 400,
-    "text": "Every runner in the release can work two ways, and the difference is entirely configuration.",
-    "v": "71da5d0510f0"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/what-changes-when-you-bring-your-own-node-02",
-    "pause_ms": 400,
-    "text": "The runner is the same program on both sides. External mode is not a second implementation: it hands the shared entry point a socket path, a network magic and a signing key file instead of letting it spawn a devnet, and everything downstream — the transaction builders, the validators, the proofs, the read-backs — is the code the factory devnet exercises on every run.",
-    "v": "aea6220e2d94"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/what-changes-when-you-bring-your-own-node-03",
-    "pause_ms": 400,
-    "text": "Three things you supply, and nothing else:",
-    "v": "c726caeae948"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-onboarding/what-changes-when-you-bring-your-own-node-04",
-    "pause_ms": 400,
-    "text": "Flags win over environment variables. Give none of the three and you get the factory devnet, exactly as before. Give one or two and the runner refuses, naming the one it is missing — a half-configured run would otherwise submit devnet transactions to a public network.",
-    "v": "bc4060574637"
-   }
-  ],
-  "what-this-page-does-not-cover": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/what-this-page-does-not-cover-00",
-    "pause_ms": 500,
-    "text": "What this page does not cover.",
-    "v": "00fcd73c08f5"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/what-this-page-does-not-cover-01",
-    "pause_ms": 400,
-    "text": "The canonical deployment on preprod — a published registry identity with its seed reference, applied script hashes, policy identifiers and bootstrap transactions — is recorded with its verifier output, journey transactions and mirror on the preprod record, from real values. Nothing here publishes or claims a canonical identity; each run stands up its own.",
-    "v": "7fdc30a26931"
-   }
-  ],
-  "when-the-wallet-cannot-pay": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/when-the-wallet-cannot-pay-00",
-    "pause_ms": 500,
-    "text": "When the wallet cannot pay.",
-    "v": "736dc3e79dac"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/when-the-wallet-cannot-pay-01",
-    "pause_ms": 400,
-    "text": "The funding check runs before the first transaction is built, so a wallet problem is a message and not a balance exception in the middle of a lifecycle:",
-    "v": "5edaadd4c901"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/when-the-wallet-cannot-pay-02",
-    "pause_ms": 400,
-    "text": "It names the address to fund, what is required, what is there, and the step that fixes it. The two numbers are a floor rather than a promise: they catch the empty and the nearly-empty wallet at the start of a run, and a journey that runs long can still exhaust a thinly funded wallet later.",
-    "v": "b553f36f77e9"
+    "text": "Before construction, the builder selects an interval with at least ten seconds of usable slots at its observed tip. The moving ledger horizon can shorten the upper bound. An empty interval refuses WindowPastLedgerHorizon; a nonempty registry-limited short interval refuses WindowTooShort. Only a horizon-limited otherwise longer window permits one wait for a later horizon, bounded by slots and 20 seconds of wall time. A stalled wait refuses HorizonWaitTimedOut before signing. Build duration can consume the selected interval; this rule is not a guarantee of eventual ledger acceptance.",
+    "v": "e0bfb1f7b928"
    }
   ]
  },
@@ -3121,8 +2948,8 @@
     "index": 2,
     "name": "docs-demos-index/dated-demo-plays-02",
     "pause_ms": 400,
-    "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's session follower confirms new preprod transactions, but older address outputs still come from its node provider; #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
-    "v": "f6c60e76b445"
+    "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's ordinary path now reads raw outputs and history through Koios; its logical sessions are Unbound and its facts Unverified, and #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
+    "v": "5860dee29188"
    }
   ],
   "planned-major-release-tags": [
@@ -3358,8 +3185,8 @@
     "index": 4,
     "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-04",
     "pause_ms": 400,
-    "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current preprod session follower confirms new transactions, while a node provider handles older outputs. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
-    "v": "d7190e503bd4"
+    "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current ordinary Koios path provides raw outputs and history in Unbound sessions with Unverified facts, without that accepted persistent proof path. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
+    "v": "56fe372695e7"
    }
   ],
   "preprod-play-to-record": [
@@ -4544,8 +4371,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "5e8bf0481def"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "9bb706141ca8"
    },
    {
     "index": 3,
@@ -4984,7 +4811,7 @@
    {
     "index": 65,
     "name": "docs-offchain-api-reference/what-this-reference-contains-65",
-    "pause_ms": 300,
+    "pause_ms": 400,
     "text": "Singular.Registry.Wire.State — source",
     "v": "107b9298263b"
    },
@@ -4992,8 +4819,92 @@
     "index": 66,
     "name": "docs-offchain-api-reference/what-this-reference-contains-66",
     "pause_ms": 400,
+    "text": "Singular.Provider.Koios.Evidence — source",
+    "v": "185353990ed9"
+   },
+   {
+    "index": 67,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-67",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.History — source",
+    "v": "84be50a5b7f1"
+   },
+   {
+    "index": 68,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-68",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Provider — source",
+    "v": "634472b9d41d"
+   },
+   {
+    "index": 69,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-69",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Runtime — source",
+    "v": "0afc3c8e801b"
+   },
+   {
+    "index": 70,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-70",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.State — source",
+    "v": "8c8e1d11344a"
+   },
+   {
+    "index": 71,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-71",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Capabilities — source",
+    "v": "d911206918c7"
+   },
+   {
+    "index": 72,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-72",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Confirmation — source",
+    "v": "504a6cfa4d46"
+   },
+   {
+    "index": 73,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-73",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Evidence — source",
+    "v": "63c566331a33"
+   },
+   {
+    "index": 74,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-74",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Funding — source",
+    "v": "ade92adce5e0"
+   },
+   {
+    "index": 75,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-75",
+    "pause_ms": 300,
+    "text": "Singular.Registry.LedgerProvider — source",
+    "v": "c5b4176ec83b"
+   },
+   {
+    "index": 76,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-76",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Signing — source",
+    "v": "a67349b171f5"
+   },
+   {
+    "index": 77,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-77",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wait — source",
+    "v": "e0da952bc13b"
+   },
+   {
+    "index": 78,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-78",
+    "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
-    "v": "1680408caa68"
+    "v": "525b416a54fb"
    }
   ]
  },
@@ -7087,8 +6998,8 @@
     "index": 1,
     "name": "docs-preprod/reproduce-it-yourself-01",
     "pause_ms": 400,
-    "text": "From the release archive (or this repository), with your own node socket and wallet as the onboarding page describes, you can point the two tools that produced this record at the deployment:",
-    "v": "22a1b4f4e8cb"
+    "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, as the onboarding page describes. From the repository root:",
+    "v": "66bc8b4ef0f9"
    },
    {
     "index": 2,
@@ -7101,8 +7012,8 @@
     "index": 3,
     "name": "docs-preprod/reproduce-it-yourself-03",
     "pause_ms": 400,
-    "text": "verify re-runs the fourteen checks above against whatever node you point it at. The attached run folds your own spelling instead of alice — alice is already Active here, and an attached rerun that asks for a held spelling is refused by design, naming the refusal. The mirror file travels with the manifest: a fold needs the trie it records, and a run whose mirror root disagrees with the chain stops and says so.",
-    "v": "907e2c18ac13"
+    "text": "verify re-runs the manifest checks against facts returned by the selected API. Those facts remain Unbound and Unverified; a successful verifier run would not establish a coherent snapshot or a trust witness. The attached run folds your own spelling instead of alice — alice is already Active here, and an attached rerun that asks for a held spelling is refused by design, naming the refusal. The mirror file travels with the manifest: a fold needs the trie it records, and a run whose mirror root disagrees with the chain stops and says so.",
+    "v": "e585eedc5e88"
    }
   ],
   "the-first-deployment-and-its-stranded-name": [
@@ -8218,8 +8129,8 @@
     "index": 1,
     "name": "docs-singular-node/booking-and-folding-01",
     "pause_ms": 400,
-    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
-    "v": "5dd52d1e085f"
+    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+    "v": "28facd1ba9dc"
    },
    {
     "index": 2,
@@ -8232,22 +8143,29 @@
     "index": 3,
     "name": "docs-singular-node/booking-and-folding-03",
     "pause_ms": 400,
-    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when the node converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
-    "v": "0e84f573a7ae"
+    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
+    "v": "990c1fabf54c"
    },
    {
     "index": 4,
     "name": "docs-singular-node/booking-and-folding-04",
     "pause_ms": 400,
-    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when the node converts it, or, when it does not, must begin at or before the deadline time; a bound the node cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-    "v": "e33b30d7c851"
+    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+    "v": "fb4c3cdd8fd4"
    },
    {
     "index": 5,
     "name": "docs-singular-node/booking-and-folding-05",
     "pause_ms": 400,
+    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+    "v": "23db3eff10c8"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/booking-and-folding-06",
+    "pause_ms": 400,
     "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
-    "v": "7d44ca51d5a2"
+    "v": "64154887f34f"
    }
   ],
   "choosing-a-registrys-windows": [
@@ -8273,43 +8191,87 @@
     "v": "1e5ca56fbf56"
    }
   ],
-  "connecting-singular-to-a-node": [
+  "choosing-a-usable-validity-interval": [
    {
     "index": 0,
-    "name": "docs-singular-node/connecting-singular-to-a-node-00",
+    "name": "docs-singular-node/choosing-a-usable-validity-interval-00",
     "pause_ms": 500,
-    "text": "Connecting singular to a node.",
-    "v": "a7ce56f9c6b9"
+    "text": "Choosing a usable validity interval.",
+    "v": "9df5759d358e"
    },
    {
     "index": 1,
-    "name": "docs-singular-node/connecting-singular-to-a-node-01",
+    "name": "docs-singular-node/choosing-a-usable-validity-interval-01",
     "pause_ms": 400,
-    "text": "You run the singular registry commands — create, insert, update, terminate, fold, reclaim, reject and inspect — against a cardano node you already run: a public test network's node, or a development network you started yourself. You tell each command where the node is and which network it carries; the command reads the chain through that node, signs with your key, submits, waits for the chain to carry what it submitted, and leaves a journal entry that names exactly which chain state each transaction was built from. When a setting is missing, contradictory or points at the wrong network, the command refuses before it reads or submits anything.",
-    "v": "8e41c461fa31"
-   }
-  ],
-  "one-path-to-every-node": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/one-path-to-every-node-00",
-    "pause_ms": 500,
-    "text": "One path to every node.",
-    "v": "83b3684089b3"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/one-path-to-every-node-01",
-    "pause_ms": 400,
-    "text": "A development network and a public test network's node are reached the same way. Each command is handed what it needs — a way to read the chain, a way to submit signed transactions, and a way to wait for a confirmation — by one composition step that turns the settings into a connection. Nothing else in the command knows which node it talks to, and a source check in CI refuses any other module that names the node backend.",
-    "v": "fa244577f7c5"
+    "text": "As a caller building under load, you want a usable interval before construction starts. The builder selects bounds only when at least ten seconds of usable slots remain at its observed tip. Build duration and later provider observations can consume that interval; this selection does not guarantee ledger acceptance. Floor, ceiling and slot-start conversions use the pinned genesis/history, with only the final era's end opened. A time before genesis refuses TimeBeforeHistory; a fresh protocol major that differs from the pin refuses EraBeyondPinned before construction.",
+    "v": "292b4e1acd75"
    },
    {
     "index": 2,
-    "name": "docs-singular-node/one-path-to-every-node-02",
+    "name": "docs-singular-node/choosing-a-usable-validity-interval-02",
     "pause_ms": 400,
-    "text": "inspect takes only the socket and the magic: it gets the read interface and nothing that can sign or send. Besides the key, its receipt lists the registry's pending requests, each with its owner, key, edge, submission time and what it actually locks, and, given --outputs-at, the outputs at that address: the reads that check a write's receipt against the node, apart from the write.",
-    "v": "78cecb969b5a"
+    "text": "The moving ledger horizon is the first epoch boundary at or after the observed tip plus the authenticated consensus buffer. The selected upper is the smaller of the registry's original upper and the horizon minus one. The usable lower is the larger of the actual finite lower and tip plus one; an omitted body lower stays omitted.",
+    "v": "1b35a94f47e9"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/choosing-a-usable-validity-interval-03",
+    "pause_ms": 400,
+    "text": "An empty interval refuses WindowPastLedgerHorizon. A nonempty registry-limited interval shorter than ten seconds refuses WindowTooShort without waiting. If the horizon alone shortens an otherwise longer window, the builder waits once for a later horizon before constructing the body. The wait is bounded by ten seconds of slots and 20 seconds of wall time; a stalled horizon refuses HorizonWaitTimedOut with the last observed tip and horizon. The wait is logged and neither signs nor submits anything. These observations remain Unbound.",
+    "v": "3f1f381ff2c7"
+   }
+  ],
+  "connecting-singular-to-a-ledger-provider": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-00",
+    "pause_ms": 500,
+    "text": "Connecting singular to a ledger provider.",
+    "v": "5c9f66250c9b"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-01",
+    "pause_ms": 400,
+    "text": "As a registry operator, you want to use create, insert, update, terminate, fold, reclaim, reject and inspect with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "368faa75a203"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
+    "pause_ms": 400,
+    "text": "The ordinary provider is Koios. Old backend and socket settings are refused before acquisition or registry effects. The current provider session promises no coherent chain snapshot and carries no verification witness.",
+    "v": "aaff8e789c25"
+   }
+  ],
+  "harness-appendix-test-hooks": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/harness-appendix-test-hooks-00",
+    "pause_ms": 500,
+    "text": "Harness appendix: test hooks.",
+    "v": "8d7d1e5e6a78"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/harness-appendix-test-hooks-01",
+    "pause_ms": 400,
+    "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+    "v": "c2f453c17e54"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/harness-appendix-test-hooks-02",
+    "pause_ms": 400,
+    "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
+    "v": "30b9e44fc52d"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/harness-appendix-test-hooks-03",
+    "pause_ms": 400,
+    "text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
+    "v": "a274ed318615"
    }
   ],
   "reading-through-an-index": [
@@ -8324,15 +8286,15 @@
     "index": 1,
     "name": "docs-singular-node/reading-through-an-index-01",
     "pause_ms": 400,
-    "text": "With --backend indexer a command still connects to the node you name and still submits through it, but it answers every address read — your wallet's outputs, the registry's state, its holdings — from an index it keeps in memory for as long as it runs. The index is built by following the node's chain from its first block, so it holds every output a block ever carried. Protocol parameters, script registration, time and evaluation still come from the node.",
-    "v": "0408a7b83fba"
+    "text": "The former --backend node / --backend indexer comparison is retired. Ordinary commands use the Koios path only. They do not create an in-memory chain index or accept an ordinary node socket. Private generated nodes and independent LSQ probes remain test harness components in this integration slice; their remaining package closure is a published follow-up gap.",
+    "v": "992754822ff7"
    },
    {
     "index": 2,
     "name": "docs-singular-node/reading-through-an-index-02",
     "pause_ms": 400,
-    "text": "Each read is answered at one chain point. The command acquires a view of the node, lets the index advance exactly to that view's block and holds it there until the view closes, so the index's outputs and the node's answers always describe the same block. If the index cannot be brought to that point, the command refuses rather than mixing two chain states.",
-    "v": "5051069fe9ee"
+    "text": "An index must not fabricate transaction history for genesis-only allocations. The retained private genesis-only control uses genuine initial ledger outputs and refuses coverage-incomplete, naming their output references, with exit 12 and no registry write. Funding those allocations through a real transaction creates full-block history that the accepting control can read. This is a private source control, not a promise that every remote service detects all missing history. Missing or inconsistent registry reconstruction remains a refusal and must not become an empty registry.",
+    "v": "704519bbe0de"
    }
   ],
   "reclaiming-your-pending-request": [
@@ -8348,21 +8310,21 @@
     "name": "docs-singular-node/reclaiming-your-pending-request-01",
     "pause_ms": 400,
     "text": "As a requester, you can take back your pending insertion or terminal-witness request after its processing deadline, while its retract window remains open. registry reclaim requires --request TXID#IX and signs with the wallet you give it. It refuses before building when that request is not pending, belongs to another wallet, or names an update or deletion edge that Lean cannot retract.",
-    "v": "3f9b4d320a2b"
+    "v": "96f2d5074948"
    },
    {
     "index": 2,
     "name": "docs-singular-node/reclaiming-your-pending-request-02",
     "pause_ms": 400,
-    "text": "The command judges the window from its own view's tip slot and converted processing deadline: that deadline must convert, and the tip must reach it. The retract deadline stays open while its converted slot is ahead of the tip, or while it is beyond the view's conversion horizon, exactly as reject judges it. An unconverted processing deadline does not prove opening and is refused before the window, naming the opening time. A known, reached retract deadline is closed; the refusal names registry reject as the way to clear expired requests. No host clock or estimated slot decides admission. The development node's short conversion horizon may still prevent the builder from providing a valid bound; a build failure is no evidence of a successful reclaim.",
-    "v": "5f791b5f8030"
+    "text": "The command judges the window from the actual tip observed through its session and converted processing deadline: that deadline must convert, and the tip must reach it. The retract deadline stays open while its converted slot is ahead of the tip, or when a conversion refusal cannot establish its closing slot, exactly as reject judges it. An unconverted processing deadline does not prove opening and is refused before the window, naming the opening time. A known, reached retract deadline is closed; the refusal names registry reject as the way to clear expired requests. No host clock or estimated slot decides admission. Conversions extend the pinned final era. A moving ledger horizon separately caps the built upper bound, and a short usable interval refuses before signing; a build failure is no evidence of a successful reclaim.",
+    "v": "e28d81efdb23"
    },
    {
     "index": 3,
     "name": "docs-singular-node/reclaiming-your-pending-request-03",
     "pause_ms": 400,
-    "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same view and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
-    "v": "bdbc3aa7bfad"
+    "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
+    "v": "f60db4ff36db"
    }
   ],
   "rejecting-expired-requests": [
@@ -8384,8 +8346,8 @@
     "index": 2,
     "name": "docs-singular-node/rejecting-expired-requests-02",
     "pause_ms": 400,
-    "text": "A request is rejected only once it is past both its windows: the processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. That is judged from the ledger, not from the host's clock. The command converts the retract deadline — the request's submission time plus the registry's processing time and retract time — to a slot in the same view it builds from, and builds only when that view's tip is at or past it. A deadline the view cannot place in a slot is taken as still open. Before anything is signed the command refuses, naming the reason: nothing pending; any pending request still inside a window, each named with when its retract window closes, as a time, as a slot when the node converts it, and the ledger's tip slot; the outlay past --max-outlay; a funding output that is not the wallet's; and a built reject that does not carry each owner's whole refund in one designated output.",
-    "v": "3c87fc4c0e63"
+    "text": "A request is rejected only once it is past both its windows: the processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. That is judged from the ledger, not from the host's clock. The command converts the retract deadline — the request's submission time plus the registry's processing time and retract time — to a slot using the pinned time consumed by its build session, and builds only when that session's observed tip is at or past it. A deadline pinned time cannot place in a slot is taken as still open. Before anything is signed the command refuses, naming the reason: nothing pending; any pending request still inside a window, each named with when its retract window closes, as a time, as a slot when pinned time converts it, and the provider's observed tip slot; the outlay past --max-outlay; a funding output that is not the wallet's; and a built reject that does not carry each owner's whole refund in one designated output.",
+    "v": "4f7c78bc7ae2"
    },
    {
     "index": 3,
@@ -8402,29 +8364,6 @@
     "v": "5fb2a63835ff"
    }
   ],
-  "test-harness-hooks": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/test-harness-hooks-00",
-    "pause_ms": 500,
-    "text": "Test-harness hooks.",
-    "v": "366bc393a06a"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/test-harness-hooks-01",
-    "pause_ms": 400,
-    "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the node — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The release verification checks this on every run: the processes it starts with no variable set, and the holds that fire only where a test asked for one.",
-    "v": "92b96d49afa1"
-   },
-   {
-    "index": 2,
-    "name": "docs-singular-node/test-harness-hooks-02",
-    "pause_ms": 400,
-    "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
-    "v": "50bf8df81c46"
-   }
-  ],
   "the-settings-you-give": [
    {
     "index": 0,
@@ -8437,79 +8376,47 @@
     "index": 1,
     "name": "docs-singular-node/the-settings-you-give-01",
     "pause_ms": 400,
-    "text": "The three node settings travel together on a write: naming one or two of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
-    "v": "5517ec0cb6ab"
+    "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
+    "v": "a6113557517a"
    }
   ],
-  "what-a-write-does-with-the-node": [
+  "what-a-write-records": [
    {
     "index": 0,
-    "name": "docs-singular-node/what-a-write-does-with-the-node-00",
+    "name": "docs-singular-node/what-a-write-records-00",
     "pause_ms": 500,
-    "text": "What a write does with the node.",
-    "v": "fd9b31db545c"
+    "text": "What a write records.",
+    "v": "b10c78e87a27"
    },
    {
     "index": 1,
-    "name": "docs-singular-node/what-a-write-does-with-the-node-01",
+    "name": "docs-singular-node/what-a-write-records-01",
     "pause_ms": 400,
-    "text": "Each transaction a write submits is built from one view of the chain — one acquired ledger state, with its network, era, slot and block hash — and that view is closed before the transaction is signed and sent. The journal line written before the send names that view's point, so a later reader knows exactly which chain state the transaction's inputs, fees and validity were decided against.",
-    "v": "18a665d36a9b"
-   }
-  ],
-  "what-the-index-covers": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/what-the-index-covers-00",
-    "pause_ms": 500,
-    "text": "What the index covers.",
-    "v": "cbe8d3745363"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/what-the-index-covers-01",
-    "pause_ms": 400,
-    "text": "The index holds every output created by a transaction in a block. Outputs that exist only in the network's genesis ledger state were never carried by a block, so the index does not hold them. When a write starts, the command compares, at one chain point, the outputs the node holds at your wallet's address with the ones the index holds; if the node holds any the index does not, the command refuses with the coverage-incomplete diagnostic naming each such output, instead of reading the wallet as empty. Pay those outputs into a block first — for example a payment to yourself through the node backend — or keep using the node backend for that wallet.",
-    "v": "f7fd350cdb3d"
+    "text": "As a registry operator, you can identify the session and raw facts used for a prepared transaction, and distinguish them from its submission and later confirmation. Shared HTTP sessions are Unbound: several reads in one session may observe different chain states. Every supplied fact is explicitly Unverified with NoVerifierConfigured; no witness verifies it.",
+    "v": "234c55146ec8"
    },
    {
     "index": 2,
-    "name": "docs-singular-node/what-the-index-covers-02",
+    "name": "docs-singular-node/what-a-write-records-02",
     "pause_ms": 400,
-    "text": "A development network's chain is followed in seconds. On a public test network the index starts from the network's first block too, which takes far longer than the two minutes a command waits for its index to catch up with the node: there the command refuses as restoring, and the node backend is the one to use.",
-    "v": "eedd713c8f8a"
+    "text": "A prepared receipt carries the actual acquisition identity, fact/verdict extent and raw-source records. Its chain-point field is empty for an Unbound session. An inspect or confirmation tip is a separate observation, not proof that the prepared reads belonged to that block. A provider's facts also cannot override the ledger's refusal of a transaction.",
+    "v": "17dfcfaa822f"
    },
    {
     "index": 3,
-    "name": "docs-singular-node/what-the-index-covers-03",
+    "name": "docs-singular-node/what-a-write-records-03",
     "pause_ms": 400,
-    "text": "Each command under the indexer backend reports on standard error, when it ends, how many address reads the index answered and how many went to the node — at most one, a write's wallet check:",
-    "v": "2c832e0e3c60"
+    "text": "Confirmation waits for the exact transaction output, rather than a status flag alone. With an upper validity bound, its provider deadline is the POSIX start of that slot plus 120 seconds; with no upper bound, it is now plus 300 seconds. The CLI's --confirm-timeout also bounds its wait. The latest observed block can establish expiry. An unresolved submission remains journalled and is not sent again by recovery.",
+    "v": "a08c1f8882b0"
    }
   ],
-  "when-the-index-cannot-answer": [
+  "when-the-provider-cannot-be-used": [
    {
     "index": 0,
-    "name": "docs-singular-node/when-the-index-cannot-answer-00",
+    "name": "docs-singular-node/when-the-provider-cannot-be-used-00",
     "pause_ms": 500,
-    "text": "When the index cannot answer.",
-    "v": "9b464905f574"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/when-the-index-cannot-answer-01",
-    "pause_ms": 400,
-    "text": "Every refusal is one line, indexer backend refused the read (CLASS): …, naming the chain points or setting involved. Nothing is submitted after it. A refusal while a command opens its connection is reported as node-unavailable. Later in a write it is client-refusal while the write has sent nothing, and partial, naming every transaction it sent, once it has: a write that already submitted never reports that nothing was submitted.",
-    "v": "399a4bfdb6fe"
-   }
-  ],
-  "when-the-node-cannot-be-used": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/when-the-node-cannot-be-used-00",
-    "pause_ms": 500,
-    "text": "When the node cannot be used.",
-    "v": "670ad061340c"
+    "text": "When the provider cannot be used.",
+    "v": "f9684822cb58"
    }
   ]
  },

@@ -1,7 +1,7 @@
 {
   description = "Singular executable model, statement debt and documentation";
   inputs = {
-    dev-assets-mkdocs.url = "github:paolino/dev-assets/34c7df6959c9fa36c6927808de6712b939e7a7fb?dir=mkdocs";
+    dev-assets-mkdocs.url = "github:paolino/dev-assets/a9d7371c1118de4026ba6ee3a9c3b54614924b82?dir=mkdocs";
     dev-assets-playwright.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=playwright";
     # This repository's own off-chain tree, as a relative in-tree input: the
     # generated API reference's Haddock build and its manifest source digests

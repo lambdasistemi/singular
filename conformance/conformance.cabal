@@ -121,8 +121,13 @@ library
     , crypton
 
 common live-runner
-  hs-source-dirs:   app
+  hs-source-dirs:   app ../offchain/private-facade
   other-modules:
+    Singular.Registry.Private.Archive
+    Singular.Registry.Private.EpochParameters
+    Singular.Registry.Private.Facade
+    Singular.Registry.Private.Source
+    Singular.Registry.Private.TimePublication
     Conformance.BlueprintEncoding
     Conformance.ScriptParameters
     Conformance.ForkKeys
@@ -151,6 +156,20 @@ common live-runner
     Conformance.Run.Control
     Paths_conformance
   build-depends:
+    , chain-follower
+    , contra-tracer
+    , crypton
+    , http-types
+    , memory
+    , wai
+    , warp
+    , case-insensitive
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , ouroboros-network:api
+    , cardano-ledger-byron
+    , cardano-ledger-read
+    , singular-registry:koios-http
     , cardano-slotting
     , ouroboros-consensus
     , plutus-ledger-api
@@ -231,6 +250,8 @@ executable cli-controls
     , plutus-core
     , process >=1.6 && <1.7
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text >=2.0 && <2.2
     , time
     , unix

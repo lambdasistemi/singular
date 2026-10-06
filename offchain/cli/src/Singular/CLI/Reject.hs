@@ -56,6 +56,7 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
 import Singular.CLI.Command (RejectArgs (..))
 import Singular.CLI.Fold (slotAt)
@@ -69,8 +70,8 @@ import Singular.CLI.RejectRules
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.Node (Wallet (..), bech32Address)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -86,6 +87,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | One pending request the reject takes, and what it is owed.
 data Row = Row
@@ -146,7 +148,7 @@ rejectPending at a = do
             "reject"
             (const (expecting "state"))
             ( \v -> do
-                allAtRequestAddr <- Cage.viewUTxOsAt v requestAddr
+                allAtRequestAddr <- Cage.outputsAt v requestAddr
                 let pending = sortOn fst (findRequestUtxos (savedToken s) allAtRequestAddr)
                     pendingIns = map fst pending
                 live <- attachLive v s
@@ -161,7 +163,8 @@ rejectPending at a = do
                     forM pending $ \(i, o) -> case extractCageDatum o of
                         Just (RequestDatum r) -> pure (i, o, r)
                         _ -> stop ClientRefusal "a pending request carries no request datum" []
-                let tipSlot = toInteger (Cage.unSlotNo (Cage.cpSlot (Cage.viewPoint v)))
+                observed <- Cage.tip v
+                let tipSlot = toInteger (Cage.unSlotNo (Cage.observedSlot observed))
                     boundsOf r =
                         windowOf
                             (requestSubmittedAt r)
@@ -271,11 +274,11 @@ rejectPending at a = do
     -- and each refund is live at its owner's address as built.
     after <-
         reading at $ \v -> do
-            left <- Cage.viewUTxOsAt v requestAddr
+            left <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             owners <-
                 forM (Set.toList (Set.fromList (map rowRecipient (plRows plan)))) $ \o ->
-                    (,) o <$> Cage.viewUTxOsAt v o
+                    (,) o <$> Cage.outputsAt v o
             pure (left, live, Map.fromList owners)
     let (leftover, afterLive, ownerOuts) = after
         rejectedIns = map rowRequest (plRows plan)

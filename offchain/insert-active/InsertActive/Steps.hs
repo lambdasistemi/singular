@@ -53,7 +53,6 @@ import Cardano.Ledger.Core (valueTxOutL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn)
-import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import InsertActive.Narration (die, hex, say)
@@ -63,22 +62,18 @@ import Singular.Registry.Blueprint
     ( NamingCodes
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , funderSignKey
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Provider
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (submitWithWallet)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -102,11 +97,14 @@ import Singular.Registry.Types
     , OnChainTxOutRef
     , edgeInsertActive
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 -- | One booted registry and everything a fold in it needs.
 data Story = Story
-    { storyProvider :: Cage.Provider IO
-    , storyWrites :: Capabilities
+    { storyProvider
+        :: (Provider.Network, Provider.LedgerProvider NoWitness IO)
+    , storyWrites :: Capabilities NoWitness IO
+    , storyWallet :: Wallet
     -- ^ The signed-only write and the confirmation
     , storyTries :: TrieManager IO
     , storyCodes :: NamingCodes
@@ -129,18 +127,21 @@ an @insertActive@ to the APPLICATION's script address, which is right
 for naming and wrong here: @open.ak@ is a minting policy with no
 spending arm, so a token routed there is locked forever.
 -}
-walletDestination :: (ByteString, ByteString)
-walletDestination = (serialiseAddr genesisAddr, "")
+walletDestination :: Story -> (ByteString, ByteString)
+walletDestination story = (serialiseAddr (walletAddr (storyWallet story)), "")
 
 {- | Boot the open registry in this node session and narrate its two
 policies and its token.
 -}
-bootStory :: Capabilities -> StoryInputs -> IO Story
-bootStory caps inputs = do
+bootStory
+    :: Wallet -> Capabilities NoWitness IO -> StoryInputs -> IO Story
+bootStory wallet caps inputs = do
     let prov = capReads caps
+        address = walletAddr wallet
+        submit = submitWithWallet wallet caps
         stateBytes = inputStateBytes inputs
     tm <- mkPureTrieManager
-    _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    _ <- Cage.withLatest prov Cage.parameters
     -- #177 A-003: publish the state validator as a reference output
     -- BEFORE the seed is chosen. The publication spends the wallet's
     -- largest ada-only output, which a seed picked first could be, and
@@ -148,10 +149,10 @@ bootStory caps inputs = do
     _ <-
         Edges.publishRefScript
             prov
-            (submitWithGenesis caps)
-            genesisAddr
+            submit
+            address
             (scriptFromBytes "state" stateBytes)
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` address)
     -- #177 A-003: never seed from the reference publication. Boot
     -- REFERENCES that output, and a transaction may not both spend and
     -- reference the same one.
@@ -176,12 +177,12 @@ bootStory caps inputs = do
         )
 
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
-    signedBoot <- submitWithGenesis caps unsignedBoot
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v address)
+    signedBoot <- submit unsignedBoot
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie tm tid
     stateUtxos <-
-        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
+        Cage.withLatest prov (`Cage.outputsAt` cageAddrFromCfg cfg Testnet)
     bootState <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure s
@@ -194,13 +195,14 @@ bootStory caps inputs = do
             cfg
             codes
             prov
-            (submitWithGenesis caps)
-            genesisAddr
+            submit
+            address
             tid
     pure
         Story
             { storyProvider = prov
             , storyWrites = caps
+            , storyWallet = wallet
             , storyTries = tm
             , storyCodes = codes
             , storyConfig = cfg
@@ -218,12 +220,12 @@ book story key =
             (storyConfig story)
             (storyCodes story)
             (storyProvider story)
-            (submitWithGenesis (storyWrites story))
-            genesisAddr
+            (submitWithWallet (storyWallet story) (storyWrites story))
+            (walletAddr (storyWallet story))
             (storyToken story)
             key
             edgeInsertActive
-            walletDestination
+            (walletDestination story)
 
 {- | Fold the pending booking and commit the key's active leaf to the
 local mirror.
@@ -237,7 +239,7 @@ foldOnce :: Story -> ByteString -> IO ConwayTx
 foldOnce story key = do
     let tm = storyTries story
         tid = storyToken story
-    tx <- Cage.withView (storyProvider story) $ \v -> do
+    tx <- Cage.withLatest (storyProvider story) $ \v -> do
         ctx <-
             Edges.registryContextFor
                 (storyConfig story)
@@ -249,9 +251,9 @@ foldOnce story key = do
             v
             tm
             tid
-            genesisAddr
+            (walletAddr (storyWallet story))
             ctx
-    signed <- submitWithGenesis (storyWrites story) tx
+    signed <- submitWithWallet (storyWallet story) (storyWrites story) tx
     withTrie tm tid $ \t -> do
         _ <- insert t key leafActive
         pure ()
@@ -261,7 +263,9 @@ foldOnce story key = do
 activeHeldAt :: Story -> ByteString -> IO Integer
 activeHeldAt story key = do
     walletUtxos <-
-        Cage.withView (storyProvider story) (`Cage.viewUTxOsAt` genesisAddr)
+        Cage.withLatest
+            (storyProvider story)
+            (`Cage.outputsAt` walletAddr (storyWallet story))
     let policy = policyIdFromPin (cfgActivePolicy (storyConfig story))
     pure $
         sum
@@ -273,17 +277,6 @@ activeHeldAt story key = do
             , (AssetName n, q) <- Map.toList names
             , SBS.fromShort n == key
             ]
-
--- | Sign with the devnet genesis key, submit, wait.
-submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
-submitWithGenesis caps unsigned = do
-    let signed = signTx funderSignKey unsigned
-    result <- submitSigned (capSubmit caps) signed
-    case result of
-        Submitted _ -> pure ()
-        Rejected reason -> die ("tx rejected: " <> show reason)
-    capConfirm caps (signedTx signed)
-    pure (signedTx signed)
 
 {- | The registry token this boot minted, and its raw name bytes for
 narration.

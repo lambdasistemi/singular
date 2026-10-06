@@ -71,14 +71,15 @@ import MPF.Backend.Pure (MPFInMemoryDB (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , cageAddrFromCfg
@@ -554,16 +555,17 @@ UTxOs there.
 -}
 providerServing
     :: Map Addr [(TxIn, TxOut ConwayEra)]
-    -> IO (IORef [Addr], Cage.View IO)
+    -> IO (IORef [Addr], Cage.Session NoWitness IO)
 providerServing serves = do
     logRef <- newIORef []
     pure
         ( logRef
-        , stubView
-            { Cage.viewUTxOsAt = \a -> do
+        , withAddressOutputs
+            ( \a -> do
                 modifyIORef' logRef (a :)
                 pure (Map.findWithDefault [] a serves)
-            }
+            )
+            stubSession
         )
 
 agreeingServes :: Map Addr [(TxIn, TxOut ConwayEra)]

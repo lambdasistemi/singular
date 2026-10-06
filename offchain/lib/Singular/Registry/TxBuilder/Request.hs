@@ -51,13 +51,15 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , PParams
     , TokenId
     )
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -73,7 +75,7 @@ the deposit is itself a datum field.
 -}
 requestEdgeImpl
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> Coin
     -- ^ Token tip (lovelace)
     -> TokenId
@@ -84,8 +86,8 @@ requestEdgeImpl
     -> Addr
     -> IO ConwayTx
 requestEdgeImpl cfg view (Coin mf) tid key edge addr = do
-    let pp = viewProtocolParams view
-    utxos <- viewUTxOsAt view addr
+    pp <- parameters view
+    utxos <- outputsAt view addr
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
         utxos of

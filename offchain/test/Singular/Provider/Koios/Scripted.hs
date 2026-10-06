@@ -45,7 +45,7 @@ import Singular.Provider.Koios.Client
     , RawRequest (..)
     , Transport (..)
     )
-import Singular.Registry.Node (SignedTx, signTx)
+import Singular.Registry.Signing (SignedTx, signTx)
 
 {- | An empty transaction with a real witness from a deterministic test key.
 It exercises signed serialization, not ledger acceptance or funding.

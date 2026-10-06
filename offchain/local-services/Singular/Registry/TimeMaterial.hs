@@ -16,7 +16,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 import Paths_singular_registry (getDataFileName)
 import Singular.Registry.NetworkTime
     ( NetworkTime
@@ -25,6 +25,7 @@ import Singular.Registry.NetworkTime
     , networkMagic
     , networkSystemStart
     , validateNetworkTime
+    , validateProtocolMajor
     )
 import System.FilePath ((</>))
 
@@ -58,19 +59,21 @@ raw preprod history never replaces the reviewed package's history or horizon.
 -}
 timeFromRaw
     :: Word32
+    -> Word64
     -> Text
     -> TimeMaterial
     -> SystemStart
     -> ByteString
     -> Either NetworkTimeFailure NetworkTime
-timeFromRaw magic source material start history = do
+timeFromRaw magic major source material start history = do
     context <- case material of
         PackagedTime reviewed -> Right reviewed
-        GeneratedGenesis genesis -> generatedNetworkTime magic source genesis history
+        GeneratedGenesis genesis -> generatedNetworkTime magic major source genesis history
     unless
         (networkMagic context == magic)
         (Left (WrongTimeNetwork magic (networkMagic context)))
     unless
         (networkSystemStart context == start)
         (Left (TimeSourceMismatch "acquired system start differs from source"))
+    validateProtocolMajor context major
     pure context

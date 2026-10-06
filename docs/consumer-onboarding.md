@@ -1,56 +1,66 @@
-# Run Singular against your own preprod node
+# Run the registry journey with your own provider and wallet
 
-As a cardano-keri integrator, I want to take a published Singular release,
-point it at the preprod node I already run, fund it with a wallet whose key
-never leaves my machine, and watch a name be claimed, recovered, retired and
-completed to Over on a public test network — without reconstructing the
-factory's devnet, its genesis keys or its worktrees.
+As a Cardano KERI integrator, you want to run the bounded Singular registry
+journey on a test network using an API you choose and a wallet whose signing
+key stays on your machine. The current ordinary path uses Koios for raw reads
+and signed submission, pinned genesis/history for time, and local construction
+and evaluation. It does not require an ordinary node socket.
 
-That is what this page walks through. Everything on it runs from a downloaded
-release archive; nothing needs a checkout of this repository.
+This page describes the current source's configuration. A candidate's local
+checks, hosted gates, release archive and public-network results are separate
+receipts; these instructions do not claim that a new release or connected
+preprod run has been accepted.
 
-## What changes when you bring your own node
+## Choose the network and API
 
-Every runner in the release can work two ways, and the difference is entirely
-configuration.
+The packaged `journey` defaults to a private generated development chain behind
+the project's HTTP facade. Supplying external settings runs the same registry
+steps through the requested API with your wallet. The launcher checks those
+settings before starting a private fixture.
 
 ```mermaid
-flowchart LR
-    subgraph factory["Factory devnet — the default"]
-        R1[runner] -->|spawns| N1[private cardano-node]
-        R1 -->|funded by| G[genesis UTxO key in the archive]
-        N1 -->|network magic 42| R1
-    end
-    subgraph joiner["Your node — external mode"]
-        R2[same runner] -->|connects to socket| N2[your preprod cardano-node]
-        R2 -->|funded by| W[your signing key file]
-        N2 -->|network magic 1| R2
-    end
+flowchart TB
+    N[Generated node] -->|raw ledger facts| F[Private HTTP facade]
+    F -->|API answers| J[Registry journey]
+    J -->|signs with| K[Ephemeral wallet]
 ```
 
-The runner is the same program on both sides. External mode is not a second
-implementation: it hands the shared entry point a socket path, a network magic
-and a signing key file instead of letting it spawn a devnet, and everything
-downstream — the transaction builders, the validators, the proofs, the
-read-backs — is the code the factory devnet exercises on every run.
+The private fixture exposes its node through the facade; the journey uses the
+API and an ephemeral fixture wallet. Your external configuration supplies your
+own API, local payment key and pinned time instead:
 
-Three things you supply, and nothing else:
+```mermaid
+flowchart TB
+    C[Local key and pinned time] -->|configure| J[Registry journey]
+    J -->|reads and signed submission| P[Koios API]
+```
 
-| you supply | as a flag | or as an environment variable |
-|---|---|---|
-| the node's node-to-client socket | `--node-socket PATH` | `SINGULAR_NODE_SOCKET` |
-| the network the node runs | `--network-magic N` | `SINGULAR_NETWORK_MAGIC` |
-| the wallet that pays | `--wallet-skey FILE` | `SINGULAR_WALLET_SKEY` |
+| You supply | Flag | Environment variable |
+| --- | --- | --- |
+| API base URL | `--koios-url URL` | `SINGULAR_KOIOS_URL` |
+| Network magic | `--network-magic N` | `SINGULAR_NETWORK_MAGIC` |
+| Payment signing-key file | `--wallet-skey FILE` | `SINGULAR_WALLET_SKEY` |
+| Pinned time directory, when needed | `--network-time DIR` | `SINGULAR_NETWORK_TIME` |
+| Optional API token file | `--koios-token-file FILE` | `SINGULAR_KOIOS_TOKEN_FILE` |
 
-Flags win over environment variables. Give none of the three and you get the
-factory devnet, exactly as before. Give one or two and the runner refuses,
-naming the one it is missing — a half-configured run would otherwise submit
-devnet transactions to a public network.
+Flags override the matching environment variable. An external run requires
+URL, magic and signing-key file together; a missing setting refuses by name.
+Preprod magic is `1`, and the reviewed packaged preprod recording is the default
+time source there. The generated network's magic is `42`, and its launcher
+supplies its exact published time directory. A supplied directory contains
+`time-manifest.json`, `shelley-genesis.json` and `era-history.cbor`; their raw
+identities, network, system start and protocol-major pin are validated.
+Unsupported time networks refuse rather than borrowing another recording.
+These submitting runners refuse mainnet.
 
-## Step 1 — download the release and check it
+The old `--backend`, `--node-socket` and `SINGULAR_NODE_SOCKET` settings refuse
+before wallet or provider access. A socket accepted by a separate private
+probe is a test-harness setting, not an ordinary provider route.
 
-Take the archive and its checksum manifest from the release page, extract it,
-and verify both the bytes and the compiled validator identities:
+## Check the archive and build its commands
+
+For an existing published archive, verify the bytes and validator identities
+before using it:
 
 ```sh
 tar xzf singular-onchain-release-<tag>.tar.gz
@@ -59,256 +69,119 @@ sha256sum --check SHA256SUMS
 bash verify-identities.sh
 ```
 
-`verify-identities.sh` re-derives every validator hash from the compiled
-blueprints the archive carries and compares them with the pinned manifest. It
-needs only `bash` and `jq`. If it exits non-zero, stop: the archive does not
-carry the validators the release claims, and nothing below is meaningful.
+The archive's command interface depends on its revision. An older node-backed
+archive does not acquire this interface from reading this page. The
+[archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
+records its runnable components and unverified legacy surfaces. Build the
+registry and naming blueprints from that tree and export `REGISTRY_BLUEPRINT`
+and `NAMING_BLUEPRINT` as the guide specifies.
 
-The [release archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md) describes what else
-the archive contains and how to replay evidence from it.
+## Fund a wallet you control
 
-## Step 2 — point at your preprod node
-
-You need a `cardano-node` synced to preprod and its node-to-client socket
-path. The socket is the one the node's own configuration names — typically
-something like `/run/cardano-node/node.socket` or
-`~/cardano/preprod/node.socket`.
-
-Two facts the runners check for you, so you do not have to:
-
-- **The network magic must be the one the node runs.** Preprod is `1`. The
-  node-to-client handshake negotiates it, and a node on another network
-  refuses the connection; the runner turns that refusal into a message naming
-  the socket and the magic you asked for rather than a bare protocol error.
-- **Protocol parameters come from the node.** Fees, execution-unit prices and
-  size limits are queried from the running node on every session, never taken
-  from a devnet constant. A preprod parameter change is picked up on the next
-  run with no code change.
-
-Mainnet's magic is refused outright. These runners submit live transactions to
-demonstrate a lifecycle; they are for test networks.
-
-## Step 3 — create and fund a wallet
-
-The wallet is yours. Its key is read from a file on your machine, used to sign,
-and never printed, logged or transmitted anywhere but into a transaction
-witness.
+Create a payment key and derive its preprod address locally:
 
 ```sh
 cardano-cli address key-gen \
-  --verification-key-file joiner.vkey \
-  --signing-key-file joiner.skey
-
+  --verification-key-file joiner.vkey --signing-key-file joiner.skey
 cardano-cli address build \
-  --payment-verification-key-file joiner.vkey \
-  --testnet-magic 1 \
+  --payment-verification-key-file joiner.vkey --testnet-magic 1 \
   --out-file joiner.addr
 cat joiner.addr
 ```
 
-The runners accept the `cardano-cli` signing-key file as written — the JSON
-text envelope with its `cborHex` field. A file holding the same key as bare
-hex, or as the 32 raw bytes, works too. The address the runner uses is derived
-from the key in that file, so there is no way for the address you fund and the
-address that pays to disagree.
+Fund the address from the preprod faucet, then make a self-payment that leaves
+several ordinary outputs, including an ada-only collateral output. The runner
+loads the key from its local file and derives the paying address from it. A
+key's bytes do not belong in command output or receipts. A funded balance alone
+is insufficient when the transaction needs distinct seed, funding and
+collateral outputs.
 
-Fund the address from the preprod faucet at
-https://docs.cardano.org/cardano-testnets/tools/faucet — then send one
-self-payment of a few ada back to the same address. The faucet pays a single
-output; the second payment leaves the wallet holding a small ada-only output,
-which is what a Plutus transaction spends as collateral.
+The retained funding checks name the wallet address, available outputs and
+required amount. They catch an empty or inadequately funded wallet; their
+initial floor does not guarantee that a long run can finish with that balance.
 
-## Step 4 — run a journey
+## Run the bounded registry journey
 
-Build the two compiled blueprints from the archive's own flakes and export
-them the way the [release archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
-describes, then run the one lifecycle command the current release ships
-verified: the bounded registry journey. The release pipeline runs it on a
-real devnet on every candidate and asserts what it observes on chain, and
-the same binary takes the three external settings to run against your node
-instead:
+From `offchain`, supply your chosen API URL, test-network magic and wallet:
 
 ```sh
-cd offchain
 nix run .#journey -- \
-  --node-socket /run/cardano-node/node.socket \
-  --network-magic 1 \
-  --wallet-skey ./joiner.skey
+  --koios-url "$koios_url" --network-magic 1 --wallet-skey ./joiner.skey
 ```
 
-It boots a registry on your chain, folds a request, applies it and reads
-the resulting state back — the registry protocol, end to end, funded from
-your wallet.
-
-The naming-lifecycle runners an older release walked through here — the
-canonical initialization row and the register, recovery and retirement
-trios that claim a name, rotate its control and end it in Over — are
-retained legacy commands today: they stay declared in the archive, but
-they are not currently buildable or verified against the released source,
-so this runbook cannot carry you through the full naming lifecycle until
-their re-cut lands in
-[#172](https://github.com/lambdasistemi/singular/issues/172) and
-[#283](https://github.com/lambdasistemi/singular/issues/283). The
-[recovery and retirement guide](recovery-retirement.md) keeps their
-behaviour documented, and the [preprod record](preprod.md) shows the
-lifecycle as it was executed on chain when those commands were current.
-
-## What a run looks like
-
-Each runner narrates what it did and what it then observed on chain. The first
-line names the chain and the wallet:
-
-```
-node: external socket=/run/cardano-node/node.socket magic=1 funder=addr_test1v…
-```
-
-Then one line per step, each stating the observation rather than the intent —
-the transaction identifier, the datum read back, the hash that matched. A zero
-exit is the claim: every runner exits non-zero on any mismatch, and it checks
-by reading state back from the node, never by assuming its own submission
-worked.
+For an explicitly supplied time recording, add `--network-time "$time_dir"`.
+The journey publishes the needed reference, boots a registry, books and folds
+an insertion, checks exclusion and inclusion proofs against the state read
+back, and attempts the retained forged-identity, changed-output and missing-
+witness controls. It reports the pinned and actually applied script identities.
+These are registry protocol steps; they do not claim a naming lifecycle.
 
 ```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
-    participant You
-    participant Runner
-    participant Node as Your preprod node
-    You->>Runner: socket, magic, signing key file
-    Runner->>Node: node-to-client handshake at the given magic
-    Node-->>Runner: accepted (refused if the node is another network)
-    Runner->>Node: query protocol parameters
-    Runner->>Node: query the funding address
-    Runner->>Runner: refuse now if the wallet cannot pay
-    loop each step of the journey
-        Runner->>Node: submit transaction
-        Runner->>Node: poll until the output it created is visible
-        Node-->>Runner: the output, or nothing yet
-        Runner->>Runner: assert what was read back
+    participant J as Journey
+    participant P as Koios API
+    J->>P: Read raw facts
+    Note over J: Build and sign
+    J->>P: Submit signed body
+    P-->>J: Outcome
+    loop Poll
+        J->>P: Poll exact output
+        P-->>J: Output facts
     end
-    Runner-->>You: exit 0, or a named mismatch
+    Note over J: Check readback
 ```
 
-## Waiting for confirmations
+A successful submission answer alone is not confirmation. Confirmation requires
+the exact output. With a validity upper bound the provider deadline is that
+slot's POSIX start plus 120 seconds; without one it is now plus 300 seconds.
+Latest-block observation can establish expiry. A refusal, unavailable answer,
+timeout or mismatching proof stops the run; it is never counted as its intended
+accepting step.
 
-A public test network makes a block about every twenty seconds; the factory
-devnet makes one about every second. The runners do not assume either. After a
-submission they poll the node for an output the transaction actually created
-and continue the moment it appears, giving up after five minutes with a message
-naming the transaction that never landed.
+## Understand the provider boundary
 
-So a preprod run is slower than a devnet run — minutes rather than seconds per
-journey — and it is slow in proportion to the network, not to a constant
-someone guessed.
+The logical session is `Unbound`. Its multiple reads may observe different
+chain states. Facts are `Unverified` with no configured witness. Raw-source
+receipts identify what was consumed, but they do not prove the API answered
+honestly or that all reads were a coherent snapshot. Ledger acceptance remains
+an independent boundary.
 
-## When the wallet cannot pay
+Before construction, the builder selects an interval with at least ten seconds
+of usable slots at its observed tip. The moving ledger horizon can shorten the
+upper bound. An empty interval refuses `WindowPastLedgerHorizon`; a nonempty
+registry-limited short interval refuses `WindowTooShort`. Only a horizon-limited
+otherwise longer window permits one wait for a later horizon, bounded by slots
+and 20 seconds of wall time. A stalled wait refuses `HorizonWaitTimedOut` before
+signing. Build duration can consume the selected interval; this rule is not a
+guarantee of eventual ledger acceptance.
 
-The funding check runs before the first transaction is built, so a wallet
-problem is a message and not a balance exception in the middle of a lifecycle:
+## Deployment and naming availability
 
-```
-the funding wallet cannot pay for this run.
-  address            : addr_test1vq7…
-  lovelace held      : 0 lovelace (0.000000 ada) across 0 UTxO(s)
-  lovelace required  : 100000000 lovelace (100.000000 ada)
-  ada-only UTxO held : 0 lovelace (0.000000 ada) (the collateral input)
-  collateral required: 5000000 lovelace (5.000000 ada)
-  Fund this address, then rerun. On preprod the faucet is
-    https://docs.cardano.org/cardano-testnets/tools/faucet
-  It pays a single output; send one self-payment afterwards so the
-  wallet also holds an ada-only output to spend as collateral.
-```
-
-It names the address to fund, what is required, what is there, and the step
-that fixes it. The two numbers are a floor rather than a promise: they catch
-the empty and the nearly-empty wallet at the start of a run, and a journey that
-runs long can still exhaust a thinly funded wallet later.
-
-## Other refusals you may see
-
-| what you see | what it means |
-|---|---|
-| `the node at … did not accept a node-to-client connection for network magic N` | the node runs a different network, or the socket path is not a node-to-client socket |
-| `external-node mode is partially configured` | one or two of the three settings were given; all three are required together |
-| `external-node mode refuses network magic 764824073` | that is mainnet; these runners are for test networks |
-| `wallet signing key …: expected 32 key bytes, found …` | the file is not a payment signing key — a verification key or a stake key will produce this |
-| `transaction … was accepted by the node but has not appeared in a block` | the node accepted the transaction and no block carried it within five minutes; check that the node is synced and the network is producing blocks |
-
-## Running it again
-
-Without `--deployment`, each run boots its own registry from a seed it
-designates out of your wallet's own outputs, so a
-second run does not collide with the first and does not depend on it having
-finished. Nothing in the archive holds state between runs; what persists lives
-on chain, under identities each run derives and prints.
-
-In this fresh-registry mode, if a run fails part way, rerun it. Its on-chain leftovers are
-inert: they belong to that run's own registry token and no later run reads
-them.
-
-## Attaching to a deployment, and what has to travel with it
-
-Everything above stands up a registry of its own for the run. A
-deployment is the other way round: the registry and the reference scripts
-are created once, recorded in a manifest, and used by every run
-afterwards.
+The `deployment` tool uses the same provider/wallet configuration. From
+`offchain`, these are its current command forms:
 
 ```sh
 nix run .#deployment -- deploy \
-  --node-socket /run/cardano-node/node.socket \
-  --network-magic 1 --wallet-skey ./joiner.skey \
-  --out ./preprod.json --release v0.4.1
-
-nix run .#register-rows -- --node-socket … --network-magic 1 \
-  --wallet-skey ./joiner.skey --deployment ./preprod.json
+  --koios-url "$koios_url" --network-magic 1 --wallet-skey ./joiner.skey \
+  --out ./preprod.json --release "$release"
+nix run .#deployment -- verify \
+  --koios-url "$koios_url" --network-magic 1 --wallet-skey ./joiner.skey \
+  --deployment ./preprod.json
 ```
 
-An availability note before you rely on this section: the `deployment`
-tool itself builds from the current source, but no required workflow
-exercises it today — what it does on your chain is documented here and
-was exercised when the preprod record below was made, not on every
-candidate. The attached claim command shown names `register-rows`, which
-is a retained legacy command: not currently buildable or verified against
-the released source, repair owned by
-[#283](https://github.com/lambdasistemi/singular/issues/283). Until that
-repair lands, treat the attached-claim walkthrough as documentation of
-the design rather than a runnable runbook.
+No required hosted workflow currently exercises the legacy deployment-attach
+script. A compiler or scoped deployment pass does not establish that attached
+naming is runnable. The retained `register-rows`, `recovery-rows` and
+`retirement-rows` commands remain unverified under
+[#172](https://github.com/lambdasistemi/singular/issues/172) and
+[#283](https://github.com/lambdasistemi/singular/issues/283). The
+[recovery and retirement guide](recovery-retirement.md) documents that design,
+and the [preprod record](preprod.md) preserves its historical executed values.
+This page does not present those naming commands as a current accepted runbook.
 
-The register runner claims the exact UTF-8 spelling supplied with
-`--spelling`, defaulting to `alice`. It never appends a run suffix. On an
-attached rerun where that spelling is already held, it submits the duplicate,
-checks the state-validator refusal and unchanged registry root, reports that
-the spelling is already held, and finishes without rerunning the other
-fixture rows. Recovery and retirement retain their explicit fixture spellings.
-
-`deploy` runs once. Given a manifest the node still agrees with it names
-the registry that already exists and stops, rather than making a second
-one nobody recorded. `nix run .#deployment -- verify --deployment
-./preprod.json` asks the node whether it still agrees, claim by claim.
-
-**One thing has to travel with the manifest.** Writing to a registry —
-folding a claim in — means proving the key against the registry's current
-trie, and that proof needs the whole trie, not the root the chain reports.
-Nothing on chain hands you the trie in one query, so this deployment
-carries it as a file beside the manifest: `preprod.json` is accompanied by
-`preprod.mirror.json`, which each run reads and writes. Copy the manifest
-to a second machine and you must copy the mirror with it; without it that
-machine can read the deployment but cannot fold into it. The runners do
-not guess about this — a run whose mirror root disagrees with the
-registry's root stops and says so, rather than building proofs against a
-history the chain does not have.
-
-Reading is unaffected. Proving a name is alive and finding where its
-application state lives needs the registry entry and the NFT, and no trie
-at all — a resolver needs nothing from the mirror.
-
-Rebuilding the trie from the chain instead of carrying it — following the
-registry token from the bootstrap transaction and replaying each fold's
-request datums — is the next milestone's work, not this release's.
-
-## What this page does not cover
-
-The canonical deployment on preprod — a published registry identity with its
-seed reference, applied script hashes, policy identifiers and bootstrap
-transactions — is recorded with its verifier output, journey transactions
-and mirror on [the preprod record](preprod.md), from real values. Nothing
-here publishes or claims a canonical identity; each run stands up its own.
+A deployment manifest and its mirror travel together. Writing a proof needs
+the trie, not only the root an API reports; a root mismatch must stop rather
+than build against the wrong registry. Historical deployment and naming
+receipts remain evidence of their recorded revision and public chain, not a
+pass for this provider candidate.

@@ -1,26 +1,28 @@
-# Connecting singular to a node
+# Connecting singular to a ledger provider
 
-You run the `singular` registry commands — `create`, `insert`, `update`,
-`terminate`, `fold`, `reclaim`, `reject` and `inspect` — against a cardano node you already run: a
-public test network's node, or a development network you started yourself.
-You tell each command where the node is and which network it carries; the
-command reads the chain through that node, signs with your key, submits,
-waits for the chain to carry what it submitted, and leaves a journal entry
-that names exactly which chain state each transaction was built from. When a
-setting is missing, contradictory or points at the wrong network, the
-command refuses before it reads or submits anything.
+As a registry operator, you want to use `create`, `insert`, `update`, `terminate`,
+`fold`, `reclaim`, `reject` and `inspect` with a Koios API on your chosen network.
+You supply the API settings and pinned time material; writes also use your local
+payment signing key. Commands read raw facts through one logical session, build
+and evaluate locally, submit signed transactions, and preserve recovery evidence
+in the registry journal.
+
+The ordinary provider is Koios. Old backend and socket settings are refused
+before acquisition or registry effects. The current provider session promises
+no coherent chain snapshot and carries no verification witness.
 
 ## The settings you give
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--node-socket PATH` | all eight | The node's node-to-client socket, the file `cardano-node` creates with `--socket-path`. |
-| `--network-magic N` | all eight | The magic of the network the node runs: 1 for preprod, 2 for preview, 42 for the factory development network. Mainnet's magic is refused for writes. |
+| `--koios-url URL` | all eight | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
+| `--koios-token-file FILE` | all eight | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
+| `--network-time DIR` | all eight | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
+| `--network-magic N` | all eight | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--backend node` or `--backend indexer` | all eight | Where the command reads addresses from: the node itself (`node`, the default) or an index the command builds by following the node's chain from its first block (`indexer`). Any other value is refused before anything runs. See [Reading through an index](#reading-through-an-index). |
 | `--registry DIR` | all eight | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
@@ -32,12 +34,12 @@ command refuses before it reads or submits anything.
 | `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional: without it the fold takes the one pending request. A named request that is not pending is refused. |
 | `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
 | `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
-| `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the node. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
-| `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the node; by `update`, before anything is signed or submitted. |
+| `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the provider. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
+| `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | all eight | Also write the JSON receipt the command prints on standard output to this file. |
 
-The three node settings travel together on a write: naming one or two of
+The URL, network magic and signing key travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The
@@ -47,7 +49,7 @@ settings are read from the command line only; the one exception is the
 ```sh
 singular registry insert --registry ./reg --blueprint plutus.json \
   --key keyA --payload alice.json \
-  --node-socket /run/cardano/node.socket --network-magic 1 \
+  --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
 ```
 
@@ -73,7 +75,7 @@ its throwaway registries with shorter windows.
 An `insert` or a `terminate` books a request and stops. The request waits at
 the registry; the command's receipt names it, the booking's transaction, and
 the fold deadline — the request's submission time plus the registry's
-processing time — as a POSIX time, and as a slot when the node converts it. Nothing is folded, and the
+processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the
 registry's root, its mirror and its saved state do not move.
 
 `registry fold` folds that request. It is an ordinary command: it signs and
@@ -84,17 +86,29 @@ the fold reads it back and checks it against the hash the request names before
 it builds anything.
 
 ```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
-    participant R as Requester's wallet
-    participant D as Registry directory
-    participant F as Folder's wallet
-    participant N as Node
-    R->>N: insert or terminate: the booking
-    R->>D: an insertion's envelope
-    N-->>R: request pending, fold deadline
-    F->>D: registry fold reads the pending request
-    F->>N: the fold, signed and funded by the folder
-    F->>D: journal, mirror and saved state follow the fold
+    participant W as Requester
+    participant P as Koios API
+    W->>P: Submit booking
+    P-->>W: Pending request
+```
+
+The requester books with its wallet. The folder reads that pending request,
+then builds, signs and funds the fold with the folder's wallet; the saved
+registry journal, mirror and state follow the observed fold:
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant W as Folder
+    participant P as Koios API
+    W->>P: Read pending request
+    P-->>W: Raw request facts
+    Note over W: Build and sign fold
+    W->>P: Submit fold
+    W->>P: Confirm exact output
+    Note over W: Journal and mirror
 ```
 
 The registry's fold takes every pending request, so a fold is built only while
@@ -104,15 +118,15 @@ pending; more than one pending, each named; an insertion whose envelope is not
 in the registry directory or is not the one the request names; an edge other
 than an insertion or a termination; the outlay past `--max-outlay`; a funding
 output that is not the wallet's; and a request whose processing deadline has
-passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when the node converts it.
+passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it.
 Run after its own booking by `--fold`, a fold that cannot be built or signed
 stops the command partial, naming the request that stays pending.
 
 That check is the fast refusal, not the proof. After the fold is built and
 before it is signed, its validity upper bound is judged again from the built
 body and the host clock: the bound must be at or before the slot of the
-deadline when the node converts it, or, when it does not, must begin at or
-before the deadline time; a bound the node cannot convert, or a clock that has
+deadline when pinned time converts it, or, when it does not, must begin at or
+before the deadline time; a bound pinned time cannot convert, or a clock that has
 meanwhile come within the margin, is refused unsigned, with the bound, the
 clock and the deadline in the receipt.
 
@@ -129,26 +143,24 @@ to another wallet, or names an update or deletion edge that Lean cannot retract.
 
 ```bash
 singular registry reclaim --registry reg --blueprint onchain/plutus.json \
-  --request TXID#IX --node-socket "$sock" --network-magic 42 \
+  --request TXID#IX --koios-url "$koios_url" --network-time "$time_dir" --network-magic 42 \
   --wallet-skey alice.skey --receipt reclaim.json
 ```
 
-The command judges the window from its own view's tip slot and converted
+The command judges the window from the actual tip observed through its session and converted
 processing deadline: that deadline must convert, and the tip must reach it.
 The retract deadline stays open while its converted slot is ahead of the tip,
-or while it is beyond the view's conversion horizon, exactly as reject judges it.
+or when a conversion refusal cannot establish its closing slot, exactly as reject judges it.
 An unconverted processing deadline does not prove opening and is refused before
 the window, naming the opening time. A known, reached retract deadline is closed;
 the refusal names `registry reject` as the way to clear expired requests. No
-host clock or estimated slot decides admission. The development node's short
-conversion horizon may still prevent the builder from providing a valid bound;
-a build failure is no evidence of a successful reclaim.
+host clock or estimated slot decides admission. Conversions extend the pinned final era. A moving ledger horizon separately caps the built upper bound, and a short usable interval refuses before signing; a build failure is no evidence of a successful reclaim.
 
 Inside the window, the existing retract builder pays the owner all the
 request's locked lovelace in one output whose inline datum is that request's
 reference. The command checks that output and the built validity interval before
 signing. When the retract deadline has no slot, the built upper bound must still
-be placed in time by that same view and be no later than the deadline. The
+be placed in time by that same session's pinned time and be no later than the deadline. The
 receipt names the request, retract transaction, actual locked value,
 owner, return address and output, returned value and any minimum-output top-up.
 It does not assume a protected holding deposit ever reached the request.
@@ -171,12 +183,12 @@ window, in which the registry's fold may take it, and the retract window after
 it, in which its owner may take it back. That is judged from the ledger, not
 from the host's clock. The command converts the retract deadline — the
 request's submission time plus the registry's processing time and retract time
-— to a slot in the same view it builds from, and builds only when that view's
-tip is at or past it. A deadline the view cannot place in a slot is taken as
+— to a slot using the pinned time consumed by its build session, and builds only when that session's observed
+tip is at or past it. A deadline pinned time cannot place in a slot is taken as
 still open. Before anything is signed the command refuses, naming the reason:
 nothing pending; any pending request still inside a window, each named with
-when its retract window closes, as a time, as a slot when the node converts it,
-and the ledger's tip slot; the outlay past `--max-outlay`; a funding output
+when its retract window closes, as a time, as a slot when pinned time converts it,
+and the provider's observed tip slot; the outlay past `--max-outlay`; a funding output
 that is not the wallet's; and a built reject that does not carry each owner's
 whole refund in one designated output.
 
@@ -197,169 +209,137 @@ several outputs to the same owner is accepted by the model and refused by the
 chain (issue #361), and `reject` never builds it. A reject that succeeds is
 that shape on this chain, not general reject-refund conformance.
 
-## One path to every node
+## What a write records
 
-A development network and a public test network's node are reached the same
-way. Each command is handed what it needs — a way to read the chain, a way
-to submit signed transactions, and a way to wait for a confirmation — by one
-composition step that turns the settings into a connection. Nothing else in
-the command knows which node it talks to, and a source check in CI refuses
-any other module that names the node backend.
-
-```mermaid
-flowchart LR
-    U[Your settings: socket, magic, key] -->|parsed once| C[Composition: opens one node connection]
-    C -->|read interface: one view per transaction| CMD[Registry command]
-    C -->|write: signed transactions only| CMD
-    C -->|confirmation: bounded wait| CMD
-    CMD -->|acquire, read| N[(Your node)]
-    CMD -->|submit signed| N
-    D[Development network] -.->|same socket and magic path| N
-    P[Public test network] -.->|same socket and magic path| N
-```
-
-`inspect` takes only the socket and the magic: it gets the read interface
-and nothing that can sign or send. Besides the key, its receipt lists the
-registry's pending requests, each with its owner, key, edge, submission time and
-what it actually locks, and, given `--outputs-at`, the outputs at that address:
-the reads that check a write's receipt against the node, apart from the write.
-
-## What a write does with the node
-
-Each transaction a write submits is built from one view of the chain — one
-acquired ledger state, with its network, era, slot and block hash — and that
-view is closed before the transaction is signed and sent. The journal line
-written before the send names that view's point, so a later reader knows
-exactly which chain state the transaction's inputs, fees and validity were
-decided against.
+As a registry operator, you can identify the session and raw facts used for a
+prepared transaction, and distinguish them from its submission and later
+confirmation. Shared HTTP sessions are `Unbound`: several reads in one session
+may observe different chain states. Every supplied fact is explicitly
+`Unverified` with `NoVerifierConfigured`; no witness verifies it.
 
 ```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram
-    participant W as singular write
-    participant N as Node
-    participant J as Journal (in --registry)
-    W->>N: acquire one view
-    N-->>W: network, era, slot, block hash, parameters, outputs
-    W->>W: build the transaction from that view only
-    W->>N: release the view
-    W->>J: prepared: inputs, body hash, the view's point
-    W->>N: submit the signed transaction
-    N-->>W: accepted or refused, with the node's reason
-    W->>J: submitted or rejected
-    W->>N: wait for its first output, within its validity window
-    W->>J: confirmed or unconfirmed
+    participant W as Command
+    participant P as Koios API
+    W->>P: Read session facts
+    P-->>W: Unverified raw facts
+    Note over W: Check, build, evaluate
+    Note over W: Journal prepared body
+    Note over W: Sign body
+    W->>P: Submit signed body
+    P-->>W: Outcome
+    Note over W: Journal outcome
+    W->>P: Confirm exact output
+    Note over W: Journal observation
 ```
 
-## When the node cannot be used
+A prepared receipt carries the actual acquisition identity, fact/verdict extent
+and raw-source records. Its chain-point field is empty for an Unbound session.
+An inspect or confirmation tip is a separate observation, not proof that the
+prepared reads belonged to that block. A provider's facts also cannot override
+the ledger's refusal of a transaction.
+
+Confirmation waits for the exact transaction output, rather than a status flag
+alone. With an upper validity bound, its provider deadline is the POSIX start of
+that slot plus 120 seconds; with no upper bound, it is now plus 300 seconds.
+The CLI's `--confirm-timeout` also bounds its wait. The latest observed block can
+establish expiry. An unresolved submission remains journalled and is not sent
+again by recovery.
+
+## Choosing a usable validity interval
+
+As a caller building under load, you want a usable interval before construction
+starts. The builder selects bounds only when at least ten seconds of usable
+slots remain at its observed tip. Build duration and later provider observations
+can consume that interval; this selection does not guarantee ledger acceptance. Floor, ceiling and slot-start
+conversions use the pinned genesis/history, with only the final era's end opened.
+A time before genesis refuses `TimeBeforeHistory`; a fresh protocol major that
+differs from the pin refuses `EraBeyondPinned` before construction.
+
+The moving ledger horizon is the first epoch boundary at or after the observed
+tip plus the authenticated consensus buffer. The selected upper is the smaller
+of the registry's original upper and the horizon minus one. The usable lower is
+the larger of the actual finite lower and tip plus one; an omitted body lower
+stays omitted.
+
+An empty interval refuses `WindowPastLedgerHorizon`. A nonempty registry-limited
+interval shorter than ten seconds refuses `WindowTooShort` without waiting. If
+the horizon alone shortens an otherwise longer window, the builder waits once
+for a later horizon before constructing the body. The wait is bounded by ten
+seconds of slots and 20 seconds of wall time; a stalled horizon refuses
+`HorizonWaitTimedOut` with the last observed tip and horizon. The wait is logged
+and neither signs nor submits anything. These observations remain Unbound.
+
+## When the provider cannot be used
 
 | What happened | What you see |
 | --- | --- |
-| One or two of the three write settings given | refused before anything runs: the missing setting is named and all three are required together |
-| No node settings on a write | refused: `singular` never starts a node of its own |
-| Network magic 764824073 (mainnet) on a write | refused: the commands submit live transactions and are for test networks only |
-| No node at the socket, or a node on another network | `node-unavailable`: the node did not accept a connection for that magic, with the magic it was asked for |
-| The chain has not made its first block yet | the command waits up to two minutes for one, then refuses: no view of a chain at its origin can be acquired |
-| A signing key passed to `inspect` | refused: `inspect` reads, and never funds or submits |
-| The node is lost after it accepted a submission | the command ends within `--confirm-timeout` with the submission journalled as unresolved; nothing is resubmitted |
+| A write omits its URL, network or signing key | configuration refusal before provider reads and key access, naming the missing setting |
+| An old backend selector, socket flag or socket environment setting is supplied | its named removed-setting refusal before provider acquisition or registry effects |
+| Mainnet magic is supplied for a write | configuration refusal; writes are restricted to test networks |
+| The API cannot answer or the requested time network is unsupported | `node-unavailable` at startup, preserving the existing outcome and diagnostic |
+| Time source identities, start, network or protocol major disagree | the specific time refusal; no unsigned body is supplied for signing |
+| `inspect` is given a signing key | configuration refusal; inspect has no signing or submission capability |
+| The API becomes unavailable after submission | an unresolved journalled result within the confirmation bound; recovery does not resubmit it |
 
 ## Reading through an index
 
-With `--backend indexer` a command still connects to the node you name and
-still submits through it, but it answers every address read — your wallet's
-outputs, the registry's state, its holdings — from an index it keeps in
-memory for as long as it runs. The index is built by following the node's
-chain from its first block, so it holds every output a block ever carried.
-Protocol parameters, script registration, time and evaluation still come
-from the node.
+The former `--backend node` / `--backend indexer` comparison is retired. Ordinary
+commands use the Koios path only. They do not create an in-memory chain index or
+accept an ordinary node socket. Private generated nodes and independent LSQ
+probes remain test harness components in this integration slice; their remaining
+package closure is a published follow-up gap.
 
-Each read is answered at one chain point. The command acquires a view of the
-node, lets the index advance exactly to that view's block and holds it there
-until the view closes, so the index's outputs and the node's answers always
-describe the same block. If the index cannot be brought to that point, the
-command refuses rather than mixing two chain states.
+An index must not fabricate transaction history for genesis-only allocations.
+The retained private genesis-only control uses genuine initial ledger outputs
+and refuses `coverage-incomplete`, naming their output references, with exit 12
+and no registry write. Funding those allocations through a real transaction
+creates full-block history that the accepting control can read. This is a
+private source control, not a promise that every remote service detects all
+missing history. Missing or inconsistent registry reconstruction remains a
+refusal and must not become an empty registry.
 
-```mermaid
-flowchart LR
-    N[(Your node)] -->|chain from its first block| F[Follower in the command]
-    F -->|applies blocks| I[In-memory index]
-    CMD[Registry command] -->|acquire one view| N
-    CMD -->|address reads at that view's block| I
-    CMD -->|parameters, time, evaluation| N
-    CMD -->|submit signed| N
-```
+<a id="test-harness-hooks"></a>
 
-### What the index covers
-
-The index holds every output created by a transaction in a block. Outputs
-that exist only in the network's genesis ledger state were never carried by
-a block, so the index does not hold them. When a write starts, the command
-compares, at one chain point, the outputs the node holds at your wallet's
-address with the ones the index holds; if the node holds any the index does
-not, the command refuses with the `coverage-incomplete` diagnostic naming each
-such output, instead of reading the wallet as empty. Pay those outputs into
-a block first — for example a payment to yourself through the node backend —
-or keep using the node backend for that wallet.
-
-A development network's chain is followed in seconds. On a public test
-network the index starts from the network's first block too, which takes far
-longer than the two minutes a command waits for its index to catch up with
-the node: there the command refuses as `restoring`, and the node backend is
-the one to use.
-
-Each command under the indexer backend reports on standard error, when it
-ends, how many address reads the index answered and how many went to the
-node — at most one, a write's wallet check:
-
-```text
-node: indexer backend: 14 address reads answered by the index, 1 by the node
-```
-
-### When the index cannot answer
-
-Every refusal is one line, `indexer backend refused the read (CLASS): …`,
-naming the chain points or setting involved. Nothing is submitted after it.
-A refusal while a command opens its connection is reported as
-`node-unavailable`. Later in a write it is `client-refusal` while the write
-has sent nothing, and `partial`, naming every transaction it sent, once it
-has: a write that already submitted never reports that nothing was
-submitted.
-
-| Class | What happened | What the line names |
-| --- | --- | --- |
-| `coverage-incomplete` | your wallet holds outputs only the genesis state carries | how many, the wallet's address, the chain point, each output as `txid#index` |
-| `restoring` | the index has not caught up with the node within two minutes | the slot the index has processed and the node's tip slot |
-| `disconnected` | the index's connection to the node is down | the connection status the follower reports |
-| `lag` | the index did not reach the node view's block within ten seconds | the view's slot and block hash, the block the index holds |
-| `fork` | the index holds another block at the view's slot | the slot and both block hashes |
-| `unsupported` | the view is on another network or in an era whose outputs the index cannot decode | the network or era |
-
-## Test-harness hooks
+## Harness appendix: test hooks
 
 You never set these. The released `singular` reads eleven environment
 variables whose only purpose is to let the project's own tests stop a
 command at an exact point — to inspect it there, kill it there, or make it
-meet no answer from the node — and check what it leaves behind. When none
+meet no answer from the provider — and check what it leaves behind. When none
 is set, which is how every operator runs it, they do nothing: no hold, no
-dropped send. The release verification checks this on every run: the
-processes it starts with no variable set, and the holds that fire only
-where a test asked for one.
+dropped send. The retained harness controls check the ordinary path with no variable set
+and the holds at the requested points. Their local, hosted and release results
+are separate evidence; an unexecuted control establishes nothing.
 
 A hold variable names a path. When the command reaches its point it writes
 `PATH.waiting` and waits until `PATH` exists.
 
 ```mermaid
-flowchart LR
-    C[Command reaches a hook point] -->|variable unset| N[Continues: nothing happens]
-    C -->|hold variable names PATH| W[Writes PATH.waiting]
-    W -->|waits until PATH exists| N
-    C -->|drop variable names this step| D[Meets no answer from the node]
+flowchart TB
+    C[Hook reached] -->|variable unset| N[Continue]
+```
+
+A requested hold writes its waiting file and continues only after the release
+file exists. A requested drop models a missing provider answer at that step.
+
+```mermaid
+flowchart TB
+    C[Requested hold] -->|writes| W[PATH.waiting]
+    W -->|PATH exists| N[Continue]
+```
+
+```mermaid
+flowchart TB
+    C[Requested drop] -->|named step| D[No provider answer]
 ```
 
 | Variable | Where the command stops or what it changes |
 | --- | --- |
 | `SINGULAR_HARNESS_HOLD_BEFORE_LOCK` | a write, after its checks and before it takes the registry directory's lock |
 | `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
-| `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the node's acceptance of a submission journalled |
+| `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the provider's acceptance of a submission journalled |
 | `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
 | `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
 | `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
@@ -367,4 +347,4 @@ flowchart LR
 | `SINGULAR_HARNESS_HOLD_BEFORE_REWIND` | a rollback journalled, the mirror not yet rebuilt |
 | `SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE` | the mirror rebuilt by a rollback, the saved state not yet following |
 | `SINGULAR_HARNESS_DROP_SEND` | names a step whose send does not happen |
-| `SINGULAR_HARNESS_DROP_ANSWER` | names a step whose node answer is discarded after the send |
+| `SINGULAR_HARNESS_DROP_ANSWER` | names a step whose provider answer is discarded after the send |

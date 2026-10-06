@@ -6,8 +6,9 @@ Description : Pure conversions over validated, pinned network data
 License     : Apache-2.0
 
 The trusted manifest pins exact genesis and node era-history bytes. Validation
-binds their network, start time and finite horizon before any conversion. The
-consensus interpreter supplies the arithmetic; no safe zone is extended.
+binds their network, start time and captured horizon before any conversion.
+The final era's end is opened under NOTE030; its slot length and epoch size
+stay pinned. Builders must check the provider's protocol major against the pin.
 -}
 module Singular.Registry.NetworkTime
     ( NetworkTime
@@ -21,6 +22,12 @@ module Singular.Registry.NetworkTime
     , networkEpochInfo
     , networkSystemStart
     , networkMagic
+    , networkProtocolMajor
+    , validateProtocolMajor
+    , ledgerHorizon
+    , capValidityUpper
+    , ValidityWindow (..)
+    , minimumValidityWindow
     ) where
 
 import Control.Exception (Exception)
@@ -31,6 +38,7 @@ import Data.Aeson
     ( FromJSON (..)
     , eitherDecodeStrict'
     , withObject
+    , withScientific
     , (.:)
     )
 import Data.Bifunctor (first)
@@ -43,10 +51,19 @@ import Data.Text qualified as Text
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time.Clock (NominalDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 
-import Cardano.Slotting.EpochInfo (EpochInfo, hoistEpochInfo)
-import Cardano.Slotting.Slot (EpochNo (..), SlotNo)
+import Cardano.Slotting.EpochInfo
+    ( EpochInfo
+    , epochInfoEpoch
+    , epochInfoFirst
+    , hoistEpochInfo
+    )
+import Cardano.Slotting.Slot
+    ( EpochNo (..)
+    , EpochSize (..)
+    , SlotNo (..)
+    )
 import Cardano.Slotting.Time (RelativeTime (..), SystemStart (..))
 import Codec.Serialise
     ( DeserialiseFailure
@@ -56,6 +73,7 @@ import Codec.Serialise
 import Ouroboros.Consensus.HardFork.History.EpochInfo
     ( interpreterToEpochInfo
     )
+import Ouroboros.Consensus.HardFork.History.EraParams (EraParams (..))
 import Ouroboros.Consensus.HardFork.History.Qry
     ( Interpreter
     , interpretQuery
@@ -81,6 +99,7 @@ data NetworkTimeManifest = NetworkTimeManifest
     , timeGenesisSha256 :: ByteString
     , timeEraHistorySha256 :: ByteString
     , timeHorizonSlot :: SlotNo
+    , timeProtocolMajor :: Word64
     , timeSourceIdentity :: Text
     }
     deriving stock (Eq, Show)
@@ -93,6 +112,7 @@ instance FromJSON NetworkTimeManifest where
             <*> (value .: "genesisSha256" >>= hashBytes)
             <*> (value .: "eraHistorySha256" >>= hashBytes)
             <*> value .: "horizonSlot"
+            <*> value .: "protocolMajor"
             <*> value .: "sourceIdentity"
       where
         hashBytes = either fail pure . B16.decode . encodeUtf8
@@ -107,6 +127,11 @@ data NetworkTimeFailure
     | MissingTimeHorizon
     | TimePastHorizon Integer
     | SlotPastHorizon SlotNo
+    | TimeBeforeHistory Integer
+    | EraBeyondPinned Word64 Word64
+    | WindowPastLedgerHorizon SlotNo SlotNo (Maybe SlotNo) SlotNo
+    | WindowTooShort SlotNo SlotNo (Maybe SlotNo) SlotNo Integer
+    | HorizonWaitTimedOut SlotNo SlotNo
     deriving stock (Eq, Show)
 
 instance Exception NetworkTimeFailure
@@ -118,29 +143,41 @@ data NetworkTime = NetworkTime
     { timeInterpreter :: Interpreter NetworkEras
     , networkSystemStart :: SystemStart
     , networkMagic :: Word32
+    , networkProtocolMajor :: Word64
+    , ledgerSecurityParam :: Integer
+    , ledgerActiveSlotsCoeff :: Rational
+    , ledgerEpochLength :: Integer
     }
 
-data GenesisIdentity = GenesisIdentity Word32 SystemStart
+data GenesisIdentity
+    = GenesisIdentity Word32 SystemStart Word64 Rational Word64
 
 instance FromJSON GenesisIdentity where
     parseJSON = withObject "network genesis" $ \value ->
         GenesisIdentity
             <$> value .: "networkMagic"
             <*> (SystemStart <$> value .: "systemStart")
+            <*> value .: "securityParam"
+            <*> ( value .: "activeSlotsCoeff"
+                    >>= withScientific "active slot coefficient" (pure . toRational)
+                )
+            <*> value .: "epochLength"
 
 {- | Bind exact generated genesis and the held node's raw history. This
 factory is solely for magic 42; public preprod uses its reviewed package.
-The source determines the finite end; no caller supplies a larger horizon.
+The source determines the recorded finite end and protocol major. Conversion
+opens only the final era's end; the captured bytes remain unchanged.
 -}
 generatedNetworkTime
     :: Word32
+    -> Word64
     -> Text
     -> ByteString
     -> ByteString
     -> Either NetworkTimeFailure NetworkTime
-generatedNetworkTime requested source genesis history = do
+generatedNetworkTime requested major source genesis history = do
     unless (requested == 42) (Left (UnknownTimeNetwork requested))
-    GenesisIdentity actual (SystemStart start) <-
+    GenesisIdentity actual (SystemStart start) _ _ _ <-
         first (InvalidTimeGenesis . Text.pack) (eitherDecodeStrict' genesis)
     summary <-
         first
@@ -159,6 +196,7 @@ generatedNetworkTime requested source genesis history = do
                 , timeGenesisSha256 = digest genesis
                 , timeEraHistorySha256 = digest history
                 , timeHorizonSlot = horizon
+                , timeProtocolMajor = major
                 , timeSourceIdentity = source
                 }
     validateNetworkTime requested manifest genesis history
@@ -182,8 +220,11 @@ validateNetworkTime requested manifest genesis history = do
         (Left (TimeSourceMismatch "source identity is absent"))
     checkHash "genesis" (timeGenesisSha256 manifest) genesis
     checkHash "era history" (timeEraHistorySha256 manifest) history
-    GenesisIdentity actual start@(SystemStart utcStart) <-
+    GenesisIdentity actual start@(SystemStart utcStart) k f epochLength <-
         first (InvalidTimeGenesis . Text.pack) (eitherDecodeStrict' genesis)
+    unless
+        (k > 0 && f > 0 && f <= 1 && epochLength > 0)
+        (Left (InvalidTimeGenesis "invalid ledger horizon parameters"))
     unless
         (actual == requested)
         (Left (WrongTimeNetwork requested actual))
@@ -201,6 +242,12 @@ validateNetworkTime requested manifest genesis history = do
     unless
         (not (null eras) && length eras <= 8)
         (Left (InvalidEraHistory "empty or unsupported era extent"))
+    case reverse eras of
+        finalEra : _ ->
+            unless
+                (eraEpochSize (eraParams finalEra) == EpochSize epochLength)
+                (Left (TimeSourceMismatch "genesis and final-era epoch length"))
+        [] -> Left (InvalidEraHistory "empty era extent")
     summary <-
         first
             (InvalidEraHistory . Text.pack . show)
@@ -234,8 +281,26 @@ validateNetworkTime requested manifest genesis history = do
     unless
         (horizon == timeHorizonSlot manifest)
         (Left (TimeSourceMismatch "conversion horizon"))
-    pure (NetworkTime (mkInterpreter summary) start requested)
+    openSummary <-
+        first
+            (InvalidEraHistory . Text.pack . show)
+            ( deserialiseOrFail (serialise (openFinalEra eras))
+                :: Either DeserialiseFailure (Summary NetworkEras)
+            )
+    pure
+        ( NetworkTime
+            (mkInterpreter openSummary)
+            start
+            requested
+            (timeProtocolMajor manifest)
+            (toInteger k)
+            f
+            (toInteger epochLength)
+        )
   where
+    openFinalEra [finalEra] = [finalEra{eraEnd = EraUnbounded}]
+    openFinalEra (era : rest) = era : openFinalEra rest
+    openFinalEra [] = []
     skippedAtGenesis era =
         boundSlot (eraStart era) == 0
             && boundEpoch (eraStart era) == EpochNo 0
@@ -246,9 +311,7 @@ validateNetworkTime requested manifest genesis history = do
             (expected == convert (hash bytes :: Digest SHA256))
             (Left (TimeSourceMismatch name))
 
-{- | Floor conversion. Times before genesis retain the existing slot-zero
-clamp; a time at or beyond the finite horizon refuses.
--}
+-- | Floor conversion over the pinned history with an open final era.
 posixMsFloorSlot
     :: NetworkTime -> Integer -> Either NetworkTimeFailure SlotNo
 posixMsFloorSlot context ms = do
@@ -266,14 +329,110 @@ timeInSlot
     :: NetworkTime
     -> Integer
     -> Either NetworkTimeFailure (SlotNo, NominalDiffTime, NominalDiffTime)
-timeInSlot context ms =
+timeInSlot context ms = do
+    when (relativeMs < 0) (Left (TimeBeforeHistory ms))
     first (const (TimePastHorizon ms)) $
         interpretQuery (timeInterpreter context) (wallclockToSlot relative)
   where
     SystemStart start = networkSystemStart context
-    relative =
-        RelativeTime
-            (max 0 (fromInteger ms / 1000 - utcTimeToPOSIXSeconds start))
+    relativeMs = fromInteger ms / 1000 - utcTimeToPOSIXSeconds start
+    relative = RelativeTime relativeMs
+
+-- | Named era safety refusal. This must run on raw parameters before building.
+validateProtocolMajor
+    :: NetworkTime -> Word64 -> Either NetworkTimeFailure ()
+validateProtocolMajor context actual =
+    unless (actual == networkProtocolMajor context) $
+        Left (EraBeyondPinned (networkProtocolMajor context) actual)
+
+{- | The moving ledger translation limit, independently of the captured
+history's end. Arithmetic stays unbounded until the checked SlotNo result.
+The epoch anchor comes from the pinned history; the size comes from genesis.
+-}
+ledgerHorizon
+    :: NetworkTime -> SlotNo -> Either NetworkTimeFailure SlotNo
+ledgerHorizon context tip = do
+    future <-
+        checkedSlot
+            ( toInteger (unSlotNo tip)
+                + ceiling
+                    ( fromInteger (3 * ledgerSecurityParam context)
+                        / ledgerActiveSlotsCoeff context
+                    )
+            )
+    epoch <-
+        first
+            InvalidEraHistory
+            (epochInfoEpoch (networkEpochInfo context) future)
+    anchor <-
+        first
+            InvalidEraHistory
+            (epochInfoFirst (networkEpochInfo context) epoch)
+    checkedSlot $
+        if future == anchor
+            then toInteger (unSlotNo anchor)
+            else toInteger (unSlotNo anchor) + ledgerEpochLength context
+  where
+    checkedSlot n
+        | n >= 0 && n <= toInteger (maxBound :: Word64) =
+            Right (SlotNo (fromInteger n))
+        | otherwise =
+            Left (TimeSourceMismatch "ledger horizon exceeds slot range")
+
+{- | Select an exclusive upper bound inside the existing window and observed
+ledger horizon, with a usable slot after the observed tip. An omitted body
+lower adds no constraint. The refusal retains the actual optional window.
+-}
+capValidityUpper
+    :: NetworkTime
+    -> SlotNo
+    -> Maybe SlotNo
+    -> SlotNo
+    -> Either NetworkTimeFailure SlotNo
+capValidityUpper context tip lower upper = do
+    horizon <- ledgerHorizon context tip
+    let capped = min upper (horizon - 1)
+        effectiveLower =
+            max
+                (maybe 0 (toInteger . unSlotNo) lower)
+                (toInteger (unSlotNo tip) + 1)
+    if toInteger (unSlotNo capped) <= effectiveLower
+        then Left (WindowPastLedgerHorizon tip horizon lower upper)
+        else Right capped
+
+{- | A pure decision under the pinned ten-second minimum. A horizon wait is
+a request to the IO caller, never an effect hidden in these conversions.
+-}
+data ValidityWindow = ValidityWindow
+    { validityHorizon :: SlotNo
+    , validitySelectedUpper :: SlotNo
+    , validityMinimumSlots :: Integer
+    , validityNeedsHorizonWait :: Bool
+    }
+    deriving stock (Eq, Show)
+
+minimumValidityWindow
+    :: NetworkTime
+    -> SlotNo
+    -> Maybe SlotNo
+    -> SlotNo
+    -> Either NetworkTimeFailure ValidityWindow
+minimumValidityWindow context tip lower upper = do
+    -- Preserve the existing empty-interval refusal before the minimum rule.
+    capped <- capValidityUpper context tip lower upper
+    horizon <- ledgerHorizon context tip
+    start <- slotStartMs context tip
+    end <- posixMsCeilingSlot context (start + 10_000)
+    let minimumSlots = toInteger (unSlotNo end) - toInteger (unSlotNo tip)
+        effectiveLower =
+            max
+                (maybe 0 (toInteger . unSlotNo) lower)
+                (toInteger (unSlotNo tip) + 1)
+        registryShort = toInteger (unSlotNo upper) - effectiveLower < minimumSlots
+        cappedShort = toInteger (unSlotNo capped) - effectiveLower < minimumSlots
+    if registryShort || (cappedShort && upper <= horizon)
+        then Left (WindowTooShort tip horizon lower upper minimumSlots)
+        else Right (ValidityWindow horizon capped minimumSlots cappedShort)
 
 -- | POSIX milliseconds at a slot's start, using the same pinned history.
 slotStartMs
@@ -288,7 +447,7 @@ slotStartMs context slot = do
             ((utcTimeToPOSIXSeconds start + getRelativeTime relative) * 1000)
         )
 
--- | The ledger evaluator's epoch information over the unchanged interpreter.
+-- | The ledger evaluator uses the same pinned, open-final-era interpreter.
 networkEpochInfo :: NetworkTime -> EpochInfo (Either Text)
 networkEpochInfo context =
     hoistEpochInfo

@@ -131,9 +131,11 @@ import Singular.Registry.Blueprint.Params
     , applyDataParam
     )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
@@ -263,7 +265,7 @@ selectFunding chosen utxos = case chosen of
 
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
-    :: Cage.Provider IO
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
@@ -276,14 +278,14 @@ publishes. The largest ada-only output that is not reserved funds it.
 -}
 publishRefScriptReserving
     :: Set.Set TxIn
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptReserving reserved prov submit payerAddr script = do
     (unsigned, refOut) <-
-        Cage.withView prov $ \v -> publishRefScriptTx reserved v payerAddr script
+        Cage.withLatest prov $ \v -> publishRefScriptTx reserved v payerAddr script
     signed <- submit unsigned
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
@@ -293,13 +295,13 @@ output it creates.
 -}
 publishRefScriptTx
     :: Set.Set TxIn
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> Addr
     -> Script ConwayEra
     -> IO (ConwayTx, TxOut ConwayEra)
 publishRefScriptTx reserved v payerAddr script = do
-    let pp = Cage.viewProtocolParams v
-    utxos <- Cage.viewUTxOsAt v payerAddr
+    pp <- Cage.parameters v
+    utxos <- Cage.outputsAt v payerAddr
     fund <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -351,7 +353,7 @@ cages publishes once.
 -}
 publishStateRef
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
@@ -364,13 +366,13 @@ outside the reservation.
 publishStateRefReserving
     :: Set.Set TxIn
     -> CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
 publishStateRefReserving reserved cfg prov submit payerAddr = do
     let script = mkCageScript cfg
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` payerAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` payerAddr)
     case stateRefIn cfg utxos of
         Just u -> pure u
         Nothing -> publishRefScriptReserving reserved prov submit payerAddr script
@@ -395,7 +397,7 @@ request validator and the three token policies.
 publishCageRefs
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -573,7 +575,7 @@ certifyBooking pp collateral mApproval unsigned =
 bookEdge
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -612,7 +614,7 @@ a tree edge mints and certifies, and a read books nothing at all.
 bookEdgeTo
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -644,7 +646,7 @@ the request is its first output.
 -}
 bookEdgeWith
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -656,7 +658,7 @@ bookEdgeWith
     -> Maybe BookingApproval
     -> IO ConwayTx
 bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval =
-    Cage.withView
+    Cage.withLatest
         prov
         ( \v -> bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval
         )
@@ -667,7 +669,7 @@ largest ada-only output pays the bond, the fee and the change.
 -}
 bookEdgeTx
     :: CageConfig
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> Addr
     -> TokenId
     -> ByteString
@@ -679,8 +681,8 @@ bookEdgeTx
     -> IO ConwayTx
 bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
     requireAdmissible key edge
-    let pp = Cage.viewProtocolParams v
-    utxos <- Cage.viewUTxOsAt v payerAddr
+    pp <- Cage.parameters v
+    utxos <- Cage.outputsAt v payerAddr
     (feeIn, feeOut) <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -786,7 +788,7 @@ released, and a caller that only prepares submits nothing.
 -}
 bookEdgeMeasured
     :: CageConfig
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     {- ^ The one acquired view the booking is built, measured and certified
     from: its protocol parameters are the ones the caller reports and judges
     its outlay under, and nothing is submitted while it is held
@@ -828,7 +830,7 @@ bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs cho
 -- | The measured booking, unlogged: the builder 'bookEdgeMeasured' times.
 measuredBody
     :: CageConfig
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> Addr
     -> TokenId
     -> ByteString
@@ -841,8 +843,8 @@ measuredBody
     -> IO ConwayTx
 measuredBody cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
     requireAdmissible key edge
-    let pp = Cage.viewProtocolParams v
-    utxos <- Cage.viewUTxOsAt v payerAddr
+    pp <- Cage.parameters v
+    utxos <- Cage.outputsAt v payerAddr
     funding <-
         either (error . ("bookEdge: " <>)) pure (selectFunding chosen utxos)
     now <- currentPosixMs
@@ -908,11 +910,11 @@ outputs the fold's scripts resolve through.
 registryContextFor
     :: CageConfig
     -> NamingCodes
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> [(TxIn, TxOut ConwayEra)]
     -> IO RegistryContext
 registryContextFor cfg codes v refs = do
-    utxos <- Cage.viewUTxOsAt v (cageAddrFromCfg cfg (network cfg))
+    utxos <- Cage.outputsAt v (cageAddrFromCfg cfg (network cfg))
     pure
         emptyRegistryContext
             { rcWitnessScripts =

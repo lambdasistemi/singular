@@ -35,7 +35,6 @@ import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address
@@ -84,12 +83,9 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( SubmitResult (..)
-    , signTx
-    , signedTx
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
@@ -248,9 +244,9 @@ pendingRequests env cage = do
     tid <- cageTid cage
     let cfg = rcCfg cage
     reqUtxos <-
-        Cage.withView
+        Cage.withLatest
             (envProv env)
-            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
+            (`Cage.outputsAt` requestAddrFromCfg cfg tid (network cfg))
     pure (sortOn fst (findRequestUtxos tid reqUtxos))
 
 {- | Book one registry-mode edge (#157 seven-admitted-edges, tree-edge-admission-by-approval, request-destination-binding): create the request
@@ -302,8 +298,8 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                 <> " is not one of the seven admissible edges"
             )
     -- One transaction, one view: parameters and the payer's outputs.
-    (pp, utxos) <- Cage.withView prov $ \v ->
-        (,) (Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v payerAddr
+    (pp, utxos) <- Cage.withLatest prov $ \v ->
+        (,) <$> Cage.parameters v <*> Cage.outputsAt v payerAddr
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "bookEdge: payer wallet has no UTxOs"
         (u : _) -> pure u
@@ -365,16 +361,17 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
-        Submitted _ -> confirmTx env signed
-        Rejected reason ->
+        SubmitAccepted _ -> confirmTx env signed
+        SubmitRefused reason ->
             failWith
                 ( "bookEdge refused (edge "
                     <> show edge
                     <> ", key "
                     <> show key
                     <> "): "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     emit
         "booked"
         ( "edge "

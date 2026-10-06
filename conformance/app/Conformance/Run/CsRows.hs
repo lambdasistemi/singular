@@ -51,6 +51,7 @@ import Conformance.Run.Replay
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -106,7 +107,9 @@ import Singular.Registry.Blueprint
     ( NamingCodes (..)
     , applyRequestParams
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.Ledger
     ( ConwayEra
     , ExUnits (..)
@@ -114,18 +117,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , checkFunding
-    , defaultFundingFloor
-    , funderAddr
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.Node (funderAddr)
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
@@ -205,7 +202,7 @@ runCSSession
     -> String
     -> Bool
     -> FilePath
-    -> Capabilities
+    -> Capabilities Cage.NoWitness IO
     -> ReplayIndex
     -> IO ()
 runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir caps replayIndex = do
@@ -218,7 +215,7 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 <> " request:"
                 <> hex
                     (scriptHashBytes (computeScriptHash requestBytes))
-    _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    _ <- Cage.withLatest prov Cage.parameters
     checkFunding prov funderAddr defaultFundingFloor
     -- Every serialization row boots by reference: publish the state validator
     -- once, before any row picks its seed.
@@ -303,8 +300,8 @@ reportCSPartials receiptsDir rows = do
 
 runCSRow
     :: ReplayIndex
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -402,8 +399,8 @@ runCSRow index prov submit stateBytes requestBytes namingCodes nodeVer base dirt
 back identical (byte-compare submitted vs chain-observed).
 -}
 runSubmittedDatumByteRoundTrip
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -418,13 +415,13 @@ runSubmittedDatumByteRoundTrip prov submit stateBytes requestBytes namingCodes n
     (seedTxIn, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
     let submittedStateDatum = findStateDatum unsignedBoot
     (mem, cpu) <- measureUnitsProv prov unsignedBoot
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     unsignedReq <-
-        Cage.withView prov $ \v ->
+        Cage.withLatest prov $ \v ->
             requestEdgeImpl
                 cfg
                 v
@@ -527,12 +524,15 @@ datumOfTxOut out = case out ^. datumTxOutL of
     _ -> Nothing
 
 readStateDatum
-    :: Cage.Provider IO -> CageConfig -> TokenId -> IO (Datum ConwayEra)
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> CageConfig
+    -> TokenId
+    -> IO (Datum ConwayEra)
 readStateDatum prov cfg tid = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Nothing -> failWith "submitted-datum-byte-round-trip: no state UTxO on chain"
         Just (_, out) -> case datumOfTxOut out of
@@ -542,16 +542,16 @@ readStateDatum prov cfg tid = do
                     "submitted-datum-byte-round-trip: state UTxO has no inline datum"
 
 readRequestDatum
-    :: Cage.Provider IO
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> CageConfig
     -> TokenId
     -> ByteString
     -> IO (Datum ConwayEra)
 readRequestDatum prov cfg tid key = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
+            (`Cage.outputsAt` requestAddrFromCfg cfg tid (network cfg))
     let reqs = findRequestUtxos tid utxos
         matching = [out | (_, out) <- reqs, isRequestDatum key out]
     case matching of
@@ -568,9 +568,11 @@ readRequestDatum prov cfg tid key = do
 
 -- | Measure execution units via the node, while inputs are unspent.
 measureUnitsProv
-    :: Cage.Provider IO -> ConwayTx -> IO (Integer, Integer)
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> ConwayTx
+    -> IO (Integer, Integer)
 measureUnitsProv prov tx = do
-    evalMap <- Cage.withView prov (`Services.evaluateTx` tx)
+    evalMap <- Cage.withLatest prov (`Services.evaluateTx` tx)
     let evalStr = Map.map (either (Left . show) Right) evalMap
     units <- case sequence evalStr of
         Left e -> failWith ("measure: node evaluation failed: " <> e)
@@ -581,9 +583,14 @@ measureUnitsProv prov tx = do
 
 -- | Emit one fold's units and size against the devnet maxima.
 emitMeasureProv
-    :: Cage.Provider IO -> String -> Integer -> Integer -> Integer -> IO ()
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> String
+    -> Integer
+    -> Integer
+    -> Integer
+    -> IO ()
 emitMeasureProv prov label mem cpu size = do
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest prov Cage.parameters
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
         maxSize = fromIntegral (pp ^. ppMaxTxSizeL) :: Integer
         pct :: Integer -> Integer -> Double
@@ -680,8 +687,8 @@ the three token policies from `witness(kind, registry)` applied — so
 this row is also what says the derivation reaches the chain intact.
 -}
 runStateFieldsChainRoundTrip
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -697,7 +704,7 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
     (seedBase, _) <- largestWalletUtxo prov
     let cfgBase = cageCfg stateBytes requestBytes namingCodes (txInToRef seedBase)
     unsignedBootBase <-
-        Cage.withView prov (\v -> bootTokenImpl cfgBase v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgBase v genesisAddr)
     (mem1, cpu1) <- measureUnitsProv prov unsignedBootBase
     signedBootBase <- submitWithGenesis submit unsignedBootBase
     tidBase <- extractTokenId cfgBase signedBootBase
@@ -709,7 +716,7 @@ runStateFieldsChainRoundTrip prov submit stateBytes requestBytes namingCodes nod
     let cfgAlt0 = cageCfg stateBytes requestBytes namingCodes (txInToRef seedAlt)
         cfgAlt = cfgAlt0{cfgActivePolicy = SBS.pack (replicate 28 7)}
     unsignedBootAlt <-
-        Cage.withView prov (\v -> bootTokenImpl cfgAlt v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgAlt v genesisAddr)
     (mem2, cpu2) <- measureUnitsProv prov unsignedBootAlt
     signedBootAlt <- submitWithGenesis submit unsignedBootAlt
     tidAlt <- extractTokenId cfgAlt signedBootAlt
@@ -874,8 +881,8 @@ The C fold uses the exact historical C-over-{A,B} regression; D and E
 widen the trie until a Branch is witnessed by another accepted fold.
 -}
 runProofStepConstructorWitnesses
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -891,7 +898,7 @@ runProofStepConstructorWitnesses prov submit stateBytes requestBytes namingCodes
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
@@ -955,7 +962,7 @@ runProofStepConstructorWitnesses prov submit stateBytes requestBytes namingCodes
                 tid
                 key
                 edgeInsertAbsent
-        unsignedFold <- Cage.withView prov $ \v -> do
+        unsignedFold <- Cage.withLatest prov $ \v -> do
             ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
             updateTokenWithDuties cfg v tm tid genesisAddr ctx
         require
@@ -1006,8 +1013,8 @@ fastRejectCfgLocal cfg =
         }
 
 runUpdateRedeemerConstructorWitnesses
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -1023,7 +1030,7 @@ runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes naming
     (seedA, _) <- largestWalletUtxo prov
     let cfgA = cageCfg stateBytes requestBytes namingCodes (txInToRef seedA)
     unsignedBootA <-
-        Cage.withView prov (\v -> bootTokenImpl cfgA v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgA v genesisAddr)
     (memBootA, cpuBootA) <- measureUnitsProv prov unsignedBootA
     signedBootA <- submitWithGenesis submit unsignedBootA
     tidA <- extractTokenId cfgA signedBootA
@@ -1046,7 +1053,7 @@ runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes naming
             tidA
             cs03KeyA
             edgeInsertActive
-    unsignedFoldA <- Cage.withView prov $ \v -> do
+    unsignedFoldA <- Cage.withLatest prov $ \v -> do
         ctxA <- RegistryEdges.registryContextFor cfgA namingCodes v refsA
         updateTokenWithDuties cfgA v tm tidA genesisAddr ctxA
     require
@@ -1064,13 +1071,13 @@ runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes naming
             fastRetractCfgLocal
                 (cageCfg stateBytes requestBytes namingCodes (txInToRef seedB))
     unsignedBootB <-
-        Cage.withView prov (\v -> bootTokenImpl cfgB v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgB v genesisAddr)
     (memBootB, cpuBootB) <- measureUnitsProv prov unsignedBootB
     signedBootB <- submitWithGenesis submit unsignedBootB
     tidB <- extractTokenId cfgB signedBootB
     createTrie tm tidB
     unsignedReqB <-
-        Cage.withView prov $ \v ->
+        Cage.withLatest prov $ \v ->
             requestEdgeImpl
                 cfgB
                 v
@@ -1083,7 +1090,7 @@ runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes naming
     reqTxInB <- findRequestTxIn prov cfgB tidB cs03KeyB
     threadDelay 3_000_000
     unsignedRetract <-
-        Cage.withView
+        Cage.withLatest
             prov
             (\v -> retractRequestImpl cfgB v tidB reqTxInB genesisAddr)
     require
@@ -1183,12 +1190,16 @@ runUpdateRedeemerConstructorWitnesses prov submit stateBytes requestBytes naming
         "update-redeemer-constructor-witnesses: PARTIAL Contribute/Modify/Retract executed; End/Sweep named residuals (E18)"
 
 findRequestTxIn
-    :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO TxIn
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> CageConfig
+    -> TokenId
+    -> ByteString
+    -> IO TxIn
 findRequestTxIn prov cfg tid key = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tid (network cfg))
+            (`Cage.outputsAt` requestAddrFromCfg cfg tid (network cfg))
     let matching =
             [i | (i, out) <- findRequestUtxos tid utxos, isRequestDatum key out]
     case matching of
@@ -1205,8 +1216,8 @@ to compare: the model comparison is unmet (#347).
 -}
 runWrongRedeemerConstructorIndex
     :: ReplayIndex
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -1222,7 +1233,7 @@ runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namin
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
@@ -1244,13 +1255,13 @@ runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namin
             tid
             "cs04-key"
             edgeInsertActive
-    unsignedFold <- Cage.withView prov $ \v -> do
+    unsignedFold <- Cage.withLatest prov $ \v -> do
         ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
         updateTokenWithDuties cfg v tm tid genesisAddr ctx
     badTx <- tamperModifyToBadIndex prov unsignedFold
     let badSigned = signTx genesisSignKey badTx
         signedBad = signedTx badSigned
-    result <- submitSigned (capSubmit submit) badSigned
+    result <- capSubmit submit badSigned
     let deployedState = computeScriptHash stateBytes
         stateMarker = hex (scriptHashBytes deployedState)
         requestMarker =
@@ -1273,7 +1284,7 @@ runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namin
             WrongReason -> wrongReasonMarker
             _ -> stateMarker
     case result of
-        Rejected reason ->
+        SubmitRefused reason ->
             attributeWrongRedeemerConstructorIndexRefusal
                 index
                 receiptsDir
@@ -1285,19 +1296,20 @@ runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namin
                 stateMarker
                 requestMarker
                 activeWitnessMarker
-                (T.unpack (TE.decodeUtf8Lenient reason))
+                (T.unpack reason)
                 (txIdHex signedBad)
-        Submitted txid ->
+        SubmitAccepted txid ->
             failWith
                 ( "wrong-redeemer-constructor-index FINDING: wrong-index fold accepted (txid "
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     -- Control: fresh cage accepts a valid fold (refusal discriminates).
     (seedC, _) <- largestWalletUtxo prov
     let cfgC = cageCfg stateBytes requestBytes namingCodes (txInToRef seedC)
     unsignedBootC <-
-        Cage.withView prov (\v -> bootTokenImpl cfgC v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgC v genesisAddr)
     signedBootC <- submitWithGenesis submit unsignedBootC
     tidC <- extractTokenId cfgC signedBootC
     createTrie tm tidC
@@ -1319,7 +1331,7 @@ runWrongRedeemerConstructorIndex index prov submit stateBytes requestBytes namin
             tidC
             "cs04-control-key"
             edgeInsertActive
-    unsignedFoldC <- Cage.withView prov $ \v -> do
+    unsignedFoldC <- Cage.withLatest prov $ \v -> do
         ctxC <- RegistryEdges.registryContextFor cfgC namingCodes v refsC
         updateTokenWithDuties cfgC v tm tidC genesisAddr ctxC
     _ <- submitWithGenesis submit unsignedFoldC
@@ -1333,9 +1345,12 @@ stay sufficient and any refusal attributes to the script, never to
 phase 1. Constr 5 names no UpdateRedeemer constructor and the
 validator must refuse it in phase 2.
 -}
-tamperModifyToBadIndex :: Cage.Provider IO -> ConwayTx -> IO ConwayTx
+tamperModifyToBadIndex
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> ConwayTx
+    -> IO ConwayTx
 tamperModifyToBadIndex prov tx = do
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest prov Cage.parameters
     let body = tx ^. bodyTxL
         Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
         scripts = tx ^. witsTxL . scriptTxWitsL
@@ -1457,8 +1472,8 @@ attributeWrongRedeemerConstructorIndexRefusal index receiptsDir base dirty nodeV
 
 -- | request-and-mint-constructor-witnesses: RequestAction + MintRedeemer coverage, Migrating as gap.
 runRequestAndMintConstructorWitnesses
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
@@ -1474,7 +1489,7 @@ runRequestAndMintConstructorWitnesses prov submit stateBytes requestBytes naming
     (seedC, _) <- largestWalletUtxo prov
     let cfgC = cageCfg stateBytes requestBytes namingCodes (txInToRef seedC)
     unsignedBootC <-
-        Cage.withView prov (\v -> bootTokenImpl cfgC v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgC v genesisAddr)
     (memBoot, cpuBoot) <- measureUnitsProv prov unsignedBootC
     signedBootC <- submitWithGenesis submit unsignedBootC
     tidC <- extractTokenId cfgC signedBootC
@@ -1500,7 +1515,7 @@ runRequestAndMintConstructorWitnesses prov submit stateBytes requestBytes naming
             tidC
             "cs05-update-key"
             edgeInsertActive
-    unsignedFoldC <- Cage.withView prov $ \v -> do
+    unsignedFoldC <- Cage.withLatest prov $ \v -> do
         ctxC <- RegistryEdges.registryContextFor cfgC namingCodes v refsC
         updateTokenWithDuties cfgC v tm tidC genesisAddr ctxC
     require
@@ -1515,12 +1530,12 @@ runRequestAndMintConstructorWitnesses prov submit stateBytes requestBytes naming
             fastRejectCfgLocal
                 (cageCfg stateBytes requestBytes namingCodes (txInToRef seedD))
     unsignedBootD <-
-        Cage.withView prov (\v -> bootTokenImpl cfgD v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgD v genesisAddr)
     signedBootD <- submitWithGenesis submit unsignedBootD
     tidD <- extractTokenId cfgD signedBootD
     createTrie tm tidD
     unsignedReqD <-
-        Cage.withView prov $ \v ->
+        Cage.withLatest prov $ \v ->
             requestEdgeImpl
                 cfgD
                 v
@@ -1532,7 +1547,9 @@ runRequestAndMintConstructorWitnesses prov submit stateBytes requestBytes naming
     _ <- submitWithGenesis submit unsignedReqD
     threadDelay 3_000_000
     unsignedReject <-
-        Cage.withView prov (\v -> rejectRequestsImpl cfgD v tidD genesisAddr)
+        Cage.withLatest
+            prov
+            (\v -> rejectRequestsImpl cfgD v tidD genesisAddr)
     require
         "request-and-mint-constructor-witnesses: Rejected witness missing Constr 1"
         (1 `elem` requestActionConstrs unsignedReject)

@@ -13,5 +13,7 @@
     "Floor/ceiling answers use the pinned acquired node provider; slot starts invert its floor answers by binary search.",
     "Exact immutable recording; a later connected devnet build requires its own generated/node context.",
     "No transaction submission, inclusion or whole-spec acceptance claim."
-  ]
+  ],
+  "protocolMajor": 10,
+  "protocolMajorSource": "protocol-parameters.cbor"
 }

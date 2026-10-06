@@ -918,18 +918,18 @@
       },
       "locked": {
         "dir": "mkdocs",
-        "lastModified": 1788962654,
-        "narHash": "sha256-4HGYaJz8u1U/YHu/Bx5qIqxBKZIwG7WhbSQ8o/5etWE=",
+        "lastModified": 1791045843,
+        "narHash": "sha256-edT3IeP+XLvvfnMkSnwnW4b/Wi6ugAikhlRJPFAbIK4=",
         "owner": "paolino",
         "repo": "dev-assets",
-        "rev": "34c7df6959c9fa36c6927808de6712b939e7a7fb",
+        "rev": "a9d7371c1118de4026ba6ee3a9c3b54614924b82",
         "type": "github"
       },
       "original": {
         "dir": "mkdocs",
         "owner": "paolino",
         "repo": "dev-assets",
-        "rev": "34c7df6959c9fa36c6927808de6712b939e7a7fb",
+        "rev": "a9d7371c1118de4026ba6ee3a9c3b54614924b82",
         "type": "github"
       }
     },

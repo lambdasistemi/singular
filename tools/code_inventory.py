@@ -625,8 +625,8 @@ NONCODE_CLASSES: list[dict] = [
     },
     {
         "id": "signed-tx-exports-allowlist",
-        "pattern": "tools/signed-tx-exports.allow",
-        "note": "the names Singular.Registry.Node.Submit may export; read by "
+        "pattern": "tools/{signed-tx-exports,signing-exports}.allow",
+        "note": "the names Signing and retained Node.Submit may export; read by "
         "tools/signed_tx_control.sh (issue #326)",
     },
     {

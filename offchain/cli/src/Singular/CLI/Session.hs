@@ -8,7 +8,7 @@ Module      : Singular.CLI.Session
 Description : The node and wallet a write command runs with, and its journalled submissions
 License     : Apache-2.0
 
-A write command holds the capabilities "Singular.CLI.Node" opens for the
+A write command holds the capabilities "Singular.Registry.Terminal" opens for the
 node its caller named — never one of its own — and the caller's signing
 key. Every transaction it builds goes through 'submitBuilt': built from
 one view, then signed and walked through the first three journal phases
@@ -85,6 +85,7 @@ import Data.List (nub)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Word (Word32)
 import Lens.Micro ((^.))
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.Environment (lookupEnv)
@@ -113,8 +114,10 @@ import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
-import Singular.CLI.Command (NodeSettings (..), WriteSettings (..))
-import Singular.CLI.Node (Capabilities (..), withWrites)
+import Singular.CLI.Command
+    ( ProviderSettings (..)
+    , WriteSettings (..)
+    )
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -125,22 +128,23 @@ import Singular.CLI.Receipt
     , readJournal
     , submissionCase
     )
+import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Node (Wallet (..), loadWallet)
-import Singular.Registry.Node.PhaseLog
+import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.PhaseLog
     ( PhaseLog
     , phaseLogEnabled
     , phaseLogFromEnv
     , timedPhase
     , validityFields
     )
-import Singular.Registry.Node.Submit
-    ( SubmitResult (..)
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.Terminal (Capabilities (..), withWrites)
+import Singular.Registry.Wait qualified as Wait
+import Singular.Registry.WaitTypes (WaitFailure)
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 {- | Why a command stopped, in its outcome class, with any receipt fields
 that name what it left behind.
@@ -162,7 +166,7 @@ data WriteContext = WriteContext
     { wcDir :: FilePath
     , wcCommand :: Text
     , wcWallet :: Wallet
-    , wcCapabilities :: Capabilities
+    , wcCapabilities :: Capabilities Cage.NoWitness IO
     , wcTimeout :: Maybe Int
     }
 
@@ -212,13 +216,15 @@ withSession
     -> (WriteContext -> IO Value)
     -> IO Value
 withSession dir command ws body = do
-    let NodeSettings sock magic = writeNode ws
+    let settings = writeProvider ws
+        magic = providerMagic settings
+        url = providerUrl settings
     wallet <- loadWallet magic (writeWalletKey ws)
     connected <- newIORef False
     before <- length <$> readJournal dir
     result <-
         try $
-            withWrites sock magic (writeWalletKey ws) $ \caps -> do
+            withWrites settings wallet $ \caps -> do
                 writeIORef connected True
                 ran <-
                     try $
@@ -240,6 +246,7 @@ withSession dir command ws body = do
     case result of
         Right a -> pure a
         Left (e :: SomeException) -> do
+            preserveInfrastructure e
             was <- readIORef connected
             if was
                 then do
@@ -248,7 +255,7 @@ withSession dir command ws body = do
                 else
                     failWith
                         NodeUnavailable
-                        ("the node at " <> sock <> " could not be used: " <> show e)
+                        ("the provider at " <> url <> " could not be used: " <> show e)
 
 {- | Each transaction this command prepared — the @prepared@ lines it
 appended after the first @before@ — in order, with the case the journal shows
@@ -285,6 +292,7 @@ admitSubmissions :: [JournalEntry] -> SomeException -> SomeException
 admitSubmissions since e
     | null sent = e
     | Just (_ :: SomeAsyncException) <- fromException e = e
+    | Just (_ :: WaitFailure) <- fromException e = e
     | otherwise = case fromException e of
         Just (CommandFailure c why fields)
             | c /= ClientRefusal -> e
@@ -411,6 +419,8 @@ blankEntry wc step txid event =
         , journalNetwork = Nothing
         , journalEra = Nothing
         , journalChainPoint = Nothing
+        , journalSession = Nothing
+        , journalObservedTip = Nothing
         , journalKey = Nothing
         , journalExpect = Nothing
         , journalEdge = Nothing
@@ -446,15 +456,16 @@ submitBuilt
     :: WriteContext
     -> Text
     -> (r -> Expectation)
-    -> (Cage.View IO -> IO (ConwayTx, r))
+    -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
 submitBuilt wc step expect build = do
     lg <- phaseLogFromEnv
-    (point, (unsigned, extra)) <-
-        Cage.withView (capReads (wcCapabilities wc)) $ \v ->
-            (,) (Cage.viewPoint v)
-                <$> timedPhase lg "build" ["step" .= step] (const []) (build v)
-    signed <- journalledSubmit lg wc step (expect extra) point unsigned
+    (scope, (unsigned, extra)) <-
+        Cage.withLatest (capReads (wcCapabilities wc)) $ \v -> do
+            built <- timedPhase lg "build" ["step" .= step] (const []) (build v)
+            scope <- sessionReceipt (wcCapabilities wc) v
+            pure (scope, built)
+    signed <- journalledSubmit lg wc step (expect extra) scope unsigned
     pure (signed, extra)
 
 {- | Sign; save the signed transaction and journal @prepared@ with its
@@ -468,10 +479,10 @@ journalledSubmit
     -> WriteContext
     -> Text
     -> Expectation
-    -> Cage.ChainPoint
+    -> Value
     -> ConwayTx
     -> IO ConwayTx
-journalledSubmit lg wc step ex point unsigned = do
+journalledSubmit lg wc step ex scope unsigned = do
     let txid = txIdHex unsigned
         named = ["step" .= step, "tx" .= txid]
     (sealed, bytes) <-
@@ -490,7 +501,6 @@ journalledSubmit lg wc step ex point unsigned = do
         bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
     createDirectoryIfMissing True (bodiesDir dir)
     durableWrite bodyPath (B16.encode bytes)
-    let SlotNo slot = Cage.cpSlot point
     appendJournal
         dir
         (blankEntry wc step txid "prepared")
@@ -499,10 +509,11 @@ journalledSubmit lg wc step ex point unsigned = do
             , journalBody = Just bodyPath
             , journalBodyHash =
                 Just (hexT (hashToBytes (hashWith @Blake2b_256 id bytes)))
-            , journalNetwork = Just (Cage.cpNetwork point)
-            , journalEra = Just (Cage.cpEra point)
-            , journalChainPoint =
-                Just (T.pack (show slot) <> "." <> hexT (Cage.cpBlockHash point))
+            , journalNetwork = Just (providerNetwork caps)
+            , journalEra = Just "Conway"
+            , journalChainPoint = Nothing
+            , journalSession = Just scope
+            , journalObservedTip = Nothing
             , journalKey = hexT <$> exKey ex
             , journalExpect = Just (exAfter ex)
             , journalEdge = exEdge ex
@@ -515,16 +526,18 @@ journalledSubmit lg wc step ex point unsigned = do
         if dropSend
             then pure (Left (toException (ErrorCall "the send was not made")))
             else
-                try
+                Wait.tryOutcome
                     ( timedPhase
                         lg
                         "submit"
                         (named <> validityFields signed <> tip)
                         ( \case
-                            Submitted _ -> ["outcome" .= ("submitted" :: Text)]
-                            Rejected _ -> ["outcome" .= ("rejected" :: Text)]
+                            Cage.SubmitAccepted _ -> ["outcome" .= ("submitted" :: Text)]
+                            Cage.SubmitRefused _ -> ["outcome" .= ("rejected" :: Text)]
+                            Cage.SubmitFailed _ -> ["outcome" .= ("failed" :: Text)]
+                            Cage.SubmitWrongNetwork _ _ -> ["outcome" .= ("wrong-network" :: Text)]
                         )
-                        (submitSigned (capSubmit caps) sealed)
+                        (capSubmit caps sealed)
                     )
     harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SEND" (Just step)
     dropAnswer <- harnessDrops "SINGULAR_HARNESS_DROP_ANSWER" step
@@ -542,12 +555,18 @@ journalledSubmit lg wc step ex point unsigned = do
                     <> "; it may or may not have been accepted: "
                     <> show e
                 )
-        Right (Rejected reason) -> do
+        Right (Cage.SubmitRefused reason) -> do
             journal "rejected" (Just (T.pack (show reason)))
             failWith
                 LedgerRefusal
                 (T.unpack step <> " refused by the node: " <> show reason)
-        Right (Submitted _) -> do
+        Right (Cage.SubmitFailed reason) -> do
+            journal "submit-unknown" (Just reason)
+            failWith Partial ("no submission answer: " <> T.unpack reason)
+        Right (Cage.SubmitWrongNetwork wanted actual) -> do
+            journal "rejected" (Just (T.pack (show (wanted, actual))))
+            failWith ClientRefusal "submission refused on the configured network"
+        Right (Cage.SubmitAccepted _) -> do
             journal "submitted" Nothing
             harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT" (Just step)
     -- The wait runs on its own thread and this thread only waits for its
@@ -571,7 +590,7 @@ journalledSubmit lg wc step ex point unsigned = do
                 ]
             )
             $ do
-                waiter <- async (capConfirm caps signed (T.unpack txid))
+                waiter <- async (capConfirm caps signed)
                 outcome <- timeout limit (waitCatch waiter)
                 when (isNothing outcome) $ void (forkIO (cancel waiter))
                 pure $ case outcome of
@@ -586,6 +605,7 @@ journalledSubmit lg wc step ex point unsigned = do
             journal
                 "unconfirmed"
                 (Just ("the confirmation wait failed: " <> T.pack (show e)))
+            preserveInfrastructure e
             failWith
                 Partial
                 ( T.unpack txid
@@ -612,12 +632,13 @@ on (and itself logged), so that a log that is off changes nothing the
 node sees. A tip that cannot be read is null; it never stops the
 submission.
 -}
-tipAtSubmission :: PhaseLog -> Capabilities -> IO [(Key, Value)]
+tipAtSubmission
+    :: PhaseLog -> Capabilities Cage.NoWitness IO -> IO [(Key, Value)]
 tipAtSubmission lg caps
     | not (phaseLogEnabled lg) = pure []
     | otherwise =
-        try
-            (Cage.withView (capReads caps) (pure . Cage.cpSlot . Cage.viewPoint))
+        Wait.tryOutcome
+            (Cage.withLatest (capReads caps) (fmap Cage.observedSlot . Cage.tip))
             >>= \case
                 Right (SlotNo s) -> pure ["tip_slot" .= s]
                 Left (e :: SomeException)
@@ -639,3 +660,14 @@ journalObservedId wc step txid detail =
 
 hexT :: ByteString -> Text
 hexT = T.pack . BC.unpack . B16.encode
+
+providerNetwork :: Capabilities Cage.NoWitness IO -> Word32
+providerNetwork caps = let Cage.Network magic = fst (capReads caps) in magic
+
+-- | Never turn a bounded wait or cancellation into a client/ledger refusal.
+preserveInfrastructure :: SomeException -> IO ()
+preserveInfrastructure failure
+    | Just (_ :: SomeAsyncException) <- fromException failure =
+        throwIO failure
+    | Just (_ :: WaitFailure) <- fromException failure = throwIO failure
+    | otherwise = pure ()

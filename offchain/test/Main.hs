@@ -17,6 +17,7 @@ import Singular.CLI.WriteSpec qualified
 import Singular.CLISpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
 import Singular.Provider.Koios.HttpSpec qualified
+import Singular.Provider.Koios.ProviderSpec qualified
 import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
@@ -33,7 +34,9 @@ import Singular.Registry.NodeSpec qualified
 import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
+import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
+import Singular.Registry.SessionServicesSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
@@ -44,6 +47,7 @@ import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
+import Singular.Registry.WaitSpec qualified
 import Test.Hspec (hspec)
 
 main :: IO ()
@@ -62,12 +66,15 @@ main = hspec $ do
     Singular.Registry.NodeCleanupSpec.spec
     Singular.Registry.NetworkTimeSpec.spec
     Singular.Registry.LocalEvaluationSpec.spec
+    Singular.Registry.SessionServicesSpec.spec
+    Singular.Registry.WaitSpec.spec
     Singular.Registry.LocalServicesCallerSpec.spec
     Singular.Registry.NodeSpec.spec
     Singular.Registry.NodeWaitSpec.spec
     Singular.Registry.OneViewSpec.spec
     Singular.Registry.PhaseLogSpec.spec
     Singular.Registry.ProviderSpec.spec
+    Singular.Registry.Private.ArchiveSpec.spec
     Singular.Registry.IndexerViewSpec.spec
     Singular.Registry.LifecycleSpec.spec
     Singular.Registry.TypesSpec.spec
@@ -89,6 +96,7 @@ main = hspec $ do
     Singular.CLI.ReclaimSpec.spec
     Singular.CLI.WriteSpec.spec
     Singular.Provider.Koios.ClientSpec.spec
+    Singular.Provider.Koios.ProviderSpec.spec
     Singular.Provider.Koios.HttpSpec.spec
     Singular.Provider.Koios.RecorderSpec.spec
     Singular.Provider.Koios.RecordedSpec.spec

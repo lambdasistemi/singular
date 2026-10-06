@@ -548,8 +548,9 @@ phaseLogOnDevnet =
                     withLogFile $ \path -> do
                         _ <-
                             withNodeReads devnetMagicWord sock $ \r ->
-                                withView (nrProvider r) $ \v ->
-                                    Services.floorSlot v 1_000_000
+                                withView (nrProvider r) $ \v -> do
+                                    start <- Services.slotStart v 0
+                                    Services.floorSlot v start
                         objects <- logObjects path
                         length (phaseLines "session-open" objects) `shouldBe` 1
                         length (filter (== "posixMsToSlot") (queryNames objects))

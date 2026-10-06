@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+      "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
       "pause": 400
     },
     {
@@ -272,6 +272,54 @@
     },
     {
       "text": "Singular.Registry.Wire.State — source",
+      "pause": 400
+    },
+    {
+      "text": "Singular.Provider.Koios.Evidence — source",
+      "pause": 400
+    },
+    {
+      "text": "Singular.Provider.Koios.History — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Provider — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.Runtime — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Provider.Koios.State — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Capabilities — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Confirmation — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Evidence — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Funding — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.LedgerProvider — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Signing — source",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Registry.Wait — source",
       "pause": 300
     },
     {
@@ -317,6 +365,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "aba9fe8e196590a83d71aad5d5e29f8b1eef01d75943759cae44af18a8e91d47"
+    "sha256": "5bc8908c2697f9dae03092daebd787f8769f1ffdecc4d0ceda3918eab341e4dc"
   }
 }

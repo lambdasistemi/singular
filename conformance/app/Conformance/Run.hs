@@ -48,6 +48,7 @@ should.
 module Conformance.Run (runForkProbe, runRows) where
 
 import Conformance.FoldFixture qualified as FoldFixture
+import Singular.Registry.Evidence qualified as Cage
 
 import Conformance.Edge.Programs (programFor)
 import Conformance.Run.CaRows
@@ -74,18 +75,15 @@ import Data.Text qualified as T
 import System.Directory (createDirectoryIfMissing)
 
 import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig)
+import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , checkFunding
-    , defaultFundingFloor
-    , funderAddr
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Node (funderAddr)
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Internal
     ( txInToRef
@@ -240,7 +238,7 @@ runSession
     -> String
     -> Bool
     -> FilePath
-    -> Capabilities
+    -> Capabilities Cage.NoWitness IO
     -> ReplayIndex
     -> IO ()
 runSession
@@ -256,7 +254,7 @@ runSession
     replayIndex = do
         let prov = capReads caps
         checkFunding prov funderAddr defaultFundingFloor
-        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        _ <- Cage.withLatest prov Cage.parameters
         let caMode = any (`elem` caRows) rows
             environment cfg world = do
                 tm <- mkPureTrieManager
@@ -277,6 +275,8 @@ runSession
                         , envProv = prov
                         , envSubmit = capSubmit caps
                         , envConfirm = capConfirm caps
+                        , envFacts = capFacts caps
+                        , envTrace = capTrace caps
                         , envTm = tm
                         , -- never read: every registry row boots its own
                           -- registries, and the row validator keeps them out

@@ -19,6 +19,7 @@ module Conformance.Run.Wallet
 import Conformance.Run.Environment
 import Conformance.Run.Observe
 import Conformance.Run.Submit
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Concurrent (threadDelay)
 import Data.ByteString qualified as BS
@@ -29,7 +30,6 @@ import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..))
@@ -63,18 +63,16 @@ import Cardano.Node.Client.E2E.Setup
     , keyHashFromSignKey
     , mkSignKey
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TxOut
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , signTx
-    , signedTx
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 
 import Conformance.Mirror
@@ -87,9 +85,11 @@ import Conformance.Mirror
 only the seed and one more input. First-in-query-order would be
 dust after a session of folds.
 -}
-largestWalletUtxo :: Cage.Provider IO -> IO (TxIn, TxOut ConwayEra)
+largestWalletUtxo
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> IO (TxIn, TxOut ConwayEra)
 largestWalletUtxo prov = do
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     -- #157: a spent approval is not burned at the fold, so it returns to
     -- the funder and rides in the wallet. Fee and collateral inputs are
     -- taken from an ada-only output, which is what the ledger requires of
@@ -191,7 +191,7 @@ collateralPotWithChange env = do
         changeIn = TxIn (txIdTx tx) (TxIx 1)
     let awaitVisible 0 = failWith "collateral split is not yet visible in wallet UTxOs"
         awaitVisible n = do
-            utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+            utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
             if all (`elem` map fst utxos) [potIn, changeIn]
                 then pure ()
                 else threadDelay 1_000_000 >> awaitVisible (n - 1)
@@ -213,11 +213,14 @@ consolidateFunding env = consolidateWallet (envProv env) (envCaps env)
 its canonical seed during construction, and a sweep after that would
 spend the very output canonical-seed-identity boots from.
 -}
-consolidateWallet :: Cage.Provider IO -> Capabilities -> IO ()
+consolidateWallet
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
+    -> IO ()
 consolidateWallet prov submit = do
     -- One transaction, one view: the wallet's outputs and the parameters.
-    (utxos, pp) <- Cage.withView prov $ \v ->
-        (,Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v genesisAddr
+    (utxos, pp) <- Cage.withLatest prov $ \v ->
+        (,) <$> Cage.outputsAt v genesisAddr <*> Cage.parameters v
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
         clean = filter (adaOnlyOut . snd) spendable
@@ -256,7 +259,7 @@ consolidateWallet prov submit = do
                 (fundingAda > 5_000_000)
             result <- submitTxResilient (capSubmit submit) signedWitnessed
             case result of
-                Submitted _ -> do
+                SubmitAccepted _ -> do
                     capConfirm submit signed
                     emit
                         "funding"
@@ -268,11 +271,12 @@ consolidateWallet prov submit = do
                             <> show fundingAda
                             <> " lovelace"
                         )
-                Rejected reason ->
+                SubmitRefused reason ->
                     failWith
                         ( "consolidateFunding refused: "
-                            <> T.unpack (TE.decodeUtf8Lenient reason)
+                            <> T.unpack reason
                         )
+                unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
 {- | Where spent approvals go.
 
@@ -316,10 +320,11 @@ carveSeed env = do
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
-        Submitted _ -> confirmTx env signed
-        Rejected reason ->
+        SubmitAccepted _ -> confirmTx env signed
+        SubmitRefused reason ->
             failWith
                 ( "carveSeed refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     pure (TxIn (txIdTx signed) (TxIx 0))

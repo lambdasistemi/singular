@@ -10,17 +10,22 @@ each command does.
 -}
 module Main (main) where
 
-import System.Environment (getArgs)
+import System.Environment (getArgs, getEnvironment)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn, stderr)
 
 import Singular.CLI (runCommand)
-import Singular.CLI.Command (parseCommand, renderCLIError, usage)
+import Singular.CLI.Command
+    ( parseCommandWithEnvironment
+    , renderCLIError
+    , usage
+    )
 
 main :: IO ()
 main = do
     args <- getArgs
-    case parseCommand args of
+    environment <- getEnvironment
+    case parseCommandWithEnvironment environment args of
         Left err -> do
             hPutStrLn stderr ("singular: " <> renderCLIError err)
             hPutStrLn stderr usage

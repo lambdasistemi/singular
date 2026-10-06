@@ -99,14 +99,20 @@ import Singular.PhaseLogFixture
     , withLogFile
     )
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Ledger (ConwayEra, PParams)
+import Singular.Registry.LedgerProvider
+    ( LedgerProvider (..)
+    , Network
+    , OutputQuery (..)
+    , Session (..)
+    )
 import Singular.Registry.NetworkTime
     ( networkEpochInfo
     , networkSystemStart
     )
-import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
-import Singular.Registry.Provider (Provider (..), View (..))
-import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SessionIO (parameters, withLatest)
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger (withCostCoefficients)
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
@@ -258,7 +264,7 @@ evaluatedOn
 evaluatedOn sc tx =
     let actual =
             evalTxExUnits
-                (viewProtocolParams (viewFor sc))
+                (parametersFor sc)
                 tx
                 (UTxO (Map.fromList (walletOuts sc)))
                 (networkEpochInfo syntheticTime)
@@ -268,24 +274,28 @@ evaluatedOn sc tx =
             actual
 
 -- | Raw facts from the one view; no provider-selected evaluator.
-viewFor :: Scenario -> View IO
+parametersFor :: Scenario -> PParams ConwayEra
+parametersFor sc = withCostCoefficients (scUnits sc) (scSlope sc) preprodParams
+
+viewFor :: Scenario -> Session NoWitness IO
 viewFor sc =
-    stubView
-        { viewUTxOsAt = \_ -> pure (walletOuts sc)
-        , viewProtocolParams =
-            withCostCoefficients (scUnits sc) (scSlope sc) preprodParams
-        , viewTimeContext = pure syntheticTime
-        , viewResolvedOutputs = \wanted ->
-            pure
-                [ (reference, output)
-                | (reference, output) <- walletOuts sc
-                , reference `Set.member` wanted
-                ]
-        }
+    withAddressOutputs (\_ -> pure (walletOuts sc))
+        $ withParameters
+            (withCostCoefficients (scUnits sc) (scSlope sc) preprodParams)
+        $ withTime (pure syntheticTime)
+        $ withResolvedOutputs
+            ( \wanted ->
+                pure
+                    [ (reference, output)
+                    | (reference, output) <- walletOuts sc
+                    , reference `Set.member` wanted
+                    ]
+            )
+            stubSession
 
 -- | The provider every acquisition of which is that view.
-providerFor :: Scenario -> Provider IO
-providerFor = servingView . viewFor
+providerFor :: Scenario -> (Network, LedgerProvider NoWitness IO)
+providerFor = servingSession . viewFor
 
 edge0 :: Edge
 edge0 = 1
@@ -480,12 +490,15 @@ spec =
                 evaluations <- newIORef (0 :: Int)
                 let counted =
                         base
-                            { viewResolvedOutputs = \references ->
-                                atomicModifyIORef' evaluations (\n -> (n + 1, ()))
-                                    >> viewResolvedOutputs base references
+                            { outputs = \query -> do
+                                case query of
+                                    AnyOf _ -> atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                                    AtTxIn _ -> atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                                    _ -> pure ()
+                                outputs base query
                             }
                 _ <-
-                    withView (loggedProvider (phaseLogAt path) (servingView counted)) $ \v ->
+                    withLatest (servingSession counted) $ \v ->
                         bookEdgeMeasured
                             cfg
                             v
@@ -530,13 +543,13 @@ spec =
             $ property
             $ forAll genTight
             $ \sc -> ioProperty $ do
-                let high = viewProtocolParams (viewFor sc) & ppCollateralPercentageL .~ 1800
+                let high = parametersFor sc & ppCollateralPercentageL .~ 1800
                     Held _ funding = first "funding" (scWallet sc)
                 built <-
                     try
                         ( bookEdgeMeasured
                             cfg
-                            (viewFor sc){viewProtocolParams = high}
+                            (withParameters high $ viewFor sc)
                             payer
                             tokenId
                             key0
@@ -591,12 +604,24 @@ spec =
                 -- one acquisition and must be the tree-change-requires-approval build; a booking built from a
                 -- P2 view must be dearer, so the parameters do reach the body.
                 acquired <- newIORef (0 :: Int)
-                let p1 = viewProtocolParams (viewFor sc)
+                let p1 = parametersFor sc
                     p2 = p1 & ppTxFeePerByteL .~ CoinPerByte (CompactCoin 440)
+                    (network, original) = providerFor sc
                     moving =
-                        Provider $ \k -> do
-                            n <- atomicModifyIORef' acquired (\c -> (c + 1, c))
-                            k (viewFor sc){viewProtocolParams = if n == 0 then p1 else p2}
+                        ( network
+                        , original
+                            { acquire = \request k -> do
+                                n <- atomicModifyIORef' acquired (\c -> (c + 1, c))
+                                acquire
+                                    ( snd
+                                        ( servingSession
+                                            (withParameters (if n == 0 then p1 else p2) (viewFor sc))
+                                        )
+                                    )
+                                    request
+                                    k
+                            }
+                        )
                     under v =
                         bookEdgeMeasured
                             cfg
@@ -612,8 +637,10 @@ spec =
                             (fundingOf sc)
                 handed1 <- under (viewFor sc)
                 (captured, whileMoving) <-
-                    withView moving $ \v -> (,) (viewProtocolParams v) <$> under v
-                handed2 <- under (viewFor sc){viewProtocolParams = p2}
+                    withLatest moving $ \v -> do
+                        capturedParameters <- parameters v
+                        (,) capturedParameters <$> under v
+                handed2 <- under (withParameters p2 $ viewFor sc)
                 acquisitions <- readIORef acquired
                 let feeOf t = let Coin f = t ^. bodyTxL . feeTxBodyL in f
                     -- the time a request is stamped with differs between two builds,

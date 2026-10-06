@@ -1,76 +1,69 @@
-{- |
-Module      : Singular.Registry.E2E.Fixture
-Description : The end-to-end suite's devnet, as capabilities
-License     : Apache-2.0
-
-Fixture startup for the end-to-end suite: spawn a devnet node over the
-checked-in genesis, follow its chain with the in-memory indexer, connect
-over node-to-client and hand the specs their capabilities — the read
-interface (address reads answered by the indexer), the signed-only write
-and the indexer's confirmation. No spec below this sees the node.
+{- | End-to-end startup over the generated private node's raw HTTP facade.
+The source actor owns LSQ, full-block history and independent genesis funding;
+the specs receive the shipping shared HTTP capabilities and use explicit
+private genesis signing material for their transactions. Source-bound runs
+retain every independent source exchange and the actual constructor's facts,
+including when an accepting or refusing assertion fails.
 -}
 module Singular.Registry.E2E.Fixture
     ( withDevnetCapabilities
     ) where
 
-import Control.Concurrent.Async (async, cancel)
-
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup (genesisDir)
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Node.Client.E2E.Setup
+    ( genesisAddr
+    , genesisDir
+    , genesisSignKey
     )
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Ouroboros.Network.Magic (NetworkMagic (..))
-
-import Singular.Registry.Node.RawView (rawNodeProvider)
-import Singular.Registry.TimeMaterial (loadTimeMaterial)
-import System.FilePath (takeDirectory)
-
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , adaptProvider
-    , awaitConnection
-    , awaitIndexed
-    , boundedSubmitter
-    , followedProvider
-    , signedSubmitter
-    , submissionBound
-    , withDevnetIndexer
+import Control.Concurrent.MVar (newMVar, withMVar)
+import Control.Exception (finally)
+import Data.Aeson (encode, object, (.=))
+import Data.ByteString.Lazy qualified as LBS
+import Data.Unique (hashUnique, newUnique)
+import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Private.Facade
+    ( Facade (..)
+    , GenesisFunding (..)
+    , withGeneratedFacade
     )
+import Singular.Registry.Terminal (withWrites)
+import Singular.Registry.Wallet (Wallet (..))
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (lookupEnv)
+import System.FilePath ((</>))
+import System.IO (IOMode (AppendMode), hFlush, withBinaryFile)
 
-{- | Start a devnet, connect and run the body with the devnet's system
-start (POSIX ms, from its genesis) and its capabilities. The connection
-is closed when the body returns.
--}
-withDevnetCapabilities :: (Integer -> Capabilities -> IO a) -> IO a
+withDevnetCapabilities
+    :: (Integer -> Capabilities NoWitness IO -> IO a) -> IO a
 withDevnetCapabilities action = do
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock startMs -> withDevnetIndexer sock $ do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    (NetworkMagic 42)
-                    sock
-                    lsqCh
-                    ltxsCh
-        material <- loadTimeMaterial 42 (takeDirectory sock)
-        let nodeProv = adaptProvider (NetworkMagic 42) material (rawNodeProvider lsqCh)
-        awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
-        let submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        -- Address reads from here on are the indexer's.
-        prov <- followedProvider nodeProv submit
-        result <-
-            action
-                startMs
-                Capabilities
-                    { capReads = prov
-                    , capSubmit = signedSubmitter submit
-                    , capConfirm = awaitIndexed
-                    }
-        cancel nodeThread
-        pure result
+    directory <- genesisDir
+    let wallet = Wallet genesisAddr genesisSignKey Testnet
+        run observer keep =
+            withGeneratedFacade FundGenesis directory observer $ \start facade ->
+                withWrites (facadeSettings facade) wallet $ \caps ->
+                    action start caps `finally` keep caps
+    evidence <- lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE"
+    case evidence of
+        Nothing -> run (const (pure ())) (const (pure ()))
+        Just root -> do
+            identity <- hashUnique <$> newUnique
+            let destination = root </> ("e2e-source-" <> show identity)
+            createDirectoryIfMissing True destination
+            serial <- newMVar ()
+            withBinaryFile
+                (destination </> "independent-sources.jsonl")
+                AppendMode
+                $ \handle ->
+                    run
+                        ( \event -> withMVar serial $ \_ -> do
+                            LBS.hPut handle (encode event <> "\n")
+                            hFlush handle
+                        )
+                        ( \caps -> do
+                            facts <- capFacts caps
+                            trace <- capTrace caps
+                            LBS.writeFile
+                                (destination </> "actual-provider-evidence.json")
+                                (encode (object ["facts" .= facts, "rawSources" .= trace]) <> "\n")
+                        )

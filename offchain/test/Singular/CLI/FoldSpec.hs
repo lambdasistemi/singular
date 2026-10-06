@@ -62,8 +62,8 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.CLI.FoldRules
 import Singular.CLI.Preimage
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.SessionIO (outputsAt)
+import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , policyIdFromPin
@@ -454,8 +454,8 @@ funding = describe "the funding a fold is built from" $ do
         tokened = ref 'c'
         theirs = ref 'd'
         serving =
-            stubView
-                { viewUTxOsAt = \a ->
+            withAddressOutputs
+                ( \a ->
                     pure $
                         if a == wallet
                             then
@@ -465,8 +465,9 @@ funding = describe "the funding a fold is built from" $ do
                                 ]
                             else
                                 [(theirs, mkBasicTxOut other (MaryValue (Coin 7_000_000) mempty))]
-                }
-        readWallet v = map fst <$> viewUTxOsAt v wallet
+                )
+                stubSession
+        readWallet v = map fst <$> outputsAt v wallet
     it "is the wallet's own view when no funding is named" $ do
         Right v <- fundedView Nothing wallet serving
         readWallet v `shouldReturn` [small, large, tokened]
@@ -475,7 +476,7 @@ funding = describe "the funding a fold is built from" $ do
         $ do
             Right v <- fundedView (Just small) wallet serving
             readWallet v `shouldReturn` [small]
-            map fst <$> viewUTxOsAt v other `shouldReturn` [theirs]
+            map fst <$> outputsAt v other `shouldReturn` [theirs]
     it "refuses an output that is not an ada-only output of the wallet" $ do
         forM_ [tokened, theirs, ref 'e'] $ \chosen ->
             fundedView (Just chosen) wallet serving >>= \case

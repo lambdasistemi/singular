@@ -35,6 +35,7 @@ module Conformance.Run.Replay
     , sessionCorrespondence
     , recordComparison
     , capturingSubmitter
+    , capturingSignedSubmission
 
       -- * Capture
     , checkResolved
@@ -209,6 +210,8 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadBlueprint
     )
+import Singular.Registry.LedgerProvider qualified as Ledger
+import Singular.Registry.Signing (SignedTx, signedTx)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
@@ -465,6 +468,25 @@ capturingSubmitter env inner =
                 Submitted _ -> mapM_ (recordAcceptingControl env tx) pending
             pure result
         }
+
+{- | Preserve the original independent pre-submit capture and post-answer
+replay order around actual signed HTTP submission. Unavailable answers are
+retained as unavailable; they cannot produce accepting or refusing evidence.
+-}
+capturingSignedSubmission
+    :: ReplayEnv
+    -> (SignedTx -> IO Ledger.SubmitResult)
+    -> SignedTx
+    -> IO Ledger.SubmitResult
+capturingSignedSubmission env inner signed = do
+    let tx = signedTx signed
+    pending <- prepareControl env tx
+    result <- inner signed
+    case result of
+        Ledger.SubmitRefused reason -> recordRejection env tx reason
+        Ledger.SubmitAccepted _ -> mapM_ (recordAcceptingControl env tx) pending
+        _ -> pure ()
+    pure result
 
 -- ---------------------------------------------------------
 -- One rejection

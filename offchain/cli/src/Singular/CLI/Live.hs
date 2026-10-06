@@ -68,9 +68,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Unique (hashUnique, newUnique)
 import Lens.Micro ((^.))
-import System.Posix.Process (getProcessID)
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx (txIdTx)
@@ -137,13 +135,15 @@ import Singular.Registry.Deployment
     , parseOutRef
     , renderOutRef
     )
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Mirror qualified as TrieMirror
 import Singular.Registry.TxBuilder.Internal
@@ -224,19 +224,21 @@ loadSaved dir blueprint = do
 
 -- | A saved registry with its live outputs resolved.
 data Live = Live
-    { liveSaved :: Saved
+    { liveSession :: Cage.Session Cage.NoWitness IO
+    , liveSaved :: Saved
     , liveRefs :: [(TxIn, TxOut ConwayEra)]
     , liveState :: (TxIn, TxOut ConwayEra)
     }
 
 -- | Resolve the recorded references and the current state output.
-attachLive :: Cage.View IO -> Saved -> IO Live
+attachLive :: Cage.Session Cage.NoWitness IO -> Saved -> IO Live
 attachLive view s = do
     att <-
         attach view (confDeployment (savedConfig s)) (partsOf (savedCfg s))
     pure
         Live
-            { liveSaved = s
+            { liveSession = view
+            , liveSaved = s
             , liveRefs = attRefUtxos att
             , liveState = attStateUtxo att
             }
@@ -257,8 +259,10 @@ applicationAddr s =
 
 -- | Every output at the application's address.
 liveOutputs
-    :: Cage.View IO -> Saved -> IO [(TxIn, TxOut ConwayEra)]
-liveOutputs view s = Cage.viewUTxOsAt view (applicationAddr s)
+    :: Cage.Session Cage.NoWitness IO
+    -> Saved
+    -> IO [(TxIn, TxOut ConwayEra)]
+liveOutputs view s = Cage.outputsAt view (applicationAddr s)
 
 {- | The outputs at the application that are this registry's holding of
 @key@: an envelope of version 1 naming this registry's full state asset,
@@ -331,16 +335,14 @@ savedIdentity saved =
             (TS.StatePolicyId (scriptHashBytes (cfgScriptHash (savedCfg saved))))
             name
 
-newStatePoint :: TxIn -> IO TS.StatePoint
-newStatePoint output = do
-    unique <- hashUnique <$> newUnique
-    process <- getProcessID
-    pure
-        ( TS.StatePoint
-            (TS.SessionId (T.pack (show process <> "." <> show unique)))
-            TS.Unbound
-            output
-        )
+newStatePoint
+    :: Cage.Session Cage.NoWitness IO -> TxIn -> TS.StatePoint
+newStatePoint session output =
+    let Cage.SessionId label = Cage.sessionId session
+        binding = case Cage.sessionBinding session of
+            Cage.Unbound -> TS.Unbound
+            Cage.Bound slot header -> TS.Bound slot header
+    in  TS.StatePoint (TS.SessionId label) binding output
 
 openMirror :: Saved -> IO Mirror
 openMirror saved = do
@@ -374,7 +376,7 @@ mirrorRoot _ mirror = do
 selectMirror
     :: Saved -> Live -> Mirror -> IO (Either TS.TrieFailure ())
 selectMirror saved live mirror = do
-    point <- newStatePoint (fst (liveState live))
+    let point = newStatePoint (liveSession live) (fst (liveState live))
     case observedRoot live of
         Left _ -> refuse (noSelection saved)
         Right root -> do
@@ -477,7 +479,8 @@ acceptMirrorFold mirror key edge beforeRoot afterRoot tx = do
 -- Recovery has independently established inclusion. Its before-output is
 -- decoded from the actual bound signed body's Modify input, not invented.
 recoverMirrorFold
-    :: Saved
+    :: Cage.Session Cage.NoWitness IO
+    -> Saved
     -> Mirror
     -> ByteString
     -> Integer
@@ -485,10 +488,9 @@ recoverMirrorFold
     -> ByteString
     -> ConwayTx
     -> IO ()
-recoverMirrorFold saved mirror key edge beforeRoot afterRoot tx = do
-    unique <- hashUnique <$> newUnique
-    process <- getProcessID
-    let sid = TS.SessionId (T.pack (show process <> "." <> show unique))
+recoverMirrorFold session saved mirror key edge beforeRoot afterRoot tx = do
+    let Cage.SessionId label = Cage.sessionId session
+        sid = TS.SessionId label
     event@(TS.ObservedFold from after _) <-
         either
             failTrie
@@ -514,13 +516,17 @@ recoverMirrorFold saved mirror key edge beforeRoot afterRoot tx = do
     TS.acceptObservedFold cap event >>= either failTrie pure
     writeIORef (mirrorSelected mirror) (Right (cap, after))
 
-rewindMirrorTo :: Saved -> Mirror -> ByteString -> IO ()
-rewindMirrorTo saved mirror target = do
+rewindMirrorTo
+    :: Cage.Session Cage.NoWitness IO
+    -> Saved
+    -> Mirror
+    -> ByteString
+    -> IO ()
+rewindMirrorTo session saved mirror target = do
     -- The prefix supplies actual historical output references. A fresh live
     -- selection is required later, before any command can read a snapshot.
-    unique <- hashUnique <$> newUnique
-    process <- getProcessID
-    let sid = TS.SessionId (T.pack (show process <> "." <> show unique))
+    let Cage.SessionId label = Cage.sessionId session
+        sid = TS.SessionId label
     (create@(TS.CreateRecord _ output), events) <-
         readTrieHistory (savedDir saved) sid (savedIdentity saved)
             >>= either failTrie pure

@@ -74,9 +74,12 @@ import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLCData
 
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.Provider (Provider, View (..))
-import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.LedgerProvider (LedgerProvider)
+import Singular.Registry.LedgerProvider qualified as LedgerProvider
+import Singular.Registry.StubSession
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
 import Singular.Registry.TxBuilder.Edges
     ( bookEdge
@@ -93,17 +96,19 @@ import Singular.Registry.Types
     )
 
 {- | A wallet holding one ada-only output, and nothing else to say. The
-stubs fail loudly: if the builder ever evaluates or asks for a slot,
+raw time is supplied for the pre-build major guard. The remaining stubs
+fail loudly: if the builder ever evaluates or asks for resolved inputs,
 every row fails with that message instead of a silent pass.
 -}
-provider :: Provider IO
+provider :: (LedgerProvider.Network, LedgerProvider NoWitness IO)
 provider =
-    servingView $
-        stubView
-            { viewUTxOsAt = \_ ->
+    servingSession $
+        withAddressOutputs
+            ( \_ ->
                 pure
                     [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
-            }
+            )
+            (withTime (pure syntheticTime) stubSession)
 
 -- | Run the builder and keep the transaction it submits.
 booked :: Edge -> ByteString -> IO ConwayTx

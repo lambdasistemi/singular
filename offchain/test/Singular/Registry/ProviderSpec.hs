@@ -120,7 +120,7 @@ memorySpec = describe "in-memory adapter" $ do
         cpSlot p2 `shouldBe` succ (cpSlot p1)
         cpBlockHash p2 `shouldNotBe` cpBlockHash p1
     it
-        "common services read the memory view's finite context with both rounding directions"
+        "common services keep rounding and extend the memory view's pinned final era"
         $ do
             chain <- newMemoryChain genesis
             mutate chain id
@@ -129,7 +129,7 @@ memorySpec = describe "in-memory adapter" $ do
                 Services.ceilingSlot view 5_010 `shouldReturn` SlotNo 6
                 Services.slotStart view (SlotNo 6) `shouldReturn` 6_000
                 try @NetworkTimeFailure (Services.floorSlot view 4_320_000_000_000)
-                    `shouldReturn` Left (TimePastHorizon 4_320_000_000_000)
+                    `shouldReturn` Right (SlotNo 4_320_000_000)
     it
         "common services refuse a released memory view before reading its context"
         $ do

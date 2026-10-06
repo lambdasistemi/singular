@@ -99,15 +99,20 @@ expect_refusal 'genesis-skey needs --out FILE' genesis-skey
 export TMPDIR="$work"
 nix run --quiet "$offchain#devnet" >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
-sock=
+provider_url=
+network_magic=
+time_directory=
 for _ in $(seq 1 300); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  if [ -n "$sock" ] && [ -S "$sock" ]; then break; fi
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  if [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -r "$time_directory/time-manifest.json" ]; then break; fi
   if ! kill -0 "$devnet_pid" 2>/dev/null; then break; fi
   sleep 1
 done
-if [ -z "$sock" ] || [ ! -S "$sock" ]; then
-  echo 'SETUP-FAIL: devnet produced no live socket' >&2
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -r "$time_directory/time-manifest.json" ]; then
+  echo 'SETUP-FAIL: devnet produced no provider and pinned time settings' >&2
   tail -40 "$work/devnet.err" >&2 || true
   exit 1
 fi
@@ -120,7 +125,7 @@ cmp -s "$joiner" "$work/joiner-equals.skey" || {
   echo 'FAIL: genesis-skey --out=FILE wrote a different key than --out FILE' >&2
   exit 1
 }
-external=(--node-socket "$sock" --network-magic 42 --wallet-skey "$joiner")
+external=(--koios-url "$provider_url" --network-magic "$network_magic" --network-time "$time_directory" --wallet-skey "$joiner")
 nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check >"$work/deploy.out"
 nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$manifest" >"$work/verify.out"
 grep -F 'deployment complete:' "$work/verify.out" >/dev/null || {

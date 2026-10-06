@@ -202,15 +202,13 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Node
+import Singular.Registry.LedgerProvider
     ( SubmitResult (..)
-    , Wallet (..)
-    , loadWallet
-    , signTx
-    , signedTx
-    , submitSigned
+    , TipObservation (..)
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -254,6 +252,7 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeUpdateTerminal
     )
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 import Conformance.Cli.Admission
     ( admit
@@ -321,6 +320,9 @@ data Options = Options
     , optBlueprint :: FilePath
     , optLedger :: FilePath
     , optSocket :: FilePath
+    -- ^ Private independent node probe and process-loss control only
+    , optProviderUrl :: String
+    , optNetworkTime :: FilePath
     , optMagic :: Int
     , optWalletKey :: FilePath
     , optWork :: FilePath
@@ -364,6 +366,8 @@ parseOptions =
             ""
             ""
             ""
+            ""
+            ""
             0
             ""
             ""
@@ -386,6 +390,8 @@ parseOptions =
             , ("--blueprint", optBlueprint o)
             , ("--ledger", optLedger o)
             , ("--node-socket", optSocket o)
+            , ("--koios-url", optProviderUrl o)
+            , ("--network-time", optNetworkTime o)
             , ("--wallet-skey", optWalletKey o)
             , ("--work", optWork o)
             , ("--stranger-skey", optStranger o)
@@ -398,6 +404,8 @@ parseOptions =
         "--blueprint" -> go o{optBlueprint = v} rest
         "--ledger" -> go o{optLedger = v} rest
         "--node-socket" -> go o{optSocket = v} rest
+        "--koios-url" -> go o{optProviderUrl = v} rest
+        "--network-time" -> go o{optNetworkTime = v} rest
         "--network-magic" -> case reads v of
             [(n, "")] -> go o{optMagic = n} rest
             _ -> Left ("--network-magic is not a number: " <> v)
@@ -424,6 +432,26 @@ parseOptions =
             _ -> Left ("--max-lag is not a number of slots: " <> v)
         _ -> Left ("unknown option " <> flag)
     go _ [flag] = Left (flag <> " needs a value")
+
+-- | Actual shipping configuration, separate from optional indexer readback URLs.
+providerSettings :: Options -> ProviderSettings
+providerSettings o =
+    ProviderSettings
+        { providerUrl = optProviderUrl o
+        , providerMagic = fromIntegral (optMagic o)
+        , providerTokenFile = Nothing
+        , providerTimeDirectory = Just (optNetworkTime o)
+        }
+
+providerArgs :: Options -> [String]
+providerArgs o =
+    [ "--koios-url"
+    , optProviderUrl o
+    , "--network-time"
+    , optNetworkTime o
+    , "--network-magic"
+    , show (optMagic o)
+    ]
 
 -- ---------------------------------------------------------
 -- Running the story
@@ -544,19 +572,18 @@ runWith chooseStory args = do
     stopped <-
         try
             ( withBackendNode
-                (optSocket o)
-                (fromIntegral (optMagic o))
-                (optWalletKey o)
+                (providerSettings o)
+                wallet
                 $ \caps -> do
                     -- Before anything is written the wallet must be able to
                     -- fund every action the take will ask of it.
                     when strict $ do
                         -- The wallet and the parameters, from one view.
                         (utxos, pp) <-
-                            Cage.withView (ncReads caps) $ \v ->
+                            Cage.withLatest (ncReads caps) $ \v ->
                                 (,)
-                                    <$> Cage.viewUTxOsAt v (walletAddr wallet)
-                                    <*> pure (Cage.viewProtocolParams v)
+                                    <$> Cage.outputsAt v (walletAddr wallet)
+                                    <*> Cage.parameters v
                         let returning =
                                 length
                                     [ a
@@ -928,9 +955,8 @@ withSession env body = do
     let o = envOptions env
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
     withBackendNode
-        (optSocket o)
-        (fromIntegral (optMagic o))
-        (optWalletKey o)
+        (providerSettings o)
+        wallet
         (`body` wallet)
 
 txIdHex :: ConwayTx -> Text
@@ -962,7 +988,7 @@ reclaim env target key partial seen r = do
                         let OnChainRoot b = stateRoot st in pure (st, b)
                     _ -> fail "the registry's state output carries no state datum"
                 pending <-
-                    Cage.viewUTxOsAt
+                    Cage.outputsAt
                         v
                         (requestAddrFromCfg cfg (regToken reg) Testnet)
                 let live =
@@ -993,7 +1019,7 @@ reclaim env target key partial seen r = do
                      ] of
                     [(i, q)] -> pure (state, i, q)
                     _ -> fail (T.unpack named <> " does not read as one request")
-        (state, firstIn, q) <- Cage.withView prov verifiedIn
+        (state, firstIn, q) <- Cage.withLatest prov verifiedIn
         let opens = requestSubmittedAt q + stateProcessTime state
             closes = opens + stateRetractTime state
         now <- currentPosixMs
@@ -1007,13 +1033,14 @@ reclaim env target key partial seen r = do
             threadDelay (fromIntegral (opens + 2_000 - now) * 1_000)
         -- Verified again and built in one view, at that view's tip: the
         -- request spent is the one this view verified.
-        (reqIn, unsigned) <- Cage.withView prov $ \v -> do
+        (reqIn, unsigned) <- Cage.withLatest prov $ \v -> do
             (_, i, _) <- verifiedIn v
             when (i /= firstIn) $
                 fail "the request changed while the retract window opened"
+            observed <- Cage.tip v
             tx <-
                 retractRequestAtTipImpl
-                    (Cage.cpSlot (Cage.viewPoint v))
+                    (observedSlot observed)
                     cfg
                     v
                     (regToken reg)
@@ -1185,7 +1212,7 @@ submitBounded env caps wallet r unsigned = do
                 , rcBodyFile = Just body
                 , rcBodySha256 = Just bodyDigest
                 }
-    answer <- try (submitSigned (ncSubmit caps) witnessed)
+    answer <- try (ncSubmit caps witnessed)
     case answer of
         Left (e :: SomeException) ->
             pure
@@ -1195,8 +1222,8 @@ submitBounded env caps wallet r unsigned = do
                     }
                 , signed
                 )
-        Right (Rejected reason) -> do
-            let text = show reason
+        Right (SubmitRefused reason) -> do
+            let text = T.unpack reason
                 (phaseWords, failed) = rejectionEvidence text
                 name = printf "step-%03d-rejection.txt" (rcStep r)
                 bytes = BC.pack text
@@ -1212,8 +1239,8 @@ submitBounded env caps wallet r unsigned = do
                     }
                 , signed
                 )
-        Right (Submitted _) -> do
-            waiter <- async (ncConfirm caps signed (T.unpack txid))
+        Right (SubmitAccepted _) -> do
+            waiter <- async (ncConfirm caps signed)
             seen <- timeout 120_000_000 (waitCatch waiter)
             case seen of
                 Just (Right ()) -> pure (r0{rcOutcome = "accepted"}, signed)
@@ -1234,6 +1261,14 @@ submitBounded env caps wallet r unsigned = do
                             }
                         , signed
                         )
+        Right unavailable ->
+            pure
+                ( r0
+                    { rcOutcome = "submit-unknown"
+                    , rcReason = Just (boundedNodeReason 600 (T.pack (show unavailable)))
+                    }
+                , signed
+                )
 
 -- ---------------------------------------------------------
 -- Commands
@@ -1285,7 +1320,7 @@ commandArgs env c target key r = do
     let o = envOptions env
         dir = targetDir env target
         node =
-            ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
+            providerArgs o
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
         common = ["--registry", dir, "--blueprint", optBlueprint o]
@@ -1372,7 +1407,7 @@ previewSeed env r label skey dir seed = do
             , optBlueprint o
             ]
                 <> developmentWindows
-                <> ["--node-socket", optSocket o, "--network-magic", show (optMagic o)]
+                <> providerArgs o
                 <> ["--wallet-skey", skey]
                 <> maybe [] (\s -> ["--seed", s]) seed
     case printedField "seed" preview of
@@ -1461,8 +1496,8 @@ provoke env p target key r = do
         plain args = do
             (status, printed, file) <- singular env r label args
             finish status printed file id
-        socketTo s args = case break (== "--node-socket") args of
-            (pre, flag : _ : post) -> pre <> [flag, s] <> post
+        providerTo url args = case break (== "--koios-url") args of
+            (pre, flag : _ : post) -> pre <> [flag, url] <> post
             _ -> args
         timeoutTo s args = case break (== "--confirm-timeout") args of
             (pre, flag : _ : post) -> pre <> [flag, s] <> post
@@ -1499,7 +1534,7 @@ provoke env p target key r = do
             plain args `finally` renameFile aside mirror
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
-            plain (socketTo (work </> "absent.sock") args)
+            plain (providerTo "http://127.0.0.1:1/api/v1" args)
         TerminateKilled -> do
             args <- commandArgs env Terminate target key r
             (status, printed, file) <- killedAt env r label hold "fold" args
@@ -1576,8 +1611,10 @@ provoke env p target key r = do
                       , work </> "probe-after"
                       , "--blueprint"
                       , optBlueprint o
-                      , "--node-socket"
-                      , optSocket o
+                      , "--koios-url"
+                      , optProviderUrl o
+                      , "--network-time"
+                      , optNetworkTime o
                       , "--network-magic"
                       , show (optMagic o)
                       , "--wallet-skey"
@@ -1625,8 +1662,10 @@ provoke env p target key r = do
             , registry
             , "--blueprint"
             , optBlueprint o
-            , "--node-socket"
-            , optSocket o
+            , "--koios-url"
+            , optProviderUrl o
+            , "--network-time"
+            , optNetworkTime o
             , "--network-magic"
             , show (optMagic o)
             , "--wallet-skey"
@@ -1762,9 +1801,9 @@ awaitOnChain env txid = withSession env $ \caps wallet -> do
     let go (0 :: Int) = pure ()
         go n = do
             utxos <-
-                Cage.withView
+                Cage.withLatest
                     (ncReads caps)
-                    (`Cage.viewUTxOsAt` walletAddr wallet)
+                    (`Cage.outputsAt` walletAddr wallet)
             unless
                 (any ((== txid) . T.takeWhile (/= '#') . renderOutRef . fst) utxos)
                 (threadDelay 200_000 >> go (n - 1))
@@ -1814,7 +1853,9 @@ book env target key r = do
         let prov = ncReads caps
             cfg = regCfg reg
         att <-
-            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
+            Cage.withLatest
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
             approval =
@@ -1917,15 +1958,17 @@ foldWith env target selection tweak byStranger r = do
                     , rcApplication = Just appHash
                     }
         att <-
-            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
+            Cage.withLatest
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf cfg))
         let (stateIn, stateOut) = attStateUtxo att
         oldState <- case extractCageDatum stateOut of
             Just (StateDatum st) -> pure st
             _ -> fail "the registry's state output carries no state datum"
         pending <-
-            Cage.withView
+            Cage.withLatest
                 prov
-                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg tok Testnet)
+                (`Cage.outputsAt` requestAddrFromCfg cfg tok Testnet)
         let selects q = case selection of
                 ForKey k -> requestKey q == keyBytes k
                 _ -> True
@@ -1964,7 +2007,7 @@ foldWith env target selection tweak byStranger r = do
                     ( "no saved mirror commits to the chain's root 0x"
                         <> T.unpack (hex chain)
                     )
-        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
+        live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         let envelopes =
                 [ envelopeOfRun
                     env
@@ -1974,7 +2017,7 @@ foldWith env target selection tweak byStranger r = do
                 | (_, q) <- chosen
                 ]
         ctx0 <-
-            Cage.withView
+            Cage.withLatest
                 prov
                 (\v -> registryContextFor cfg (regCodes reg) v (attRefUtxos att))
         ctx <-
@@ -1982,7 +2025,7 @@ foldWith env target selection tweak byStranger r = do
                 fail
                 pure
                 (withApplication (applied reg) Nothing envelopes live ctx0)
-        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        pp <- Cage.withLatest prov Cage.parameters
         owedDuties <-
             either
                 fail
@@ -2052,7 +2095,7 @@ foldWith env target selection tweak byStranger r = do
                         ( show (length hs)
                             <> " live holdings for the released key; it needs one"
                         )
-        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr folder)
+        wallets <- Cage.withLatest prov (`Cage.outputsAt` walletAddr folder)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -2067,11 +2110,11 @@ foldWith env target selection tweak byStranger r = do
             owed :: [Script ConwayEra]
             owed = map csScript (rdSpends duties) <> map cmScript (rdMints duties)
         (unsigned, _) <-
-            Cage.withView prov $ \v ->
+            Cage.withLatest prov $ \v ->
                 connectedFoldTx
                     ConnectedFoldArgs
                         { cfaCfg = cfg
-                        , cfaView = v
+                        , cfaSession = v
                         , cfaTrie = tm
                         , cfaToken = tok
                         , cfaFeeAddr = walletAddr folder
@@ -2109,11 +2152,13 @@ observe env target key r = do
             cfg = regCfg reg
             identity = scriptHashBytes (cfgScriptHash cfg) <> tokenBytes reg
         att <-
-            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
+            Cage.withLatest
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf cfg))
         root <- case extractCageDatum (snd (attStateUtxo att)) of
             Just (StateDatum st) -> let OnChainRoot b = stateRoot st in pure b
             _ -> fail "the registry's state output carries no state datum"
-        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
+        live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         let holdings =
                 [ (i, o)
                 | (i, o) <- live
@@ -2130,10 +2175,10 @@ observe env target key r = do
             [u] -> pure (Just u)
             _ -> fail "more than one live output claims the key"
         pending <-
-            Cage.withView
+            Cage.withLatest
                 prov
-                (`Cage.viewUTxOsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
-        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
+                (`Cage.outputsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
+        wallets <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
         leaf <- authenticatedLeaf env target reg root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
@@ -2248,11 +2293,11 @@ craftHolding env c target key r = do
             mine = addrKeyHashBytes (walletAddr wallet)
             theirs = addrKeyHashBytes (walletAddr stranger)
         att <-
-            Cage.withView
+            Cage.withLatest
                 prov
                 (\v -> attach v (regDeployment reg) (partsOf (regCfg reg)))
         appRef <- applicationReference reg att
-        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
+        live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         holding@(hIn, hOut) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->
@@ -2264,8 +2309,8 @@ craftHolding env c target key r = do
         let ctl = envControl e
         unless (ctlController ctl == mine) $
             fail "the holding's controller is not this story's wallet"
-        pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
-        wallets <- Cage.withView prov (`Cage.viewUTxOsAt` walletAddr wallet)
+        pp <- Cage.withLatest prov Cage.parameters
+        wallets <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
         feeUtxo <-
             case sortOn
                 (Down . (^. coinTxOutL) . snd)
@@ -2435,7 +2480,9 @@ craftBooking env c target key r = do
                 _ -> honest
             payer = if c == BookingByStranger then stranger else wallet
         att <-
-            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
+            Cage.withLatest
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
         let approval =
                 (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
@@ -2478,9 +2525,11 @@ craftTermination env byStranger target key r = do
             r0 = r{rcEvaluation = Just "skipped", rcApplication = Just appHash}
             payer = if byStranger then stranger else wallet
         att <-
-            Cage.withView prov (\v -> attach v (regDeployment reg) (partsOf cfg))
+            Cage.withLatest
+                prov
+                (\v -> attach v (regDeployment reg) (partsOf cfg))
         (appRef, _) <- applicationReference reg att
-        live <- Cage.withView prov (`Cage.viewUTxOsAt` applicationAddr reg)
+        live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         (liveIn, _) <- case holdingsOf reg key live of
             [u] -> pure u
             us ->

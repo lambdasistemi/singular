@@ -59,7 +59,7 @@ def facts():
     cmd = r["command"]
     out = cmd["applicationOutput"]
     fields = out["envelope"]["fields"][0]["fields"]
-    point = cmd["chainPoint"]
+    point = cmd["observedTip"]
     tx, _, ix = out["output"].partition("#")
     cbor, given = out["datumCbor"], out["datumHash"]
     if mode == "datum-changed":

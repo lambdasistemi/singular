@@ -55,7 +55,7 @@ import Singular.Registry.Blueprint
     )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -137,7 +137,7 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
 
                 -- The eight-field datum, read back from chain.
                 let stateAddr = cageAddrFromCfg cfg Testnet
-                stateUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` stateAddr)
+                stateUtxos <- Cage.withLatest prov (`Cage.outputsAt` stateAddr)
                 case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
                     Nothing ->
                         expectationFailure

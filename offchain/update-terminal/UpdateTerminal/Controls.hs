@@ -40,7 +40,7 @@ import Data.ByteString (ByteString)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 
-import Singular.Registry.Node (tryOutcome)
+import Singular.Registry.Wait (tryOutcome)
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Registry
     ( Registry

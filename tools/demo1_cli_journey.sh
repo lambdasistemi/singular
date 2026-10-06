@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Alice's open-datum story through the packaged `singular` commands (#299),
-# under each read backend (#324).
+# through the sole Koios provider. The node/indexer comparison is retired
+# with the node backend (A023); every registry and recovery control remains.
 #
-# usage: demo1_cli_journey.sh SINGULAR DEVNET BLUEPRINT WORKDIR [BACKEND]
+# usage: demo1_cli_journey.sh SINGULAR DEVNET BLUEPRINT WORKDIR
 #
 # SINGULAR and DEVNET are executables; BLUEPRINT is the registry
 # partition's plutus.json. ONE development node is started once, funding
@@ -31,31 +32,17 @@
 # target's journal to be exactly as it was: nothing submitted. Setup
 # failures (no node, no socket) are reported as setup, never as a result.
 #
-# BACKEND is `node` or `indexer`. Without it the journey runs under the
-# node backend and then again, on a fresh development node in
-# WORKDIR-indexer, under the indexer backend. There every process runs
-# with `--backend indexer`, each successful one must report the address
-# reads the in-process index answered (a line the node backend never
-# prints, shown absent on a node-backend control), and a wallet whose
-# only output is in the genesis ledger state is refused by name.
+# The genesis-only wallet remains an explicit coverage refusal control.
 set -euo pipefail
 
-[ "$#" -eq 4 ] || [ "$#" -eq 5 ] || {
-  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR [BACKEND]" >&2
+[ "$#" -eq 4 ] || {
+  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR" >&2
   exit 2
 }
 singular="$1"
 devnet="$2"
 blueprint="$3"
 work="$4"
-backend="${5:-}"
-case "$backend" in
-  "" | node | indexer) ;;
-  *)
-    echo "usage: BACKEND is node or indexer, not $backend" >&2
-    exit 2
-    ;;
-esac
 rm -rf "$work"
 mkdir -p "$work"
 receipts="$work/receipts"
@@ -73,22 +60,6 @@ setup_fail() {
 }
 say() { echo "journey: $*"; }
 
-# Under the indexer backend every process, the create race's included,
-# names it; `node_singular` is the same executable at its default.
-node_singular="$singular"
-if [ "$backend" = indexer ]; then
-  printf '#!/usr/bin/env bash\nexec %q "$@" --backend indexer\n' "$singular" >"$work/singular"
-  chmod +x "$work/singular"
-  singular="$work/singular"
-fi
-
-# served ERR: the process whose standard error is ERR read through the
-# index: it names at least one address read the index answered, and at
-# most one node address read (a write's wallet coverage check).
-served() {
-  grep -Eq '^node: indexer backend: [1-9][0-9]* address reads answered by the index, [01] by the node$' "$1"
-}
-
 hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
@@ -97,71 +68,52 @@ hexkey >"$work/carol.skey" # never funded
 export TMPDIR="$work"
 
 # ------------------------------------------------------------------
-# 0. coverage (indexer backend): a genesis-only wallet is refused
+# 0. coverage: a genesis-only wallet is refused on the Koios path
 # ------------------------------------------------------------------
-# On a development node nobody has paid from yet, the genesis key holds
-# its one output in the ledger's initial state, carried by no block. The
-# node backend reads it (a preview seeds from it, naming the refusal a
-# create from that one-output wallet meets, and such a create is refused
-# before it writes anything); the indexer backend, following blocks from
-# the origin, refuses the wallet by name and submits nothing, rather than
-# reading it as empty.
-if [ "$backend" = indexer ]; then
-  "$devnet" >"$work/bare.out" 2>"$work/bare.err" &
-  bare_pid=$!
-  trap 'kill "$bare_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
-  bare=""
-  for _ in $(seq 1 900); do
-    bare="$(head -n1 "$work/bare.out" 2>/dev/null || true)"
-    [ -n "$bare" ] && [ -S "$bare" ] && break
-    kill -0 "$bare_pid" 2>/dev/null || break
-    sleep 1
-  done
-  [ -n "$bare" ] && [ -S "$bare" ] || setup_fail "the unfunded development node never printed a usable socket"
-  # The genesis UTxO key of the development network (cardano-node-clients'
-  # genesisSignKey): its 32 seed bytes are the raw signing key.
-  printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
-  genesis=(--wallet-skey "$work/genesis.skey")
-  bare_node=(--node-socket "$bare" --network-magic 42)
-  status=0
-  "$node_singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/genesis-node" --blueprint "$blueprint" \
-    "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-node.json" 2>"$receipts/genesis-node.err" || status=$?
-  [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/genesis-node.json")" = success ] \
-    || fail "the node backend did not preview the genesis key's output (exit $status): $(jq -r .reason "$receipts/genesis-node.json" 2>/dev/null)"
-  ! served "$receipts/genesis-node.err" || fail "a node-backend process reported reads the index answered"
-  # That output is the wallet's only one, so the preview names the refusal a
-  # create would meet, and a create is refused before it writes anything.
-  jq -e '.seed as $s | .createRefusal | type == "string" and contains($s) and contains("only ada-only output")' \
-    "$receipts/genesis-node.json" >/dev/null \
-    || fail "the preview of a one-output wallet does not report the refusal its create meets: $(jq -c .createRefusal "$receipts/genesis-node.json")"
-  status=0
-  "$node_singular" registry create --process-time 45000 --retract-time 15000 --seed "$(jq -r .seed "$receipts/genesis-node.json")" --registry "$work/genesis-create" \
-    --blueprint "$blueprint" "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-create.json" 2>"$receipts/genesis-create.err" || status=$?
-  [ "$(jq -r .outcome "$receipts/genesis-create.json")" = client-refusal ] && [ "$status" -ne 0 ] \
-    || fail "a create from the one-output wallet: outcome $(jq -r .outcome "$receipts/genesis-create.json") (exit $status), expected client-refusal"
-  jq -e --arg s "$(jq -r .seed "$receipts/genesis-node.json")" '.reason | contains($s) and contains("only ada-only output")' \
-    "$receipts/genesis-create.json" >/dev/null || fail "the create's refusal does not name the missing funding: $(jq -r .reason "$receipts/genesis-create.json")"
-  [ -z "$(find "$work/genesis-create" -mindepth 1 ! -name .lock 2>/dev/null)" ] \
-    || fail "the refused create wrote more than its lock: $(find "$work/genesis-create" -mindepth 1 ! -name .lock)"
-  status=0
-  "$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
-    "${bare_node[@]}" "${genesis[@]}" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
-  [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
-    || fail "the genesis-only wallet under the indexer backend: outcome $(jq -r .outcome "$receipts/genesis-indexer.json") (exit $status), expected node-unavailable"
-  jq -e --arg seed "$(jq -r .seed "$receipts/genesis-node.json")" \
-    '.reason | contains("(coverage-incomplete)") and contains("genesis") and contains($seed)' \
-    "$receipts/genesis-indexer.json" >/dev/null \
-    || fail "the genesis-only wallet was not refused by the coverage diagnostic naming its output: $(jq -r .reason "$receipts/genesis-indexer.json")"
-  [ ! -e "$work/genesis-indexer" ] || fail "the refused preview created its target"
-  kill "$bare_pid" 2>/dev/null || true
-  pkill -f "cardano-node run --config $work/" 2>/dev/null || true
-  for _ in $(seq 1 300); do
-    pgrep -f "cardano-node run --config $work/" >/dev/null || break
-    sleep 0.1
-  done
-  wait "$bare_pid" 2>/dev/null || true
-  say "a genesis-only wallet: previewed by the node backend (its create refused for want of a second output), refused by the indexer backend as coverage-incomplete"
-fi
+# These actual initial allocations have no transaction carried by a full
+# block. The private actor leaves them untouched for this control; the
+# node/genesis/epoch/slot/time parameters are the normal fixture's.
+"$devnet" --genesis-only --evidence-dir "$work/genesis-source" >"$work/bare.out" 2>"$work/bare.err" &
+bare_pid=$!
+trap 'kill "$bare_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+bare_provider=""
+bare_time=""
+bare_magic=""
+for _ in $(seq 1 900); do
+  settings="$(head -n1 "$work/bare.out" 2>/dev/null || true)"
+  bare_provider="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  bare_time="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  bare_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$bare_provider" ] && [ "$bare_magic" = 42 ] && [ -r "$bare_time/time-manifest.json" ] && break
+  kill -0 "$bare_pid" 2>/dev/null || break
+  sleep 1
+done
+[ -n "$bare_provider" ] && [ "$bare_magic" = 42 ] && [ -r "$bare_time/time-manifest.json" ] \
+  || setup_fail "the genesis-only source never printed usable provider/time settings"
+printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
+status=0
+"$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
+  --koios-url "$bare_provider" --network-time "$bare_time" --network-magic "$bare_magic" \
+  --wallet-skey "$work/genesis.skey" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
+[ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
+  || fail "the genesis-only wallet: outcome $(jq -r .outcome "$receipts/genesis-indexer.json") (exit $status), expected node-unavailable/12"
+jq -e '.reason | contains("(coverage-incomplete)") and contains("genesis")' \
+  "$receipts/genesis-indexer.json" >/dev/null \
+  || fail "the genesis-only wallet was not refused by the named coverage diagnostic"
+jq -s -e --slurpfile receipt "$receipts/genesis-indexer.json" '
+  [.[] | select(.kind == "http-ledger-exchange") | .source.unindexedGenesisReferences? // [] | .[]] | unique
+  | length > 0 and all(. as $ref | $receipt[0].reason | contains($ref))' \
+  "$work/genesis-source/independent-facade-sources.jsonl" >/dev/null \
+  || fail "the coverage diagnostic does not name the actual queried genesis allocation"
+[ ! -e "$work/genesis-indexer" ] || fail "the refused preview created its target"
+kill "$bare_pid" 2>/dev/null || true
+pkill -f "cardano-node run --config $work/" 2>/dev/null || true
+for _ in $(seq 1 300); do
+  pgrep -f "cardano-node run --config $work/" >/dev/null || break
+  sleep 0.1
+done
+wait "$bare_pid" 2>/dev/null || true
+say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 
 # ------------------------------------------------------------------
 # One persistent development node
@@ -174,19 +126,26 @@ devnet_pid=$!
 # run outlives it holding the development network's ports.
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
 sock=""
+provider_url=""
+time_directory=""
+network_magic=""
 for _ in $(seq 1 900); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  [ -n "$sock" ] && [ -S "$sock" ] && break
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -S "$sock" ] && [ -r "$time_directory/time-manifest.json" ] && break
   kill -0 "$devnet_pid" 2>/dev/null || break
   sleep 1
 done
-if [ -z "$sock" ] || [ ! -S "$sock" ]; then
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [ ! -r "$time_directory/time-manifest.json" ]; then
   tail -40 "$work/devnet.err" >&2 || true
-  setup_fail "the development node never printed a usable socket"
+  setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
-say "one development node at $sock"
+say "one private development source at $provider_url"
 
-node=(--node-socket "$sock" --network-magic 42)
+node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 common=(--registry "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 bob=(--wallet-skey "$work/bob.skey")
@@ -200,12 +159,13 @@ exit_of() {
   esac
 }
 # run NAME CLASS -- ARGS: one singular process; its receipt must name CLASS
-# and its exit status must be that class's. Under the indexer backend a
-# successful process must also have read through the index.
+# and its exit status must be that class's. Each process uses the Koios path.
 run() {
   local name="$1" class="$2"
   shift 3
   local status=0
+  local SINGULAR_LOG="$receipts/$name.phases.jsonl"
+  export SINGULAR_LOG
   : >"$receipts/$name.trie.jsonl"
   if [[ " $* " == *" --preview "* ]]; then
     # Keep the release's existing all-harness-variables-unset preview controls.
@@ -222,10 +182,6 @@ run() {
     cat "$receipts/$name.json" >&2 || true
     tail -20 "$receipts/$name.err" >&2 || true
     fail "$name: outcome $got (exit $status), expected $class"
-  fi
-  if [ "$backend" = indexer ] && [ "$class" = success ] && ! served "$receipts/$name.err"; then
-    tail -20 "$receipts/$name.err" >&2 || true
-    fail "$name: no address read was answered by the index"
   fi
   if [ "$class" = success ] && jq -e 'any(.submissions[]?; .step == "fold")' "$receipts/$name.json" >/dev/null; then
     [ -s "$receipts/$name.phases.jsonl" ] || setup_fail "$name: the fold produced no phase log"
@@ -330,16 +286,25 @@ booking_only() {
     | jq -s -e '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["book"]) and (map(.journalTxId) | unique | length == 1)' >/dev/null \
     || fail "$name: the journal lines the booking left are not one booking's prepared, submitted, confirmed and observed"
 }
-# prepared_points DIR: the view point of each prepared line of DIR's
-# journal, one JSON object each; a line missing any of the four fields
-# fails the journey.
-prepared_points() {
+# The body is built in one actual acquisition. Latest Koios reads are
+# Unbound; a latest observed tip is separate from snapshot binding.
+prepared_scopes() {
   jq -c 'select(.journalEvent == "prepared")
+      | . as $j | .journalSession as $s
       | if (.journalNetwork == 42) and (.journalEra | type == "string" and length > 0)
-          and (.journalChainPoint // "" | test("^[0-9]+\\.[0-9a-f]{64}$"))
-        then {slot: (.journalChainPoint | split(".")[0] | tonumber)}
-        else error("prepared \(.journalTxId) lacks its view point: network \(.journalNetwork), era \(.journalEra), point \(.journalChainPoint)")
-        end' "$1/journal.jsonl" || fail "$1: a write did not journal its view point"
+          and (.journalChainPoint == null)
+          and ($s.session | type == "string" and length > 0)
+          and ($s.networkMagic == 42) and ($s.binding == {kind:"Unbound"})
+          and ($s.facts | type == "array" and length > 0)
+          and ($s.facts | all(.session == $s.session and .networkMagic == 42
+            and .binding == $s.binding and .verdict == "Unverified"
+            and .reason == "NoVerifierConfigured" and .witnessPresent == false))
+          and ($s.rawSources | type == "array" and length > 0)
+          and ($s.rawSources | all(.session == $s.session))
+          and ([$s.rawSources[] | select(.kind == "acquire")] | length == 1)
+        then {session:$s.session, binding:$s.binding, facts:($s.facts|length), sources:($s.rawSources|length)}
+        else error("prepared \($j.journalTxId) lacks its actual Unbound acquisition/fact/source extent")
+        end' "$1/journal.jsonl" || fail "$1: a write did not journal its actual acquisition"
 }
 
 # hexof TEXT: the hex of the key bytes, for the expected envelope.
@@ -606,7 +571,8 @@ jq -e '.reason | contains("retract-owner") and contains("not the request\u0027s 
   "$receipts/reclaim-not-owner.json" >/dev/null || fail "another wallet's reclaim did not name the ownership refusal"
 
 # The fold is bob's: another wallet folds alice's request, and the receipt
-# names the same deadline, the same request, and a validity bound at it.
+# names the same deadline and request. Its body's upper bound is the lesser
+# of that deadline and the observed ledger horizon minus one.
 run fold success -- registry fold --request "$(field insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 fold_ok() {
@@ -615,10 +581,51 @@ fold_ok() {
       and .folder != $b[0].requester and .edge == "'"$3"'"
       and (.fold | test("^[0-9a-f]{64}$"))
       and (.validUntilSlot | type == "number")
-      and (if .foldDeadline.slot != null then .validUntilSlot == .foldDeadline.slot else true end)
+      and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
       and (.hostClockMs + 30000 < .foldDeadline.posixMs)
       and (.remainingMs | type == "number" and . > 30000)' "$receipts/$1.json" >/dev/null \
     || fail "$1: the fold does not name the booking's request and deadline, or was signed by the booker"
+  # Read the exact genesis bytes consumed by this body's prepared session,
+  # rather than the facade's later current publication or the emitted horizon.
+  jq -s -ce --arg tx "$(field "$1" .fold)" '
+      [.[] | select(.journalEvent == "prepared" and .journalTxId == $tx)
+        | .journalSession.rawSources[] | select(.kind == "raw-time")] | unique
+      | if length == 1 then .[0] else error("fold has no unique raw time source") end' \
+    "$reg/journal.jsonl" >"$receipts/$1.time-source.json" \
+    || fail "$1: the prepared body has no exact pinned time source"
+  jq -j "$(cat "$work/cbor.jq") .genesisHex | tobytes | implode" \
+    "$receipts/$1.time-source.json" >"$receipts/$1.genesis.json"
+  [ "$(sha256sum "$receipts/$1.genesis.json" | cut -d' ' -f1)" = "$(jq -r .genesisSha256 "$receipts/$1.time-source.json")" ] \
+    || fail "$1: the consumed genesis bytes do not match their recorded hash"
+  jq -s -e --arg tx "$(field "$1" .fold)" --slurpfile phases "$receipts/$1.phases.jsonl" '
+      [$phases[] | select(.phase == "validityUpper")] as $selected
+      | [.[] | select(.journalEvent == "prepared" and .journalTxId == $tx)] as $prepared
+      | ($selected | length) == 1 and ($prepared | length) == 1
+      and any($prepared[0].journalSession.facts[];
+        .query == "Latest block observation" and .value.slot == $selected[0].tip)' \
+    "$reg/journal.jsonl" >/dev/null \
+    || fail "$1: the selected build tip is absent from the prepared body's actual observations"
+  jq -s -e --slurpfile receipt "$receipts/$1.json" --slurpfile genesis "$receipts/$1.genesis.json" '
+      [.[] | select(.phase == "validityUpper")] as $selected
+      | ($selected | length) == 1
+      and ($selected[0] as $s | $receipt[0] as $r | $genesis[0] as $g
+        | ([$s.tip, $s.horizon, $s.effectiveLower, $s.windowUpper, $s.upper, $s.minimumSlots] | all(type == "number"))
+        and $g.networkMagic == 42 and $g.securityParam > 0
+        and $g.activeSlotsCoeff > 0 and $g.activeSlotsCoeff <= 1
+        and $g.epochLength > 0 and $g.slotLength > 0
+        and $s.horizon == (((($s.tip + ((3 * $g.securityParam / $g.activeSlotsCoeff) | ceil)) / $g.epochLength) | ceil) * $g.epochLength)
+        and $s.windowUpper == $r.foldDeadline.slot
+        and $s.upper == ([$s.windowUpper, ($s.horizon - 1)] | min)
+        and $s.upper == $r.validUntilSlot
+        and $s.effectiveLower == ([($s.lower // 0), ($s.tip + 1)] | max)
+        and $s.minimumSlots == ((10 / $g.slotLength) | ceil)
+        and ($s.upper - $s.effectiveLower) >= $s.minimumSlots)' \
+    "$receipts/$1.phases.jsonl" >/dev/null \
+    || fail "$1: the actual selection does not cap the deadline at the observed horizon with the required usable interval"
+  jq -R -e --slurpfile receipt "$receipts/$1.json" \
+    "$(cat "$work/cbor.jq") decode | .[0] | mapget(3) == \$receipt[0].validUntilSlot" \
+    "$reg/submissions/$(field "$1" .fold).cbor.hex" >/dev/null \
+    || fail "$1: the saved signed body's upper slot differs from the receipt and actual selection"
 }
 fold_ok fold insert insertActive
 [ "$(field fold .folder)" = "$bobkey" ] || fail "alice's request was not folded with bob's key"
@@ -636,20 +643,6 @@ holds_envelope insert .envelope "$alicekey" "$key" "$work/payload-insert.json" \
   || fail "the insert receipt's envelope is not the one the sources make"
 holds_envelope insert-preview .envelope "$alicekey" "$key" "$work/payload-insert.json" \
   || fail "the insert preview's envelope is not the one the sources make"
-# The index-read report is the indexer backend's own: the same inspect at
-# the node backend reads the same leaf and reports no read the index
-# answered.
-if [ "$backend" = indexer ]; then
-  status=0
-  "$node_singular" registry inspect --key "$key" "${common[@]}" "${node[@]}" \
-    >"$receipts/inspect-1-node.json" 2>"$receipts/inspect-1-node.err" || status=$?
-  [ "$status" -eq 0 ] && [ "$(field inspect-1-node .leaf)" = active ] \
-    || fail "inspect-1 at the node backend did not read the active leaf (exit $status)"
-  ! served "$receipts/inspect-1-node.err" \
-    || fail "a node-backend inspect reported reads the index answered"
-  say "the node backend reads the same leaf and reports no index read"
-fi
-
 # bob, a wallet that did not create the registry, inserts his own key.
 bkey=keyB
 before="$(journal_lines "$reg")"
@@ -726,7 +719,7 @@ refused insert-selector-changed client-refusal -- registry insert --key keyC \
 cp "$work/registry.json.aside" "$reg/registry.json"
 # No node at all.
 run inspect-no-node node-unavailable -- registry inspect --key "$key" "${common[@]}" \
-  --node-socket "$work/absent.sock" --network-magic 42
+  --koios-url http://127.0.0.1:1 --network-time "$time_directory" --network-magic "$network_magic"
 [ "$(field inspect-no-node .leaf)" = null ] || fail "a leaf was printed with no node"
 # A concurrent writer on the same target. An OS lock holder takes the
 # target's actual lock (an fcntl open-file-description lock, which conflicts
@@ -851,14 +844,14 @@ fold_ok bob-terminate-fold bob-terminate updateTerminal
 run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
 
-# Every write so far journalled, at prepared, the point of the view its
-# body was built from: this network, an era, a slot and a block hash — a
-# point no later than the one inspect-4 read afterwards.
-read_slot="$(field inspect-4 .chainPoint | cut -d. -f1)"
-prepared_points "$reg" | jq -e -s --argjson s "$read_slot" \
-  'length > 0 and all(.slot <= $s)' >/dev/null \
-  || fail "a write's journalled view point is missing or later than inspect-4's ($read_slot)"
-say "every write journalled its build view's point, no later than slot $read_slot"
+# Every prepared body names the actual acquisition and its consumed facts.
+# Inspect separately reports the latest tip it observed, without a snapshot promise.
+prepared_scopes "$reg" | jq -e -s 'length > 0' >/dev/null \
+  || fail "a write lacks its Unbound acquisition"
+jq -e '(.observedTip | test("^[0-9]+\\.[0-9a-f]{64}$"))
+  and (.sessionEvidence.binding == {kind:"Unbound"})' "$receipts/inspect-4.json" >/dev/null \
+  || fail "inspect-4 lacks its actual latest observation and Unbound binding"
+say "every write names its actual Unbound acquisition; inspect reports its separate latest observation"
 
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
@@ -868,7 +861,7 @@ say "every write journalled its build view's point, no later than slot $read_slo
 # re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
 race="${DEMO1_CREATE_RACE:-$(dirname "$0")/demo1_cli_create_race.sh}"
 status=0
-bash "$race" "$singular" "$blueprint" "$sock" "$work/alice.skey" "$work/bob.skey" "$work/race" || status=$?
+bash "$race" "$singular" "$blueprint" "$provider_url" "$time_directory" "$network_magic" "$work/alice.skey" "$work/bob.skey" "$work/race" || status=$?
 case "$status" in
   0) ;;
   3) setup_fail "the create race never reached its target check" ;;
@@ -1421,23 +1414,16 @@ say "node lost after an accepted submission: $outcome after ${waited}s, naming $
 jq -r '.journalEvent' "$reg/journal.jsonl" | sort | uniq -c
 
 # Every journal the journey's writes left, wherever they wrote: each
-# prepared line names its view point.
+# prepared line names its actual Unbound acquisition.
 mapfile -t journals < <(find "$work" -name journal.jsonl | sort)
 [ "${#journals[@]}" -ge 2 ] || fail "found ${#journals[@]} journals; the extent is not the journey's"
 written=0
 for j in "${journals[@]}"; do
-  n="$(prepared_points "$(dirname "$j")" | wc -l)"
+  n="$(prepared_scopes "$(dirname "$j")" | wc -l)"
   written=$((written + n))
 done
 [ "$written" -gt 0 ] || fail "no prepared line in ${#journals[@]} journals"
-say "$written prepared submissions in ${#journals[@]} journals each name their view point"
+say "$written prepared submissions in ${#journals[@]} journals each name their actual Unbound acquisition"
 trie_extent
 say "all eight stored-registry commands have nonempty capability evidence from actual executions"
-say "JOURNEY-OK (${backend:-node} backend)"
-
-# Without a named backend the same journey runs again under the indexer
-# backend, on its own development node; this pass's node is gone.
-if [ -z "$backend" ]; then
-  trap - EXIT
-  exec bash "$0" "$node_singular" "$devnet" "$blueprint" "$work-indexer" indexer
-fi
+say "JOURNEY-OK (Koios path)"

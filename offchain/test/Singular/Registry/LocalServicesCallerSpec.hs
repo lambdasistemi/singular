@@ -18,6 +18,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
+import Singular.Registry.LedgerProvider (Network (..), Session (..))
 import Singular.Registry.LocalEvaluation
     ( EvaluationContext (..)
     )
@@ -26,8 +27,7 @@ import Singular.Registry.NetworkTime
     ( networkEpochInfo
     , networkSystemStart
     )
-import Singular.Registry.Provider (ChainPoint (..), View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Internal
     ( evaluateAndBalanceReferencing
     )
@@ -68,18 +68,18 @@ spec = describe "Common services through the existing transaction balancer"
                 else pure pp
         let
             view =
-                stubView
-                    { viewProtocolParams = supplied
-                    , viewPoint = (viewPoint stubView){cpNetwork = 1}
-                    , viewTimeContext = pure time
-                    , viewResolvedOutputs = \wanted -> do
-                        modifyIORef' calls (+ 1)
-                        pure
-                            [ (reference, output)
-                            | (reference, output) <- inputs
-                            , reference `Set.member` wanted
-                            ]
-                    }
+                withParameters supplied
+                    $ withTime (pure time)
+                    $ withResolvedOutputs
+                        ( \wanted -> do
+                            modifyIORef' calls (+ 1)
+                            pure
+                                [ (reference, output)
+                                | (reference, output) <- inputs
+                                , reference `Set.member` wanted
+                                ]
+                        )
+                    $ stubSession{sessionNetwork = Network 1}
         case inputs of
             [funding, collateral, reference] -> do
                 balanced <-

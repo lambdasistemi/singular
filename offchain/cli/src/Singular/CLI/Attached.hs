@@ -37,11 +37,10 @@ import Data.Text qualified as T
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
-    ( NodeSettings (..)
+    ( ProviderSettings (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live
-import Singular.CLI.Node (Capabilities (..))
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Reconcile
     ( reconcile
@@ -56,13 +55,16 @@ import Singular.CLI.Registry
     , writeLocalState
     )
 import Singular.CLI.Session
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (Wallet (..))
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (Capabilities (..))
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
+import Singular.Registry.Wallet (Wallet (..))
 
 -- | Everything a write holds once attached.
 data Attached = Attached
@@ -90,13 +92,13 @@ attached
 attached dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
     withWrite dir command ws $ \wc -> do
-        let NodeSettings _ magic = writeNode ws
+        let ProviderSettings _ magic _ _ = writeProvider ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
             (checkNetwork (savedConfig saved) magic)
         (reconciled, live) <-
-            Cage.withView (capReads (wcCapabilities wc)) $ \v -> do
+            Cage.withLatest (capReads (wcCapabilities wc)) $ \v -> do
                 r <- reconcile command dir saved v
                 refuseUnreconciled r
                 (,) r <$> attachLive v saved
@@ -126,12 +128,14 @@ attached dir blueprint ws command body = do
 callerKey :: Attached -> ByteString
 callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
 
-provider :: Attached -> Cage.Provider IO
+provider
+    :: Attached -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
 provider = capReads . wcCapabilities . atWrite
 
 -- | One read operation: acquire a view and read through it.
-reading :: Attached -> (Cage.View IO -> IO a) -> IO a
-reading at = Cage.withView (provider at)
+reading
+    :: Attached -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
+reading at = Cage.withLatest (provider at)
 
 savedOf :: Attached -> Saved
 savedOf = liveSaved . atLive

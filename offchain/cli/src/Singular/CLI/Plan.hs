@@ -80,8 +80,10 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session (failWith, failWithFields)
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , edgeDeposit
@@ -225,7 +227,7 @@ planUpdate live caller key outs = do
 caller's chosen ada-only output or else the largest.
 -}
 buildUpdate
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -- ^ The one view the update is built from: its wallet, parameters and evaluation
     -> Live
     -> Addr
@@ -236,7 +238,7 @@ buildUpdate
 buildUpdate v live addr chosen holding payload = do
     appRef <- appReferenceOf live
     let refOut = [u | u@(i, _) <- liveRefs live, i == appRef]
-    wallet <- Cage.viewUTxOsAt v addr
+    wallet <- Cage.outputsAt v addr
     fee <-
         either
             ( \why ->
@@ -246,7 +248,7 @@ buildUpdate v live addr chosen holding payload = do
             (selectFunding chosen wallet)
     updatePayloadTx
         UpdateArgs
-            { uaView = v
+            { uaSession = v
             , uaApplied = applied (liveSaved live)
             , uaHolding = holding
             , uaPayload = payload

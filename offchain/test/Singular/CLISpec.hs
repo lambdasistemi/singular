@@ -95,7 +95,6 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (Wallet (..), bech32Address, loadWallet)
 import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
@@ -111,6 +110,11 @@ import Singular.Registry.Types
     ( edgeInsertActive
     , edgeUpdateTerminal
     )
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 spec :: Spec
 spec = describe "singular registry commands" $ do
@@ -125,8 +129,13 @@ spec = describe "singular registry commands" $ do
 -- The command line
 -- ---------------------------------------------------------
 
-node :: [String]
-node = ["--node-socket", "/run/node.socket", "--network-magic", "42"]
+provider :: [String]
+provider =
+    [ "--koios-url"
+    , "http://127.0.0.1:8080/api/v1"
+    , "--network-magic"
+    , "42"
+    ]
 
 wallet :: [String]
 wallet = ["--wallet-skey", "/keys/payment.skey"]
@@ -157,11 +166,11 @@ commandLine = describe "the command line" $ do
     it "refuses a command it does not support" $
         parseCommand ["registry", "delete"]
             `shouldSatisfy` isLeftWith isUnknown
-    it "reads a create with its seed, wallet and node" $
+    it "reads a create with its seed, wallet and provider" $
         parseCommand
             ( ["registry", "create", "--seed", seedText]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
             )
             `shouldBe` Right
@@ -185,7 +194,7 @@ commandLine = describe "the command line" $ do
                         ( ["registry", "create", "--seed", seedText]
                             <> ["--process-time", processing, "--retract-time", retracting]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                         )
                         `shouldSatisfy` either (const False) (const True)
@@ -199,7 +208,7 @@ commandLine = describe "the command line" $ do
                         ( parseCommand
                             ( ["registry", "create", "--seed", seedText]
                                 <> reg
-                                <> node
+                                <> provider
                                 <> wallet
                                 <> extra
                             )
@@ -225,7 +234,7 @@ commandLine = describe "the command line" $ do
             $ \command ->
                 forM_ ["--process-time", "--retract-time"] $ \flag ->
                     parseCommand
-                        (["registry", command, flag, "1"] <> reg <> node <> wallet)
+                        (["registry", command, flag, "1"] <> reg <> provider <> wallet)
                         `shouldBe` Left
                             ( BadValue
                                 flag
@@ -239,7 +248,7 @@ commandLine = describe "the command line" $ do
                     parseCommand
                         ( ["registry", "create", "--seed", seedText, flag, argument]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                         )
                         `shouldBe` Left
@@ -248,7 +257,7 @@ commandLine = describe "the command line" $ do
                 parseCommand
                     ( ["registry", "create", "--seed", seedText]
                         <> reg
-                        <> node
+                        <> provider
                         <> wallet
                         <> [flag]
                     )
@@ -257,7 +266,7 @@ commandLine = describe "the command line" $ do
         parseCommand
             ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
             )
             `shouldBe` Right
@@ -291,7 +300,7 @@ commandLine = describe "the command line" $ do
                     ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                         <> ["--deposit", argument]
                         <> reg
-                        <> node
+                        <> provider
                         <> wallet
                     )
                 )
@@ -302,7 +311,7 @@ commandLine = describe "the command line" $ do
                     ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                         <> ["--deposit", argument]
                         <> reg
-                        <> node
+                        <> provider
                         <> wallet
                     )
         forM_ ["two", "2e6", "2.5", "", "0x10", "+2000000"] $ \argument ->
@@ -325,7 +334,7 @@ commandLine = describe "the command line" $ do
                 ( command
                     <> ["--key", "key", "--deposit", "2000000"]
                     <> reg
-                    <> node
+                    <> provider
                     <> wallet
                 )
                 `shouldBe` Left
@@ -341,20 +350,20 @@ commandLine = describe "the command line" $ do
                 `shouldBe` Left (BadValue removedFlag "is not a flag singular reads")
     it "refuses an insert without its payload" $
         parseCommand
-            (["registry", "insert", "--key", "key"] <> reg <> node <> wallet)
+            (["registry", "insert", "--key", "key"] <> reg <> provider <> wallet)
             `shouldBe` Left (MissingFlag "--payload")
     it "reads an update with its payload, and refuses one without" $ do
         parseCommand
             ( ["registry", "update", "--key", "key", "--payload", "/p.json"]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
             )
             `shouldSatisfy` \case
                 Right (Update e) -> entryDocument e == Just "/p.json"
                 _ -> False
         parseCommand
-            (["registry", "update", "--key", "key"] <> reg <> node <> wallet)
+            (["registry", "update", "--key", "key"] <> reg <> provider <> wallet)
             `shouldSatisfy` isLeftWith isMissing
     it "reads --key as text and --key-hex as base16, to the same key" $
         forM_ keyCommands $ \command -> do
@@ -415,7 +424,7 @@ commandLine = describe "the command line" $ do
                 (command <> ["--key", "alice", "--key-hex", "616c696365"])
                 `shouldSatisfy` refusedWith "--key-hex excludes --key"
             parseCommand command `shouldBe` Left (MissingFlag "--key")
-    it "refuses a bad key before it asks for a node or a wallet" $
+    it "refuses a bad key before it asks for a provider or a wallet" $
         parseCommand (["registry", "insert", "--key-hex", "zz"] <> reg)
             `shouldSatisfy` refusedWith "--key-hex is not base16"
     it "shows a receipt's key as hex and, when it is UTF-8, as text" $ do
@@ -427,13 +436,13 @@ commandLine = describe "the command line" $ do
             `shouldBe` [("key", Aeson.String "ff00")]
     it "refuses a signing key on inspect" $
         parseCommand
-            (["registry", "inspect", "--key", "key"] <> reg <> node <> wallet)
+            (["registry", "inspect", "--key", "key"] <> reg <> provider <> wallet)
             `shouldBe` Left SigningKeyNotAccepted
-    it "refuses a write with a partial node and wallet setting" $
+    it "refuses a write with a partial provider and wallet setting" $
         parseCommand
             ( ["registry", "insert", "--key", "key"]
                 <> reg
-                <> ["--node-socket", "/run/node.socket"]
+                <> ["--koios-url", "http://127.0.0.1:8080/api/v1"]
             )
             `shouldSatisfy` isLeftWith (unsafeMentions "partially configured")
     it
@@ -443,7 +452,7 @@ commandLine = describe "the command line" $ do
                     parseCommand
                         ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                             <> extra
                         )
@@ -465,58 +474,119 @@ commandLine = describe "the command line" $ do
         parseCommand
             ( ["registry", "insert", "--key", "key"]
                 <> reg
-                <> ["--node-socket", "/s", "--network-magic", "764_824_073"]
+                <> ["--koios-url", "/s", "--network-magic", "764_824_073"]
                 <> wallet
             )
             `shouldSatisfy` isLeftWith (unsafeMentions "764_824_073")
-    it "refuses a write with no node at all rather than spawning one" $
+    it "refuses a write with no provider configuration" $
         parseCommand (["registry", "insert", "--key", "key"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
     it "names a missing registry directory" $
         parseCommand
-            (["registry", "inspect", "--key", "key", "--blueprint", "b"] <> node)
+            ( ["registry", "inspect", "--key", "key", "--blueprint", "b"]
+                <> provider
+            )
             `shouldBe` Left (MissingFlag "--registry")
     it
-        "reads every command under the indexer backend as it reads it under \
-        \the default (#324)"
-        $ forM5 commands
-        $ \line -> do
-            parseCommand line `shouldSatisfy` either (const False) (const True)
-            parseCommand (line <> ["--backend", "indexer"])
-                `shouldBe` parseCommand line
+        "reads sole-provider settings over the full nonempty command extent"
+        $ do
+            length commands `shouldBe` 8
+            forM5 commands $ \line ->
+                parseCommand line `shouldSatisfy` either (const False) (const True)
+    it "refuses every obsolete backend selector before command effects" $
+        forM5 (commands <> [[], ["--help"]]) $ \line -> do
+            forM5 ["koios", "node", "indexer", "nodes", ""] $ \value -> do
+                parseCommand (line <> ["--backend", value])
+                    `shouldBe` Left (RemovedSetting "--backend")
+                parseCommand (line <> ["--backend=" <> value])
+                    `shouldBe` Left (RemovedSetting "--backend")
+            parseCommand (line <> ["--backend"])
+                `shouldBe` Left (RemovedSetting "--backend")
     it
-        "refuses a backend it does not name on every command, before \
-        \anything runs (#324)"
-        $ forM5 commands
-        $ \line ->
-            parseCommand (line <> ["--backend", "nodes"])
-                `shouldBe` Left
-                    (BadValue "--backend" "names node or indexer, not nodes")
+        "refuses obsolete socket flags and environment settings before command effects"
+        $ forM5 (commands <> [[], ["--help"]])
+        $ \line -> do
+            parseCommand (line <> ["--node-socket", "/obsolete/node.socket"])
+                `shouldBe` Left (RemovedSetting "--node-socket")
+            parseCommand (line <> ["--node-socket=/obsolete/node.socket"])
+                `shouldBe` Left (RemovedSetting "--node-socket")
+            parseCommand (line <> ["--node-socket"])
+                `shouldBe` Left (RemovedSetting "--node-socket")
+            parseCommandWithEnvironment
+                [("SINGULAR_NODE_SOCKET", "/obsolete/node.socket")]
+                line
+                `shouldBe` Left (RemovedSetting "SINGULAR_NODE_SOCKET")
+            parseCommandWithEnvironment [("SINGULAR_NODE_SOCKET", "")] line
+                `shouldBe` Left (RemovedSetting "SINGULAR_NODE_SOCKET")
+    it
+        "carries a token-file path and pinned-time directory without reading either"
+        $ do
+            let extra =
+                    [ "--koios-token-file"
+                    , "/not-read/token"
+                    , "--network-time"
+                    , "/not-read/time"
+                    ]
+            forM5 commands $ \line -> case parseCommand (line <> extra) of
+                Right command -> do
+                    let settings = settingsOf command
+                    providerTokenFile settings `shouldBe` Just "/not-read/token"
+                    providerTimeDirectory settings `shouldBe` Just "/not-read/time"
+                Left failure -> expectationFailure (show failure)
+    it "refuses the numeric mainnet magic before reading a signing key" $
+        parseCommand
+            ( ["registry", "insert", "--key", "key"]
+                <> reg
+                <> ["--koios-url", "https://unused", "--network-magic", "764824073"]
+                <> wallet
+            )
+            `shouldSatisfy` isLeftWith (unsafeMentions "mainnet")
   where
     -- Spelled apart: no line of the tree names the removed flag.
     removedFlag = "--" <> "envelope"
     commands =
-        [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
+        [ ["registry", "create", "--seed", seedText]
+            <> reg
+            <> provider
+            <> wallet
         , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
             <> reg
-            <> node
+            <> provider
             <> wallet
         , ["registry", "update", "--key", "key", "--payload", "/p.json"]
             <> reg
-            <> node
+            <> provider
             <> wallet
-        , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
-        , ["registry", "fold"] <> reg <> node <> wallet
-        , ["registry", "reject"] <> reg <> node <> wallet
-        , ["registry", "inspect", "--key", "key"] <> reg <> node
+        , ["registry", "terminate", "--key", "key"] <> reg <> provider <> wallet
+        , ["registry", "fold"] <> reg <> provider <> wallet
+        , ["registry", "reject"] <> reg <> provider <> wallet
+        , ["registry", "reclaim", "--request", seedText]
+            <> reg
+            <> provider
+            <> wallet
+        , ["registry", "inspect", "--key", "key"] <> reg <> provider
         ]
     forM5 xs f = mapM_ f xs
+    settingsOf = \case
+        Create CreateArgs{createMode = Submit settings} -> writeProvider settings
+        Insert args -> entrySettings args
+        Update args -> entrySettings args
+        Terminate args -> entrySettings args
+        Fold args -> writeProvider (foldWrite args)
+        Reject args -> writeProvider (rejectWrite args)
+        Reclaim args -> writeProvider (reclaimWrite args)
+        Inspect args -> inspectProvider args
+        other -> error ("provider settings were not exercised: " <> show other)
+    entrySettings args = case entryMode args of
+        Submit settings -> writeProvider settings
+        Preview settings _ -> settings
     preview = previewRows
     foldRows = foldCommandRows
     rejectRows = rejectCommandRows
     writeSettings =
         WriteSettings
-            { writeNode = NodeSettings "/run/node.socket" 42
+            { writeProvider =
+                ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
             , writeWalletKey = "/keys/payment.skey"
             , writeConfirmTimeout = Nothing
             }
@@ -533,16 +603,16 @@ commandLine = describe "the command line" $ do
     insertCommand =
         ["registry", "insert", "--payload", "/p.json"]
             <> reg
-            <> node
+            <> provider
             <> wallet
     keyCommands =
         [ insertCommand
         , ["registry", "update", "--payload", "/p.json"]
             <> reg
-            <> node
+            <> provider
             <> wallet
-        , ["registry", "terminate"] <> reg <> node <> wallet
-        , ["registry", "inspect"] <> reg <> node
+        , ["registry", "terminate"] <> reg <> provider <> wallet
+        , ["registry", "inspect"] <> reg <> provider
         ]
     isMissing = \case MissingFlag _ -> True; _ -> False
     isUnsafe = \case UnsafeSettings _ -> True; _ -> False
@@ -828,6 +898,8 @@ journal = describe "the journal of a write" $ do
             , journalNetwork = Nothing
             , journalEra = Nothing
             , journalChainPoint = Nothing
+            , journalSession = Nothing
+            , journalObservedTip = Nothing
             , journalKey = Nothing
             , journalExpect = Nothing
             , journalEdge = Nothing
@@ -1082,6 +1154,8 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalBody = Nothing
             , journalBodyHash = Nothing
             , journalChainPoint = Nothing
+            , journalSession = Nothing
+            , journalObservedTip = Nothing
             , journalKey = Nothing
             , journalExpect = Nothing
             , journalEdge = Nothing
@@ -1329,6 +1403,8 @@ jline t e =
         , journalBody = Nothing
         , journalBodyHash = Nothing
         , journalChainPoint = Nothing
+        , journalSession = Nothing
+        , journalObservedTip = Nothing
         , journalKey = Nothing
         , journalExpect = Nothing
         , journalEdge = Nothing
@@ -1370,7 +1446,12 @@ previewRows = describe "--preview" $ do
             Addr net (KeyHashObj k) _ ->
                 Addr net (KeyHashObj k) (StakeRefBase (KeyHashObj (coerceKeyRole k)))
             other -> other
-        previewNode magic = ["--node-socket", "/run/node.socket", "--network-magic", magic]
+        previewNode magic =
+            [ "--koios-url"
+            , "http://127.0.0.1:8080/api/v1"
+            , "--network-magic"
+            , magic
+            ]
         insertPreview extra =
             parseCommand
                 ( [ "registry"
@@ -1384,7 +1465,7 @@ previewRows = describe "--preview" $ do
                     <> reg
                     <> extra
                 )
-    it "reads a preview as a node and a public address, with no key" $
+    it "reads a preview as a provider and a public address, with no key" $
         insertPreview
             (previewNode "1" <> ["--wallet-address", textOf Testnet payerHash])
             `shouldBe` Right
@@ -1394,7 +1475,7 @@ previewRows = describe "--preview" $ do
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode =
                             Preview
-                                (NodeSettings "/run/node.socket" 1)
+                                (ProviderSettings "http://127.0.0.1:8080/api/v1" 1 Nothing Nothing)
                                 (textOf Testnet payerHash)
                         , entryKey = Key "key"
                         , entryDocument = Just "/p.json"
@@ -1425,11 +1506,11 @@ previewRows = describe "--preview" $ do
                 <> wallet
             )
             `shouldBe` Left PreviewTakesNoKey
-    it "names a missing address, and a missing node" $ do
+    it "names a missing address, and a missing provider" $ do
         insertPreview (previewNode "1")
             `shouldBe` Left (MissingFlag "--wallet-address")
         insertPreview ["--wallet-address", textOf Testnet payerHash]
-            `shouldBe` Left (MissingFlag "--node-socket")
+            `shouldBe` Left (MissingFlag "--koios-url")
     it
         "reads the funding output and the allowance a write or a preview may use"
         $ do
@@ -1469,7 +1550,9 @@ previewRows = describe "--preview" $ do
             (create ["--wallet-address", textOf Testnet payerHash])
             `shouldBe` Right
                 ( Just
-                    ( Preview (NodeSettings "/run/node.socket" 1) (textOf Testnet payerHash)
+                    ( Preview
+                        (ProviderSettings "http://127.0.0.1:8080/api/v1" 1 Nothing Nothing)
+                        (textOf Testnet payerHash)
                     , True
                     , Nothing
                     )
@@ -1481,7 +1564,7 @@ previewRows = describe "--preview" $ do
         parseCommand
             ( ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
                 <> ["--wallet-address", textOf Testnet payerHash]
             )
@@ -1494,18 +1577,18 @@ previewRows = describe "--preview" $ do
                     parseCommand
                         ( ["registry", "create", "--seed", funded]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                             <> extra
                         )
                 inspect extra =
                     parseCommand
-                        (["registry", "inspect", "--key", "key"] <> reg <> node <> extra)
+                        (["registry", "inspect", "--key", "key"] <> reg <> provider <> extra)
                 terminate extra =
                     parseCommand
                         ( ["registry", "terminate", "--key", "key"]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                             <> extra
                         )
@@ -1566,12 +1649,13 @@ previewRows = describe "--preview" $ do
 foldCommandRows :: Spec
 foldCommandRows = describe "booking and folding as separate commands" $ do
     let fold extra =
-            parseCommand (["registry", "fold"] <> reg <> node <> wallet <> extra)
+            parseCommand
+                (["registry", "fold"] <> reg <> provider <> wallet <> extra)
         insertWith extra =
             parseCommand
                 ( ["registry", "insert", "--key", "6b6579", "--payload", "/p.json"]
                     <> reg
-                    <> node
+                    <> provider
                     <> wallet
                     <> extra
                 )
@@ -1579,7 +1663,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             parseCommand
                 ( ["registry", "terminate", "--key", "6b6579"]
                     <> reg
-                    <> node
+                    <> provider
                     <> wallet
                     <> extra
                 )
@@ -1592,12 +1676,14 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             _ -> False
         writes =
             WriteSettings
-                { writeNode = NodeSettings "/run/node.socket" 42
+                { writeProvider =
+                    ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
                 , writeWalletKey = "/keys/payment.skey"
                 , writeConfirmTimeout = Nothing
                 }
-    it "reads a fold with its registry, node and wallet and nothing else" $
-        fold []
+    it
+        "reads a fold with its registry, provider and wallet and nothing else"
+        $ fold []
             `shouldBe` Right
                 ( Fold
                     FoldArgs
@@ -1644,7 +1730,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                     (fromLeft "parsed" (parseOutRef "not-a-request"))
                 )
     it
-        "refuses a fold with no node and wallet rather than starting a node"
+        "refuses a fold with no provider and wallet rather than starting a node"
         $ parseCommand (["registry", "fold"] <> reg)
             `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
     it "refuses, by name, what a fold decides from its request"
@@ -1679,7 +1765,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
               , "--fold"
               ]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
             )
             `shouldSatisfy` refusesNaming "--fold" "insert and terminate"
@@ -1694,7 +1780,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
               , "--fold"
               ]
                 <> reg
-                <> node
+                <> provider
                 <> ["--wallet-address", "addr_test1"]
             )
             `shouldSatisfy` refusesNaming "--fold" "preview"
@@ -1724,18 +1810,19 @@ rejectCommandRows :: Spec
 rejectCommandRows = describe "rejecting the registry's expired requests" $ do
     let reject extra =
             parseCommand
-                (["registry", "reject"] <> reg <> node <> wallet <> extra)
+                (["registry", "reject"] <> reg <> provider <> wallet <> extra)
         refusesBadValue flag = \case
             Left (BadValue name _) -> name == flag
             _ -> False
         writes =
             WriteSettings
-                { writeNode = NodeSettings "/run/node.socket" 42
+                { writeProvider =
+                    ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
                 , writeWalletKey = "/keys/payment.skey"
                 , writeConfirmTimeout = Nothing
                 }
     it
-        "reads a reject with its registry, node and wallet and nothing else"
+        "reads a reject with its registry, provider and wallet and nothing else"
         $ reject []
             `shouldBe` Right
                 ( Reject
@@ -1772,7 +1859,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                         }
                 )
     it
-        "refuses a reject with no node and wallet rather than starting a node"
+        "refuses a reject with no provider and wallet rather than starting a node"
         $ parseCommand (["registry", "reject"] <> reg)
             `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
     it
@@ -1801,7 +1888,7 @@ reclaimCommandRows :: Spec
 reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
     let reclaim extra =
             parseCommand
-                (["registry", "reclaim"] <> reg <> node <> wallet <> extra)
+                (["registry", "reclaim"] <> reg <> provider <> wallet <> extra)
         named = ["--request", replicate 64 'a' <> "#0"]
         bad flag = \case
             Left (BadValue name _) -> name == flag
@@ -1815,7 +1902,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
                 reclaimBlueprint a `shouldBe` "/srv/plutus.json"
                 reclaimWrite a
                     `shouldBe` WriteSettings
-                        (NodeSettings "/run/node.socket" 42)
+                        (ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing)
                         "/keys/payment.skey"
                         Nothing
                 reclaimFund a `shouldBe` Nothing
@@ -1845,7 +1932,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
         reclaim [] `shouldBe` Left (MissingFlag "--request")
     it "refuses a malformed request by name" $
         reclaim ["--request", "not-a-request"] `shouldSatisfy` bad "--request"
-    it "requires a node and wallet" $
+    it "requires a provider and wallet" $
         parseCommand (["registry", "reclaim"] <> reg <> named)
             `shouldSatisfy` isLeftWith (\case UnsafeSettings _ -> True; _ -> False)
     it "refuses the settings of booking and preview commands"
@@ -1868,23 +1955,26 @@ outputsAtRows :: Spec
 outputsAtRows = describe "reading the outputs at an address with inspect" $ do
     let inspect extra =
             parseCommand
-                (["registry", "inspect", "--key", "key"] <> reg <> node <> extra)
+                (["registry", "inspect", "--key", "key"] <> reg <> provider <> extra)
         outputsAtOf = \case
             Right (Inspect i) -> Just (inspectOutputsAt i)
             _ -> Nothing
         others =
-            [ ["registry", "create", "--seed", seedText] <> reg <> node <> wallet
+            [ ["registry", "create", "--seed", seedText]
+                <> reg
+                <> provider
+                <> wallet
             , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
             , ["registry", "update", "--key", "key", "--payload", "/p.json"]
                 <> reg
-                <> node
+                <> provider
                 <> wallet
-            , ["registry", "terminate", "--key", "key"] <> reg <> node <> wallet
-            , ["registry", "fold"] <> reg <> node <> wallet
-            , ["registry", "reject"] <> reg <> node <> wallet
+            , ["registry", "terminate", "--key", "key"] <> reg <> provider <> wallet
+            , ["registry", "fold"] <> reg <> provider <> wallet
+            , ["registry", "reject"] <> reg <> provider <> wallet
             ]
     it "reads the address an inspect names, and none by default" $ do
         outputsAtOf (inspect []) `shouldBe` Just Nothing

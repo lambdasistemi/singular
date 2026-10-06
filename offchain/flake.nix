@@ -141,13 +141,16 @@
             }
             ''
               mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.journey} $out/bin/journey \
+              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/journey \
+                --add-flags "run ${pkgs.lib.getExe components.exes.journey}" \
+                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
                 --prefix PATH : ${cardanoNode}/bin
             '';
 
-        # #173 A173-COMMAND: the packaged `insert-active` verb, wrapped
-        # exactly like journey so the locked cardano-node rides on its
-        # own PATH. The blueprint comes from the caller at run time
+        # #173 A173-COMMAND: the retained runner receives an explicit
+        # provider and wallet. Its default private CI fixture belongs to
+        # the devnet launcher, which forwards HTTP/time settings only.
+        # The blueprint comes from the caller at run time
         # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
         # lets it run from an EXTRACTED ARCHIVE with no checkout.
         insert-active =
@@ -160,13 +163,15 @@
             }
             ''
               mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.insert-active} $out/bin/insert-active \
+              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/insert-active \
+                --add-flags "run ${pkgs.lib.getExe components.exes.insert-active}" \
+                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
                 --prefix PATH : ${cardanoNode}/bin
             '';
 
-        # #177 I177-COMMAND: the packaged `update-terminal` verb, wrapped
-        # exactly like insert-active so the locked cardano-node rides on
-        # its own PATH. The blueprint comes from the caller at run time
+        # #177 I177-COMMAND: the retained runner receives HTTP/time and
+        # wallet settings from its private CI launcher. The blueprint
+        # comes from the caller at run time
         # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
         # lets it run from an EXTRACTED ARCHIVE with no checkout.
         update-terminal =
@@ -179,7 +184,9 @@
             }
             ''
               mkdir -p $out/bin
-              makeWrapper ${pkgs.lib.getExe components.exes.update-terminal} $out/bin/update-terminal \
+              makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/update-terminal \
+                --add-flags "run ${pkgs.lib.getExe components.exes.update-terminal}" \
+                --set E2E_GENESIS_DIR ${./e2e-test/genesis} \
                 --prefix PATH : ${cardanoNode}/bin
             '';
 
@@ -347,12 +354,14 @@
 
         # #326 R5: the external leg. A devnet started as a process of its own
         # funds a fresh key; the contract suite then reaches that node only
-        # by the socket the devnet printed, the network magic and the key
-        # file, through the constructor a singular write uses.
+        # by the private probe socket in the devnet settings, magic and key.
+        # This is retained private legacy characterization, not the shipping
+        # Koios constructor or row16 production-deletion evidence.
         contract-external = pkgs.writeShellApplication {
           name = "contract-external";
           runtimeInputs = [
             pkgs.coreutils
+            pkgs.jq
             devnet
             contract-tests
           ];

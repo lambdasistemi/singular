@@ -67,8 +67,9 @@ import Journey.Chain (readChainState)
 import Journey.Narration (emit, failWith, hex, textOf)
 import Journey.Steps (journeyKey, journeyValue)
 import Singular.Registry.Config (CageConfig)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (TokenId)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Provider
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.Types
@@ -154,7 +155,7 @@ the root it implies against the root read back from the chain.
 -}
 stepVerifyAbsent
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
     -> IORef MPFInMemoryDB
     -> TokenId
     -> IO ()
@@ -197,7 +198,7 @@ the same chain root.
 -}
 stepVerifyPresent
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
     -> IORef MPFInMemoryDB
     -> TokenId
     -> IO ()

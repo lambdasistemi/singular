@@ -26,6 +26,7 @@ import Conformance.Run.Observe
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
@@ -112,7 +113,8 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -239,7 +241,7 @@ assembly makes is served by the same acquired state, and the chain
 inputs the spec names are checked against it ('heldInputs').
 -}
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
-assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
+assembleFoldSpec env0 fs = Cage.withLatest (envProv env0) $ \held -> do
     let env = pinnedTo held env0
     heldInputs held fs
     -- Every purpose resolves through the cage's reference outputs, which
@@ -249,7 +251,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
     ctx <- foldSpecContext env held fs
     let prov = envProv env
 
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest prov Cage.parameters
     funder <- maybe (largestWalletUtxo prov) pure (fsFunder fs)
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
     -- #157: a booked request carries the approval that certifies its
@@ -289,7 +291,7 @@ assembleFoldSpec env0 fs = Cage.withView (envProv env0) $ \held -> do
     upperSlot <- case fsUpper fs of
         Just s -> pure s
         Nothing ->
-            Cage.withView
+            Cage.withLatest
                 prov
                 (\v -> trySlots v [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000])
     let tipAmount = stateMaxFee oldState
@@ -579,11 +581,11 @@ assembly (a refund under min-ADA).
 -}
 assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldWithFee env0 fs =
-    Cage.withView (envProv env0) $ \held -> go (pinnedTo held env0) (0 :: Int) 1_500_000
+    Cage.withLatest (envProv env0) $ \held -> go (pinnedTo held env0) (0 :: Int) 1_500_000
   where
     go env n fee = do
         tx <- assembleFoldSpec env fs{fsFee = Just fee}
-        pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
+        pp <- Cage.withLatest (envProv env) Cage.parameters
         -- Conway charges for the reference scripts a transaction reads,
         -- by their size. Estimating against zero of them stops this loop
         -- one fee short and the node refuses the result.
@@ -600,7 +602,7 @@ refunds and roots from them; the assembly finds each again in its own view
 and refuses, by name, an input that is gone there or holds something
 else — so every chain value the transaction carries is the held view's.
 -}
-heldInputs :: Cage.View IO -> FoldSpec -> IO ()
+heldInputs :: Cage.Session Cage.NoWitness IO -> FoldSpec -> IO ()
 heldInputs v fs = do
     heldInput v "state" (fsState fs)
     mapM_ (heldInput v "request") (fsReqs fs)
@@ -612,9 +614,12 @@ with the address, value, datum and reference script the row read;
 refused by name when it is not unspent there or holds something else.
 -}
 heldInput
-    :: Cage.View IO -> String -> (TxIn, TxOut ConwayEra) -> IO ()
+    :: Cage.Session Cage.NoWitness IO
+    -> String
+    -> (TxIn, TxOut ConwayEra)
+    -> IO ()
 heldInput v what (i, o) = do
-    here <- Cage.viewUTxOsAt v (o ^. addrTxOutL)
+    here <- Cage.outputsAt v (o ^. addrTxOutL)
     case lookup i here of
         Nothing ->
             failWith
@@ -691,7 +696,7 @@ declaredSpec env cage = do
     case (mem, cpu) of
         (m, c) | m > 0 -> pure (declaredUnits (m, c))
         _ -> do
-            pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
+            pp <- Cage.withLatest (envProv env) Cage.parameters
             let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
                 fallback =
                     ExUnits
@@ -738,13 +743,13 @@ rowRequestAndFold env cage label key _val _op = do
     -- The library fold and the hand model it is calibrated against are
     -- assembled from one view.
     (unsignedFold, stateIn, handFold) <- withHeldView env $ \held -> do
-        lib <- Cage.withView (envProv held) $ \v -> do
+        lib <- Cage.withLatest (envProv held) $ \v -> do
             ctx <- rowRegistryContext held v cage tid
             updateTokenWithDuties cfg v (envTm held) tid genesisAddr ctx
         state@(stateIn, _) <- cageStateUtxo held cage
         reqUtxos <- pendingRequests held cage
         (handProofs, handRoot) <- speculativeApplyAll held cage tid reqUtxos
-        pp <- Cage.withView (envProv held) (pure . Cage.viewProtocolParams)
+        pp <- Cage.withLatest (envProv held) Cage.parameters
         let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
             calibSpec =
                 ( rowSpec
@@ -869,7 +874,10 @@ and the reference outputs it carries, read from the view the fold is
 built in.
 -}
 foldSpecContext
-    :: Env -> Cage.View IO -> FoldSpec -> IO RegistryContext
+    :: Env
+    -> Cage.Session Cage.NoWitness IO
+    -> FoldSpec
+    -> IO RegistryContext
 foldSpecContext env0 v fs = do
     let env = pinnedTo v env0
     let cfg = fsCfg fs

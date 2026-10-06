@@ -7,8 +7,13 @@ License     : Apache-2.0
 -}
 module Singular.Registry.NetworkTimeSpec (spec, loadNetworkFixture) where
 
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
+import Cardano.Ledger.BaseTypes (ProtVer (..))
+import Cardano.Ledger.Binary (DecoderError, decodeFull', getVersion)
+import Cardano.Ledger.Conway (ConwayEra)
+import Cardano.Ledger.Core (PParams, eraProtVerLow)
 import Cardano.Slotting.Slot (SlotNo (..))
-import Cardano.Slotting.Time (RelativeTime (..))
+import Cardano.Slotting.Time (RelativeTime (..), getSlotLength)
 import Codec.Serialise
     ( DeserialiseFailure
     , deserialiseOrFail
@@ -30,6 +35,8 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as LBS
 import Data.Text qualified as Text
 import Data.Text.Encoding (encodeUtf8)
+import Lens.Micro ((^.))
+import Ouroboros.Consensus.HardFork.History.EraParams (EraParams (..))
 import Ouroboros.Consensus.HardFork.History.Summary
     ( Bound (..)
     , EraSummary (..)
@@ -105,6 +112,7 @@ instance FromJSON Fixture where
         genesisHash <- value .: "genesisSha256" >>= hex
         historyHash <- value .: "eraHistorySha256" >>= hex
         horizon <- SlotNo <$> value .: "horizonSlot"
+        major <- value .: "protocolMajor"
         source <- value .: "sourceIdentity"
         answerHash <- value .: "nodeAnswerSha256" >>= hex
         startHash <- value .: "nodeSlotStartSha256" >>= hex
@@ -112,7 +120,15 @@ instance FromJSON Fixture where
         manifestHash <- value .: "sourceManifestSha256" >>= hex
         pure
             ( Fixture
-                (NetworkTimeManifest magic start genesisHash historyHash horizon source)
+                ( NetworkTimeManifest
+                    magic
+                    start
+                    genesisHash
+                    historyHash
+                    horizon
+                    major
+                    source
+                )
                 answerHash
                 startHash
                 sourceHash
@@ -143,6 +159,20 @@ loadNetworkFixture network = do
         readFixture network "time-manifest.json" >>= decode
     genesis <- readFixture network "shelley-genesis.json"
     history <- readFixture network "era-history.cbor"
+    parameterBytes <-
+        readFixture network $
+            if network == "preprod"
+                then "evaluation/protocol-parameters.cbor"
+                else "protocol-parameters.cbor"
+    pp <-
+        either
+            (fail . show)
+            pure
+            ( decodeFull' (eraProtVerLow @ConwayEra) parameterBytes
+                :: Either DecoderError (PParams ConwayEra)
+            )
+    timeProtocolMajor manifest
+        `shouldBe` getVersion (pvMajor (pp ^. ppProtocolVersionL))
     answerBytes <- readFixture network "node-time-answers.json"
     startBytes <- readFixture network "node-slot-starts.json"
     sourceBytes <- readFixture network "node-source.json"
@@ -184,27 +214,222 @@ matches (NodeRefusal reason) actual =
             Left (TimePastHorizon _) -> True
             _ -> False
 
+-- Keep captured node refusals as history. NOTE030 changes the conversion
+-- expectation there; extrapolate independently from the raw final era.
+recordedRows
+    :: NetworkTime -> NetworkTimeManifest -> ByteString -> [TimeRow] -> IO ()
+recordedRows context manifest history rows = do
+    eras <-
+        either
+            (fail . show)
+            pure
+            ( deserialiseOrFail (LBS.fromStrict history)
+                :: Either DeserialiseFailure [EraSummary]
+            )
+    finalEra <- case reverse eras of
+        era : _ -> pure era
+        [] -> fail "EmptyRecordedHistory"
+    let begin = eraStart finalEra
+        startMs =
+            fromInteger (timeSystemStartMs manifest)
+                + getRelativeTime (boundTime begin) * 1000
+        slotMs = getSlotLength (eraSlotLength (eraParams finalEra)) * 1000
+        expected roundSlot ms =
+            boundSlot begin
+                + fromInteger (roundSlot ((fromInteger ms - startMs) / slotMs))
+        check conversion roundSlot ms answer
+            | ms < timeSystemStartMs manifest =
+                conversion context ms `shouldBe` Left (TimeBeforeHistory ms)
+            | otherwise = case answer of
+                NodeSlot slot -> conversion context ms `shouldBe` Right slot
+                NodeRefusal reason -> do
+                    reason `shouldSatisfy` (Text.isInfixOf "PastHorizon" . Text.pack)
+                    conversion context ms `shouldBe` Right (expected roundSlot ms)
+    forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
+        check posixMsFloorSlot floor ms floorAnswer
+        check posixMsCeilingSlot ceiling ms ceilAnswer
+
 spec :: Spec
 spec = describe "Validity conversions from recorded preprod network data" $ do
+    it
+        "caps at the moving ledger horizon and refuses wholly past or empty exclusive windows"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 42 manifest genesis history)
+            -- k=10 and f=1 in the authenticated recorded genesis; epoch size 500.
+            -- These cases also distinguish ceiling from adding a whole extra epoch.
+            ledgerHorizon context (SlotNo 868) `shouldBe` Right (SlotNo 1000)
+            ledgerHorizon context (SlotNo 470) `shouldBe` Right (SlotNo 500)
+            ledgerHorizon context (SlotNo 471) `shouldBe` Right (SlotNo 1000)
+            forM_ [868, 869] $ \upper ->
+                capValidityUpper context (SlotNo 868) Nothing (SlotNo upper)
+                    `shouldBe` Left
+                        ( WindowPastLedgerHorizon
+                            (SlotNo 868)
+                            (SlotNo 1000)
+                            Nothing
+                            (SlotNo upper)
+                        )
+            capValidityUpper context (SlotNo 868) Nothing (SlotNo 999)
+                `shouldBe` Right (SlotNo 999)
+            capValidityUpper
+                context
+                (SlotNo 868)
+                (Just (SlotNo 868))
+                (SlotNo 1113)
+                `shouldBe` Right (SlotNo 999)
+            capValidityUpper
+                context
+                (SlotNo 868)
+                (Just (SlotNo 1001))
+                (SlotNo 1113)
+                `shouldBe` Left
+                    ( WindowPastLedgerHorizon
+                        (SlotNo 868)
+                        (SlotNo 1000)
+                        (Just (SlotNo 1001))
+                        (SlotNo 1113)
+                    )
+            capValidityUpper
+                context
+                (SlotNo 868)
+                (Just (SlotNo 999))
+                (SlotNo 1113)
+                `shouldBe` Left
+                    ( WindowPastLedgerHorizon
+                        (SlotNo 868)
+                        (SlotNo 1000)
+                        (Just (SlotNo 999))
+                        (SlotNo 1113)
+                    )
+            capValidityUpper context (SlotNo 868) (Just (SlotNo 868)) (SlotNo 868)
+                `shouldBe` Left
+                    ( WindowPastLedgerHorizon
+                        (SlotNo 868)
+                        (SlotNo 1000)
+                        (Just (SlotNo 868))
+                        (SlotNo 868)
+                    )
+    it
+        "keeps a preprod-shaped 120-second window below the moving ledger horizon"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "preprod"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 1 manifest genesis history)
+            let tip = SlotNo 120_000_000
+                upper = tip + 120
+            capValidityUpper context tip (Just tip) upper `shouldBe` Right upper
+            horizon <- either (fail . show) pure (ledgerHorizon context tip)
+            horizon `shouldSatisfy` (>= tip + 129_600)
+    it "keeps horizon1000 at970 and advances to1500 at971" $ do
+        (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+        context <-
+            either
+                (fail . show)
+                pure
+                (validateNetworkTime 42 manifest genesis history)
+        ledgerHorizon context (SlotNo 970) `shouldBe` Right (SlotNo 1000)
+        ledgerHorizon context (SlotNo 971) `shouldBe` Right (SlotNo 1500)
+        minimumValidityWindow context (SlotNo 970) Nothing (SlotNo 1250)
+            `shouldBe` Right (ValidityWindow (SlotNo 1000) (SlotNo 999) 100 True)
+        minimumValidityWindow context (SlotNo 971) Nothing (SlotNo 1250)
+            `shouldBe` Right (ValidityWindow (SlotNo 1500) (SlotNo 1250) 100 False)
+    it
+        "keeps empty refusal first and refuses short registry and exact horizon windows"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 42 manifest genesis history)
+            minimumValidityWindow context (SlotNo 917) Nothing (SlotNo 918)
+                `shouldBe` Left
+                    ( WindowPastLedgerHorizon
+                        (SlotNo 917)
+                        (SlotNo 1000)
+                        Nothing
+                        (SlotNo 918)
+                    )
+            forM_ [999, 1000] $ \upper ->
+                minimumValidityWindow context (SlotNo 917) Nothing (SlotNo upper)
+                    `shouldBe` Left
+                        (WindowTooShort (SlotNo 917) (SlotNo 1000) Nothing (SlotNo upper) 100)
+            minimumValidityWindow context (SlotNo 899) Nothing (SlotNo 1000)
+                `shouldBe` Left
+                    (WindowTooShort (SlotNo 899) (SlotNo 1000) Nothing (SlotNo 1000) 100)
+    it
+        "uses10slots on pinned preprod and never waits in its ordinary120slot window"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "preprod"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 1 manifest genesis history)
+            let tip = SlotNo 120_000_000
+            result <-
+                either
+                    (fail . show)
+                    pure
+                    (minimumValidityWindow context tip Nothing (tip + 120))
+            validityMinimumSlots result `shouldBe` 10
+            validityNeedsHorizonWait result `shouldBe` False
+            validitySelectedUpper result `shouldBe` tip + 120
+    it
+        "refuses before the pinned history start and accepts its exact start"
+        $ forM_ [("devnet", 42), ("preprod", 1)]
+        $ \(network, magic) -> do
+            (manifest, genesis, history, _) <- loadNetworkFixture network
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime magic manifest genesis history)
+            let start = timeSystemStartMs manifest
+            posixMsFloorSlot context (start - 1)
+                `shouldBe` Left (TimeBeforeHistory (start - 1))
+            posixMsCeilingSlot context (start - 1)
+                `shouldBe` Left (TimeBeforeHistory (start - 1))
+            posixMsFloorSlot context start `shouldBe` Right (SlotNo 0)
+            posixMsCeilingSlot context start `shouldBe` Right (SlotNo 0)
+            slotStartMs context (SlotNo 0) `shouldBe` Right start
+    it "extends the pinned final era far beyond the old horizon" $ do
+        (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+        context <-
+            either
+                (fail . show)
+                pure
+                (validateNetworkTime 42 manifest genesis history)
+        let farSlot = timeHorizonSlot manifest + 10_000_000
+            farMs = timeSystemStartMs manifest + toInteger (unSlotNo farSlot) * 100
+        slotStartMs context farSlot `shouldBe` Right farMs
+        posixMsFloorSlot context farMs `shouldBe` Right farSlot
+        posixMsCeilingSlot context (farMs + 1) `shouldBe` Right (farSlot + 1)
     it "refuses an unsupported local time network by name" $
         loadTimeMaterial 999 "unused-for-unsupported-network"
             `shouldThrow` (== UnknownTimeNetwork 999)
     it
-        "loads the production packaged source and retains all recorded answers"
+        "loads the packaged source and preserves valid recorded answers with amended range policy"
         $ do
             material <- loadTimeMaterial 1 "unused-for-packaged-preprod"
             context <- case material of
                 PackagedTime reviewed -> pure reviewed
                 GeneratedGenesis _ -> fail "PackagedPreprodSelectedGeneratedSource"
-            (_, _, _, rows) <- loadFixture
-            forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
-                matches floorAnswer (posixMsFloorSlot context ms) `shouldBe` True
-                matches ceilAnswer (posixMsCeilingSlot context ms) `shouldBe` True
+            (manifest, _, history, rows) <- loadFixture
+            recordedRows context manifest history rows
     forM_ [("preprod", 1), ("devnet", 42)] $ \(network, magic) ->
         it
             ( "matches independently recorded "
                 <> network
-                <> " slot starts and horizon refusal"
+                <> " slot starts and extends its former horizon"
             )
             $ do
                 (manifest, genesis, history, _) <- loadNetworkFixture network
@@ -221,9 +446,16 @@ spec = describe "Validity conversions from recorded preprod network data" $ do
                     Right ms -> slotStartMs context slot `shouldBe` Right ms
                     Left reason -> do
                         reason `shouldSatisfy` (Text.isInfixOf "PastHorizon" . Text.pack)
-                        slotStartMs context slot `shouldBe` Left (SlotPastHorizon slot)
+                        -- The recorded refusal is at the old exclusive end.
+                        -- Its time is independently recorded at the prior slot.
+                        slot `shouldBe` timeHorizonSlot manifest
+                        previous <- case [ms | StartRow s (Right ms) <- rows, s == slot - 1] of
+                            [ms] -> pure ms
+                            _ -> fail "MissingRecordedPreviousSlot"
+                        let slotMs = if magic == 42 then 100 else 1000
+                        slotStartMs context slot `shouldBe` Right (previous + slotMs)
     it
-        "matches the exact generated-devnet context, rounding and horizon refusals"
+        "preserves generated-devnet rounding and extends its captured final era"
         $ do
             (manifest, genesis, history, rows) <- loadNetworkFixture "devnet"
             context <-
@@ -231,21 +463,19 @@ spec = describe "Validity conversions from recorded preprod network data" $ do
                     (fail . show)
                     pure
                     (validateNetworkTime 42 manifest genesis history)
-            forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
-                matches floorAnswer (posixMsFloorSlot context ms) `shouldBe` True
-                matches ceilAnswer (posixMsCeilingSlot context ms) `shouldBe` True
-    it "matches every recorded node floor, ceiling and horizon refusal" $ do
-        (manifest, genesis, history, rows) <- loadFixture
-        context <-
-            either
-                (fail . show)
-                pure
-                (validateNetworkTime 1 manifest genesis history)
-        forM_ rows $ \(TimeRow ms floorAnswer ceilAnswer) -> do
-            matches floorAnswer (posixMsFloorSlot context ms) `shouldBe` True
-            matches ceilAnswer (posixMsCeilingSlot context ms) `shouldBe` True
-        length [() | TimeRow _ (NodeRefusal _) _ <- rows]
-            `shouldSatisfy` (> 0)
+            recordedRows context manifest history rows
+    it
+        "preserves recorded preprod rounding with explicit amended range expectations"
+        $ do
+            (manifest, genesis, history, rows) <- loadFixture
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 1 manifest genesis history)
+            recordedRows context manifest history rows
+            length [() | TimeRow _ (NodeRefusal _) _ <- rows]
+                `shouldSatisfy` (> 0)
 
     it "detects swapped rounding on the recorded non-boundary inputs" $ do
         (manifest, genesis, history, rows) <- loadFixture

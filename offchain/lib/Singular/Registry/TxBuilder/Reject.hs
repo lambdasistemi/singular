@@ -54,6 +54,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
@@ -61,11 +62,12 @@ import Singular.Registry.Ledger
     , TokenId
     , TxIn
     )
-import Singular.Registry.Provider
-    ( ChainPoint (..)
-    , View (..)
+import Singular.Registry.LedgerProvider
+    ( Session (..)
+    , TipObservation (..)
     )
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.SessionIO (outputsAt, parameters)
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -84,7 +86,7 @@ to the transaction itself.
 -}
 rejectRequestsImpl
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -> Addr
     -> IO ConwayTx
@@ -104,7 +106,7 @@ nothing published.
 -}
 rejectRequestsWithRefs
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
@@ -157,7 +159,7 @@ window selects among them.
 -}
 queryRejectContext
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -> Addr
     -> IO
@@ -171,8 +173,8 @@ queryRejectContext cfg view tid addr = do
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- viewUTxOsAt view stateAddr
-    requestUtxos <- viewUTxOsAt view reqAddr
+    stateUtxos <- outputsAt view stateAddr
+    requestUtxos <- outputsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -190,8 +192,8 @@ queryRejectContext cfg view tid addr = do
         error
             "rejectRequests: no pending \
             \requests"
-    let pp = viewProtocolParams view
-    walletUtxos <- viewUTxOsAt view addr
+    pp <- parameters view
+    walletUtxos <- outputsAt view addr
     -- A published reference output lives in this same wallet. Spending
     -- one to pay the fee would destroy the script the transaction is
     -- resolving through, and collateral must be ada-only besides.
@@ -239,10 +241,10 @@ chooses only the upper bound, with shorter horizons tried as needed.
 Keep that bound after the tip even when the clock is behind it. No
 request deadline selects the interval: a reject is admitted in every window.
 -}
-rejectValidity :: View IO -> IO (SlotNo, SlotNo)
+rejectValidity :: Session NoWitness IO -> IO (SlotNo, SlotNo)
 rejectValidity view = do
     now <- currentPosixMs
-    let lowerSlot = cpSlot (viewPoint view)
+    lowerSlot <- observedSlot <$> Services.tip view
     -- A tip supplies the lower slot directly, but both ledger bounds must
     -- remain inside this view's validated finite conversion context.
     _ <- Services.slotStart view lowerSlot
@@ -253,11 +255,13 @@ rejectValidity view = do
                 [120_000, 60_000, 30_000, 10_000, 5_000, 2_000, 1_000]
     let finalUpper = max (lowerSlot + 1) upperSlot
     _ <- Services.slotStart view finalUpper
-    pure (lowerSlot, finalUpper)
+    capped <-
+        Services.validityUpper view lowerSlot (Just lowerSlot) finalUpper
+    pure (lowerSlot, capped)
 
 -- | Wrap common local evaluation for the story language.
 mkRejectEvalTx
-    :: View IO
+    :: Session NoWitness IO
     -> ConwayTx
     -> IO
         ( Map.Map

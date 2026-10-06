@@ -67,6 +67,7 @@ import Conformance.Run.Observe
 import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
+import Singular.Registry.Evidence qualified as Cage
 
 import Conformance.Compare.Perturbation qualified as Perturbation
 import Conformance.Compare.Registration qualified as Compare
@@ -206,13 +207,11 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( SubmitResult (..)
-    , signTx
-    , signedTx
-    )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrie)
@@ -742,7 +741,7 @@ submitEdge env state cage exit alteration placement request = do
                 fmap
                     (Map.fromList . concat)
                     ( mapM
-                        (\a -> Cage.withView (envProv env) (`Cage.viewUTxOsAt` a))
+                        (\a -> Cage.withLatest (envProv env) (`Cage.outputsAt` a))
                         [ genesisAddr
                         , wallet
                         , requestAddrFromCfg cfg tid (network cfg)
@@ -809,7 +808,7 @@ submitEdge env state cage exit alteration placement request = do
                     then Just <$> retractionWitness env state cage reqOut signed
                     else pure Nothing
             case result of
-                Submitted _ -> do
+                SubmitAccepted _ -> do
                     modifyIORef' (livePendingRequests state) (Map.delete pendingKey)
                     case alteration of
                         Just payment
@@ -856,8 +855,8 @@ submitEdge env state cage exit alteration placement request = do
                             spent
                             (StepAccepted signed (mem, cpu, txSizeBytes signed))
                         )
-                Rejected reason -> do
-                    let explanation = T.unpack (TE.decodeUtf8Lenient reason)
+                SubmitRefused reason -> do
+                    let explanation = T.unpack reason
                         -- A retraction is judged by the request script, every other
                         -- exit by the state script.
                         marker =
@@ -892,6 +891,7 @@ submitEdge env state cage exit alteration placement request = do
                             spent
                             (refusedOutcome marker signed diagnostic)
                         )
+                unavailable -> failWith ("submission unavailable: " <> show unavailable)
   where
     -- A fold spends the custody its edge consumes; a reject and a retraction
     -- consume none.
@@ -1015,7 +1015,7 @@ submitBatch env state cage exit placement alteration requests = do
                     else do
                         sleepUntil (opens + 500)
                         Just
-                            <$> Cage.withView
+                            <$> Cage.withLatest
                                 (envProv env)
                                 (\v -> trySlots v [opens + 400, opens + 200, opens + 100])
             pure
@@ -1063,7 +1063,7 @@ submitBatch env state cage exit placement alteration requests = do
                 }
         build units = do
             now <- currentPosixMs
-            upper <- Cage.withView (envProv env) (`trySlots` reach now)
+            upper <- Cage.withLatest (envProv env) (`trySlots` reach now)
             assembleFoldWithFee
                 env
                 spec{fsPurposeUnits = units, fsUpper = Just upper}
@@ -1102,7 +1102,7 @@ submitBatch env state cage exit placement alteration requests = do
             ]
     result <- submitTxResilient (envSubmit env) signedWitnessed
     measured <- case result of
-        Submitted _ -> do
+        SubmitAccepted _ -> do
             confirmTx env signed
             forM_ booked $ \(request, _) ->
                 modifyIORef'
@@ -1129,7 +1129,7 @@ submitBatch env state cage exit placement alteration requests = do
             let size = txSizeBytes signed
             modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, size)])
             pure (Just (mem, cpu, size))
-        Rejected _ -> do
+        SubmitRefused _ -> do
             -- A refused batch leaves its requests pending; a later batch naming
             -- them spends the same ones.
             forM_ booked $ \(request, utxo) ->
@@ -1137,6 +1137,7 @@ submitBatch env state cage exit placement alteration requests = do
                     (livePendingRequests state)
                     (Map.insert (pendingKeyOf request) utxo)
             pure Nothing
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     batchRecord
         env
         state
@@ -1211,18 +1212,19 @@ batchRecord env state cage exit alteration booked asked signed result units (mea
             , T.pack marker `elem` hashes
             ]
     chainSide <- case result of
-        Submitted _ -> pure (Right ())
-        Rejected reason ->
+        SubmitAccepted _ -> pure (Right ())
+        SubmitRefused reason ->
             pure . Left $
                 refusedOutcome
                     stateMarker
                     signed
                     StepRejection
-                        { srText = TE.decodeUtf8Lenient reason
+                        { srText = reason
                         , srMeasured = measured
                         , srDeclared = declared
                         , srBudgetExceeded = []
                         }
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     -- A reject batch is judged on the outputs crediting each owner it owes.
     judged <- case exit of
         Live.Reject -> do
@@ -1533,7 +1535,7 @@ declareUnits
     -> (Map.Map T.Text ExUnits -> IO ConwayTx)
     -> IO (ConwayTx, PurposeMeasurements, PurposeUnits)
 declareUnits env build = do
-    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest (envProv env) Cage.parameters
     let maxUnits = pp ^. ppMaxTxExUnitsL
         blockUnits = pp ^. ppMaxBlockExUnitsL
     template <- build Map.empty
@@ -1618,7 +1620,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
             -- the window before it is submitted.
             sleepUntil (opens + 500)
             lower <-
-                Cage.withView (envProv env) $ \v ->
+                Cage.withLatest (envProv env) $ \v ->
                     trySlots v [opens + 400, opens + 200, opens + 100]
             pure
                 ( [Types.Rejected]
@@ -1667,7 +1669,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
         build units = do
             now <- currentPosixMs
             upper <-
-                Cage.withView
+                Cage.withLatest
                     (envProv env)
                     (`trySlots` reach now)
             transaction <-
@@ -1734,7 +1736,7 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                         (ReferenceIdentity (txInReference pot))
             else pure Nothing
     stateUtxo <- cageStateUtxo env cage
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest prov Cage.parameters
     let stateScripts =
             [ u
             | u@(_, out) <- rcRefs cage
@@ -1750,16 +1752,16 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                     require
                         "before-phase-2 request missed its processing window"
                         (now < phase2Start)
-                    lower <- Cage.withView prov (`Services.floorSlot` submittedAt)
-                    upper <- Cage.withView prov (`Services.floorSlot` phase2Start)
+                    lower <- Cage.withLatest prov (`Services.floorSlot` submittedAt)
+                    upper <- Cage.withLatest prov (`Services.floorSlot` phase2Start)
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
                         )
                 Just Live.AfterPhase2 -> do
-                    lower <- Cage.withView prov (`Services.ceilingSlot` phase2End)
+                    lower <- Cage.withLatest prov (`Services.ceilingSlot` phase2End)
                     now <- currentPosixMs
-                    upper <- Cage.withView prov (`Services.floorSlot` (now + 10_000))
+                    upper <- Cage.withLatest prov (`Services.floorSlot` (now + 10_000))
                     pure
                         ( honest
                             & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper)
@@ -1819,18 +1821,18 @@ buildRetraction env cage tid named@(reqIn, reqOut) before = do
         prov = envProv env
         (_, submittedAt) = requestDatumOf reqOut
     state <- cageStateUtxo env cage
-    wallet <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    wallet <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     funder <- case sortOn (negate . outCoin . snd) wallet of
         first : _ -> pure first
         [] -> failWith "retraction fee payer has no indexed outputs"
     owner <- requestOwnerKey reqOut
-    pp <- Cage.withView prov (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest prov Cage.parameters
     lower <-
-        Cage.withView
+        Cage.withLatest
             prov
             (`Services.ceilingSlot` (submittedAt + stateProcessTime before))
     SlotNo upper <-
-        Cage.withView
+        Cage.withLatest
             prov
             ( `Services.floorSlot`
                 (submittedAt + stateProcessTime before + stateRetractTime before)
@@ -1950,8 +1952,11 @@ retractionWitness env state cage requestOut transaction = do
 {- | The POSIX slot-start time from one acquired view's validated finite
 material, through the fixed common conversion.
 -}
-slotStartMs :: Cage.Provider IO -> SlotNo -> IO Integer
-slotStartMs prov slot = Cage.withView prov (`Services.slotStart` slot)
+slotStartMs
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> SlotNo
+    -> IO Integer
+slotStartMs prov slot = Cage.withLatest prov (`Services.slotStart` slot)
 
 {- | Refuse to submit a placed reject whose validity interval does not lie in the
 window its placement names: a setup failure of the run, never a step outcome.
@@ -2024,9 +2029,9 @@ storyReferences env cage key edge
         let cfg = rcCfg cage
             absentPolicy = scriptHashBytes (policyID (policyIdFromPin (cfgAbsentPolicy cfg)))
         utxos <-
-            Cage.withView
+            Cage.withLatest
                 (envProv env)
-                (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+                (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
         case [ u
              | u@(_, out) <- utxos
              , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)
@@ -2042,7 +2047,7 @@ storyWitness
     -> Addr
     -> IO (Maybe (TxIn, TxOut ConwayEra))
 storyWitness env cfg key wallet = do
-    utxos <- Cage.withView (envProv env) (`Cage.viewUTxOsAt` wallet)
+    utxos <- Cage.withLatest (envProv env) (`Cage.outputsAt` wallet)
     let policy = SBS.fromShort (cfgActivePolicy cfg)
         candidates =
             [ u
@@ -2257,9 +2262,9 @@ observeAcceptedStep env state step transaction = do
                 )
                 wallets
     cageOutputs <-
-        Cage.withView
+        Cage.withLatest
             (envProv env)
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     custody <-
         mapM
             (observeCustody ids cfg)
@@ -2386,7 +2391,7 @@ observeAcceptedStep env state step transaction = do
     -- A wallet holds the active and terminal witnesses the folds routed to
     -- it; the absent witness stays in the cage's custody.
     walletHoldings identities keys kinds wallet =
-        Cage.withView (envProv env) (`Cage.viewUTxOsAt` wallet)
+        Cage.withLatest (envProv env) (`Cage.outputsAt` wallet)
             >>= walletHoldingsOf identities keys kinds wallet
 
 {- | The holdings one wallet's outputs carry, one entry per token unit of each

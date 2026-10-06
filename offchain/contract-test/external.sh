@@ -3,9 +3,10 @@
 #
 # A devnet is started here as a process of its own, funding a fresh key
 # with outputs in blocks; the suite is then handed only the socket path the
-# devnet printed, the network magic and the key file — the three settings a
-# singular write takes — and builds the node and indexer adapters from
-# them. The suite starts no node of its own on this leg.
+# devnet settings name, the network magic and the key file. This retained
+# private legacy characterization builds the old node/indexer adapters; it
+# is not the shipping Koios constructor or node-deletion evidence. The suite
+# starts no node of its own on this leg.
 work="$(mktemp -d)"
 devnet_pid=""
 cleanup() {
@@ -30,7 +31,8 @@ devnet_pid=$!
 
 sock=""
 for _ in $(seq 1 1200); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
   if [ -n "$sock" ] && [ -S "$sock" ]; then
     break
   fi

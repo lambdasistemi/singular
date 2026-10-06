@@ -79,12 +79,14 @@ import Singular.Registry.Config
     ( CageConfig (..)
     , bootStateFromCfg
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
     )
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -148,12 +150,12 @@ publication of the state validator.
 -}
 bootTokenImpl
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> Addr
     -> IO ConwayTx
 bootTokenImpl cfg view addr = do
-    let pp = viewProtocolParams view
-    utxos <- viewUTxOsAt view addr
+    pp <- parameters view
+    utxos <- outputsAt view addr
     stateRef <-
         maybe
             (throwIO StateValidatorNotPublished)

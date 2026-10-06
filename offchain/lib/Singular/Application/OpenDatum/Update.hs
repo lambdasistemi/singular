@@ -41,9 +41,11 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, timedPhase)
-import Singular.Registry.Provider (View (..))
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
+import Singular.Registry.SessionIO (parameters)
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrWitnessKeyHash
@@ -62,7 +64,7 @@ releaseRedeemer = RawRedeemer (PLC.Constr 1 [])
 
 -- | What one payload update needs in hand.
 data UpdateArgs = UpdateArgs
-    { uaView :: View IO
+    { uaSession :: Session NoWitness IO
     {- ^ The view the update is built from: its parameters, its script
     evaluation
     -}
@@ -121,6 +123,7 @@ updateBody args = case liveEnvelope (snd (uaHolding args)) of
                         )
                     )
             else do
+                pp <- parameters (uaSession args)
                 let next = continuationOf out e (uaPayload args)
                     script = scriptFromBytes "open-datum" (uaApplied args)
                     prog :: Tx.TxBuild NoCtx Void ()
@@ -134,9 +137,9 @@ updateBody args = case liveEnvelope (snd (uaHolding args)) of
                         Tx.collateral (fst (uaFee args))
                 result <-
                     Tx.build
-                        (Tx.mkPParamsBound (viewProtocolParams (uaView args)))
+                        (Tx.mkPParamsBound pp)
                         (Tx.InterpretIO (const (pure undefined)))
-                        (mkEvalTx (uaView args))
+                        (mkEvalTx (uaSession args))
                         [uaFee args, uaHolding args]
                         (maybe [] pure (uaReference args))
                         (uaChange args)

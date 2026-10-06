@@ -75,11 +75,13 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
-import Singular.Registry.Node (Capabilities, tryOutcome)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
@@ -99,6 +101,7 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeUpdateTerminal
     )
+import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.E2E.CageSpec
     ( foldUnsigned
@@ -305,8 +308,8 @@ retire = edgeUpdateTerminal
 book
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> ByteString
     -> Edge
@@ -326,8 +329,8 @@ committed trie.
 -}
 foldOnce
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
@@ -345,8 +348,8 @@ The root is read on either side and must move.
 -}
 foldAndMirror
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
@@ -376,9 +379,12 @@ foldAndMirror cfg prov submit tm tokenId refs key edge = do
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
 activeHeldAt
-    :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> CageConfig
+    -> ByteString
+    -> IO Integer
 activeHeldAt prov cfg key = do
-    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    walletUtxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -420,12 +426,15 @@ mirror reaches it through an independent local trie, so their equality
 is a statement about the leaf and not about either implementation.
 -}
 committedRoot
-    :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> CageConfig
+    -> TokenId
+    -> IO ByteString
 committedRoot prov cfg tokenId = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId utxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))

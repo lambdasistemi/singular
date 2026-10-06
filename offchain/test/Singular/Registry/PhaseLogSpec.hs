@@ -117,7 +117,6 @@ import Singular.Registry.IndexerRig
     , withRigAt
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TxIn)
-import Singular.Registry.Node (Wallet (..), loadWallet)
 import Singular.Registry.Node.Indexer (Following (..), withFollowing)
 import Singular.Registry.Node.Memory
     ( ChainState (..)
@@ -157,6 +156,7 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , scriptFromBytes
     )
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
 spec = describe "the phase log of the read interface (#363)" $ do

@@ -47,7 +47,7 @@ case "${TAMPER:?TAMPER names the fact to change}" in
   lag)
     jq '.indexer.tipSlot = ((.indexer.tipSlot | tonumber) - 100000 | if . < 0 then 0 else . end | tostring)' \
       "$out" >"$out.tampered"
-    jq -e '((.node.chainPoint | split(".")[0] | tonumber) - (.indexer.tipSlot | tonumber)) > (.maxLagSlots | tonumber)' \
+    jq -e '((.inspect.observedTip | split(".")[0] | tonumber) - (.indexer.tipSlot | tonumber)) > (.maxLagSlots | tonumber)' \
       "$out.tampered" >/dev/null || {
       rm -f "$out.tampered"
       echo "readback-tamper: setup: the node is too young for a tip beyond the maximum lag" >&2

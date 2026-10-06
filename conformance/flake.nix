@@ -727,7 +727,7 @@
         # The Conformance Haskell extent, shared by the format and lint
         # checks so the two cannot visit different files.
         haskellDiscovery = ''
-          cd "${./.}"
+          cd "${src}/conformance"
           conf_dirs=$(
             awk '/^[ \t]*hs-source-dirs:/ {
               sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")

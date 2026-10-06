@@ -71,9 +71,8 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
-import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
-import Singular.Registry.Provider (View (..), withView)
-import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.SessionIO (withLatest)
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -251,7 +250,7 @@ updates :: Spec
 updates = describe "a payload update" $ do
     let args holding =
             UpdateArgs
-                { uaView = stubView
+                { uaSession = stubSession
                 , uaApplied = applied
                 , uaHolding = (ref '4' 1, holding)
                 , uaPayload = PLC.I 7
@@ -277,27 +276,28 @@ updates = describe "a payload update" $ do
         $ \path -> do
             evaluations <- newIORef (0 :: Int)
             let view =
-                    stubView
-                        { viewProtocolParams = withSyntheticCosts preprodParams
-                        , viewTimeContext = pure syntheticTime
-                        , viewResolvedOutputs = \wanted -> do
-                            atomicModifyIORef' evaluations (\n -> (n + 1, ()))
-                            pure
-                                [ (reference, output)
-                                | (reference, output) <- [(ref '4' 1, held), (ref '6' 0, funding)]
-                                , reference `Set.member` wanted
-                                ]
-                        }
+                    withParameters (withSyntheticCosts preprodParams) $
+                        withTime (pure syntheticTime) $
+                            withResolvedOutputs
+                                ( \wanted -> do
+                                    atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                                    pure
+                                        [ (reference, output)
+                                        | (reference, output) <- [(ref '4' 1, held), (ref '6' 0, funding)]
+                                        , reference `Set.member` wanted
+                                        ]
+                                )
+                                stubSession
                 funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
                 held =
                     liveWith 1 (Just (envelopeToData envelope))
                         & addrTxOutL
                             .~ Addr Testnet (ScriptHashObj (computeScriptHash applied)) StakeRefNull
             built <-
-                withView (loggedProvider (phaseLogAt path) (servingView view)) $ \v ->
+                withLatest (servingSession view) $ \v ->
                     updatePayloadTx
                         UpdateArgs
-                            { uaView = v
+                            { uaSession = v
                             , uaApplied = applied
                             , uaHolding = (ref '4' 1, held)
                             , uaPayload = PLC.I 7

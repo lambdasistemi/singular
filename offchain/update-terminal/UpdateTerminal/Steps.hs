@@ -45,17 +45,17 @@ import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Core (eraProtVerHigh, valueTxOutL)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (txInToText)
-import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (AssetName (..), ConwayEra, Root)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
+import Singular.Registry.Wallet (Wallet (..))
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Registry
     ( Registry (..)
-    , Session (sessProvider)
+    , Session (sessProvider, sessWallet)
     , book
     , committedRoot
     , foldAndMirror
@@ -131,9 +131,9 @@ retireStoryKey story = do
 activeHeldAt :: Registry -> CageConfig -> ByteString -> IO Integer
 activeHeldAt reg cfg key = do
     walletUtxos <-
-        Cage.withView
+        Cage.withLatest
             (sessProvider (regSession reg))
-            (`Cage.viewUTxOsAt` genesisAddr)
+            (`Cage.outputsAt` walletAddr (sessWallet (regSession reg)))
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum
@@ -152,9 +152,9 @@ quantity, read off the chain before the retirement spends it.
 activeSourceOf :: Registry -> CageConfig -> ByteString -> IO Value
 activeSourceOf reg cfg key = do
     walletUtxos <-
-        Cage.withView
+        Cage.withLatest
             (sessProvider (regSession reg))
-            (`Cage.viewUTxOsAt` genesisAddr)
+            (`Cage.outputsAt` walletAddr (sessWallet (regSession reg)))
     let policy = policyIdFromPin (cfgActivePolicy cfg)
         carriers =
             [ (txIn, q)

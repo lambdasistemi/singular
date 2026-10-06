@@ -65,6 +65,7 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Cardano.Slotting.Slot qualified as Cage
 import Singular.Application.OpenDatum.Envelope
     ( dataFromJson
     , envelopeToJson
@@ -72,10 +73,9 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.CLI.Command
     ( EntryArgs (..)
     , Key (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     )
 import Singular.CLI.Live
-import Singular.CLI.Node (withReads)
 import Singular.CLI.Outlay
     ( Outlay (..)
     , bookingOutlay
@@ -93,8 +93,12 @@ import Singular.CLI.Registry
     , renderIdentityError
     )
 import Singular.CLI.Session (failWith, txIdHex)
+import Singular.Registry.Capabilities (sessionReceipt)
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
@@ -110,8 +114,10 @@ kindName KTerminate = "terminate"
 {- | Prepare one entry command against the saved registry, for the public
 address the caller named, and report what it would submit.
 -}
-runPreview :: Kind -> EntryArgs -> NodeSettings -> String -> IO Value
-runPreview kind a (NodeSettings sock magic) addrText = do
+runPreview
+    :: Kind -> EntryArgs -> ProviderSettings -> String -> IO Value
+runPreview kind a settings addrText = do
+    let magic = providerMagic settings
     addr <-
         either
             (failWith ClientRefusal)
@@ -129,9 +135,9 @@ runPreview kind a (NodeSettings sock magic) addrText = do
     -- One view for the whole preparation: the state, the mirror's root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
-    withReads magic sock $ \prov -> Cage.withView prov $ \v -> do
-        let pp = Cage.viewProtocolParams v
-            point = Cage.viewPoint v
+    withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
+        pp <- Cage.parameters v
+        point <- Cage.tip v
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
@@ -173,6 +179,7 @@ runPreview kind a (NodeSettings sock magic) addrText = do
                     [ ("update", bodyReport pp tx)
                     , ("outlay", outlayReport (entryMaxOutlay a) outlay)
                     ]
+        scope <- sessionReceipt caps v
         pure $
             receipt
                 (kindName kind)
@@ -182,7 +189,8 @@ runPreview kind a (NodeSettings sock magic) addrText = do
                     <> [ ("networkMagic", toJSON magic)
                        , ("caller", callerReport addrText caller)
                        , ("stateRoot", toJSON (hexT observed))
-                       , ("chainPoint", toJSON (pointText point))
+                       , ("observedTip", toJSON (pointText point))
+                       , ("sessionEvidence", scope)
                        , ("protocolParameters", parametersDigest pp)
                        ]
                     <> prepared
@@ -199,7 +207,7 @@ report it beside the bound on the fold that follows.
 -}
 previewBooking
     :: EntryArgs
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> Live
     -> Addr
     -> ByteString
@@ -208,7 +216,7 @@ previewBooking
 previewBooking a v live addr key b = do
     let s = liveSaved live
         cfg = savedCfg s
-        pp = Cage.viewProtocolParams v
+    pp <- Cage.parameters v
     booking <-
         bookEdgeMeasured
             cfg
@@ -295,11 +303,11 @@ foldBound pp live outlay =
         ]
 
 -- | The view's chain point, as the other commands print it: slot, a dot, the block hash.
-pointText :: Cage.ChainPoint -> Text
+pointText :: Cage.TipObservation -> Text
 pointText p =
-    T.pack (show (Cage.unSlotNo (Cage.cpSlot p)))
+    T.pack (show (Cage.unSlotNo (Cage.observedSlot p)))
         <> "."
-        <> hexT (Cage.cpBlockHash p)
+        <> hexT (Cage.observedHash p)
 
 {- | A digest of the parameters the bodies were built under, so a later
 reader can tell whether they moved: BLAKE2b-256 of their JSON.

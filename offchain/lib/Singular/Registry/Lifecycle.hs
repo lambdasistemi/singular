@@ -78,28 +78,24 @@ import Cardano.Tx.Balance
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusLedgerApi.V3 qualified as PLC
 
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , PParams
     , TokenId
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
+import Singular.Registry.LedgerProvider
+    ( Network (..)
+    , OutputQuery (..)
+    , Session (..)
     , SubmitResult (..)
-    , funderAddr
-    , funderSignKey
-    , signTx
-    , signedTx
-    , submitSigned
     )
-import Singular.Registry.Provider
-    ( ChainPoint (..)
-    , Provider (..)
-    , View (..)
-    )
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.SessionIO (outputsAt, parameters, withLatest)
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -110,14 +106,15 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     )
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
 import Singular.Registry.Types (Edge)
+import Singular.Registry.Wallet (Wallet (..))
 
 {- | Public external nodes use the lifecycle automatically: a chain point
 on a network other than the factory devnet (network magic 42). The
 explicit flag also exercises that path on the devnet.
 -}
-lifecycleRequested :: ChainPoint -> [String] -> Bool
-lifecycleRequested point args =
-    "--lifecycle" `elem` args || cpNetwork point /= 42
+lifecycleRequested :: Network -> [String] -> Bool
+lifecycleRequested (Network magic) args =
+    "--lifecycle" `elem` args || magic /= 42
 
 {- | A funding allowance, not the fee charged: one maximum-size transaction,
 the live aggregate execution limit, and the actual reference scripts.
@@ -239,19 +236,24 @@ verifyLifecycleBudget True pp tx = do
             <> show (tx ^. bodyTxL . feeTxBodyL)
         )
 
-fundingRequirement :: PParams ConwayEra -> [TxOut ConwayEra] -> Coin
-fundingRequirement pp outs =
+fundingRequirement
+    :: Addr -> PParams ConwayEra -> [TxOut ConwayEra] -> Coin
+fundingRequirement address pp outs =
     let Coin fees = protocolFeeReserve pp []
         Coin change =
-            minimumCoin pp (mkBasicTxOut funderAddr (MaryValue (Coin 0) mempty))
+            minimumCoin pp (mkBasicTxOut address (MaryValue (Coin 0) mempty))
     in  Coin
             (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
 
 -- | Keep request funding away from references and inputs reserved for later steps.
-fundingView :: [TxIn] -> View IO -> View IO
+fundingView :: [TxIn] -> Session NoWitness IO -> Session NoWitness IO
 fundingView reserved v =
     v
-        { viewUTxOsAt = fmap (filter available) . viewUTxOsAt v
+        { outputs = \query -> do
+            result <- outputs v query
+            pure $ case query of
+                AtAddress _ -> fmap (\fact -> fact{value = filter available (value fact)}) result
+                _ -> result
         }
   where
     available (i, out) =
@@ -263,16 +265,20 @@ fundingView reserved v =
 
 -- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle
-    :: Capabilities
+    :: Wallet
+    -> Capabilities NoWitness IO
     -> [TxOut ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
-fundLifecycle caps outs = do
-    unsigned <- withView (capReads caps) $ \v -> fundingTx v outs
-    let signed = signTx funderSignKey unsigned
+fundLifecycle wallet caps outs = do
+    unsigned <- withLatest (capReads caps) $ \v -> fundingTx wallet v outs
+    let signed = signTx (walletSignKey wallet) unsigned
         tx = signedTx signed
-    submitSigned (capSubmit caps) signed >>= \case
-        Submitted _ -> pure ()
-        Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
+    capSubmit caps signed >>= \case
+        SubmitAccepted _ -> pure ()
+        SubmitRefused reason -> fail ("lifecycle funding rejected: " <> show reason)
+        SubmitFailed reason -> fail ("lifecycle funding answer unavailable: " <> show reason)
+        SubmitWrongNetwork wanted actual ->
+            fail ("lifecycle funding wrong network: " <> show (wanted, actual))
     capConfirm caps tx
     putStrLn ("lifecycle funding confirmed: " <> show (txIdTx tx))
     pure
@@ -281,13 +287,15 @@ fundLifecycle caps outs = do
         ]
 
 -- | The unsigned funding of the requested outputs, built from one view.
-fundingTx :: View IO -> [TxOut ConwayEra] -> IO ConwayTx
-fundingTx v outs = do
-    let pp = viewProtocolParams v
-    wallet <- viewUTxOsAt (fundingView [] v) funderAddr
+fundingTx
+    :: Wallet -> Session NoWitness IO -> [TxOut ConwayEra] -> IO ConwayTx
+fundingTx fundingWallet v outs = do
+    pp <- parameters v
+    let address = walletAddr fundingWallet
+    wallet <- outputsAt (fundingView [] v) address
     let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
         Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
-        Coin need = fundingRequirement pp outs
+        Coin need = fundingRequirement address pp outs
         pick
             :: Integer -> [(TxIn, TxOut ConwayEra)] -> [(TxIn, TxOut ConwayEra)]
         pick _ [] = []
@@ -315,7 +323,7 @@ fundingTx v outs = do
     either
         (fail . show)
         (pure . balancedTx)
-        (balanceTx pp inputs [] funderAddr draft)
+        (balanceTx pp inputs [] address draft)
 
 checkExecutionLimit :: ExUnits -> [ExUnits] -> Either String ExUnits
 checkExecutionLimit (ExUnits maxMem maxSteps) costs =
@@ -341,17 +349,18 @@ Re-evaluate the final fee/body until both budgets and fee are stable.
 -}
 prepareLifecycleTx
     :: Bool
-    -> View IO
+    -> Session NoWitness IO
     -> [(TxIn, TxOut ConwayEra)]
     -> Int
     -> ConwayTx
     -> IO ConwayTx
 prepareLifecycleTx False _ _ _ tx = pure tx
-prepareLifecycleTx True v refs witnesses initial = go (4 :: Int) initial
+prepareLifecycleTx True v refs witnesses initial = do
+    pp <- parameters v
+    go pp (4 :: Int) initial
   where
-    pp = viewProtocolParams v
-    go 0 _ = fail "lifecycle evaluation and fee did not converge"
-    go rounds tx = do
+    go _ 0 _ = fail "lifecycle evaluation and fee did not converge"
+    go pp rounds tx = do
         measured <- Services.evaluateTx v tx
         let Redeemers original = tx ^. witsTxL . rdmrsTxWitsL
         unless (Map.keysSet measured == Map.keysSet original) $
@@ -404,4 +413,4 @@ prepareLifecycleTx True v refs witnesses initial = go (4 :: Int) initial
                         <> show (balanced ^. bodyTxL . feeTxBodyL)
                     )
                 pure balanced
-            else go (rounds - 1) balanced
+            else go pp (rounds - 1) balanced

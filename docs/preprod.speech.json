@@ -91,7 +91,7 @@
       "pause": 500
     },
     {
-      "text": "From the release archive (or this repository), with your own node socket and wallet as the onboarding page describes, you can point the two tools that produced this record at the deployment:",
+      "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, as the onboarding page describes. From the repository root:",
       "pause": 400
     },
     {
@@ -99,7 +99,7 @@
       "pause": 400
     },
     {
-      "text": "verify re-runs the fourteen checks above against whatever node you point it at. The attached run folds your own spelling instead of alice — alice is already Active here, and an attached rerun that asks for a held spelling is refused by design, naming the refusal. The mirror file travels with the manifest: a fold needs the trie it records, and a run whose mirror root disagrees with the chain stops and says so.",
+      "text": "verify re-runs the manifest checks against facts returned by the selected API. Those facts remain Unbound and Unverified; a successful verifier run would not establish a coherent snapshot or a trust witness. The attached run folds your own spelling instead of alice — alice is already Active here, and an attached rerun that asks for a held spelling is refused by design, naming the refusal. The mirror file travels with the manifest: a fold needs the trie it records, and a run whose mirror root disagrees with the chain stops and says so.",
       "pause": 400
     }
   ],
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "preprod.md",
-    "sha256": "54a0d2a46a5a4f516eeb6e4c582425aa9984076fcb1922f2533eb6c64b3f1151"
+    "sha256": "08942b885c7245e5e1de6269d9f01ab36fe4a3754f935cddaa6a9b325f35c4bf"
   }
 }

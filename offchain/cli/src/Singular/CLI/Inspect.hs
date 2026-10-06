@@ -46,7 +46,6 @@ import Data.ByteString (ByteString)
 import Data.List (sortOn)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Word (Word32)
 import Lens.Micro ((^.))
 import System.Directory (doesFileExist)
 
@@ -73,10 +72,9 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
-    , NodeSettings (..)
+    , ProviderSettings (..)
     )
 import Singular.CLI.Live
-import Singular.CLI.Node (withReads)
 import Singular.CLI.Proof
     ( AuthError (RootMismatch)
     , Leaf (..)
@@ -113,8 +111,10 @@ import Singular.CLI.Session
     , failWith
     , withTargetLockOr
     )
+import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , extractOwnerBytes
@@ -133,12 +133,12 @@ runInspect :: InspectArgs -> IO Value
 runInspect a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
-        NodeSettings sock magic = inspectNode a
+        settings = inspectProvider a
     complete <- doesFileExist (configPath dir)
     pending <- doesFileExist (pendingPath dir)
     if not complete && pending
-        then inspectIncompleteCreate dir sock magic
-        else inspectSaved dir key sock magic a
+        then inspectIncompleteCreate dir settings
+        else inspectSaved dir key settings a
 
 {- | Reconcile under the registry's lock, or not at all when another
 process holds it.
@@ -178,24 +178,26 @@ ledger (confirmed, and observed where their own after-state reads back),
 and the outcome is @partial@ with no leaf. Create refuses the directory;
 nothing is booted again or resubmitted.
 -}
-inspectIncompleteCreate :: FilePath -> FilePath -> Word32 -> IO Value
-inspectIncompleteCreate dir sock magic = do
+inspectIncompleteCreate :: FilePath -> ProviderSettings -> IO Value
+inspectIncompleteCreate dir settings = do
     identity <-
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ withReads magic sock $ \prov -> Cage.withView prov $ \v -> do
-            let point = Cage.viewPoint v
+        try $ withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
+            point <- Cage.tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
             pending <- unresolved <$> readJournal dir
+            scope <- sessionReceipt caps v
             pure $
                 receipt
                     "inspect"
                     Partial
-                    ( [ ("incompleteCreate", identity)
+                    ( [ ("sessionEvidence", scope)
+                      , ("incompleteCreate", identity)
                       ,
-                          ( "chainPoint"
+                          ( "observedTip"
                           , toJSON (renderPoint point)
                           )
                       ]
@@ -219,7 +221,11 @@ inspectIncompleteCreate dir sock magic = do
             Nothing ->
                 failWith
                     NodeUnavailable
-                    ("the node at " <> sock <> " could not be read: " <> show e)
+                    ( "the provider at "
+                        <> providerUrl settings
+                        <> " could not be read: "
+                        <> show e
+                    )
 
 {- | The inline datum an output carries, as the ledger holds it: its bytes,
 and their BLAKE2b-256 hash, both hex. A public indexer's copy of the same
@@ -238,11 +244,11 @@ inlineDatum o = case o ^. datumTxOutL of
 inspectSaved
     :: FilePath
     -> ByteString
-    -> FilePath
-    -> Word32
+    -> ProviderSettings
     -> InspectArgs
     -> IO Value
-inspectSaved dir key sock magic a = do
+inspectSaved dir key settings a = do
+    let magic = providerMagic settings
     saved <- loadSaved dir (inspectBlueprint a)
     either
         (failWith ClientRefusal . renderIdentityError)
@@ -251,8 +257,8 @@ inspectSaved dir key sock magic a = do
     -- Missing proof material is refused before the node is contacted.
     _ <- openMirror saved
     reached <-
-        try $ withReads magic sock $ \prov -> Cage.withView prov $ \v -> do
-            let point = Cage.viewPoint v
+        try $ withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
+            point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved
             state <- case extractCageDatum (snd (liveState live)) of
@@ -265,7 +271,7 @@ inspectSaved dir key sock magic a = do
             leaf <- mirrorLeaf mirror key root
             outs <- liveOutputs v saved
             requests <-
-                Cage.viewUTxOsAt
+                Cage.outputsAt
                     v
                     (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
             listed <- case inspectOutputsAt a of
@@ -276,7 +282,7 @@ inspectSaved dir key sock magic a = do
                             (failWith ClientRefusal . replaceFlag)
                             pure
                             (parseEnterpriseAddress magic text)
-                    os <- Cage.viewUTxOsAt v addr
+                    os <- Cage.outputsAt v addr
                     pure
                         [
                             ( "outputsAt"
@@ -286,6 +292,7 @@ inspectSaved dir key sock magic a = do
                                 ]
                             )
                         ]
+            scope <- sessionReceipt caps v
             let holdings = holdingsFor saved key outs
                 keyOutput = liveOutputFor saved key outs
             entries <- readJournal dir
@@ -310,11 +317,15 @@ inspectSaved dir key sock magic a = do
                             ]
                 labels =
                     keyFields key
-                        <> [ ("chainPoint", toJSON chainPoint)
-                           , ("mechanism", toJSON ("node-to-client local state query" :: Text))
+                        <> [ ("sessionEvidence", scope)
+                           , ("observedTip", toJSON chainPoint)
+                           ,
+                               ( "mechanism"
+                               , toJSON ("Koios raw facts through the shared HTTP transport" :: Text)
+                               )
                            ,
                                ( "freshness"
-                               , toJSON ("read at the chain point above, in this process" :: Text)
+                               , toJSON ("Latest reads in this process; no snapshot binding" :: Text)
                                )
                            , ("root", toJSON (hexT root))
                            , ("processTime", toJSON (stateProcessTime state))
@@ -396,7 +407,11 @@ inspectSaved dir key sock magic a = do
             Nothing ->
                 failWith
                     NodeUnavailable
-                    ("the node at " <> sock <> " could not be read: " <> show e)
+                    ( "the provider at "
+                        <> providerUrl settings
+                        <> " could not be read: "
+                        <> show e
+                    )
 
 {- | A pending request, as the node holds it: who owns it, what it asks and
 what it actually locks.

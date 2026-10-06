@@ -21,6 +21,7 @@ module Singular.Registry.TxBuilder.BootSpec (spec) where
 
 import Control.Exception
     ( ErrorCall (..)
+    , SomeException
     , displayException
     , try
     )
@@ -37,6 +38,7 @@ import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
@@ -48,7 +50,12 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , ProtVer (..)
+    , StrictMaybe (..)
+    )
+import Cardano.Ledger.Binary (mkVersion)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
@@ -62,9 +69,11 @@ import UntypedPlutusCore qualified as UPLC
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.Provider (Provider, View (..))
-import Singular.Registry.StubView (servingView, stubView)
+import Singular.Registry.LedgerProvider (LedgerProvider)
+import Singular.Registry.LedgerProvider qualified as LedgerProvider
+import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Boot
     ( BootRefusal (..)
     , bootTokenImpl
@@ -88,6 +97,19 @@ spec = do
 
 bootsByReference :: Spec
 bootsByReference = describe "a registry boots only by reference" $ do
+    it "refuses EraBeyondPinned before a boot reads outputs or builds" $ do
+        calls <- newIORef (0 :: Int)
+        major <- mkVersion (10 :: Word)
+        let session =
+                withAddressOutputs (\_ -> modifyIORef calls (+ 1) >> pure []) $
+                    withParameters (preprodParams & ppProtocolVersionL .~ ProtVer major 0) $
+                        withTime (pure syntheticTime) stubSession
+        result <-
+            try (bootTokenImpl cfg session payer)
+                :: IO (Either SomeException ConwayTx)
+        either displayException (const "built") result
+            `shouldSatisfy` isInfixOf "EraBeyondPinned"
+        readIORef calls `shouldReturn` 0
     it
         "refuses a boot from a wallet holding no publication of the state validator, by name"
         $ boot [seedUtxo, fundUtxo]
@@ -179,16 +201,20 @@ transaction it is handed and returns it as signed; a refusal is returned,
 not rethrown, so a row can require that nothing was submitted.
 -}
 publish
-    :: (Provider IO -> (ConwayTx -> IO ConwayTx) -> Addr -> IO a)
+    :: ( (LedgerProvider.Network, LedgerProvider NoWitness IO)
+         -> (ConwayTx -> IO ConwayTx)
+         -> Addr
+         -> IO a
+       )
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ([ConwayTx], Either ErrorCall a)
 publish run wallet = do
     kept <- newIORef []
     let provider =
-            servingView
-                stubView
-                    { viewUTxOsAt = \_ -> pure wallet
-                    }
+            servingSession
+                ( withAddressOutputs (\_ -> pure wallet) $
+                    withTime (pure syntheticTime) stubSession
+                )
         submit tx = do
             modifyIORef kept (<> [tx])
             pure tx
@@ -202,17 +228,19 @@ material, returning its completed transaction. A refusal propagates.
 boot :: [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
 boot wallet =
     let provider =
-            stubView
-                { viewUTxOsAt = \_ -> pure wallet
-                , viewProtocolParams = withSyntheticCosts preprodParams
-                , viewTimeContext = pure syntheticTime
-                , viewResolvedOutputs = \wanted ->
-                    pure
-                        [ (reference, output)
-                        | (reference, output) <- wallet
-                        , reference `Set.member` wanted
-                        ]
-                }
+            ( withAddressOutputs (\_ -> pure wallet) $
+                withParameters (withSyntheticCosts preprodParams) $
+                    withTime (pure syntheticTime) $
+                        withResolvedOutputs
+                            ( \wanted ->
+                                pure
+                                    [ (reference, output)
+                                    | (reference, output) <- wallet
+                                    , reference `Set.member` wanted
+                                    ]
+                            )
+                            stubSession
+            )
     in  bootTokenImpl cfg provider payer
 
 -- | A well-formed PlutusV3 program, distinguished by its arity.

@@ -37,6 +37,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.IORef (IORef, newIORef, readIORef)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Singular.Registry.Evidence qualified as Cage
 import System.IO (BufferMode (..), hSetBuffering, stdout)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -78,7 +79,8 @@ import MPF.Proof.Insertion (MPFProofStep (..))
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (TokenId)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.TxBuilder.Internal
@@ -146,14 +148,14 @@ comparison target for every verification below.
 -}
 readChainState
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> TokenId
     -> IO OnChainTokenState
 readChainState cfg prov tid = do
     stateUtxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "verify: no state UTxO carrying the policy token"

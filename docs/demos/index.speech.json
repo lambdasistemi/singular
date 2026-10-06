@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's session follower confirms new preprod transactions, but older address outputs still come from its node provider; #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
+      "text": "For Cardano KERI identity actions, the planned source is its local follower indexer: ckeri writes use --store PATH or CKERI_STORE, and reads use explicit --backend local --store PATH (or an indexer-backed endpoint where supported). Record the indexed chain point and freshness. Singular's ordinary path now reads raw outputs and history through Koios; its logical sessions are Unbound and its facts Unverified, and #107 tracks a persistent registry follower. A Koios asset lookup alone does not close these demo stories. The Cardano KERI indexer contract tracks the identity side. The older V1 cast used Koios and remains historical evidence.",
       "pause": 400
     }
   ],
@@ -35,6 +35,6 @@
   ],
   "_source": {
     "file": "index.md",
-    "sha256": "ffb82ca32aed55e48b77eb107d1623e620db036eb791ff5b994bdbe94385a619"
+    "sha256": "1f60115886d58f146db6c2ec332347ad3567b5a2ecf9c2dc87c584e169d32455"
   }
 }

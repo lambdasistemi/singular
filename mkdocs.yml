@@ -22,8 +22,8 @@ nav:
   - Ending a name: docs/retirement.md
   - Recovery and retirement: docs/recovery-retirement.md
   - Keep recovery and retirement available: docs/record-value.md
-  - Run against your own preprod node: docs/consumer-onboarding.md
-  - Connecting singular to a node: docs/singular-node.md
+  - Run with your own provider and wallet: docs/consumer-onboarding.md
+  - Connecting singular to a ledger provider: docs/singular-node.md
   - Download and verify a release: docs/verify-release.md
   - Conformance evidence: docs/conformance-evidence.md
   - Consumer conformance record: docs/consumer-conformance.md

@@ -13,8 +13,9 @@ module Devnet.Probe
     ( probe
     ) where
 
-import Control.Concurrent.Async (async, cancel)
-import Control.Exception (bracket)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (link, withAsync)
+import Control.Exception (throwIO)
 import Data.Aeson (object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Base16 qualified as B16
@@ -23,7 +24,6 @@ import Data.ByteString.Lazy.Char8 qualified as BL8
 import Data.ByteString.Short qualified as SBS
 import Data.List (partition)
 import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 import Data.Word (Word32)
 
 import Cardano.Node.Client.N2C.Connection
@@ -31,8 +31,6 @@ import Cardano.Node.Client.N2C.Connection
     , newLTxSChannel
     , runNodeClient
     )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Slotting.Slot (SlotNo (..))
 import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
     ( OneEraHash (..)
@@ -42,10 +40,11 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import Singular.Registry.Ledger (TxIn)
 
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Node (adaptProvider, awaitConnection)
-import Singular.Registry.Node.RawView (rawNodeProvider)
-import Singular.Registry.TimeMaterial (loadTimeMaterial)
-import System.FilePath (takeDirectory)
+import Singular.Registry.Private.Source
+    ( LedgerSource (..)
+    , readLedgerSource
+    )
+import System.Timeout (timeout)
 
 {- | Ask the node at a socket and magic, from one acquired ledger state,
 for its tip and which of the named outputs are unspent, and print both
@@ -56,30 +55,37 @@ probe sock magicWord txIns = do
     let magic = NetworkMagic magicWord
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
-    bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \thread -> do
-        let n2c = mkN2CProvider lsqCh
-        material <- loadTimeMaterial magicWord (takeDirectory sock)
-        awaitConnection
-            magic
-            sock
-            thread
-            (adaptProvider magic material (rawNodeProvider lsqCh))
-        (snapshot, unspent) <- N2C.withAcquired n2c $ \h ->
-            (,)
-                <$> N2C.queryLedgerSnapshotH h
-                <*> N2C.queryUTxOByTxInH h (Set.fromList txIns)
-        let (live, spent) = partition (`Map.member` unspent) txIns
-            tip = case N2C.ledgerChainPoint snapshot of
-                Chain.GenesisPoint -> Aeson.Null
-                Chain.BlockPoint (SlotNo slot) (OneEraHash h) ->
+    withAsync
+        ( runNodeClient magic sock lsqCh ltxsCh
+            >>= either throwIO (const (fail "private probe connection ended"))
+        )
+        $ \thread -> do
+            link thread
+            let observed = do
+                    source <- readLedgerSource lsqCh
+                    case sourcePoint source of
+                        Chain.GenesisPoint -> threadDelay 100_000 >> observed
+                        _ -> pure source
+            source <-
+                timeout 120_000_000 observed
+                    >>= maybe
+                        ( fail
+                            "private probe did not acquire a non-origin ledger state within120seconds"
+                        )
+                        pure
+            let unspent = sourceOutputs source
+            let (live, spent) = partition (`Map.member` unspent) txIns
+                tip = case sourcePoint source of
+                    Chain.GenesisPoint -> Aeson.Null
+                    Chain.BlockPoint (SlotNo slot) (OneEraHash h) ->
+                        object
+                            [ "slot" .= slot
+                            , "hash" .= BC.unpack (B16.encode (SBS.fromShort h))
+                            ]
+            BL8.putStrLn $
+                Aeson.encode $
                     object
-                        [ "slot" .= slot
-                        , "hash" .= BC.unpack (B16.encode (SBS.fromShort h))
+                        [ "tip" .= tip
+                        , "live" .= map renderOutRef live
+                        , "spent" .= map renderOutRef spent
                         ]
-        BL8.putStrLn $
-            Aeson.encode $
-                object
-                    [ "tip" .= tip
-                    , "live" .= map renderOutRef live
-                    , "spent" .= map renderOutRef spent
-                    ]

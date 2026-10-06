@@ -65,14 +65,16 @@ import PlutusTx.IsData.Class (ToData (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
     , TokenId
     , TxIn
     )
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (Session, TipObservation (..))
+import Singular.Registry.SessionIO (parameters)
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)
@@ -115,7 +117,7 @@ data ConnectedMint = ConnectedMint
 -- | Everything one connected fold binds.
 data ConnectedFoldArgs = ConnectedFoldArgs
     { cfaCfg :: CageConfig
-    , cfaView :: View IO
+    , cfaSession :: Session NoWitness IO
     -- ^ The view the fold is built from: parameters, evaluation, slots
     , cfaTrie :: TrieManager IO
     , cfaToken :: TokenId
@@ -144,14 +146,14 @@ computed new root the state continuation carries.
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
 connectedFoldTx args = do
     let cfg = cfaCfg args
-        view = cfaView args
+        view = cfaSession args
         tm = cfaTrie args
         tid = cfaToken args
         feeAddr = cfaFeeAddr args
         (stateIn, stateOut) = cfaStateUtxo args
         reqUtxos = cfaReqUtxos args
         feeUtxo = cfaFeeUtxo args
-        pp = viewProtocolParams view
+    pp <- parameters view
     (proofs, newRoot) <- computeProofs tm tid reqUtxos
     let adjustedRoot = cfaAdjustRoot args newRoot
         (oldState, newStateOut, script) =
@@ -291,7 +293,7 @@ prepareState cfg stateOut newRoot =
 
 -- | Compute the validity upper slot from the earliest request deadline.
 computeUpperSlot
-    :: View IO
+    :: Session NoWitness IO
     -> OnChainTokenState
     -> [(TxIn, TxOut ConwayEra)]
     -> IO SlotNo
@@ -306,7 +308,7 @@ computeUpperSlot view oldState reqUtxos = do
                     reqUtxos
     mUpperSlot <-
         trySync (Services.floorSlot view earliestDeadline)
-    case mUpperSlot of
+    candidate <- case mUpperSlot of
         Right s -> pure s
         Left _ -> do
             nowUtc <- getCurrentTime
@@ -315,6 +317,12 @@ computeUpperSlot view oldState reqUtxos = do
                 map
                     (\d -> round ((posixSec + d) * 1000))
                     [30, 5, 2]
+    observed <- Services.tip view
+    Services.validityUpper
+        view
+        (observedSlot observed)
+        Nothing
+        candidate
 
 {- | The TxBuild program: registry spends, attached spends and mints,
 outputs, witnesses. Processed requests lock into the state output

@@ -1224,7 +1224,7 @@ commandReceipt c k updates terminal = case c of
                     , "leaf" .= ("active" :: String)
                     , "key" .= hexOf k
                     , "root" .= ("r1" :: String)
-                    , "chainPoint" .= ("100.aa" :: String)
+                    , "observedTip" .= ("100.aa" :: String)
                     , "applicationOutput"
                         .= object
                             [ "output"

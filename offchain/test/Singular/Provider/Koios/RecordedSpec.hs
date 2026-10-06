@@ -22,6 +22,7 @@ ledger from its recorded @tx_cbor@. The protocol parameters decoded from
 module Singular.Provider.Koios.RecordedSpec (spec) where
 
 import Control.Monad (forM_, unless, (>=>))
+import Control.Monad qualified
 import Data.Aeson
     ( Value (..)
     , decodeStrict'
@@ -30,6 +31,7 @@ import Data.Aeson
     , toJSON
     , (.=)
     )
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
@@ -172,8 +174,62 @@ spec :: Spec
 spec = describe "recorded preprod Koios answers" $ do
     setSpec
     decodeSpec
+    rawBlockFactsSpec
     validitySpec
     seamSpec
+
+-- These controls alter decoded JSON in memory; no recorded file is changed.
+-- Source: Koios API 1.4.2, cardano-community/koios-artifacts revision
+-- 2e2eb57933e1e2528de5ca36ee961759841cf389,
+-- specs/results/koiosapi-preprod.yaml, components/schemas/tip ->
+-- blocks/items/properties/block_time (UNIX seconds), and tx_info ->
+-- blocks/items/properties/block_height (block height, not a slot).
+rawBlockFactsSpec :: Spec
+rawBlockFactsSpec = describe "required raw block facts" $ do
+    forM_
+        [ (CallTip, "block_time", voidRows decodeTip)
+        , (CallTxInfo, "block_height", voidRows decodeTxInfos)
+        ]
+        $ \(call, key, decode) -> do
+            it (show call <> " accepts its unchanged recorded raw field") $ do
+                body <- recordedBody call
+                decode body `shouldBe` Right ()
+            forM_
+                [ ("missing", KM.delete key)
+                , ("negative", KM.insert key (Number (-1)))
+                , ("fractional", KM.insert key (Number 1.5))
+                , ("text", KM.insert key (String "not a raw integer"))
+                , ("null", KM.insert key Null)
+                , ("overflow", KM.insert key (Number 18446744073709551616))
+                ]
+                $ \(name, change) ->
+                    it
+                        (show call <> " refuses its " <> name <> " " <> show key <> " by name")
+                        $ do
+                            body <- recordedBody call
+                            let changed = case body of
+                                    Array rows -> Array (fmap (\case Object o -> Object (change o); v -> v) rows)
+                                    _ -> error "recorded answer is not rows"
+                            case decode changed of
+                                Left failure ->
+                                    (decodePosition failure <> decodeReason failure)
+                                        `shouldSatisfy` T.isInfixOf (Key.toText key)
+                                Right () -> expectationFailure "malformed required raw field was accepted"
+  where
+    voidRows decode = Control.Monad.void . decode
+    recordedBody call = do
+        set <- loadSet
+        let bodies =
+                [ body
+                | f <- setFixtures set
+                , fixtureCall (fixtureRequest f) == call
+                , Just body@(Array rows) <-
+                    [decodeStrict' (answerBody (fixtureAnswer f))]
+                , not (null rows)
+                ]
+        case bodies of
+            body : _ -> pure body
+            [] -> fail ("no nonempty recorded " <> show call)
 
 -- ---------------------------------------------------------------------------
 -- The fixture set

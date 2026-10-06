@@ -1,11 +1,8 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-{- | A fold's validity upper bound stays inside the node's horizon.
-
-The provider below answers as the node client does for a development node
-of 100 ms slots whose horizon ends, exclusively, at slot 500: a time is
-converted only while it is inside the horizon, and rounding up adds one slot
-unless the time falls exactly on a slot boundary.
+{- | Upper bounds round down over the pinned final era, including beyond
+its captured horizon. NOTE030 opens that era; it does not change the caller's
+candidate windows, rounding rules, or cancellation behavior.
 -}
 module Singular.Registry.TxBuilder.UpperSlotSpec (spec) where
 
@@ -18,64 +15,64 @@ import Test.Hspec
     , expectationFailure
     , it
     , shouldBe
-    , shouldSatisfy
     )
 
-import Singular.Registry.Provider (SlotNo (..), View (..))
-import Singular.Registry.StubView (stubView)
+import Cardano.Slotting.Slot (SlotNo (..))
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticTime (syntheticTimeWith)
 import Singular.Registry.TxBuilder.Internal (trySlots, tryUpperSlots)
 
--- | The exclusive horizon, and the slot length in milliseconds.
+-- | The captured exclusive horizon, and the pinned slot length in milliseconds.
 horizon, slotMs :: Integer
 horizon = 500
 slotMs = 100
 
--- | A view that converts times as the node client does, up to the horizon.
-horizonView :: View IO
+-- | Raw synthetic finite history; the common interpreter opens its final era.
+horizonView :: Session NoWitness IO
 horizonView =
-    stubView
-        { viewTimeContext = pure (syntheticTimeWith 0 (1 / 10) 500)
-        }
-
--- | Inside the horizon: strictly below it.
-inside :: SlotNo -> Bool
-inside (SlotNo s) = fromIntegral s < horizon
+    withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) stubSession
 
 spec :: Spec
-spec = describe "A fold's validity upper bound and the node's horizon" $ do
+spec = describe "A fold's validity upper bound in the pinned final era" $ do
     -- 49 950 ms is inside slot 499, the horizon's last slot.
     let lastSlotTime = (horizon - 1) * slotMs + slotMs `div` 2
     it
-        "rounding up a time in the horizon's last slot gives the horizon slot itself"
+        "rounds up the first candidate beyond the old horizon without shortening the window"
         $ do
             s <- trySlots horizonView [lastSlotTime + 30_000, lastSlotTime]
-            s `shouldBe` SlotNo 500
-    it "the upper bound for that time stays inside the horizon" $ do
+            s `shouldBe` SlotNo 800
+    it "rounds the same upper-bound candidate down beyond the old horizon" $ do
         s <-
             tryUpperSlots horizonView [lastSlotTime + 30_000, lastSlotTime]
-        s `shouldBe` SlotNo 499
-        s `shouldSatisfy` inside
-    it "stays inside the horizon for every time the node converts" $ do
-        bounds <-
-            mapM
-                ( \ms ->
-                    tryUpperSlots
-                        horizonView
-                        [ms + 30_000, ms + 5_000, ms + 2_000, ms]
-                )
-                [0, 7 .. horizon * slotMs - 1]
-        bounds `shouldSatisfy` all inside
+        s `shouldBe` SlotNo 799
+    it
+        "preserves the first candidate's window and floor for every sampled time"
+        $ do
+            bounds <-
+                mapM
+                    ( \ms ->
+                        tryUpperSlots
+                            horizonView
+                            [ms + 30_000, ms + 5_000, ms + 2_000, ms]
+                    )
+                    [0, 7 .. horizon * slotMs - 1]
+            bounds
+                `shouldBe` [ SlotNo (fromInteger ((ms + 30_000) `div` slotMs))
+                           | ms <- [0, 7 .. horizon * slotMs - 1]
+                           ]
     cancellationSpec
 
 -- | A view whose every conversion first counts itself, then is cancelled.
-cancelledView :: IORef Int -> View IO
+cancelledView :: IORef Int -> Session NoWitness IO
 cancelledView calls =
-    horizonView
-        { viewTimeContext = do
+    withTime
+        ( do
             modifyIORef' calls (+ 1)
             throwIO ThreadKilled
-        }
+        )
+        horizonView
 
 -- | A cancellation escapes the fallback, and no later conversion is tried.
 cancellationSpec :: Spec

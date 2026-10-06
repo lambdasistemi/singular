@@ -92,6 +92,11 @@ library
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
     Singular.Provider.Koios.Client
+    Singular.Provider.Koios.Evidence
+    Singular.Provider.Koios.History
+    Singular.Provider.Koios.Provider
+    Singular.Provider.Koios.Runtime
+    Singular.Provider.Koios.State
     Singular.Provider.Koios.Recorded
     Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
@@ -100,11 +105,15 @@ library
     Singular.Registry.Blueprint.Params
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
+    Singular.Registry.Capabilities
+    Singular.Registry.Funding
     Singular.Registry.Config
     Singular.Registry.Config.Application
     Singular.Registry.Deployment
     Singular.Registry.Driver
     Singular.Registry.Lifecycle
+    Singular.Registry.Wait
+    Singular.Registry.Confirmation
     Singular.Registry.Node
     Singular.Registry.Proof
     Singular.Registry.Replay
@@ -160,7 +169,10 @@ library
   -- concern, and the generated API reference documents them here.
   reexported-modules:
     , Singular.Registry.Ledger
+    , Singular.Registry.LedgerProvider
+    , Singular.Registry.Evidence
     , Singular.Registry.Provider
+    , Singular.Registry.Signing
 
 -- Common derived services are public and independent of node transport.
 library local-services
@@ -171,22 +183,35 @@ library local-services
   autogen-modules:  Paths_singular_registry
   other-modules:    Paths_singular_registry
   exposed-modules:
+    Singular.Registry.Evidence
     Singular.Registry.Ledger
+    Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
     Singular.Registry.PhaseLog
     Singular.Registry.Provider
     Singular.Registry.Services
+    Singular.Registry.SessionServices
+    Singular.Registry.SessionIO
+    Singular.Registry.SessionEvidence
+    Singular.Registry.WaitTypes
+    Singular.Registry.Signing
+    Singular.Registry.Wallet
     Singular.Registry.TimeMaterial
+    Singular.Registry.TimeSource
+    Singular.Registry.ProviderSettings
 
   build-depends:
     , aeson
     , base                       >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -194,6 +219,7 @@ library local-services
     , cardano-tx-tools:tx-build
     , containers
     , crypton
+    , directory
     , filepath
     , memory
     , microlens
@@ -236,7 +262,6 @@ library node-internal
     , async
     , base                                   >=4.14 && <5
     , base16-bytestring
-    , bech32
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -341,6 +366,8 @@ library koios-http
   exposed-modules:
     Singular.Provider.Koios.Http
     Singular.Provider.Koios.Recorder
+    Singular.Registry.Terminal
+    Singular.Registry.Runner
 
   build-depends:
     , aeson
@@ -354,6 +381,7 @@ library koios-http
     , cardano-ledger-mary
     , cardano-slotting
     , case-insensitive
+    , cardano-tx-tools:tx-build
     , directory
     , filepath
     , http-client
@@ -362,6 +390,7 @@ library koios-http
     , microlens
     , random
     , singular-registry
+    , singular-registry:local-services
     , text
     , time
 
@@ -415,13 +444,14 @@ executable journey
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , mts:mpf-write
     , plutus-tx
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -731,9 +761,16 @@ executable retirement-verify
 executable devnet
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   devnet
+  hs-source-dirs:   devnet private-facade
   main-is:          Main.hs
-  other-modules:    Devnet.Probe
+  other-modules:
+    Devnet.Probe
+    Singular.Registry.Private.Archive
+    Singular.Registry.Private.Source
+    Singular.Registry.Private.Smoke
+    Singular.Registry.Private.EpochParameters
+    Singular.Registry.Private.Facade
+    Singular.Registry.Private.TimePublication
   build-depends:
     , aeson
     , async
@@ -754,7 +791,29 @@ executable devnet
     , ouroboros-network:api
     , singular-registry
     , singular-registry:local-services
-    , singular-registry:node-internal
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-tx-tools:tx-build
+    , chain-follower
+    , contra-tracer
+    , crypton
+    , http-types
+    , memory
+    , wai
+    , warp
+    , unix
+    , serialise
+    , time
+    , cardano-ledger-read
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , singular-registry:koios-http
+    , cardano-ledger-byron
+    , case-insensitive
+    , temporary
+    , process
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -789,6 +848,8 @@ executable deployment
     , directory
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -839,7 +900,7 @@ test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test cli/src
+  hs-source-dirs:   test cli/src private-facade
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
@@ -859,7 +920,6 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLI.Live
-    Singular.CLI.Node
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Plan
@@ -883,6 +943,7 @@ test-suite cage-tests
     Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
+    Singular.Provider.Koios.ProviderSpec
     Singular.Provider.Koios.FakeServer
     Singular.Provider.Koios.HttpSpec
     Singular.Provider.Koios.RecordedSpec
@@ -897,6 +958,8 @@ test-suite cage-tests
     Singular.Registry.LifecycleSpec
     Singular.Registry.LocalEvaluationSpec
     Singular.Registry.LocalServicesCallerSpec
+    Singular.Registry.SessionServicesSpec
+    Singular.Registry.WaitSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.NodeCleanupSpec
     Singular.Registry.NodeSpec
@@ -904,9 +967,13 @@ test-suite cage-tests
     Singular.Registry.OneViewSpec
     Singular.Registry.PhaseLogSpec
     Singular.Registry.ProviderSpec
+    Singular.Registry.Private.ArchiveSpec
+    Singular.Registry.Private.Archive
     Singular.Registry.RawNodeFixture
     Singular.Registry.StubFollowing
     Singular.Registry.StubView
+    Singular.Registry.StubSession
+    Singular.Registry.RawChainFixture
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime
     Singular.Registry.TrieStateContractSpec
@@ -971,6 +1038,7 @@ test-suite cage-tests
     , singular-registry:node-internal
     , stm
     , temporary
+    , cardano-ledger-read
     , text
     , time
     , unix
@@ -1041,7 +1109,7 @@ test-suite e2e-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   e2e-test
+  hs-source-dirs:   e2e-test private-facade
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
@@ -1058,8 +1126,32 @@ test-suite e2e-tests
     Singular.Registry.E2E.ReplayHistory
     Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.UpdateTerminalSpec
+    Singular.Registry.Private.Archive
+    Singular.Registry.Private.EpochParameters
+    Singular.Registry.Private.Facade
+    Singular.Registry.Private.Source
+    Singular.Registry.Private.TimePublication
 
   build-depends:
+    , aeson
+    , cardano-slotting
+    , chain-follower
+    , contra-tracer
+    , crypton
+    , http-types
+    , memory
+    , wai
+    , warp
+    , unix
+    , serialise
+    , time
+    , cardano-ledger-read
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , singular-registry:koios-http
+    , cardano-ledger-byron
+    , case-insensitive
     , async
     , base
     , base16-bytestring
@@ -1081,7 +1173,7 @@ test-suite e2e-tests
     , hspec
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-network:api
     , plutus-tx
     , process
     , singular-registry
@@ -1120,11 +1212,12 @@ executable insert-active
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1161,11 +1254,12 @@ executable update-terminal
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1190,7 +1284,6 @@ executable singular
     Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
-    Singular.CLI.Node
     Singular.CLI.Outlay
     Singular.CLI.Plan
     Singular.CLI.Preimage
@@ -1233,7 +1326,7 @@ executable singular
     , plutus-core
     , singular-registry
     , singular-registry:local-services
-    , singular-registry:node-internal
+    , singular-registry:koios-http
     , text
     , unix
 

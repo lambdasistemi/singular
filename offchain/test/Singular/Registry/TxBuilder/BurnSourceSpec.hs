@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -33,14 +34,22 @@ built body, not only the duties the fold accumulated.
 -}
 module Singular.Registry.TxBuilder.BurnSourceSpec (spec, builtFoldUnder) where
 
-import Control.Exception (ErrorCall, displayException, try)
+import Control.Exception
+    ( ErrorCall
+    , SomeException
+    , displayException
+    , try
+    )
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
+import Data.IORef (atomicModifyIORef', newIORef, readIORef)
+import Data.List (isPrefixOf)
 import Data.Set qualified as Set
 import Data.Word (Word8)
+import GHC.Clock (getMonotonicTimeNSec)
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -50,10 +59,12 @@ import Cardano.Ledger.Alonzo.TxBody (reqSignerHashesTxBodyL)
 import Cardano.Ledger.Api.PParams (PParams, emptyPParams)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
-    ( inputsTxBodyL
+    ( ValidityInterval (..)
+    , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -106,22 +117,31 @@ import Singular.Application.OpenDatum.Release
     )
 import UntypedPlutusCore.DeBruijn ()
 
+import Cardano.Slotting.Slot (SlotNo (..))
 import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef, saveMirror)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.Provider (View (..))
-import Singular.Registry.StubView (stubView)
+import Singular.Registry.LedgerProvider
+    ( Session (..)
+    , TipObservation (..)
+    )
+import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
+import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
     )
-import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.SyntheticTime
+    ( syntheticTime
+    , syntheticTimeWith
+    )
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TrieState qualified as TS
@@ -173,9 +193,9 @@ import Singular.Registry.Types
     , edgeWitnessTerminal
     )
 
-import Control.Monad (void)
+import Control.Monad (forM_, void)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
 
 -- ---------------------------------------------------------
@@ -317,6 +337,7 @@ spec = do
     requestOrder
     noFoldSigner
     builtFoldBody
+    upperOnlyWindow
     builderRefusals
     applicationRelease
     openDatumFold
@@ -1043,15 +1064,14 @@ anywhere else. Explicit finite synthetic time, exact resolved outputs and
 unit-returning synthetic witnesses let the real local evaluator run. These
 rows inspect assembled bodies and do not establish registry script admission.
 -}
-foldProvider :: View IO
+foldProvider :: Session NoWitness IO
 foldProvider =
-    stubView
-        { viewUTxOsAt = pure . utxosAt
-        , viewProtocolParams = withSyntheticCosts preprodParams
-        , viewTimeContext = pure syntheticTime
-        , viewResolvedOutputs =
-            resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] []
-        }
+    withAddressOutputs (pure . utxosAt) $
+        withParameters (withSyntheticCosts preprodParams) $
+            withTime (pure syntheticTime) $
+                withResolvedOutputs
+                    (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] [])
+                    stubSession
 
 -- | Actual script address for the request the built fixture owns.
 builtRequest :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
@@ -1099,7 +1119,7 @@ builtFoldUnder pp = do
     createTrie tm foldTokenId
     updateTokenWithDuties
         builtCfg
-        foldProvider{viewProtocolParams = withSyntheticCosts pp}
+        (withParameters (withSyntheticCosts pp) foldProvider)
         tm
         foldTokenId
         payer
@@ -1134,6 +1154,132 @@ builtFoldBody =
                 `shouldSatisfy` (\ins -> Set.member stateIn ins && Set.member requestIn ins)
             case body ^. mintTxBodyL of
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
+
+{- | The public fold builder supplies an unsigned body only when a future
+slot remains. Its original omitted lower bound must stay omitted. Synthetic
+scripts establish construction/refusal here, not actual registry admission.
+-}
+upperOnlyWindow :: Spec
+upperOnlyWindow = describe "upper-only folds remain usable after their observed tip" $ do
+    forM_ [868, 869] $ \upper ->
+        it
+            ( "refuses upper "
+                <> show upper
+                <> " before returning a body for signing"
+            )
+            $ build upper `shouldThrow` refused upper
+    it "refuses the registry-limited upper999 at tip917 before signing" $
+        buildAt 917 999
+            `shouldThrow` ( (isPrefixOf "WindowTooShort" . displayException)
+                                :: SomeException -> Bool
+                          )
+    it
+        "waits through970 and rebuilds the upper-only body at971 before signing"
+        $ do
+            observations <- newIORef ([915, 970, 971], [])
+            let next = atomicModifyIORef' observations $ \(remainingTips, seen) -> case remainingTips of
+                    current : rest -> ((rest, seen <> [current]), current)
+                    [] -> (([], seen <> [971]), 971)
+            tx <- buildWith next 1250
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SNothing
+            upper `shouldBe` SJust (SlotNo 1250)
+            (_, observed) <- readIORef observations
+            observed `shouldBe` [915, 970, 971]
+    it
+        "waits for the later horizon before reselecting a registry window that becomes short"
+        $ do
+            observations <- newIORef ([915, 916, 970, 971], [])
+            let next = atomicModifyIORef' observations $ \(remainingTips, seen) -> case remainingTips of
+                    current : rest -> ((rest, seen <> [current]), current)
+                    [] -> (([], seen <> [971]), 971)
+            buildWith next 1016
+                `shouldThrow` (== WindowTooShort (SlotNo 971) (SlotNo 1500) Nothing (SlotNo 1016) 100)
+            (_, observed) <- readIORef observations
+            observed `shouldBe` [915, 916, 970, 971]
+    it
+        "checks the Mslot wait bound before reselecting an expired registry window"
+        $ do
+            observations <- newIORef [915, 1016]
+            let next = atomicModifyIORef' observations $ \case
+                    current : rest -> (rest, current)
+                    [] -> ([], 1016)
+            buildWith next 1016
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 1016) (SlotNo 1500))
+    it
+        "refuses stalled horizon after the actual20second bound before returning a body"
+        $ do
+            begin <- getMonotonicTimeNSec
+            buildAt 970 1250
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 970) (SlotNo 1000))
+            end <- getMonotonicTimeNSec
+            let elapsed = fromIntegral (end - begin) / 1_000_000_000 :: Double
+            elapsed `shouldSatisfy` (>= 19.9)
+            elapsed `shouldSatisfy` (< 25)
+    it
+        "enforces the Mslot wait bound even when a later observation jumps past it"
+        $ do
+            observations <- newIORef [915, 1016]
+            let next = atomicModifyIORef' observations $ \case
+                    current : rest -> (rest, current)
+                    [] -> ([], 1016)
+            buildWith next 1250
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 1016) (SlotNo 1500))
+    it "builds the accepting upper-999 twin with no lower bound" $ do
+        tx <- build 999
+        let body = tx ^. bodyTxL
+            ValidityInterval lower upper = body ^. vldtTxBodyL
+        lower `shouldBe` SNothing
+        upper `shouldBe` SJust (SlotNo 999)
+        body ^. inputsTxBodyL
+            `shouldSatisfy` (\inputs -> Set.member stateIn inputs && Set.member requestIn inputs)
+        body ^. mintTxBodyL `shouldSatisfy` (/= mempty)
+  where
+    build = buildAt 868
+    buildAt observed = buildWith (pure observed)
+    buildWith nextTip upper = do
+        let (reference, output) = requestFor edgeInsertAbsent
+            requested = case extractCageDatum output of
+                Just (RequestDatum request) ->
+                    ( reference
+                    , output
+                        & datumTxOutL
+                            .~ mkInlineDatum
+                                ( toPlcData
+                                    ( RequestDatum
+                                        request
+                                            { requestSubmittedAt = upper * 100 - stateProcessTime tokenState
+                                            }
+                                    )
+                                )
+                    )
+                _ -> error "upper-only fixture: request datum absent"
+            raw =
+                withTime
+                    (pure (syntheticTimeWith 0 (1 / 10) 500))
+                    (providerWith requested)
+            view =
+                raw
+                    { tipObservation = do
+                        observed <- nextTip
+                        tipObservation
+                            (withTip (TipObservation (SlotNo observed) (BS.replicate 32 0) 1 0) raw)
+                    }
+        tm <- trieWith Nothing
+        updateTokenWithDuties
+            builtCfg
+            view
+            tm
+            foldTokenId
+            payer
+            witnessScripts
+    refused upper failure = case failure of
+        WindowPastLedgerHorizon tip horizon lower windowUpper ->
+            tip == SlotNo 868
+                && horizon == SlotNo 1000
+                && isNothing lower
+                && windowUpper == SlotNo (fromInteger upper)
+        _ -> False
 
 -- The fold command includes the builder exception in its printed refusal.
 -- Drive the public builder, then read that exception's first line: no name
@@ -1208,27 +1354,32 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
     it "still refuses a view without the state output" $
         checkView
             "updateToken: state UTxO not found"
-            foldProvider
-                { viewUTxOsAt = \a ->
+            ( withAddressOutputs
+                ( \a ->
                     pure (if a == cageAddrFromCfg builtCfg Testnet then [] else utxosAt a)
-                }
+                )
+                foldProvider
+            )
     it "still refuses a view without pending requests" $
         checkView
             "updateToken: no pending requests"
-            foldProvider
-                { viewUTxOsAt = \a ->
+            ( withAddressOutputs
+                ( \a ->
                     pure
                         ( if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                             then []
                             else utxosAt a
                         )
-                }
+                )
+                foldProvider
+            )
     it "still refuses a view without an ada-only funding output" $
         checkView
             "updateToken: no ada-only UTxO to fund the fold"
-            foldProvider
-                { viewUTxOsAt = \a -> pure (if a == payer then [] else utxosAt a)
-                }
+            ( withAddressOutputs
+                (\a -> pure (if a == payer then [] else utxosAt a))
+                foldProvider
+            )
   where
     who =
         TS.RegistryIdentity
@@ -1247,8 +1398,8 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     )
     check name identity output state requests =
         checkWith name identity output $ \root ->
-            foldProvider
-                { viewUTxOsAt = \a ->
+            withAddressOutputs
+                ( \a ->
                     pure $
                         if a == cageAddrFromCfg builtCfg Testnet
                             then [(stateIn, state root)]
@@ -1256,7 +1407,8 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                                     then requests
                                     else utxosAt a
-                }
+                )
+                foldProvider
     checkView name view = checkWith name who stateIn (const view)
     checkWith name identity output viewAt = withSystemTempDirectory "fold-builder-refusals" $ \path -> do
         saveMirror path (Map.singleton foldTokenId emptyMPFInMemoryDB)
@@ -1441,16 +1593,18 @@ liveOutput =
     )
 
 -- | A stub view whose one pending request is `request`.
-providerWith :: (TxIn, TxOut ConwayEra) -> View IO
+providerWith :: (TxIn, TxOut ConwayEra) -> Session NoWitness IO
 providerWith request =
-    foldProvider
-        { viewUTxOsAt = \a ->
+    withAddressOutputs
+        ( \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                     then [builtRequest request]
                     else utxosAt a
-        , viewResolvedOutputs = resolveBuilt [builtRequest request] []
-        }
+        )
+        $ withResolvedOutputs
+            (resolveBuilt [builtRequest request] [])
+            foldProvider
 
 -- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
 trieWith :: Maybe ByteString -> IO (TrieManager IO)
@@ -1614,10 +1768,10 @@ retireWithReferences app = do
             )
     updateTokenWithDuties
         builtCfg
-        (providerWith (retirementAt 1 ownerKey keyA))
-            { viewResolvedOutputs =
-                resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive]
-            }
+        ( withResolvedOutputs
+            (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive])
+            $ providerWith (retirementAt 1 ownerKey keyA)
+        )
         tm
         foldTokenId
         payer

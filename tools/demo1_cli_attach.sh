@@ -68,19 +68,26 @@ export TMPDIR="$work"
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
 sock=""
+provider_url=""
+time_directory=""
+network_magic=""
 for _ in $(seq 1 900); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  [ -n "$sock" ] && [ -S "$sock" ] && break
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -S "$sock" ] && [ -r "$time_directory/time-manifest.json" ] && break
   kill -0 "$devnet_pid" 2>/dev/null || break
   sleep 1
 done
-if [ -z "$sock" ] || [ ! -S "$sock" ]; then
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [ ! -r "$time_directory/time-manifest.json" ]; then
   tail -40 "$work/devnet.err" >&2 || true
-  setup_fail "the development node never printed a usable socket"
+  setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
-say "one development node at $sock"
+say "one private development source at $provider_url"
 
-node=(--node-socket "$sock" --network-magic 42)
+node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 registry="$work/registry"
 common=(--registry "$registry" --blueprint "$blueprint")
 receipts="$work/receipts"
@@ -127,7 +134,7 @@ take() {
   # shellcheck disable=SC2046
   "$controls" attach \
     --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
-    "${node[@]}" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
+    "${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
     --registry "$registry" --key "$key" \
     --collateral-allowance 10000000 --max-outlay 40000000 \
     --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) \
@@ -230,7 +237,7 @@ say "artifact controls: a record whose raw datum, tip or token census contradict
 # Active afterwards and no later action ran.
 # (4) A take whose refusal states more collateral than its allowance stops at
 # that refusal: nothing is signed for it, and no later action runs.
-node_args=("${node[@]}" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey")
+node_args=("${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey")
 attach_with() { # NAME KEY [extra options]
   local name="$1" key="$2"
   shift 2

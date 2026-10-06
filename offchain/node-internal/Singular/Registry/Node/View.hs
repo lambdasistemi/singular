@@ -24,10 +24,14 @@ module Singular.Registry.Node.View
     , chainPointOf
     ) where
 
+import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
+import Cardano.Ledger.BaseTypes (ProtVer (..))
+import Cardano.Ledger.Binary (getVersion)
 import Control.Exception (handle, throwIO)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
+import Lens.Micro ((^.))
 
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Node.Client.N2C.Types (ConnectionLost (..))
@@ -71,6 +75,7 @@ nodeProvider magic@(NetworkMagic magicWord) material raw = scopedProvider $ \act
                 pure
                 ( timeFromRaw
                     magicWord
+                    (getVersion (pvMajor (pp ^. ppProtocolVersionL)))
                     "held private-devnet LSQ history"
                     material
                     start

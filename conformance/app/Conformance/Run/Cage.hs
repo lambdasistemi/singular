@@ -22,6 +22,7 @@ module Conformance.Run.Cage
 import Conformance.Run.Environment
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -37,7 +38,6 @@ import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -77,6 +77,7 @@ import Singular.Registry.Blueprint
     , applyBytesParam
     , applyDataParam
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -85,14 +86,10 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , signTx
-    , signedTx
-    , tryOutcome
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
@@ -106,6 +103,7 @@ import Singular.Registry.TxBuilder.Internal
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Update (RegistryContext (..))
+import Singular.Registry.Wait (tryOutcome)
 
 import Conformance.Mirror
     ( emit
@@ -184,7 +182,7 @@ ensureRowCage env name processMs retractMs = do
                     processMs
                     retractMs
         unsignedBoot <-
-            Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+            Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
         signedBoot <- submitWithGenesis (envCaps env) unsignedBoot
         tid <- extractTokenId cfg signedBoot
         createTrie (envTm env) tid
@@ -217,9 +215,9 @@ cageStateUtxo env cage = do
     tid <- cageTid cage
     let cfg = rcCfg cage
     utxos <-
-        Cage.withView
+        Cage.withLatest
             (envProv env)
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing -> failWith "row cage: no state UTxO"
@@ -240,9 +238,9 @@ recordDatumHash =
 -- | The UTxOs sitting at the cage's own address; custody lives among them.
 cageUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
 cageUtxos env =
-    Cage.withView
+    Cage.withLatest
         (envProv env)
-        (`Cage.viewUTxOsAt` cageAddrFromCfg (envCfg env) (network (envCfg env)))
+        (`Cage.outputsAt` cageAddrFromCfg (envCfg env) (network (envCfg env)))
 
 -- | The reference outputs one cage's folds resolve their scripts through.
 cageRefUtxos
@@ -312,11 +310,14 @@ session cage boots before its 'Env' is built, and the state validator
 depends on the blueprint alone, not on the seed.
 -}
 ensureStateRefWith
-    :: Cage.Provider IO -> Capabilities -> SBS.ShortByteString -> IO ()
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
+    -> SBS.ShortByteString
+    -> IO ()
 ensureStateRefWith prov submit stateBytes = do
     let script = scriptFromBytes "state" stateBytes
         wanted = hashScript script
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     let published =
             [ ()
             | (_, out) <- utxos
@@ -335,9 +336,9 @@ ensureStateRefWith prov submit stateBytes = do
 -- | The UTxOs at a given cage's own address; custody lives among them.
 cageUtxosOf :: Env -> CageConfig -> IO [(TxIn, TxOut ConwayEra)]
 cageUtxosOf env cfg =
-    Cage.withView
+    Cage.withLatest
         (envProv env)
-        (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+        (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
 
 -- | The tip a cage charges, as a plain integer.
 defaultTipCoin :: CageConfig -> Integer
@@ -356,14 +357,14 @@ publishRefScript env = publishRefScriptWith (envProv env) (envCaps env)
 
 -- | 'publishRefScript' from the provider and submitter alone.
 publishRefScriptWith
-    :: Cage.Provider IO
-    -> Capabilities
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptWith prov submit script = do
     -- One transaction, one view: parameters and the funding outputs.
-    (pp, utxos) <- Cage.withView prov $ \v ->
-        (,) (Cage.viewProtocolParams v) <$> Cage.viewUTxOsAt v genesisAddr
+    (pp, utxos) <- Cage.withLatest prov $ \v ->
+        (,) <$> Cage.parameters v <*> Cage.outputsAt v genesisAddr
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "publishRefScript: the funding wallet has no output"
         (u : _) -> pure u
@@ -399,12 +400,13 @@ publishRefScriptWith prov submit script = do
         signed = signedTx signedWitnessed
     result <- submitTxResilient (capSubmit submit) signedWitnessed
     case result of
-        Submitted _ -> capConfirm submit signed
-        Rejected reason ->
+        SubmitAccepted _ -> capConfirm submit signed
+        SubmitRefused reason ->
             failWith
                 ( "publishRefScript refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
 {- | The duties context for a row cage: its own three token policies, the
@@ -413,7 +415,11 @@ the harness books against, and the reference outputs published at its boot —
 read from the view the fold itself is built in.
 -}
 rowRegistryContext
-    :: Env -> Cage.View IO -> RowCage -> TokenId -> IO RegistryContext
+    :: Env
+    -> Cage.Session Cage.NoWitness IO
+    -> RowCage
+    -> TokenId
+    -> IO RegistryContext
 rowRegistryContext env0 v cage tid = do
     let env = pinnedTo v env0
     let cfg = rcCfg cage

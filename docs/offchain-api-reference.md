@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 63 modules in
-three kinds: 48 explicitly exposed modules and two re-exported modules
+re-exports under its own name. That complete extent is 75 modules in
+three kinds: 57 explicitly exposed modules and five re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -38,11 +38,14 @@ facade — `Singular.Registry.Deployment.Manifest`, `.Mirror` and
 `.Attach` — are package-internal `other-modules` with generated pages
 here for the contributor reading the facades' implementations, but no
 caller import path: a caller compiles against the facades' exports, not
-against these modules. `Singular.Registry.Ledger` and
-`Singular.Registry.Provider` are the re-exports: their implementations
-are owned by the public `local-services` component
-(`offchain/local-services/`) and the main library re-exports them, so
-their import paths and their entries in this reference are unchanged.
+against these modules. `Singular.Registry.Ledger`,
+`Singular.Registry.LedgerProvider`, `Singular.Registry.Evidence`,
+`Singular.Registry.Provider` and `Singular.Registry.Signing` are the
+re-exports: their implementations are owned by the public `local-services`
+component (`offchain/local-services/`) and the main library exposes their
+stable import paths. The generic provider interface and evidence types let a
+caller supply capabilities without selecting a node runtime; the Koios
+constructor supplies unbound, unverified HTTP facts through that interface.
 The private node runtime owners are deliberately not
 part of this reference — they are not importable from the public library
 — and are documented with source links in
@@ -114,6 +117,19 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
+
+- <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="module">Singular.Provider.Koios.Provider</a> — <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="module">Singular.Provider.Koios.Runtime</a> — <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="module">Singular.Provider.Koios.State</a> — <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="module">Singular.Registry.Capabilities</a> — <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="module">Singular.Registry.Confirmation</a> — <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="module">Singular.Registry.Funding</a> — <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="module">Singular.Registry.Signing</a> — <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="module">Singular.Registry.Wait</a> — <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="source">source</a>
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the

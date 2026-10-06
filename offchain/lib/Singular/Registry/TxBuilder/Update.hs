@@ -48,15 +48,14 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
     , TokenId (..)
     , TxIn
     )
-import Singular.Registry.Provider
-    ( View (..)
-    )
+import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.Trie
     ( TrieManager (..)
     )
@@ -95,7 +94,7 @@ import Singular.Registry.Types
 -- | Build an update-token transaction (fair fee).
 updateTokenImpl
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -108,7 +107,7 @@ they take create (#157 mint-matches-edge-deltas, token-destinations-and-refunds,
 -}
 updateTokenWithDuties
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -123,7 +122,7 @@ remain in the same shared builder as the retained lower-level adapters.
 -}
 updateTokenWithTrieState
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TS.TrieSnapshot IO
     -> TokenId
     -> Addr
@@ -160,7 +159,7 @@ updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
 
 updateTokenUsing
     :: CageConfig
-    -> View IO
+    -> Session NoWitness IO
     -> TokenId
     -> Addr
     -> RegistryContext

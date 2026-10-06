@@ -80,25 +80,23 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config
     ( CageConfig (..)
     )
 import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.E2E.Fixture (withDevnetCapabilities)
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager
     ( mkPureTrieManager
@@ -201,7 +199,7 @@ cageFlowSpec stateBytes requestBytes = do
                     "hello"
                     edgeInsertAbsent
             reqUtxosBefore <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
@@ -266,7 +264,7 @@ cageFlowSpec stateBytes requestBytes = do
             signedUpdate <- submitWithGenesis submit unsignedUpdate
 
             reqUtxosAfter <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
             -- Singular.txOfExit / txCageOutputs, observed after inclusion.
@@ -300,7 +298,7 @@ cageFlowSpec stateBytes requestBytes = do
                     "bye"
                     edgeInsertActive
             reqUtxosBefore <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
@@ -308,15 +306,15 @@ cageFlowSpec stateBytes requestBytes = do
             stateBefore <- currentState cfg prov tokenId
             oldState <- observedState (snd stateBefore)
             stateUtxos <-
-                Cage.withView
+                Cage.withLatest
                     prov
-                    (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
-            walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+                    (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
+            walletUtxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
 
             threadDelay 3_000_000
 
             unsignedRetract <-
-                Cage.withView prov $ \v ->
+                Cage.withLatest prov $ \v ->
                     retractRequestImpl
                         cfg
                         v
@@ -361,7 +359,7 @@ cageFlowSpec stateBytes requestBytes = do
             _ <- submitWithGenesis submit unsignedRetract
 
             reqUtxosAfter <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
@@ -394,7 +392,7 @@ cageFlowSpec stateBytes requestBytes = do
                     "stale"
                     edgeInsertActive
             reqUtxosBefore <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
@@ -410,7 +408,7 @@ cageFlowSpec stateBytes requestBytes = do
             -- references carry both instead.
             refs <- publishCageRefs cfg prov submit tokenId
             unsignedReject <-
-                Cage.withView prov $ \v ->
+                Cage.withLatest prov $ \v ->
                     rejectRequestsWithRefs
                         cfg
                         v
@@ -450,7 +448,7 @@ cageFlowSpec stateBytes requestBytes = do
             signedReject <- submitWithGenesis submit unsignedReject
 
             reqUtxosAfter <-
-                Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+                Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
@@ -496,8 +494,8 @@ withBootedCage
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> ( CageConfig
-         -> Cage.Provider IO
-         -> Capabilities
+         -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+         -> Capabilities Cage.NoWitness IO
          -> TrieManager IO
          -> Driver.Registry
          -> IO a
@@ -515,8 +513,8 @@ withBootedCageTimed
     -> SBS.ShortByteString
     -> ( Integer
          -> CageConfig
-         -> Cage.Provider IO
-         -> Capabilities
+         -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+         -> Capabilities Cage.NoWitness IO
          -> TrieManager IO
          -> Driver.Registry
          -> IO a
@@ -539,15 +537,15 @@ withBootedCageTimed adjustCfg stateBytes requestBytes action =
 
 submitInsertRequest
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> ByteString
     -> Edge
     -> IO TxIn
 submitInsertRequest cfg prov submit tokenId key edge = do
     unsignedReq <-
-        Cage.withView prov $ \v ->
+        Cage.withLatest prov $ \v ->
             requestEdgeImpl
                 cfg
                 v
@@ -563,12 +561,12 @@ submitInsertRequest cfg prov submit tokenId key edge = do
             (TxIx 0)
 
 submitWithGenesis
-    :: Capabilities
+    :: Capabilities Cage.NoWitness IO
     -> ConwayTx
     -> IO ConwayTx
 submitWithGenesis caps unsignedTx = do
     let signed = signTx genesisSignKey unsignedTx
-    result <- submitSigned (capSubmit caps) signed
+    result <- capSubmit caps signed
     assertSubmitted result
     capConfirm caps (signedTx signed)
     pure (signedTx signed)
@@ -620,8 +618,8 @@ rejectsWithin
     :: RejectWindow
     -> Integer
     -> CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> Driver.Registry
     -> IO ()
@@ -636,7 +634,7 @@ rejectsWithin window startMs cfg prov submit _tm reg = do
             tokenId
             "early"
             edgeInsertActive
-    reqUtxosBefore <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    reqUtxosBefore <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     request <- observedRequest reqTxIn reqUtxosBefore
     stateBefore <- currentState cfg prov tokenId
     oldState <- observedState (snd stateBefore)
@@ -649,7 +647,7 @@ rejectsWithin window startMs cfg prov submit _tm reg = do
     waitUntilMs (windowStart + 1_000)
     refs <- publishCageRefs cfg prov submit tokenId
     unsignedReject <-
-        Cage.withView prov $ \v ->
+        Cage.withLatest prov $ \v ->
             rejectRequestsWithRefs
                 cfg
                 v
@@ -707,7 +705,7 @@ rejectsWithin window startMs cfg prov submit _tm reg = do
             <> show (txIdTx signedReject)
         )
     -- Read back from the ledger after inclusion.
-    reqUtxosAfter <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    reqUtxosAfter <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     assertEqual
         "rejection request remains after submission"
         Nothing
@@ -730,13 +728,16 @@ system start plus 100 ms a slot; the node's own conversion of the lower
 bound checks that reading.
 -}
 builtIntervalMs
-    :: Cage.Provider IO -> Integer -> ConwayTx -> IO (Integer, Integer)
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Integer
+    -> ConwayTx
+    -> IO (Integer, Integer)
 builtIntervalMs prov startMs tx =
     case tx ^. bodyTxL . vldtTxBodyL of
         ValidityInterval (SJust lower) (SJust upper) -> do
             let posixOf (SlotNo slot) = startMs + 100 * toInteger slot
             nodeLower <-
-                Cage.withView prov (\v -> Services.floorSlot v (posixOf lower))
+                Cage.withLatest prov (\v -> Services.floorSlot v (posixOf lower))
             assertEqual "validity lower bound read by the node" lower nodeLower
             pure (posixOf lower, posixOf upper)
         other -> do
@@ -766,8 +767,8 @@ withE2E
     -> SBS.ShortByteString
     -- ^ Unparameterized request compiled-code bytes
     -> ( CageConfig
-         -> Cage.Provider IO
-         -> Capabilities
+         -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+         -> Capabilities Cage.NoWitness IO
          -> TrieManager IO
          -> IO a
        )
@@ -785,8 +786,8 @@ withE2ETimed
     -- ^ Unparameterized request compiled-code bytes
     -> ( Integer
          -> CageConfig
-         -> Cage.Provider IO
-         -> Capabilities
+         -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+         -> Capabilities Cage.NoWitness IO
          -> TrieManager IO
          -> IO a
        )
@@ -797,7 +798,7 @@ withE2ETimed stateBytes requestBytes action =
         -- Build TrieManager
         tm <- mkPureTrieManager
         -- Verify connection works
-        _ <- Cage.withView prov (pure . Cage.viewProtocolParams)
+        _ <- Cage.withLatest prov Cage.parameters
         -- #177 A-003: publish the state validator as a reference output
         -- BEFORE the seed is chosen. The publication spends the
         -- wallet's largest ada-only output, which is exactly the one a
@@ -812,7 +813,7 @@ withE2ETimed stateBytes requestBytes action =
         -- Pick the seed from the genesis wallet. The state script
         -- is unparameterized; boot carries the seed in the mint
         -- redeemer.
-        utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+        utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
         -- #177 A-003: never seed from the reference publication. Boot
         -- REFERENCES that output, and a transaction may not both spend
         -- and reference the same one — the ledger calls it
@@ -930,14 +931,14 @@ stateContinuation cfg tokenId outputs = do
 -- | Read the registry state and retain its reference to distinguish an unspent UTxO.
 currentState
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> TokenId
     -> IO (TxIn, TxOut ConwayEra)
 currentState cfg prov tokenId = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     exactlyOne
         "observed registry state"
         (filter (holdsState cfg tokenId . snd) utxos)
@@ -950,7 +951,10 @@ paysOwner request out =
 
 -- | Check the actual output at the submitted transaction's output reference.
 assertLandedOutput
-    :: Cage.Provider IO -> ConwayTx -> TxOut ConwayEra -> Expectation
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> ConwayTx
+    -> TxOut ConwayEra
+    -> Expectation
 assertLandedOutput prov tx expected = do
     ix <-
         exactlyOne
@@ -960,7 +964,7 @@ assertLandedOutput prov tx expected = do
             , out == expected
             ]
     observed <-
-        Cage.withView prov (`Cage.viewUTxOsAt` (expected ^. addrTxOutL))
+        Cage.withLatest prov (`Cage.outputsAt` (expected ^. addrTxOutL))
     -- Singular.txOfExit / txCageOutputs: value and datum agree after inclusion.
     assertEqual
         "output after submission"
@@ -969,10 +973,11 @@ assertLandedOutput prov tx expected = do
 
 -- | Assert that a submit result is 'Submitted'.
 assertSubmitted :: SubmitResult -> IO ()
-assertSubmitted (Submitted _) = pure ()
-assertSubmitted (Rejected reason) =
+assertSubmitted (SubmitAccepted _) = pure ()
+assertSubmitted (SubmitRefused reason) =
     expectationFailure $
         "Tx rejected: " <> show reason
+assertSubmitted other = expectationFailure ("Tx submission unavailable: " <> show other)
 
 -- ---------------------------------------------------------
 -- Config
@@ -1025,7 +1030,7 @@ cageCfg stateBytes requestBytes codes seed =
 {- | Sign with the genesis key, submit and wait: the submission
 discipline every transaction of this suite uses.
 -}
-genesisSubmit :: Capabilities -> SubmitSigned
+genesisSubmit :: Capabilities Cage.NoWitness IO -> SubmitSigned
 genesisSubmit = submitWithGenesis
 
 {- | Publish this cage's scripts as reference outputs. The state
@@ -1035,8 +1040,8 @@ references every purpose resolves through them instead.
 -}
 publishCageRefs
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg prov submit tokenId = do
@@ -1052,14 +1057,14 @@ publishCageRefs cfg prov submit tokenId = do
 -- | The unsigned fold of every pending request, built from one view.
 foldUnsigned
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ConwayTx
 foldUnsigned cfg prov tm tokenId refs = do
     codes <- loadRegistryCodesFromEnv
-    Cage.withView prov $ \v -> do
+    Cage.withLatest prov $ \v -> do
         ctx <- Edges.registryContextFor cfg codes v refs
         updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
 
@@ -1068,8 +1073,8 @@ certifies the edge, and the request carries it to the fold.
 -}
 bookEdge
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> ByteString
     -> Edge
@@ -1089,8 +1094,8 @@ bookEdge cfg prov submit tokenId key op = do
 -- | Book one edge and fold it, end to end on a real devnet.
 foldEdge
     :: CageConfig
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]

@@ -10,11 +10,8 @@ token a boot minted, signed submission that waits for confirmation, and
 only comparison target every verification in the journey uses.
 -}
 module Journey.Chain
-    ( genesisAddr
-    , genesisSignKey
-    , cageCfg
+    ( cageCfg
     , extractTokenId
-    , submitWithGenesis
     , readChainState
     ) where
 
@@ -24,36 +21,24 @@ import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))
 
-import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
-import Cardano.Node.Client.E2E.Setup
-    ( Ed25519DSIGN
-    , SignKeyDSIGN
-    )
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Journey.Narration (failWith)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , funderAddr
-    , funderSignKey
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Provider
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -68,19 +53,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , OnChainTxOutRef
     )
-
-{- | The wallet every actor of this run is funded from. On the factory
-devnet it is the genesis UTxO key, as it always was; in external-node
-mode it is the joiner's own signing key
-(`Singular.Registry.Node`). The name is kept so the funding sites
-below read unchanged.
--}
-genesisAddr :: Addr
-genesisAddr = funderAddr
-
--- | The signing key matching 'genesisAddr'.
-genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
-genesisSignKey = funderSignKey
 
 {- | Build a 'CageConfig' from state and request script bytes
 plus the boot seed 'OnChainTxOutRef', exactly as the end-to-end
@@ -140,31 +112,18 @@ extractTokenId cfg tx =
                     "boot: unexpected mint assets: "
                         <> show (length assets)
 
-{- | Sign with the devnet genesis key, submit and wait for
-confirmation. Fails the journey on a rejected transaction.
--}
-submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
-submitWithGenesis caps unsigned = do
-    let signed = signTx genesisSignKey unsigned
-    result <- submitSigned (capSubmit caps) signed
-    case result of
-        Submitted _ -> pure ()
-        Rejected reason -> failWith ("tx rejected: " <> show reason)
-    capConfirm caps (signedTx signed)
-    pure (signedTx signed)
-
 {- | Read the current state datum for a token straight from
 the chain: the state UTxO at the cage address. This is the
 only comparison target for every verification below.
 -}
 readChainState
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Provider.Network, Provider.LedgerProvider NoWitness IO)
     -> TokenId
     -> IO OnChainTokenState
 readChainState cfg prov tid = do
     stateUtxos <-
-        Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
+        Cage.withLatest prov (`Cage.outputsAt` cageAddrFromCfg cfg Testnet)
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "verify: no state UTxO carrying the policy token"

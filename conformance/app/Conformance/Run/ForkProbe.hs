@@ -12,6 +12,7 @@ import Conformance.Run.Observe
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
 import Control.Monad (void)
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Exception
     ( SomeException
@@ -23,13 +24,10 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
 import Singular.Registry.Blueprint (NamingCodes (..))
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , checkFunding
-    , defaultFundingFloor
-    , funderAddr
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
+import Singular.Registry.Node (funderAddr)
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -77,7 +75,7 @@ runForkProbeSession
     :: SBS.ShortByteString
     -> SBS.ShortByteString
     -> NamingCodes
-    -> Capabilities
+    -> Capabilities Cage.NoWitness IO
     -> IO ()
 runForkProbeSession stateBytes requestBytes namingCodes caps = do
     let prov = capReads caps
@@ -90,7 +88,7 @@ runForkProbeSession stateBytes requestBytes namingCodes caps = do
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
@@ -135,7 +133,7 @@ runForkProbeSession stateBytes requestBytes namingCodes caps = do
             edgeUpdateActive
     probeResult <-
         try @SomeException $
-            Cage.withView prov $ \v -> do
+            Cage.withLatest prov $ \v -> do
                 ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
                 updateTokenWithDuties cfg v tm tid genesisAddr ctx
     case probeResult of
@@ -168,7 +166,7 @@ runForkProbeSession stateBytes requestBytes namingCodes caps = do
                 tidInner
                 key
                 edgeInsertAbsent
-        unsignedFold <- Cage.withView provInner $ \v -> do
+        unsignedFold <- Cage.withLatest provInner $ \v -> do
             ctx <- RegistryEdges.registryContextFor cfgInner namingCodes v refs
             updateTokenWithDuties cfgInner v tmInner tidInner genesisAddr ctx
         signedFold <- submitWithGenesis submitInner unsignedFold

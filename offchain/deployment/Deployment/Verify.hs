@@ -16,8 +16,9 @@ import Deployment.Compiled (bindDeployment, loadCompiled)
 import Deployment.Narration (emit)
 import Deployment.Node (verifyRegisteredDeployment)
 import Deployment.Options (verifyManifest)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (readDeployment)
-import Singular.Registry.Node (Capabilities (..), withCapabilities)
+import Singular.Registry.Runner (withRunner)
 
 -- | Verify the manifest these arguments name against the node.
 verify :: [String] -> IO ()
@@ -25,7 +26,7 @@ verify args = do
     path <- verifyManifest args
     dep <- readDeployment path
     compiled <- loadCompiled >>= (`bindDeployment` dep)
-    withCapabilities $ \caps -> do
+    withRunner $ \_wallet caps -> do
         claims <- verifyRegisteredDeployment (capReads caps) dep compiled
         mapM_ (emit "verified") claims
         emit
