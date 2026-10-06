@@ -15,6 +15,7 @@ import Conformance.Support.FixtureChild
     ( childModeVariable
     , holdScopedDirectories
     )
+import Conformance.Support.FoldHistory qualified as FoldHistory
 import Conformance.Support.HeldView qualified as HeldView
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
@@ -101,6 +102,12 @@ suite = do
         describe "Appendix — how we check the evidence" CliControls.spec
     describe (tagged "Conformance.Support.CliProof" [Conformance, Cli]) $
         describe "Appendix — how we check the evidence" CliProof.spec
+    describe
+        ( tagged
+            "Conformance.Support.FoldHistory"
+            [Conformance, Cli, History, Trie]
+        )
+        $ describe "Appendix — how we check the evidence" FoldHistory.spec
     describe
         (tagged "Conformance.Support.CliAdmission" [Conformance, Cli])
         $ describe "Appendix — how we check the evidence" CliAdmission.spec

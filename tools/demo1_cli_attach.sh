@@ -141,6 +141,16 @@ take() {
     --work "$work/$name" >"$work/$name.md" 2> >(tee "$work/$name.err" >&2) || status=$?
   stop_indexer
   tail -1 "$work/$name.md"
+  if [ "$name" = one ]; then
+    jq -se '
+      [.[] | select(.step == 4 and .action == "fold-unevaluated")]
+      | length == 1 and .[0].outcome == "ledger-refused"
+    ' "$work/$name/receipts"/*.json >/dev/null || {
+      jq -s '[.[] | select(.step == 4 and .action == "fold-unevaluated") | {step, action, outcome, reason}]' \
+        "$work/$name/receipts"/*.json >&2
+      fail_control "take one step 4 must reach the ledger's refusal after command-produced state"
+    }
+  fi
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
   grep -m3 "uncovered" "$work/$name.md" >&2 || true
   # The key ends Terminal by the ordinary inspect, and no request is left pending.
