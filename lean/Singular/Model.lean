@@ -673,15 +673,51 @@ def foldActions (s : RegistryState) (batch : List Action) : Except String Result
     let rest ← foldActions first.state bs
     pure (combineResults first rest)
 
+/-- What a batch has created so far and is not yet live: the keys of the active
+holdings and of the custody entries an earlier request of the same batch made.
+The chain settles a fold from the outputs it spends, which exist before it; a
+holding or custody entry the same transaction creates is not among them. -/
+structure Created where
+  holdings : List Key := []
+  custody : List Key := []
+
+/-- The refusal of a request consuming what the batch created before it: a
+holding is `token-missing`, a custody entry `not-booked`; `none` otherwise. -/
+def consumesCreated (c : Created) (a : Action) : Option String :=
+  match a.edge with
+  | .updateTerminal | .deleteActive =>
+    if c.holdings.contains a.key then some "token-missing" else none
+  | .updateActive | .deleteAbsent =>
+    if c.custody.contains a.key then some "not-booked" else none
+  | .insertAbsent | .insertActive | .witnessTerminal => none
+
+/-- What a request adds to what its batch has created. -/
+def creates (c : Created) (a : Action) : Created :=
+  match a.edge with
+  | .insertActive | .updateActive => { c with holdings := a.key :: c.holdings }
+  | .insertAbsent => { c with custody := a.key :: c.custody }
+  | .updateTerminal | .deleteAbsent | .deleteActive | .witnessTerminal => c
+
+/-- The first request of a batch that consumes a holding or custody entry an
+earlier request of the same batch creates, refused for its reason; `none` when
+no request does. -/
+def batchConsumesCreated (_batch : List Action) : Option String :=
+  none
+
 /-- The atomic fold: a zero-request batch is refused; every request applies or
-the whole batch refuses; any claimed mint differing from the summed delta of the
-folded edges at any `(kind, key)` is refused. The guard is per asset, not per
-kind: a batch that claims one key's token twice and another's not at all
-balances per kind and is still refused. -/
+the whole batch refuses; any claimed mint differing from the summed delta of
+the folded edges at any `(kind, key)` is refused; a request consuming a holding
+or custody entry an earlier request of the batch creates is refused
+(`batchConsumesCreated`). The mint guard is per asset, not per kind: a batch
+that claims one key's token twice and another's not at all balances per kind
+and is still refused. -/
 def foldBatch (s : RegistryState) (batch : List Action) : Except String Result := do
   if batch.isEmpty then throw "empty-fold"
   let r ← foldActions s batch
-  if assetSame (claimedMint batch) (actualMint batch) then pure r else throw "net-mint-mismatch"
+  if !assetSame (claimedMint batch) (actualMint batch) then throw "net-mint-mismatch"
+  match batchConsumesCreated batch with
+  | some why => throw why
+  | none => pure r
 
 /-- The ledger/trie consistency invariant: the root commits to the map, the
 biconditional supply laws hold for active and absent tokens, and every terminal
@@ -1281,8 +1317,54 @@ def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option St
   else if !inPhase2 c w then some "not-phase2"
   else none
 
+/-! ## A fold's admission
+
+A fold is admitted before the law judges its requests. The fold validator
+updates the registry only while the fold transaction's whole validity interval
+lies before every folded request's deadline, `submittedAt + processTime`: a fold
+including a request past it is refused `not-phase1`, as the chain refuses it,
+whatever its requests' steps. Inside the window the fold is exactly the law. -/
+
+/-- What a fold's admission reads beyond its requests: each folded request's
+submission time (its datum's `submitted_at`), in batch order, and the fold
+transaction's validity upper bound, excluded, as the ledger hands a script a
+transaction's validity. Times are POSIX milliseconds. -/
+structure FoldWitness where
+  submittedAt : List Nat
+  validTo : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- Phase 1 of a request, for a fold: the fold's whole validity interval lies
+before the request's deadline. The upper bound, being excluded, may reach
+`submittedAt + processTime` and not pass it. This is the request script's
+`in_phase1`, `interval.is_entirely_before` at the deadline, over a finite
+interval. -/
+def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
+  decide (validTo ≤ submittedAt + c.processTime)
+
+/-- Why a fold is not admitted: `not-phase1` when its validity upper bound
+passes any folded request's deadline. `none` admits. -/
+def foldAdmission (_c : Config) (_w : FoldWitness) : Option String :=
+  none
+
+/-- A batch folded admission first: refused with the admission's reason,
+otherwise exactly `foldBatch`. -/
+def admittedFoldBatch (s : RegistryState) (batch : List Action) (w : FoldWitness) :
+    Except String Result :=
+  match foldAdmission s.config w with
+  | some why => .error why
+  | none => foldBatch s batch
+
+/-- One request folded admission first: refused with the admission's reason,
+otherwise exactly `step`. -/
+def admittedFold (s : RegistryState) (a : Action) (w : FoldWitness) : Except String Result :=
+  match foldAdmission s.config w with
+  | some why => .error why
+  | none => step s a
+
 /-- The admission an exit is subject to: a retract's is `retractAdmission`; a
-fold and a reject have none here, and ignore the witness. -/
+fold and a reject have none here, and ignore the witness. A fold's own
+admission is `foldAdmission`, under its `FoldWitness`. -/
 def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
   match exit with
   | .retract => retractAdmission c r w

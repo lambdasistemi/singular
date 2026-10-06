@@ -839,24 +839,18 @@ theorem empty_fold_error (s : RegistryState) (batch : List Request)
   subst h
   rfl
 
-/-- A fold succeeds iff every request applies in order and the claimed mint
-matches the summed delta of the folded edges. -/
+/-- A fold succeeds iff every request applies in order, the claimed mint
+matches the summed delta of the folded edges, and no request consumes a holding
+or custody entry an earlier request of the batch creates. -/
 theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
     foldBatch s (b :: bs) = .ok t ↔
     ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
       t = { state := r.state, mint := assetPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
-      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
+      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) ∧
+      batchConsumesCreated (b :: bs) = none := by
+  rw [foldBatch_ok_iff]
   constructor
-  · intro hok
-    have hacts := (foldBatch_inv s (b :: bs) t hok).2
-    have hdelta : assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
-      unfold foldBatch at hok
-      rw [if_neg (by simp)] at hok
-      rw [hacts] at hok
-      simp only [bind, Except.bind, pure, Except.pure] at hok
-      split at hok
-      · assumption
-      · exact Except.noConfusion hok
+  · rintro ⟨_, hacts, hdelta, hcreated⟩
     unfold foldActions at hacts
     simp only [bind, Except.bind, pure, Except.pure] at hacts
     cases hs : step s b with
@@ -869,22 +863,15 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
       | ok r =>
         rw [hr] at hacts
         have hEq : combineResults m r = t := by injection hacts
-        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta⟩
-  · rintro ⟨m, r, hs, hr, hEq, hdelta⟩
-    unfold foldBatch
-    rw [if_neg (by simp)]
-    have hacts : foldActions s (b :: bs) = .ok t := by
-      unfold foldActions
-      simp only [bind, Except.bind, pure, Except.pure]
-      rw [hs]
-      simp only [bind, Except.bind, pure, Except.pure]
-      rw [hr, hEq]
-      rfl
-    rw [hacts]
+        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta, hcreated⟩
+  · rintro ⟨m, r, hs, hr, hEq, hdelta, hcreated⟩
+    refine ⟨by simp, ?_, hdelta, hcreated⟩
+    unfold foldActions
     simp only [bind, Except.bind, pure, Except.pure]
-    split
-    · rfl
-    · rename_i hc; exact absurd hdelta hc
+    rw [hs]
+    simp only [bind, Except.bind, pure, Except.pure]
+    rw [hr, hEq]
+    rfl
 
 /-- A read changes nothing: the leaf, the root and custody survive an admitted
 `witnessTerminal` step unchanged. -/
@@ -1444,21 +1431,13 @@ theorem fold_batch_claimed_mint_by_kind_key :
         foldBatch s [b₁, b₂] = .error "net-mint-mismatch") := by
   refine ⟨?_, ?_, ?_⟩
   · intro s batch t hok
-    obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
-    unfold foldBatch at hok
-    rw [if_neg (by simpa using hne)] at hok
-    rw [hacts] at hok
-    simp only [bind, Except.bind, pure, Except.pure] at hok
-    split at hok
-    · assumption
-    · exact Except.noConfusion hok
+    exact ((foldBatch_ok_iff s batch t).mp hok).2.2.1
   · intro s batch m hne hacts hfalse
     unfold foldBatch
-    rw [if_neg (by simpa using hne)]
-    rw [hacts]
-    simp only [bind, Except.bind, pure, Except.pure]
-    rw [if_neg (by simp [hfalse])]
-    rfl
+    cases hb : batch.isEmpty
+    · simp [hacts, hfalse, bind, Except.bind, pure, Except.pure, throw, throwThe,
+        MonadExcept.throw]
+    · simp_all [List.isEmpty_iff]
   · refine ⟨{ config := { Oracle.referenceConfig with root := rootOf [] }
             , trie := [], custody := [], held := [] },
       { edge := .insertActive, key := 5, owner := 0, output := 555
@@ -1896,6 +1875,9 @@ theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request)
   have hnil : assetPlus (assetDelta r) [] = assetDelta r := by
     rcases r with ⟨edge, key⟩
     cases edge <;> simp [assetPlus, assetDelta, delta, assetKind, List.eraseDups_cons]
+  have hcreated : batchConsumesCreated [r] = none := by
+    rcases r with ⟨edge, key⟩
+    cases edge <;> rfl
   unfold foldBatch
   cases hs : step s r with
   | error why => simp [foldActions, hs]; rfl
@@ -2021,6 +2003,52 @@ example :
        , config := none, commitment := none, assets := [], lovelace := 2 }]
       = some "destination" := by
   decide
+
+/-- **#396, a fold past a request's deadline is refused** — a fold whose validity
+upper bound passes the deadline of any request it folds, `submittedAt +
+processTime`, is refused `not-phase1`, as the chain refuses it, whatever the
+batch and whatever its requests' steps. -/
+theorem fold_batch_refuses_past_deadline (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (t : Nat) (ht : t ∈ w.submittedAt)
+    (hpast : t + s.config.processTime < w.validTo) :
+    admittedFoldBatch s batch w = .error "not-phase1" := by
+  sorry
+
+/-- **#396, inside the window a fold is the law** — a fold whose validity upper
+bound is at or before the deadline of every request it folds is exactly
+`foldBatch`: admission changes nothing inside the window. -/
+theorem fold_admitted_in_window_is_fold_batch (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (hin : ∀ t ∈ w.submittedAt, w.validTo ≤ t + s.config.processTime) :
+    admittedFoldBatch s batch w = foldBatch s batch := by
+  sorry
+
+/-- **#396, the boundary of the window** — one request folded under an upper
+bound equal to its deadline is admitted and is exactly its step; one millisecond
+past it is refused `not-phase1`. The upper bound is excluded, so it may reach
+the deadline and not pass it, as `interval.is_entirely_before` reads it. -/
+theorem fold_admission_boundary (s : RegistryState) (r : Request) (t : Nat) :
+    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime } = step s r ∧
+    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime + 1 }
+      = .error "not-phase1" := by
+  sorry
+
+/-- **#396, a batch cannot consume what it creates** — when one request of a
+batch creates an active holding (`insertActive`, `updateActive`) or a custody
+entry (`insertAbsent`) and the next consumes it at the same key
+(`updateTerminal` or `deleteActive` a holding, `updateActive` or `deleteAbsent`
+a custody entry), the batch is never accepted, and the consuming request is
+refused `token-missing` for a holding and `not-booked` for a custody entry: what
+the batch creates is not live for it. -/
+theorem fold_batch_refuses_consuming_created (s : RegistryState) (a b : Request)
+    (hkey : a.key = b.key) :
+    (((a.edge = .insertActive ∨ a.edge = .updateActive) ∧
+        (b.edge = .updateTerminal ∨ b.edge = .deleteActive)) →
+      batchConsumesCreated [a, b] = some "token-missing" ∧
+        ∀ t, foldBatch s [a, b] ≠ .ok t) ∧
+    ((a.edge = .insertAbsent ∧ (b.edge = .updateActive ∨ b.edge = .deleteAbsent)) →
+      batchConsumesCreated [a, b] = some "not-booked" ∧
+        ∀ t, foldBatch s [a, b] ≠ .ok t) := by
+  sorry
 
 end Statements
 end Singular

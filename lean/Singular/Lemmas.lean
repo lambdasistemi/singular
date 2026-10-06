@@ -902,26 +902,30 @@ theorem step_preserves_terminal_holding (s : RegistryState) (a : Action) (t : Re
       rw [h4]
       exact List.mem_filter.mpr ⟨hmem, by simp⟩
 
+/-- `foldBatch` succeeds exactly when the batch is nonempty, every request
+applies in order, the claimed mint matches the edges' and no request consumes a
+holding or custody entry an earlier request of the batch creates; the checks
+after the steps do not change the resulting state. -/
+theorem foldBatch_ok_iff (s : RegistryState) (batch : List Action) (t : Result) :
+    foldBatch s batch = .ok t ↔
+      batch ≠ [] ∧ foldActions s batch = .ok t ∧
+        assetSame (claimedMint batch) (actualMint batch) = true ∧
+        batchConsumesCreated batch = none := by
+  unfold foldBatch
+  cases hb : batch.isEmpty <;> cases hf : foldActions s batch <;>
+    cases ha : assetSame (claimedMint batch) (actualMint batch) <;>
+    cases hc : batchConsumesCreated batch <;>
+    simp_all [bind, Except.bind, pure, Except.pure, throw, throwThe, MonadExcept.throw,
+      List.isEmpty_iff]
+
 /-- `foldBatch` succeeds exactly when the batch is nonempty and every request
-applies in order; the mint check does not change the resulting state. -/
+applies in order; the checks after the steps do not change the resulting state. -/
 theorem foldBatch_inv (s : RegistryState) (batch : List Action) (t : Result)
     (h : foldBatch s batch = .ok t) :
-    batch ≠ [] ∧ foldActions s batch = .ok t := by
-  have hne : batch ≠ [] := by
-    intro hc; subst hc
-    exact Except.noConfusion (show Except.error "empty-fold" = Except.ok t from h)
-  refine ⟨hne, ?_⟩
-  unfold foldBatch at h
-  rw [if_neg (by simpa using hne)] at h
-  cases hf : foldActions s batch with
-  | error e => rw [hf] at h; exact Except.noConfusion h
-  | ok r =>
-    rw [hf] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    split at h
-    · have hrt : r = t := by injection h
-      exact congrArg Except.ok hrt
-    · exact Except.noConfusion h
+    batch ≠ [] ∧ foldActions s batch = .ok t :=
+  let ⟨hne, hf, _, _⟩ := (foldBatch_ok_iff s batch t).mp h
+  ⟨hne, hf⟩
+
 
 /-- A terminal leaf survives a whole fold. -/
 theorem foldActions_preserves_terminal (s : RegistryState) (batch : List Action) (t : Result)
