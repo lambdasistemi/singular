@@ -1,0 +1,46 @@
+{
+  "a-registry-joined-from-its-state-token-tasks": [
+    {
+      "text": "A registry joined from its state token: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Read the plan for the slices. There is one commit per task, in order. Each acceptance task is a review checkpoint.",
+      "pause": 400
+    }
+  ],
+  "slice-the-token-is-the-registry": [
+    {
+      "text": "Slice: the token is the registry.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I start from an empty directory and the state token, and every command works or refuses by name.",
+      "pause": 400
+    }
+  ],
+  "slice-anyone-publishes": [
+    {
+      "text": "Slice: anyone publishes.",
+      "pause": 500
+    },
+    {
+      "text": "As anyone, I restore a registry's references from the release when no output carries them, and I get my own back.",
+      "pause": 400
+    }
+  ],
+  "slice-the-page": [
+    {
+      "text": "Slice: the page.",
+      "pause": 500
+    },
+    {
+      "text": "As anyone, I generate the registry's page from the chain and compare it with a published copy.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "0b129d256da588d194d795cac7347ef45011e05108fe3c1d9815a2fb032879d7"
+  }
+}

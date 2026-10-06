@@ -1,0 +1,76 @@
+{
+  "a-registry-joined-from-its-state-token-modules-model": [
+    {
+      "text": "A registry joined from its state token: modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Only new or changed modules are listed. Fields are in the data model and signatures in the functions model. Dependencies point downward: the CLI depends on the registry library, and the library depends on the provider interface.",
+      "pause": 400
+    }
+  ],
+  "the-provider-interface": [
+    {
+      "text": "The provider interface.",
+      "pause": 500
+    },
+    {
+      "text": "offchain/local-services/Singular/Registry/LedgerProvider.hs, used by every slice.",
+      "pause": 400
+    }
+  ],
+  "the-koios-instance": [
+    {
+      "text": "The Koios instance.",
+      "pause": 500
+    },
+    {
+      "text": "offchain/lib/Singular/Provider/Koios/ (wire, client, provider, fixtures), used by every slice.",
+      "pause": 400
+    }
+  ],
+  "the-development-network-koios-facade": [
+    {
+      "text": "The development-network Koios facade.",
+      "pause": 500
+    },
+    {
+      "text": "offchain/private-facade/Singular/Registry/Private/Facade.hs, used by every slice.",
+      "pause": 400
+    }
+  ],
+  "registry-identity-and-references": [
+    {
+      "text": "Registry identity and references.",
+      "pause": 500
+    },
+    {
+      "text": "A new library module under offchain/lib/Singular/Registry/, introduced in slice 1. It owns the whole derivation from a state token.",
+      "pause": 400
+    }
+  ],
+  "the-cli": [
+    {
+      "text": "The CLI.",
+      "pause": 500
+    },
+    {
+      "text": "offchain/cli/src/Singular/CLI/.",
+      "pause": 400
+    }
+  ],
+  "demo-scripts-ci-apps-and-docs": [
+    {
+      "text": "Demo scripts, CI apps and docs.",
+      "pause": 500
+    },
+    {
+      "text": "tools/demo1_*.sh, flake.nix apps, and docs/ and onchain-release/ pages that mention registry.json.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "0e20780bfee070fad91755ef88098c6680e4d968b57cf28a5e64f1a6c97fbbf1"
+  }
+}
