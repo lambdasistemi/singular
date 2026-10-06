@@ -108,6 +108,7 @@ import Data.Aeson
     , (.:)
     , (.=)
     )
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types (Parser, parseEither)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -126,6 +127,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding (decodeUtf8)
+import Data.Time.Clock (getCurrentTime)
 import Data.Word (Word64)
 import Lens.Micro ((&), (.~), (^.))
 import Network.HTTP.Types
@@ -393,9 +395,6 @@ intersector server = scope
         Follower
             { rollForward = \fetched _ -> do
                 updateArchive server (appendFetched fetched)
-                source <- readTimeSourceFacts (serverLSQ server)
-                void
-                    (publishTime (serverTimeRoot server) (serverGenesis server) source)
                 blocks <- archiveBlocks <$> readIORef (serverArchive server)
                 case reverse blocks of
                     block : _ ->
@@ -404,7 +403,6 @@ intersector server = scope
                             ( object
                                 [ "kind" .= ("chain-sync-full-block" :: Text)
                                 , "block" .= blockValue block
-                                , "timeSource" .= timeSourceValue source
                                 ]
                             )
                     [] -> fail "private facade: missing appended block"
@@ -574,6 +572,15 @@ answer server request body
         answerOutputs server request body
     | otherwise = do
         source <- readLedgerSource (serverLSQ server)
+        -- Publish from the HTTP request's own fresh acquired ledger facts.
+        -- This keeps time refresh out of the full-block follower's critical
+        -- path: each block must not wait on a second multi-query LSQ session.
+        void
+            ( publishTime
+                (serverTimeRoot server)
+                (serverGenesis server)
+                (timeFactsOf source)
+            )
         archive <- readIORef (serverArchive server)
         context <-
             either
@@ -877,10 +884,14 @@ epochFor context slot = do
 
 record :: Server -> Value -> IO ()
 record server value = do
+    now <- getCurrentTime
+    let observed = case value of
+            Object fields -> Object (KeyMap.insert "observedAt" (toJSON now) fields)
+            other -> other
     atomicModifyIORef'
         (serverLog server)
-        (\values -> (value : values, ()))
-    serverObserver server value
+        (\values -> (observed : values, ()))
+    serverObserver server observed
 
 parsed :: (Value -> Parser a) -> Value -> IO a
 parsed parser = either fail pure . parseEither parser
@@ -1039,17 +1050,6 @@ sourceValue source =
                ]
         , "systemStart" .= show (sourceSystemStart source)
         , "eraHistoryCBOR" .= hex (sourceEraHistory source)
-        ]
-
-timeSourceValue :: TimeSourceFacts -> Value
-timeSourceValue source =
-    object
-        [ "point" .= show (timeSourcePoint source)
-        , "systemStart" .= show (timeSourceSystemStart source)
-        , "eraHistoryCBOR" .= hex (timeSourceEraHistory source)
-        , "protocolParametersCBOR"
-            .= hex
-                (serialize' (eraProtVerHigh @ConwayEra) (timeSourceParameters source))
         ]
 
 pointHash :: Chain.Point Block -> IO Text
