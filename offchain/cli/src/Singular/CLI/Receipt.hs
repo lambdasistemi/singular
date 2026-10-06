@@ -175,7 +175,18 @@ instance FromJSON FoldTransition where
 
 -- | The transitions a journal line binds to its transaction.
 foldTransitions :: JournalEntry -> [FoldTransition]
-foldTransitions _ = []
+foldTransitions e = case journalTransitions e of
+    Just ts -> ts
+    Nothing -> case ( journalKey e
+                    , journalEdge e
+                    , journalExpect e
+                    , journalRootBefore e
+                    , journalRootAfter e
+                    ) of
+        -- A fold line written before batches: its scalar fields are its one transition.
+        (Just key, Just edge, Just expect, Just before, Just after) ->
+            [FoldTransition Nothing key edge expect before after]
+        _ -> []
 
 {- | A batch's transitions from the transaction's root before and, per
 request, its output, key, edge, after-state and root after.
@@ -184,7 +195,10 @@ chainTransitions
     :: Text
     -> [(Text, Text, Integer, Text, Text)]
     -> [FoldTransition]
-chainTransitions _ _ = []
+chainTransitions _ [] = []
+chainTransitions before ((request, key, edge, expect, after) : rest) =
+    FoldTransition (Just request) key edge expect before after
+        : chainTransitions after rest
 
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"
