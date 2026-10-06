@@ -326,11 +326,6 @@ foldPending at FoldSpec{..} = do
             wc
             "fold"
             ( \p ->
-                [ InRequest (txInText (plRequest p))
-                , InEdge (Folding (edgeText (plEdge p)))
-                ]
-            )
-            ( \p ->
                 Expectation
                     (Just (plKey p))
                     ( case plKind p of
@@ -342,7 +337,7 @@ foldPending at FoldSpec{..} = do
                     (Just rootBefore)
                     (Just (plRootAfter p))
             )
-            ( \v -> do
+            ( \place v -> do
                 pending <-
                     Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
                 let pendingIns = map fst pending
@@ -390,8 +385,7 @@ foldPending at FoldSpec{..} = do
                             []
                 deadline <- deadlineOf v req st
                 seen (Just deadline)
-                report
-                    (wcTracer wc)
+                place
                     [ InRequest (txInText request)
                     , InEdge (Folding (edgeText (requestEdge req)))
                     ]

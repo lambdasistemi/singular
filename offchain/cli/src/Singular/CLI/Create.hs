@@ -291,14 +291,15 @@ boot wc cfg pinned seedIn = do
         (scriptFromBytes "state" (cageScriptBytes cfg))
         stateRef
     -- The boot, consuming the seed.
-    report (wcTracer wc) [InEdge Booting] (EdgeStarted Booting)
     (signedBoot, ()) <-
         submitBuiltIn
             wc
             "boot"
-            (const [InEdge Booting])
             (const (expecting "state"))
-            (\v -> (,()) <$> bootTokenImpl cfg v addr)
+            ( \place v -> do
+                place [InEdge Booting] (EdgeStarted Booting)
+                (,()) <$> bootTokenImpl cfg v addr
+            )
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
@@ -319,14 +320,13 @@ boot wc cfg pinned seedIn = do
                 "boot"
                 signedBoot
                 "the state output holds the registry token"
-            let registry = InRegistry (tokenHex tid)
             report
                 (wcTracer wc)
-                [registry, InEdge Booting]
+                [InEdge Booting]
                 (Created (tokenHex tid) (txInText output))
             report
                 (wcTracer wc)
-                [registry]
+                [InRegistry (tokenHex tid)]
                 ( RegistrySeen
                     (txInText output)
                     (hexT (unOnChainRoot (stateRoot state)))

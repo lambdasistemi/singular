@@ -108,9 +108,8 @@ runReclaim env a = attached
             submitBuiltIn
                 wc
                 "reclaim"
-                (\(_, req, _, _, _, _, _) -> placed req)
                 (const (expecting ("reclaim:" <> txInText named)))
-                $ \v -> do
+                $ \place v -> do
                     allRequests <- Cage.outputsAt v requestAddr
                     let pending = findRequestUtxos (savedToken s) allRequests
                     locked <-
@@ -147,10 +146,7 @@ runReclaim env a = attached
                             (Just (processingEnds b))
                             (fromInteger <$> opens)
                         )
-                    report
-                        (wcTracer wc)
-                        (placed req)
-                        (EdgeStarted (Reclaiming (edgeText req)))
+                    place (placed req) (EdgeStarted (Reclaiming (edgeText req)))
                     bounds <-
                         either (stop . renderReclaimRefusal) pure $
                             reclaimGate

@@ -47,6 +47,7 @@ module Singular.CLI.Session
     , readOnce
     , submitBuilt
     , submitBuiltIn
+    , Place
     , Expectation (..)
     , expecting
     , journalObserved
@@ -152,12 +153,13 @@ import Singular.CLI.Trace
     , Scope (..)
     , SubmitVerdict (..)
     , TipAt (..)
-    , Trace
+    , Trace (..)
     , TxEvent (..)
     , What (..)
     , backendUnder
     , ended
     , readsUnder
+    , report
     , txUnder
     , what
     , within
@@ -247,6 +249,8 @@ data WriteContext = WriteContext
     {- ^ For each transaction confirmed so far, the milliseconds since its
     confirmation: how long its readback took when it is journalled observed
     -}
+    , wcPlaced :: IORef (Map Text [Scope])
+    -- ^ For each transaction built so far, the scopes its build placed it in
     }
 
 {- | Take the target directory's write lock, connect to the named node with
@@ -303,6 +307,7 @@ withSession env dir command ws body = do
     wallet <- loadWallet magic (writeWalletKey ws)
     connected <- newIORef False
     confirmed <- newIORef Map.empty
+    placements <- newIORef Map.empty
     before <- length <$> readJournal dir
     result <-
         try $
@@ -320,6 +325,7 @@ withSession env dir command ws body = do
                                 , wcTracer = envTracer env
                                 , wcSource = envSource env
                                 , wcConfirmed = confirmed
+                                , wcPlaced = placements
                                 }
                 named <- submissionsOf dir before
                 case ran of
@@ -539,12 +545,14 @@ submitBuilt
     -> (r -> Expectation)
     -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuilt wc step = submitBuiltIn wc step (const [])
+submitBuilt wc step expect build = submitBuiltIn wc step expect (const build)
 
-{- | 'submitBuilt', with the scopes the build decides placing the transaction:
-a fold learns its request and edge only from the view it builds from, so
-its signing, submission, confirmation and readback sit under them while its
-build's own reads sit under the registry.
+{- | 'submitBuilt', with the build placing its transaction where it decides:
+a fold learns its request and edge only from the view it builds from. The
+build is given 'Place': when it decides, it reports the protocol event that
+opens those scopes (an edge started), and from then on its own mechanics, the
+signing, submission, confirmation and readback sit inside them; what it read
+before deciding sits outside.
 
 A build that fails is a refusal where it happens: by local script evaluation
 when a script failed in the build's own view, by the client otherwise. A
@@ -555,12 +563,19 @@ class is unchanged.
 submitBuiltIn
     :: WriteContext
     -> Text
-    -> (r -> [Scope])
     -> (r -> Expectation)
-    -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
+    -> (Place -> Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuiltIn wc step placed expect build = do
-    let building = within (InTransaction step) (wcTracer wc)
+submitBuiltIn wc step expect build = do
+    placement <- newIORef []
+    let building = Tracer $ \(Trace path event) -> do
+            placed <- readIORef placement
+            traceWith
+                (wcTracer wc)
+                (Trace (placed <> (InTransaction step : path)) event)
+        place scopes event = do
+            writeIORef placement scopes
+            report (wcTracer wc) scopes event
     evaluationFailed <- newIORef False
     let noting = Tracer $ \case
             Evaluated e | evalFailed e > 0 -> writeIORef evaluationFailed True
@@ -573,7 +588,7 @@ submitBuiltIn wc step placed expect build = do
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
-                    (build v)
+                    (build place v)
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of
@@ -587,10 +602,17 @@ submitBuiltIn wc step placed expect build = do
                         (if failed then EvaluationRefused else ClientRefused)
                         (Just (errorClassOf e))
                 throwIO e
-    let tracer = within (InTransaction step) (inScopes (placed extra) (wcTracer wc))
+    placed <- readIORef placement
+    modifyIORef' (wcPlaced wc) (Map.insert (txIdHex unsigned) placed)
+    let tracer = within (InTransaction step) (inScopes placed (wcTracer wc))
     signed <-
         journalledSubmit tracer wc step (expect extra) scope unsigned
     pure (signed, extra)
+
+{- | Report the protocol event that opens these scopes, outermost first, and
+place the rest of the build and its transaction inside them.
+-}
+type Place = [Scope] -> What -> IO ()
 
 -- | The tracer inside these scopes, outermost first.
 inScopes :: [Scope] -> Tracer IO Trace -> Tracer IO Trace
@@ -823,8 +845,9 @@ journalObservedId wc step txid detail = do
         (blankEntry wc step txid "observed"){journalDetail = Just detail}
     readback <-
         readIORef (wcConfirmed wc) >>= maybe (pure 0) id . Map.lookup txid
+    placed <- Map.findWithDefault [] txid <$> readIORef (wcPlaced wc)
     traceWith
-        (txUnder (within (InTransaction step) (wcTracer wc)))
+        (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
         (TxObserved step txid readback)
 
 hexT :: ByteString -> Text

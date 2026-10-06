@@ -550,6 +550,7 @@ data Fixture = Fixture
     , fxUnsigned :: IORef (Maybe ConwayTx)
     , fxFacts :: IORef [FactRecord]
     , fxConfirmations :: IORef (Map.Map Text (IO Double))
+    , fxPlacements :: IORef (Map.Map Text [Scope])
     }
 
 magic :: Word32
@@ -588,6 +589,7 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
         <*> newIORef Nothing
         <*> newIORef []
         <*> newIORef Map.empty
+        <*> newIORef Map.empty
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -621,6 +623,7 @@ writeContext fx =
         , wcTracer = nullTracer
         , wcSource = "fixture"
         , wcConfirmed = fxConfirmations fx
+        , wcPlaced = fxPlacements fx
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the

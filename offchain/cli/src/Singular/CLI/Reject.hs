@@ -153,9 +153,8 @@ rejectPending at a = do
         submitBuiltIn
             wc
             "reject"
-            (const [InEdge Rejecting])
             (const (expecting "state"))
-            ( \v -> do
+            ( \place v -> do
                 allAtRequestAddr <- Cage.outputsAt v requestAddr
                 let pending = sortOn fst (findRequestUtxos (savedToken s) allAtRequestAddr)
                     pendingIns = map fst pending
@@ -208,7 +207,7 @@ rejectPending at a = do
                             Nothing
                             Nothing
                         )
-                report (wcTracer wc) [InEdge Rejecting] (EdgeStarted Rejecting)
+                place [InEdge Rejecting] (EdgeStarted Rejecting)
                 funded <-
                     fundedView (rejectFund a) addr v
                         >>= either

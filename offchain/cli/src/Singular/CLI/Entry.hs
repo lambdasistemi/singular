@@ -155,20 +155,16 @@ book at a key plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    (booking, (decided, _)) <-
+    (booking, decided) <-
         submitBuiltIn
             wc
             "book"
-            (\(_, edge) -> [InKey key, InEdge (Booking edge)])
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
-            ( \v -> do
+            ( \place v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
                 let edge = T.pack (edgeName (bookedEdge b))
-                report
-                    (wcTracer wc)
-                    [InKey key, InEdge (Booking edge)]
-                    (EdgeStarted (Booking edge))
+                place [InKey key, InEdge (Booking edge)] (EdgeStarted (Booking edge))
                 tx <-
                     bookEdgeMeasured
                         cfg
@@ -186,7 +182,7 @@ book at a key plan = do
                 refuseOver
                     (entryMaxOutlay a)
                     (bookingOutlay pp (liveRefs live) tx)
-                pure (tx, (decided, edge))
+                pure (tx, decided)
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
     deadline <-
@@ -307,12 +303,10 @@ runUpdate env a = case entryMode a of
             -- parameters, the script evaluation and the outlay judged against
             -- the allowance all come from the update's one view.
             let placed = [InKey key, InEdge Updating]
-            report (wcTracer wc) placed (EdgeStarted Updating)
             (signed, envelope) <-
                 submitBuiltIn
                     wc
                     "update"
-                    (const placed)
                     ( \envelope ->
                         Expectation
                             (Just key)
@@ -321,7 +315,8 @@ runUpdate env a = case entryMode a of
                             Nothing
                             Nothing
                     )
-                    ( \v -> do
+                    ( \place v -> do
+                        place placed (EdgeStarted Updating)
                         live <- attachLive v s
                         outs <- liveOutputs v s
                         (holding, envelope) <- planUpdate live (callerKey at) key outs

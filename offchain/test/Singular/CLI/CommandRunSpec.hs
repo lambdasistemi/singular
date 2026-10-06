@@ -124,6 +124,7 @@ import Singular.Registry.SyntheticLedger
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
@@ -168,6 +169,39 @@ spec = describe
                         lifecycle
                 map summary traced `shouldBe` map summary plain
                 [runLabel r | r <- traced, null (runEvents r)] `shouldBe` []
+        it
+            "places each transaction, from its evaluation to its readback, in one \
+            \scope, under the edge its command acts on"
+            $ withRig
+            $ \rig -> do
+                runs <- lifecycle rig
+                let placements =
+                        [ (runLabel r, step, nub paths, started)
+                        | r <- runs
+                        , let started = not (null [() | Trace _ (What (EdgeStarted _)) <- runEvents r])
+                        , step <-
+                            nub [s | Trace scope _ <- runEvents r, InTransaction s <- scope]
+                        , let paths =
+                                [ takeWhile (/= InTransaction step) scope
+                                | Trace scope (How h) <- runEvents r
+                                , InTransaction step `elem` scope
+                                , mechanicOfItsTransaction h
+                                ]
+                        , not (null paths)
+                        ]
+                    misplaced =
+                        [ (label, step, paths)
+                        | (label, step, paths, started) <- placements
+                        , length paths /= 1
+                            || ( step `elem` edgeSteps
+                                    && started
+                                    && not (or [True | InEdge _ <- concat paths])
+                               )
+                        ]
+                -- the extent: every step that acts on an edge was placed somewhere
+                nub (sort [s | (_, s, _, True) <- placements, s `elem` edgeSteps])
+                    `shouldBe` sort edgeSteps
+                misplaced `shouldBe` []
         it "fails a stream that contradicts its receipt in any one fact" $
             withRig $ \rig -> do
                 runs <- lifecycle rig
@@ -1186,3 +1220,17 @@ plantedFacts =
     , "scope request"
     , "scope edge"
     ]
+
+-- | The journal steps that act on an edge: boot, book, fold, update, reject, reclaim.
+edgeSteps :: [Text]
+edgeSteps = ["boot", "book", "fold", "update", "reject", "reclaim"]
+
+{- | A mechanic that belongs to its transaction once its build has decided
+where it is placed: an evaluation, the build, the signing, submission,
+confirmation and readback. Reads before the decision are not.
+-}
+mechanicOfItsTransaction :: How -> Bool
+mechanicOfItsTransaction = \case
+    Read (Evaluated _) -> True
+    Tx _ -> True
+    _ -> False
