@@ -67,10 +67,10 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
 import Singular.Registry.Deployment
     ( Deployment (..)
+    , cageConfigForApplication
     , parseOutRef
     , renderOutRef
     )
-import Singular.Registry.Deployment.Attach (cageConfigForApplication)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
 import Singular.Registry.LedgerProvider (Session (..))
 import Singular.Registry.SessionIO (withLatest)

@@ -55,6 +55,7 @@ module Singular.CLI.Registry
     , seedChecks
     , refuseExisting
     , publicationFunding
+    , checkPendingToken
     ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
@@ -108,6 +109,7 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (Release (..))
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
@@ -497,3 +499,12 @@ publicationFunding
     -- ^ The wallet
     -> Either IdentityError ()
 publicationFunding _ _ _ _ _ = Right ()
+
+{- | An inspect of an interrupted create may read its pending identity only
+when the requested state token is the pending registry's own: the actor's
+in-flight submission, never another registry's. The pending token is the
+one the pending seed derives under this release; a token from any other
+seed is refused before anything is read.
+-}
+checkPendingToken :: Asset -> Asset -> Either Text ()
+checkPendingToken _ _ = Left "checkPendingToken: not implemented"
