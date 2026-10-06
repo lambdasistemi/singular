@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | Fresh, session-bound public replay. No nodes or selections survive a read.
@@ -108,7 +109,7 @@ drain
 drain who = go Nothing []
   where
     go previous reversed stream =
-        LP.nextBlock stream >>= \answer -> case answer of
+        LP.nextBlock stream >>= \case
             Left failure -> pure (Left (providerRefusal who failure))
             Right Nothing -> pure (Right (reverse reversed))
             Right (Just (block, rest)) -> case previous of
@@ -143,7 +144,7 @@ checkBlocks who asset blocks = do
         pure (after, reversed)
     transaction creators (seen, resolved, transactions) record = do
         tx <- decode record
-        forM_ (LP.spentOutputs record) $ \((TxIn creator _), output) ->
+        forM_ (LP.spentOutputs record) $ \(TxIn creator _, output) ->
             unless
                 ( not (holds asset output)
                     || not (Set.member creator creators)

@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 
 {- | Execute the ordinary CLI's refusal controls against a node.

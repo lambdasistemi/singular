@@ -301,7 +301,7 @@ applicationReference l =
         [] -> Nothing
 
 -- | A capability and its caller's selection; no nodes or files are retained.
-data TrieContext = TrieContext
+newtype TrieContext = TrieContext
     { trieSelected
         :: IORef (Either TS.TrieFailure (TS.TrieState IO, TS.TrieSelection))
     }

@@ -3289,8 +3289,8 @@ replay byStep story =
                 (Just r, st') ->
                     let missing =
                             rcOutcome r == "client-error"
-                                && rcCommand r == Nothing
-                                && rcProcess r == Nothing
+                                && isNothing (rcCommand r)
+                                && isNothing (rcProcess r)
                         why =
                             if missing
                                 then

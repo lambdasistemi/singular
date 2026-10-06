@@ -283,10 +283,10 @@ replaySpec = do
                     case answer of
                         Left
                             (TS.HistoryIncomplete _ Nothing (TS.ProviderHistoryFailure failure)) ->
-                            case heights of
-                                first : second : _ -> failure `shouldBe` LP.HistoryOrderMismatch first second
-                                _ ->
-                                    expectationFailure "the chain history supplies fewer than two heights"
+                                case heights of
+                                    first : second : _ -> failure `shouldBe` LP.HistoryOrderMismatch first second
+                                    _ ->
+                                        expectationFailure "the chain history supplies fewer than two heights"
                         other ->
                             expectationFailure
                                 ("descending history lost its provider refusal: " <> show other)
@@ -312,10 +312,10 @@ replaySpec = do
                     case answer of
                         Left
                             (TS.HistoryIncomplete _ transaction (TS.ProviderHistoryFailure failure)) -> do
-                            let spender = txIdTx (pointTx (lastPoint h))
-                                creator = txIdTx (pointTx (last (init (points h))))
-                            transaction `shouldBe` Just spender
-                            failure `shouldBe` LP.MissingInBlockParent spender creator
+                                let spender = txIdTx (pointTx (lastPoint h))
+                                    creator = txIdTx (pointTx (last (init (points h))))
+                                transaction `shouldBe` Just spender
+                                failure `shouldBe` LP.MissingInBlockParent spender creator
                         other ->
                             expectationFailure
                                 ("asset ordering lost its provider refusal: " <> show other)
