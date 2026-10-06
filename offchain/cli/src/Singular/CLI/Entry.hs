@@ -159,12 +159,16 @@ book at a key plan = do
         submitBuiltIn
             wc
             "book"
+            ["state", "key outputs"]
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
-            ( \place v -> do
+            ( \building v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
                 let edge = T.pack (edgeName (bookedEdge b))
-                place [InKey key, InEdge (Booking edge)] (EdgeStarted (Booking edge))
+                place
+                    building
+                    [InKey key, InEdge (Booking edge)]
+                    (EdgeStarted (Booking edge))
                 tx <-
                     bookEdgeMeasured
                         cfg
@@ -186,7 +190,7 @@ book at a key plan = do
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
     deadline <-
-        reading at $ \v -> do
+        reading at ["requests", "state"] $ \v -> do
             reqs <-
                 Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
             unless (any ((== request) . fst) reqs) $
@@ -307,6 +311,7 @@ runUpdate env a = case entryMode a of
                 submitBuiltIn
                     wc
                     "update"
+                    ["state", "key outputs"]
                     ( \envelope ->
                         Expectation
                             (Just key)
@@ -315,24 +320,24 @@ runUpdate env a = case entryMode a of
                             Nothing
                             Nothing
                     )
-                    ( \place v -> do
-                        place placed (EdgeStarted Updating)
+                    ( \building v -> do
                         live <- attachLive v s
                         outs <- liveOutputs v s
                         (holding, envelope) <- planUpdate live (callerKey at) key outs
+                        place building placed (EdgeStarted Updating)
                         unsigned <-
                             buildUpdate v live addr (entryFund a) holding payload
                         refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
                         pure (unsigned, envelope)
                     )
-            after <- reading at (`liveOutputs` s)
+            after <- reading at ["key outputs"] (`liveOutputs` s)
             ((liveIn, _), seen) <-
                 either (failWith Partial) pure (liveOutputFor s key after)
             unless (seen == envelope{envPayload = payload}) $
                 failWith
                     Partial
                     "the updated output carries another envelope than the one sent"
-            state <- reading at (`attachLive` s)
+            state <- reading at ["state"] (`attachLive` s)
             rootAfter <- either (failWith Partial) pure (observedRoot state)
             when (rootAfter /= rootBefore) $
                 failWith StaleState "the registry root moved during an update"

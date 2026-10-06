@@ -153,8 +153,9 @@ rejectPending at a = do
         submitBuiltIn
             wc
             "reject"
+            ["state", "requests"]
             (const (expecting "state"))
-            ( \place v -> do
+            ( \building v -> do
                 allAtRequestAddr <- Cage.outputsAt v requestAddr
                 let pending = sortOn fst (findRequestUtxos (savedToken s) allAtRequestAddr)
                     pendingIns = map fst pending
@@ -197,8 +198,8 @@ rejectPending at a = do
                         ]
                     tip = stateMaxFee st
                 forM_ rows $ \r ->
-                    report
-                        (wcTracer wc)
+                    found
+                        building
                         [InRequest (txInText (rowRequest r))]
                         ( RequestSeen
                             (txInText (rowRequest r))
@@ -207,7 +208,7 @@ rejectPending at a = do
                             Nothing
                             Nothing
                         )
-                place [InEdge Rejecting] (EdgeStarted Rejecting)
+                place building [InEdge Rejecting] (EdgeStarted Rejecting)
                 funded <-
                     fundedView (rejectFund a) addr v
                         >>= either
@@ -292,7 +293,7 @@ rejectPending at a = do
     -- Observed: every rejected request output is gone, the root is where it was,
     -- and each refund is live at its owner's address as built.
     after <-
-        reading at $ \v -> do
+        reading at ["requests", "state", "owner outputs"] $ \v -> do
             left <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             owners <-

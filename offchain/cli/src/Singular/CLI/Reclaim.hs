@@ -108,8 +108,9 @@ runReclaim env a = attached
             submitBuiltIn
                 wc
                 "reclaim"
+                ["requests", "state"]
                 (const (expecting ("reclaim:" <> txInText named)))
-                $ \place v -> do
+                $ \building v -> do
                     allRequests <- Cage.outputsAt v requestAddr
                     let pending = findRequestUtxos (savedToken s) allRequests
                     locked <-
@@ -136,8 +137,8 @@ runReclaim env a = attached
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (processingEnds b)
                     closes <-
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (retractEnds b)
-                    report
-                        (wcTracer wc)
+                    found
+                        building
                         [InRequest (txInText named)]
                         ( RequestSeen
                             (txInText named)
@@ -146,7 +147,7 @@ runReclaim env a = attached
                             (Just (processingEnds b))
                             (fromInteger <$> opens)
                         )
-                    place (placed req) (EdgeStarted (Reclaiming (edgeText req)))
+                    place building (placed req) (EdgeStarted (Reclaiming (edgeText req)))
                     bounds <-
                         either (stop . renderReclaimRefusal) pure $
                             reclaimGate
@@ -220,7 +221,7 @@ runReclaim env a = attached
                     refuseOver (reclaimMaxOutlay a) (updateOutlay unsigned)
                     pure
                         (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
-        (pendingAfter, liveAfter, ownerOuts) <- reading at $ \v -> do
+        (pendingAfter, liveAfter, ownerOuts) <- reading at ["requests", "state", "owner outputs"] $ \v -> do
             requests <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             ownerOuts <- Cage.outputsAt v recipient

@@ -31,6 +31,8 @@ prints it and exits with that class's status.
 module Singular.CLI.Session
     ( -- * Failures
       CommandFailure (..)
+    , Reported (..)
+    , reportedOf
     , failWith
     , failWithFields
     , admitSubmissions
@@ -47,7 +49,9 @@ module Singular.CLI.Session
     , readOnce
     , submitBuilt
     , submitBuiltIn
-    , Place
+    , Building (..)
+    , readStep
+    , timedRead
     , Expectation (..)
     , expecting
     , journalObserved
@@ -65,16 +69,17 @@ import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.Async (async, cancel, waitCatch)
 import Control.Exception
     ( ErrorCall (..)
-    , Exception
+    , Exception (..)
     , IOException
     , SomeAsyncException
-    , SomeException
+    , SomeException (..)
     , bracket
     , evaluate
     , fromException
     , throwIO
     , toException
     , try
+    , tryJust
     )
 import Control.Monad (void, when)
 import Control.Tracer (Tracer (..), traceWith)
@@ -98,6 +103,7 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Typeable (cast)
 import Data.Word (Word32, Word64)
 import Lens.Micro ((^.))
 import System.Directory (createDirectoryIfMissing, doesFileExist)
@@ -149,6 +155,9 @@ import Singular.CLI.Receipt
     )
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
+    , Ended (..)
+    , Fetch (..)
+    , How (..)
     , RefusalKind (..)
     , Scope (..)
     , SubmitVerdict (..)
@@ -158,6 +167,7 @@ import Singular.CLI.Trace
     , What (..)
     , backendUnder
     , ended
+    , how
     , readsUnder
     , report
     , txUnder
@@ -194,7 +204,38 @@ that name what it left behind.
 data CommandFailure = CommandFailure OutcomeClass String [(Text, Value)]
     deriving stock (Show)
 
-instance Exception CommandFailure
+-- | A failure is seen through the mark that its refusal was reported ('Reported').
+instance Exception CommandFailure where
+    fromException (SomeException inner) = case cast inner of
+        Just failure -> Just failure
+        Nothing -> case cast inner of
+            Just (Reported failure) -> fromException failure
+            Nothing -> Nothing
+
+{- | A failure whose refusal was already reported where it happened, in the
+scopes it happened in: a build that failed, a submission refused or
+unanswered. The entry point ('Singular.CLI.Finish') reports a refusal for
+any other refusal outcome, so a command's stream carries exactly one. The
+failure inside is unchanged, and seen through the mark as itself.
+-}
+newtype Reported = Reported SomeException
+
+instance Show Reported where
+    showsPrec p (Reported e) = showsPrec p e
+
+instance Exception Reported
+
+-- | Whether a failure's refusal was reported, and the failure itself.
+reportedOf :: SomeException -> (Bool, SomeException)
+reportedOf e = case fromException e of
+    Just (Reported inner) -> (True, inner)
+    Nothing -> (False, e)
+
+-- | The failure, marked as reported when the original was.
+markedLike :: Bool -> SomeException -> SomeException
+markedLike reported e
+    | reported = toException (Reported e)
+    | otherwise = e
 
 failWith :: OutcomeClass -> String -> IO a
 failWith c why = throwIO (CommandFailure c why [])
@@ -314,7 +355,7 @@ withSession env dir command ws body = do
             envWrites env settings wallet $ \caps -> do
                 writeIORef connected True
                 ran <-
-                    try $
+                    tryJust failureOf $
                         body
                             WriteContext
                                 { wcDir = dir
@@ -329,8 +370,9 @@ withSession env dir command ws body = do
                                 }
                 named <- submissionsOf dir before
                 case ran of
-                    Left (CommandFailure c why fields) ->
-                        throwIO (CommandFailure c why (fields <> [("submissions", named)]))
+                    Left (reported, CommandFailure c why fields) ->
+                        throwIO . markedLike reported . toException $
+                            CommandFailure c why (fields <> [("submissions", named)])
                     Right (Object o) ->
                         pure (Object (KeyMap.insert "submissions" named o))
                     Right v -> pure v
@@ -347,6 +389,9 @@ withSession env dir command ws body = do
                     failWith
                         NodeUnavailable
                         ("the provider at " <> url <> " could not be used: " <> show e)
+  where
+    failureOf e = case reportedOf e of
+        (reported, inner) -> (,) reported <$> fromException inner
 
 {- | Each transaction this command prepared — the @prepared@ lines it
 appended after the first @before@ — in order, with the case the journal shows
@@ -384,12 +429,13 @@ admitSubmissions since e
     | null sent = e
     | Just (_ :: SomeAsyncException) <- fromException e = e
     | Just (_ :: WaitFailure) <- fromException e = e
-    | otherwise = case fromException e of
+    | otherwise = case fromException inner of
         Just (CommandFailure c why fields)
             | c /= ClientRefusal -> e
-            | otherwise -> admitted why fields
-        Nothing -> admitted (show e) []
+            | otherwise -> markedLike reported (admitted why fields)
+        Nothing -> markedLike reported (admitted (show inner) [])
   where
+    (reported, inner) = reportedOf e
     sent =
         nub
             [ journalTxId j
@@ -545,12 +591,14 @@ submitBuilt
     -> (r -> Expectation)
     -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuilt wc step expect build = submitBuiltIn wc step expect (const build)
+submitBuilt wc step expect build = submitBuiltIn wc step [] expect (const build)
 
-{- | 'submitBuilt', with the build placing its transaction where it decides:
-a fold learns its request and edge only from the view it builds from. The
-build is given 'Place': when it decides, it reports the protocol event that
-opens those scopes (an edge started), and from then on its own mechanics, the
+{- | 'submitBuilt', with the build reading what it names and placing its
+transaction where it decides: a fold learns its request and edge only from
+the view it builds from. The build is given 'Building'. Its read step (what
+it read, from the view's acquisition) closes when it first reports what it
+found or decides; when it decides, it reports the protocol event that opens
+those scopes (an edge started), and from then on its own mechanics, the
 signing, submission, confirmation and readback sit inside them; what it read
 before deciding sits outside.
 
@@ -563,19 +611,34 @@ class is unchanged.
 submitBuiltIn
     :: WriteContext
     -> Text
+    -> [Text]
     -> (r -> Expectation)
-    -> (Place -> Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
+    -> (Building -> Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuiltIn wc step expect build = do
+submitBuiltIn wc step items expect build = do
     placement <- newIORef []
+    readOpen <- newIORef (null items)
     let building = Tracer $ \(Trace path event) -> do
             placed <- readIORef placement
             traceWith
                 (wcTracer wc)
                 (Trace (placed <> (InTransaction step : path)) event)
-        place scopes event = do
-            writeIORef placement scopes
-            report (wcTracer wc) scopes event
+        closeRead since = do
+            open <- not <$> readIORef readOpen
+            when open $ do
+                writeIORef readOpen True
+                ms <- since
+                traceWith (how building) (Fetched (Fetch items (wcSource wc) ms Done))
+        acting since =
+            Building
+                { found = \scopes event -> do
+                    closeRead since
+                    report (wcTracer wc) scopes event
+                , place = \scopes event -> do
+                    closeRead since
+                    writeIORef placement scopes
+                    report (wcTracer wc) scopes event
+                }
     evaluationFailed <- newIORef False
     let noting = Tracer $ \case
             Evaluated e | evalFailed e > 0 -> writeIORef evaluationFailed True
@@ -584,11 +647,12 @@ submitBuiltIn wc step expect build = do
         provider = tracedReads (wcSource wc) reads' (wcCapabilities wc)
     built <-
         try $ Cage.withLatest provider $ \v -> do
+            since <- startTimer
             made <-
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
-                    (build place v)
+                    (build (acting since) v)
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of
@@ -601,7 +665,10 @@ submitBuiltIn wc step expect build = do
                     Refused
                         (if failed then EvaluationRefused else ClientRefused)
                         (Just (errorClassOf e))
-                throwIO e
+                -- a bounded wait keeps its own type for the caller to recognise
+                case fromException e of
+                    Just (_ :: WaitFailure) -> throwIO e
+                    Nothing -> throwIO (Reported e)
     placed <- readIORef placement
     modifyIORef' (wcPlaced wc) (Map.insert (txIdHex unsigned) placed)
     let tracer = within (InTransaction step) (inScopes placed (wcTracer wc))
@@ -609,10 +676,41 @@ submitBuiltIn wc step expect build = do
         journalledSubmit tracer wc step (expect extra) scope unsigned
     pure (signed, extra)
 
-{- | Report the protocol event that opens these scopes, outermost first, and
-place the rest of the build and its transaction inside them.
+-- | What a build reports while it decides, from its own view.
+data Building = Building
+    { found :: [Scope] -> What -> IO ()
+    -- ^ A protocol fact the build read, in these scopes, outermost first
+    , place :: [Scope] -> What -> IO ()
+    {- ^ The protocol event that opens these scopes: the rest of the build and
+    its transaction sit inside them
+    -}
+    }
+
+{- | One read step of a command: a view acquired and read through, timed and
+reported with what it read.
 -}
-type Place = [Scope] -> What -> IO ()
+readStep
+    :: Tracer IO Trace
+    -> Text
+    -> [Text]
+    -> Capabilities Cage.NoWitness IO
+    -> (Cage.Session Cage.NoWitness IO -> IO a)
+    -> IO a
+readStep tracer source items caps body =
+    timedRead
+        tracer
+        source
+        items
+        (Cage.withLatest (readsIn source tracer caps) body)
+
+{- | A read step inside a view already held: timed and reported with what it
+read.
+-}
+timedRead :: Tracer IO Trace -> Text -> [Text] -> IO a -> IO a
+timedRead tracer source items =
+    timedTrace
+        (how tracer)
+        (\ms end -> Fetched (Fetch items source ms (ended end)))
 
 -- | The tracer inside these scopes, outermost first.
 inScopes :: [Scope] -> Tracer IO Trace -> Tracer IO Trace
@@ -621,6 +719,10 @@ inScopes scopes tracer = foldl (flip within) tracer scopes
 -- | Report a refusal where it happened.
 refused :: Tracer IO Trace -> What -> IO ()
 refused tracer = traceWith (what tracer)
+
+-- | Stop with a failure whose refusal was just reported.
+reportedAs :: OutcomeClass -> String -> IO a
+reportedAs c why = throwIO (Reported (toException (CommandFailure c why [])))
 
 -- | The capabilities' provider, its reads traced into this scope.
 readsIn
@@ -724,7 +826,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))
             refused tracer (Refused TransportFailed (Just (errorClassOf e)))
-            failWith
+            reportedAs
                 Partial
                 ( "no answer from the node for "
                     <> T.unpack txid
@@ -734,17 +836,19 @@ journalledSubmit tracer wc step ex scope unsigned = do
         Right (Cage.SubmitRefused reason) -> do
             journal "rejected" (Just (T.pack (show reason)))
             refused tracer (Refused LedgerRejected Nothing)
-            failWith
+            reportedAs
                 LedgerRefusal
                 (T.unpack step <> " refused by the node: " <> show reason)
         Right (Cage.SubmitFailed reason) -> do
             journal "submit-unknown" (Just reason)
             refused tracer (Refused TransportFailed Nothing)
-            failWith Partial ("no submission answer: " <> T.unpack reason)
+            reportedAs Partial ("no submission answer: " <> T.unpack reason)
         Right (Cage.SubmitWrongNetwork wanted actual) -> do
             journal "rejected" (Just (T.pack (show (wanted, actual))))
             refused tracer (Refused ClientRefused Nothing)
-            failWith ClientRefusal "submission refused on the configured network"
+            reportedAs
+                ClientRefusal
+                "submission refused on the configured network"
         Right (Cage.SubmitAccepted _) -> do
             journal "submitted" Nothing
             harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT" (Just step)
@@ -870,13 +974,12 @@ view, every read traced into this scope.
 readOnce
     :: Env
     -> ProviderSettings
+    -> [Text]
     -> ( Capabilities Cage.NoWitness IO
          -> Cage.Session Cage.NoWitness IO
          -> IO a
        )
     -> IO a
-readOnce env settings body =
+readOnce env settings items body =
     envReads env settings $ \caps ->
-        Cage.withLatest
-            (readsIn (envSource env) (envTracer env) caps)
-            (body caps)
+        readStep (envTracer env) (envSource env) items caps (body caps)

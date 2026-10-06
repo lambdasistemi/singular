@@ -190,7 +190,7 @@ inspectIncompleteCreate env dir settings = do
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ readOnce env settings $ \caps v -> do
+        try $ readOnce env settings ["chain tip", "journal transactions"] $ \caps v -> do
             point <- Cage.tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
@@ -262,7 +262,7 @@ inspectSaved env dir key settings a = do
         pure
         (checkNetwork (savedConfig saved) magic)
     reached <-
-        try $ readOnce env settings $ \caps v -> do
+        try $ readOnce env settings ["state", "key outputs", "requests"] $ \caps v -> do
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved

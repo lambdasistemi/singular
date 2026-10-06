@@ -17,6 +17,7 @@ module Singular.CLI.Finish
     ) where
 
 import Control.Exception (SomeException, fromException, try)
+import Control.Monad (forM_, unless)
 import Control.Tracer (Tracer, traceWith)
 import Data.Aeson (Value (..), toJSON)
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -31,14 +32,21 @@ import Singular.CLI.Receipt
     , exitCodeOf
     , outcomeName
     )
-import Singular.CLI.Session (CommandFailure (..))
-import Singular.CLI.Trace (Event (..), Trace (..), What (..))
+import Singular.CLI.Session (CommandFailure (..), reportedOf)
+import Singular.CLI.Trace
+    ( Event (..)
+    , RefusalKind (..)
+    , Trace (..)
+    , What (..)
+    )
 import Singular.Registry.Trace (startTimer)
 
 {- | Print the receipt, write it where asked, and exit with the class of
 its outcome. A failure is its own receipt. The command's stream opens with
 its start and closes with its outcome class and elapsed time, before the
-receipt is printed.
+receipt is printed. A refusal outcome whose refusal was not reported where it
+happened (a refusal before any transaction is built) is reported here, so
+every refusal receipt has exactly one refusal event.
 -}
 finish
     :: Tracer IO Trace -> T.Text -> Maybe FilePath -> IO Value -> IO ExitCode
@@ -46,17 +54,29 @@ finish tracer command target action = do
     traceWith tracer (Trace [] (What (CommandStarted command)))
     elapsed <- startTimer
     result <- try action
-    let (value, outcome) = case result of
-            Right v -> (v, outcomeOf v)
-            Left (e :: SomeException) -> case fromException e of
-                Just (CommandFailure c why fields) ->
-                    (receipt command c (("reason", toJSON (T.pack why)) : fields), c)
-                Nothing ->
-                    ( receipt command ClientRefusal [("reason", toJSON (T.pack (show e)))]
-                    , ClientRefusal
-                    )
+    let (value, outcome, reported) = case result of
+            Right v -> (v, outcomeOf v, False)
+            Left (e :: SomeException) -> case reportedOf e of
+                (marked, failure) -> case fromException failure of
+                    Just (CommandFailure c why fields) ->
+                        ( receipt command c (("reason", toJSON (T.pack why)) : fields)
+                        , c
+                        , marked
+                        )
+                    Nothing ->
+                        ( receipt
+                            command
+                            ClientRefusal
+                            [("reason", toJSON (T.pack (show failure)))]
+                        , ClientRefusal
+                        , marked
+                        )
         rendered = encodePretty value
     ms <- elapsed
+    -- a refusal not reported where it happened is reported here, once
+    unless reported $
+        forM_ (refusalOf outcome) $ \kind ->
+            traceWith tracer (Trace [] (What (Refused kind Nothing)))
     traceWith
         tracer
         (Trace [] (What (CommandEnded command (outcomeName outcome) ms)))
@@ -72,3 +92,10 @@ outcomeOf = \case
         , (c : _) <- [c | c <- [minBound .. maxBound], outcomeName c == name] ->
             c
     _ -> ClientRefusal
+
+-- | The refusal an outcome class stands for, when it is one.
+refusalOf :: OutcomeClass -> Maybe RefusalKind
+refusalOf = \case
+    ClientRefusal -> Just ClientRefused
+    LedgerRefusal -> Just LedgerRejected
+    _ -> Nothing

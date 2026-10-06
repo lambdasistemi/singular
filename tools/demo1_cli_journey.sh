@@ -173,7 +173,9 @@ exit_of() {
 # every transaction event is one of the receipt's submissions, or the read-back
 # of a reference the command found already published, each submission signed
 # and submitted, observed exactly when the receipt says so, with verdicts
-# matching the case the journal records; a refusal's kind fits the outcome.
+# matching the case the journal records; a refusal's kind fits the outcome,
+# and a refusal receipt's stream reports exactly one refusal (any other at
+# most one).
 trace_disagreements() {
   local receipt="$1" trace="$2" key="${3:-}"
   jq -s -c --slurpfile r "$receipt" --arg invoked "$key" '
@@ -262,6 +264,10 @@ trace_disagreements() {
         ($ev[] | select(.event == "folded") | select(.output != ($r.liveOutput // $r.released)) | "folded output \(.output)"),
         ($ev[] | select(.event == "refused") | select(refusal_fits(.kind; $r.outcome) | not)
          | "refusal \(.kind) under outcome \($r.outcome)"),
+        (([$ev[] | select(.event == "refused")] | length) as $n
+        | if ($r.outcome | IN("client-refusal", "ledger-refusal")) then
+            (if $n != 1 then "refusal events \($n) under outcome \($r.outcome)" else empty end)
+          elif $n > 1 then "refusal events \($n) under outcome \($r.outcome)" else empty end),
         (if $r.outcome == "ledger-refusal" and ([$ev[] | select(.event == "refused" and .kind == "ledger")] | length) == 0
          then "ledger refusal with no ledger rejection event" else empty end)
       ]' "$trace"
@@ -1594,5 +1600,16 @@ for altered in \
     || fail "the trace agreement accepts an inspect stream altered by: $altered"
 done
 trace_agrees "$receipts/inspect-1.json" "$inspect_trace" || fail "the inspect's own stream no longer agrees"
+# and a refusal's stream, refused before anything was built, disagrees with
+# its receipt once its one refusal event is removed or repeated.
+refusal_trace="$receipts/insert-payload-not-data.trace.jsonl"
+refusal_key="$(printf %s "$key" | od -An -tx1 | tr -d " \n")"
+trace_agrees "$receipts/insert-payload-not-data.json" "$refusal_trace" "$refusal_key" \
+  || fail "the early refusal's own stream does not agree"
+for altered in 'select(.event != "refused")' 'if .event == "refused" then (., .) else . end'; do
+  jq -c "$altered" "$refusal_trace" >"$work/altered.trace.jsonl"
+  ! trace_agrees "$receipts/insert-payload-not-data.json" "$work/altered.trace.jsonl" "$refusal_key" \
+    || fail "the trace agreement accepts a refusal stream altered by: $altered"
+done
 say "every narrated command's typed events agree with its receipt; altered streams do not"
 say "JOURNEY-OK (Koios path)"

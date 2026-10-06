@@ -325,6 +325,7 @@ foldPending at FoldSpec{..} = do
         submitBuiltIn
             wc
             "fold"
+            ["state", "requests"]
             ( \p ->
                 Expectation
                     (Just (plKey p))
@@ -337,7 +338,7 @@ foldPending at FoldSpec{..} = do
                     (Just rootBefore)
                     (Just (plRootAfter p))
             )
-            ( \place v -> do
+            ( \building v -> do
                 pending <-
                     Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
                 let pendingIns = map fst pending
@@ -360,8 +361,8 @@ foldPending at FoldSpec{..} = do
                     _ ->
                         stop' ClientRefusal "the pending request carries no request datum" []
                 let seen dl =
-                        report
-                            (wcTracer wc)
+                        found
+                            building
                             [InRequest (txInText request)]
                             ( RequestSeen
                                 (txInText request)
@@ -386,6 +387,7 @@ foldPending at FoldSpec{..} = do
                 deadline <- deadlineOf v req st
                 seen (Just deadline)
                 place
+                    building
                     [ InRequest (txInText request)
                     , InEdge (Folding (edgeText (requestEdge req)))
                     ]
@@ -575,7 +577,7 @@ foldPending at FoldSpec{..} = do
     let key = plKey plan
         edge = plEdge plan
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
-    local <- reading at $ \v -> do
+    local <- reading at ["state"] $ \v -> do
         afterFold <- attachLive v s
         context <- openTrie s
         requireTrieSelection s afterFold context
@@ -587,7 +589,7 @@ foldPending at FoldSpec{..} = do
         pure root
     (delivery, detail) <- case (plKind plan, plEnvelope plan, plHolding plan) of
         (FoldInsertion, Just envelope, _) -> do
-            outs <- reading at (`liveOutputs` s)
+            outs <- reading at ["key outputs"] (`liveOutputs` s)
             ((liveIn, _), seen) <-
                 either (failWith Partial) pure (liveOutputFor s key outs)
             unless (seen == envelope) $
@@ -600,7 +602,7 @@ foldPending at FoldSpec{..} = do
                     <> hexT local
                 )
         (FoldTermination, _, Just ((liveIn, _), envelope)) -> do
-            after <- reading at (`liveOutputs` s)
+            after <- reading at ["key outputs"] (`liveOutputs` s)
             when (any ((== liveIn) . fst) after) $
                 failWith
                     Partial

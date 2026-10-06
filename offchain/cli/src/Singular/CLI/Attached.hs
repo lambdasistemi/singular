@@ -97,9 +97,15 @@ attached env dir blueprint ws command body = do
         Cage.withLatest
             (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             $ \v -> do
-                reconciled <- reconcile command dir saved v
-                refuseUnreconciled reconciled
-                live <- attachLive v saved
+                (reconciled, live) <-
+                    timedRead
+                        (wcTracer wc)
+                        (wcSource wc)
+                        ["journal transactions", "state"]
+                        $ do
+                            r <- reconcile command dir saved v
+                            refuseUnreconciled r
+                            (,) r <$> attachLive v saved
                 context <- openTrie saved
                 requireTrieSelection saved live context
                 observed <- either (failWith StaleState) pure (observedRoot live)
@@ -125,10 +131,12 @@ provider at =
     let wc = atWrite at
     in  readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
 
--- | One read operation: acquire a view and read through it.
+-- | One read step: acquire a view, read through it, and report what was read.
 reading
-    :: Attached -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
-reading at = Cage.withLatest (provider at)
+    :: Attached -> [Text] -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
+reading at items =
+    let wc = atWrite at
+    in  readStep (wcTracer wc) (wcSource wc) items (wcCapabilities wc)
 
 savedOf :: Attached -> Saved
 savedOf = liveSaved . atLive

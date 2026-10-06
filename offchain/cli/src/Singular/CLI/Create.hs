@@ -89,14 +89,15 @@ import Singular.CLI.Registry
     , writeConfig
     )
 import Singular.CLI.Session
-    ( Env
+    ( Building (..)
+    , Env
     , WriteContext (..)
     , expecting
     , failWith
     , journalObserved
     , journalObservedId
     , readOnce
-    , readsIn
+    , readStep
     , submitBuilt
     , submitBuiltIn
     , txIdHex
@@ -162,7 +163,7 @@ runCreate env a = do
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            readOnce env settings $ \_ v -> do
+            readOnce env settings ["wallet outputs"] $ \_ v -> do
                 utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
@@ -177,8 +178,11 @@ createWith env a rel ws = do
     session env dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
-            Cage.withLatest
-                (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
+            readStep
+                (wcTracer wc)
+                (wcSource wc)
+                ["wallet outputs"]
+                (wcCapabilities wc)
                 (`Cage.outputsAt` addr)
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
@@ -258,8 +262,7 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let prov = readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
-        addr = walletAddr (wcWallet wc)
+    let addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
             (signed, refOut) <-
@@ -274,7 +277,12 @@ boot wc cfg pinned seedIn = do
     -- The state validator, published from outside the seed, unless the
     -- wallet already publishes it.
     existing <-
-        Cage.withLatest prov (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["reference scripts"]
+            (wcCapabilities wc)
+            (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
     stateRef@(stateIn, _) <-
         maybe
             ( publish
@@ -295,9 +303,10 @@ boot wc cfg pinned seedIn = do
         submitBuiltIn
             wc
             "boot"
+            []
             (const (expecting "state"))
-            ( \place v -> do
-                place [InEdge Booting] (EdgeStarted Booting)
+            ( \building v -> do
+                place building [InEdge Booting] (EdgeStarted Booting)
                 (,()) <$> bootTokenImpl cfg v addr
             )
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
@@ -305,8 +314,11 @@ boot wc cfg pinned seedIn = do
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
             _ -> failWith LedgerRefusal "the boot minted no single registry token"
     stateUtxos <-
-        Cage.withLatest
-            prov
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["state"]
+            (wcCapabilities wc)
             (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     (seenOutput, seenState) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
@@ -380,8 +392,11 @@ observeReference
     -> IO ()
 observeReference wc step addr script (i, _) = do
     utxos <-
-        Cage.withLatest
-            (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["reference scripts"]
+            (wcCapabilities wc)
             (`Cage.outputsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of

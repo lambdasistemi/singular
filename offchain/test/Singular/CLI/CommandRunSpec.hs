@@ -202,6 +202,46 @@ spec = describe
                 nub (sort [s | (_, s, _, True) <- placements, s `elem` edgeSteps])
                     `shouldBe` sort edgeSteps
                 misplaced `shouldBe` []
+        it
+            "reads in timed steps, each naming what it read, and a build reads before \
+            \it reports what it found"
+            $ withRig
+            $ \rig -> do
+                runs <- lifecycle rig
+                let fetches r = [f | Trace _ (How (Fetched f)) <- runEvents r]
+                    succeeded = [r | r <- runs, outcomeOf (runReceipt r) == Just "success"]
+                    unread = [runLabel r | r <- succeeded, null (fetches r)]
+                    unnamed =
+                        [ (runLabel r, f)
+                        | r <- runs
+                        , f <- fetches r
+                        , null (fetchWhat f) || fetchSource f /= "fixture"
+                        ]
+                    -- in each build that reports a protocol fact, its read comes first
+                    unordered =
+                        [ (runLabel r, step)
+                        | r <- runs
+                        , step <-
+                            nub [s | Trace scope _ <- runEvents r, InTransaction s <- scope]
+                        , step `elem` ["book", "fold", "update", "reject", "reclaim"]
+                        , let inStep = dropWhile (not . startsStep step) (runEvents r)
+                              beforeFact = takeWhile (not . protocolFact) (drop 1 inStep)
+                        , any protocolFact inStep
+                        , null [() | Trace _ (How (Fetched _)) <- beforeFact]
+                        ]
+                    startsStep step (Trace scope _) = InTransaction step `elem` scope
+                    protocolFact = \case
+                        Trace _ (What (RequestSeen{})) -> True
+                        Trace _ (What (EdgeStarted _)) -> True
+                        _ -> False
+                length succeeded `shouldSatisfy` (> 10)
+                (unread, unnamed, unordered) `shouldBe` ([], [], [])
+                [ l
+                  | r <- runs
+                  , Just l <- map renderText (runEvents r)
+                  , "how  read " `T.isInfixOf` l
+                  ]
+                    `shouldSatisfy` (not . null)
         it "fails a stream that contradicts its receipt in any one fact" $
             withRig $ \rig -> do
                 runs <- lifecycle rig
@@ -501,6 +541,18 @@ lifecycle rig = do
             rig
             "update an absent key"
             ["registry", "update", "--key", "nobody", "--payload", payload2]
+    -- refused before any transaction is built
+    existing <-
+        run
+            rig
+            "create over an existing registry"
+            ["registry", "create", "--seed", seed]
+    missing <-
+        runAt
+            rig
+            "no-registry"
+            "inspect a registry that does not exist"
+            ["registry", "inspect", "--key", "alice-1"]
     writeIORef
         (rigAnswer rig)
         (Just (Cage.SubmitRefused "the ledger said no"))
@@ -533,6 +585,8 @@ lifecycle rig = do
         , nothingPending
         , overAllowance
         , absent
+        , existing
+        , missing
         , rejected
         , unanswered
         ]
@@ -887,6 +941,10 @@ disagreements invokedKey receipt events =
           | Trace _ (What (Refused k _)) <- events
           , not (refusalFits k outcome)
           ]
+        , [ "refusal events " <> show n <> " under outcome " <> show outcome
+          | let n = length [() | Trace _ (What (Refused _ _)) <- events]
+          , if refusalOutcome outcome then n /= 1 else n > 1
+          ]
         , [ "ledger refusal with no ledger rejection event"
           | outcome == Just "ledger-refusal"
           , null [() | Trace _ (What (Refused LedgerRejected _)) <- events]
@@ -1013,6 +1071,18 @@ alterations receipt events =
              , [x | (i, x) <- zip [0 :: Int ..] events, i /= n]
              )
            | (n, Trace _ (How (Tx TxObserved{}))) <- zip [0 ..] events
+           ]
+        <> [ ( "refusal removed"
+             , [x | (i, x) <- zip [0 :: Int ..] events, i /= n]
+             )
+           | refusalOutcome outcome
+           , (n, Trace _ (What (Refused{}))) <- zip [0 ..] events
+           ]
+        <> [ ( "refusal repeated"
+             , concat
+                [if i == n then [x, x] else [x] | (i, x) <- zip [0 :: Int ..] events]
+             )
+           | (n, Trace _ (What (Refused{}))) <- zip [0 ..] events
            ]
   where
     outcome = textAt "outcome" receipt
@@ -1216,6 +1286,8 @@ plantedFacts =
     , "confirmed verdict"
     , "observed step"
     , "observation removed"
+    , "refusal removed"
+    , "refusal repeated"
     , "scope key"
     , "scope request"
     , "scope edge"
@@ -1234,3 +1306,7 @@ mechanicOfItsTransaction = \case
     Read (Evaluated _) -> True
     Tx _ -> True
     _ -> False
+
+-- | Whether a receipt's outcome is a refusal: its stream carries exactly one refusal event.
+refusalOutcome :: Maybe Text -> Bool
+refusalOutcome = (`elem` map Just ["client-refusal", "ledger-refusal"])
