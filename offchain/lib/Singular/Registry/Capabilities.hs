@@ -28,8 +28,6 @@ data Capabilities w m = Capabilities
     {- ^ The provider, undecorated: each scope that reads wraps it with its own
     tracer ('Singular.Registry.ProviderTrace.tracedLedgerProvider')
     -}
-    , capSource :: Text
-    -- ^ The name its reads report as
     , capSubmit :: SignedTx -> m SubmitResult
     , capConfirm :: ConwayTx -> m ()
     , capFacts :: m [FactRecord]

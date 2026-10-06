@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -33,6 +34,10 @@ module Singular.CLI.Session
     , failWith
     , failWithFields
     , admitSubmissions
+
+      -- * The environment
+    , Env (..)
+    , koiosEnv
 
       -- * Writes
     , WriteContext (..)
@@ -153,6 +158,7 @@ import Singular.CLI.Trace
     , txUnder
     , within
     )
+import Singular.Provider.Koios.Runtime (koiosSource)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
@@ -185,6 +191,37 @@ failWith c why = throwIO (CommandFailure c why [])
 failWithFields :: OutcomeClass -> String -> [(Text, Value)] -> IO a
 failWithFields c why fields = throwIO (CommandFailure c why fields)
 
+{- | What a command runs with, composed by the entry point: where it traces, and
+how it opens the provider its caller named, for reads and for writes. The
+packaged command opens Koios ('koiosEnv'); a test opens its own.
+-}
+data Env = Env
+    { envTracer :: Tracer IO Trace
+    , envSource :: Text
+    -- ^ The name the provider's reads report as
+    , envReads
+        :: forall a
+         . ProviderSettings
+        -> (Capabilities Cage.NoWitness IO -> IO a)
+        -> IO a
+    , envWrites
+        :: forall a
+         . ProviderSettings
+        -> Wallet
+        -> (Capabilities Cage.NoWitness IO -> IO a)
+        -> IO a
+    }
+
+-- | The environment over Koios, its mechanics and reads traced into this tracer.
+koiosEnv :: Tracer IO Trace -> Env
+koiosEnv tracer =
+    Env
+        { envTracer = tracer
+        , envSource = koiosSource
+        , envReads = withReads (backendUnder tracer) (readsUnder tracer)
+        , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)
+        }
+
 -- | Everything a write's submissions need.
 data WriteContext = WriteContext
     { wcDir :: FilePath
@@ -194,6 +231,8 @@ data WriteContext = WriteContext
     , wcTimeout :: Maybe Int
     , wcTracer :: Tracer IO Trace
     -- ^ Where the write reports its transactions, in the scope that runs it
+    , wcSource :: Text
+    -- ^ The name the provider's reads report as
     , wcConfirmed :: IORef (Map Text (IO Double))
     {- ^ For each transaction confirmed so far, the milliseconds since its
     confirmation: how long its readback took when it is journalled observed
@@ -210,15 +249,15 @@ body starts is @node-unavailable@; once connected, failures are the
 body's own.
 -}
 withWrite
-    :: Tracer IO Trace
+    :: Env
     -> FilePath
     -> Text
     -> WriteSettings
     -> (WriteContext -> IO Value)
     -> IO Value
-withWrite tracer dir command ws body = do
+withWrite env dir command ws body = do
     harnessHold
-    withTargetLock dir (withSession tracer dir command ws body)
+    withTargetLock dir (withSession env dir command ws body)
 
 {- | __Test harness only__ (#299 journey). When
 @SINGULAR_HARNESS_HOLD_BEFORE_LOCK@ names a path, write @PATH.waiting@ and
@@ -241,13 +280,13 @@ it met, read from the journal when the command ends ('submissionsOf'),
 whether it succeeded or stopped.
 -}
 withSession
-    :: Tracer IO Trace
+    :: Env
     -> FilePath
     -> Text
     -> WriteSettings
     -> (WriteContext -> IO Value)
     -> IO Value
-withSession tracer dir command ws body = do
+withSession env dir command ws body = do
     let settings = writeProvider ws
         magic = providerMagic settings
         url = providerUrl settings
@@ -257,7 +296,7 @@ withSession tracer dir command ws body = do
     before <- length <$> readJournal dir
     result <-
         try $
-            withWrites (backendUnder tracer) (readsUnder tracer) settings wallet $ \caps -> do
+            envWrites env settings wallet $ \caps -> do
                 writeIORef connected True
                 ran <-
                     try $
@@ -268,7 +307,8 @@ withSession tracer dir command ws body = do
                                 , wcWallet = wallet
                                 , wcCapabilities = caps
                                 , wcTimeout = writeConfirmTimeout ws
-                                , wcTracer = tracer
+                                , wcTracer = envTracer env
+                                , wcSource = envSource env
                                 , wcConfirmed = confirmed
                                 }
                 named <- submissionsOf dir before
@@ -492,7 +532,7 @@ submitBuilt
 submitBuilt wc step expect build = do
     let tracer = within (InTransaction step) (wcTracer wc)
     (scope, (unsigned, extra)) <-
-        Cage.withLatest (readsIn tracer (wcCapabilities wc)) $ \v -> do
+        Cage.withLatest (readsIn (wcSource wc) tracer (wcCapabilities wc)) $ \v -> do
             built <-
                 timedTrace
                     (txUnder tracer)
@@ -506,10 +546,11 @@ submitBuilt wc step expect build = do
 
 -- | The capabilities' provider, its reads traced into this scope.
 readsIn
-    :: Tracer IO Trace
+    :: Text
+    -> Tracer IO Trace
     -> Capabilities Cage.NoWitness IO
     -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-readsIn tracer = tracedReads (readsUnder tracer)
+readsIn source tracer = tracedReads source (readsUnder tracer)
 
 {- | Sign; save the signed transaction and journal @prepared@ with its
 inputs, body hash and the chain point of the view its body was built
@@ -568,7 +609,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
             , journalRootAfter = hexT <$> exRootAfter ex
             }
     dropSend <- harnessDrops "SINGULAR_HARNESS_DROP_SEND" step
-    tip <- tipAtSubmission tracer caps
+    tip <- tipAtSubmission (wcSource wc) tracer caps
     let (lower, upper) = validityOf signed
     sentAnswer <-
         if dropSend
@@ -686,11 +727,11 @@ event: one more acquisition, its reads traced like every other. A tip that
 cannot be read is unreadable; it never stops the submission.
 -}
 tipAtSubmission
-    :: Tracer IO Trace -> Capabilities Cage.NoWitness IO -> IO TipAt
-tipAtSubmission tracer caps =
+    :: Text -> Tracer IO Trace -> Capabilities Cage.NoWitness IO -> IO TipAt
+tipAtSubmission source tracer caps =
     Wait.tryOutcome
         ( Cage.withLatest
-            (readsIn tracer caps)
+            (readsIn source tracer caps)
             (fmap Cage.observedSlot . Cage.tip)
         )
         >>= \case
@@ -744,13 +785,15 @@ preserveInfrastructure failure
 view, every read traced into this scope.
 -}
 readOnce
-    :: Tracer IO Trace
+    :: Env
     -> ProviderSettings
     -> ( Capabilities Cage.NoWitness IO
          -> Cage.Session Cage.NoWitness IO
          -> IO a
        )
     -> IO a
-readOnce tracer settings body =
-    withReads (backendUnder tracer) (readsUnder tracer) settings $ \caps ->
-        Cage.withLatest (readsIn tracer caps) (body caps)
+readOnce env settings body =
+    envReads env settings $ \caps ->
+        Cage.withLatest
+            (readsIn (envSource env) (envTracer env) caps)
+            (body caps)

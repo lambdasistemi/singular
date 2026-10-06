@@ -39,7 +39,6 @@ import Cardano.Ledger.BaseTypes
 import Cardano.Ledger.TxIn (TxIn (..))
 
 import Cardano.Slotting.Slot qualified as Cage
-import Control.Tracer (Tracer)
 import Singular.CLI.Attached
 import Singular.CLI.Command (ReclaimArgs (..))
 import Singular.CLI.Fold (slotAt)
@@ -52,7 +51,6 @@ import Singular.CLI.ReclaimRules
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
-import Singular.CLI.Trace (Trace)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.SessionIO qualified as Services
@@ -77,9 +75,9 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
-runReclaim :: Tracer IO Trace -> ReclaimArgs -> IO Value
-runReclaim tracer a = attached
-    tracer
+runReclaim :: Env -> ReclaimArgs -> IO Value
+runReclaim env a = attached
+    env
     (reclaimRegistry a)
     (reclaimBlueprint a)
     (reclaimWrite a)

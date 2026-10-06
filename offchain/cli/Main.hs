@@ -24,6 +24,7 @@ import Singular.CLI.Command
     , renderCLIError
     , usage
     )
+import Singular.CLI.Session (koiosEnv)
 import Singular.CLI.Trace (withTracing)
 
 main :: IO ()
@@ -41,7 +42,7 @@ main = do
                 terminal
                 (phaseLog environment)
                 request
-                (`runCommand` command)
+                (\tracer -> runCommand (koiosEnv tracer) command)
                 >>= exitWith
   where
     phaseLog environment = case lookup "SINGULAR_LOG" environment of

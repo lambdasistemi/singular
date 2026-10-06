@@ -65,7 +65,6 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
-import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( dataFromJson
     , envelopeToJson
@@ -92,14 +91,12 @@ import Singular.CLI.Registry
     , parseEnterpriseAddress
     , renderIdentityError
     )
-import Singular.CLI.Session (failWith, readsIn, txIdHex)
-import Singular.CLI.Trace (Trace, backendUnder, readsUnder)
+import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (withReads)
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
@@ -116,13 +113,13 @@ kindName KTerminate = "terminate"
 address the caller named, and report what it would submit.
 -}
 runPreview
-    :: Tracer IO Trace
+    :: Env
     -> Kind
     -> EntryArgs
     -> ProviderSettings
     -> String
     -> IO Value
-runPreview tracer kind a settings addrText = do
+runPreview env kind a settings addrText = do
     let magic = providerMagic settings
     addr <-
         either
@@ -141,8 +138,8 @@ runPreview tracer kind a settings addrText = do
     -- One view for the whole preparation: the state, the replayed root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
-    withReads (backendUnder tracer) (readsUnder tracer) settings $ \caps ->
-        Cage.withLatest (readsIn tracer caps) $ \v -> do
+    envReads env settings $ \caps ->
+        Cage.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
             pp <- Cage.parameters v
             point <- Cage.tip v
             either

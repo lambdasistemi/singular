@@ -602,10 +602,10 @@ writeContext fx =
                 , capConfirm = \tx -> modifyIORef' (fxConfirmed fx) (<> [T.unpack (txIdHex tx)])
                 , capFacts = readIORef (fxFacts fx)
                 , capTrace = pure []
-                , capSource = "fixture"
                 }
         , wcTimeout = Just 5
         , wcTracer = nullTracer
+        , wcSource = "fixture"
         , wcConfirmed = fxConfirmations fx
         }
 

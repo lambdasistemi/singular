@@ -7,6 +7,7 @@ import Naming.RetireVerifySpec qualified
 import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
+import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.FoldSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.OutlaySpec qualified
@@ -201,6 +202,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Write" [Cli, Recovery])
         Singular.CLI.WriteSpec.spec
+    describe
+        (tagged "Singular.CLI.CommandRun" [Cli])
+        Singular.CLI.CommandRunSpec.spec
     describe
         (tagged "Singular.CLI.Trace" [Cli])
         Singular.CLI.TraceSpec.spec

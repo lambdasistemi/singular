@@ -66,6 +66,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Maybe qualified
 import Data.Text qualified as T
+import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
@@ -231,7 +232,7 @@ data Command
     | Reject RejectArgs
     | Reclaim ReclaimArgs
     | Inspect InspectArgs
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Generic)
 
 -- | Why a command line was refused before anything ran.
 data CLIError

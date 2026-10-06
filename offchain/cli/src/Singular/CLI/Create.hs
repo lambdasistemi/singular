@@ -61,7 +61,6 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Word (Word32)
 
-import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Script
     ( Application (..)
     , applicationTitle
@@ -90,7 +89,8 @@ import Singular.CLI.Registry
     , writeConfig
     )
 import Singular.CLI.Session
-    ( WriteContext (..)
+    ( Env
+    , WriteContext (..)
     , expecting
     , failWith
     , journalObserved
@@ -102,7 +102,6 @@ import Singular.CLI.Session
     , withSession
     , withWrite
     )
-import Singular.CLI.Trace (Trace)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
@@ -139,8 +138,8 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
-runCreate :: Tracer IO Trace -> CreateArgs -> IO Value
-runCreate tracer a = do
+runCreate :: Env -> CreateArgs -> IO Value
+runCreate env a = do
     let dir = createRegistry a
     refuseExisting dir
         >>= either (failWith ClientRefusal . renderIdentityError) pure
@@ -156,23 +155,23 @@ runCreate tracer a = do
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            readOnce tracer settings $ \_ v -> do
+            readOnce env settings $ \_ v -> do
                 utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
-        Submit ws -> createWith tracer a rel ws
+        Submit ws -> createWith env a rel ws
 
 createWith
-    :: Tracer IO Trace -> CreateArgs -> Release -> WriteSettings -> IO Value
-createWith tracer a rel ws = do
+    :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
+createWith env a rel ws = do
     let dir = createRegistry a
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
-    session tracer dir "create" ws $ \wc -> do
+    session env dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
             Cage.withLatest
-                (readsIn (wcTracer wc) (wcCapabilities wc))
+                (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
                 (`Cage.outputsAt` addr)
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
@@ -252,7 +251,7 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let prov = readsIn (wcTracer wc) (wcCapabilities wc)
+    let prov = readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
         addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
@@ -360,7 +359,7 @@ observeReference
 observeReference wc step addr script (i, _) = do
     utxos <-
         Cage.withLatest
-            (readsIn (wcTracer wc) (wcCapabilities wc))
+            (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             (`Cage.outputsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of

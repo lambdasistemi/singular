@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- | Private deterministic raw facts for consumer interleavings. Each
 acquisition captures an immutable value; common services calculate all
@@ -11,15 +12,32 @@ module Singular.Registry.RawChainFixture
     , newRawChain
     , rawChainProvider
     , advanceChain
+    , jumpChainTo
     , loseConnection
+    , recordTransaction
     ) where
 
+import Cardano.Ledger.Alonzo.Tx (IsValid (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, isValidTxL, txIdTx)
+import Cardano.Ledger.Api.Tx.Body
+    ( inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, valueTxOutL)
+import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import Data.Bits (shiftR)
 import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BL
+import Data.Foldable (toList)
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
@@ -29,7 +47,7 @@ import Data.Set qualified as Set
 import Data.Word (Word32)
 import Lens.Micro ((^.))
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
-import Singular.Registry.Ledger (ConwayEra, PParams, TxIn)
+import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTime (NetworkTime)
 import Singular.Registry.StubSession (servingSession, stubSession)
@@ -47,19 +65,58 @@ data RawChain = RawChain
     { chainNetwork :: Network
     , chainFacts :: IORef ChainFacts
     , chainConnected :: IORef Bool
+    , chainHistory :: IORef [HistoryBlock]
+    -- ^ Every transaction recorded, oldest first, one block each
     }
 newRawChain :: ChainFacts -> IO RawChain
 newRawChain facts =
     RawChain (Network (csNetwork facts))
         <$> newIORef facts
         <*> newIORef True
+        <*> newIORef []
 
 advanceChain :: RawChain -> (ChainFacts -> ChainFacts) -> IO ()
 advanceChain chain change = atomicModifyIORef' (chainFacts chain) $ \facts ->
     let next = maybe 1 (succ . fst) (csTip facts)
     in  ((change facts){csTip = Just (next, blockHash next)}, ())
+
+-- | Move the tip to a later slot, as the chain does while nothing reads it.
+jumpChainTo :: RawChain -> SlotNo -> IO ()
+jumpChainTo chain slot = atomicModifyIORef' (chainFacts chain) $ \facts ->
+    (facts{csTip = Just (slot, blockHash slot)}, ())
+
 loseConnection :: RawChain -> IO ()
 loseConnection chain = atomicModifyIORef' (chainConnected chain) (const (False, ()))
+
+{- | Record a transaction the chain is about to apply as public history, its
+inputs and references resolved against the outputs live before it: a block
+of its own, after every block recorded before it.
+-}
+recordTransaction :: RawChain -> ConwayTx -> IO ()
+recordTransaction chain tx = do
+    live <- csUTxO <$> readIORef (chainFacts chain)
+    let txid = txIdTx tx
+        resolved ins = [(i, out) | i <- Set.toList ins, Just out <- [Map.lookup i live]]
+        record =
+            HistoricalTransaction
+                { historicalId = txid
+                , historicalCbor =
+                    BL.toStrict (serialize (eraProtVerHigh @ConwayEra) tx)
+                , historicalTx = tx
+                , spentOutputs = resolved (tx ^. bodyTxL . inputsTxBodyL)
+                , referenceOutputs = resolved (tx ^. bodyTxL . referenceInputsTxBodyL)
+                , createdOutputs =
+                    zipWith
+                        (\ix out -> (TxIn txid (TxIx ix), out))
+                        [0 ..]
+                        (toList (tx ^. bodyTxL . outputsTxBodyL))
+                , scriptValid = tx ^. isValidTxL == IsValid True
+                }
+    atomicModifyIORef' (chainHistory chain) $ \blocks ->
+        ( blocks
+            <> [HistoryBlock (fromIntegral (length blocks) + 1) (record NE.:| [])]
+        , ()
+        )
 
 rawChainProvider :: RawChain -> (Network, LedgerProvider NoWitness IO)
 rawChainProvider chain =
@@ -81,6 +138,7 @@ rawChainProvider chain =
                             )
                     else do
                         captured <- readIORef (chainFacts chain)
+                        recorded <- readIORef (chainHistory chain)
                         case csTip captured of
                             Nothing ->
                                 pure
@@ -107,6 +165,8 @@ rawChainProvider chain =
                                                 fact (TipObservation slot header (fromIntegral (unSlotNo slot)) 0)
                                             , networkTime = fact (csNetworkTime captured)
                                             , scriptRegistered = \script -> fact (Set.member script (csRegistered captured))
+                                            , history = \asset _ ->
+                                                pure (Right (streamOf (filter (touches asset) recorded)))
                                             }
                                 acquire (snd (servingSession session)) request action
         , submitTx = \wanted _ ->
@@ -118,6 +178,34 @@ rawChainProvider chain =
     )
   where
     configured = chainNetwork chain
+
+{- | The recorded blocks whose transaction spends, references, creates, mints
+or burns the asset, as the public history of that asset. Every range is
+answered whole.
+-}
+touches :: Asset -> HistoryBlock -> Bool
+touches (policy, name) block =
+    any involved (NE.toList (blockTransactions block))
+  where
+    involved record =
+        any
+            (holds . snd)
+            ( spentOutputs record
+                <> referenceOutputs record
+                <> createdOutputs record
+            )
+            || minted (historicalTx record ^. bodyTxL . mintTxBodyL)
+    holds out = let MaryValue _ assets = out ^. valueTxOutL in minted assets
+    minted (MultiAsset assets) =
+        maybe
+            False
+            ((/= 0) . Map.findWithDefault 0 name)
+            (Map.lookup policy assets)
+
+streamOf :: [HistoryBlock] -> HistoryStream IO
+streamOf = \case
+    [] -> HistoryStream (pure (Right Nothing))
+    b : bs -> HistoryStream (pure (Right (Just (b, streamOf bs))))
 
 selectOutputs
     :: Map TxIn (TxOut ConwayEra)

@@ -83,7 +83,6 @@ newCapabilities backend settings = do
     pure
         Capabilities
             { capReads = (network, provider)
-            , capSource = koiosSource
             , capSubmit = boundedSignedSubmission 300 (submitTx provider network)
             , capConfirm = awaitTransaction provider network
             , capFacts = readIORef facts
@@ -103,7 +102,7 @@ withReads
     -> IO a
 withReads backend reading settings action = do
     capabilities <- newCapabilities backend settings
-    withLatest (tracedReads reading capabilities) $ \session ->
+    withLatest (tracedReads koiosSource reading capabilities) $ \session ->
         Control.Monad.void (SessionIO.parameters session)
     action capabilities
 
@@ -119,7 +118,7 @@ withWrites
     -> IO a
 withWrites backend reading settings wallet action = withReads backend reading settings $ \capabilities -> do
     checkFunding
-        (tracedReads reading capabilities)
+        (tracedReads koiosSource reading capabilities)
         (walletAddr wallet)
         defaultFundingFloor
     action capabilities
@@ -136,13 +135,14 @@ submitWithWallet wallet capabilities unsigned = do
     capConfirm capabilities (signedTx signed)
     pure (signedTx signed)
 
--- | The capabilities' provider with its reads traced into this tracer.
+{- | The capabilities' provider with its reads traced into this tracer, under
+the source name its reads report.
+-}
 tracedReads
-    :: Tracer IO ReadEvent
+    :: Text.Text
+    -> Tracer IO ReadEvent
     -> Capabilities w IO
     -> (Network, LedgerProvider w IO)
-tracedReads tracer capabilities =
+tracedReads source tracer capabilities =
     let (network, provider) = capReads capabilities
-    in  ( network
-        , tracedLedgerProvider (capSource capabilities) tracer provider
-        )
+    in  (network, tracedLedgerProvider source tracer provider)

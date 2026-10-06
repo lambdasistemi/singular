@@ -63,7 +63,6 @@ import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxIn)
 
-import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -109,11 +108,11 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( CommandFailure (..)
+    , Env
     , failWith
     , readOnce
     , withTargetLockOr
     )
-import Singular.CLI.Trace (Trace)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.SessionIO qualified as Cage
@@ -131,16 +130,16 @@ import Singular.Registry.Types
     , edgeName
     )
 
-runInspect :: Tracer IO Trace -> InspectArgs -> IO Value
-runInspect tracer a = do
+runInspect :: Env -> InspectArgs -> IO Value
+runInspect env a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
         settings = inspectProvider a
     complete <- doesFileExist (configPath dir)
     pending <- doesFileExist (pendingPath dir)
     if not complete && pending
-        then inspectIncompleteCreate tracer dir settings
-        else inspectSaved tracer dir key settings a
+        then inspectIncompleteCreate env dir settings
+        else inspectSaved env dir key settings a
 
 {- | Reconcile under the registry's lock, or not at all when another
 process holds it.
@@ -177,13 +176,13 @@ and the outcome is @partial@ with no leaf. Create refuses the directory;
 nothing is booted again or resubmitted.
 -}
 inspectIncompleteCreate
-    :: Tracer IO Trace -> FilePath -> ProviderSettings -> IO Value
-inspectIncompleteCreate tracer dir settings = do
+    :: Env -> FilePath -> ProviderSettings -> IO Value
+inspectIncompleteCreate env dir settings = do
     identity <-
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ readOnce tracer settings $ \caps v -> do
+        try $ readOnce env settings $ \caps v -> do
             point <- Cage.tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
@@ -241,13 +240,13 @@ inlineDatum o = case o ^. datumTxOutL of
     _ -> Nothing
 
 inspectSaved
-    :: Tracer IO Trace
+    :: Env
     -> FilePath
     -> ByteString
     -> ProviderSettings
     -> InspectArgs
     -> IO Value
-inspectSaved tracer dir key settings a = do
+inspectSaved env dir key settings a = do
     let magic = providerMagic settings
     saved <- loadSaved dir (inspectBlueprint a)
     either
@@ -255,7 +254,7 @@ inspectSaved tracer dir key settings a = do
         pure
         (checkNetwork (savedConfig saved) magic)
     reached <-
-        try $ readOnce tracer settings $ \caps v -> do
+        try $ readOnce env settings $ \caps v -> do
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved

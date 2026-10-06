@@ -82,7 +82,6 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -103,7 +102,6 @@ import Singular.CLI.Plan (outlayReport, refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
-import Singular.CLI.Trace (Trace)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
@@ -252,10 +250,10 @@ data Plan = Plan
 by this wallet, and journal it. Whoever booked the request, and whatever
 wallet, the registry directory they share says what the fold needs.
 -}
-runFold :: Tracer IO Trace -> FoldArgs -> IO Value
-runFold tracer a =
+runFold :: Env -> FoldArgs -> IO Value
+runFold env a =
     attached
-        tracer
+        env
         (foldRegistry a)
         (foldBlueprint a)
         (foldWrite a)

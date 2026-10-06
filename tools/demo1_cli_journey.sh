@@ -159,30 +159,77 @@ exit_of() {
     proof-inconsistent) echo 18 ;; *) fail "no exit status for class $1" ;;
   esac
 }
-# trace_agrees RECEIPT TRACE: the command's typed events, as the JSON lines
-# its file sink wrote, agree with its receipt. Every line is one JSON
-# object; the stream ends with the command's own end, naming the receipt's
-# command and outcome; every submission the receipt names is a transaction
-# event of that step and id. A successful receipt's key, request, edge and
-# leaf are each named by an event, or by the scope one happened in.
+# trace_disagreements RECEIPT TRACE: every way the command's typed events, as
+# the JSON lines its file sink wrote, contradict its receipt; empty when every
+# event that carries a receipt-bound fact agrees with it. The same rules as
+# the in-process comparison (offchain/test/Singular/CLI/CommandRunSpec.hs):
+# one end naming the receipt's command and outcome, last; every key an event
+# or its scope carries is the receipt's key; every request is one the receipt
+# names, with that request's key and edge; a fold's edge, the root and the
+# token are the receipt's; every transaction event is one of the receipt's
+# submissions, each submission signed and submitted, observed exactly when
+# the receipt says so, with verdicts matching the case the journal records;
+# a refusal's kind fits the outcome.
+trace_disagreements() {
+  local receipt="$1" trace="$2"
+  jq -s -c --slurpfile r "$receipt" '
+    $r[0] as $r
+    | . as $ev
+    | ([$r | .. | objects | select(has("request")) | {request, key, edge}]
+       + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]) as $facts
+    | [$r.submissions[]? | {step, tx, case, observed}] as $subs
+    | def keys_of: (if .event == "key" or .event == "folded" or .event == "updated" then .key else empty end),
+        (.scope[]? | .key? // empty);
+      def requests_of: (if .event == "request" or .event == "booked" or .event == "reclaimed" then .request else empty end),
+        (if .event == "rejected" then .requests[] else empty end),
+        (.scope[]? | .request? // empty);
+      def fits($v; $c):
+        if $v == "accepted" then ($c | IN("acknowledged", "timeout", "included", "rolled-back", "excluded"))
+        elif $v == "ledger-refused" or $v == "wrong-network" then $c == "rejected"
+        elif $v == "provider-failed" or $v == "threw" then $c == "unknown"
+        elif $v == "confirmed" then ($c | IN("included", "rolled-back", "excluded"))
+        else $c == "timeout" end;
+      def refusal_fits($k; $o):
+        if $k == "ledger" then $o == "ledger-refusal"
+        elif $k == "transport" then ($o | IN("partial", "node-unavailable", "timeout"))
+        elif $k == "evaluation" then ($o | IN("client-refusal", "partial"))
+        else ($o | IN("client-refusal", "partial", "concurrent-writer", "stale-state")) end;
+      [ (map(select(.event == "command-ended")) as $ends
+         | if ($ends | length) == 1 and ($ends[0].command == $r.command) and ($ends[0].outcome == $r.outcome)
+              and ($ev | last | .event) == "command-ended"
+           then empty else "the stream does not end once with the command and outcome of the receipt" end),
+        ($ev[] | keys_of | select(. != $r.key) | "key \(.)"),
+        ($ev[] | requests_of | select(. as $q | $facts | map(.request) | index($q) | not) | "request \(.) not named by the receipt"),
+        ($ev[] | select(.event == "request") as $e
+         | $facts[] | select(.request == $e.request)
+         | (select(.key != null and .key != $e.key) | "request \($e.request) key \($e.key)"),
+           (select(.edge != null and .edge != $e.edge) | "request \($e.request) edge \($e.edge)")),
+        ($ev[] | select(.event == "folded") | select(.edge != $r.edge) | "edge \(.edge)"),
+        ($ev[] | select(.event == "root") | select(.after != $r.root) | "root \(.after)"),
+        ($ev[] | select(.event == "created") | select(.token != $r.token) | "token \(.token)"),
+        ($ev[] | select(.tx != null) | {step, tx} as $t
+         | select($subs | map({step, tx}) | index($t) | not) | "transaction \($t) not among the submissions of the receipt"),
+        ($subs[] as $s
+         | (select(([$ev[] | select(.event == "tx-signed" and .step == $s.step and .tx == $s.tx)] | length) == 0
+              or ([$ev[] | select(.event == "tx-submitted" and .step == $s.step and .tx == $s.tx)] | length) == 0)
+            | "submission \($s.tx) has no signing and submission event"),
+           (select(($s.observed == true) != ([$ev[] | select(.event == "tx-observed" and .step == $s.step and .tx == $s.tx)] | length > 0))
+            | "submission \($s.tx) observed \($s.observed) against its events"),
+           ($ev[] | select((.event == "tx-submitted" or .event == "tx-confirmed") and .tx == $s.tx)
+            | select(fits(.verdict; $s.case) | not) | "submission \($s.tx) met \($s.case) but its events say \(.verdict)")),
+        ($ev[] | select(.event == "refused") | select(refusal_fits(.kind; $r.outcome) | not)
+         | "refusal \(.kind) under outcome \($r.outcome)"),
+        (if $r.outcome == "ledger-refusal" and ([$ev[] | select(.event == "refused" and .kind == "ledger")] | length) == 0
+         then "ledger refusal with no ledger rejection event" else empty end)
+      ]' "$trace"
+}
+# trace_agrees RECEIPT TRACE: every line is one JSON object and the stream has
+# no disagreement with the receipt.
 trace_agrees() {
   local receipt="$1" trace="$2"
   [ -s "$trace" ] || return 1
   jq -R -e 'fromjson | type == "object"' "$trace" >/dev/null || return 1
-  jq -s -e --slurpfile r "$receipt" '
-    $r[0] as $r
-    | def named($field; $value):
-        any(.[]; .[$field] == $value or any(.scope[]?; .[$field] == $value));
-      (last | .event == "command-ended" and .command == $r.command and .outcome == $r.outcome)
-      and (map(select(.event == "command-ended")) | length == 1)
-      and (. as $events | [$r.submissions[]? | {step, tx}]
-        | all(. as $s | any($events[]; .step == $s.step and .tx == $s.tx)))
-      and (if $r.outcome != "success" then true else
-        (if $r.key then named("key"; $r.key) else true end)
-        and (if $r.request then named("request"; $r.request) else true end)
-        and (if $r.edge then named("edge"; $r.edge) or any(.[]; any(.scope[]?; .on == $r.edge)) else true end)
-        and (if $r.leaf then any(.[]; .event == "key" and .leaf == $r.leaf) else true end)
-      end)' "$trace" >/dev/null
+  [ "$(trace_disagreements "$receipt" "$trace")" = "[]" ]
 }
 # run NAME CLASS -- ARGS: one singular process; its receipt must name CLASS
 # and its exit status must be that class's. Each process uses the Koios path
@@ -216,8 +263,10 @@ run() {
   jq -s -e 'length == 1' "$receipts/$name.json" >/dev/null \
     || fail "$name: standard output holds more than the receipt"
   [ -s "$receipts/$name.err" ] || fail "$name: --trace how --trace-to stderr narrated nothing"
-  trace_agrees "$receipts/$name.json" "$trace" \
-    || fail "$name: the typed events of its narration disagree with its receipt"
+  trace_agrees "$receipts/$name.json" "$trace" || {
+    trace_disagreements "$receipts/$name.json" "$trace" >&2 || true
+    fail "$name: the typed events of its narration disagree with its receipt"
+  }
   printf '%s\n' "$name" >>"$work/trace-command-invocations"
   if [ "$class" = success ] && jq -e 'any(.submissions[]?; .step == "fold")' "$receipts/$name.json" >/dev/null; then
     [ -s "$receipts/$name.phases.jsonl" ] || setup_fail "$name: the fold produced no phase log"
@@ -1465,12 +1514,16 @@ jq -s -e '[.[] | select(.outcome == "success" and .how > 0) | .command] | unique
     == ["create","fold","insert","inspect","reclaim","reject","terminate","update"]' \
   "$work/trace-command-extent.jsonl" >/dev/null \
   || fail "the narrated command extent omits a command, or narrates it without mechanics"
-# The agreement can fail: one fold's stream, altered in its outcome, its key
-# or a transaction id, disagrees with that fold's receipt.
+# The agreement can fail: one fold's stream, altered in any one fact it
+# carries, disagrees with that fold's receipt.
 fold_trace="$receipts/fold.trace.jsonl"
 for altered in \
   'if .event == "command-ended" then .outcome = "partial" else . end' \
-  'del(.key) | .scope |= map(del(.key))' \
+  'if .key then .key = "00" else . end' \
+  '.scope |= map(if .request then .request = ("0" * 64 + "#9") else . end)' \
+  'if .event == "tx-confirmed" then .verdict = "timed-out" else . end' \
+  'select(.event != "tx-observed")' \
+  'if .event == "root" then .after = "00" else . end' \
   'if .tx then .tx |= (if startswith("0") then "1" else "0" end) + .[1:] else . end'; do
   jq -c "$altered" "$fold_trace" >"$work/altered.trace.jsonl"
   ! trace_agrees "$receipts/fold.json" "$work/altered.trace.jsonl" \

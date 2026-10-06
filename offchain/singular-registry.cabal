@@ -919,24 +919,31 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLI.Attached
     Singular.CLI.Command
+    Singular.CLI.CommandRunSpec
+    Singular.CLI.Create
+    Singular.CLI.Entry
     Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
+    Singular.CLI.Inspect
     Singular.CLI.Live
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Plan
+    Singular.CLI.Preview
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
+    Singular.CLI.Reclaim
     Singular.CLI.ReclaimRules
     Singular.CLI.ReclaimSpec
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
+    Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
     Singular.CLI.RequestWindow
@@ -947,6 +954,7 @@ test-suite cage-tests
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
+    Singular.CLI
     Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
