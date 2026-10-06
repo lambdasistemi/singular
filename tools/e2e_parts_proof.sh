@@ -1,33 +1,31 @@
 #!/usr/bin/env bash
-# The devnet E2E parts select the whole suite: every named part selects at
-# least one example, and the parts' selections add up to exactly the full
-# suite (a part matching nothing, or a module no part names, fails here).
+# The devnet E2E lanes select the whole suite. Every module is wrapped in
+# exactly one lane (Test.Tags.lane, "{lane:NAME}"), and each CI part runs one
+# lane with --match "{lane:NAME}". Before any part runs, this proves:
+#   - every listed lane selects at least one example;
+#   - the lanes' selections add up to exactly the full suite;
+#   - skipping every lane selects nothing: no example is untagged.
 # Dry runs only: no node starts.
 #
 # usage: e2e_parts_proof.sh PARTS-JSON   (run from offchain/, REGISTRY_BLUEPRINT set)
 set -euo pipefail
 parts="$1"
 count() {
-  # shellcheck disable=SC2086 # hspec arguments split on spaces
-  nix run --quiet .#cage-tests-e2e -- --dry-run $1 2>/dev/null \
+  nix run --quiet .#cage-tests-e2e -- --dry-run "$@" 2>/dev/null \
     | awk '/ examples?, /{n=$1} END{print n+0}'
 }
-total="$(count "")"
+total="$(count)"
 [ "$total" -gt 0 ] || { echo "FAIL: the full suite selects no example"; exit 1; }
+untagged="$(count --skip "{lane:")"
+echo "untagged examples (outside every lane): $untagged"
+[ "$untagged" -eq 0 ] || { echo "FAIL: $untagged example(s) carry no lane, so no part would run them"; exit 1; }
 sum=0
-n_parts="$(jq length "$parts")"
-for i in $(seq 0 $((n_parts - 1))); do
-  name="$(jq -r ".[$i].name" "$parts")"
-  args="$(jq -r ".[$i].args" "$parts")"
-  empty_ok="$(jq -r ".[$i].mayBeEmpty" "$parts")"
-  n="$(count "$args")"
-  echo "part '$name': $n example(s)"
-  if [ "$n" -eq 0 ] && [ "$empty_ok" != true ]; then
-    echo "FAIL: part '$name' selects no example"
-    exit 1
-  fi
+while IFS=$'\t' read -r name lane; do
+  n="$(count --match "{lane:$lane}")"
+  echo "lane $lane ($name): $n example(s)"
+  [ "$n" -gt 0 ] || { echo "FAIL: lane $lane selects no example"; exit 1; }
   sum=$((sum + n))
-done
-echo "parts select $sum of $total examples"
-[ "$sum" -eq "$total" ] || { echo "FAIL: the parts overlap or leave examples out ($sum selected, $total in the suite)"; exit 1; }
-echo "E2E-PARTS-PROOF: the parts select the whole suite exactly once"
+done < <(jq -r '.[] | [.name, .lane] | @tsv' "$parts")
+echo "lanes select $sum of $total examples"
+[ "$sum" -eq "$total" ] || { echo "FAIL: the lanes overlap or leave examples out ($sum selected, $total in the suite)"; exit 1; }
+echo "E2E-LANES-PROOF: every example is in exactly one listed lane"

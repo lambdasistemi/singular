@@ -266,13 +266,12 @@ jobs:
   # here. The registry-protocol jobs (`e2e`, `journey`) and the generic
   # rows above are unaffected.
   # #449: the devnet E2E modules each start their own development node, so
-  # they run as parallel parts listed once in .github/ci/e2e-parts.json.
-  # The plan proves the selection before any node starts: every named part
-  # selects at least one example, and the parts add up to exactly the full
-  # suite ("the rest" skips every named module, so a module added later
-  # still runs).
+  # they run as parallel parts, one per lane (Test.Tags.Lane), listed once in
+  # .github/ci/e2e-parts.json. The plan proves the selection before any node
+  # starts: every lane selects at least one example, the lanes add up to the
+  # whole suite, and no example is outside every lane.
   e2e-plan:
-    name: Devnet E2E parts select the whole suite
+    name: Devnet E2E lanes select the whole suite
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 30
@@ -326,15 +325,11 @@ jobs:
       - name: Run this part of the devnet E2E against a fresh blueprint
         working-directory: offchain
         env:
-          PART_ARGS: ${{ matrix.part.args }}
-          MAY_BE_EMPTY: ${{ matrix.part.mayBeEmpty }}
+          LANE: ${{ matrix.part.lane }}
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          # A named part that runs no example fails; only "the rest" may be empty.
-          fail_on=()
-          [ "$MAY_BE_EMPTY" = true ] || fail_on=(--fail-on=empty)
-          # shellcheck disable=SC2086 # the part's hspec arguments split on spaces
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- $PART_ARGS "${fail_on[@]}"
+          # A lane that runs no example fails.
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match "{lane:$LANE}" --fail-on=empty
   # The required check keeps its name and fails unless every part passed: a
   # skipped job would otherwise count as passing.
   e2e:
