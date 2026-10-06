@@ -10,7 +10,8 @@
         "datum": null,
         "datums": [],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR03-retire-registered": {
         "datum": null,
@@ -24,7 +25,8 @@
         "witnessDelivered": [
           "none",
           null
-        ]
+        ],
+        "unreachedSettled": false
       },
       "DR02-register-active": {
         "datum": null,
@@ -35,7 +37,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR15-register-active-carrying-datum": {
         "datum": 7,
@@ -46,14 +49,15 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       }
     },
     "fabrications": [],
     "proofExit": 0,
     "statementErrorLines": [],
-    "modelSha256": "69dbefefde1d8d86d40b2769600d06ff73550f2c436aae40559c0d24dfa28fcc",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   },
   {
     "mutation": "unconditional-row",
@@ -71,7 +75,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR03-retire-registered": {
         "datum": null,
@@ -90,7 +95,8 @@
         "witnessDelivered": [
           "none",
           null
-        ]
+        ],
+        "unreachedSettled": false
       },
       "DR02-register-active": {
         "datum": null,
@@ -101,7 +107,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR15-register-active-carrying-datum": {
         "datum": 7,
@@ -112,7 +119,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       }
     },
     "fabrications": [
@@ -124,12 +132,12 @@
       969,
       1341,
       1358,
-      1765,
-      1830,
-      1934
+      1783,
+      1848,
+      1952
     ],
-    "modelSha256": "f1e2992051e0f28abe83653dc8a58598e4d44a3f42906bbdfa9ac778c05ae56d",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "c5dc19900e67bae068e1de559ab1240fa698ba61985b9ed3a7eeb20cd8751062",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   },
   {
     "mutation": "unconditional-inline",
@@ -142,7 +150,8 @@
         "datum": null,
         "datums": [],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR03-retire-registered": {
         "datum": null,
@@ -156,7 +165,8 @@
         "witnessDelivered": [
           "none",
           null
-        ]
+        ],
+        "unreachedSettled": false
       },
       "DR02-register-active": {
         "datum": null,
@@ -167,7 +177,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR15-register-active-carrying-datum": {
         "datum": 7,
@@ -178,7 +189,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       }
     },
     "fabrications": [
@@ -189,12 +201,12 @@
     "statementErrorLines": [
       1131,
       1138,
-      1632,
-      1823,
-      1938
+      1650,
+      1841,
+      1956
     ],
-    "modelSha256": "888d1426f119eaf72db455d38c2adede9c54aa6f8a9fb040809554a1792f2c21",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "b6546daacbcd991ee891115f389d16341151a9305dd1b2136d9945ce25aa7bf1",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   },
   {
     "mutation": "dropped-datum-value",
@@ -207,7 +219,8 @@
         "datum": null,
         "datums": [],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR03-retire-registered": {
         "datum": null,
@@ -221,7 +234,8 @@
         "witnessDelivered": [
           "none",
           null
-        ]
+        ],
+        "unreachedSettled": false
       },
       "DR02-register-active": {
         "datum": null,
@@ -232,7 +246,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR15-register-active-carrying-datum": {
         "datum": 7,
@@ -243,22 +258,25 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       }
     },
     "fabrications": [
-      "DR15-register-active-carrying-datum: delivered datum ['inline', None], request carries ['inline', 7]"
+      "DR15-register-active-carrying-datum: delivered datum ['inline', None], request carries ['inline', 7]",
+      "DR16-deliver-foreign-datum-without-deposit: delivered datum ['inline', None], request carries ['inline', 7]",
+      "DR17-deliver-without-carrier-or-deposit: delivered datum ['inline', None], request carries ['inline', 7]"
     ],
     "proofExit": 1,
     "statementErrorLines": [
       1131,
       1138,
-      1632,
-      1817,
-      1938
+      1650,
+      1835,
+      1956
     ],
-    "modelSha256": "4223c5e2816c19ba059c63afcd947ea8c7952c6c3214255b4e9bac1e001a414c",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "a174bbc4c6632b49738f7954dbbcc206341cc317f3092ace505a90017810d0d8",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   },
   {
     "mutation": "unconditional-inline-witness",
@@ -271,7 +289,8 @@
         "datum": null,
         "datums": [],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR03-retire-registered": {
         "datum": null,
@@ -285,7 +304,8 @@
         "witnessDelivered": [
           "none",
           null
-        ]
+        ],
+        "unreachedSettled": false
       },
       "DR02-register-active": {
         "datum": null,
@@ -296,7 +316,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       },
       "DR15-register-active-carrying-datum": {
         "datum": 7,
@@ -307,7 +328,8 @@
           ]
         ],
         "witnesses": [],
-        "witnessDelivered": null
+        "witnessDelivered": null,
+        "unreachedSettled": false
       }
     },
     "fabrications": [
@@ -317,67 +339,45 @@
     "statementErrorLines": [
       1321,
       1374,
-      1804
+      1822
     ],
-    "modelSha256": "cf3edaf9db27be990594a0461b6ba4cf4946713663a0ccd3eb5466fa8e508c19",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "3c1de9c8414e2ad70b6622f9164effe277edb3dc1ec5ebf1f337b15b5e080e4a",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+  },
+  {
+    "mutation": "floor-only-delivery",
+    "before": "    if requiresCarrier recipient && paying.isEmpty then some (unpaidReason recipient paying)\n    else if",
+    "after": "    if",
+    "driverBuildExit": 1,
+    "driverExit": null,
+    "destinationOutputs": null,
+    "fabrications": [
+      "the driver's guard over the judged rows refused the build"
+    ],
+    "proofExit": 1,
+    "statementErrorLines": [
+      1556,
+      1558,
+      2011
+    ],
+    "modelSha256": "dcd33f404cb9b165cbb61d746cd02b76b218e11be20a3be8e6bdf5ab4dde9e32",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   },
   {
     "mutation": "any-datum-value-pays",
     "before": "  | some v => output.datum == .inline && output.datumValue == some v",
     "after": "  | some v => output.datum == .inline",
-    "driverBuildExit": 0,
-    "driverExit": 0,
-    "destinationOutputs": {
-      "DR01-register-absent": {
-        "datum": null,
-        "datums": [],
-        "witnesses": [],
-        "witnessDelivered": null
-      },
-      "DR03-retire-registered": {
-        "datum": null,
-        "datums": [],
-        "witnesses": [
-          [
-            "none",
-            null
-          ]
-        ],
-        "witnessDelivered": [
-          "none",
-          null
-        ]
-      },
-      "DR02-register-active": {
-        "datum": null,
-        "datums": [
-          [
-            "none",
-            null
-          ]
-        ],
-        "witnesses": [],
-        "witnessDelivered": null
-      },
-      "DR15-register-active-carrying-datum": {
-        "datum": 7,
-        "datums": [
-          [
-            "inline",
-            7
-          ]
-        ],
-        "witnesses": [],
-        "witnessDelivered": null
-      }
-    },
-    "fabrications": [],
+    "driverBuildExit": 1,
+    "driverExit": null,
+    "destinationOutputs": null,
+    "fabrications": [
+      "the driver's guard over the judged rows refused the build"
+    ],
     "proofExit": 1,
     "statementErrorLines": [
-      1980
+      1999
     ],
-    "modelSha256": "7ff2c175c15e119b704f5ad6414ba015c294426b6841ba6c7c7811d19212da76",
-    "statementsSha256": "bca111d240810d71942ed16bfe6f185169d6fed1a9fbbf8674d4c3cbdbcf7c58"
+    "modelSha256": "7831e2264c65c82f8e72f486a7d2b3ff81a8c6f48594b10e1833f4b209c03c7a",
+    "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
   }
 ]

@@ -98,6 +98,9 @@ def deliveredDatumIsRequestDatum : String :=
   "Singular.Statements.delivered_datum_is_request_datum"
 def deliveredDatumIsRequestDatumDigest : String :=
   "76247fab5884aefffb7639b05675206c16b48c191fb0bd8c63ce87afba58c4a5"
+def foldRefusesForeignDatum : String := "Singular.Statements.fold_refuses_foreign_datum"
+def foldRefusesForeignDatumDigest : String :=
+  "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
 def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
 def bookedAtMostOnceDigest : String :=
   "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
@@ -164,6 +167,37 @@ def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with 
 def ownerPaid (owner lovelace : Nat) : TxOutput :=
   { role := .owner, datum := .none, address := some owner, stateTokens := 0, config := none
   , commitment := none, assets := [], lovelace := lovelace }
+
+/-- An active registration of key 5 for owner 42, routed to output 99 with no
+deposit, whose request carries the datum 7. -/
+def zeroDepositCarryingDatum : Request :=
+  { request .insertActive 5 42 99 0 0 with datum := some 7 }
+
+/-- The token carrier of that registration as a caller observed it: at output 99,
+carrying the datum 8 inline rather than the request's 7. -/
+def foreignCarrier : TxOutput :=
+  { role := .destination, datum := .inline, address := some 99, stateTokens := 0
+  , config := none, commitment := none, assets := [], lovelace := 0, datumValue := some 8 }
+
+/-- The registration folded with a carrier bearing a foreign datum: the deposit is
+zero, so no floor is short, and the delivery is still refused `destination`. -/
+def foreignDatumDelivery : Scenario :=
+  { id := "DR16-deliver-foreign-datum-without-deposit"
+  , theoremName := foldRefusesForeignDatum, statementSha256 := foldRefusesForeignDatumDigest
+  , kind := "witness", mutates := none, requiresReachableState := false
+  , start := s0, setup := [], exit := .fold .insertActive
+  , request := zeroDepositCarryingDatum, lovelace := lovelace
+  , outputs := some [foreignCarrier] }
+
+/-- Its twin with no carrier at all: nothing reaches the destination. -/
+def carrierlessDelivery : Scenario :=
+  { foreignDatumDelivery with
+    id := "DR17-deliver-without-carrier-or-deposit", outputs := some [] }
+
+-- A delivery whose carrier bears another datum, and one with no carrier at all,
+-- is refused `destination` whatever the deposit, as the cage refuses it.
+#guard [foreignDatumDelivery, carrierlessDelivery].all fun sc =>
+  judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
@@ -263,6 +297,8 @@ def scenarios : List Scenario :=
     , start := s0, setup := [], exit := .fold .insertActive
     , request := { request .insertActive 43 42 556 0 55 with datum := some 7 }
     , lovelace := lovelace }
+  , foreignDatumDelivery
+  , carrierlessDelivery
   ]
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a

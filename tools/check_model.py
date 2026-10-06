@@ -866,6 +866,33 @@ def reject_batch_settle(settlement, requests, outputs):
     return None
 
 
+def check_judged_scenarios(corpus, root):
+    """A single scenario may carry the outputs of a transaction a caller observed;
+    the driver's judgement of them rides beside them, and only on an accepted
+    row, since a refused exit builds nothing to judge. The judgement is the
+    model's own word: none, or a reason `Singular.unpaidReason` gives, read off
+    its source, unhyphenated ones included."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
+    unpaid = set(re.findall(r'"([a-z][a-z0-9-]*)"', body))
+    assert unpaid, "EMPTY EXTENT: no reasons discovered in Singular.unpaidReason"
+    judged = 0
+    for s in corpus["scenarios"]:
+        if "outputs" not in s:
+            assert "settle" not in s, f"{s['id']}: a judgement with no judged outputs"
+            continue
+        judged += 1
+        assert s["outcome"] == "accepted", (
+            f"{s['id']}: judged outputs on a row the law did not accept"
+        )
+        assert "settle" in s, f"{s['id']}: judged outputs with no judgement"
+        assert s["settle"] is None or s["settle"] in unpaid, (
+            f"{s['id']}: judgement {s['settle']!r} is not a reason the model gives"
+        )
+    assert judged, "EMPTY EXTENT: no single scenario carries judged outputs"
+    return judged
+
+
 def batch_surface(surface):
     """The declared batch questions, each with its own observation extent.
 
@@ -1619,6 +1646,7 @@ def main():
     refusals = model_batch_refusals(root)
     unpaid = model_unpaid_reasons(root)
     settlement = model_reject_settlement(root)
+    judged = check_judged_scenarios(driver_corpus, root)
 
     def run_batches(corpus):
         return check_batch_rows(
@@ -1646,6 +1674,9 @@ def main():
         f"driver: {total} scenarios ({accepted} accepted, {refused} refused) over "
         f"{len(driver_corpus['surface']['operations'])} declared operations and "
         f"{len(driver_corpus['surface']['observations'])} declared observations"
+    )
+    print(
+        f"judged: {judged} single scenarios carry observed outputs and their judgement"
     )
     print(
         f"derived: {derived} observations re-derived from the model rather than trusted "

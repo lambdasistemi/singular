@@ -5,12 +5,13 @@ Run from the repository's Nix development shell with an evidence directory.
 Only temporary copies are mutated. Each mutant brings back one fabrication: a
 destination row on every fold, an inline datum on every delivered output, a
 delivered output that drops the request's datum value, an inline datum on every
-spent witness, or a destination paid whatever datum value it carries.
+spent witness, a destination paid whatever datum value it carries, or a delivery
+judged by its floor alone, settled with no carrier.
 The driver binary depends on the model alone, so it is built and run first, and
 the fabrication must be visible by value in its output while the baseline shows
-none, unless the mutant says no exported row can show it. Then the statements
-module is elaborated, and the mutant must fail inside the statement that forbids
-that fabrication.
+none, or, for a mutant the driver's own guard over its judged rows refuses, the
+driver build must fail at that guard. Then the statements module is elaborated,
+and the mutant must fail inside the statement that forbids that fabrication.
 """
 
 import argparse
@@ -51,12 +52,19 @@ MUTANTS = {
         "after": "  | .requestOutput => registryDatumForm",
         "statement": "theorem witness_input_datum_is_held",
     },
-    # The driver exports no judged outputs for a delivery, so no row can show it.
+    "floor-only-delivery": {
+        "before": "    if requiresCarrier recipient && paying.isEmpty then some (unpaidReason recipient paying)\n    else if",
+        "after": "    if",
+        "statement": "theorem fold_refuses_foreign_datum",
+        # The driver's own guard over the judged rows refuses this build, before
+        # any row can be exported.
+        "guarded": True,
+    },
     "any-datum-value-pays": {
         "before": "  | some v => output.datum == .inline && output.datumValue == some v",
         "after": "  | some v => output.datum == .inline",
         "statement": "theorem fold_refuses_foreign_datum",
-        "visible": False,
+        "guarded": True,
     },
 }
 DELIVERING_EDGES = ("insertActive", "updateActive", "witnessTerminal")
@@ -90,10 +98,28 @@ def destination_outputs(driver_output):
                 if i["role"] == "witness"
             ],
             "witnessDelivered": delivered_form(s),
+            "unreachedSettled": unreached_destination_settled(s),
         }
         for s in scenarios
         if (s.get("observations") or {}).get("tx") is not None
     }
+
+
+def unreached_destination_settled(scenario):
+    """A judged delivery settled although no observed output carries the token to
+    the request's own output with the request's own datum."""
+    if "outputs" not in scenario or scenario["settle"] is not None:
+        return False
+    if scenario["operation"] not in DELIVERING_EDGES:
+        return False
+    request = scenario["request"]
+    want = [form_of(request.get("datum")), request.get("datum")]
+    return not any(
+        o["role"] == "destination"
+        and o["address"] == request["output"]
+        and [o["datum"], o.get("datumValue")] == want
+        for o in scenario["outputs"]
+    )
 
 
 def delivered_form(scenario):
@@ -122,6 +148,8 @@ def fabrications(rows):
         if rows[i]["datums"]:
             found.append(f"{i}: destination row on a fold delivering nothing")
     for i, row in rows.items():
+        if row["unreachedSettled"]:
+            found.append(f"{i}: a delivery no carrier reaches was settled")
         want = [form_of(row["datum"]), row["datum"]]
         for datum in row["datums"]:
             if datum != want:
@@ -167,15 +195,27 @@ def main():
                 tree,
                 evidence / f"{name}-driver-build.log",
             )
-            assert binary_status == 0, f"{name}: setup/driver compilation failure"
-            driver_status = run(
-                [str(tree / ".lake/build/bin/singular-driver")],
-                tree,
-                evidence / f"{name}-driver.json",
-            )
-            assert driver_status == 0, f"{name}: driver run failed"
-            rows = destination_outputs((evidence / f"{name}-driver.json").read_text())
-            found = fabrications(rows)
+            if mutant and mutant.get("guarded"):
+                build_text = (evidence / f"{name}-driver-build.log").read_text()
+                assert (
+                    binary_status != 0
+                    and "lean/DriverMain.lean" in build_text
+                    and "did not evaluate to `true`" in build_text
+                ), (name, "the driver's guard did not refuse it")
+                driver_status, rows = None, None
+                found = ["the driver's guard over the judged rows refused the build"]
+            else:
+                assert binary_status == 0, f"{name}: setup/driver compilation failure"
+                driver_status = run(
+                    [str(tree / ".lake/build/bin/singular-driver")],
+                    tree,
+                    evidence / f"{name}-driver.json",
+                )
+                assert driver_status == 0, f"{name}: driver run failed"
+                rows = destination_outputs(
+                    (evidence / f"{name}-driver.json").read_text()
+                )
+                found = fabrications(rows)
             proof_status = run(
                 ["lake", "build", "Singular.Statements"],
                 tree,
@@ -188,7 +228,7 @@ def main():
                     r"error: lean/Singular/Statements.lean:(\d+):", proof_text
                 )
             ]
-            for control in (DELIVERING, DELIVERING_DATUM):
+            for control in (DELIVERING, DELIVERING_DATUM) if rows else ():
                 assert len(rows[control]["datums"]) == 1, (
                     name,
                     "a delivering control lost its row",
@@ -197,11 +237,9 @@ def main():
                 assert proof_status == 0, "baseline statements failed"
                 assert not found, ("baseline fabricates", found)
             else:
-                assert bool(found) == mutant.get("visible", True), (
+                assert found, (
                     name,
-                    "mutant fabricated nothing the observation can see"
-                    if not found
-                    else "a mutant said to be invisible fabricated by value",
+                    "mutant fabricated nothing the observation can see",
                 )
                 first, last = lines_of(statements, mutant["statement"])
                 assert proof_status != 0 and any(first <= n <= last for n in errors), (
@@ -216,7 +254,9 @@ def main():
                 "driverExit": driver_status,
                 "destinationOutputs": {
                     i: rows[i] for i in (*NON_DELIVERING, DELIVERING, DELIVERING_DATUM)
-                },
+                }
+                if rows
+                else None,
                 "fabrications": found,
                 "proofExit": proof_status,
                 "statementErrorLines": sorted(set(errors)),

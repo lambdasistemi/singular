@@ -1506,16 +1506,21 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
 /-- Value an exit does not owe is unconstrained, for every exit alike.
 
 For every exit, every request and any two lists of transaction outputs: when each
-recipient the exit owes receives (`receivedBy`: the summed lovelace of the outputs
-that pay it by role and address, or, for a retraction's return bound to its
-request, the largest such output) at least as much from the second list as from
-the first, the second list settles whenever the first does. Adding outputs, or adding lovelace to
-an output, therefore never turns a settled transaction into an unsettled one, and
-whether a transaction settles depends only on the lovelace reaching the recipients
-the exit owes: fees, the folder's tip and every output that pays none of them play
+recipient the exit owes that some output of the first list reaches is reached by
+some output of the second, and receives (`receivedBy`: the summed lovelace of the
+outputs that pay it by role, address and, for a destination, datum, or, for a
+retraction's return bound to its request, the largest such output) at least as
+much from the second list as from the first, the second list settles whenever the
+first does. Adding outputs, or adding lovelace to an output, therefore never turns
+a settled transaction into an unsettled one, and whether a transaction settles
+depends only on which recipients the exit owes are reached and the lovelace
+reaching them: fees, the folder's tip and every output that pays none of them play
 no part. -/
 theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
     (outputs more : List TxOutput)
+    (reached : ∀ payment ∈ obligations exit request,
+      (outputs.filter (paysRecipient payment.recipient)).isEmpty = false →
+      (more.filter (paysRecipient payment.recipient)).isEmpty = false)
     (received : ∀ payment ∈ obligations exit request,
       receivedBy payment.recipient outputs ≤ receivedBy payment.recipient more) :
     settle (obligations exit request) outputs = none →
@@ -1546,9 +1551,22 @@ theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
   have owed := (named _ [] recipient judged).resolve_right (by simp)
   obtain ⟨payment, owedPayment, rfl⟩ := List.mem_map.mp owed
   have before := settled _ judged
+  dsimp only at before ⊢
   split at before
-  · next paid => rw [if_pos (Nat.le_trans paid (received payment owedPayment))]
   · cases before
+  · next notMissing =>
+    split at before
+    · next paid =>
+      have keep : ¬ ((requiresCarrier payment.recipient &&
+          (more.filter (paysRecipient payment.recipient)).isEmpty) = true) := by
+        intro h
+        simp only [Bool.and_eq_true] at h
+        cases hb : (outputs.filter (paysRecipient payment.recipient)).isEmpty
+        · rw [reached payment owedPayment hb] at h
+          exact Bool.false_ne_true h.2
+        · exact notMissing (by simp [h.1, hb])
+      rw [if_neg keep, if_pos (Nat.le_trans paid (received payment owedPayment))]
+    · cases before
 
 /-- No exit strands a deposit.
 
@@ -1968,7 +1986,30 @@ theorem fold_refuses_foreign_datum (r : Request) (outputs : List TxOutput)
       (∀ v, r.datum = some v → o.datum ≠ .inline ∨ o.datumValue ≠ some v) ∧
       (r.datum = none → o.datum ≠ .none)) :
     settle (obligations (.fold r.edge) r) outputs = some "destination" := by
-  sorry
+  have hpaying : outputs.filter (paysRecipient (.destination (requestDestination r) r.datum)) = [] := by
+    rw [List.filter_eq_nil_iff]
+    intro o ho
+    cases hr : o.role
+    case destination =>
+      obtain ⟨h1, h2⟩ := hforeign o ho hr
+      cases hd : r.datum with
+      | none =>
+        have h := h2 hd
+        cases hod : o.datum <;> simp_all +decide [paysRecipient, presentsDatum]
+      | some v =>
+        rcases h1 v hd with h | h <;> cases hod : o.datum <;>
+          simp_all +decide [paysRecipient, presentsDatum]
+    all_goals simp +decide [paysRecipient, hr]
+  have hob : obligations (.fold r.edge) r =
+      [{ recipient := .destination (requestDestination r) r.datum, atLeast := r.deposit }] := by
+    rcases hdelivers with he | he | he <;> rw [he] <;> rfl
+  rw [hob]
+  have hnone : ∀ o ∈ outputs,
+      paysRecipient (.destination (requestDestination r) r.datum) o = false := by
+    simpa [List.filter_eq_nil_iff] using hpaying
+  simp [settle, requiresCarrier, unpaidReason, hpaying, List.eraseDups_cons]
+  rw [if_pos hnone, if_pos hnone]
+
 
 /-- By value: an active insertion whose request carries no datum, observed paying
 its destination through an output carrying an inline datum, is refused

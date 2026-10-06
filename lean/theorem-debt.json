@@ -177,7 +177,7 @@
     "name": "Singular.Statements.exit_settles_on_lovelace_received",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "28e4e54c3429bd02296aaf609b24ab9defa96458de759eb2e403347ec84afd74"
+    "statementSha256": "efdbcb44050b3bebb5c73d95e04fe8653ebe92e0c8c4a81b7b87347872427a12"
   },
   {
     "name": "Singular.Statements.no_exit_strands_the_deposit",
@@ -273,6 +273,6 @@
     "name": "Singular.Statements.fold_refuses_foreign_datum",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "e25af5285165912b3e0ee2f4a85efee86e812ec15ca87f5c9a21851f30e4e94d"
+    "statementSha256": "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
   }
 ]

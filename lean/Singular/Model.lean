@@ -1079,15 +1079,26 @@ def receivedBy (recipient : Recipient) (outputs : List TxOutput) : Nat :=
   | .bound _ _ => paying.foldl (fun most o => max most o.lovelace) 0
   | _ => paying.foldl (· + ·.lovelace) 0
 
+/-- Whether the chain requires an output to reach this recipient whatever its
+floor: a destination is reached only by the carrier of the delivered token at its
+address with its datum, which the cage requires whatever the deposit. -/
+def requiresCarrier : Recipient → Bool
+  | .destination _ _ => true
+  | _ => false
+
 /-- Judge a transaction's outputs against the payments owed: `none` when every
-recipient receives its summed floor, else the chain's reason for the first
-recipient, in the order the payments are owed, that does not. One exit's judgement
-is `settle (obligations exit request) outputs`; a batch is the concatenation of
-its exits' payments. -/
+recipient receives its summed floor and a destination is reached by its carrier,
+else the chain's reason for the first recipient, in the order the payments are
+owed, that is not. A destination no output reaches is refused whatever its floor,
+as the cage refuses a delivery with no matching carrier. One exit's judgement is
+`settle (obligations exit request) outputs`; a batch is the concatenation of its
+exits' payments. -/
 def settle (payments : List Payment) (outputs : List TxOutput) : Option String :=
   (payments.map (·.recipient)).eraseDups.findSome? fun recipient =>
-    if owedTo recipient payments ≤ receivedBy recipient outputs then none
-    else some (unpaidReason recipient (outputs.filter (paysRecipient recipient)))
+    let paying := outputs.filter (paysRecipient recipient)
+    if requiresCarrier recipient && paying.isEmpty then some (unpaidReason recipient paying)
+    else if owedTo recipient payments ≤ receivedBy recipient outputs then none
+    else some (unpaidReason recipient paying)
 
 /-- A payment as the (address, value) pair `Result.paid` carries, at the address
 `paysRecipient` reads for its recipient: the cage's for custody, the named address

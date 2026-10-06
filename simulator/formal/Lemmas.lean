@@ -1086,7 +1086,10 @@ theorem settle_one (p : Payment) (outputs : List TxOutput)
   have named : recipient = p.recipient := by
     simpa [List.eraseDups, List.eraseDupsBy, List.eraseDupsBy.loop] using judged
   subst named
-  simp [owedTo, Nat.le_trans enough (lovelace_le_receivedBy _ outputs o h pays)]
+  have reached : (outputs.filter (paysRecipient p.recipient)).isEmpty = false := by
+    rw [List.isEmpty_eq_false_iff_exists_mem]
+    exact ⟨o, List.mem_filter.mpr ⟨h, pays⟩⟩
+  simp [reached, owedTo, Nat.le_trans enough (lovelace_le_receivedBy _ outputs o h pays)]
 
 /-! ### Retraction admission: the checks, read as propositions -/
 

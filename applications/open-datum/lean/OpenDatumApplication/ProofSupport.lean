@@ -154,10 +154,12 @@ theorem settle_none_le (ps : List Payment) (outs : List TxOutput) (h : settle ps
   · have hm : rcp ∈ (ps.map (·.recipient)).eraseDups := (mem_eraseDups _ _).2 hr
     unfold settle at h
     have := List.findSome?_eq_none_iff.1 h rcp hm
+    dsimp only at this
     by_cases hle : owedTo rcp ps ≤ receivedBy rcp outs
     · exact hle
-    · rw [if_neg hle] at this
-      exact Option.noConfusion this
+    · exfalso
+      revert this
+      split <;> (try split) <;> simp_all
   · have : ps.filter (·.recipient == rcp) = [] := by
       rw [List.filter_eq_nil_iff]
       intro p hp hpr
