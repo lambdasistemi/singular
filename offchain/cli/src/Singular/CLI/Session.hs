@@ -618,24 +618,26 @@ submitBuiltIn
 submitBuiltIn wc step items expect build = do
     placement <- newIORef []
     readOpen <- newIORef (null items)
+    since <- startTimer
     let building = Tracer $ \(Trace path event) -> do
             placed <- readIORef placement
             traceWith
                 (wcTracer wc)
                 (Trace (placed <> (InTransaction step : path)) event)
-        closeRead since = do
+        closeReadWith end = do
             open <- not <$> readIORef readOpen
             when open $ do
                 writeIORef readOpen True
                 ms <- since
-                traceWith (how building) (Fetched (Fetch items (wcSource wc) ms Done))
-        acting since =
+                traceWith (how building) (Fetched (Fetch items (wcSource wc) ms end))
+        closeRead = closeReadWith Done
+        acting =
             Building
                 { found = \scopes event -> do
-                    closeRead since
+                    closeRead
                     report (wcTracer wc) scopes event
                 , place = \scopes event -> do
-                    closeRead since
+                    closeRead
                     writeIORef placement scopes
                     report (wcTracer wc) scopes event
                 }
@@ -650,12 +652,11 @@ submitBuiltIn wc step items expect build = do
                 }
     built <-
         try $ Cage.withLatest provider $ \v -> do
-            since <- startTimer
             made <-
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
-                    (build (acting since) (recording v))
+                    (build acting (recording v))
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of
@@ -664,10 +665,12 @@ submitBuiltIn wc step items expect build = do
             | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
             | otherwise -> do
                 failed <- readIORef evaluationFailed
+                let cls = errorClassOf e
+                closeReadWith (FailedWith cls)
                 refused building $
                     Refused
                         (if failed then EvaluationRefused else ClientRefused)
-                        (Just (errorClassOf e))
+                        (Just cls)
                 -- a bounded wait keeps its own type for the caller to recognise
                 case fromException e of
                     Just (_ :: WaitFailure) -> throwIO e

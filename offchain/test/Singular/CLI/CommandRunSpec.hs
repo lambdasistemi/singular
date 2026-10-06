@@ -247,6 +247,44 @@ spec = describe
                   ]
                     `shouldSatisfy` (not . null)
         it
+            "closes a build read that fails before it decides, ahead of its refusal"
+            $ withRig
+            $ \rig -> do
+                runs <- lifecycle rig
+                case [r | r <- runs, runLabel r == "update an absent key"] of
+                    [absent] -> do
+                        let events = runEvents absent
+                            fetches = [f | Trace _ (How (Fetched f)) <- events]
+                            buildReads =
+                                [ f
+                                | f <- fetches
+                                , fetchWhat f == ["state", "key outputs"]
+                                ]
+                            refusals = [k | Trace _ (What (Refused k _)) <- events]
+                            posFetch = length (takeWhile (not . isBuildFetch) events)
+                            isBuildFetch = \case
+                                Trace _ (How (Fetched f)) ->
+                                    fetchWhat f == ["state", "key outputs"]
+                                _ -> False
+                            posRefused = length (takeWhile (not . isRefused) events)
+                            isRefused = \case
+                                Trace _ (What (Refused{})) -> True
+                                _ -> False
+                        outcomeOf (runReceipt absent) `shouldBe` Just "client-refusal"
+                        refusals `shouldBe` [ClientRefused]
+                        length buildReads `shouldBe` 1
+                        case buildReads of
+                            [f] -> do
+                                fetchSource f `shouldBe` "fixture"
+                                fetchElapsed f `shouldSatisfy` (>= 0)
+                                case fetchEnd f of
+                                    FailedWith _ -> pure ()
+                                    Done -> expectationFailure "a failed build read ends Done"
+                            _ -> expectationFailure "one build read"
+                        (posFetch < posRefused) `shouldBe` True
+                        disagreements (runKey absent) (runReceipt absent) events `shouldBe` []
+                    _ -> expectationFailure "one absent update run"
+        it
             "reports a script that fails its local evaluation as refused there, from \
             \the build's own session"
             $ withRigOf failingOpenDatum pure
