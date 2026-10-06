@@ -2360,15 +2360,15 @@ at path r = go path =<< rcCommand r
 field :: Text -> Either Text Int
 field = Left
 
-{- | A field of the fold's entry for the request the command booked: a
+{- | A path into the fold's entry for the request the command booked: a
 combined command's receipt lists every request its fold settled.
 -}
-atBooked :: Text -> Receipt -> Maybe Aeson.Value
-atBooked name r = do
+atBooked :: [Either Text Int] -> Receipt -> Maybe Aeson.Value
+atBooked path r = do
     booked <- at [field "request"] r
     Aeson.Array entries <- at [field "folded"] r
     i <- V.findIndex (bookedEntry booked) entries
-    at [field "folded", Right i, field name] r
+    at ([field "folded", Right i] <> path) r
   where
     bookedEntry booked entry = case entry of
         Aeson.Object o -> KeyMap.lookup "request" o == Just booked
@@ -2889,32 +2889,32 @@ check req rs = case (req, rs) of
             <> same
                 "the registry's state policy"
                 (at [field "pins", field "pinState"] c)
-                ( at
+                ( atBooked
                     (controlPath <> [Right 1, field "fields", Right 0, field "bytes"])
                     i
                 )
             <> same
                 "the registry's state token"
                 (at [field "token"] c)
-                ( at
+                ( atBooked
                     (controlPath <> [Right 1, field "fields", Right 1, field "bytes"])
                     i
                 )
             <> same
                 "the registry's active policy"
                 (at [field "pins", field "pinActive"] c)
-                (at (controlPath <> [Right 2, field "bytes"]) i)
+                (atBooked (controlPath <> [Right 2, field "bytes"]) i)
     (Delivered, [i, s]) ->
         succeeded "the insert" i
             <> succeeded "the inspect" s
             <> is "the key's leaf" "active" (at [field "leaf"] s)
             <> same
                 "the holding's output"
-                (atBooked "liveOutput" i)
+                (atBooked [field "liveOutput"] i)
                 (at [field "applicationOutput", field "output"] s)
             <> same
                 "the holding's inline envelope"
-                (atBooked "envelope" i)
+                (atBooked [field "envelope"] i)
                 (at [field "applicationOutput", field "envelope"] s)
             <> case ( at [field "applicationOutput", field "lovelace"] s
                     , at [field "applicationOutput", field "deposit"] s
@@ -2963,8 +2963,8 @@ check req rs = case (req, rs) of
             <> same
                 "the released deposit"
                 (at [field "applicationOutput", field "deposit"] b)
-                (atBooked "deposit" t)
-            <> case atBooked "released" t of
+                (atBooked [field "deposit"] t)
+            <> case atBooked [field "released"] t of
                 Just (Aeson.String _) -> []
                 _ -> ["the terminate names no released output"]
     (CommandSucceeded, [r]) -> succeeded "the command" r
