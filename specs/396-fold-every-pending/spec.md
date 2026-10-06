@@ -45,13 +45,16 @@ subset of pending requests, and the model's `Singular.foldBatch` folds a list.
   holding or a custody entry an earlier request of the same batch creates: the model
   refuses it `token-missing` (a holding) or `not-booked` (a custody entry), and the next
   fold settles it from the live output.
-- **The bound follows the batch.** The transaction's validity upper bound is the earliest
-  deadline among the included requests, never one of an excluded request.
+- **The bound follows the batch.** The transaction's validity upper bound is at or before
+  the earliest deadline among the included requests (the builder may place it earlier, at
+  the ledger's horizon), and is never set by an excluded request.
 - **The model governs the batch.** The included list is a batch `Singular.foldBatch`
   accepts, and a batch containing a request past its deadline is refused `not-phase1` by
-  the model as by the chain (amendment pending, see the plan).
-- **The built transaction spends exactly the selection.** It spends the state output and
-  exactly the included request outputs; any other set is refused before submission.
+  the model as by the chain (constitution 1.13.0, see the [ruling](ruling.md)).
+- **The built transaction spends exactly the selection.** Of the pending request outputs,
+  it spends exactly the included ones, beside the state output and the inputs that fund
+  the fold or discharge its duties; a build spending any other pending request is refused
+  before submission.
 - **A named request.** `--request R` still folds every foldable request, and is refused
   unless R is among them, naming why R is not.
 - **The receipt lists the batch.** One shape for one request or many: every folded request

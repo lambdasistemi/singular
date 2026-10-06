@@ -127,13 +127,17 @@ it (`refused-by-law` with the model's reason: a second insertion of a key is
 `refused-by-law key-exists`, a request without its approval
 `refused-by-law no-approval`). Its receipt lists every request it folded, with
 its key, edge, owner, deadline and what it delivered or released, and the
-transaction's roots; its validity bound is the earliest deadline among them.
+transaction's roots; its validity bound is at or before the earliest deadline
+among them, earlier when the ledger's horizon is nearer.
 Before anything is signed the command refuses, naming the reason: nothing to
 fold (`nothing-to-fold`, naming every request left out); a request named by
 `--request` that the fold does not take, with why; an insertion whose request
-carries no envelope, or something that is not one; the outlay past `--max-outlay`; a funding output that is not the wallet's; a built
-fold that spends anything but the registry's state and exactly the requests it
-takes, or pays an owner less than its releases owe.
+carries no envelope, or something that is not one; the outlay past
+`--max-outlay`; a funding output that is not the wallet's; a built fold that
+does not spend the registry's state, or whose spent pending requests are not
+exactly the ones it takes (the inputs that fund it or discharge its duties are
+not pending requests and are not compared), or that pays an owner less than
+its releases owe.
 Run after its own booking by `--fold`, a fold that cannot be built or signed
 stops the command partial, naming the request that stays pending. A fold the
 node refuses because another fold spent the registry's state output first is
