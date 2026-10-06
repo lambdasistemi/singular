@@ -127,8 +127,8 @@ the [decisions](decisions.md#joining-a-registry-from-public-data). Then:
    membership proof from her own replay and no envelope. Alice books the
    termination of her own key; Bob folds it likewise. Bob's update and
    termination attempts on Alice's key stay refused as not the controller.
-4. Alice inserts and folds her own key; Bob's attempt to fold one of Alice's
-   insertions is refused for the missing envelope, by name.
+4. Alice inserts and folds her own key. Whether another actor can fold her
+   insertion waits for [issue 419](https://github.com/lambdasistemi/singular/issues/419).
 5. Rejection and reclaim run across actors, as today.
 6. After every fold, both actors' inspect roots equal the fold's state root.
 

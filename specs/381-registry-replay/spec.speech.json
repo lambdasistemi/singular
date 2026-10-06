@@ -75,7 +75,7 @@
       "pause": 400
     },
     {
-      "text": "An insertion's request names only its envelope's hash, so only the booker can fold it. A fold by anyone else is refused by its existing name. A termination needs no envelope: the holding it releases is public.",
+      "text": "Today a fold that delivers a datum needs the booker's preimage, because an insertion's request names only its hash; that is an open limit (issue 419), not a design. A termination needs no preimage: the holding it releases is public.",
       "pause": 400
     }
   ],
@@ -113,6 +113,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "61131c2f00ec4b224615fd2d7fc71ab88892d99bab09e680e4cfdc41927d698b"
+    "sha256": "034114152b8271deea3531642e5145b9763b0ea6a5a2947dae01231a07b7d171"
   }
 }

@@ -79,7 +79,7 @@
       "pause": 300
     },
     {
-      "text": "insertion. Alice's directory is hashed before and after, and never read. 2. Alice inspects Bob's key and finds it active, from her own replay. 3. Bob books the termination of his own key; Alice folds it, with the    membership proof from her own replay and no envelope. Alice books the    termination of her own key; Bob folds it likewise. Bob's update and    termination attempts on Alice's key stay refused as not the controller. 4. Alice inserts and folds her own key; Bob's attempt to fold one of Alice's    insertions is refused for the missing envelope, by name. 5. Rejection and reclaim run across actors, as today. 6. After every fold, both actors' inspect roots equal the fold's state root.",
+      "text": "insertion. Alice's directory is hashed before and after, and never read. 2. Alice inspects Bob's key and finds it active, from her own replay. 3. Bob books the termination of his own key; Alice folds it, with the    membership proof from her own replay and no envelope. Alice books the    termination of her own key; Bob folds it likewise. Bob's update and    termination attempts on Alice's key stay refused as not the controller. 4. Alice inserts and folds her own key. Whether another actor can fold her insertion waits for issue 419. 5. Rejection and reclaim run across actors, as today. 6. After every fold, both actors' inspect roots equal the fold's state root.",
       "pause": 400
     },
     {
@@ -189,6 +189,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b723056f10c0ad8dad7fc3ef2b9ff562ad176d077001f5109d9e2e301e2b9f8c"
+    "sha256": "5819b5a0599110410c1a2c168884bf61dbd39c01169b6d29bf8c39a0747f9d83"
   }
 }
