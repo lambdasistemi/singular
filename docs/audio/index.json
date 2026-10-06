@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 67 proved declarations — 46 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "051fd92c1302"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 65 proved declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "41fa49fe1e44"
    },
    {
     "index": 2,
@@ -1041,15 +1041,22 @@
     "index": 2,
     "name": "docs-cli-recovery/when-a-transaction-can-never-land-02",
     "pause_ms": 400,
-    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
-    "v": "acfe831fd29c"
+    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. It blocks nobody: the next registry fold, or the next insert --fold or terminate --fold by anyone, folds it together with every other request it can. Once its processing deadline has passed a fold leaves it out, naming it window-closed; its owner may then reclaim it inside its retract window, and registry reject clears it after both windows.",
+    "v": "823a5773b4b8"
    },
    {
     "index": 3,
     "name": "docs-cli-recovery/when-a-transaction-can-never-land-03",
     "pause_ms": 400,
+    "text": "Two folds may race for the registry's one state output: each built from the same state, the first included spends it, and the node refuses the other. That fold is refused stale-state, naming the state output another fold spent; its journal line is closed rejected, nothing of it is on the chain, and running it again folds whatever is still pending.",
+    "v": "ba37ebf01c15"
+   },
+   {
+    "index": 4,
+    "name": "docs-cli-recovery/when-a-transaction-can-never-land-04",
+    "pause_ms": 400,
     "text": "A fold carries an upper bound on its validity window. A booking, and the publications create makes, carry none: a booking that never landed, or one rolled back and not included again, stays unresolved however far the chain moves on, and every write stops on it. That is a known limit of these commands, not a judgement about the transaction.",
-    "v": "2b7a542cefa6"
+    "v": "4bee44d3b79a"
    }
   ],
   "when-the-chain-rolls-back": [
@@ -2179,8 +2186,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-01",
     "pause_ms": 400,
-    "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
-    "v": "c11678c2fa20"
+    "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the hash of the inline datum that output must carry. An empty datum hash means a datum-less output. A request that mints nothing names no destination.",
+    "v": "73f5b1db9153"
    },
    {
     "index": 2,
@@ -8136,8 +8143,8 @@
     "index": 2,
     "name": "docs-singular-node/booking-and-folding-02",
     "pause_ms": 400,
-    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
-    "v": "11a63c9659ca"
+    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
+    "v": "274459466bc0"
    },
    {
     "index": 3,
@@ -8150,22 +8157,22 @@
     "index": 4,
     "name": "docs-singular-node/booking-and-folding-04",
     "pause_ms": 400,
-    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
-    "v": "13a88f64b9d4"
+    "text": "One fold settles every pending request it can, whoever booked it: Alice and Bob each book from their own wallet, and one registry fold, run by either of them or by anyone, folds both in one transaction, each delivery at its own key under its own owner's envelope. The fold takes the requests in the ledger's input order and leaves out, naming each in its receipt's excluded list with the reason, a request whose processing deadline has passed or is within thirty seconds of passing (window-closed, judged on the host's clock and named by its time, and by its slot when pinned time converts it), one whose edge is not an insertion or a termination (edge-unsupported), one whose datum is not a request (undecodable), and one the model refuses after the requests before it (refused-by-law with the model's reason: a second insertion of a key is refused-by-law key-exists, a request without its approval refused-by-law no-approval). Its receipt lists every request it folded, with its key, edge, owner, deadline and what it delivered or released, and the transaction's roots; its validity bound is the earliest deadline among them. Before anything is signed the command refuses, naming the reason: nothing to fold (nothing-to-fold, naming every request left out); a request named by --request that the fold does not take, with why; an insertion whose envelope is not in the registry directory or is not the one the request names; the outlay past --max-outlay; a funding output that is not the wallet's; a built fold that spends anything but the registry's state and exactly the requests it takes, or pays an owner less than its releases owe. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. A fold the node refuses because another fold spent the registry's state output first is refused stale-state: nothing of it is on the chain, its journal is closed, and running it again folds whatever is still pending.",
+    "v": "dad6eee1e7fe"
    },
    {
     "index": 5,
     "name": "docs-singular-node/booking-and-folding-05",
     "pause_ms": 400,
-    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-    "v": "23db3eff10c8"
+    "text": "The window check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the earliest deadline among the requests it folds when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+    "v": "dcd96d3e2a18"
    },
    {
     "index": 6,
     "name": "docs-singular-node/booking-and-folding-06",
     "pause_ms": 400,
-    "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
-    "v": "64154887f34f"
+    "text": "Each request's deadline is the one its booking's receipt states. A fold refused for one submitted nothing, and every request stays pending; a request left out for its window stays pending until its owner reclaims it or registry reject clears it.",
+    "v": "36947efdb0c7"
    }
   ],
   "choosing-a-registrys-windows": [
@@ -8670,8 +8677,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
-    "v": "fc095f16e90b"
+    "text": "All 44 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 65 in total, each with its own manifest and its own compiled gate.",
+    "v": "582e350b5a5f"
    }
   ],
   "what-the-eleven-promises-are": [

@@ -47,7 +47,7 @@
       "pause": 400
     },
     {
-      "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
+      "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
       "pause": 400
     },
     {
@@ -55,15 +55,15 @@
       "pause": 400
     },
     {
-      "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+      "text": "One fold settles every pending request it can, whoever booked it: Alice and Bob each book from their own wallet, and one registry fold, run by either of them or by anyone, folds both in one transaction, each delivery at its own key under its own owner's envelope. The fold takes the requests in the ledger's input order and leaves out, naming each in its receipt's excluded list with the reason, a request whose processing deadline has passed or is within thirty seconds of passing (window-closed, judged on the host's clock and named by its time, and by its slot when pinned time converts it), one whose edge is not an insertion or a termination (edge-unsupported), one whose datum is not a request (undecodable), and one the model refuses after the requests before it (refused-by-law with the model's reason: a second insertion of a key is refused-by-law key-exists, a request without its approval refused-by-law no-approval). Its receipt lists every request it folded, with its key, edge, owner, deadline and what it delivered or released, and the transaction's roots; its validity bound is the earliest deadline among them. Before anything is signed the command refuses, naming the reason: nothing to fold (nothing-to-fold, naming every request left out); a request named by --request that the fold does not take, with why; an insertion whose envelope is not in the registry directory or is not the one the request names; the outlay past --max-outlay; a funding output that is not the wallet's; a built fold that spends anything but the registry's state and exactly the requests it takes, or pays an owner less than its releases owe. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. A fold the node refuses because another fold spent the registry's state output first is refused stale-state: nothing of it is on the chain, its journal is closed, and running it again folds whatever is still pending.",
       "pause": 400
     },
     {
-      "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+      "text": "The window check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the earliest deadline among the requests it folds when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
       "pause": 400
     },
     {
-      "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
+      "text": "Each request's deadline is the one its booking's receipt states. A fold refused for one submitted nothing, and every request stays pending; a request left out for its window stays pending until its owner reclaims it or registry reject clears it.",
       "pause": 400
     }
   ],
@@ -209,6 +209,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "6b37f806f6d0f21fb86a90c2d4dace53b4ea85d22eb98178da5af58a44413207"
+    "sha256": "479f45884bec487a482a8439adda5ea5dd1a6f8ca1ee64902e51b4d251199960"
   }
 }

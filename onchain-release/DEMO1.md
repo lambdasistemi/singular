@@ -169,11 +169,13 @@ insert receipt and the preview receipt print the envelope it built.
    for the fold and `foldDeadline`, the time (and, where pinned time converts it, the slot) by which the fold must
    happen. Nothing is folded, and the registry's root and your saved state do not
    move.
-3. **`singular registry fold`** folds that one pending request with the wallet that runs
-   it, which need not be the wallet that booked: the key's one active token lands in
-   an output at the application, carrying your envelope inline. Its receipt names the
-   request, the key, the edge, the fold's transaction, the output it delivered, the
-   new root, the host clock at which it was decided and how many milliseconds remained before the deadline.
+3. **`singular registry fold`** folds every pending request it can, yours and anyone
+   else's, with the wallet that runs it, which need not be a wallet that booked: each
+   key's one active token lands in an output at the application, carrying its own
+   owner's envelope inline. Its receipt lists each request it folded with its key,
+   edge, owner, deadline and the output it delivered, and each pending request it left
+   out with the reason; then the fold's transaction, the new root, the host clock at
+   which it was decided and how many milliseconds remained before the earliest deadline.
 4. **`singular registry inspect`** reads the key `active`, with the holding, its envelope and
    payload, the registry's root and its separately observed tip. Its Unbound facts do not prove a common
    chain point for the reads used to prepare a write.
@@ -239,10 +241,11 @@ overwrites on its own:
 
 - **partial** names what was left behind. An insertion of a key the
   registry already holds is booked by the application and then cannot be
-  folded: the receipt names the pending request, and its deposit stays
-  locked in it. A fold that is asked for after its request's deadline, or
-  that the registry cannot take, is a **client-refusal** that submitted
-  nothing; the request stays pending.
+  folded: every fold leaves it out, naming it `refused-by-law key-exists`,
+  and folds the other requests; its deposit stays locked in it until it is
+  reclaimed or rejected. A fold that would take nothing, or that is asked
+  with `--request` for a request it leaves out, is a **client-refusal** that
+  submitted nothing, naming every request it left and why.
 - **timeout** names the submitted transaction when its confirmation did
   not arrive within `--confirm-timeout` seconds (default 600). The entry
   stays unresolved, and every later write on that registry refuses until

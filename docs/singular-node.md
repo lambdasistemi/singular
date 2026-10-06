@@ -31,7 +31,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The wallet output that funds and collateralises the write. `create` and `inspect` refuse it rather than ignore it. |
 | `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The most the write may put out of your wallet. A booking, an update, a fold, reclaim or reject past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create` and `inspect` refuse it. |
 | `--fold` | `insert`, `terminate` | Also fold the request this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
-| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional: without it the fold takes the one pending request. A named request that is not pending is refused. |
+| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional: the fold takes every pending request it can either way, and with it the fold is refused, naming why, unless the named request is among them. |
 | `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
 | `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
 | `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the provider. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
@@ -105,7 +105,7 @@ registry journal, mirror and state follow the observed fold:
 sequenceDiagram
     participant W as Folder
     participant P as Koios API
-    W->>P: Read pending request
+    W->>P: Read pending requests
     P-->>W: Raw request facts
     Note over W: Build and sign fold
     W->>P: Submit fold
@@ -113,27 +113,45 @@ sequenceDiagram
     Note over W: Journal and mirror
 ```
 
-The registry's fold takes every pending request, so a fold is built only while
-exactly one is pending. Before anything is signed the command refuses, naming
-the reason: nothing pending; the request named by `--request` is not the one
-pending; more than one pending, each named; an insertion whose request carries
-no envelope, or something that is not one; an edge other
-than an insertion or a termination; the outlay past `--max-outlay`; a funding
-output that is not the wallet's; and a request whose processing deadline has
-passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it.
+One fold settles every pending request it can, whoever booked it: Alice and
+Bob each book from their own wallet, and one `registry fold`, run by either of
+them or by anyone, folds both in one transaction, each delivery at its own key
+under its own owner's envelope. The fold takes the requests in the ledger's
+input order and leaves out, naming each in its receipt's `excluded` list with
+the reason, a request whose processing deadline has passed or is within thirty
+seconds of passing (`window-closed`, judged on the host's clock and named by
+its time, and by its slot when pinned time converts it), one whose edge is not
+an insertion or a termination (`edge-unsupported`), one whose datum is not a
+request (`undecodable`), and one the model refuses after the requests before
+it (`refused-by-law` with the model's reason: a second insertion of a key is
+`refused-by-law key-exists`, a request without its approval
+`refused-by-law no-approval`). Its receipt lists every request it folded, with
+its key, edge, owner, deadline and what it delivered or released, and the
+transaction's roots; its validity bound is the earliest deadline among them.
+Before anything is signed the command refuses, naming the reason: nothing to
+fold (`nothing-to-fold`, naming every request left out); a request named by
+`--request` that the fold does not take, with why; an insertion whose request
+carries no envelope, or something that is not one; the outlay past `--max-outlay`; a funding output that is not the wallet's; a built
+fold that spends anything but the registry's state and exactly the requests it
+takes, or pays an owner less than its releases owe.
 Run after its own booking by `--fold`, a fold that cannot be built or signed
-stops the command partial, naming the request that stays pending.
+stops the command partial, naming the request that stays pending. A fold the
+node refuses because another fold spent the registry's state output first is
+refused `stale-state`: nothing of it is on the chain, its journal is closed,
+and running it again folds whatever is still pending.
 
-That check is the fast refusal, not the proof. After the fold is built and
+The window check is the fast refusal, not the proof. After the fold is built and
 before it is signed, its validity upper bound is judged again from the built
 body and the host clock: the bound must be at or before the slot of the
-deadline when pinned time converts it, or, when it does not, must begin at or
+earliest deadline among the requests it folds when pinned time converts it, or, when it does not, must begin at or
 before the deadline time; a bound pinned time cannot convert, or a clock that has
 meanwhile come within the margin, is refused unsigned, with the bound, the
 clock and the deadline in the receipt.
 
-The deadline the fold is judged against is the one the booking's receipt
-states. A fold refused for it submitted nothing, and its request stays pending.
+Each request's deadline is the one its booking's receipt states. A fold
+refused for one submitted nothing, and every request stays pending; a request
+left out for its window stays pending until its owner reclaims it or
+`registry reject` clears it.
 
 ## Reclaiming your pending request
 

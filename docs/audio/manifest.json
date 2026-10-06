@@ -31,17 +31,17 @@
    ]
   },
   "README/design-status-01": {
-   "audio_sha256": "051fd92c130270ac9ccb30b3669df7ad1f43c4c2e498807da33d91096f3b0beb",
+   "audio_sha256": "41fa49fe1e4483a078a2cb8ef9986e4e77e7d8be54a390498e1850a6e3ba5343",
    "characters": 1010,
    "cost": 0.0006262,
-   "duration": 70.5,
+   "duration": 70.475,
    "index": 1,
-   "key": "0c5335540460fe6fe2df68555b148e0c9004206f5d4d7a35083dd0ff5cdf4c4e",
+   "key": "737919ea64ae7e9f99e71f5cdb13d9de2053d112dcc56c8471c5e7e55078265c",
    "page": "README.md",
    "pause_ms": 400,
    "section": "design-status",
-   "sent_text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 67 proved declarations — 46 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-   "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 67 proved declarations — 46 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+   "sent_text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 65 proved declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+   "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 65 proved declarations — 44 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
    "words": [
     {
      "end": 0.45,
@@ -149,728 +149,728 @@
      "text": "candidate"
     },
     {
-     "end": 9.212,
+     "end": 9.225,
      "start": 8.975,
      "text": "has"
     },
     {
-     "end": 9.988,
-     "start": 9.212,
-     "text": "67"
+     "end": 10.038,
+     "start": 9.225,
+     "text": "65"
     },
     {
-     "end": 10.375,
-     "start": 9.988,
+     "end": 10.425,
+     "start": 10.038,
      "text": "proved"
     },
     {
-     "end": 11.363,
-     "start": 10.375,
+     "end": 11.413,
+     "start": 10.425,
      "text": "declarations"
     },
     {
-     "end": 11.462,
-     "start": 11.363,
+     "end": 11.538,
+     "start": 11.413,
      "text": "—"
     },
     {
-     "end": 12.15,
-     "start": 11.462,
-     "text": "46"
+     "end": 12.2,
+     "start": 11.538,
+     "text": "44"
     },
     {
-     "end": 12.262,
-     "start": 12.15,
+     "end": 12.312,
+     "start": 12.2,
      "text": "for"
     },
     {
-     "end": 12.35,
-     "start": 12.262,
+     "end": 12.4,
+     "start": 12.312,
      "text": "the"
     },
     {
      "end": 13.575,
-     "start": 12.35,
+     "start": 12.4,
      "text": "registry"
     },
     {
-     "end": 13.85,
+     "end": 13.825,
      "start": 13.575,
      "text": ","
     },
     {
-     "end": 14.4,
-     "start": 14.075,
+     "end": 14.375,
+     "start": 14.05,
      "text": "7"
     },
     {
-     "end": 14.512,
-     "start": 14.4,
+     "end": 14.488,
+     "start": 14.375,
      "text": "for"
     },
     {
-     "end": 14.625,
-     "start": 14.512,
+     "end": 14.6,
+     "start": 14.488,
      "text": "the"
     },
     {
-     "end": 14.962,
-     "start": 14.625,
+     "end": 14.938,
+     "start": 14.6,
      "text": "naming"
     },
     {
-     "end": 15.6,
-     "start": 14.962,
+     "end": 15.575,
+     "start": 14.938,
      "text": "instance"
     },
     {
-     "end": 15.712,
-     "start": 15.6,
+     "end": 15.688,
+     "start": 15.575,
      "text": ","
     },
     {
-     "end": 16.05,
-     "start": 15.712,
+     "end": 16.025,
+     "start": 15.688,
      "text": "9"
     },
     {
-     "end": 16.163,
-     "start": 16.05,
+     "end": 16.138,
+     "start": 16.025,
      "text": "for"
     },
     {
-     "end": 16.35,
-     "start": 16.163,
+     "end": 16.325,
+     "start": 16.138,
      "text": "its"
     },
     {
-     "end": 17.05,
-     "start": 16.35,
+     "end": 17.025,
+     "start": 16.325,
      "text": "lifecycle"
     },
     {
-     "end": 17.188,
-     "start": 17.05,
+     "end": 17.163,
+     "start": 17.025,
      "text": "and"
     },
     {
-     "end": 17.575,
-     "start": 17.188,
+     "end": 17.55,
+     "start": 17.163,
      "text": "5"
     },
     {
-     "end": 17.688,
-     "start": 17.575,
+     "end": 17.663,
+     "start": 17.55,
      "text": "for"
     },
     {
-     "end": 17.888,
-     "start": 17.688,
+     "end": 17.862,
+     "start": 17.663,
      "text": "its"
     },
     {
-     "end": 18.275,
-     "start": 17.888,
+     "end": 18.25,
+     "start": 17.862,
      "text": "wire"
     },
     {
-     "end": 19.375,
-     "start": 18.275,
+     "end": 19.35,
+     "start": 18.25,
      "text": "encoding"
     },
     {
-     "end": 19.575,
-     "start": 19.375,
+     "end": 19.55,
+     "start": 19.35,
      "text": ","
     },
     {
-     "end": 20.175,
-     "start": 19.8,
+     "end": 20.15,
+     "start": 19.775,
      "text": "counts"
     },
     {
-     "end": 20.35,
-     "start": 20.175,
+     "end": 20.325,
+     "start": 20.15,
      "text": "that"
     },
     {
-     "end": 20.487,
-     "start": 20.35,
+     "end": 20.462,
+     "start": 20.325,
      "text": "the"
     },
     {
-     "end": 20.888,
-     "start": 20.487,
+     "end": 20.862,
+     "start": 20.462,
      "text": "model"
     },
     {
-     "end": 21.188,
-     "start": 20.888,
+     "end": 21.163,
+     "start": 20.862,
      "text": "check"
     },
     {
-     "end": 21.775,
-     "start": 21.188,
+     "end": 21.75,
+     "start": 21.163,
      "text": "derives"
     },
     {
-     "end": 21.938,
-     "start": 21.775,
+     "end": 21.913,
+     "start": 21.75,
      "text": "from"
     },
     {
-     "end": 22.062,
-     "start": 21.938,
+     "end": 22.038,
+     "start": 21.913,
      "text": "the"
     },
     {
-     "end": 22.5,
-     "start": 22.062,
+     "end": 22.475,
+     "start": 22.038,
      "text": "theorem"
     },
     {
-     "end": 23.35,
-     "start": 22.5,
+     "end": 23.325,
+     "start": 22.475,
      "text": "manifests"
     },
     {
-     "end": 23.425,
-     "start": 23.35,
+     "end": 23.4,
+     "start": 23.325,
      "text": "—"
     },
     {
-     "end": 23.7,
-     "start": 23.425,
+     "end": 23.675,
+     "start": 23.4,
      "text": "plus"
     },
     {
-     "end": 23.812,
-     "start": 23.7,
+     "end": 23.788,
+     "start": 23.675,
      "text": "a"
     },
     {
-     "end": 24.388,
-     "start": 23.812,
+     "end": 24.362,
+     "start": 23.788,
      "text": "playable"
     },
     {
-     "end": 25.15,
-     "start": 24.388,
+     "end": 25.125,
+     "start": 24.362,
      "text": "simulation"
     },
     {
-     "end": 25.85,
-     "start": 25.15,
+     "end": 25.825,
+     "start": 25.125,
      "text": "transcribed"
     },
     {
-     "end": 26.05,
-     "start": 25.85,
+     "end": 26.025,
+     "start": 25.825,
      "text": "from"
     },
     {
-     "end": 26.925,
-     "start": 26.05,
+     "end": 26.9,
+     "start": 26.025,
      "text": "them"
     },
     {
-     "end": 27.125,
-     "start": 26.925,
+     "end": 27.1,
+     "start": 26.9,
      "text": "."
     },
     {
-     "end": 27.438,
-     "start": 27.325,
+     "end": 27.413,
+     "start": 27.3,
      "text": "The"
     },
     {
-     "end": 27.888,
-     "start": 27.438,
+     "end": 27.862,
+     "start": 27.413,
      "text": "focused"
     },
     {
-     "end": 28.225,
-     "start": 27.888,
+     "end": 28.2,
+     "start": 27.862,
      "text": "checks"
     },
     {
-     "end": 28.65,
-     "start": 28.225,
+     "end": 28.625,
+     "start": 28.2,
      "text": "replay"
     },
     {
-     "end": 29.275,
-     "start": 28.65,
+     "end": 29.25,
+     "start": 28.625,
      "text": "38"
     },
     {
-     "end": 29.75,
-     "start": 29.275,
+     "end": 29.725,
+     "start": 29.25,
      "text": "registry"
     },
     {
-     "end": 30.2,
-     "start": 29.75,
+     "end": 30.175,
+     "start": 29.725,
      "text": "rows"
     },
     {
-     "end": 30.312,
-     "start": 30.2,
+     "end": 30.288,
+     "start": 30.175,
      "text": ","
     },
     {
-     "end": 30.9,
-     "start": 30.312,
+     "end": 30.875,
+     "start": 30.288,
      "text": "24"
     },
     {
-     "end": 31.325,
-     "start": 30.9,
+     "end": 31.3,
+     "start": 30.875,
      "text": "naming"
     },
     {
-     "end": 31.725,
-     "start": 31.325,
+     "end": 31.7,
+     "start": 31.3,
      "text": "rows"
     },
     {
-     "end": 31.85,
-     "start": 31.725,
+     "end": 31.825,
+     "start": 31.7,
      "text": "and"
     },
     {
-     "end": 32.4,
-     "start": 31.85,
+     "end": 32.375,
+     "start": 31.825,
      "text": "21"
     },
     {
-     "end": 32.95,
-     "start": 32.4,
+     "end": 32.925,
+     "start": 32.375,
      "text": "lifecycle"
     },
     {
-     "end": 34.0,
-     "start": 32.95,
+     "end": 33.975,
+     "start": 32.925,
      "text": "rows"
     },
     {
-     "end": 34.2,
-     "start": 34.0,
+     "end": 34.175,
+     "start": 33.975,
      "text": ";"
     },
     {
-     "end": 34.537,
-     "start": 34.4,
+     "end": 34.513,
+     "start": 34.375,
      "text": "they"
     },
     {
-     "end": 34.875,
-     "start": 34.537,
+     "end": 34.85,
+     "start": 34.513,
      "text": "test"
     },
     {
-     "end": 35.725,
-     "start": 34.875,
+     "end": 35.7,
+     "start": 34.85,
      "text": "correspondence"
     },
     {
-     "end": 35.875,
-     "start": 35.725,
+     "end": 35.85,
+     "start": 35.7,
      "text": "on"
     },
     {
-     "end": 36.162,
-     "start": 35.875,
+     "end": 36.138,
+     "start": 35.85,
      "text": "those"
     },
     {
-     "end": 36.625,
-     "start": 36.162,
+     "end": 36.6,
+     "start": 36.138,
      "text": "finite"
     },
     {
-     "end": 37.237,
-     "start": 36.625,
+     "end": 37.213,
+     "start": 36.6,
      "text": "inputs"
     },
     {
-     "end": 37.625,
-     "start": 37.237,
+     "end": 37.6,
+     "start": 37.213,
      "text": "rather"
     },
     {
-     "end": 37.8,
-     "start": 37.625,
+     "end": 37.775,
+     "start": 37.6,
      "text": "than"
     },
     {
-     "end": 38.175,
-     "start": 37.8,
+     "end": 38.15,
+     "start": 37.775,
      "text": "proving"
     },
     {
-     "end": 38.625,
-     "start": 38.175,
+     "end": 38.6,
+     "start": 38.15,
      "text": "browser"
     },
     {
-     "end": 39.188,
-     "start": 38.625,
+     "end": 39.162,
+     "start": 38.6,
      "text": "behaviour"
     },
     {
-     "end": 40.325,
-     "start": 39.188,
+     "end": 40.3,
+     "start": 39.162,
      "text": "generally"
     },
     {
-     "end": 40.525,
-     "start": 40.325,
+     "end": 40.5,
+     "start": 40.3,
      "text": "."
     },
     {
-     "end": 40.912,
-     "start": 40.725,
+     "end": 40.888,
+     "start": 40.7,
      "text": "No"
     },
     {
-     "end": 41.35,
-     "start": 40.912,
+     "end": 41.325,
+     "start": 40.888,
      "text": "independent"
     },
     {
-     "end": 41.588,
-     "start": 41.35,
+     "end": 41.562,
+     "start": 41.325,
      "text": "audit"
     },
     {
-     "end": 42.125,
-     "start": 41.588,
+     "end": 42.1,
+     "start": 41.562,
      "text": "acceptance"
     },
     {
-     "end": 42.275,
-     "start": 42.125,
+     "end": 42.25,
+     "start": 42.1,
      "text": "is"
     },
     {
-     "end": 43.125,
-     "start": 42.275,
+     "end": 43.1,
+     "start": 42.25,
      "text": "claimed"
     },
     {
-     "end": 43.325,
-     "start": 43.125,
+     "end": 43.3,
+     "start": 43.1,
      "text": "."
     },
     {
-     "end": 43.6,
-     "start": 43.525,
+     "end": 43.575,
+     "start": 43.5,
      "text": "The"
     },
     {
-     "end": 44.125,
-     "start": 43.6,
+     "end": 44.1,
+     "start": 43.575,
      "text": "compiled"
     },
     {
-     "end": 44.912,
-     "start": 44.125,
+     "end": 44.888,
+     "start": 44.1,
      "text": "validators"
     },
     {
-     "end": 45.037,
-     "start": 44.912,
+     "end": 45.013,
+     "start": 44.888,
      "text": "and"
     },
     {
-     "end": 45.138,
-     "start": 45.037,
+     "end": 45.112,
+     "start": 45.013,
      "text": "a"
     },
     {
-     "end": 45.7,
-     "start": 45.138,
+     "end": 45.675,
+     "start": 45.112,
      "text": "registry"
     },
     {
-     "end": 46.263,
-     "start": 45.7,
+     "end": 46.237,
+     "start": 45.675,
      "text": "deployed"
     },
     {
-     "end": 46.362,
-     "start": 46.263,
+     "end": 46.338,
+     "start": 46.237,
      "text": "on"
     },
     {
-     "end": 46.463,
-     "start": 46.362,
+     "end": 46.438,
+     "start": 46.338,
      "text": "the"
     },
     {
-     "end": 46.875,
-     "start": 46.463,
+     "end": 46.85,
+     "start": 46.438,
      "text": "public"
     },
     {
-     "end": 47.35,
-     "start": 46.875,
+     "end": 47.325,
+     "start": 46.85,
      "text": "preprod"
     },
     {
-     "end": 47.912,
-     "start": 47.35,
+     "end": 47.888,
+     "start": 47.325,
      "text": "network"
     },
     {
-     "end": 48.075,
-     "start": 47.912,
+     "end": 48.05,
+     "start": 47.888,
      "text": "are"
     },
     {
-     "end": 48.65,
-     "start": 48.075,
+     "end": 48.625,
+     "start": 48.05,
      "text": "recorded"
     },
     {
-     "end": 48.763,
-     "start": 48.65,
+     "end": 48.737,
+     "start": 48.625,
      "text": "in"
     },
     {
-     "end": 48.85,
-     "start": 48.763,
+     "end": 48.825,
+     "start": 48.737,
      "text": "the"
     },
     {
-     "end": 49.375,
-     "start": 48.85,
+     "end": 49.35,
+     "start": 48.825,
      "text": "preprod"
     },
     {
-     "end": 50.4,
-     "start": 49.375,
+     "end": 50.375,
+     "start": 49.35,
      "text": "record"
     },
     {
-     "end": 50.625,
-     "start": 50.4,
+     "end": 50.6,
+     "start": 50.375,
      "text": ","
     },
     {
-     "end": 50.938,
-     "start": 50.85,
+     "end": 50.912,
+     "start": 50.825,
      "text": "and"
     },
     {
-     "end": 51.025,
-     "start": 50.938,
+     "end": 51.0,
+     "start": 50.912,
      "text": "the"
     },
     {
-     "end": 51.675,
-     "start": 51.025,
+     "end": 51.65,
+     "start": 51.0,
      "text": "conformance"
     },
     {
-     "end": 52.188,
-     "start": 51.675,
+     "end": 52.162,
+     "start": 51.65,
      "text": "evidence"
     },
     {
-     "end": 52.6,
-     "start": 52.188,
+     "end": 52.575,
+     "start": 52.162,
      "text": "states"
     },
     {
-     "end": 52.8,
-     "start": 52.6,
+     "end": 52.775,
+     "start": 52.575,
      "text": "which"
     },
     {
-     "end": 53.4,
-     "start": 52.8,
+     "end": 53.375,
+     "start": 52.775,
      "text": "consumer"
     },
     {
-     "end": 54.263,
-     "start": 53.4,
+     "end": 54.237,
+     "start": 53.375,
      "text": "requirements"
     },
     {
-     "end": 54.4,
-     "start": 54.263,
+     "end": 54.375,
+     "start": 54.237,
      "text": "a"
     },
     {
-     "end": 54.862,
-     "start": 54.4,
+     "end": 54.838,
+     "start": 54.375,
      "text": "named"
     },
     {
-     "end": 55.25,
-     "start": 54.862,
+     "end": 55.225,
+     "start": 54.838,
      "text": "code"
     },
     {
-     "end": 55.838,
-     "start": 55.25,
+     "end": 55.812,
+     "start": 55.225,
      "text": "revision"
     },
     {
-     "end": 56.6,
-     "start": 55.838,
+     "end": 56.575,
+     "start": 55.812,
      "text": "demonstrated"
     },
     {
-     "end": 57.0,
-     "start": 56.6,
+     "end": 56.975,
+     "start": 56.575,
      "text": "against"
     },
     {
-     "end": 57.875,
-     "start": 57.0,
+     "end": 57.85,
+     "start": 56.975,
      "text": "them"
     },
     {
-     "end": 58.075,
-     "start": 57.875,
+     "end": 58.05,
+     "start": 57.85,
      "text": "."
     },
     {
-     "end": 58.35,
-     "start": 58.25,
+     "end": 58.325,
+     "start": 58.225,
      "text": "The"
     },
     {
-     "end": 58.8,
-     "start": 58.35,
+     "end": 58.775,
+     "start": 58.325,
      "text": "coverage"
     },
     {
-     "end": 59.125,
-     "start": 58.8,
+     "end": 59.1,
+     "start": 58.775,
      "text": "ledger"
     },
     {
-     "end": 59.95,
-     "start": 59.125,
+     "end": 59.925,
+     "start": 59.1,
      "text": "distinguishes"
     },
     {
-     "end": 60.438,
-     "start": 59.95,
+     "end": 60.412,
+     "start": 59.925,
      "text": "finite"
     },
     {
-     "end": 61.15,
-     "start": 60.438,
+     "end": 61.125,
+     "start": 60.412,
      "text": "executable"
     },
     {
-     "end": 61.6,
-     "start": 61.15,
+     "end": 61.575,
+     "start": 61.125,
      "text": "evidence"
     },
     {
-     "end": 61.8,
-     "start": 61.6,
+     "end": 61.775,
+     "start": 61.575,
      "text": "from"
     },
     {
-     "end": 63.025,
-     "start": 61.8,
+     "end": 63.0,
+     "start": 61.775,
      "text": "conditions"
     },
     {
-     "end": 63.225,
-     "start": 63.025,
+     "end": 63.2,
+     "start": 63.0,
      "text": ","
     },
     {
-     "end": 63.987,
-     "start": 63.4,
+     "end": 63.963,
+     "start": 63.375,
      "text": "abstractions"
     },
     {
-     "end": 64.1,
-     "start": 63.987,
+     "end": 64.075,
+     "start": 63.963,
      "text": "and"
     },
     {
-     "end": 65.1,
-     "start": 64.1,
+     "end": 65.075,
+     "start": 64.075,
      "text": "omissions"
     },
     {
-     "end": 65.3,
-     "start": 65.1,
+     "end": 65.275,
+     "start": 65.075,
      "text": ","
     },
     {
-     "end": 65.588,
-     "start": 65.5,
+     "end": 65.562,
+     "start": 65.475,
      "text": "and"
     },
     {
-     "end": 65.675,
-     "start": 65.588,
+     "end": 65.65,
+     "start": 65.562,
      "text": "the"
     },
     {
-     "end": 66.1,
-     "start": 65.675,
+     "end": 66.075,
+     "start": 65.65,
      "text": "clarity"
     },
     {
-     "end": 66.5,
-     "start": 66.1,
+     "end": 66.475,
+     "start": 66.075,
      "text": "record"
     },
     {
-     "end": 66.887,
-     "start": 66.5,
+     "end": 66.863,
+     "start": 66.475,
      "text": "states"
     },
     {
-     "end": 67.438,
-     "start": 66.887,
+     "end": 67.412,
+     "start": 66.863,
      "text": "plainly"
     },
     {
-     "end": 67.688,
-     "start": 67.438,
+     "end": 67.662,
+     "start": 67.412,
      "text": "how"
     },
     {
-     "end": 67.975,
-     "start": 67.688,
+     "end": 67.95,
+     "start": 67.662,
      "text": "much"
     },
     {
-     "end": 68.7,
-     "start": 67.975,
+     "end": 68.675,
+     "start": 67.95,
      "text": "independence"
     },
     {
-     "end": 68.85,
-     "start": 68.7,
+     "end": 68.825,
+     "start": 68.675,
      "text": "that"
     },
     {
-     "end": 69.3,
-     "start": 68.85,
+     "end": 69.275,
+     "start": 68.825,
      "text": "evidence"
     },
     {
-     "end": 70.275,
-     "start": 69.3,
+     "end": 70.25,
+     "start": 69.275,
      "text": "has"
     },
     {
-     "end": 70.5,
-     "start": 70.275,
+     "end": 70.475,
+     "start": 70.25,
      "text": "."
     }
    ]
@@ -35226,17 +35226,17 @@
    ]
   },
   "docs-cli-recovery/when-a-transaction-can-never-land-02": {
-   "audio_sha256": "acfe831fd29c18af7d12aae0a6945b15f79c557ead426fa914b2a7b487d10579",
-   "characters": 700,
-   "cost": 0.00043400000000000003,
-   "duration": 45.725,
+   "audio_sha256": "823a5773b4b8c8b4b7d2fd119382270ba0bbc37607180916bca2e6ab46bd2dd3",
+   "characters": 623,
+   "cost": 0.00038626000000000003,
+   "duration": 41.6,
    "index": 2,
-   "key": "0392a24fd853f6057ecd6b6a3d4c502f30f50c984adc7d1ec0a40dac472a1f9e",
+   "key": "1f697cb63280aeef3732c650f52d2a7544dd39ace4eeef67b07076d1bc8aa7b7",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "when-a-transaction-can-never-land",
-   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
-   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
+   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. It blocks nobody: the next registry fold, or the next insert --fold or terminate --fold by anyone, folds it together with every other request it can. Once its processing deadline has passed a fold leaves it out, naming it window-closed; its owner may then reclaim it inside its retract window, and registry reject clears it after both windows.",
+   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. It blocks nobody: the next registry fold, or the next insert --fold or terminate --fold by anyone, folds it together with every other request it can. Once its processing deadline has passed a fold leaves it out, naming it window-closed; its owner may then reclaim it inside its retract window, and registry reject clears it after both windows.",
    "words": [
     {
      "end": 0.287,
@@ -35479,468 +35479,753 @@
      "text": ":"
     },
     {
-     "end": 15.413,
+     "end": 15.438,
      "start": 15.3,
      "text": "its"
     },
     {
-     "end": 15.762,
-     "start": 15.413,
+     "end": 15.863,
+     "start": 15.438,
      "text": "request"
     },
     {
-     "end": 16.075,
-     "start": 15.762,
+     "end": 16.237,
+     "start": 15.863,
      "text": "stays"
     },
     {
-     "end": 16.5,
-     "start": 16.075,
+     "end": 16.675,
+     "start": 16.237,
      "text": "pending"
     },
     {
-     "end": 16.55,
-     "start": 16.5,
+     "end": 16.725,
+     "start": 16.675,
      "text": ","
     },
     {
-     "end": 16.888,
-     "start": 16.55,
+     "end": 17.062,
+     "start": 16.725,
      "text": "holding"
     },
     {
-     "end": 17.0,
-     "start": 16.888,
+     "end": 17.225,
+     "start": 17.062,
      "text": "its"
     },
     {
-     "end": 18.05,
-     "start": 17.0,
+     "end": 17.95,
+     "start": 17.225,
      "text": "deposit"
     },
     {
-     "end": 18.25,
-     "start": 18.05,
+     "end": 18.05,
+     "start": 17.95,
      "text": "."
     },
     {
-     "end": 18.55,
-     "start": 18.425,
-     "text": "The"
+     "end": 18.2,
+     "start": 18.05,
+     "text": "It"
     },
     {
-     "end": 19.0,
-     "start": 18.55,
-     "text": "ordinary"
+     "end": 18.575,
+     "start": 18.2,
+     "text": "blocks"
     },
     {
      "end": 19.55,
-     "start": 19.0,
-     "text": "commands"
+     "start": 18.575,
+     "text": "nobody"
     },
     {
      "end": 19.775,
      "start": 19.55,
-     "text": "have"
-    },
-    {
-     "end": 19.95,
-     "start": 19.775,
-     "text": "no"
-    },
-    {
-     "end": 20.087,
-     "start": 19.95,
-     "text": "way"
-    },
-    {
-     "end": 20.212,
-     "start": 20.087,
-     "text": "to"
-    },
-    {
-     "end": 20.712,
-     "start": 20.212,
-     "text": "fold"
-    },
-    {
-     "end": 20.875,
-     "start": 20.712,
-     "text": "or"
-    },
-    {
-     "end": 21.375,
-     "start": 20.875,
-     "text": "retract"
-    },
-    {
-     "end": 21.538,
-     "start": 21.375,
-     "text": "that"
-    },
-    {
-     "end": 22.525,
-     "start": 21.538,
-     "text": "request"
-    },
-    {
-     "end": 22.75,
-     "start": 22.525,
-     "text": ","
-    },
-    {
-     "end": 23.125,
-     "start": 23.025,
-     "text": "and"
-    },
-    {
-     "end": 23.375,
-     "start": 23.125,
-     "text": "while"
-    },
-    {
-     "end": 23.475,
-     "start": 23.375,
-     "text": "it"
-    },
-    {
-     "end": 23.638,
-     "start": 23.475,
-     "text": "is"
-    },
-    {
-     "end": 24.138,
-     "start": 23.638,
-     "text": "pending"
-    },
-    {
-     "end": 24.513,
-     "start": 24.138,
-     "text": "every"
-    },
-    {
-     "end": 24.875,
-     "start": 24.513,
-     "text": "later"
-    },
-    {
-     "end": 25.413,
-     "start": 24.875,
-     "text": "insert"
-    },
-    {
-     "end": 25.587,
-     "start": 25.413,
-     "text": "or"
-    },
-    {
-     "end": 26.175,
-     "start": 25.587,
-     "text": "terminate"
-    },
-    {
-     "end": 26.312,
-     "start": 26.175,
-     "text": "on"
-    },
-    {
-     "end": 26.4,
-     "start": 26.312,
-     "text": "the"
-    },
-    {
-     "end": 27.062,
-     "start": 26.4,
-     "text": "registry"
-    },
-    {
-     "end": 27.225,
-     "start": 27.062,
-     "text": "is"
-    },
-    {
-     "end": 27.875,
-     "start": 27.225,
-     "text": "refused"
-    },
-    {
-     "end": 28.75,
-     "start": 27.875,
-     "text": "concurrent-writer"
-    },
-    {
-     "end": 29.125,
-     "start": 28.75,
-     "text": "before"
-    },
-    {
-     "end": 29.337,
-     "start": 29.125,
-     "text": "its"
-    },
-    {
-     "end": 29.725,
-     "start": 29.337,
-     "text": "fold"
-    },
-    {
-     "end": 29.888,
-     "start": 29.725,
-     "text": "is"
-    },
-    {
-     "end": 30.513,
-     "start": 29.888,
-     "text": "built"
-    },
-    {
-     "end": 30.612,
-     "start": 30.513,
-     "text": "—"
-    },
-    {
-     "end": 30.737,
-     "start": 30.612,
-     "text": "a"
-    },
-    {
-     "end": 31.188,
-     "start": 30.737,
-     "text": "rerun"
-    },
-    {
-     "end": 31.263,
-     "start": 31.188,
-     "text": "of"
-    },
-    {
-     "end": 31.388,
-     "start": 31.263,
-     "text": "the"
-    },
-    {
-     "end": 31.725,
-     "start": 31.388,
-     "text": "same"
-    },
-    {
-     "end": 32.25,
-     "start": 31.725,
-     "text": "command"
-    },
-    {
-     "end": 32.525,
-     "start": 32.25,
-     "text": "books"
-    },
-    {
-     "end": 32.638,
-     "start": 32.525,
-     "text": "a"
-    },
-    {
-     "end": 33.0,
-     "start": 32.638,
-     "text": "second"
-    },
-    {
-     "end": 34.225,
-     "start": 33.0,
-     "text": "request"
-    },
-    {
-     "end": 34.475,
-     "start": 34.225,
-     "text": ","
-    },
-    {
-     "end": 34.787,
-     "start": 34.65,
-     "text": "with"
-    },
-    {
-     "end": 34.85,
-     "start": 34.787,
-     "text": "a"
-    },
-    {
-     "end": 35.162,
-     "start": 34.85,
-     "text": "second"
-    },
-    {
-     "end": 35.825,
-     "start": 35.162,
-     "text": "deposit"
-    },
-    {
-     "end": 35.9,
-     "start": 35.825,
-     "text": ","
-    },
-    {
-     "end": 36.013,
-     "start": 35.9,
-     "text": "and"
-    },
-    {
-     "end": 36.15,
-     "start": 36.013,
-     "text": "is"
-    },
-    {
-     "end": 36.688,
-     "start": 36.15,
-     "text": "refused"
-    },
-    {
-     "end": 36.775,
-     "start": 36.688,
-     "text": "the"
-    },
-    {
-     "end": 37.05,
-     "start": 36.775,
-     "text": "same"
-    },
-    {
-     "end": 37.825,
-     "start": 37.05,
-     "text": "way"
-    },
-    {
-     "end": 38.05,
-     "start": 37.825,
-     "text": "."
-    },
-    {
-     "end": 38.7,
-     "start": 38.25,
-     "text": "update"
-    },
-    {
-     "end": 38.812,
-     "start": 38.7,
-     "text": "and"
-    },
-    {
-     "end": 39.225,
-     "start": 38.812,
-     "text": "inspect"
-    },
-    {
-     "end": 39.5,
-     "start": 39.225,
-     "text": "still"
-    },
-    {
-     "end": 39.925,
-     "start": 39.5,
-     "text": "run"
-    },
-    {
-     "end": 40.025,
-     "start": 39.925,
-     "text": "."
-    },
-    {
-     "end": 40.237,
-     "start": 40.025,
-     "text": "That"
-    },
-    {
-     "end": 40.338,
-     "start": 40.237,
-     "text": "is"
-    },
-    {
-     "end": 40.425,
-     "start": 40.338,
-     "text": "a"
-    },
-    {
-     "end": 40.688,
-     "start": 40.425,
-     "text": "limit"
-    },
-    {
-     "end": 40.763,
-     "start": 40.688,
-     "text": "of"
-    },
-    {
-     "end": 40.975,
-     "start": 40.763,
-     "text": "these"
-    },
-    {
-     "end": 42.0,
-     "start": 40.975,
-     "text": "commands"
-    },
-    {
-     "end": 42.2,
-     "start": 42.0,
      "text": ":"
     },
     {
-     "end": 42.838,
-     "start": 42.4,
-     "text": "releasing"
-    },
-    {
-     "end": 42.925,
-     "start": 42.838,
+     "end": 20.025,
+     "start": 19.95,
      "text": "the"
     },
     {
-     "end": 43.287,
-     "start": 42.925,
-     "text": "pending"
+     "end": 20.3,
+     "start": 20.025,
+     "text": "next"
     },
     {
-     "end": 43.75,
-     "start": 43.287,
+     "end": 20.788,
+     "start": 20.3,
+     "text": "registry"
+    },
+    {
+     "end": 21.275,
+     "start": 20.788,
+     "text": "fold"
+    },
+    {
+     "end": 21.362,
+     "start": 21.275,
+     "text": ","
+    },
+    {
+     "end": 21.55,
+     "start": 21.362,
+     "text": "or"
+    },
+    {
+     "end": 21.65,
+     "start": 21.55,
+     "text": "the"
+    },
+    {
+     "end": 21.975,
+     "start": 21.65,
+     "text": "next"
+    },
+    {
+     "end": 22.438,
+     "start": 21.975,
+     "text": "insert"
+    },
+    {
+     "end": 22.888,
+     "start": 22.438,
+     "text": "--fold"
+    },
+    {
+     "end": 23.062,
+     "start": 22.888,
+     "text": "or"
+    },
+    {
+     "end": 23.638,
+     "start": 23.062,
+     "text": "terminate"
+    },
+    {
+     "end": 23.975,
+     "start": 23.638,
+     "text": "--fold"
+    },
+    {
+     "end": 24.188,
+     "start": 23.975,
+     "text": "by"
+    },
+    {
+     "end": 25.225,
+     "start": 24.188,
+     "text": "anyone"
+    },
+    {
+     "end": 25.425,
+     "start": 25.225,
+     "text": ","
+    },
+    {
+     "end": 25.913,
+     "start": 25.625,
+     "text": "folds"
+    },
+    {
+     "end": 26.0,
+     "start": 25.913,
+     "text": "it"
+    },
+    {
+     "end": 26.425,
+     "start": 26.0,
+     "text": "together"
+    },
+    {
+     "end": 26.625,
+     "start": 26.425,
+     "text": "with"
+    },
+    {
+     "end": 26.975,
+     "start": 26.625,
+     "text": "every"
+    },
+    {
+     "end": 27.212,
+     "start": 26.975,
+     "text": "other"
+    },
+    {
+     "end": 27.612,
+     "start": 27.212,
      "text": "request"
     },
     {
-     "end": 43.987,
-     "start": 43.75,
-     "text": "needs"
+     "end": 27.7,
+     "start": 27.612,
+     "text": "it"
     },
     {
-     "end": 44.062,
-     "start": 43.987,
+     "end": 28.525,
+     "start": 27.7,
+     "text": "can"
+    },
+    {
+     "end": 28.725,
+     "start": 28.525,
+     "text": "."
+    },
+    {
+     "end": 29.138,
+     "start": 28.925,
+     "text": "Once"
+    },
+    {
+     "end": 29.3,
+     "start": 29.138,
+     "text": "its"
+    },
+    {
+     "end": 29.85,
+     "start": 29.3,
+     "text": "processing"
+    },
+    {
+     "end": 30.325,
+     "start": 29.85,
+     "text": "deadline"
+    },
+    {
+     "end": 30.513,
+     "start": 30.325,
+     "text": "has"
+    },
+    {
+     "end": 30.862,
+     "start": 30.513,
+     "text": "passed"
+    },
+    {
+     "end": 30.962,
+     "start": 30.862,
      "text": "a"
     },
     {
-     "end": 44.375,
-     "start": 44.062,
-     "text": "tool"
+     "end": 31.35,
+     "start": 30.962,
+     "text": "fold"
     },
     {
-     "end": 44.838,
-     "start": 44.375,
-     "text": "outside"
+     "end": 31.587,
+     "start": 31.35,
+     "text": "leaves"
     },
     {
-     "end": 45.55,
-     "start": 44.838,
-     "text": "them"
+     "end": 31.7,
+     "start": 31.587,
+     "text": "it"
     },
     {
-     "end": 45.725,
-     "start": 45.55,
+     "end": 32.05,
+     "start": 31.7,
+     "text": "out"
+    },
+    {
+     "end": 32.15,
+     "start": 32.05,
+     "text": ","
+    },
+    {
+     "end": 32.487,
+     "start": 32.15,
+     "text": "naming"
+    },
+    {
+     "end": 32.575,
+     "start": 32.487,
+     "text": "it"
+    },
+    {
+     "end": 33.9,
+     "start": 32.575,
+     "text": "window-closed"
+    },
+    {
+     "end": 34.1,
+     "start": 33.9,
+     "text": ";"
+    },
+    {
+     "end": 34.5,
+     "start": 34.325,
+     "text": "its"
+    },
+    {
+     "end": 34.85,
+     "start": 34.5,
+     "text": "owner"
+    },
+    {
+     "end": 35.05,
+     "start": 34.85,
+     "text": "may"
+    },
+    {
+     "end": 35.275,
+     "start": 35.05,
+     "text": "then"
+    },
+    {
+     "end": 35.8,
+     "start": 35.275,
+     "text": "reclaim"
+    },
+    {
+     "end": 35.963,
+     "start": 35.8,
+     "text": "it"
+    },
+    {
+     "end": 36.513,
+     "start": 35.963,
+     "text": "inside"
+    },
+    {
+     "end": 36.7,
+     "start": 36.513,
+     "text": "its"
+    },
+    {
+     "end": 37.25,
+     "start": 36.7,
+     "text": "retract"
+    },
+    {
+     "end": 37.85,
+     "start": 37.25,
+     "text": "window"
+    },
+    {
+     "end": 37.975,
+     "start": 37.85,
+     "text": ","
+    },
+    {
+     "end": 38.1,
+     "start": 37.975,
+     "text": "and"
+    },
+    {
+     "end": 38.6,
+     "start": 38.1,
+     "text": "registry"
+    },
+    {
+     "end": 39.062,
+     "start": 38.6,
+     "text": "reject"
+    },
+    {
+     "end": 39.45,
+     "start": 39.062,
+     "text": "clears"
+    },
+    {
+     "end": 39.6,
+     "start": 39.45,
+     "text": "it"
+    },
+    {
+     "end": 39.9,
+     "start": 39.6,
+     "text": "after"
+    },
+    {
+     "end": 40.2,
+     "start": 39.9,
+     "text": "both"
+    },
+    {
+     "end": 41.4,
+     "start": 40.2,
+     "text": "windows"
+    },
+    {
+     "end": 41.6,
+     "start": 41.4,
      "text": "."
     }
    ]
   },
   "docs-cli-recovery/when-a-transaction-can-never-land-03": {
-   "audio_sha256": "2b7a542cefa67250efd7381a8038f0fcf329baa684b23c824d7d87c9cde955d4",
+   "audio_sha256": "ba37ebf01c15b4631680d4c0c863a749e49d8020545e713969ae6a0a8d264dfa",
+   "characters": 349,
+   "cost": 0.00021638,
+   "duration": 22.925,
+   "index": 3,
+   "key": "353a1ca5dfb3c20fc46852bfdc00c2e39e94797a7ea81a65bc2104694d045233",
+   "page": "docs/cli-recovery.md",
+   "pause_ms": 400,
+   "section": "when-a-transaction-can-never-land",
+   "sent_text": "Two folds may race for the registry's one state output: each built from the same state, the first included spends it, and the node refuses the other. That fold is refused stale-state, naming the state output another fold spent; its journal line is closed rejected, nothing of it is on the chain, and running it again folds whatever is still pending.",
+   "text": "Two folds may race for the registry's one state output: each built from the same state, the first included spends it, and the node refuses the other. That fold is refused stale-state, naming the state output another fold spent; its journal line is closed rejected, nothing of it is on the chain, and running it again folds whatever is still pending.",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.2,
+     "text": "Two"
+    },
+    {
+     "end": 0.775,
+     "start": 0.438,
+     "text": "folds"
+    },
+    {
+     "end": 0.95,
+     "start": 0.775,
+     "text": "may"
+    },
+    {
+     "end": 1.25,
+     "start": 0.95,
+     "text": "race"
+    },
+    {
+     "end": 1.362,
+     "start": 1.25,
+     "text": "for"
+    },
+    {
+     "end": 1.45,
+     "start": 1.362,
+     "text": "the"
+    },
+    {
+     "end": 2.037,
+     "start": 1.45,
+     "text": "registry's"
+    },
+    {
+     "end": 2.3,
+     "start": 2.037,
+     "text": "one"
+    },
+    {
+     "end": 2.6,
+     "start": 2.3,
+     "text": "state"
+    },
+    {
+     "end": 3.55,
+     "start": 2.6,
+     "text": "output"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": ":"
+    },
+    {
+     "end": 4.238,
+     "start": 3.95,
+     "text": "each"
+    },
+    {
+     "end": 4.5,
+     "start": 4.238,
+     "text": "built"
+    },
+    {
+     "end": 4.637,
+     "start": 4.5,
+     "text": "from"
+    },
+    {
+     "end": 4.738,
+     "start": 4.637,
+     "text": "the"
+    },
+    {
+     "end": 5.075,
+     "start": 4.738,
+     "text": "same"
+    },
+    {
+     "end": 5.45,
+     "start": 5.075,
+     "text": "state"
+    },
+    {
+     "end": 5.5,
+     "start": 5.45,
+     "text": ","
+    },
+    {
+     "end": 5.637,
+     "start": 5.5,
+     "text": "the"
+    },
+    {
+     "end": 5.938,
+     "start": 5.637,
+     "text": "first"
+    },
+    {
+     "end": 6.425,
+     "start": 5.938,
+     "text": "included"
+    },
+    {
+     "end": 6.863,
+     "start": 6.425,
+     "text": "spends"
+    },
+    {
+     "end": 7.075,
+     "start": 6.863,
+     "text": "it"
+    },
+    {
+     "end": 7.15,
+     "start": 7.075,
+     "text": ","
+    },
+    {
+     "end": 7.262,
+     "start": 7.15,
+     "text": "and"
+    },
+    {
+     "end": 7.35,
+     "start": 7.262,
+     "text": "the"
+    },
+    {
+     "end": 7.725,
+     "start": 7.35,
+     "text": "node"
+    },
+    {
+     "end": 8.325,
+     "start": 7.725,
+     "text": "refuses"
+    },
+    {
+     "end": 8.475,
+     "start": 8.325,
+     "text": "the"
+    },
+    {
+     "end": 9.35,
+     "start": 8.475,
+     "text": "other"
+    },
+    {
+     "end": 9.575,
+     "start": 9.35,
+     "text": "."
+    },
+    {
+     "end": 10.025,
+     "start": 9.775,
+     "text": "That"
+    },
+    {
+     "end": 10.375,
+     "start": 10.025,
+     "text": "fold"
+    },
+    {
+     "end": 10.525,
+     "start": 10.375,
+     "text": "is"
+    },
+    {
+     "end": 11.075,
+     "start": 10.525,
+     "text": "refused"
+    },
+    {
+     "end": 11.85,
+     "start": 11.075,
+     "text": "stale-state"
+    },
+    {
+     "end": 11.925,
+     "start": 11.85,
+     "text": ","
+    },
+    {
+     "end": 12.238,
+     "start": 11.925,
+     "text": "naming"
+    },
+    {
+     "end": 12.325,
+     "start": 12.238,
+     "text": "the"
+    },
+    {
+     "end": 12.625,
+     "start": 12.325,
+     "text": "state"
+    },
+    {
+     "end": 13.075,
+     "start": 12.625,
+     "text": "output"
+    },
+    {
+     "end": 13.462,
+     "start": 13.075,
+     "text": "another"
+    },
+    {
+     "end": 13.825,
+     "start": 13.462,
+     "text": "fold"
+    },
+    {
+     "end": 14.75,
+     "start": 13.825,
+     "text": "spent"
+    },
+    {
+     "end": 14.95,
+     "start": 14.75,
+     "text": ";"
+    },
+    {
+     "end": 15.363,
+     "start": 15.175,
+     "text": "its"
+    },
+    {
+     "end": 15.7,
+     "start": 15.363,
+     "text": "journal"
+    },
+    {
+     "end": 16.05,
+     "start": 15.7,
+     "text": "line"
+    },
+    {
+     "end": 16.212,
+     "start": 16.05,
+     "text": "is"
+    },
+    {
+     "end": 16.725,
+     "start": 16.212,
+     "text": "closed"
+    },
+    {
+     "end": 17.45,
+     "start": 16.725,
+     "text": "rejected"
+    },
+    {
+     "end": 17.562,
+     "start": 17.45,
+     "text": ","
+    },
+    {
+     "end": 17.975,
+     "start": 17.562,
+     "text": "nothing"
+    },
+    {
+     "end": 18.1,
+     "start": 17.975,
+     "text": "of"
+    },
+    {
+     "end": 18.263,
+     "start": 18.1,
+     "text": "it"
+    },
+    {
+     "end": 18.425,
+     "start": 18.263,
+     "text": "is"
+    },
+    {
+     "end": 18.587,
+     "start": 18.425,
+     "text": "on"
+    },
+    {
+     "end": 18.712,
+     "start": 18.587,
+     "text": "the"
+    },
+    {
+     "end": 19.225,
+     "start": 18.712,
+     "text": "chain"
+    },
+    {
+     "end": 19.3,
+     "start": 19.225,
+     "text": ","
+    },
+    {
+     "end": 19.438,
+     "start": 19.3,
+     "text": "and"
+    },
+    {
+     "end": 19.763,
+     "start": 19.438,
+     "text": "running"
+    },
+    {
+     "end": 19.85,
+     "start": 19.763,
+     "text": "it"
+    },
+    {
+     "end": 20.225,
+     "start": 19.85,
+     "text": "again"
+    },
+    {
+     "end": 20.7,
+     "start": 20.225,
+     "text": "folds"
+    },
+    {
+     "end": 21.15,
+     "start": 20.7,
+     "text": "whatever"
+    },
+    {
+     "end": 21.275,
+     "start": 21.15,
+     "text": "is"
+    },
+    {
+     "end": 21.562,
+     "start": 21.275,
+     "text": "still"
+    },
+    {
+     "end": 22.725,
+     "start": 21.562,
+     "text": "pending"
+    },
+    {
+     "end": 22.925,
+     "start": 22.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-cli-recovery/when-a-transaction-can-never-land-04": {
+   "audio_sha256": "4bee44d3b79a0294e9101960dbfe988eb28930363b0d6190d1c97fed9d4f7d5c",
    "characters": 341,
    "cost": 0.00021142,
    "duration": 22.125,
-   "index": 3,
+   "index": 4,
    "key": "2fcfdf527b105631d01328e36d963aa0bb4398cda9e095d59f7dc6533287fccf",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
@@ -78256,17 +78541,17 @@
    ]
   },
   "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-01": {
-   "audio_sha256": "c11678c2fa208ed9a857888fb743b310faf8f029c0781e7e5aa8dc0a4d384f28",
-   "characters": 476,
-   "cost": 0.00029512,
-   "duration": 35.725,
+   "audio_sha256": "73f5b1db91531c9594562546257ccf06e8bb4e23ca2f39d45eaf1f3d00737a9d",
+   "characters": 273,
+   "cost": 0.00016926,
+   "duration": 19.25,
    "index": 1,
-   "key": "2c9fa2751f7fbe7faf5f4759c278394d28b71aa956ed2a353e8adce5d19cb282",
+   "key": "1415c0396c06247fcc49ab431e7d8576b32aa1e6cb52a7bcdd28914c1cd93a75",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "the-request-a-destination-then-an-edge-index",
-   "sent_text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
-   "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
+   "sent_text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the hash of the inline datum that output must carry. An empty datum hash means a datum-less output. A request that mints nothing names no destination.",
+   "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the hash of the inline datum that output must carry. An empty datum hash means a datum-less output. A request that mints nothing names no destination.",
    "words": [
     {
      "end": 0.55,
@@ -78319,13 +78604,13 @@
      "text": ","
     },
     {
-     "end": 4.588,
-     "start": 4.5,
+     "end": 4.613,
+     "start": 4.525,
      "text": "a"
     },
     {
      "end": 4.887,
-     "start": 4.588,
+     "start": 4.613,
      "text": "pair"
     },
     {
@@ -78359,403 +78644,178 @@
      "text": "the"
     },
     {
-     "end": 6.838,
+     "end": 6.863,
      "start": 6.463,
      "text": "minted"
     },
     {
-     "end": 7.3,
-     "start": 6.838,
+     "end": 7.325,
+     "start": 6.863,
      "text": "token"
     },
     {
-     "end": 7.575,
-     "start": 7.3,
+     "end": 7.6,
+     "start": 7.325,
      "text": "must"
     },
     {
-     "end": 7.95,
-     "start": 7.575,
+     "end": 7.975,
+     "start": 7.6,
      "text": "land"
     },
     {
-     "end": 8.238,
-     "start": 7.95,
+     "end": 8.288,
+     "start": 7.975,
      "text": "at"
     },
     {
-     "end": 8.363,
-     "start": 8.238,
+     "end": 8.413,
+     "start": 8.288,
      "text": "and"
     },
     {
-     "end": 8.488,
-     "start": 8.363,
+     "end": 8.512,
+     "start": 8.413,
      "text": "the"
     },
     {
-     "end": 8.875,
-     "start": 8.488,
+     "end": 8.887,
+     "start": 8.512,
+     "text": "hash"
+    },
+    {
+     "end": 8.962,
+     "start": 8.887,
+     "text": "of"
+    },
+    {
+     "end": 9.075,
+     "start": 8.962,
+     "text": "the"
+    },
+    {
+     "end": 9.425,
+     "start": 9.075,
      "text": "inline"
     },
     {
-     "end": 9.275,
-     "start": 8.875,
+     "end": 9.825,
+     "start": 9.425,
      "text": "datum"
     },
     {
-     "end": 9.45,
-     "start": 9.275,
+     "end": 10.025,
+     "start": 9.825,
      "text": "that"
     },
     {
-     "end": 9.925,
-     "start": 9.45,
+     "end": 10.5,
+     "start": 10.025,
      "text": "output"
     },
     {
-     "end": 10.175,
-     "start": 9.925,
+     "end": 10.775,
+     "start": 10.5,
      "text": "must"
     },
     {
-     "end": 11.125,
-     "start": 10.175,
+     "end": 11.85,
+     "start": 10.775,
      "text": "carry"
     },
     {
-     "end": 11.4,
-     "start": 11.125,
-     "text": ","
+     "end": 12.1,
+     "start": 11.85,
+     "text": "."
     },
     {
-     "end": 11.688,
-     "start": 11.6,
-     "text": "as"
-    },
-    {
-     "end": 11.775,
-     "start": 11.688,
-     "text": "an"
-    },
-    {
-     "end": 12.575,
-     "start": 11.775,
-     "text": "Option"
+     "end": 12.438,
+     "start": 12.3,
+     "text": "An"
     },
     {
      "end": 12.8,
-     "start": 12.575,
-     "text": ":"
-    },
-    {
-     "end": 13.225,
-     "start": 13.0,
-     "text": "Some"
-    },
-    {
-     "end": 13.562,
-     "start": 13.225,
-     "text": "carries"
-    },
-    {
-     "end": 13.65,
-     "start": 13.562,
-     "text": "the"
-    },
-    {
-     "end": 14.0,
-     "start": 13.65,
-     "text": "datum"
-    },
-    {
-     "end": 14.6,
-     "start": 14.0,
-     "text": "itself"
-    },
-    {
-     "end": 14.712,
-     "start": 14.6,
-     "text": ","
-    },
-    {
-     "end": 14.975,
-     "start": 14.712,
-     "text": "None"
-    },
-    {
-     "end": 15.212,
-     "start": 14.975,
-     "text": "means"
-    },
-    {
-     "end": 15.275,
-     "start": 15.212,
-     "text": "a"
-    },
-    {
-     "end": 15.85,
-     "start": 15.275,
-     "text": "datum-less"
-    },
-    {
-     "end": 16.825,
-     "start": 15.85,
-     "text": "output"
-    },
-    {
-     "end": 17.025,
-     "start": 16.825,
-     "text": "."
-    },
-    {
-     "end": 17.3,
-     "start": 17.225,
-     "text": "The"
-    },
-    {
-     "end": 17.825,
-     "start": 17.3,
-     "text": "request"
-    },
-    {
-     "end": 18.225,
-     "start": 17.825,
-     "text": "carries"
-    },
-    {
-     "end": 18.362,
-     "start": 18.225,
-     "text": "the"
-    },
-    {
-     "end": 18.837,
-     "start": 18.362,
-     "text": "datum"
-    },
-    {
-     "end": 19.225,
-     "start": 18.837,
-     "text": "rather"
-    },
-    {
-     "end": 19.35,
-     "start": 19.225,
-     "text": "than"
-    },
-    {
-     "end": 19.562,
-     "start": 19.35,
-     "text": "its"
-    },
-    {
-     "end": 20.025,
-     "start": 19.562,
-     "text": "hash"
-    },
-    {
-     "end": 20.1,
-     "start": 20.025,
-     "text": "("
-    },
-    {
-     "end": 21.6,
-     "start": 20.1,
-     "text": "419"
-    },
-    {
-     "end": 21.7,
-     "start": 21.6,
-     "text": ")"
-    },
-    {
-     "end": 21.775,
-     "start": 21.7,
-     "text": ","
-    },
-    {
-     "end": 21.987,
-     "start": 21.775,
-     "text": "so"
-    },
-    {
-     "end": 22.5,
-     "start": 21.987,
-     "text": "anyone"
-    },
-    {
-     "end": 22.712,
-     "start": 22.5,
-     "text": "can"
-    },
-    {
-     "end": 22.962,
-     "start": 22.712,
-     "text": "build"
-    },
-    {
-     "end": 23.087,
-     "start": 22.962,
-     "text": "the"
-    },
-    {
-     "end": 23.5,
-     "start": 23.087,
-     "text": "fold"
-    },
-    {
-     "end": 23.663,
-     "start": 23.5,
-     "text": "from"
-    },
-    {
-     "end": 23.763,
-     "start": 23.663,
-     "text": "the"
-    },
-    {
-     "end": 24.1,
-     "start": 23.763,
-     "text": "chain"
-    },
-    {
-     "end": 25.25,
-     "start": 24.1,
-     "text": "alone"
-    },
-    {
-     "end": 25.475,
-     "start": 25.25,
-     "text": ";"
-    },
-    {
-     "end": 25.775,
-     "start": 25.675,
-     "text": "an"
-    },
-    {
-     "end": 26.275,
-     "start": 25.775,
-     "text": "approval"
-    },
-    {
-     "end": 26.55,
-     "start": 26.275,
-     "text": "still"
-    },
-    {
-     "end": 26.913,
-     "start": 26.55,
-     "text": "binds"
-    },
-    {
-     "end": 27.0,
-     "start": 26.913,
-     "text": "the"
-    },
-    {
-     "end": 27.45,
-     "start": 27.0,
-     "text": "datum"
-    },
-    {
-     "end": 27.625,
-     "start": 27.45,
-     "text": "by"
-    },
-    {
-     "end": 27.837,
-     "start": 27.625,
-     "text": "its"
-    },
-    {
-     "end": 28.725,
-     "start": 27.837,
-     "text": "BLAKE"
-    },
-    {
-     "end": 28.825,
-     "start": 28.725,
-     "text": "2"
-    },
-    {
-     "end": 30.0,
-     "start": 28.825,
-     "text": "b-256"
-    },
-    {
-     "end": 30.525,
-     "start": 30.0,
-     "text": "hash"
-    },
-    {
-     "end": 30.65,
-     "start": 30.525,
-     "text": ","
-    },
-    {
-     "end": 31.0,
-     "start": 30.65,
+     "start": 12.438,
      "text": "empty"
     },
     {
-     "end": 31.15,
-     "start": 31.0,
-     "text": "for"
+     "end": 13.175,
+     "start": 12.8,
+     "text": "datum"
     },
     {
-     "end": 32.1,
-     "start": 31.15,
-     "text": "none"
+     "end": 13.613,
+     "start": 13.175,
+     "text": "hash"
     },
     {
-     "end": 32.325,
-     "start": 32.1,
+     "end": 13.95,
+     "start": 13.613,
+     "text": "means"
+    },
+    {
+     "end": 14.062,
+     "start": 13.95,
+     "text": "a"
+    },
+    {
+     "end": 14.738,
+     "start": 14.062,
+     "text": "datum-less"
+    },
+    {
+     "end": 15.4,
+     "start": 14.738,
+     "text": "output"
+    },
+    {
+     "end": 15.512,
+     "start": 15.4,
      "text": "."
     },
     {
-     "end": 32.55,
-     "start": 32.5,
+     "end": 15.625,
+     "start": 15.512,
      "text": "A"
     },
     {
-     "end": 32.987,
-     "start": 32.55,
+     "end": 16.112,
+     "start": 15.625,
      "text": "request"
     },
     {
-     "end": 33.125,
-     "start": 32.987,
+     "end": 16.312,
+     "start": 16.112,
      "text": "that"
     },
     {
-     "end": 33.412,
-     "start": 33.125,
+     "end": 16.663,
+     "start": 16.312,
      "text": "mints"
     },
     {
-     "end": 33.825,
-     "start": 33.412,
+     "end": 17.1,
+     "start": 16.663,
      "text": "nothing"
     },
     {
-     "end": 34.1,
-     "start": 33.825,
+     "end": 17.462,
+     "start": 17.1,
      "text": "names"
     },
     {
-     "end": 34.3,
-     "start": 34.1,
+     "end": 17.7,
+     "start": 17.462,
      "text": "no"
     },
     {
-     "end": 35.55,
-     "start": 34.3,
+     "end": 19.05,
+     "start": 17.7,
      "text": "destination"
     },
     {
-     "end": 35.725,
-     "start": 35.55,
+     "end": 19.25,
+     "start": 19.05,
      "text": "."
     }
    ]
@@ -267216,17 +267276,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-02": {
-   "audio_sha256": "11a63c9659ca6ccd93c70e9da98ae46009a749c515c8bb5cc1d24000af624c6b",
-   "characters": 391,
-   "cost": 0.00024242,
-   "duration": 25.75,
+   "audio_sha256": "274459466bc09bd7619c98a6c37e60db9dcc42ab5882eefc8b8f615200de8ea8",
+   "characters": 407,
+   "cost": 0.00025234,
+   "duration": 26.2,
    "index": 2,
-   "key": "349af79161384219f8ffedffa1d261aecbe5ee3acdccf03221f229ffa8a04206",
+   "key": "aff4d268352d540bac9fd9a258414da3f44be74d855d229ac14c1a7c6b1960c9",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
-   "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
+   "sent_text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
+   "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
    "words": [
     {
      "end": 0.675,
@@ -267444,178 +267504,193 @@
      "text": "."
     },
     {
-     "end": 13.775,
-     "start": 13.675,
-     "text": "An"
+     "end": 13.7,
+     "start": 13.625,
+     "text": "The"
     },
     {
-     "end": 14.4,
-     "start": 13.775,
-     "text": "insertion's"
-    },
-    {
-     "end": 14.962,
-     "start": 14.4,
-     "text": "request"
-    },
-    {
-     "end": 15.375,
-     "start": 14.962,
-     "text": "carries"
-    },
-    {
-     "end": 15.538,
-     "start": 15.375,
-     "text": "the"
-    },
-    {
-     "end": 16.125,
-     "start": 15.538,
-     "text": "envelope"
-    },
-    {
-     "end": 16.337,
-     "start": 16.125,
-     "text": "its"
-    },
-    {
-     "end": 16.725,
-     "start": 16.337,
-     "text": "fold"
-    },
-    {
-     "end": 17.375,
-     "start": 16.725,
-     "text": "delivers"
-    },
-    {
-     "end": 17.45,
-     "start": 17.375,
-     "text": ","
-    },
-    {
-     "end": 17.625,
-     "start": 17.45,
-     "text": "so"
-    },
-    {
-     "end": 17.763,
-     "start": 17.625,
-     "text": "the"
-    },
-    {
-     "end": 18.212,
-     "start": 17.763,
-     "text": "folder"
-    },
-    {
-     "end": 18.55,
-     "start": 18.212,
-     "text": "reads"
-    },
-    {
-     "end": 18.7,
-     "start": 18.55,
-     "text": "it"
-    },
-    {
-     "end": 18.862,
-     "start": 18.7,
-     "text": "from"
-    },
-    {
-     "end": 18.95,
-     "start": 18.862,
-     "text": "the"
-    },
-    {
-     "end": 19.35,
-     "start": 18.95,
-     "text": "pending"
-    },
-    {
-     "end": 19.9,
-     "start": 19.35,
-     "text": "request"
-    },
-    {
-     "end": 20.062,
-     "start": 19.9,
-     "text": "on"
-    },
-    {
-     "end": 20.163,
-     "start": 20.062,
-     "text": "the"
-    },
-    {
-     "end": 21.275,
-     "start": 20.163,
-     "text": "chain"
-    },
-    {
-     "end": 21.475,
-     "start": 21.275,
-     "text": ";"
-    },
-    {
-     "end": 22.038,
-     "start": 21.7,
-     "text": "nothing"
-    },
-    {
-     "end": 22.125,
-     "start": 22.038,
-     "text": "the"
-    },
-    {
-     "end": 22.475,
-     "start": 22.125,
-     "text": "booking"
-    },
-    {
-     "end": 22.775,
-     "start": 22.475,
-     "text": "wrote"
-    },
-    {
-     "end": 22.925,
-     "start": 22.775,
-     "text": "to"
-    },
-    {
-     "end": 23.138,
-     "start": 22.925,
-     "text": "its"
-    },
-    {
-     "end": 23.4,
-     "start": 23.138,
-     "text": "own"
-    },
-    {
-     "end": 23.9,
-     "start": 23.4,
+     "end": 14.2,
+     "start": 13.7,
      "text": "registry"
     },
     {
-     "end": 24.487,
-     "start": 23.9,
+     "end": 14.812,
+     "start": 14.2,
      "text": "directory"
     },
     {
-     "end": 24.65,
-     "start": 24.487,
+     "end": 14.962,
+     "start": 14.812,
      "text": "is"
     },
     {
-     "end": 25.525,
-     "start": 24.65,
-     "text": "needed"
+     "end": 15.087,
+     "start": 14.962,
+     "text": "the"
     },
     {
-     "end": 25.75,
-     "start": 25.525,
+     "end": 15.4,
+     "start": 15.087,
+     "text": "shared"
+    },
+    {
+     "end": 16.175,
+     "start": 15.4,
+     "text": "state"
+    },
+    {
+     "end": 16.375,
+     "start": 16.175,
+     "text": ":"
+    },
+    {
+     "end": 16.625,
+     "start": 16.55,
+     "text": "the"
+    },
+    {
+     "end": 16.975,
+     "start": 16.625,
+     "text": "booking"
+    },
+    {
+     "end": 17.325,
+     "start": 16.975,
+     "text": "leaves"
+    },
+    {
+     "end": 17.6,
+     "start": 17.325,
+     "text": "there"
+    },
+    {
+     "end": 17.75,
+     "start": 17.6,
+     "text": "the"
+    },
+    {
+     "end": 18.237,
+     "start": 17.75,
+     "text": "envelope"
+    },
+    {
+     "end": 18.312,
+     "start": 18.237,
+     "text": "an"
+    },
+    {
+     "end": 18.9,
+     "start": 18.312,
+     "text": "insertion"
+    },
+    {
+     "end": 19.925,
+     "start": 18.9,
+     "text": "delivers"
+    },
+    {
+     "end": 20.125,
+     "start": 19.925,
+     "text": ","
+    },
+    {
+     "end": 20.413,
+     "start": 20.325,
+     "text": "and"
+    },
+    {
+     "end": 20.513,
+     "start": 20.413,
+     "text": "the"
+    },
+    {
+     "end": 20.925,
+     "start": 20.513,
+     "text": "fold"
+    },
+    {
+     "end": 21.163,
+     "start": 20.925,
+     "text": "reads"
+    },
+    {
+     "end": 21.275,
+     "start": 21.163,
+     "text": "it"
+    },
+    {
+     "end": 21.65,
+     "start": 21.275,
+     "text": "back"
+    },
+    {
+     "end": 21.788,
+     "start": 21.65,
+     "text": "and"
+    },
+    {
+     "end": 22.1,
+     "start": 21.788,
+     "text": "checks"
+    },
+    {
+     "end": 22.2,
+     "start": 22.1,
+     "text": "it"
+    },
+    {
+     "end": 22.538,
+     "start": 22.2,
+     "text": "against"
+    },
+    {
+     "end": 22.625,
+     "start": 22.538,
+     "text": "the"
+    },
+    {
+     "end": 23.05,
+     "start": 22.625,
+     "text": "hash"
+    },
+    {
+     "end": 23.15,
+     "start": 23.05,
+     "text": "the"
+    },
+    {
+     "end": 23.675,
+     "start": 23.15,
+     "text": "request"
+    },
+    {
+     "end": 24.1,
+     "start": 23.675,
+     "text": "names"
+    },
+    {
+     "end": 24.462,
+     "start": 24.1,
+     "text": "before"
+    },
+    {
+     "end": 24.575,
+     "start": 24.462,
+     "text": "it"
+    },
+    {
+     "end": 24.9,
+     "start": 24.575,
+     "text": "builds"
+    },
+    {
+     "end": 26.0,
+     "start": 24.9,
+     "text": "anything"
+    },
+    {
+     "end": 26.2,
+     "start": 26.0,
      "text": "."
     }
    ]
@@ -267836,1521 +267911,2781 @@
    ]
   },
   "docs-singular-node/booking-and-folding-04": {
-   "audio_sha256": "13a88f64b9d48c437282e12c02d5b7da3d9ab78294f0c00889e7d826feafeb2f",
-   "characters": 804,
-   "cost": 0.00049848,
-   "duration": 52.55,
+   "audio_sha256": "dad6eee1e7fed30a9f140ef3a695f359787bfcaa221b6259654cb2d1b161d481",
+   "characters": 1995,
+   "cost": 0.0012369,
+   "duration": 129.775,
    "index": 4,
-   "key": "58fa4c1ff204211b402bdca258dcca8f08378ff39800187338e1f38ea8f34764",
+   "key": "0cd6fb0c33741524c81f22a72d28fbe0d5c2bd7c20d221513186392d6cba60cb",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
-   "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+   "sent_text": "One fold settles every pending request it can, whoever booked it: Alice and Bob each book from their own wallet, and one registry fold, run by either of them or by anyone, folds both in one transaction, each delivery at its own key under its own owner's envelope. The fold takes the requests in the ledger's input order and leaves out, naming each in its receipt's excluded list with the reason, a request whose processing deadline has passed or is within thirty seconds of passing (window-closed, judged on the host's clock and named by its time, and by its slot when pinned time converts it), one whose edge is not an insertion or a termination (edge-unsupported), one whose datum is not a request (undecodable), and one the model refuses after the requests before it (refused-by-law with the model's reason: a second insertion of a key is refused-by-law key-exists, a request without its approval refused-by-law no-approval). Its receipt lists every request it folded, with its key, edge, owner, deadline and what it delivered or released, and the transaction's roots; its validity bound is the earliest deadline among them. Before anything is signed the command refuses, naming the reason: nothing to fold (nothing-to-fold, naming every request left out); a request named by --request that the fold does not take, with why; an insertion whose envelope is not in the registry directory or is not the one the request names; the outlay past --max-outlay; a funding output that is not the wallet's; a built fold that spends anything but the registry's state and exactly the requests it takes, or pays an owner less than its releases owe. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. A fold the node refuses because another fold spent the registry's state output first is refused stale-state: nothing of it is on the chain, its journal is closed, and running it again folds whatever is still pending.",
+   "text": "One fold settles every pending request it can, whoever booked it: Alice and Bob each book from their own wallet, and one registry fold, run by either of them or by anyone, folds both in one transaction, each delivery at its own key under its own owner's envelope. The fold takes the requests in the ledger's input order and leaves out, naming each in its receipt's excluded list with the reason, a request whose processing deadline has passed or is within thirty seconds of passing (window-closed, judged on the host's clock and named by its time, and by its slot when pinned time converts it), one whose edge is not an insertion or a termination (edge-unsupported), one whose datum is not a request (undecodable), and one the model refuses after the requests before it (refused-by-law with the model's reason: a second insertion of a key is refused-by-law key-exists, a request without its approval refused-by-law no-approval). Its receipt lists every request it folded, with its key, edge, owner, deadline and what it delivered or released, and the transaction's roots; its validity bound is the earliest deadline among them. Before anything is signed the command refuses, naming the reason: nothing to fold (nothing-to-fold, naming every request left out); a request named by --request that the fold does not take, with why; an insertion whose envelope is not in the registry directory or is not the one the request names; the outlay past --max-outlay; a funding output that is not the wallet's; a built fold that spends anything but the registry's state and exactly the requests it takes, or pays an owner less than its releases owe. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending. A fold the node refuses because another fold spent the registry's state output first is refused stale-state: nothing of it is on the chain, its journal is closed, and running it again folds whatever is still pending.",
    "words": [
     {
-     "end": 0.3,
+     "end": 0.438,
      "start": 0.2,
-     "text": "The"
+     "text": "One"
     },
     {
-     "end": 0.938,
-     "start": 0.3,
-     "text": "registry's"
-    },
-    {
-     "end": 1.35,
-     "start": 0.938,
+     "end": 0.8,
+     "start": 0.438,
      "text": "fold"
     },
     {
-     "end": 1.638,
-     "start": 1.35,
-     "text": "takes"
+     "end": 1.237,
+     "start": 0.8,
+     "text": "settles"
     },
     {
-     "end": 1.987,
-     "start": 1.638,
+     "end": 1.575,
+     "start": 1.237,
      "text": "every"
     },
     {
-     "end": 2.4,
-     "start": 1.987,
+     "end": 1.95,
+     "start": 1.575,
      "text": "pending"
     },
     {
-     "end": 3.025,
-     "start": 2.4,
+     "end": 2.338,
+     "start": 1.95,
      "text": "request"
     },
     {
-     "end": 3.1,
-     "start": 3.025,
-     "text": ","
-    },
-    {
-     "end": 3.275,
-     "start": 3.1,
-     "text": "so"
-    },
-    {
-     "end": 3.4,
-     "start": 3.275,
-     "text": "a"
-    },
-    {
-     "end": 3.825,
-     "start": 3.4,
-     "text": "fold"
-    },
-    {
-     "end": 3.975,
-     "start": 3.825,
-     "text": "is"
-    },
-    {
-     "end": 4.262,
-     "start": 3.975,
-     "text": "built"
-    },
-    {
-     "end": 4.65,
-     "start": 4.262,
-     "text": "only"
-    },
-    {
-     "end": 4.875,
-     "start": 4.65,
-     "text": "while"
-    },
-    {
-     "end": 5.475,
-     "start": 4.875,
-     "text": "exactly"
-    },
-    {
-     "end": 5.675,
-     "start": 5.475,
-     "text": "one"
-    },
-    {
-     "end": 5.838,
-     "start": 5.675,
-     "text": "is"
-    },
-    {
-     "end": 6.95,
-     "start": 5.838,
-     "text": "pending"
-    },
-    {
-     "end": 7.15,
-     "start": 6.95,
-     "text": "."
-    },
-    {
-     "end": 7.675,
-     "start": 7.325,
-     "text": "Before"
-    },
-    {
-     "end": 8.175,
-     "start": 7.675,
-     "text": "anything"
-    },
-    {
-     "end": 8.312,
-     "start": 8.175,
-     "text": "is"
-    },
-    {
-     "end": 8.637,
-     "start": 8.312,
-     "text": "signed"
-    },
-    {
-     "end": 8.725,
-     "start": 8.637,
-     "text": "the"
-    },
-    {
-     "end": 9.113,
-     "start": 8.725,
-     "text": "command"
-    },
-    {
-     "end": 9.8,
-     "start": 9.113,
-     "text": "refuses"
-    },
-    {
-     "end": 9.875,
-     "start": 9.8,
-     "text": ","
-    },
-    {
-     "end": 10.212,
-     "start": 9.875,
-     "text": "naming"
-    },
-    {
-     "end": 10.3,
-     "start": 10.212,
-     "text": "the"
-    },
-    {
-     "end": 10.825,
-     "start": 10.3,
-     "text": "reason"
-    },
-    {
-     "end": 10.938,
-     "start": 10.825,
-     "text": ":"
-    },
-    {
-     "end": 11.325,
-     "start": 10.938,
-     "text": "nothing"
-    },
-    {
-     "end": 12.35,
-     "start": 11.325,
-     "text": "pending"
-    },
-    {
-     "end": 12.55,
-     "start": 12.35,
-     "text": ";"
-    },
-    {
-     "end": 12.8,
-     "start": 12.725,
-     "text": "the"
-    },
-    {
-     "end": 13.25,
-     "start": 12.8,
-     "text": "request"
-    },
-    {
-     "end": 13.5,
-     "start": 13.25,
-     "text": "named"
-    },
-    {
-     "end": 13.688,
-     "start": 13.5,
-     "text": "by"
-    },
-    {
-     "end": 13.725,
-     "start": 13.688,
-     "text": "--"
-    },
-    {
-     "end": 14.312,
-     "start": 13.725,
-     "text": "request"
-    },
-    {
-     "end": 14.475,
-     "start": 14.312,
-     "text": "is"
-    },
-    {
-     "end": 14.712,
-     "start": 14.475,
-     "text": "not"
-    },
-    {
-     "end": 14.8,
-     "start": 14.712,
-     "text": "the"
-    },
-    {
-     "end": 15.05,
-     "start": 14.8,
-     "text": "one"
-    },
-    {
-     "end": 16.025,
-     "start": 15.05,
-     "text": "pending"
-    },
-    {
-     "end": 16.225,
-     "start": 16.025,
-     "text": ";"
-    },
-    {
-     "end": 16.65,
-     "start": 16.45,
-     "text": "more"
-    },
-    {
-     "end": 16.825,
-     "start": 16.65,
-     "text": "than"
-    },
-    {
-     "end": 17.087,
-     "start": 16.825,
-     "text": "one"
-    },
-    {
-     "end": 17.6,
-     "start": 17.087,
-     "text": "pending"
-    },
-    {
-     "end": 17.675,
-     "start": 17.6,
-     "text": ","
-    },
-    {
-     "end": 17.962,
-     "start": 17.675,
-     "text": "each"
-    },
-    {
-     "end": 18.525,
-     "start": 17.962,
-     "text": "named"
-    },
-    {
-     "end": 18.625,
-     "start": 18.525,
-     "text": ";"
-    },
-    {
-     "end": 18.725,
-     "start": 18.625,
-     "text": "an"
-    },
-    {
-     "end": 19.35,
-     "start": 18.725,
-     "text": "insertion"
-    },
-    {
-     "end": 19.575,
-     "start": 19.35,
-     "text": "whose"
-    },
-    {
-     "end": 20.1,
-     "start": 19.575,
-     "text": "request"
-    },
-    {
-     "end": 20.513,
-     "start": 20.1,
-     "text": "carries"
-    },
-    {
-     "end": 20.775,
-     "start": 20.513,
-     "text": "no"
-    },
-    {
-     "end": 21.325,
-     "start": 20.775,
-     "text": "envelope"
-    },
-    {
-     "end": 21.375,
-     "start": 21.325,
-     "text": ","
-    },
-    {
-     "end": 21.538,
-     "start": 21.375,
-     "text": "or"
-    },
-    {
-     "end": 22.025,
-     "start": 21.538,
-     "text": "something"
-    },
-    {
-     "end": 22.175,
-     "start": 22.025,
-     "text": "that"
-    },
-    {
-     "end": 22.325,
-     "start": 22.175,
-     "text": "is"
-    },
-    {
-     "end": 22.575,
-     "start": 22.325,
-     "text": "not"
-    },
-    {
-     "end": 23.5,
-     "start": 22.575,
-     "text": "one"
-    },
-    {
-     "end": 23.725,
-     "start": 23.5,
-     "text": ";"
-    },
-    {
-     "end": 24.025,
-     "start": 23.925,
-     "text": "an"
-    },
-    {
-     "end": 24.225,
-     "start": 24.025,
-     "text": "edge"
-    },
-    {
-     "end": 24.525,
-     "start": 24.225,
-     "text": "other"
-    },
-    {
-     "end": 24.638,
-     "start": 24.525,
-     "text": "than"
-    },
-    {
-     "end": 24.725,
-     "start": 24.638,
-     "text": "an"
-    },
-    {
-     "end": 25.462,
-     "start": 24.725,
-     "text": "insertion"
-    },
-    {
-     "end": 25.587,
-     "start": 25.462,
-     "text": "or"
-    },
-    {
-     "end": 25.675,
-     "start": 25.587,
-     "text": "a"
-    },
-    {
-     "end": 26.525,
-     "start": 25.675,
-     "text": "termination"
-    },
-    {
-     "end": 26.625,
-     "start": 26.525,
-     "text": ";"
-    },
-    {
-     "end": 26.775,
-     "start": 26.625,
-     "text": "the"
-    },
-    {
-     "end": 27.188,
-     "start": 26.775,
-     "text": "outlay"
-    },
-    {
-     "end": 27.55,
-     "start": 27.188,
-     "text": "past"
-    },
-    {
-     "end": 28.775,
-     "start": 27.55,
-     "text": "--max-outlay"
-    },
-    {
-     "end": 29.05,
-     "start": 28.775,
-     "text": ";"
-    },
-    {
-     "end": 29.312,
-     "start": 29.225,
-     "text": "a"
-    },
-    {
-     "end": 29.7,
-     "start": 29.312,
-     "text": "funding"
-    },
-    {
-     "end": 30.1,
-     "start": 29.7,
-     "text": "output"
-    },
-    {
-     "end": 30.237,
-     "start": 30.1,
-     "text": "that"
-    },
-    {
-     "end": 30.375,
-     "start": 30.237,
-     "text": "is"
-    },
-    {
-     "end": 30.587,
-     "start": 30.375,
-     "text": "not"
-    },
-    {
-     "end": 30.675,
-     "start": 30.587,
-     "text": "the"
-    },
-    {
-     "end": 31.6,
-     "start": 30.675,
-     "text": "wallet's"
-    },
-    {
-     "end": 31.775,
-     "start": 31.6,
-     "text": ";"
-    },
-    {
-     "end": 32.062,
-     "start": 31.975,
-     "text": "and"
-    },
-    {
-     "end": 32.125,
-     "start": 32.062,
-     "text": "a"
-    },
-    {
-     "end": 32.625,
-     "start": 32.125,
-     "text": "request"
-    },
-    {
-     "end": 32.825,
-     "start": 32.625,
-     "text": "whose"
-    },
-    {
-     "end": 33.425,
-     "start": 32.825,
-     "text": "processing"
-    },
-    {
-     "end": 33.862,
-     "start": 33.425,
-     "text": "deadline"
-    },
-    {
-     "end": 34.037,
-     "start": 33.862,
-     "text": "has"
-    },
-    {
-     "end": 34.662,
-     "start": 34.037,
-     "text": "passed"
-    },
-    {
-     "end": 34.987,
-     "start": 34.662,
-     "text": "or"
-    },
-    {
-     "end": 35.15,
-     "start": 34.987,
-     "text": "is"
-    },
-    {
-     "end": 35.525,
-     "start": 35.15,
-     "text": "within"
-    },
-    {
-     "end": 35.888,
-     "start": 35.525,
-     "text": "thirty"
-    },
-    {
-     "end": 36.237,
-     "start": 35.888,
-     "text": "seconds"
-    },
-    {
-     "end": 36.325,
-     "start": 36.237,
-     "text": "of"
-    },
-    {
-     "end": 37.4,
-     "start": 36.325,
-     "text": "passing"
-    },
-    {
-     "end": 37.6,
-     "start": 37.4,
-     "text": ","
-    },
-    {
-     "end": 38.037,
-     "start": 37.8,
-     "text": "judged"
-    },
-    {
-     "end": 38.138,
-     "start": 38.037,
-     "text": "on"
-    },
-    {
-     "end": 38.225,
-     "start": 38.138,
-     "text": "the"
-    },
-    {
-     "end": 38.525,
-     "start": 38.225,
-     "text": "host's"
-    },
-    {
-     "end": 38.9,
-     "start": 38.525,
-     "text": "clock"
-    },
-    {
-     "end": 39.013,
-     "start": 38.9,
-     "text": "and"
-    },
-    {
-     "end": 39.275,
-     "start": 39.013,
-     "text": "named"
-    },
-    {
-     "end": 39.45,
-     "start": 39.275,
-     "text": "by"
-    },
-    {
-     "end": 39.65,
-     "start": 39.45,
-     "text": "its"
-    },
-    {
-     "end": 40.475,
-     "start": 39.65,
-     "text": "time"
-    },
-    {
-     "end": 40.675,
-     "start": 40.475,
-     "text": ","
-    },
-    {
-     "end": 40.938,
-     "start": 40.85,
-     "text": "and"
-    },
-    {
-     "end": 41.062,
-     "start": 40.938,
-     "text": "by"
-    },
-    {
-     "end": 41.175,
-     "start": 41.062,
-     "text": "its"
-    },
-    {
-     "end": 41.463,
-     "start": 41.175,
-     "text": "slot"
-    },
-    {
-     "end": 41.6,
-     "start": 41.463,
-     "text": "when"
-    },
-    {
-     "end": 41.875,
-     "start": 41.6,
-     "text": "pinned"
-    },
-    {
-     "end": 42.15,
-     "start": 41.875,
-     "text": "time"
-    },
-    {
-     "end": 42.688,
-     "start": 42.15,
-     "text": "converts"
-    },
-    {
-     "end": 43.275,
-     "start": 42.688,
+     "end": 2.425,
+     "start": 2.338,
      "text": "it"
     },
     {
-     "end": 43.475,
-     "start": 43.275,
-     "text": "."
+     "end": 2.825,
+     "start": 2.425,
+     "text": "can"
     },
     {
-     "end": 43.875,
-     "start": 43.675,
-     "text": "Run"
+     "end": 2.925,
+     "start": 2.825,
+     "text": ","
     },
     {
-     "end": 44.138,
-     "start": 43.875,
-     "text": "after"
+     "end": 3.3,
+     "start": 2.925,
+     "text": "whoever"
     },
     {
-     "end": 44.25,
-     "start": 44.138,
-     "text": "its"
+     "end": 3.612,
+     "start": 3.3,
+     "text": "booked"
     },
     {
-     "end": 44.425,
-     "start": 44.25,
+     "end": 4.3,
+     "start": 3.612,
+     "text": "it"
+    },
+    {
+     "end": 4.5,
+     "start": 4.3,
+     "text": ":"
+    },
+    {
+     "end": 5.05,
+     "start": 4.7,
+     "text": "Alice"
+    },
+    {
+     "end": 5.175,
+     "start": 5.05,
+     "text": "and"
+    },
+    {
+     "end": 5.45,
+     "start": 5.175,
+     "text": "Bob"
+    },
+    {
+     "end": 5.675,
+     "start": 5.45,
+     "text": "each"
+    },
+    {
+     "end": 5.9,
+     "start": 5.675,
+     "text": "book"
+    },
+    {
+     "end": 6.037,
+     "start": 5.9,
+     "text": "from"
+    },
+    {
+     "end": 6.2,
+     "start": 6.037,
+     "text": "their"
+    },
+    {
+     "end": 6.425,
+     "start": 6.2,
      "text": "own"
     },
     {
-     "end": 44.725,
-     "start": 44.425,
-     "text": "booking"
+     "end": 6.875,
+     "start": 6.425,
+     "text": "wallet"
     },
     {
-     "end": 44.912,
-     "start": 44.725,
-     "text": "by"
-    },
-    {
-     "end": 45.725,
-     "start": 44.912,
-     "text": "--fold"
-    },
-    {
-     "end": 45.925,
-     "start": 45.725,
+     "end": 6.95,
+     "start": 6.875,
      "text": ","
     },
     {
-     "end": 46.213,
-     "start": 46.125,
-     "text": "a"
+     "end": 7.075,
+     "start": 6.95,
+     "text": "and"
     },
     {
-     "end": 46.562,
-     "start": 46.213,
+     "end": 7.325,
+     "start": 7.075,
+     "text": "one"
+    },
+    {
+     "end": 7.812,
+     "start": 7.325,
+     "text": "registry"
+    },
+    {
+     "end": 8.75,
+     "start": 7.812,
      "text": "fold"
     },
     {
-     "end": 46.7,
-     "start": 46.562,
-     "text": "that"
-    },
-    {
-     "end": 47.037,
-     "start": 46.7,
-     "text": "cannot"
-    },
-    {
-     "end": 47.175,
-     "start": 47.037,
-     "text": "be"
-    },
-    {
-     "end": 47.475,
-     "start": 47.175,
-     "text": "built"
-    },
-    {
-     "end": 47.638,
-     "start": 47.475,
-     "text": "or"
-    },
-    {
-     "end": 48.112,
-     "start": 47.638,
-     "text": "signed"
-    },
-    {
-     "end": 48.487,
-     "start": 48.112,
-     "text": "stops"
-    },
-    {
-     "end": 48.575,
-     "start": 48.487,
-     "text": "the"
-    },
-    {
-     "end": 48.95,
-     "start": 48.575,
-     "text": "command"
-    },
-    {
-     "end": 49.925,
-     "start": 48.95,
-     "text": "partial"
-    },
-    {
-     "end": 50.125,
-     "start": 49.925,
+     "end": 8.975,
+     "start": 8.75,
      "text": ","
     },
     {
-     "end": 50.588,
-     "start": 50.325,
-     "text": "naming"
+     "end": 9.4,
+     "start": 9.175,
+     "text": "run"
     },
     {
-     "end": 50.662,
-     "start": 50.588,
+     "end": 9.587,
+     "start": 9.4,
+     "text": "by"
+    },
+    {
+     "end": 9.863,
+     "start": 9.587,
+     "text": "either"
+    },
+    {
+     "end": 9.975,
+     "start": 9.863,
+     "text": "of"
+    },
+    {
+     "end": 10.225,
+     "start": 9.975,
+     "text": "them"
+    },
+    {
+     "end": 10.35,
+     "start": 10.225,
+     "text": "or"
+    },
+    {
+     "end": 10.525,
+     "start": 10.35,
+     "text": "by"
+    },
+    {
+     "end": 11.05,
+     "start": 10.525,
+     "text": "anyone"
+    },
+    {
+     "end": 11.163,
+     "start": 11.05,
+     "text": ","
+    },
+    {
+     "end": 11.525,
+     "start": 11.163,
+     "text": "folds"
+    },
+    {
+     "end": 11.825,
+     "start": 11.525,
+     "text": "both"
+    },
+    {
+     "end": 11.975,
+     "start": 11.825,
+     "text": "in"
+    },
+    {
+     "end": 12.2,
+     "start": 11.975,
+     "text": "one"
+    },
+    {
+     "end": 13.45,
+     "start": 12.2,
+     "text": "transaction"
+    },
+    {
+     "end": 13.65,
+     "start": 13.45,
+     "text": ","
+    },
+    {
+     "end": 14.05,
+     "start": 13.85,
+     "text": "each"
+    },
+    {
+     "end": 14.575,
+     "start": 14.05,
+     "text": "delivery"
+    },
+    {
+     "end": 14.663,
+     "start": 14.575,
+     "text": "at"
+    },
+    {
+     "end": 14.775,
+     "start": 14.663,
+     "text": "its"
+    },
+    {
+     "end": 15.038,
+     "start": 14.775,
+     "text": "own"
+    },
+    {
+     "end": 15.438,
+     "start": 15.038,
+     "text": "key"
+    },
+    {
+     "end": 15.663,
+     "start": 15.438,
+     "text": "under"
+    },
+    {
+     "end": 15.775,
+     "start": 15.663,
+     "text": "its"
+    },
+    {
+     "end": 16.0,
+     "start": 15.775,
+     "text": "own"
+    },
+    {
+     "end": 16.375,
+     "start": 16.0,
+     "text": "owner's"
+    },
+    {
+     "end": 17.35,
+     "start": 16.375,
+     "text": "envelope"
+    },
+    {
+     "end": 17.575,
+     "start": 17.35,
+     "text": "."
+    },
+    {
+     "end": 17.862,
+     "start": 17.75,
+     "text": "The"
+    },
+    {
+     "end": 18.25,
+     "start": 17.862,
+     "text": "fold"
+    },
+    {
+     "end": 18.538,
+     "start": 18.25,
+     "text": "takes"
+    },
+    {
+     "end": 18.625,
+     "start": 18.538,
      "text": "the"
     },
     {
-     "end": 51.037,
-     "start": 50.662,
+     "end": 19.2,
+     "start": 18.625,
+     "text": "requests"
+    },
+    {
+     "end": 19.288,
+     "start": 19.2,
+     "text": "in"
+    },
+    {
+     "end": 19.375,
+     "start": 19.288,
+     "text": "the"
+    },
+    {
+     "end": 19.75,
+     "start": 19.375,
+     "text": "ledger's"
+    },
+    {
+     "end": 20.125,
+     "start": 19.75,
+     "text": "input"
+    },
+    {
+     "end": 20.513,
+     "start": 20.125,
+     "text": "order"
+    },
+    {
+     "end": 20.65,
+     "start": 20.513,
+     "text": "and"
+    },
+    {
+     "end": 20.975,
+     "start": 20.65,
+     "text": "leaves"
+    },
+    {
+     "end": 21.75,
+     "start": 20.975,
+     "text": "out"
+    },
+    {
+     "end": 21.95,
+     "start": 21.75,
+     "text": ","
+    },
+    {
+     "end": 22.475,
+     "start": 22.15,
+     "text": "naming"
+    },
+    {
+     "end": 22.688,
+     "start": 22.475,
+     "text": "each"
+    },
+    {
+     "end": 22.763,
+     "start": 22.688,
+     "text": "in"
+    },
+    {
+     "end": 22.875,
+     "start": 22.763,
+     "text": "its"
+    },
+    {
+     "end": 23.388,
+     "start": 22.875,
+     "text": "receipt's"
+    },
+    {
+     "end": 23.975,
+     "start": 23.388,
+     "text": "excluded"
+    },
+    {
+     "end": 24.237,
+     "start": 23.975,
+     "text": "list"
+    },
+    {
+     "end": 24.362,
+     "start": 24.237,
+     "text": "with"
+    },
+    {
+     "end": 24.45,
+     "start": 24.362,
+     "text": "the"
+    },
+    {
+     "end": 25.425,
+     "start": 24.45,
+     "text": "reason"
+    },
+    {
+     "end": 25.625,
+     "start": 25.425,
+     "text": ","
+    },
+    {
+     "end": 25.9,
+     "start": 25.825,
+     "text": "a"
+    },
+    {
+     "end": 26.388,
+     "start": 25.9,
      "text": "request"
     },
     {
-     "end": 51.162,
-     "start": 51.037,
+     "end": 26.575,
+     "start": 26.388,
+     "text": "whose"
+    },
+    {
+     "end": 27.175,
+     "start": 26.575,
+     "text": "processing"
+    },
+    {
+     "end": 27.612,
+     "start": 27.175,
+     "text": "deadline"
+    },
+    {
+     "end": 27.788,
+     "start": 27.612,
+     "text": "has"
+    },
+    {
+     "end": 28.462,
+     "start": 27.788,
+     "text": "passed"
+    },
+    {
+     "end": 28.763,
+     "start": 28.462,
+     "text": "or"
+    },
+    {
+     "end": 28.925,
+     "start": 28.763,
+     "text": "is"
+    },
+    {
+     "end": 29.288,
+     "start": 28.925,
+     "text": "within"
+    },
+    {
+     "end": 29.688,
+     "start": 29.288,
+     "text": "thirty"
+    },
+    {
+     "end": 30.062,
+     "start": 29.688,
+     "text": "seconds"
+    },
+    {
+     "end": 30.163,
+     "start": 30.062,
+     "text": "of"
+    },
+    {
+     "end": 30.725,
+     "start": 30.163,
+     "text": "passing"
+    },
+    {
+     "end": 30.775,
+     "start": 30.725,
+     "text": "("
+    },
+    {
+     "end": 32.175,
+     "start": 30.775,
+     "text": "window-closed"
+    },
+    {
+     "end": 32.4,
+     "start": 32.175,
+     "text": ","
+    },
+    {
+     "end": 32.838,
+     "start": 32.6,
+     "text": "judged"
+    },
+    {
+     "end": 32.938,
+     "start": 32.838,
+     "text": "on"
+    },
+    {
+     "end": 33.025,
+     "start": 32.938,
+     "text": "the"
+    },
+    {
+     "end": 33.325,
+     "start": 33.025,
+     "text": "host's"
+    },
+    {
+     "end": 33.7,
+     "start": 33.325,
+     "text": "clock"
+    },
+    {
+     "end": 33.812,
+     "start": 33.7,
+     "text": "and"
+    },
+    {
+     "end": 34.075,
+     "start": 33.812,
+     "text": "named"
+    },
+    {
+     "end": 34.25,
+     "start": 34.075,
+     "text": "by"
+    },
+    {
+     "end": 34.45,
+     "start": 34.25,
+     "text": "its"
+    },
+    {
+     "end": 35.275,
+     "start": 34.45,
+     "text": "time"
+    },
+    {
+     "end": 35.475,
+     "start": 35.275,
+     "text": ","
+    },
+    {
+     "end": 35.737,
+     "start": 35.65,
+     "text": "and"
+    },
+    {
+     "end": 35.862,
+     "start": 35.737,
+     "text": "by"
+    },
+    {
+     "end": 35.975,
+     "start": 35.862,
+     "text": "its"
+    },
+    {
+     "end": 36.263,
+     "start": 35.975,
+     "text": "slot"
+    },
+    {
+     "end": 36.4,
+     "start": 36.263,
+     "text": "when"
+    },
+    {
+     "end": 36.675,
+     "start": 36.4,
+     "text": "pinned"
+    },
+    {
+     "end": 36.95,
+     "start": 36.675,
+     "text": "time"
+    },
+    {
+     "end": 37.487,
+     "start": 36.95,
+     "text": "converts"
+    },
+    {
+     "end": 38.05,
+     "start": 37.487,
+     "text": "it"
+    },
+    {
+     "end": 38.25,
+     "start": 38.05,
+     "text": ")"
+    },
+    {
+     "end": 38.3,
+     "start": 38.25,
+     "text": ","
+    },
+    {
+     "end": 38.725,
+     "start": 38.5,
+     "text": "one"
+    },
+    {
+     "end": 38.987,
+     "start": 38.725,
+     "text": "whose"
+    },
+    {
+     "end": 39.3,
+     "start": 38.987,
+     "text": "edge"
+    },
+    {
+     "end": 39.45,
+     "start": 39.3,
+     "text": "is"
+    },
+    {
+     "end": 39.688,
+     "start": 39.45,
+     "text": "not"
+    },
+    {
+     "end": 39.763,
+     "start": 39.688,
+     "text": "an"
+    },
+    {
+     "end": 40.463,
+     "start": 39.763,
+     "text": "insertion"
+    },
+    {
+     "end": 40.6,
+     "start": 40.463,
+     "text": "or"
+    },
+    {
+     "end": 40.7,
+     "start": 40.6,
+     "text": "a"
+    },
+    {
+     "end": 41.562,
+     "start": 40.7,
+     "text": "termination"
+    },
+    {
+     "end": 41.625,
+     "start": 41.562,
+     "text": "("
+    },
+    {
+     "end": 42.85,
+     "start": 41.625,
+     "text": "edge-unsupported"
+    },
+    {
+     "end": 43.075,
+     "start": 42.85,
+     "text": ")"
+    },
+    {
+     "end": 43.125,
+     "start": 43.075,
+     "text": ","
+    },
+    {
+     "end": 43.55,
+     "start": 43.325,
+     "text": "one"
+    },
+    {
+     "end": 43.775,
+     "start": 43.55,
+     "text": "whose"
+    },
+    {
+     "end": 44.175,
+     "start": 43.775,
+     "text": "datum"
+    },
+    {
+     "end": 44.325,
+     "start": 44.175,
+     "text": "is"
+    },
+    {
+     "end": 44.537,
+     "start": 44.325,
+     "text": "not"
+    },
+    {
+     "end": 44.588,
+     "start": 44.537,
+     "text": "a"
+    },
+    {
+     "end": 45.037,
+     "start": 44.588,
+     "text": "request"
+    },
+    {
+     "end": 45.075,
+     "start": 45.037,
+     "text": "("
+    },
+    {
+     "end": 46.225,
+     "start": 45.075,
+     "text": "undecodable"
+    },
+    {
+     "end": 46.425,
+     "start": 46.225,
+     "text": ")"
+    },
+    {
+     "end": 46.475,
+     "start": 46.425,
+     "text": ","
+    },
+    {
+     "end": 46.812,
+     "start": 46.675,
+     "text": "and"
+    },
+    {
+     "end": 47.175,
+     "start": 46.812,
+     "text": "one"
+    },
+    {
+     "end": 47.275,
+     "start": 47.175,
+     "text": "the"
+    },
+    {
+     "end": 47.65,
+     "start": 47.275,
+     "text": "model"
+    },
+    {
+     "end": 48.338,
+     "start": 47.65,
+     "text": "refuses"
+    },
+    {
+     "end": 48.638,
+     "start": 48.338,
+     "text": "after"
+    },
+    {
+     "end": 48.725,
+     "start": 48.638,
+     "text": "the"
+    },
+    {
+     "end": 49.3,
+     "start": 48.725,
+     "text": "requests"
+    },
+    {
+     "end": 49.75,
+     "start": 49.3,
+     "text": "before"
+    },
+    {
+     "end": 49.925,
+     "start": 49.75,
+     "text": "it"
+    },
+    {
+     "end": 49.975,
+     "start": 49.925,
+     "text": "("
+    },
+    {
+     "end": 50.925,
+     "start": 49.975,
+     "text": "refused-by-law"
+    },
+    {
+     "end": 51.062,
+     "start": 50.925,
+     "text": "with"
+    },
+    {
+     "end": 51.15,
+     "start": 51.062,
+     "text": "the"
+    },
+    {
+     "end": 51.575,
+     "start": 51.15,
+     "text": "model's"
+    },
+    {
+     "end": 52.6,
+     "start": 51.575,
+     "text": "reason"
+    },
+    {
+     "end": 52.825,
+     "start": 52.6,
+     "text": ":"
+    },
+    {
+     "end": 53.138,
+     "start": 53.05,
+     "text": "a"
+    },
+    {
+     "end": 53.475,
+     "start": 53.138,
+     "text": "second"
+    },
+    {
+     "end": 54.013,
+     "start": 53.475,
+     "text": "insertion"
+    },
+    {
+     "end": 54.088,
+     "start": 54.013,
+     "text": "of"
+    },
+    {
+     "end": 54.188,
+     "start": 54.088,
+     "text": "a"
+    },
+    {
+     "end": 54.6,
+     "start": 54.188,
+     "text": "key"
+    },
+    {
+     "end": 54.775,
+     "start": 54.6,
+     "text": "is"
+    },
+    {
+     "end": 55.737,
+     "start": 54.775,
+     "text": "refused-by-law"
+    },
+    {
+     "end": 56.575,
+     "start": 55.737,
+     "text": "key-exists"
+    },
+    {
+     "end": 56.65,
+     "start": 56.575,
+     "text": ","
+    },
+    {
+     "end": 56.75,
+     "start": 56.65,
+     "text": "a"
+    },
+    {
+     "end": 57.275,
+     "start": 56.75,
+     "text": "request"
+    },
+    {
+     "end": 57.588,
+     "start": 57.275,
+     "text": "without"
+    },
+    {
+     "end": 57.75,
+     "start": 57.588,
+     "text": "its"
+    },
+    {
+     "end": 58.3,
+     "start": 57.75,
+     "text": "approval"
+    },
+    {
+     "end": 59.25,
+     "start": 58.3,
+     "text": "refused-by-law"
+    },
+    {
+     "end": 60.6,
+     "start": 59.25,
+     "text": "no-approval"
+    },
+    {
+     "end": 60.85,
+     "start": 60.6,
+     "text": ")"
+    },
+    {
+     "end": 60.9,
+     "start": 60.85,
+     "text": "."
+    },
+    {
+     "end": 61.225,
+     "start": 61.075,
+     "text": "Its"
+    },
+    {
+     "end": 61.6,
+     "start": 61.225,
+     "text": "receipt"
+    },
+    {
+     "end": 61.912,
+     "start": 61.6,
+     "text": "lists"
+    },
+    {
+     "end": 62.225,
+     "start": 61.912,
+     "text": "every"
+    },
+    {
+     "end": 62.638,
+     "start": 62.225,
+     "text": "request"
+    },
+    {
+     "end": 62.725,
+     "start": 62.638,
+     "text": "it"
+    },
+    {
+     "end": 63.2,
+     "start": 62.725,
+     "text": "folded"
+    },
+    {
+     "end": 63.275,
+     "start": 63.2,
+     "text": ","
+    },
+    {
+     "end": 63.412,
+     "start": 63.275,
+     "text": "with"
+    },
+    {
+     "end": 63.612,
+     "start": 63.412,
+     "text": "its"
+    },
+    {
+     "end": 63.925,
+     "start": 63.612,
+     "text": "key"
+    },
+    {
+     "end": 64.0,
+     "start": 63.925,
+     "text": ","
+    },
+    {
+     "end": 64.275,
+     "start": 64.0,
+     "text": "edge"
+    },
+    {
+     "end": 64.35,
+     "start": 64.275,
+     "text": ","
+    },
+    {
+     "end": 65.2,
+     "start": 64.35,
+     "text": "owner"
+    },
+    {
+     "end": 65.45,
+     "start": 65.2,
+     "text": ","
+    },
+    {
+     "end": 66.188,
+     "start": 65.65,
+     "text": "deadline"
+    },
+    {
+     "end": 66.325,
+     "start": 66.188,
+     "text": "and"
+    },
+    {
+     "end": 66.463,
+     "start": 66.325,
+     "text": "what"
+    },
+    {
+     "end": 66.55,
+     "start": 66.463,
+     "text": "it"
+    },
+    {
+     "end": 67.05,
+     "start": 66.55,
+     "text": "delivered"
+    },
+    {
+     "end": 67.2,
+     "start": 67.05,
+     "text": "or"
+    },
+    {
+     "end": 67.775,
+     "start": 67.2,
+     "text": "released"
+    },
+    {
+     "end": 67.85,
+     "start": 67.775,
+     "text": ","
+    },
+    {
+     "end": 67.963,
+     "start": 67.85,
+     "text": "and"
+    },
+    {
+     "end": 68.05,
+     "start": 67.963,
+     "text": "the"
+    },
+    {
+     "end": 68.787,
+     "start": 68.05,
+     "text": "transaction's"
+    },
+    {
+     "end": 69.675,
+     "start": 68.787,
+     "text": "roots"
+    },
+    {
+     "end": 69.875,
+     "start": 69.675,
+     "text": ";"
+    },
+    {
+     "end": 70.188,
+     "start": 70.075,
+     "text": "its"
+    },
+    {
+     "end": 70.6,
+     "start": 70.188,
+     "text": "validity"
+    },
+    {
+     "end": 71.062,
+     "start": 70.6,
+     "text": "bound"
+    },
+    {
+     "end": 71.213,
+     "start": 71.062,
+     "text": "is"
+    },
+    {
+     "end": 71.338,
+     "start": 71.213,
+     "text": "the"
+    },
+    {
+     "end": 71.825,
+     "start": 71.338,
+     "text": "earliest"
+    },
+    {
+     "end": 72.3,
+     "start": 71.825,
+     "text": "deadline"
+    },
+    {
+     "end": 72.588,
+     "start": 72.3,
+     "text": "among"
+    },
+    {
+     "end": 73.3,
+     "start": 72.588,
+     "text": "them"
+    },
+    {
+     "end": 73.475,
+     "start": 73.3,
+     "text": "."
+    },
+    {
+     "end": 74.0,
+     "start": 73.65,
+     "text": "Before"
+    },
+    {
+     "end": 74.425,
+     "start": 74.0,
+     "text": "anything"
+    },
+    {
+     "end": 74.562,
+     "start": 74.425,
+     "text": "is"
+    },
+    {
+     "end": 74.887,
+     "start": 74.562,
+     "text": "signed"
+    },
+    {
+     "end": 74.975,
+     "start": 74.887,
+     "text": "the"
+    },
+    {
+     "end": 75.363,
+     "start": 74.975,
+     "text": "command"
+    },
+    {
+     "end": 76.0,
+     "start": 75.363,
+     "text": "refuses"
+    },
+    {
+     "end": 76.075,
+     "start": 76.0,
+     "text": ","
+    },
+    {
+     "end": 76.412,
+     "start": 76.075,
+     "text": "naming"
+    },
+    {
+     "end": 76.5,
+     "start": 76.412,
+     "text": "the"
+    },
+    {
+     "end": 77.45,
+     "start": 76.5,
+     "text": "reason"
+    },
+    {
+     "end": 77.65,
+     "start": 77.45,
+     "text": ":"
+    },
+    {
+     "end": 78.2,
+     "start": 77.85,
+     "text": "nothing"
+    },
+    {
+     "end": 78.338,
+     "start": 78.2,
+     "text": "to"
+    },
+    {
+     "end": 78.725,
+     "start": 78.338,
+     "text": "fold"
+    },
+    {
+     "end": 78.8,
+     "start": 78.725,
+     "text": "("
+    },
+    {
+     "end": 79.625,
+     "start": 78.8,
+     "text": "nothing-to-fold"
+    },
+    {
+     "end": 79.7,
+     "start": 79.625,
+     "text": ","
+    },
+    {
+     "end": 80.037,
+     "start": 79.7,
+     "text": "naming"
+    },
+    {
+     "end": 80.35,
+     "start": 80.037,
+     "text": "every"
+    },
+    {
+     "end": 80.8,
+     "start": 80.35,
+     "text": "request"
+    },
+    {
+     "end": 81.05,
+     "start": 80.8,
+     "text": "left"
+    },
+    {
+     "end": 81.8,
+     "start": 81.05,
+     "text": "out"
+    },
+    {
+     "end": 81.975,
+     "start": 81.8,
+     "text": ")"
+    },
+    {
+     "end": 82.025,
+     "start": 81.975,
+     "text": ";"
+    },
+    {
+     "end": 82.3,
+     "start": 82.225,
+     "text": "a"
+    },
+    {
+     "end": 82.775,
+     "start": 82.3,
+     "text": "request"
+    },
+    {
+     "end": 83.075,
+     "start": 82.775,
+     "text": "named"
+    },
+    {
+     "end": 83.225,
+     "start": 83.075,
+     "text": "by"
+    },
+    {
+     "end": 83.725,
+     "start": 83.225,
+     "text": "request"
+    },
+    {
+     "end": 83.838,
+     "start": 83.725,
      "text": "that"
     },
     {
-     "end": 51.475,
-     "start": 51.162,
+     "end": 83.963,
+     "start": 83.838,
+     "text": "the"
+    },
+    {
+     "end": 84.312,
+     "start": 83.963,
+     "text": "fold"
+    },
+    {
+     "end": 84.438,
+     "start": 84.312,
+     "text": "does"
+    },
+    {
+     "end": 84.65,
+     "start": 84.438,
+     "text": "not"
+    },
+    {
+     "end": 84.95,
+     "start": 84.65,
+     "text": "take"
+    },
+    {
+     "end": 85.0,
+     "start": 84.95,
+     "text": ","
+    },
+    {
+     "end": 85.2,
+     "start": 85.0,
+     "text": "with"
+    },
+    {
+     "end": 86.0,
+     "start": 85.2,
+     "text": "why"
+    },
+    {
+     "end": 86.225,
+     "start": 86.0,
+     "text": ";"
+    },
+    {
+     "end": 86.525,
+     "start": 86.425,
+     "text": "an"
+    },
+    {
+     "end": 87.175,
+     "start": 86.525,
+     "text": "insertion"
+    },
+    {
+     "end": 87.412,
+     "start": 87.175,
+     "text": "whose"
+    },
+    {
+     "end": 88.0,
+     "start": 87.412,
+     "text": "envelope"
+    },
+    {
+     "end": 88.162,
+     "start": 88.0,
+     "text": "is"
+    },
+    {
+     "end": 88.45,
+     "start": 88.162,
+     "text": "not"
+    },
+    {
+     "end": 88.537,
+     "start": 88.45,
+     "text": "in"
+    },
+    {
+     "end": 88.625,
+     "start": 88.537,
+     "text": "the"
+    },
+    {
+     "end": 89.125,
+     "start": 88.625,
+     "text": "registry"
+    },
+    {
+     "end": 89.912,
+     "start": 89.125,
+     "text": "directory"
+    },
+    {
+     "end": 90.325,
+     "start": 89.912,
+     "text": "or"
+    },
+    {
+     "end": 90.512,
+     "start": 90.325,
+     "text": "is"
+    },
+    {
+     "end": 90.75,
+     "start": 90.512,
+     "text": "not"
+    },
+    {
+     "end": 90.875,
+     "start": 90.75,
+     "text": "the"
+    },
+    {
+     "end": 91.1,
+     "start": 90.875,
+     "text": "one"
+    },
+    {
+     "end": 91.2,
+     "start": 91.1,
+     "text": "the"
+    },
+    {
+     "end": 91.675,
+     "start": 91.2,
+     "text": "request"
+    },
+    {
+     "end": 92.725,
+     "start": 91.675,
+     "text": "names"
+    },
+    {
+     "end": 92.95,
+     "start": 92.725,
+     "text": ";"
+    },
+    {
+     "end": 93.25,
+     "start": 93.125,
+     "text": "the"
+    },
+    {
+     "end": 93.625,
+     "start": 93.25,
+     "text": "outlay"
+    },
+    {
+     "end": 93.975,
+     "start": 93.625,
+     "text": "past"
+    },
+    {
+     "end": 94.75,
+     "start": 93.975,
+     "text": "--max-outlay"
+    },
+    {
+     "end": 94.85,
+     "start": 94.75,
+     "text": ";"
+    },
+    {
+     "end": 94.963,
+     "start": 94.85,
+     "text": "a"
+    },
+    {
+     "end": 95.35,
+     "start": 94.963,
+     "text": "funding"
+    },
+    {
+     "end": 95.775,
+     "start": 95.35,
+     "text": "output"
+    },
+    {
+     "end": 95.925,
+     "start": 95.775,
+     "text": "that"
+    },
+    {
+     "end": 96.075,
+     "start": 95.925,
+     "text": "is"
+    },
+    {
+     "end": 96.287,
+     "start": 96.075,
+     "text": "not"
+    },
+    {
+     "end": 96.375,
+     "start": 96.287,
+     "text": "the"
+    },
+    {
+     "end": 97.4,
+     "start": 96.375,
+     "text": "wallet's"
+    },
+    {
+     "end": 97.6,
+     "start": 97.4,
+     "text": ";"
+    },
+    {
+     "end": 97.887,
+     "start": 97.8,
+     "text": "a"
+    },
+    {
+     "end": 98.188,
+     "start": 97.887,
+     "text": "built"
+    },
+    {
+     "end": 98.55,
+     "start": 98.188,
+     "text": "fold"
+    },
+    {
+     "end": 98.7,
+     "start": 98.55,
+     "text": "that"
+    },
+    {
+     "end": 99.062,
+     "start": 98.7,
+     "text": "spends"
+    },
+    {
+     "end": 99.575,
+     "start": 99.062,
+     "text": "anything"
+    },
+    {
+     "end": 99.713,
+     "start": 99.575,
+     "text": "but"
+    },
+    {
+     "end": 99.825,
+     "start": 99.713,
+     "text": "the"
+    },
+    {
+     "end": 100.412,
+     "start": 99.825,
+     "text": "registry's"
+    },
+    {
+     "end": 100.887,
+     "start": 100.412,
+     "text": "state"
+    },
+    {
+     "end": 101.012,
+     "start": 100.887,
+     "text": "and"
+    },
+    {
+     "end": 101.6,
+     "start": 101.012,
+     "text": "exactly"
+    },
+    {
+     "end": 101.7,
+     "start": 101.6,
+     "text": "the"
+    },
+    {
+     "end": 102.175,
+     "start": 101.7,
+     "text": "requests"
+    },
+    {
+     "end": 102.3,
+     "start": 102.175,
+     "text": "it"
+    },
+    {
+     "end": 103.275,
+     "start": 102.3,
+     "text": "takes"
+    },
+    {
+     "end": 103.5,
+     "start": 103.275,
+     "text": ","
+    },
+    {
+     "end": 103.8,
+     "start": 103.7,
+     "text": "or"
+    },
+    {
+     "end": 104.062,
+     "start": 103.8,
+     "text": "pays"
+    },
+    {
+     "end": 104.15,
+     "start": 104.062,
+     "text": "an"
+    },
+    {
+     "end": 104.425,
+     "start": 104.15,
+     "text": "owner"
+    },
+    {
+     "end": 104.675,
+     "start": 104.425,
+     "text": "less"
+    },
+    {
+     "end": 104.787,
+     "start": 104.675,
+     "text": "than"
+    },
+    {
+     "end": 104.887,
+     "start": 104.787,
+     "text": "its"
+    },
+    {
+     "end": 105.412,
+     "start": 104.887,
+     "text": "releases"
+    },
+    {
+     "end": 106.1,
+     "start": 105.412,
+     "text": "owe"
+    },
+    {
+     "end": 106.325,
+     "start": 106.1,
+     "text": "."
+    },
+    {
+     "end": 106.725,
+     "start": 106.525,
+     "text": "Run"
+    },
+    {
+     "end": 106.988,
+     "start": 106.725,
+     "text": "after"
+    },
+    {
+     "end": 107.1,
+     "start": 106.988,
+     "text": "its"
+    },
+    {
+     "end": 107.275,
+     "start": 107.1,
+     "text": "own"
+    },
+    {
+     "end": 107.575,
+     "start": 107.275,
+     "text": "booking"
+    },
+    {
+     "end": 107.762,
+     "start": 107.575,
+     "text": "by"
+    },
+    {
+     "end": 108.575,
+     "start": 107.762,
+     "text": "--fold"
+    },
+    {
+     "end": 108.775,
+     "start": 108.575,
+     "text": ","
+    },
+    {
+     "end": 109.062,
+     "start": 108.975,
+     "text": "a"
+    },
+    {
+     "end": 109.412,
+     "start": 109.062,
+     "text": "fold"
+    },
+    {
+     "end": 109.55,
+     "start": 109.412,
+     "text": "that"
+    },
+    {
+     "end": 109.887,
+     "start": 109.55,
+     "text": "cannot"
+    },
+    {
+     "end": 110.025,
+     "start": 109.887,
+     "text": "be"
+    },
+    {
+     "end": 110.325,
+     "start": 110.025,
+     "text": "built"
+    },
+    {
+     "end": 110.488,
+     "start": 110.325,
+     "text": "or"
+    },
+    {
+     "end": 110.963,
+     "start": 110.488,
+     "text": "signed"
+    },
+    {
+     "end": 111.338,
+     "start": 110.963,
+     "text": "stops"
+    },
+    {
+     "end": 111.425,
+     "start": 111.338,
+     "text": "the"
+    },
+    {
+     "end": 111.8,
+     "start": 111.425,
+     "text": "command"
+    },
+    {
+     "end": 112.775,
+     "start": 111.8,
+     "text": "partial"
+    },
+    {
+     "end": 112.975,
+     "start": 112.775,
+     "text": ","
+    },
+    {
+     "end": 113.438,
+     "start": 113.175,
+     "text": "naming"
+    },
+    {
+     "end": 113.512,
+     "start": 113.438,
+     "text": "the"
+    },
+    {
+     "end": 113.887,
+     "start": 113.512,
+     "text": "request"
+    },
+    {
+     "end": 114.012,
+     "start": 113.887,
+     "text": "that"
+    },
+    {
+     "end": 114.325,
+     "start": 114.012,
      "text": "stays"
     },
     {
-     "end": 52.35,
-     "start": 51.475,
+     "end": 115.2,
+     "start": 114.325,
      "text": "pending"
     },
     {
-     "end": 52.55,
-     "start": 52.35,
+     "end": 115.4,
+     "start": 115.2,
+     "text": "."
+    },
+    {
+     "end": 115.688,
+     "start": 115.6,
+     "text": "A"
+    },
+    {
+     "end": 116.025,
+     "start": 115.688,
+     "text": "fold"
+    },
+    {
+     "end": 116.15,
+     "start": 116.025,
+     "text": "the"
+    },
+    {
+     "end": 116.5,
+     "start": 116.15,
+     "text": "node"
+    },
+    {
+     "end": 117.2,
+     "start": 116.5,
+     "text": "refuses"
+    },
+    {
+     "end": 117.525,
+     "start": 117.2,
+     "text": "because"
+    },
+    {
+     "end": 117.938,
+     "start": 117.525,
+     "text": "another"
+    },
+    {
+     "end": 118.35,
+     "start": 117.938,
+     "text": "fold"
+    },
+    {
+     "end": 118.613,
+     "start": 118.35,
+     "text": "spent"
+    },
+    {
+     "end": 118.7,
+     "start": 118.613,
+     "text": "the"
+    },
+    {
+     "end": 119.312,
+     "start": 118.7,
+     "text": "registry's"
+    },
+    {
+     "end": 119.65,
+     "start": 119.312,
+     "text": "state"
+    },
+    {
+     "end": 120.088,
+     "start": 119.65,
+     "text": "output"
+    },
+    {
+     "end": 120.562,
+     "start": 120.088,
+     "text": "first"
+    },
+    {
+     "end": 120.725,
+     "start": 120.562,
+     "text": "is"
+    },
+    {
+     "end": 121.35,
+     "start": 120.725,
+     "text": "refused"
+    },
+    {
+     "end": 122.675,
+     "start": 121.35,
+     "text": "stale-state"
+    },
+    {
+     "end": 122.9,
+     "start": 122.675,
+     "text": ":"
+    },
+    {
+     "end": 123.525,
+     "start": 123.15,
+     "text": "nothing"
+    },
+    {
+     "end": 123.65,
+     "start": 123.525,
+     "text": "of"
+    },
+    {
+     "end": 123.812,
+     "start": 123.65,
+     "text": "it"
+    },
+    {
+     "end": 123.975,
+     "start": 123.812,
+     "text": "is"
+    },
+    {
+     "end": 124.137,
+     "start": 123.975,
+     "text": "on"
+    },
+    {
+     "end": 124.262,
+     "start": 124.137,
+     "text": "the"
+    },
+    {
+     "end": 124.725,
+     "start": 124.262,
+     "text": "chain"
+    },
+    {
+     "end": 124.8,
+     "start": 124.725,
+     "text": ","
+    },
+    {
+     "end": 125.012,
+     "start": 124.8,
+     "text": "its"
+    },
+    {
+     "end": 125.4,
+     "start": 125.012,
+     "text": "journal"
+    },
+    {
+     "end": 125.562,
+     "start": 125.4,
+     "text": "is"
+    },
+    {
+     "end": 126.2,
+     "start": 125.562,
+     "text": "closed"
+    },
+    {
+     "end": 126.275,
+     "start": 126.2,
+     "text": ","
+    },
+    {
+     "end": 126.4,
+     "start": 126.275,
+     "text": "and"
+    },
+    {
+     "end": 126.688,
+     "start": 126.4,
+     "text": "running"
+    },
+    {
+     "end": 126.775,
+     "start": 126.688,
+     "text": "it"
+    },
+    {
+     "end": 127.15,
+     "start": 126.775,
+     "text": "again"
+    },
+    {
+     "end": 127.65,
+     "start": 127.15,
+     "text": "folds"
+    },
+    {
+     "end": 128.075,
+     "start": 127.65,
+     "text": "whatever"
+    },
+    {
+     "end": 128.2,
+     "start": 128.075,
+     "text": "is"
+    },
+    {
+     "end": 128.475,
+     "start": 128.2,
+     "text": "still"
+    },
+    {
+     "end": 129.575,
+     "start": 128.475,
+     "text": "pending"
+    },
+    {
+     "end": 129.775,
+     "start": 129.575,
      "text": "."
     }
    ]
   },
   "docs-singular-node/booking-and-folding-05": {
-   "audio_sha256": "23db3eff10c8ae434330d17598e6393abd2310878614fdc0186f93f6efe72b4e",
-   "characters": 497,
-   "cost": 0.00030814,
-   "duration": 31.125,
+   "audio_sha256": "dcd96d3e2a1890a575009e086a594a53ed7b9e898868012f61f18c6c9e8603f7",
+   "characters": 540,
+   "cost": 0.0003348,
+   "duration": 34.25,
    "index": 5,
-   "key": "d92679f7c978e64a008aa151417e3b37967cba3441c5ae3ef98880db359dd7a6",
+   "key": "2feb55aabdfb21b1873ec331111a6cd9ed85ab4c01c454d19de1c2a33f019dc0",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-   "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+   "sent_text": "The window check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the earliest deadline among the requests it folds when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+   "text": "The window check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the earliest deadline among the requests it folds when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
    "words": [
     {
-     "end": 0.325,
+     "end": 0.25,
      "start": 0.175,
-     "text": "That"
+     "text": "The"
     },
     {
-     "end": 0.538,
-     "start": 0.325,
+     "end": 0.562,
+     "start": 0.25,
+     "text": "window"
+    },
+    {
+     "end": 0.85,
+     "start": 0.562,
      "text": "check"
     },
     {
-     "end": 0.663,
-     "start": 0.538,
+     "end": 0.988,
+     "start": 0.85,
      "text": "is"
-    },
-    {
-     "end": 0.788,
-     "start": 0.663,
-     "text": "the"
     },
     {
      "end": 1.112,
-     "start": 0.788,
+     "start": 0.988,
+     "text": "the"
+    },
+    {
+     "end": 1.438,
+     "start": 1.112,
      "text": "fast"
     },
     {
-     "end": 1.575,
-     "start": 1.112,
+     "end": 1.975,
+     "start": 1.438,
      "text": "refusal"
     },
     {
-     "end": 1.612,
-     "start": 1.575,
+     "end": 2.025,
+     "start": 1.975,
      "text": ","
     },
     {
-     "end": 1.788,
-     "start": 1.612,
+     "end": 2.213,
+     "start": 2.025,
      "text": "not"
     },
     {
-     "end": 1.875,
-     "start": 1.788,
+     "end": 2.3,
+     "start": 2.213,
      "text": "the"
     },
     {
-     "end": 2.7,
-     "start": 1.875,
+     "end": 3.15,
+     "start": 2.3,
      "text": "proof"
     },
     {
-     "end": 2.9,
-     "start": 2.7,
+     "end": 3.35,
+     "start": 3.15,
      "text": "."
     },
     {
-     "end": 3.338,
-     "start": 3.1,
+     "end": 3.787,
+     "start": 3.55,
      "text": "After"
     },
     {
-     "end": 3.425,
-     "start": 3.338,
+     "end": 3.875,
+     "start": 3.787,
      "text": "the"
     },
     {
-     "end": 3.713,
-     "start": 3.425,
+     "end": 4.162,
+     "start": 3.875,
      "text": "fold"
     },
     {
-     "end": 3.85,
-     "start": 3.713,
+     "end": 4.3,
+     "start": 4.162,
      "text": "is"
     },
     {
-     "end": 4.175,
-     "start": 3.85,
+     "end": 4.625,
+     "start": 4.3,
      "text": "built"
     },
     {
-     "end": 4.287,
-     "start": 4.175,
+     "end": 4.738,
+     "start": 4.625,
      "text": "and"
     },
     {
-     "end": 4.613,
-     "start": 4.287,
+     "end": 5.062,
+     "start": 4.738,
      "text": "before"
     },
     {
-     "end": 4.688,
-     "start": 4.613,
+     "end": 5.137,
+     "start": 5.062,
      "text": "it"
     },
     {
-     "end": 4.812,
-     "start": 4.688,
+     "end": 5.262,
+     "start": 5.137,
      "text": "is"
     },
     {
-     "end": 5.675,
-     "start": 4.812,
+     "end": 6.125,
+     "start": 5.262,
      "text": "signed"
     },
     {
-     "end": 5.875,
-     "start": 5.675,
+     "end": 6.325,
+     "start": 6.125,
      "text": ","
-    },
-    {
-     "end": 6.25,
-     "start": 6.075,
-     "text": "its"
     },
     {
      "end": 6.7,
-     "start": 6.25,
+     "start": 6.525,
+     "text": "its"
+    },
+    {
+     "end": 7.15,
+     "start": 6.7,
      "text": "validity"
     },
     {
-     "end": 7.0,
-     "start": 6.7,
+     "end": 7.45,
+     "start": 7.15,
      "text": "upper"
     },
     {
-     "end": 7.412,
-     "start": 7.0,
+     "end": 7.863,
+     "start": 7.45,
      "text": "bound"
     },
     {
-     "end": 7.6,
-     "start": 7.412,
+     "end": 8.05,
+     "start": 7.863,
      "text": "is"
     },
     {
-     "end": 7.95,
-     "start": 7.6,
+     "end": 8.4,
+     "start": 8.05,
      "text": "judged"
     },
     {
-     "end": 8.275,
-     "start": 7.95,
+     "end": 8.725,
+     "start": 8.4,
      "text": "again"
     },
     {
-     "end": 8.413,
-     "start": 8.275,
+     "end": 8.863,
+     "start": 8.725,
      "text": "from"
     },
     {
-     "end": 8.5,
-     "start": 8.413,
+     "end": 8.95,
+     "start": 8.863,
      "text": "the"
     },
     {
-     "end": 8.775,
-     "start": 8.5,
+     "end": 9.225,
+     "start": 8.95,
      "text": "built"
     },
     {
-     "end": 9.3,
-     "start": 8.775,
+     "end": 9.75,
+     "start": 9.225,
      "text": "body"
     },
     {
-     "end": 9.438,
-     "start": 9.3,
+     "end": 9.887,
+     "start": 9.75,
      "text": "and"
     },
     {
-     "end": 9.525,
-     "start": 9.438,
+     "end": 9.975,
+     "start": 9.887,
      "text": "the"
     },
     {
-     "end": 9.85,
-     "start": 9.525,
+     "end": 10.3,
+     "start": 9.975,
      "text": "host"
     },
     {
-     "end": 10.8,
-     "start": 9.85,
+     "end": 11.25,
+     "start": 10.3,
      "text": "clock"
     },
     {
-     "end": 11.025,
-     "start": 10.8,
+     "end": 11.475,
+     "start": 11.25,
      "text": ":"
     },
     {
-     "end": 11.275,
-     "start": 11.2,
+     "end": 11.775,
+     "start": 11.675,
      "text": "the"
     },
     {
-     "end": 11.625,
-     "start": 11.275,
+     "end": 12.15,
+     "start": 11.775,
      "text": "bound"
     },
     {
-     "end": 11.875,
-     "start": 11.625,
+     "end": 12.4,
+     "start": 12.15,
      "text": "must"
     },
     {
-     "end": 12.087,
-     "start": 11.875,
+     "end": 12.613,
+     "start": 12.4,
      "text": "be"
     },
     {
-     "end": 12.387,
-     "start": 12.087,
+     "end": 12.913,
+     "start": 12.613,
      "text": "at"
     },
     {
-     "end": 12.525,
-     "start": 12.387,
+     "end": 13.05,
+     "start": 12.913,
      "text": "or"
     },
     {
-     "end": 12.887,
-     "start": 12.525,
+     "end": 13.425,
+     "start": 13.05,
      "text": "before"
     },
     {
-     "end": 13.012,
-     "start": 12.887,
+     "end": 13.562,
+     "start": 13.425,
      "text": "the"
     },
     {
-     "end": 13.337,
-     "start": 13.012,
+     "end": 13.938,
+     "start": 13.562,
      "text": "slot"
     },
     {
-     "end": 13.413,
-     "start": 13.337,
+     "end": 14.012,
+     "start": 13.938,
      "text": "of"
     },
     {
-     "end": 13.5,
-     "start": 13.413,
+     "end": 14.137,
+     "start": 14.012,
      "text": "the"
     },
     {
-     "end": 14.025,
-     "start": 13.5,
+     "end": 14.663,
+     "start": 14.137,
+     "text": "earliest"
+    },
+    {
+     "end": 15.225,
+     "start": 14.663,
      "text": "deadline"
     },
     {
-     "end": 14.2,
-     "start": 14.025,
+     "end": 15.488,
+     "start": 15.225,
+     "text": "among"
+    },
+    {
+     "end": 15.575,
+     "start": 15.488,
+     "text": "the"
+    },
+    {
+     "end": 16.288,
+     "start": 15.575,
+     "text": "requests"
+    },
+    {
+     "end": 16.462,
+     "start": 16.288,
+     "text": "it"
+    },
+    {
+     "end": 16.975,
+     "start": 16.462,
+     "text": "folds"
+    },
+    {
+     "end": 17.188,
+     "start": 16.975,
      "text": "when"
     },
     {
-     "end": 14.475,
-     "start": 14.2,
+     "end": 17.475,
+     "start": 17.188,
      "text": "pinned"
     },
     {
-     "end": 14.775,
-     "start": 14.475,
+     "end": 17.825,
+     "start": 17.475,
      "text": "time"
     },
     {
-     "end": 15.337,
-     "start": 14.775,
+     "end": 18.4,
+     "start": 17.825,
      "text": "converts"
     },
     {
-     "end": 16.025,
-     "start": 15.337,
+     "end": 19.15,
+     "start": 18.4,
      "text": "it"
-    },
-    {
-     "end": 16.25,
-     "start": 16.025,
-     "text": ","
-    },
-    {
-     "end": 16.575,
-     "start": 16.45,
-     "text": "or"
-    },
-    {
-     "end": 16.612,
-     "start": 16.575,
-     "text": ","
-    },
-    {
-     "end": 16.737,
-     "start": 16.612,
-     "text": "when"
-    },
-    {
-     "end": 16.812,
-     "start": 16.737,
-     "text": "it"
-    },
-    {
-     "end": 17.025,
-     "start": 16.812,
-     "text": "does"
-    },
-    {
-     "end": 17.325,
-     "start": 17.025,
-     "text": "not"
-    },
-    {
-     "end": 17.4,
-     "start": 17.325,
-     "text": ","
-    },
-    {
-     "end": 17.65,
-     "start": 17.4,
-     "text": "must"
-    },
-    {
-     "end": 18.087,
-     "start": 17.65,
-     "text": "begin"
-    },
-    {
-     "end": 18.362,
-     "start": 18.087,
-     "text": "at"
-    },
-    {
-     "end": 18.5,
-     "start": 18.362,
-     "text": "or"
-    },
-    {
-     "end": 18.837,
-     "start": 18.5,
-     "text": "before"
-    },
-    {
-     "end": 18.925,
-     "start": 18.837,
-     "text": "the"
     },
     {
      "end": 19.375,
-     "start": 18.925,
-     "text": "deadline"
-    },
-    {
-     "end": 20.3,
-     "start": 19.375,
-     "text": "time"
-    },
-    {
-     "end": 20.5,
-     "start": 20.3,
-     "text": ";"
-    },
-    {
-     "end": 20.75,
-     "start": 20.675,
-     "text": "a"
-    },
-    {
-     "end": 21.025,
-     "start": 20.75,
-     "text": "bound"
-    },
-    {
-     "end": 21.225,
-     "start": 21.025,
-     "text": "pinned"
-    },
-    {
-     "end": 21.475,
-     "start": 21.225,
-     "text": "time"
-    },
-    {
-     "end": 21.8,
-     "start": 21.475,
-     "text": "cannot"
-    },
-    {
-     "end": 22.7,
-     "start": 21.8,
-     "text": "convert"
-    },
-    {
-     "end": 22.9,
-     "start": 22.7,
+     "start": 19.15,
      "text": ","
     },
     {
-     "end": 23.2,
-     "start": 23.1,
+     "end": 19.7,
+     "start": 19.575,
      "text": "or"
     },
     {
-     "end": 23.312,
-     "start": 23.2,
-     "text": "a"
-    },
-    {
-     "end": 23.725,
-     "start": 23.312,
-     "text": "clock"
-    },
-    {
-     "end": 23.862,
-     "start": 23.725,
-     "text": "that"
-    },
-    {
-     "end": 24.062,
-     "start": 23.862,
-     "text": "has"
-    },
-    {
-     "end": 24.55,
-     "start": 24.062,
-     "text": "meanwhile"
-    },
-    {
-     "end": 24.788,
-     "start": 24.55,
-     "text": "come"
-    },
-    {
-     "end": 24.987,
-     "start": 24.788,
-     "text": "within"
-    },
-    {
-     "end": 25.075,
-     "start": 24.987,
-     "text": "the"
-    },
-    {
-     "end": 25.6,
-     "start": 25.075,
-     "text": "margin"
-    },
-    {
-     "end": 25.712,
-     "start": 25.6,
+     "end": 19.737,
+     "start": 19.7,
      "text": ","
     },
     {
-     "end": 25.875,
-     "start": 25.712,
-     "text": "is"
+     "end": 19.862,
+     "start": 19.737,
+     "text": "when"
     },
     {
-     "end": 26.475,
-     "start": 25.875,
-     "text": "refused"
+     "end": 19.938,
+     "start": 19.862,
+     "text": "it"
     },
     {
-     "end": 27.675,
-     "start": 26.475,
-     "text": "unsigned"
+     "end": 20.15,
+     "start": 19.938,
+     "text": "does"
     },
     {
-     "end": 27.875,
-     "start": 27.675,
+     "end": 20.45,
+     "start": 20.15,
+     "text": "not"
+    },
+    {
+     "end": 20.525,
+     "start": 20.45,
      "text": ","
     },
     {
-     "end": 28.188,
-     "start": 28.05,
-     "text": "with"
+     "end": 20.775,
+     "start": 20.525,
+     "text": "must"
     },
     {
-     "end": 28.275,
-     "start": 28.188,
+     "end": 21.212,
+     "start": 20.775,
+     "text": "begin"
+    },
+    {
+     "end": 21.487,
+     "start": 21.212,
+     "text": "at"
+    },
+    {
+     "end": 21.625,
+     "start": 21.487,
+     "text": "or"
+    },
+    {
+     "end": 21.962,
+     "start": 21.625,
+     "text": "before"
+    },
+    {
+     "end": 22.05,
+     "start": 21.962,
      "text": "the"
     },
     {
-     "end": 28.675,
-     "start": 28.275,
-     "text": "bound"
-    },
-    {
-     "end": 28.712,
-     "start": 28.675,
-     "text": ","
-    },
-    {
-     "end": 28.8,
-     "start": 28.712,
-     "text": "the"
-    },
-    {
-     "end": 29.188,
-     "start": 28.8,
-     "text": "clock"
-    },
-    {
-     "end": 29.288,
-     "start": 29.188,
-     "text": "and"
-    },
-    {
-     "end": 29.375,
-     "start": 29.288,
-     "text": "the"
-    },
-    {
-     "end": 29.837,
-     "start": 29.375,
+     "end": 22.5,
+     "start": 22.05,
      "text": "deadline"
     },
     {
-     "end": 29.913,
-     "start": 29.837,
-     "text": "in"
+     "end": 23.425,
+     "start": 22.5,
+     "text": "time"
     },
     {
-     "end": 29.987,
-     "start": 29.913,
+     "end": 23.625,
+     "start": 23.425,
+     "text": ";"
+    },
+    {
+     "end": 23.875,
+     "start": 23.8,
+     "text": "a"
+    },
+    {
+     "end": 24.15,
+     "start": 23.875,
+     "text": "bound"
+    },
+    {
+     "end": 24.35,
+     "start": 24.15,
+     "text": "pinned"
+    },
+    {
+     "end": 24.6,
+     "start": 24.35,
+     "text": "time"
+    },
+    {
+     "end": 24.925,
+     "start": 24.6,
+     "text": "cannot"
+    },
+    {
+     "end": 25.825,
+     "start": 24.925,
+     "text": "convert"
+    },
+    {
+     "end": 26.025,
+     "start": 25.825,
+     "text": ","
+    },
+    {
+     "end": 26.325,
+     "start": 26.225,
+     "text": "or"
+    },
+    {
+     "end": 26.438,
+     "start": 26.325,
+     "text": "a"
+    },
+    {
+     "end": 26.85,
+     "start": 26.438,
+     "text": "clock"
+    },
+    {
+     "end": 26.987,
+     "start": 26.85,
+     "text": "that"
+    },
+    {
+     "end": 27.188,
+     "start": 26.987,
+     "text": "has"
+    },
+    {
+     "end": 27.675,
+     "start": 27.188,
+     "text": "meanwhile"
+    },
+    {
+     "end": 27.913,
+     "start": 27.675,
+     "text": "come"
+    },
+    {
+     "end": 28.112,
+     "start": 27.913,
+     "text": "within"
+    },
+    {
+     "end": 28.2,
+     "start": 28.112,
      "text": "the"
     },
     {
-     "end": 30.925,
-     "start": 29.987,
+     "end": 28.725,
+     "start": 28.2,
+     "text": "margin"
+    },
+    {
+     "end": 28.837,
+     "start": 28.725,
+     "text": ","
+    },
+    {
+     "end": 29.0,
+     "start": 28.837,
+     "text": "is"
+    },
+    {
+     "end": 29.6,
+     "start": 29.0,
+     "text": "refused"
+    },
+    {
+     "end": 30.8,
+     "start": 29.6,
+     "text": "unsigned"
+    },
+    {
+     "end": 31.0,
+     "start": 30.8,
+     "text": ","
+    },
+    {
+     "end": 31.312,
+     "start": 31.175,
+     "text": "with"
+    },
+    {
+     "end": 31.4,
+     "start": 31.312,
+     "text": "the"
+    },
+    {
+     "end": 31.8,
+     "start": 31.4,
+     "text": "bound"
+    },
+    {
+     "end": 31.837,
+     "start": 31.8,
+     "text": ","
+    },
+    {
+     "end": 31.925,
+     "start": 31.837,
+     "text": "the"
+    },
+    {
+     "end": 32.312,
+     "start": 31.925,
+     "text": "clock"
+    },
+    {
+     "end": 32.412,
+     "start": 32.312,
+     "text": "and"
+    },
+    {
+     "end": 32.5,
+     "start": 32.412,
+     "text": "the"
+    },
+    {
+     "end": 32.963,
+     "start": 32.5,
+     "text": "deadline"
+    },
+    {
+     "end": 33.037,
+     "start": 32.963,
+     "text": "in"
+    },
+    {
+     "end": 33.112,
+     "start": 33.037,
+     "text": "the"
+    },
+    {
+     "end": 34.05,
+     "start": 33.112,
      "text": "receipt"
     },
     {
-     "end": 31.125,
-     "start": 30.925,
+     "end": 34.25,
+     "start": 34.05,
      "text": "."
     }
    ]
   },
   "docs-singular-node/booking-and-folding-06": {
-   "audio_sha256": "64154887f34fff216449c48aaf4cf2b807e354dc03a477541f1e269763d6e1e4",
-   "characters": 152,
-   "cost": 9.424e-05,
-   "duration": 9.8,
+   "audio_sha256": "36947efdb0c7a12cfa202865022b67e73a42802ccfe3e412ffbbc6d6f108d404",
+   "characters": 245,
+   "cost": 0.0001519,
+   "duration": 16.475,
    "index": 6,
-   "key": "88cc5b9ffd9e4edf2c85740d9dcd5d841ceb380ea250d010fe8405dd39065c70",
+   "key": "9053029fe4db8935a41af3fe67840cb597b75a7daece01fb8602e07291ddadc1",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
-   "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
+   "sent_text": "Each request's deadline is the one its booking's receipt states. A fold refused for one submitted nothing, and every request stays pending; a request left out for its window stays pending until its owner reclaims it or registry reject clears it.",
+   "text": "Each request's deadline is the one its booking's receipt states. A fold refused for one submitted nothing, and every request stays pending; a request left out for its window stays pending until its owner reclaims it or registry reject clears it.",
    "words": [
     {
-     "end": 0.287,
-     "start": 0.175,
-     "text": "The"
+     "end": 0.387,
+     "start": 0.2,
+     "text": "Each"
     },
     {
-     "end": 0.762,
-     "start": 0.287,
+     "end": 0.875,
+     "start": 0.387,
+     "text": "request's"
+    },
+    {
+     "end": 1.462,
+     "start": 0.875,
      "text": "deadline"
     },
     {
-     "end": 0.887,
-     "start": 0.762,
-     "text": "the"
-    },
-    {
-     "end": 1.25,
-     "start": 0.887,
-     "text": "fold"
-    },
-    {
-     "end": 1.413,
-     "start": 1.25,
+     "end": 1.612,
+     "start": 1.462,
      "text": "is"
     },
     {
-     "end": 1.775,
-     "start": 1.413,
-     "text": "judged"
-    },
-    {
-     "end": 2.4,
-     "start": 1.775,
-     "text": "against"
-    },
-    {
-     "end": 2.575,
-     "start": 2.4,
-     "text": "is"
-    },
-    {
-     "end": 2.675,
-     "start": 2.575,
+     "end": 1.7,
+     "start": 1.612,
      "text": "the"
     },
     {
-     "end": 2.862,
-     "start": 2.675,
+     "end": 1.888,
+     "start": 1.7,
      "text": "one"
     },
     {
-     "end": 2.95,
-     "start": 2.862,
-     "text": "the"
-    },
-    {
-     "end": 3.375,
-     "start": 2.95,
-     "text": "booking's"
-    },
-    {
-     "end": 3.75,
-     "start": 3.375,
-     "text": "receipt"
-    },
-    {
-     "end": 4.75,
-     "start": 3.75,
-     "text": "states"
-    },
-    {
-     "end": 4.95,
-     "start": 4.75,
-     "text": "."
-    },
-    {
-     "end": 5.238,
-     "start": 5.15,
-     "text": "A"
-    },
-    {
-     "end": 5.625,
-     "start": 5.238,
-     "text": "fold"
-    },
-    {
-     "end": 6.2,
-     "start": 5.625,
-     "text": "refused"
-    },
-    {
-     "end": 6.338,
-     "start": 6.2,
-     "text": "for"
-    },
-    {
-     "end": 6.45,
-     "start": 6.338,
-     "text": "it"
-    },
-    {
-     "end": 6.925,
-     "start": 6.45,
-     "text": "submitted"
-    },
-    {
-     "end": 7.4,
-     "start": 6.925,
-     "text": "nothing"
-    },
-    {
-     "end": 7.475,
-     "start": 7.4,
-     "text": ","
-    },
-    {
-     "end": 7.588,
-     "start": 7.475,
-     "text": "and"
-    },
-    {
-     "end": 7.725,
-     "start": 7.588,
+     "end": 2.05,
+     "start": 1.888,
      "text": "its"
     },
     {
-     "end": 8.225,
-     "start": 7.725,
+     "end": 2.45,
+     "start": 2.05,
+     "text": "booking's"
+    },
+    {
+     "end": 2.825,
+     "start": 2.45,
+     "text": "receipt"
+    },
+    {
+     "end": 3.75,
+     "start": 2.825,
+     "text": "states"
+    },
+    {
+     "end": 3.95,
+     "start": 3.75,
+     "text": "."
+    },
+    {
+     "end": 4.238,
+     "start": 4.15,
+     "text": "A"
+    },
+    {
+     "end": 4.65,
+     "start": 4.238,
+     "text": "fold"
+    },
+    {
+     "end": 5.25,
+     "start": 4.65,
+     "text": "refused"
+    },
+    {
+     "end": 5.4,
+     "start": 5.25,
+     "text": "for"
+    },
+    {
+     "end": 5.625,
+     "start": 5.4,
+     "text": "one"
+    },
+    {
+     "end": 6.1,
+     "start": 5.625,
+     "text": "submitted"
+    },
+    {
+     "end": 6.575,
+     "start": 6.1,
+     "text": "nothing"
+    },
+    {
+     "end": 6.65,
+     "start": 6.575,
+     "text": ","
+    },
+    {
+     "end": 6.812,
+     "start": 6.65,
+     "text": "and"
+    },
+    {
+     "end": 7.125,
+     "start": 6.812,
+     "text": "every"
+    },
+    {
+     "end": 7.625,
+     "start": 7.125,
      "text": "request"
     },
     {
-     "end": 8.6,
-     "start": 8.225,
+     "end": 8.0,
+     "start": 7.625,
      "text": "stays"
     },
     {
-     "end": 9.6,
-     "start": 8.6,
+     "end": 9.025,
+     "start": 8.0,
      "text": "pending"
     },
     {
-     "end": 9.8,
-     "start": 9.6,
+     "end": 9.225,
+     "start": 9.025,
+     "text": ";"
+    },
+    {
+     "end": 9.525,
+     "start": 9.45,
+     "text": "a"
+    },
+    {
+     "end": 10.05,
+     "start": 9.525,
+     "text": "request"
+    },
+    {
+     "end": 10.3,
+     "start": 10.05,
+     "text": "left"
+    },
+    {
+     "end": 10.55,
+     "start": 10.3,
+     "text": "out"
+    },
+    {
+     "end": 10.7,
+     "start": 10.55,
+     "text": "for"
+    },
+    {
+     "end": 10.913,
+     "start": 10.7,
+     "text": "its"
+    },
+    {
+     "end": 11.3,
+     "start": 10.913,
+     "text": "window"
+    },
+    {
+     "end": 11.738,
+     "start": 11.3,
+     "text": "stays"
+    },
+    {
+     "end": 12.3,
+     "start": 11.738,
+     "text": "pending"
+    },
+    {
+     "end": 12.587,
+     "start": 12.3,
+     "text": "until"
+    },
+    {
+     "end": 12.762,
+     "start": 12.587,
+     "text": "its"
+    },
+    {
+     "end": 13.125,
+     "start": 12.762,
+     "text": "owner"
+    },
+    {
+     "end": 13.725,
+     "start": 13.125,
+     "text": "reclaims"
+    },
+    {
+     "end": 13.938,
+     "start": 13.725,
+     "text": "it"
+    },
+    {
+     "end": 14.137,
+     "start": 13.938,
+     "text": "or"
+    },
+    {
+     "end": 14.65,
+     "start": 14.137,
+     "text": "registry"
+    },
+    {
+     "end": 15.1,
+     "start": 14.65,
+     "text": "reject"
+    },
+    {
+     "end": 15.462,
+     "start": 15.1,
+     "text": "clears"
+    },
+    {
+     "end": 16.25,
+     "start": 15.462,
+     "text": "it"
+    },
+    {
+     "end": 16.475,
+     "start": 16.25,
      "text": "."
     }
    ]
@@ -287331,17 +288666,17 @@
    ]
   },
   "docs-theorems/theorem-manifest-02": {
-   "audio_sha256": "fc095f16e90b41427340f5712b3faec12ff7b2ce122363bd34d00a0c36adf34e",
+   "audio_sha256": "582e350b5a5f8298d1caaf511afd2cc691495f8cc87c3dcfd6aab610b0341f35",
    "characters": 294,
    "cost": 0.00018228000000000002,
-   "duration": 21.35,
+   "duration": 21.3,
    "index": 2,
-   "key": "4cba7dc160460b5ae895f9d17e244b7cbeac281b9b85910fbc2cf793c8bbd1d0",
+   "key": "1489664ecb02d85bf277772397c60f54b6b137a403b80cedb2ea25c9045ad622",
    "page": "docs/theorems.md",
    "pause_ms": 400,
    "section": "theorem-manifest",
-   "sent_text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
-   "text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
+   "sent_text": "All 44 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 65 in total, each with its own manifest and its own compiled gate.",
+   "text": "All 44 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 65 in total, each with its own manifest and its own compiled gate.",
    "words": [
     {
      "end": 0.55,
@@ -287349,283 +288684,283 @@
      "text": "All"
     },
     {
-     "end": 1.275,
+     "end": 1.175,
      "start": 0.55,
-     "text": "46"
+     "text": "44"
     },
     {
-     "end": 2.013,
-     "start": 1.275,
+     "end": 1.938,
+     "start": 1.175,
      "text": "declarations"
     },
     {
-     "end": 2.088,
-     "start": 2.013,
+     "end": 2.013,
+     "start": 1.938,
      "text": "of"
     },
     {
-     "end": 2.175,
-     "start": 2.088,
+     "end": 2.1,
+     "start": 2.013,
      "text": "the"
     },
     {
-     "end": 2.75,
-     "start": 2.175,
+     "end": 2.675,
+     "start": 2.1,
      "text": "registry's"
     },
     {
-     "end": 3.0,
-     "start": 2.75,
+     "end": 2.925,
+     "start": 2.675,
      "text": "own"
     },
     {
-     "end": 3.45,
-     "start": 3.0,
+     "end": 3.375,
+     "start": 2.925,
      "text": "statement"
     },
     {
-     "end": 3.938,
-     "start": 3.45,
+     "end": 3.862,
+     "start": 3.375,
      "text": "module"
     },
     {
-     "end": 4.113,
-     "start": 3.938,
+     "end": 4.037,
+     "start": 3.862,
      "text": "are"
     },
     {
-     "end": 4.5,
-     "start": 4.113,
+     "end": 4.425,
+     "start": 4.037,
      "text": "PROVED"
     },
     {
-     "end": 4.662,
-     "start": 4.5,
+     "end": 4.588,
+     "start": 4.425,
      "text": "from"
     },
     {
-     "end": 4.75,
-     "start": 4.662,
+     "end": 4.688,
+     "start": 4.588,
      "text": "the"
     },
     {
-     "end": 5.262,
-     "start": 4.75,
+     "end": 5.213,
+     "start": 4.688,
      "text": "standard"
     },
     {
-     "end": 5.95,
-     "start": 5.262,
+     "end": 5.875,
+     "start": 5.213,
      "text": "axioms"
     },
     {
-     "end": 6.025,
-     "start": 5.95,
+     "end": 5.95,
+     "start": 5.875,
      "text": "—"
     },
     {
-     "end": 6.7,
-     "start": 6.025,
+     "end": 6.625,
+     "start": 5.95,
      "text": "propext"
     },
     {
-     "end": 6.787,
-     "start": 6.7,
+     "end": 6.713,
+     "start": 6.625,
      "text": ","
     },
     {
-     "end": 7.675,
-     "start": 6.787,
+     "end": 7.6,
+     "start": 6.713,
      "text": "Classical.choice"
     },
     {
-     "end": 7.738,
-     "start": 7.675,
+     "end": 7.662,
+     "start": 7.6,
      "text": ","
     },
     {
-     "end": 8.7,
-     "start": 7.738,
+     "end": 8.725,
+     "start": 7.662,
      "text": "Quot.sound"
     },
     {
-     "end": 8.775,
-     "start": 8.7,
+     "end": 8.8,
+     "start": 8.725,
      "text": "—"
     },
     {
-     "end": 8.9,
-     "start": 8.775,
+     "end": 8.925,
+     "start": 8.8,
      "text": "and"
     },
     {
-     "end": 9.25,
-     "start": 8.9,
+     "end": 9.275,
+     "start": 8.925,
      "text": "nothing"
     },
     {
-     "end": 10.3,
-     "start": 9.25,
+     "end": 10.325,
+     "start": 9.275,
      "text": "else"
     },
     {
-     "end": 10.55,
-     "start": 10.3,
+     "end": 10.575,
+     "start": 10.325,
      "text": "."
     },
     {
-     "end": 10.85,
-     "start": 10.75,
+     "end": 10.875,
+     "start": 10.775,
      "text": "The"
     },
     {
-     "end": 11.212,
-     "start": 10.85,
+     "end": 11.238,
+     "start": 10.875,
      "text": "naming"
     },
     {
-     "end": 11.712,
-     "start": 11.212,
+     "end": 11.738,
+     "start": 11.238,
      "text": "instance"
     },
     {
-     "end": 12.05,
-     "start": 11.712,
+     "end": 12.075,
+     "start": 11.738,
      "text": "adds"
     },
     {
-     "end": 12.525,
-     "start": 12.05,
+     "end": 12.55,
+     "start": 12.075,
      "text": "7"
     },
     {
-     "end": 12.6,
-     "start": 12.525,
+     "end": 12.625,
+     "start": 12.55,
      "text": ","
     },
     {
-     "end": 12.812,
-     "start": 12.6,
+     "end": 12.837,
+     "start": 12.625,
      "text": "its"
     },
     {
-     "end": 13.45,
-     "start": 12.812,
+     "end": 13.475,
+     "start": 12.837,
      "text": "lifecycle"
     },
     {
-     "end": 13.825,
-     "start": 13.45,
+     "end": 13.85,
+     "start": 13.475,
      "text": "9"
     },
     {
-     "end": 13.938,
-     "start": 13.825,
+     "end": 13.962,
+     "start": 13.85,
      "text": "and"
     },
     {
-     "end": 14.113,
-     "start": 13.938,
+     "end": 14.137,
+     "start": 13.962,
      "text": "its"
     },
     {
-     "end": 14.525,
-     "start": 14.113,
+     "end": 14.55,
+     "start": 14.137,
      "text": "wire"
     },
     {
-     "end": 15.038,
-     "start": 14.525,
+     "end": 15.062,
+     "start": 14.55,
      "text": "encoding"
     },
     {
-     "end": 15.55,
-     "start": 15.038,
+     "end": 15.575,
+     "start": 15.062,
      "text": "5"
     },
     {
-     "end": 15.65,
-     "start": 15.55,
+     "end": 15.675,
+     "start": 15.575,
      "text": ","
     },
     {
-     "end": 15.812,
-     "start": 15.65,
+     "end": 15.837,
+     "start": 15.675,
      "text": "for"
     },
     {
-     "end": 16.525,
-     "start": 15.812,
-     "text": "67"
+     "end": 16.513,
+     "start": 15.837,
+     "text": "65"
     },
     {
-     "end": 16.675,
-     "start": 16.525,
+     "end": 16.65,
+     "start": 16.513,
      "text": "in"
     },
     {
-     "end": 17.675,
-     "start": 16.675,
+     "end": 17.65,
+     "start": 16.65,
      "text": "total"
     },
     {
-     "end": 17.925,
-     "start": 17.675,
+     "end": 17.875,
+     "start": 17.65,
      "text": ","
     },
     {
-     "end": 18.312,
-     "start": 18.125,
+     "end": 18.263,
+     "start": 18.075,
      "text": "each"
     },
     {
-     "end": 18.438,
-     "start": 18.312,
+     "end": 18.388,
+     "start": 18.263,
      "text": "with"
     },
     {
-     "end": 18.55,
-     "start": 18.438,
+     "end": 18.5,
+     "start": 18.388,
      "text": "its"
     },
     {
-     "end": 18.75,
-     "start": 18.55,
+     "end": 18.7,
+     "start": 18.5,
      "text": "own"
     },
     {
-     "end": 19.462,
-     "start": 18.75,
+     "end": 19.413,
+     "start": 18.7,
      "text": "manifest"
     },
     {
-     "end": 19.587,
-     "start": 19.462,
+     "end": 19.538,
+     "start": 19.413,
      "text": "and"
     },
     {
-     "end": 19.7,
-     "start": 19.587,
+     "end": 19.65,
+     "start": 19.538,
      "text": "its"
     },
     {
-     "end": 19.925,
-     "start": 19.7,
+     "end": 19.875,
+     "start": 19.65,
      "text": "own"
     },
     {
-     "end": 20.375,
-     "start": 19.925,
+     "end": 20.325,
+     "start": 19.875,
      "text": "compiled"
     },
     {
-     "end": 21.15,
-     "start": 20.375,
+     "end": 21.1,
+     "start": 20.325,
      "text": "gate"
     },
     {
-     "end": 21.35,
-     "start": 21.15,
+     "end": 21.3,
+     "start": 21.1,
      "text": "."
     }
    ]

@@ -142,13 +142,17 @@ What the excluded transaction leaves on chain depends on the command.
 An excluded `update` leaves nothing: run it again. The fold of an
 `insert` or a `terminate` is the second of two transactions, and the
 first, its booking, is on chain: its request stays pending, holding its
-deposit. The ordinary commands have no way to fold or retract that
-request, and while it is pending every later `insert` or `terminate` on
-the registry is refused `concurrent-writer` before its fold is built — a
-rerun of the same command books a second request, with a second deposit,
-and is refused the same way. `update` and `inspect` still run. That is a
-limit of these commands: releasing the pending request needs a tool
-outside them.
+deposit. It blocks nobody: the next `registry fold`, or the next `insert
+--fold` or `terminate --fold` by anyone, folds it together with every other
+request it can. Once its processing deadline has passed a fold leaves it
+out, naming it `window-closed`; its owner may then reclaim it inside its
+retract window, and `registry reject` clears it after both windows.
+
+Two folds may race for the registry's one state output: each built from
+the same state, the first included spends it, and the node refuses the
+other. That fold is refused `stale-state`, naming the state output another
+fold spent; its journal line is closed `rejected`, nothing of it is on the
+chain, and running it again folds whatever is still pending.
 
 A fold carries an upper bound on its validity window. A booking, and the
 publications `create` makes, carry none: a booking that never landed,
