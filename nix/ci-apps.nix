@@ -64,6 +64,19 @@ in
     }
   );
 
+  e2e-lanes-proof = app (
+    pkgs.writeShellApplication {
+      name = "e2e-lanes-proof";
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.gawk
+        pkgs.jq
+        pkgs.nix
+      ];
+      text = builtins.readFile ../tools/e2e_parts_proof.sh;
+    }
+  );
+
   naming-drift-check = app (
     pkgs.writeShellApplication {
       name = "naming-drift-check";
