@@ -531,8 +531,8 @@ jobs:
             )
           ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
           echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."
-  demo1-cli:
-    name: Demo 1 through the packaged singular commands, from the archive
+  demo1-archive:
+    name: Demo 1 journey from the release archive
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 90
@@ -564,6 +564,24 @@ jobs:
       # this step fails at the page check or at the first invocation.
       - name: Run the Demo 1 singular journey from the extracted release archive
         run: nix run --quiet .#demo1-cli-check
+  demo1-refusals:
+    name: Demo 1 ordinary CLI refusal controls
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #299: the registry refuses an insertion the application books for a
       # key that is Active or already Terminal. The ordinary `insert` stops
       # partial naming its pending request; that request's fold, submitted
@@ -572,6 +590,24 @@ jobs:
       # from the run's receipts.
       - name: Run the ordinary CLI's refusal controls
         run: nix run --quiet .#demo1-cli-controls
+  demo1-attach:
+    name: Demo 1 refusals on one existing registry
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #300: the same four refusals the demonstration shows, on ONE registry
       # created once by the ordinary commands from a wallet holding one large
       # output, and two fresh keys. The controls runner creates no registry and
@@ -581,12 +617,48 @@ jobs:
       # collateral a refusal states is read from its retained body.
       - name: Run the demonstration's four refusals on one existing registry
         run: nix run --quiet .#demo1-cli-attach
+  demo1-readback:
+    name: Demo 1 public-indexer readback
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #300: the readback of a key's token output from a public indexer, from
       # policy id and asset name alone, against a local indexer answering with
       # the public services' shapes: each alteration fails for its own reason, and
       # the credential reaches the indexer and appears nowhere else.
       - name: Run the public-indexer readback against a local indexer
         run: nix run --quiet .#demo1-readback-check
+  cli-recovery:
+    name: Ordinary CLI recovery controls
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #325: after a lost acknowledgement or an interrupted local commit,
       # the next ordinary write reconciles from chain evidence — the
       # journalled edge applied to the mirror once, observed once, nothing
@@ -600,6 +672,24 @@ jobs:
       # refuses partial, and the verdict table fails.
       - name: Run the ordinary CLI's recovery controls
         run: nix run --quiet .#cli-recovery-controls
+  cli-flags:
+    name: Documented CLI flags and refusal controls
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #326: the flags documented for `singular` — the settings table of
       # docs/singular-node.md and every documented invocation — are the
       # flags the binary's --help and each command's --help print, pair
