@@ -366,6 +366,12 @@ outcome_is bob-preview success || setup_fail "the folder wallet's preview did no
 bobkey="$(field bob-preview .walletKeyHash)"
 
 # ------------------------------------------------------------------
+
+# Parts (#449): CLI_RECOVERY_PARTS names the scenarios to run, space separated;
+# unset runs them all. Each part runs on this script's own node and registry,
+# so separate CI jobs run separate parts in parallel. "killed" needs "accepting".
+part() { [ -z "${CLI_RECOVERY_PARTS:-}" ] || [[ " $CLI_RECOVERY_PARTS " == *" $1 "* ]]; }
+if part accepting; then
 # accepting
 # ------------------------------------------------------------------
 control=accepting
@@ -460,6 +466,8 @@ if [ "${SINGULAR_RECOVERY_SOURCE_ONLY:-0}" = 1 ]; then
 fi
 
 # ------------------------------------------------------------------
+fi
+if part lost-answer; then
 # lost answer
 # ------------------------------------------------------------------
 control="lost answer"
@@ -515,6 +523,8 @@ clause "inspect reads the lost answer's key active" is_equal "$(field inspect-b 
 clause "the journal was only appended to and no body changed" appended_only s1
 
 # ------------------------------------------------------------------
+fi
+if part killed; then
 # killed before the commit
 # ------------------------------------------------------------------
 control="killed before observation"
@@ -562,6 +572,8 @@ clause "inspect reads the killed insert's key active" is_equal "$(field inspect-
 clause "the journal was only appended to and no body changed" appended_only s5
 
 # ------------------------------------------------------------------
+fi
+if part cross-wallet; then
 # another wallet's fold at every hold supported by the fold path
 # ------------------------------------------------------------------
 # Discovery supplies executions, not a source-text verdict. Every discovered
@@ -738,6 +750,8 @@ cross_clause "every discovered fold hold point was reached" \
   '(.declared | length) > 0 and .declared == .executed' '.executed = .executed[1:]' '.declared = [] | .executed = []'
 
 # ------------------------------------------------------------------
+fi
+if part never-sent; then
 # never sent
 # ------------------------------------------------------------------
 control="never sent, past its upper bound"
@@ -805,6 +819,8 @@ clause "the unsent booking was prepared once and never acknowledged" \
   is_equal "$(events_of "$unbooked")" '["prepared","submit-unknown"]'
 
 # ------------------------------------------------------------------
+fi
+if part whole-journal; then
 # the whole journal
 # ------------------------------------------------------------------
 control="every control"
@@ -819,6 +835,8 @@ clause "no transaction of this registry was ever journalled rolled back" \
 jq -r '.journalEvent' "$journal" | sort | uniq -c
 
 # ------------------------------------------------------------------
+fi
+if part rollback; then
 # rolled back — a generated-DevNet mechanism, not a public-chain fork
 # ------------------------------------------------------------------
 # The development node's database is copied while the node is stopped,
@@ -1068,8 +1086,12 @@ clause "at the end too, the adoption record covers every block the node forged" 
 say "$control: $(chained_after "$mark" | wc -l) block(s) chained by the restored node"
 jq -r '.journalEvent' "$journal" | sort | uniq -c
 
+fi
+
+if part trie-capability; then
 control="trie capability"
 clause "completed real recovery commands have nonempty trie evidence bound to their key, leaf and root" trie_extent
+fi
 
 cat "$verdicts"
 if [ "$failed" -ne 0 ]; then
