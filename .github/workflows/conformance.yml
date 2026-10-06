@@ -88,10 +88,10 @@ jobs:
       # HLint the off-chain lint resolves; no exclusions, no ignore file.
       - run: nix run --quiet .#hlint-check
         working-directory: conformance
-  conformance:
-    name: Generic, canonical-identity and serialization rows on a real devnet
+  conformance-checks:
+    name: Conformance checks without a devnet
     runs-on: nixos
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -180,6 +180,29 @@ jobs:
       # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
       # The ledger's own reason comes from the traced replay of each refused
       # transaction (#287) and must equal the model's.
+  conformance-retire:
+    name: "Conformance devnet: retire-active-key"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the dedicated retire-active-key retirement row as a packaged app
         run: |
           set -e
@@ -261,6 +284,43 @@ jobs:
       # run in the separate finite-window chapter below.
       # The ledger's own reason comes from the traced replay of each refused
       # transaction (#287) and must equal the model's.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-retire
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-refund-controls:
+    name: "Conformance devnet: reject and retract refund controls"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the dedicated reject-and-retract-refund-controls exit row as a packaged app
         run: |
           set -e
@@ -342,6 +402,43 @@ jobs:
       # early_reject_refund_one_lovelace_short_in_the_processing_window_refuses_by_name,
       # early_reject_refund_to_another_key_in_the_processing_window_refuses_by_name
       # and their retraction-window twins).
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-refund-controls
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-reject-early:
+    name: "Conformance devnet: early rejection inside the windows"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the dedicated reject-inside-processing-and-retraction-windows early rejection row as a packaged app
         run: |
           set -eo pipefail
@@ -402,6 +499,43 @@ jobs:
           echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (reject-before-deadline-consumer-requirement, unmet-by-ruling).'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-reject-early
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-retraction:
+    name: "Conformance devnet: the retraction window"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the retraction window as a packaged app
         run: |
           set -e
@@ -456,6 +590,43 @@ jobs:
       # one, write no receipt, and keep the differing comparison in its replay
       # index. The restored leg is the retraction window step above: the same
       # row at this head, without the control, passing.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-retraction
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-wrong-reason:
+    name: "Conformance devnet: a wrong model reason fails the row"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Show a wrong model reason fails the row naming both reasons
         working-directory: conformance
         run: |
@@ -470,6 +641,43 @@ jobs:
           grep -q 'model and chain refuse for different reasons for retract at window-first: chain=not-phase2 lean=retract-owner' /tmp/reason-control.log || { echo 'FAIL: the altered row did not fail naming both reasons'; exit 1; }
           test ! -e "$receipts/receipt-retract-outside-window.json" || { echo 'FAIL: the altered row wrote a receipt'; exit 1; }
           nix run --quiet nixpkgs#jq -- -e 'any(.[]; .kind == "refusal" and .comparison == "differs" and .modelReason == "retract-owner")' "$receipts/replay/index.json" > /dev/null || { echo 'FAIL: the replay index lost the differing comparison'; exit 1; }
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-wrong-reason
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-generic:
+    name: "Conformance devnet: the generic rows"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: bash ../.github/scripts/ci_generic_rows.sh
@@ -480,6 +688,43 @@ jobs:
       # policy-address-only-authentication-control proves the name check is the discriminator; tokenless-output-authentication shows
       # no script executed when a forged output is created at the
       # canonical address.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-generic
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-identity:
+    name: "Conformance devnet: the canonical-identity rows"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the canonical-identity rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -530,6 +775,43 @@ jobs:
       # runner's exit line — then requires exactly the six serialization receipt
       # IDs with no missing or extra receipt, each with its real
       # verdict, on a clean tree, bound to the candidate.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-identity
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance-serialization:
+    name: "Conformance devnet: the serialization rows"
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Receipt directories for this part
+        run: |
+          for v in CONFORMANCE_RECEIPTS CONFORMANCE_DEDICATED_RECEIPTS STORY_RECEIPTS; do
+            d="$(mktemp -d "$RUNNER_TEMP/$v.XXXXXX")"
+            printf '%s=%s\n' "$v" "$d" >> "$GITHUB_ENV"
+          done
       - name: Run the serialization rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -650,6 +932,57 @@ jobs:
       # refusing script role has an accepting control; and a run with no
       # refusal fails. The wrong-reason control's run is a deliberate
       # disagreement and is not part of the extent.
+      - name: Collect this part's receipts
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/part-receipts"
+          mkdir -p "$out/receipts" "$out/dedicated" "$out/story"
+          [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
+          [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
+          [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-part-conformance-serialization
+          path: ${{ runner.temp }}/part-receipts
+          if-no-files-found: ignore
+  conformance:
+    name: Generic, canonical-identity and serialization rows on a real devnet
+    needs:
+      - conformance-checks
+      - conformance-retire
+      - conformance-refund-controls
+      - conformance-reject-early
+      - conformance-retraction
+      - conformance-wrong-reason
+      - conformance-generic
+      - conformance-identity
+      - conformance-serialization
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: conformance-part-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/merged
+      - name: Point at the merged receipts
+        run: |
+          printf 'CONFORMANCE_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/receipts" >> "$GITHUB_ENV"
+          printf 'CONFORMANCE_DEDICATED_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/dedicated" >> "$GITHUB_ENV"
+          printf 'STORY_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/story" >> "$GITHUB_ENV"
       - name: Account for every live refusal against the model
         working-directory: conformance
         run: |

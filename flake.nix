@@ -110,6 +110,31 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          # #449: the recovery controls as one app per part, each on its own
+          # development node, so CI runs the parts as parallel jobs. An empty
+          # part list runs them all.
+          recoveryApp = name: parts: {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                inherit name;
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  jq
+                  nix
+                  # the controls find and stop their own development node
+                  procps
+                  # read-root.py and the CBOR reader; without it the check
+                  # script falls back to nix develop
+                  python3
+                ];
+                text = ''CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
           flagsTools = with pkgs; [
             bash
             coreutils
@@ -294,25 +319,11 @@
           # mirror is saved, a transaction never sent, and an accepting
           # control — judged from receipts and journals:
           # `nix run --quiet .#cli-recovery-controls`.
-          cli-recovery-controls = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "cli-recovery-controls";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  jq
-                  nix
-                  # the controls find and stop their own development node
-                  procps
-                ];
-                text = ''CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"'';
-              }
-            );
-          };
+          cli-recovery-controls = recoveryApp "cli-recovery-controls" "";
+          # #449: the parts seen passing on main since #411, one CI job each.
+          cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";
+          cli-recovery-lost-answer = recoveryApp "cli-recovery-lost-answer" "lost-answer";
+          cli-recovery-killed = recoveryApp "cli-recovery-killed" "accepting killed";
         };
     in
     {

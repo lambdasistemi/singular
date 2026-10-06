@@ -29,10 +29,6 @@ devnet="$(build .#devnet)/bin/devnet"
 blueprint="$(build ../onchain#plutus-blueprint)"
 
 status=0
-if command -v python3 >/dev/null; then
-  bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
-else
-  nix develop --quiet "$root" -c bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
-fi
+bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"
 exit "$status"
