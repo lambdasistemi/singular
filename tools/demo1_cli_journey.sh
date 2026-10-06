@@ -1264,15 +1264,20 @@ for fault in missing-create missing-change broken-before wrong-after undecodable
   cp -a "$reg" "$copy"
   case "$fault" in
     missing-create)
-      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
+      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      ;;
     missing-change)
-      jq -c 'select(.journalEdge == null)' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
+      jq -c 'select(.journalEdge == null)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      ;;
     broken-before)
-      jq -c 'if .journalEvent == "prepared" then .journalRootBefore = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
+      jq -c 'if .journalEvent == "prepared" then .journalRootBefore = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      ;;
     wrong-after)
-      jq -c 'if .journalEvent == "prepared" then .journalRootAfter = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
+      jq -c 'if .journalEvent == "prepared" then .journalRootAfter = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      ;;
     undecodable-edge)
-      jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
+      jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      ;;
   esac
   run "trie-local-$fault" success -- registry inspect --key keyG --registry "$copy" \
     --blueprint "$blueprint" "${node[@]}"
