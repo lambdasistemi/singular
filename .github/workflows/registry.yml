@@ -265,11 +265,32 @@ jobs:
   # into a conditional skip, or given any other substitute success path
   # here. The registry-protocol jobs (`e2e`, `journey`) and the generic
   # rows above are unaffected.
-  e2e:
-    name: Devnet E2E on the fresh blueprint
+  # #449: the devnet E2E modules each start their own development node, so
+  # they run as parallel parts. "the rest" skips every named module, so a
+  # module added later still runs instead of being silently dropped.
+  e2e-part:
+    name: "Devnet E2E part: ${{ matrix.part.name }}"
     needs: blueprint
     runs-on: nixos
-    timeout-minutes: 60
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        part:
+          - name: node, boot, insert and config
+            args: --match Singular.Registry.E2E.Node --match Singular.Registry.E2E.OpenBoot --match Singular.Registry.E2E.InsertActive --match Singular.Registry.E2E.Config
+          - name: fork recovery
+            args: --match Singular.Registry.E2E.Fork81
+          - name: update to terminal
+            args: --match Singular.Registry.E2E.UpdateTerminal
+          - name: criterion 3
+            args: --match Singular.Registry.E2E.Criterion3
+          - name: cage
+            args: --match Singular.Registry.E2E.Cage
+          - name: driver and replay
+            args: --match Singular.Registry.E2E.Driver --match Singular.Registry.E2E.Replay
+          - name: the rest
+            args: --skip Singular.Registry.E2E.Node --skip Singular.Registry.E2E.OpenBoot --skip Singular.Registry.E2E.InsertActive --skip Singular.Registry.E2E.Config --skip Singular.Registry.E2E.Fork81 --skip Singular.Registry.E2E.UpdateTerminal --skip Singular.Registry.E2E.Criterion3 --skip Singular.Registry.E2E.Cage --skip Singular.Registry.E2E.Driver --skip Singular.Registry.E2E.Replay
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -283,30 +304,29 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Hermetic devnet run (D-011): no `nix develop`, no `just`, no
-      # cabal — nothing consults a package index or any ambient state.
-      # haskell.nix resolves every dependency of the wrapped
-      # `cage-tests-e2e` binary at build time, and the wrapper puts the
-      # locked cardano-node (offchain#cardano-node) on its own PATH.
-      # The step builds the blueprint from the onchain flake first and
-      # points REGISTRY_BLUEPRINT at that store path, then runs the suite —
-      # eight registry scenarios: boots state and applies a request
-      # update; retracts a phase-2 request; rejects a request in its
-      # processing window, in its retraction window and in phase 3;
-      # ends a cage by burning the state token; sweeps malformed
-      # request-address UTxOs; Modify and End succeed with
-      # staking-script withdrawal. `needs:` stays ordering and
-      # fail-fast: if the blueprint cannot build, this expensive job is
-      # skipped instead of failing later for the same reason, while
-      # freshness itself is carried by the step's own blueprint build
-      # (the consumed artifact is always built from the checked-out
-      # commit). The suite covers the cage protocol surface only — it
-      # does not cover Singular's naming-claim or maintenance behaviour.
-      - name: Run the devnet E2E against a fresh blueprint
+      - name: Run this part of the devnet E2E against a fresh blueprint
         working-directory: offchain
+        env:
+          PART_ARGS: ${{ matrix.part.args }}
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+          # shellcheck disable=SC2086 # the part's hspec arguments split on spaces
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- $PART_ARGS
+  # The required check keeps its name and fails unless every part passed: a
+  # skipped job would otherwise count as passing.
+  e2e:
+    name: Devnet E2E on the fresh blueprint
+    needs: e2e-part
+    if: always()
+    runs-on: nixos
+    timeout-minutes: 5
+    steps:
+      - name: Every E2E part passed
+        env:
+          PARTS: ${{ needs.e2e-part.result }}
+        run: |
+          echo "E2E parts: $PARTS"
+          [ "$PARTS" = success ]
   contract:
     name: Backend contract suite on every adapter
     runs-on: nixos
