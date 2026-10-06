@@ -417,41 +417,43 @@ law = describe "the model's verdict on each step of the batch" $ do
             forM_ [edgeInsertActive, edgeInsertAbsent] $ \e ->
                 leafLaw (leaves l) live live [("k", e)] `shouldBe` Left "key-exists"
     it
-        "terminates an active key whose holding is live, naming every other case" $ do
-        leafLaw (leaves Active) live none [("k", edgeUpdateTerminal)]
-            `shouldBe` Right ()
-        leafLaw (leaves Active) none none [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "token-missing"
-        leafLaw Map.empty none none [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "key-unknown"
-        leafLaw (leaves Absent) none live [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "not-booked"
-        leafLaw (leaves Terminal) none none [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "terminal-immutable"
+        "terminates an active key whose holding is live, naming every other case"
+        $ do
+            leafLaw (leaves Active) live none [("k", edgeUpdateTerminal)]
+                `shouldBe` Right ()
+            leafLaw (leaves Active) none none [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "token-missing"
+            leafLaw Map.empty none none [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "key-unknown"
+            leafLaw (leaves Absent) none live [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "not-booked"
+            leafLaw (leaves Terminal) none none [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "terminal-immutable"
     it
-        "consumes a live custody entry or a live holding, naming every other case" $ do
-        leafLaw (leaves Absent) none live [("k", edgeUpdateActive)]
-            `shouldBe` Right ()
-        leafLaw (leaves Absent) none none [("k", edgeUpdateActive)]
-            `shouldBe` Left "custody-missing"
-        leafLaw (leaves Active) live none [("k", edgeUpdateActive)]
-            `shouldBe` Left "already-booked"
-        leafLaw (leaves Absent) none live [("k", edgeDeleteAbsent)]
-            `shouldBe` Right ()
-        leafLaw (leaves Absent) none none [("k", edgeDeleteAbsent)]
-            `shouldBe` Left "custody-missing"
-        leafLaw (leaves Active) live none [("k", edgeDeleteAbsent)]
-            `shouldBe` Left "not-absent"
-        leafLaw (leaves Active) live none [("k", edgeDeleteActive)]
-            `shouldBe` Right ()
-        leafLaw (leaves Active) none none [("k", edgeDeleteActive)]
-            `shouldBe` Left "token-missing"
-        leafLaw (leaves Absent) none live [("k", edgeDeleteActive)]
-            `shouldBe` Left "not-active"
-        leafLaw (leaves Terminal) none none [("k", edgeWitnessTerminal)]
-            `shouldBe` Right ()
-        leafLaw (leaves Active) live none [("k", edgeWitnessTerminal)]
-            `shouldBe` Left "read-active"
+        "consumes a live custody entry or a live holding, naming every other case"
+        $ do
+            leafLaw (leaves Absent) none live [("k", edgeUpdateActive)]
+                `shouldBe` Right ()
+            leafLaw (leaves Absent) none none [("k", edgeUpdateActive)]
+                `shouldBe` Left "custody-missing"
+            leafLaw (leaves Active) live none [("k", edgeUpdateActive)]
+                `shouldBe` Left "already-booked"
+            leafLaw (leaves Absent) none live [("k", edgeDeleteAbsent)]
+                `shouldBe` Right ()
+            leafLaw (leaves Absent) none none [("k", edgeDeleteAbsent)]
+                `shouldBe` Left "custody-missing"
+            leafLaw (leaves Active) live none [("k", edgeDeleteAbsent)]
+                `shouldBe` Left "not-absent"
+            leafLaw (leaves Active) live none [("k", edgeDeleteActive)]
+                `shouldBe` Right ()
+            leafLaw (leaves Active) none none [("k", edgeDeleteActive)]
+                `shouldBe` Left "token-missing"
+            leafLaw (leaves Absent) none live [("k", edgeDeleteActive)]
+                `shouldBe` Left "not-active"
+            leafLaw (leaves Terminal) none none [("k", edgeWitnessTerminal)]
+                `shouldBe` Right ()
+            leafLaw (leaves Active) live none [("k", edgeWitnessTerminal)]
+                `shouldBe` Left "read-active"
     it "judges each step from the state the steps before it leave" $ do
         leafLaw
             Map.empty
@@ -497,24 +499,26 @@ law = describe "the model's verdict on each step of the batch" $ do
                 leafLaw start none custody (create <> [("k", consume)])
                     `shouldBe` Left "token-missing"
     it
-        "refuses a step consuming a custody entry an earlier step of the batch creates: not-booked" $
-        forM_ [edgeUpdateActive, edgeDeleteAbsent] $ \consume ->
+        "refuses a step consuming a custody entry an earlier step of the batch creates: not-booked"
+        $ forM_ [edgeUpdateActive, edgeDeleteAbsent]
+        $ \consume ->
             leafLaw Map.empty none none [("k", edgeInsertAbsent), ("k", consume)]
                 `shouldBe` Left "not-booked"
     it
-        "folds the creating request and leaves the consuming one, named by the model's reason" $ do
-        let create =
-                ( outRef 'a' 0
-                , pendingOf (requestOf alice "keyA" edgeInsertActive open)
-                )
-            consume =
-                ( outRef 'b' 0
-                , pendingOf (requestOf bob "keyA" edgeUpdateTerminal open)
-                )
-            s = selectFold now margin (lawWith []) [consume, create]
-        included s `shouldBe` [outRef 'a' 0]
-        selExcluded s
-            `shouldBe` [(outRef 'b' 0, RefusedByLaw "token-missing")]
+        "folds the creating request and leaves the consuming one, named by the model's reason"
+        $ do
+            let create =
+                    ( outRef 'a' 0
+                    , pendingOf (requestOf alice "keyA" edgeInsertActive open)
+                    )
+                consume =
+                    ( outRef 'b' 0
+                    , pendingOf (requestOf bob "keyA" edgeUpdateTerminal open)
+                    )
+                s = selectFold now margin (lawWith []) [consume, create]
+            included s `shouldBe` [outRef 'a' 0]
+            selExcluded s
+                `shouldBe` [(outRef 'b' 0, RefusedByLaw "token-missing")]
 
 -- ---------------------------------------------------------
 -- Refusals
