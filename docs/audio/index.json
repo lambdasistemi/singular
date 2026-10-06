@@ -983,6 +983,22 @@
     "v": "d16a0f4d3bfe"
    }
   ],
+  "the-request-keeps-its-registrys-windows": [
+   {
+    "index": 0,
+    "name": "docs-cli-recovery/the-request-keeps-its-registrys-windows-00",
+    "pause_ms": 500,
+    "text": "The request keeps its registry's windows.",
+    "v": "ac1a8e4dbadf"
+   },
+   {
+    "index": 1,
+    "name": "docs-cli-recovery/the-request-keeps-its-registrys-windows-01",
+    "pause_ms": 400,
+    "text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+    "v": "17d0e67dc48f"
+   }
+  ],
   "what-the-checks-show": [
    {
     "index": 0,
@@ -4795,7 +4811,7 @@
    {
     "index": 65,
     "name": "docs-offchain-api-reference/what-this-reference-contains-65",
-    "pause_ms": 300,
+    "pause_ms": 400,
     "text": "Singular.Registry.Wire.State — source",
     "v": "107b9298263b"
    },
@@ -8150,6 +8166,29 @@
     "pause_ms": 400,
     "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
     "v": "64154887f34f"
+   }
+  ],
+  "choosing-a-registrys-windows": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/choosing-a-registrys-windows-00",
+    "pause_ms": 500,
+    "text": "Choosing a registry's windows.",
+    "v": "36b0e5d09934"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/choosing-a-registrys-windows-01",
+    "pause_ms": 400,
+    "text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
+    "v": "c0a89f69268b"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/choosing-a-registrys-windows-02",
+    "pause_ms": 400,
+    "text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
+    "v": "1e5ca56fbf56"
    }
   ],
   "choosing-a-usable-validity-interval": [

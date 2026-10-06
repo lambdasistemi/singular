@@ -92,7 +92,7 @@ done
   || setup_fail "the genesis-only source never printed usable provider/time settings"
 printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
 status=0
-"$singular" registry create --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
+"$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
   --koios-url "$bare_provider" --network-time "$bare_time" --network-magic "$bare_magic" \
   --wallet-skey "$work/genesis.skey" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
 [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
@@ -172,7 +172,7 @@ run() {
     env -u SINGULAR_HARNESS_TRIE_TRACE "$singular" "$@" \
       >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   else
-    SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
+    SINGULAR_LOG="$receipts/$name.phases.jsonl" SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
       "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   fi
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
@@ -182,6 +182,16 @@ run() {
     cat "$receipts/$name.json" >&2 || true
     tail -20 "$receipts/$name.err" >&2 || true
     fail "$name: outcome $got (exit $status), expected $class"
+  fi
+  if [ "$class" = success ] && jq -e 'any(.submissions[]?; .step == "fold")' "$receipts/$name.json" >/dev/null; then
+    [ -s "$receipts/$name.phases.jsonl" ] || setup_fail "$name: the fold produced no phase log"
+    local build_ms
+    build_ms="$(jq -s '[.[] | select(.phase == "build" and .step == "fold") | .duration_ms] | max // empty' "$receipts/$name.phases.jsonl")"
+    [ -n "$build_ms" ] || setup_fail "$name: the fold phase log has no build duration"
+    jq -n -e --argjson build "$build_ms" --argjson window "$(field create .processTime)" \
+      '$build * 3 < $window - 30000' >/dev/null \
+      || fail "$name: the processing window leaves less than three times the measured fold build beyond the CLI margin"
+    say "$name: fold build ${build_ms} ms, processing window $(field create .processTime) ms"
   fi
   say "$name: $class"
 }
@@ -389,10 +399,10 @@ say "help names the eight commands; a signing key on inspect is refused"
 # ------------------------------------------------------------------
 # 1. create
 # ------------------------------------------------------------------
-run preview success -- registry create --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview success -- registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 [ ! -e "$reg" ] || fail "preview created the target $reg"
 seed="$(field preview .seed)"
-run bob-preview success -- registry create --preview --registry "$work/bob-preview" \
+run bob-preview success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/bob-preview" \
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -401,21 +411,23 @@ bob_addr="$(field bob-preview .wallet)"
 
 # The same preview for a public address alone: no key, no write, and the
 # identity it names is the one the key-holding preview named.
-run preview-public success -- registry create --preview --registry "$work/public-preview" \
+run preview-public success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/public-preview" \
   --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
 [ ! -e "$work/public-preview" ] || fail "a public preview created its target"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
   "$receipts/preview-public.json" >/dev/null || fail "the public preview names another identity than the key preview"
 status=0
-"$singular" registry create --preview --registry "$work/public-preview" --blueprint "$blueprint" \
+"$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/public-preview" --blueprint "$blueprint" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
-run create-seed-not-owned client-refusal -- registry create --seed "$seed" \
+run create-seed-not-owned client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 [ ! -e "$reg/registry.json" ] || fail "a refused create saved a registry"
 
-run create success -- registry create --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+process_time=45000
+retract_time=15000
+run create success -- registry create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 state="$(field create .pins.pinState)"
 token="$(field create .token)"
 active="$(field create .pins.pinActive)"
@@ -423,8 +435,23 @@ alicekey="$(field create .walletKeyHash)"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
   "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
-refused create-again client-refusal -- registry create --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+refused create-again client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e --argjson p "$process_time" --argjson r "$retract_time" \
+  '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
+  || fail "create did not report the chosen processing and retract windows"
 say "registry $token booted from $seed"
+
+# This registry exercises absent flags and never books a timed request.
+# The rest of the journey keeps its explicit development-network windows.
+run create-defaults success -- registry create --seed "$(field bob-preview .seed)" \
+  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+run inspect-defaults success -- registry inspect --key default-window-key \
+  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}"
+for name in create-defaults inspect-defaults; do
+  jq -e '.processTime == 600000 and .retractTime == 300000' "$receipts/$name.json" >/dev/null \
+    || fail "$name: the default registry did not read back ten-minute processing and five-minute retract windows"
+done
+say "default registry windows read back from create and inspect, without waiting them out"
 
 # ------------------------------------------------------------------
 # 2. insert (alice), with its refusals
@@ -523,6 +550,13 @@ jq -e --slurpfile i "$receipts/insert.json" '. == $i[0].envelope' "$stored" >/de
   || fail "the kept envelope is not the one inserted"
 run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
+jq -e --argjson p "$process_time" --argjson r "$retract_time" --slurpfile b "$receipts/insert.json" '
+  .processTime == $p and .retractTime == $r
+  and ([.pendingRequests[] | select(.request == $b[0].request)] | length == 1)
+  and ([.pendingRequests[] | select(.request == $b[0].request)][0].submittedAt + .processTime == $b[0].foldDeadline.posixMs)
+' "$receipts/inspect-pending.json" >/dev/null \
+  || fail "inspect did not read the chosen windows, or the booking deadline differs from its live submission time plus the processing window"
+say "chosen registry windows read back; booking deadline is submission time plus the processing window"
 
 # A-001: an unconverted processing deadline cannot prove opening and is
 # refused before the window, naming when it opens.
@@ -819,42 +853,6 @@ jq -e '(.observedTip | test("^[0-9]+\\.[0-9a-f]{64}$"))
   || fail "inspect-4 lacks its actual latest observation and Unbound binding"
 say "every write names its actual Unbound acquisition; inspect reports its separate latest observation"
 
-# A request nobody folds: alice books one more insertion and leaves it. The
-# registry's fold takes every pending request, so this is the journey's last
-# booking; the late fold below is its control.
-before="$(journal_lines "$reg")"
-files_before="$(local_files)"
-run late-insert success -- registry insert --key keyD --payload "$work/payload-insert.json" \
-  "${common[@]}" "${node[@]}" "${alice[@]}"
-booked late-insert
-booking_only late-insert "$before" "$files_before"
-
-# A fold near its request's deadline. Within the margin a fold needs to be
-# included, the client refuses it up front, by name, before it builds anything:
-# nothing is signed, submitted or journalled. (The fold the guard admits is judged
-# again from its built body, `postBuildDecision`, which a unit witness proves;
-# on a development network that second check cannot be reached end to end,
-# because near a window's end the library's own fallback times lie past the
-# node's horizon and no fold is built there, #370.)
-deadline_ms="$(field late-insert .foldDeadline.posixMs)"
-margin_ms=30000
-wait_ms=$((deadline_ms - 20000 - $(date +%s%3N)))
-[ "$wait_ms" -gt -10000 ] || setup_fail "the late request has less than 10 s of margin left: the near fold would meet the passed deadline instead"
-if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s until 20 s of the late request's window remain"
-  sleep $((wait_ms / 1000 + 1))
-fi
-refused fold-near client-refusal -- registry fold --request "$(field late-insert .request)" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
-    (.reason | contains("within the") and contains("no fold is built") and (contains("could not be built") | not))
-    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
-    and (.remainingMs > 0 and .remainingMs <= $m) and (.hostClockMs + $m >= .foldDeadline.posixMs)
-    and (.submissions | length == 0)' \
-  "$receipts/fold-near.json" >/dev/null \
-  || fail "the fold near the deadline was not refused up front, by name, with nothing submitted: $(field fold-near .reason)"
-say "a fold near the deadline: refused up front by the guard, naming it, nothing signed or submitted"
-
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
 # ------------------------------------------------------------------
@@ -874,12 +872,12 @@ say "create race: the late create was refused RegistryExists; the first registry
 # A create killed after its first accepted submission: a new create is
 # refused, and inspect reads the incomplete create from its journal.
 inter="$work/interrupted"
-run preview-inter success -- registry create --preview --registry "$inter" \
+run preview-inter success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 seed_i="$(field preview-inter .seed)"
 rm -f "$work/create.go" "$work/create.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
-  "$singular" registry create --seed "$seed_i" --registry "$inter" --blueprint "$blueprint" \
+  "$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_i" --registry "$inter" --blueprint "$blueprint" \
   "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
 victim=$!
 for _ in $(seq 1 1200); do
@@ -894,7 +892,7 @@ wait "$victim" 2>/dev/null || true
 first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
 first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
-run create-after-kill client-refusal -- registry create --seed "$seed_i" --registry "$inter" \
+run create-after-kill client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed_i" --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
@@ -909,6 +907,43 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
   "$inter/journal.jsonl" >/dev/null || fail "the killed create's accepted submission was never observed"
 say "an interrupted create is refused a second boot and read back from its journal"
+
+# A request nobody folds: alice books one more insertion and leaves it. The
+# registry's fold takes every pending request, so this is the journey's last
+# booking; the late fold below is its control.
+before="$(journal_lines "$reg")"
+files_before="$(local_files)"
+run late-insert success -- registry insert --key keyD --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked late-insert
+booking_only late-insert "$before" "$files_before"
+
+# A fold near its request's deadline. Within the margin a fold needs to be
+# included, the client refuses it up front, by name, before it builds anything:
+# nothing is signed, submitted or journalled. (The fold the guard admits is judged
+# again from its built body, `postBuildDecision`, which a unit witness proves;
+# on a development network that second check cannot be reached end to end,
+# because near a window's end the library's own fallback times lie past the
+# node's horizon and no fold is built there, #370.)
+deadline_ms="$(field late-insert .foldDeadline.posixMs)"
+margin_ms=30000
+near_remaining_ms=$((margin_ms * 2 / 3))
+wait_ms=$((deadline_ms - near_remaining_ms - $(date +%s%3N)))
+[ "$wait_ms" -gt -10000 ] || setup_fail "the late request has less than 10 s of margin left: the near fold would meet the passed deadline instead"
+if [ "$wait_ms" -gt 0 ]; then
+  say "waiting $((wait_ms / 1000 + 1)) s until $((near_remaining_ms / 1000)) s of the late request's window remain"
+  sleep $((wait_ms / 1000 + 1))
+fi
+refused fold-near client-refusal -- registry fold --request "$(field late-insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
+    (.reason | contains("within the") and contains("no fold is built") and (contains("could not be built") | not))
+    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
+    and (.remainingMs > 0 and .remainingMs <= $m) and (.hostClockMs + $m >= .foldDeadline.posixMs)
+    and (.submissions | length == 0)' \
+  "$receipts/fold-near.json" >/dev/null \
+  || fail "the fold near the deadline was not refused up front, by name, with nothing submitted: $(field fold-near .reason)"
+say "a fold near the deadline: refused up front by the guard, naming it, nothing signed or submitted"
 
 # ------------------------------------------------------------------
 # 7b. a fold that comes too late
@@ -937,7 +972,7 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
 # retract window, where its owner may take it back: a reject, which takes
 # every pending request, is refused by the client before anything is signed,
 # naming the request and when its retract window closes.
-retract_ms="$(jq -r .confDeployment.depRetractTime "$reg/registry.json")"
+retract_ms="$(field inspect-pending .retractTime)"
 retract_ends=$((deadline_ms + retract_ms))
 [ "$(($(date +%s%3N) + 5000))" -lt "$retract_ends" ] \
   || setup_fail "the late request's retract window is nearly over: the early reject would meet the open reject"

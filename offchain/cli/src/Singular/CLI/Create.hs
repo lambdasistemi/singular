@@ -78,6 +78,7 @@ import Singular.CLI.Registry
     ( LocalState (..)
     , Release
     , configPath
+    , economics
     , hexT
     , loadRelease
     , mkRegistryConfig
@@ -106,6 +107,7 @@ import Singular.CLI.Session
 import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment
     ( Deployment (..)
     , ReferenceScript (..)
@@ -250,6 +252,8 @@ createWith a rel ws = do
                         Success
                         ( identity
                             <> [ ("token", toJSON (tokenHex (bootedToken booted)))
+                               , ("processTime", toJSON (stateProcessTime (bootedState booted)))
+                               , ("retractTime", toJSON (stateRetractTime (bootedState booted)))
                                , ("boot", toJSON (bootedBoot booted))
                                , ("transactions", toJSON (bootedTxs booted))
                                ,
@@ -274,6 +278,7 @@ data Booted = Booted
     , bootedBody :: ConwayTx
     , bootedOutput :: TxIn
     , bootedRoot :: ByteString
+    , bootedState :: OnChainTokenState
     , bootedBoot :: Text
     -- ^ The boot's transaction id
     , bootedRefs :: [ReferenceScript]
@@ -333,19 +338,19 @@ boot wc cfg pinned seedIn = do
         Cage.withLatest
             prov
             (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
-    (seenOutput, seenRoot) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+    (seenOutput, seenState) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
         Just (output, out) -> do
-            root <- case extractCageDatum out of
-                Just (StateDatum state) -> pure (unOnChainRoot (stateRoot state))
+            state <- case extractCageDatum out of
+                Just (StateDatum found) -> pure found
                 _ -> failWith Partial "the boot's state output carries no state datum"
             journalObserved
                 wc
                 "boot"
                 signedBoot
                 "the state output holds the registry token"
-            pure (output, root)
+            pure (output, state)
     -- The references every later command resolves its scripts through.
     let scripts =
             [ ("request", mkRequestScript cfg tid)
@@ -368,7 +373,8 @@ boot wc cfg pinned seedIn = do
             { bootedToken = tid
             , bootedBody = signedBoot
             , bootedOutput = seenOutput
-            , bootedRoot = seenRoot
+            , bootedRoot = unOnChainRoot (stateRoot seenState)
+            , bootedState = seenState
             , bootedBoot = txIdHex signedBoot
             , bootedRefs = reference "state" addr stateScript stateRef : published
             , bootedTxs =
@@ -496,7 +502,12 @@ previewIdentity submitting a rel addr utxos = do
             (failWith ClientRefusal . renderIdentityError)
             pure
             (seedChecks submitting seedIn utxos)
-    let (cfg, pinned) = registryConfigFor rel (txInToRef seedIn)
+    let chosen =
+            economics
+                { reProcessTime = createProcessTime a
+                , reRetractTime = createRetractTime a
+                }
+        (cfg, pinned) = registryConfigFor rel chosen (txInToRef seedIn)
         identity =
             [ ("application", toJSON (applicationTitle OpenDatumApplication))
             , ("seed", toJSON (txInText seedIn))

@@ -20,6 +20,8 @@ no coherent chain snapshot and carries no verification witness.
 | `--network-time DIR` | all eight | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
 | `--network-magic N` | all eight | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` refuses it. |
+| `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
+| `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--registry DIR` | all eight | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
@@ -51,6 +53,22 @@ singular registry insert --registry ./reg --blueprint plutus.json \
   --wallet-skey ~/keys/payment.skey
 ```
 
+## Choosing a registry's windows
+
+As a registry creator, you choose the processing and retract windows when you
+run `registry create`, through `--process-time MS` and `--retract-time MS`.
+Each must be a positive integer number of milliseconds; any other value is
+refused before the command builds or signs anything. When omitted, they are
+600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then
+five minutes for its owner to reclaim it.
+
+Both windows are written into the state datum and fixed for the life of the
+registry. A later command cannot change them. The successful `create` receipt
+and `inspect` report `processTime` and `retractTime` read from that datum;
+booking deadlines follow the registry's actual windows, including those of a
+registry created before these defaults changed. The defaults give public
+network reads and folds more time; development-network CI explicitly creates
+its throwaway registries with shorter windows.
 
 ## Booking and folding
 

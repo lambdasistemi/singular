@@ -124,6 +124,8 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
     , edgeName
     )
 
@@ -259,7 +261,11 @@ inspectSaved dir key settings a = do
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved
-            root <- either (failWith Partial) pure (observedRoot live)
+            state <- case extractCageDatum (snd (liveState live)) of
+                Just (StateDatum found) -> pure found
+                _ ->
+                    failWith Partial "the registry's state output carries no state datum"
+            let root = unOnChainRoot (stateRoot state)
             mirror <- openMirror saved
             _ <- selectMirror saved live mirror
             leaf <- mirrorLeaf mirror key root
@@ -322,6 +328,8 @@ inspectSaved dir key settings a = do
                                , toJSON ("Latest reads in this process; no snapshot binding" :: Text)
                                )
                            , ("root", toJSON (hexT root))
+                           , ("processTime", toJSON (stateProcessTime state))
+                           , ("retractTime", toJSON (stateRetractTime state))
                            , ("applicationOutput", application)
                            ]
                         <> [

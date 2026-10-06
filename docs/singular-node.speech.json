@@ -23,6 +23,20 @@
       "pause": 400
     }
   ],
+  "choosing-a-registrys-windows": [
+    {
+      "text": "Choosing a registry's windows.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
+      "pause": 400
+    },
+    {
+      "text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
+      "pause": 400
+    }
+  ],
   "booking-and-folding": [
     {
       "text": "Booking and folding.",
@@ -169,6 +183,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "3028934900fc5f368d6329cac086f2f000310f8647f09af48e93337bb8bb7759"
+    "sha256": "eb33d260c5f8b7e58d3e1f5b26f4002858e4ff492cebd52d1bbd81d90b2c22b9"
   }
 }

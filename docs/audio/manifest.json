@@ -33165,6 +33165,581 @@
     }
    ]
   },
+  "docs-cli-recovery/the-request-keeps-its-registrys-windows-00": {
+   "audio_sha256": "ac1a8e4dbadfd071a10ab54d93a92cdc4cd596ae366c624bcb58d7e117a1130a",
+   "characters": 41,
+   "cost": 2.542e-05,
+   "duration": 2.725,
+   "index": 0,
+   "key": "da71a33b5380cc17ea0e00d0beaf426e373f967f13f4ffc287c6a9e9d4f5f2bf",
+   "page": "docs/cli-recovery.md",
+   "pause_ms": 500,
+   "section": "the-request-keeps-its-registrys-windows",
+   "sent_text": "The request keeps its registry's windows.",
+   "text": "The request keeps its registry's windows.",
+   "words": [
+    {
+     "end": 0.237,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.65,
+     "start": 0.237,
+     "text": "request"
+    },
+    {
+     "end": 0.913,
+     "start": 0.65,
+     "text": "keeps"
+    },
+    {
+     "end": 1.025,
+     "start": 0.913,
+     "text": "its"
+    },
+    {
+     "end": 1.6,
+     "start": 1.025,
+     "text": "registry's"
+    },
+    {
+     "end": 2.525,
+     "start": 1.6,
+     "text": "windows"
+    },
+    {
+     "end": 2.725,
+     "start": 2.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-cli-recovery/the-request-keeps-its-registrys-windows-01": {
+   "audio_sha256": "17d0e67dc48fe6e4e909563242d2a051a58406ac2f15f2102a339458282be809",
+   "characters": 586,
+   "cost": 0.00036332000000000004,
+   "duration": 39.325,
+   "index": 1,
+   "key": "f88ec3bc8ebaba6a1106022934fb45023ff637d03b3ec18a72c7896832a27f9e",
+   "page": "docs/cli-recovery.md",
+   "pause_ms": 400,
+   "section": "the-request-keeps-its-registrys-windows",
+   "sent_text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+   "text": "As a requester recovering after an interruption, you read processTime and retractTime from registry inspect to see the windows stored in the live state datum. They were chosen once at registry create with --process-time and --retract-time, or defaulted to 600 000 and 300 000 milliseconds (ten and five minutes). Both are fixed for the life of the registry; restarting a command or reconciling its journal does not restart or extend a request's windows. A booking's fold deadline remains its submission time plus the registry's processing window, followed by the owner's retract window.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.425,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 1.0,
+     "start": 0.425,
+     "text": "requester"
+    },
+    {
+     "end": 1.6,
+     "start": 1.0,
+     "text": "recovering"
+    },
+    {
+     "end": 1.888,
+     "start": 1.6,
+     "text": "after"
+    },
+    {
+     "end": 1.962,
+     "start": 1.888,
+     "text": "an"
+    },
+    {
+     "end": 2.625,
+     "start": 1.962,
+     "text": "interruption"
+    },
+    {
+     "end": 2.7,
+     "start": 2.625,
+     "text": ","
+    },
+    {
+     "end": 2.888,
+     "start": 2.7,
+     "text": "you"
+    },
+    {
+     "end": 3.162,
+     "start": 2.888,
+     "text": "read"
+    },
+    {
+     "end": 4.125,
+     "start": 3.162,
+     "text": "processTime"
+    },
+    {
+     "end": 4.25,
+     "start": 4.125,
+     "text": "and"
+    },
+    {
+     "end": 5.075,
+     "start": 4.25,
+     "text": "retractTime"
+    },
+    {
+     "end": 5.275,
+     "start": 5.075,
+     "text": "from"
+    },
+    {
+     "end": 5.775,
+     "start": 5.275,
+     "text": "registry"
+    },
+    {
+     "end": 6.325,
+     "start": 5.775,
+     "text": "inspect"
+    },
+    {
+     "end": 6.45,
+     "start": 6.325,
+     "text": "to"
+    },
+    {
+     "end": 6.65,
+     "start": 6.45,
+     "text": "see"
+    },
+    {
+     "end": 6.775,
+     "start": 6.65,
+     "text": "the"
+    },
+    {
+     "end": 7.238,
+     "start": 6.775,
+     "text": "windows"
+    },
+    {
+     "end": 7.75,
+     "start": 7.238,
+     "text": "stored"
+    },
+    {
+     "end": 7.863,
+     "start": 7.75,
+     "text": "in"
+    },
+    {
+     "end": 7.95,
+     "start": 7.863,
+     "text": "the"
+    },
+    {
+     "end": 8.3,
+     "start": 7.95,
+     "text": "live"
+    },
+    {
+     "end": 8.625,
+     "start": 8.3,
+     "text": "state"
+    },
+    {
+     "end": 9.775,
+     "start": 8.625,
+     "text": "datum"
+    },
+    {
+     "end": 10.0,
+     "start": 9.775,
+     "text": "."
+    },
+    {
+     "end": 10.312,
+     "start": 10.175,
+     "text": "They"
+    },
+    {
+     "end": 10.462,
+     "start": 10.312,
+     "text": "were"
+    },
+    {
+     "end": 10.913,
+     "start": 10.462,
+     "text": "chosen"
+    },
+    {
+     "end": 11.25,
+     "start": 10.913,
+     "text": "once"
+    },
+    {
+     "end": 11.35,
+     "start": 11.25,
+     "text": "at"
+    },
+    {
+     "end": 11.913,
+     "start": 11.35,
+     "text": "registry"
+    },
+    {
+     "end": 12.375,
+     "start": 11.913,
+     "text": "create"
+    },
+    {
+     "end": 12.562,
+     "start": 12.375,
+     "text": "with"
+    },
+    {
+     "end": 13.4,
+     "start": 12.562,
+     "text": "--process-time"
+    },
+    {
+     "end": 13.512,
+     "start": 13.4,
+     "text": "and"
+    },
+    {
+     "end": 14.8,
+     "start": 13.512,
+     "text": "--retract-time"
+    },
+    {
+     "end": 15.0,
+     "start": 14.8,
+     "text": ","
+    },
+    {
+     "end": 15.35,
+     "start": 15.2,
+     "text": "or"
+    },
+    {
+     "end": 15.85,
+     "start": 15.35,
+     "text": "defaulted"
+    },
+    {
+     "end": 15.988,
+     "start": 15.85,
+     "text": "to"
+    },
+    {
+     "end": 16.612,
+     "start": 15.988,
+     "text": "600"
+    },
+    {
+     "end": 17.112,
+     "start": 16.612,
+     "text": "000"
+    },
+    {
+     "end": 17.263,
+     "start": 17.112,
+     "text": "and"
+    },
+    {
+     "end": 17.875,
+     "start": 17.263,
+     "text": "300"
+    },
+    {
+     "end": 18.25,
+     "start": 17.875,
+     "text": "000"
+    },
+    {
+     "end": 19.038,
+     "start": 18.25,
+     "text": "milliseconds"
+    },
+    {
+     "end": 19.125,
+     "start": 19.038,
+     "text": "("
+    },
+    {
+     "end": 19.45,
+     "start": 19.125,
+     "text": "ten"
+    },
+    {
+     "end": 19.575,
+     "start": 19.45,
+     "text": "and"
+    },
+    {
+     "end": 19.9,
+     "start": 19.575,
+     "text": "five"
+    },
+    {
+     "end": 20.9,
+     "start": 19.9,
+     "text": "minutes"
+    },
+    {
+     "end": 21.075,
+     "start": 20.9,
+     "text": ")"
+    },
+    {
+     "end": 21.125,
+     "start": 21.075,
+     "text": "."
+    },
+    {
+     "end": 21.538,
+     "start": 21.3,
+     "text": "Both"
+    },
+    {
+     "end": 21.663,
+     "start": 21.538,
+     "text": "are"
+    },
+    {
+     "end": 21.962,
+     "start": 21.663,
+     "text": "fixed"
+    },
+    {
+     "end": 22.062,
+     "start": 21.962,
+     "text": "for"
+    },
+    {
+     "end": 22.15,
+     "start": 22.062,
+     "text": "the"
+    },
+    {
+     "end": 22.438,
+     "start": 22.15,
+     "text": "life"
+    },
+    {
+     "end": 22.513,
+     "start": 22.438,
+     "text": "of"
+    },
+    {
+     "end": 22.6,
+     "start": 22.513,
+     "text": "the"
+    },
+    {
+     "end": 23.575,
+     "start": 22.6,
+     "text": "registry"
+    },
+    {
+     "end": 23.8,
+     "start": 23.575,
+     "text": ";"
+    },
+    {
+     "end": 24.55,
+     "start": 24.0,
+     "text": "restarting"
+    },
+    {
+     "end": 24.625,
+     "start": 24.55,
+     "text": "a"
+    },
+    {
+     "end": 25.237,
+     "start": 24.625,
+     "text": "command"
+    },
+    {
+     "end": 25.4,
+     "start": 25.237,
+     "text": "or"
+    },
+    {
+     "end": 26.1,
+     "start": 25.4,
+     "text": "reconciling"
+    },
+    {
+     "end": 26.312,
+     "start": 26.1,
+     "text": "its"
+    },
+    {
+     "end": 26.788,
+     "start": 26.312,
+     "text": "journal"
+    },
+    {
+     "end": 27.0,
+     "start": 26.788,
+     "text": "does"
+    },
+    {
+     "end": 27.25,
+     "start": 27.0,
+     "text": "not"
+    },
+    {
+     "end": 27.862,
+     "start": 27.25,
+     "text": "restart"
+    },
+    {
+     "end": 28.0,
+     "start": 27.862,
+     "text": "or"
+    },
+    {
+     "end": 28.525,
+     "start": 28.0,
+     "text": "extend"
+    },
+    {
+     "end": 28.6,
+     "start": 28.525,
+     "text": "a"
+    },
+    {
+     "end": 29.125,
+     "start": 28.6,
+     "text": "request's"
+    },
+    {
+     "end": 30.3,
+     "start": 29.125,
+     "text": "windows"
+    },
+    {
+     "end": 30.5,
+     "start": 30.3,
+     "text": "."
+    },
+    {
+     "end": 30.775,
+     "start": 30.7,
+     "text": "A"
+    },
+    {
+     "end": 31.263,
+     "start": 30.775,
+     "text": "booking's"
+    },
+    {
+     "end": 31.663,
+     "start": 31.263,
+     "text": "fold"
+    },
+    {
+     "end": 32.225,
+     "start": 31.663,
+     "text": "deadline"
+    },
+    {
+     "end": 32.725,
+     "start": 32.225,
+     "text": "remains"
+    },
+    {
+     "end": 32.875,
+     "start": 32.725,
+     "text": "its"
+    },
+    {
+     "end": 33.425,
+     "start": 32.875,
+     "text": "submission"
+    },
+    {
+     "end": 33.888,
+     "start": 33.425,
+     "text": "time"
+    },
+    {
+     "end": 34.175,
+     "start": 33.888,
+     "text": "plus"
+    },
+    {
+     "end": 34.3,
+     "start": 34.175,
+     "text": "the"
+    },
+    {
+     "end": 34.875,
+     "start": 34.3,
+     "text": "registry's"
+    },
+    {
+     "end": 35.475,
+     "start": 34.875,
+     "text": "processing"
+    },
+    {
+     "end": 36.45,
+     "start": 35.475,
+     "text": "window"
+    },
+    {
+     "end": 36.725,
+     "start": 36.45,
+     "text": ","
+    },
+    {
+     "end": 37.225,
+     "start": 36.9,
+     "text": "followed"
+    },
+    {
+     "end": 37.338,
+     "start": 37.225,
+     "text": "by"
+    },
+    {
+     "end": 37.45,
+     "start": 37.338,
+     "text": "the"
+    },
+    {
+     "end": 37.775,
+     "start": 37.45,
+     "text": "owner's"
+    },
+    {
+     "end": 38.25,
+     "start": 37.775,
+     "text": "retract"
+    },
+    {
+     "end": 39.1,
+     "start": 38.25,
+     "text": "window"
+    },
+    {
+     "end": 39.325,
+     "start": 39.1,
+     "text": "."
+    }
+   ]
+  },
   "docs-cli-recovery/what-the-checks-show-00": {
    "audio_sha256": "3a277008587057fe2fd27d8647bef09014f97fe925d5dd7eae51246cc013ad31",
    "characters": 21,
@@ -147208,7 +147783,7 @@
    "index": 65,
    "key": "896a4a387f305831d1c5a108e07324c41b852a9c46c8e558cddaf85703e8fa63",
    "page": "docs/offchain-api-reference.md",
-   "pause_ms": 300,
+   "pause_ms": 400,
    "section": "what-this-reference-contains",
    "sent_text": "Singular.Registry.Wire.State — source",
    "text": "Singular.Registry.Wire.State — source",
@@ -268276,6 +268851,866 @@
     {
      "end": 9.8,
      "start": 9.6,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/choosing-a-registrys-windows-00": {
+   "audio_sha256": "36b0e5d099340d5efbd320f0ae119ce42043aa0b79dfc3944bbf93391221df60",
+   "characters": 30,
+   "cost": 1.86e-05,
+   "duration": 2.175,
+   "index": 0,
+   "key": "bb0788c950bffa3ece2243045d823d8a5107f0e61ef48ace995525f7f11f2ca3",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "choosing-a-registrys-windows",
+   "sent_text": "Choosing a registry's windows.",
+   "text": "Choosing a registry's windows.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.2,
+     "text": "Choosing"
+    },
+    {
+     "end": 0.525,
+     "start": 0.463,
+     "text": "a"
+    },
+    {
+     "end": 1.075,
+     "start": 0.525,
+     "text": "registry's"
+    },
+    {
+     "end": 1.975,
+     "start": 1.075,
+     "text": "windows"
+    },
+    {
+     "end": 2.175,
+     "start": 1.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/choosing-a-registrys-windows-01": {
+   "audio_sha256": "c0a89f69268bfe50bbe42daec64ba26104e56b00cecf1fea700f1117572c2505",
+   "characters": 417,
+   "cost": 0.00025854000000000003,
+   "duration": 28.7,
+   "index": 1,
+   "key": "5a42d2d0c895dc445aea1a0b1cbb879c1a5d6f9b9d20c0ef42759a231cfad5bd",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "choosing-a-registrys-windows",
+   "sent_text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
+   "text": "As a registry creator, you choose the processing and retract windows when you run registry create, through --process-time MS and --retract-time MS. Each must be a positive integer number of milliseconds; any other value is refused before the command builds or signs anything. When omitted, they are 600 000 and 300 000 milliseconds: ten minutes to fold a booked request, then five minutes for its owner to reclaim it.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.45,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 0.925,
+     "start": 0.45,
+     "text": "registry"
+    },
+    {
+     "end": 1.4,
+     "start": 0.925,
+     "text": "creator"
+    },
+    {
+     "end": 1.45,
+     "start": 1.4,
+     "text": ","
+    },
+    {
+     "end": 1.625,
+     "start": 1.45,
+     "text": "you"
+    },
+    {
+     "end": 1.975,
+     "start": 1.625,
+     "text": "choose"
+    },
+    {
+     "end": 2.088,
+     "start": 1.975,
+     "text": "the"
+    },
+    {
+     "end": 2.775,
+     "start": 2.088,
+     "text": "processing"
+    },
+    {
+     "end": 2.9,
+     "start": 2.775,
+     "text": "and"
+    },
+    {
+     "end": 3.45,
+     "start": 2.9,
+     "text": "retract"
+    },
+    {
+     "end": 3.975,
+     "start": 3.45,
+     "text": "windows"
+    },
+    {
+     "end": 4.125,
+     "start": 3.975,
+     "text": "when"
+    },
+    {
+     "end": 4.287,
+     "start": 4.125,
+     "text": "you"
+    },
+    {
+     "end": 4.575,
+     "start": 4.287,
+     "text": "run"
+    },
+    {
+     "end": 5.062,
+     "start": 4.575,
+     "text": "registry"
+    },
+    {
+     "end": 5.6,
+     "start": 5.062,
+     "text": "create"
+    },
+    {
+     "end": 5.7,
+     "start": 5.6,
+     "text": ","
+    },
+    {
+     "end": 5.912,
+     "start": 5.7,
+     "text": "through"
+    },
+    {
+     "end": 6.787,
+     "start": 5.912,
+     "text": "--process-time"
+    },
+    {
+     "end": 7.412,
+     "start": 6.787,
+     "text": "MS"
+    },
+    {
+     "end": 7.55,
+     "start": 7.412,
+     "text": "and"
+    },
+    {
+     "end": 8.325,
+     "start": 7.55,
+     "text": "--retract-time"
+    },
+    {
+     "end": 9.5,
+     "start": 8.325,
+     "text": "MS"
+    },
+    {
+     "end": 9.75,
+     "start": 9.5,
+     "text": "."
+    },
+    {
+     "end": 10.238,
+     "start": 9.95,
+     "text": "Each"
+    },
+    {
+     "end": 10.475,
+     "start": 10.238,
+     "text": "must"
+    },
+    {
+     "end": 10.625,
+     "start": 10.475,
+     "text": "be"
+    },
+    {
+     "end": 10.738,
+     "start": 10.625,
+     "text": "a"
+    },
+    {
+     "end": 11.275,
+     "start": 10.738,
+     "text": "positive"
+    },
+    {
+     "end": 11.675,
+     "start": 11.275,
+     "text": "integer"
+    },
+    {
+     "end": 11.913,
+     "start": 11.675,
+     "text": "number"
+    },
+    {
+     "end": 12.0,
+     "start": 11.913,
+     "text": "of"
+    },
+    {
+     "end": 13.225,
+     "start": 12.0,
+     "text": "milliseconds"
+    },
+    {
+     "end": 13.425,
+     "start": 13.225,
+     "text": ";"
+    },
+    {
+     "end": 13.825,
+     "start": 13.625,
+     "text": "any"
+    },
+    {
+     "end": 14.075,
+     "start": 13.825,
+     "text": "other"
+    },
+    {
+     "end": 14.525,
+     "start": 14.075,
+     "text": "value"
+    },
+    {
+     "end": 14.675,
+     "start": 14.525,
+     "text": "is"
+    },
+    {
+     "end": 15.275,
+     "start": 14.675,
+     "text": "refused"
+    },
+    {
+     "end": 15.613,
+     "start": 15.275,
+     "text": "before"
+    },
+    {
+     "end": 15.7,
+     "start": 15.613,
+     "text": "the"
+    },
+    {
+     "end": 16.1,
+     "start": 15.7,
+     "text": "command"
+    },
+    {
+     "end": 16.575,
+     "start": 16.1,
+     "text": "builds"
+    },
+    {
+     "end": 16.763,
+     "start": 16.575,
+     "text": "or"
+    },
+    {
+     "end": 17.175,
+     "start": 16.763,
+     "text": "signs"
+    },
+    {
+     "end": 18.2,
+     "start": 17.175,
+     "text": "anything"
+    },
+    {
+     "end": 18.4,
+     "start": 18.2,
+     "text": "."
+    },
+    {
+     "end": 18.712,
+     "start": 18.575,
+     "text": "When"
+    },
+    {
+     "end": 19.2,
+     "start": 18.712,
+     "text": "omitted"
+    },
+    {
+     "end": 19.25,
+     "start": 19.2,
+     "text": ","
+    },
+    {
+     "end": 19.4,
+     "start": 19.25,
+     "text": "they"
+    },
+    {
+     "end": 19.562,
+     "start": 19.4,
+     "text": "are"
+    },
+    {
+     "end": 20.175,
+     "start": 19.562,
+     "text": "600"
+    },
+    {
+     "end": 20.712,
+     "start": 20.175,
+     "text": "000"
+    },
+    {
+     "end": 20.862,
+     "start": 20.712,
+     "text": "and"
+    },
+    {
+     "end": 21.475,
+     "start": 20.862,
+     "text": "300"
+    },
+    {
+     "end": 21.85,
+     "start": 21.475,
+     "text": "000"
+    },
+    {
+     "end": 23.1,
+     "start": 21.85,
+     "text": "milliseconds"
+    },
+    {
+     "end": 23.3,
+     "start": 23.1,
+     "text": ":"
+    },
+    {
+     "end": 23.725,
+     "start": 23.5,
+     "text": "ten"
+    },
+    {
+     "end": 24.05,
+     "start": 23.725,
+     "text": "minutes"
+    },
+    {
+     "end": 24.175,
+     "start": 24.05,
+     "text": "to"
+    },
+    {
+     "end": 24.487,
+     "start": 24.175,
+     "text": "fold"
+    },
+    {
+     "end": 24.587,
+     "start": 24.487,
+     "text": "a"
+    },
+    {
+     "end": 24.875,
+     "start": 24.587,
+     "text": "booked"
+    },
+    {
+     "end": 25.55,
+     "start": 24.875,
+     "text": "request"
+    },
+    {
+     "end": 25.625,
+     "start": 25.55,
+     "text": ","
+    },
+    {
+     "end": 25.875,
+     "start": 25.625,
+     "text": "then"
+    },
+    {
+     "end": 26.25,
+     "start": 25.875,
+     "text": "five"
+    },
+    {
+     "end": 26.575,
+     "start": 26.25,
+     "text": "minutes"
+    },
+    {
+     "end": 26.712,
+     "start": 26.575,
+     "text": "for"
+    },
+    {
+     "end": 26.875,
+     "start": 26.712,
+     "text": "its"
+    },
+    {
+     "end": 27.2,
+     "start": 26.875,
+     "text": "owner"
+    },
+    {
+     "end": 27.325,
+     "start": 27.2,
+     "text": "to"
+    },
+    {
+     "end": 27.8,
+     "start": 27.325,
+     "text": "reclaim"
+    },
+    {
+     "end": 28.475,
+     "start": 27.8,
+     "text": "it"
+    },
+    {
+     "end": 28.7,
+     "start": 28.475,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/choosing-a-registrys-windows-02": {
+   "audio_sha256": "1e5ca56fbf566741ff75e4dcd13142a66c35d6485446851491dd3c3e84552918",
+   "characters": 494,
+   "cost": 0.00030628000000000003,
+   "duration": 32.75,
+   "index": 2,
+   "key": "05c1a648ea2f6e252f517a14175b81a3e410589a5b53d1f7c89aa44f5f3863c0",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "choosing-a-registrys-windows",
+   "sent_text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
+   "text": "Both windows are written into the state datum and fixed for the life of the registry. A later command cannot change them. The successful create receipt and inspect report processTime and retractTime read from that datum; booking deadlines follow the registry's actual windows, including those of a registry created before these defaults changed. The defaults give public network reads and folds more time; development-network CI explicitly creates its throwaway registries with shorter windows.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "Both"
+    },
+    {
+     "end": 0.95,
+     "start": 0.5,
+     "text": "windows"
+    },
+    {
+     "end": 1.087,
+     "start": 0.95,
+     "text": "are"
+    },
+    {
+     "end": 1.388,
+     "start": 1.087,
+     "text": "written"
+    },
+    {
+     "end": 1.562,
+     "start": 1.388,
+     "text": "into"
+    },
+    {
+     "end": 1.675,
+     "start": 1.562,
+     "text": "the"
+    },
+    {
+     "end": 2.0,
+     "start": 1.675,
+     "text": "state"
+    },
+    {
+     "end": 2.575,
+     "start": 2.0,
+     "text": "datum"
+    },
+    {
+     "end": 2.8,
+     "start": 2.575,
+     "text": "and"
+    },
+    {
+     "end": 3.15,
+     "start": 2.8,
+     "text": "fixed"
+    },
+    {
+     "end": 3.263,
+     "start": 3.15,
+     "text": "for"
+    },
+    {
+     "end": 3.375,
+     "start": 3.263,
+     "text": "the"
+    },
+    {
+     "end": 3.662,
+     "start": 3.375,
+     "text": "life"
+    },
+    {
+     "end": 3.737,
+     "start": 3.662,
+     "text": "of"
+    },
+    {
+     "end": 3.825,
+     "start": 3.737,
+     "text": "the"
+    },
+    {
+     "end": 4.975,
+     "start": 3.825,
+     "text": "registry"
+    },
+    {
+     "end": 5.2,
+     "start": 4.975,
+     "text": "."
+    },
+    {
+     "end": 5.475,
+     "start": 5.4,
+     "text": "A"
+    },
+    {
+     "end": 5.75,
+     "start": 5.475,
+     "text": "later"
+    },
+    {
+     "end": 6.1,
+     "start": 5.75,
+     "text": "command"
+    },
+    {
+     "end": 6.425,
+     "start": 6.1,
+     "text": "cannot"
+    },
+    {
+     "end": 6.775,
+     "start": 6.425,
+     "text": "change"
+    },
+    {
+     "end": 7.45,
+     "start": 6.775,
+     "text": "them"
+    },
+    {
+     "end": 7.625,
+     "start": 7.45,
+     "text": "."
+    },
+    {
+     "end": 7.925,
+     "start": 7.825,
+     "text": "The"
+    },
+    {
+     "end": 8.538,
+     "start": 7.925,
+     "text": "successful"
+    },
+    {
+     "end": 8.95,
+     "start": 8.538,
+     "text": "create"
+    },
+    {
+     "end": 9.512,
+     "start": 8.95,
+     "text": "receipt"
+    },
+    {
+     "end": 9.637,
+     "start": 9.512,
+     "text": "and"
+    },
+    {
+     "end": 10.15,
+     "start": 9.637,
+     "text": "inspect"
+    },
+    {
+     "end": 10.575,
+     "start": 10.15,
+     "text": "report"
+    },
+    {
+     "end": 11.35,
+     "start": 10.575,
+     "text": "processTime"
+    },
+    {
+     "end": 11.475,
+     "start": 11.35,
+     "text": "and"
+    },
+    {
+     "end": 12.288,
+     "start": 11.475,
+     "text": "retractTime"
+    },
+    {
+     "end": 12.625,
+     "start": 12.288,
+     "text": "read"
+    },
+    {
+     "end": 12.8,
+     "start": 12.625,
+     "text": "from"
+    },
+    {
+     "end": 13.025,
+     "start": 12.8,
+     "text": "that"
+    },
+    {
+     "end": 14.025,
+     "start": 13.025,
+     "text": "datum"
+    },
+    {
+     "end": 14.25,
+     "start": 14.025,
+     "text": ";"
+    },
+    {
+     "end": 14.8,
+     "start": 14.45,
+     "text": "booking"
+    },
+    {
+     "end": 15.413,
+     "start": 14.8,
+     "text": "deadlines"
+    },
+    {
+     "end": 15.775,
+     "start": 15.413,
+     "text": "follow"
+    },
+    {
+     "end": 15.9,
+     "start": 15.775,
+     "text": "the"
+    },
+    {
+     "end": 16.562,
+     "start": 15.9,
+     "text": "registry's"
+    },
+    {
+     "end": 17.05,
+     "start": 16.562,
+     "text": "actual"
+    },
+    {
+     "end": 17.75,
+     "start": 17.05,
+     "text": "windows"
+    },
+    {
+     "end": 17.85,
+     "start": 17.75,
+     "text": ","
+    },
+    {
+     "end": 18.375,
+     "start": 17.85,
+     "text": "including"
+    },
+    {
+     "end": 18.75,
+     "start": 18.375,
+     "text": "those"
+    },
+    {
+     "end": 18.837,
+     "start": 18.75,
+     "text": "of"
+    },
+    {
+     "end": 18.925,
+     "start": 18.837,
+     "text": "a"
+    },
+    {
+     "end": 19.487,
+     "start": 18.925,
+     "text": "registry"
+    },
+    {
+     "end": 19.975,
+     "start": 19.487,
+     "text": "created"
+    },
+    {
+     "end": 20.375,
+     "start": 19.975,
+     "text": "before"
+    },
+    {
+     "end": 20.65,
+     "start": 20.375,
+     "text": "these"
+    },
+    {
+     "end": 21.138,
+     "start": 20.65,
+     "text": "defaults"
+    },
+    {
+     "end": 22.275,
+     "start": 21.138,
+     "text": "changed"
+    },
+    {
+     "end": 22.5,
+     "start": 22.275,
+     "text": "."
+    },
+    {
+     "end": 22.75,
+     "start": 22.675,
+     "text": "The"
+    },
+    {
+     "end": 23.225,
+     "start": 22.75,
+     "text": "defaults"
+    },
+    {
+     "end": 23.425,
+     "start": 23.225,
+     "text": "give"
+    },
+    {
+     "end": 23.825,
+     "start": 23.425,
+     "text": "public"
+    },
+    {
+     "end": 24.225,
+     "start": 23.825,
+     "text": "network"
+    },
+    {
+     "end": 24.712,
+     "start": 24.225,
+     "text": "reads"
+    },
+    {
+     "end": 24.862,
+     "start": 24.712,
+     "text": "and"
+    },
+    {
+     "end": 25.275,
+     "start": 24.862,
+     "text": "folds"
+    },
+    {
+     "end": 25.5,
+     "start": 25.275,
+     "text": "more"
+    },
+    {
+     "end": 26.4,
+     "start": 25.5,
+     "text": "time"
+    },
+    {
+     "end": 26.6,
+     "start": 26.4,
+     "text": ";"
+    },
+    {
+     "end": 27.775,
+     "start": 26.8,
+     "text": "development-network"
+    },
+    {
+     "end": 28.312,
+     "start": 27.775,
+     "text": "CI"
+    },
+    {
+     "end": 29.013,
+     "start": 28.312,
+     "text": "explicitly"
+    },
+    {
+     "end": 29.475,
+     "start": 29.013,
+     "text": "creates"
+    },
+    {
+     "end": 29.675,
+     "start": 29.475,
+     "text": "its"
+    },
+    {
+     "end": 30.125,
+     "start": 29.675,
+     "text": "throwaway"
+    },
+    {
+     "end": 30.8,
+     "start": 30.125,
+     "text": "registries"
+    },
+    {
+     "end": 30.987,
+     "start": 30.8,
+     "text": "with"
+    },
+    {
+     "end": 31.4,
+     "start": 30.987,
+     "text": "shorter"
+    },
+    {
+     "end": 32.55,
+     "start": 31.4,
+     "text": "windows"
+    },
+    {
+     "end": 32.75,
+     "start": 32.55,
      "text": "."
     }
    ]

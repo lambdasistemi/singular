@@ -17,6 +17,17 @@ before it is sent), the node's answer, the confirmation, and
 `observed` (what the transaction made, read back from the chain). The
 journal is only ever appended to; saved bodies are never rewritten.
 
+## The request keeps its registry's windows
+
+As a requester recovering after an interruption, you read `processTime` and
+`retractTime` from `registry inspect` to see the windows stored in the live
+state datum. They were chosen once at `registry create` with `--process-time`
+and `--retract-time`, or defaulted to 600 000 and 300 000 milliseconds (ten
+and five minutes). Both are fixed for the life of the registry; restarting a
+command or reconciling its journal does not restart or extend a request's
+windows. A booking's fold deadline remains its submission time plus the
+registry's processing window, followed by the owner's retract window.
+
 ## The case each submission met
 
 Every write's receipt lists the transactions it prepared under
