@@ -71,12 +71,16 @@ module Singular.Provider.Koios.Client
     , submitTx
     , txStatus
     , accountRegistered
+    , referenceScriptUtxos
+    , utxoInfo
+    , assetInfo
     ) where
 
 import Data.Aeson (Value)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.List (find)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -88,11 +92,13 @@ import Cardano.Ledger.BaseTypes (EpochNo)
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams, eraProtVerHigh)
+import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
 import Singular.Provider.Koios.Wire
     ( AccountStatus (..)
+    , AssetInfo
     , AssetTx
     , Body (..)
     , Call (..)
@@ -103,6 +109,7 @@ import Singular.Provider.Koios.Wire
     , TxCbor (..)
     , TxInfo (..)
     , TxStatus (..)
+    , UtxoInfo
     , accountInfoRequest
     , addressUtxosRequest
     , assetTxsRequest
@@ -670,3 +677,36 @@ accountRegistered k account = do
                 | s == "registered" -> Right True
                 | s == "not registered" -> Right False
                 | otherwise -> unknown (Just s)
+
+{- | Every live output whose reference script is one of the hashes, with
+the hash Koios names for it, read page by page. An empty answer means
+not found by this provider.
+-}
+referenceScriptUtxos
+    :: (Monad m)
+    => Koios m
+    -> NonEmpty ScriptHash
+    -> m (Either ClientFailure [(ScriptHash, TxIn)])
+referenceScriptUtxos _ _ =
+    pure
+        ( Left
+            (failing CallReferenceScriptUtxos 0 (NotRecorded "not implemented"))
+        )
+
+-- | Whether each named output is spent, as Koios reports it.
+utxoInfo
+    :: (Monad m)
+    => Koios m
+    -> NonEmpty TxIn
+    -> m (Either ClientFailure [UtxoInfo])
+utxoInfo _ _ =
+    pure (Left (failing CallUtxoInfo 0 (NotRecorded "not implemented")))
+
+-- | The asset's latest minting transaction and supply, or no row.
+assetInfo
+    :: (Monad m)
+    => Koios m
+    -> (PolicyID, AssetName)
+    -> m (Either ClientFailure (Maybe AssetInfo))
+assetInfo _ _ =
+    pure (Left (failing CallAssetInfo 0 (NotRecorded "not implemented")))

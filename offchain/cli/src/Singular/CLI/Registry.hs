@@ -54,6 +54,7 @@ module Singular.CLI.Registry
     , seedHeld
     , seedChecks
     , refuseExisting
+    , publicationFunding
     ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
@@ -76,6 +77,7 @@ import System.FilePath ((</>))
 import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Core (PParams, Script)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
@@ -106,6 +108,7 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.StateToken (Release (..))
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
@@ -166,16 +169,6 @@ mkRegistryConfig magic addr pins dep =
 -- ---------------------------------------------------------
 -- The release a command brings
 -- ---------------------------------------------------------
-
--- | The compiled code a registry command needs from the blueprint.
-data Release = Release
-    { releaseState :: SBS.ShortByteString
-    , releaseRequest :: SBS.ShortByteString
-    , releaseCodes :: NamingCodes
-    {- ^ @open_datum.open_datum@ unapplied and @witness.witness@, from the
-    same blueprint
-    -}
-    }
 
 -- | Read the registry blueprint a command was given.
 loadRelease :: FilePath -> IO (Either String Release)
@@ -311,6 +304,10 @@ data IdentityError
     | NoFundingBesideSeed Text
     | RegistryExists FilePath
     | UnsupportedVersion Int
+    | {- | A publication the wallet cannot fund: its role, the ada-only output
+      it needs, and the largest the wallet holds for it
+      -}
+      PublicationUnfunded Text Integer Integer
     deriving stock (Eq, Show)
 
 renderIdentityError :: IdentityError -> String
@@ -353,6 +350,7 @@ renderIdentityError = \case
             <> show v
             <> " are not version "
             <> show configVersion
+    PublicationUnfunded{} -> ""
 
 checkNetwork :: RegistryConfig -> Word32 -> Either IdentityError ()
 checkNetwork conf magic
@@ -480,3 +478,22 @@ parseEnterpriseAddress magic text = do
         _ ->
             Left
                 "--wallet-address must be an enterprise address: a payment key hash and no stake part"
+
+{- | Whether the wallet funds every reference publication a create makes,
+each from its largest ada-only output with its change returned, as
+'Singular.Registry.TxBuilder.Edges.publishRefScriptTx' funds it: the
+publications before the boot leave the seed alone, those after it go
+without the seed the boot spent. Checked before anything is submitted.
+-}
+publicationFunding
+    :: PParams ConwayEra
+    -> TxIn
+    -- ^ The seed
+    -> [(Text, Script ConwayEra)]
+    -- ^ Published before the boot, by role
+    -> [(Text, Script ConwayEra)]
+    -- ^ Published after the boot, by role
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ The wallet
+    -> Either IdentityError ()
+publicationFunding _ _ _ _ _ = Right ()

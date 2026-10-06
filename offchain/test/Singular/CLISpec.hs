@@ -34,12 +34,14 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Short qualified as SBS
 import Data.Either (fromLeft)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode (..))
@@ -60,7 +62,7 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Keys (coerceKeyRole)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), PolicyID (..))
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
@@ -88,6 +90,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider (ReadFailure (..))
+import Singular.Registry.StateTokenFixture (token)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -96,6 +99,7 @@ import Singular.Registry.TxBuilder.Internal
     , leafActive
     , leafTerminal
     , scriptFromBytes
+    , scriptHashBytes
     , walkEdge
     )
 import Singular.Registry.Types
@@ -132,8 +136,27 @@ provider =
 wallet :: [String]
 wallet = ["--wallet-skey", "/keys/payment.skey"]
 
+-- | The actor directory, the release and the registry's state token.
 reg :: [String]
-reg = ["--registry", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+reg = createReg <> ["--state-token", T.unpack tokenSpelling]
+
+-- | A create names no state token: it makes one.
+createReg :: [String]
+createReg = ["--registry", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+
+-- | The state token as a person copies it from the registry's page.
+tokenSpelling :: T.Text
+tokenSpelling =
+    let (PolicyID policy, AssetName name) = token
+    in  hexText (scriptHashBytes policy)
+            <> "."
+            <> hexText (SBS.fromShort name)
+  where
+    hexText = TE.decodeUtf8 . B16.encode
+
+-- | What a command parsed with @reg@ acts on.
+access :: RegistryAccess
+access = RegistryAccess{accessToken = token, accessHints = []}
 
 commandLine :: Spec
 commandLine = describe "the command line" $ do
@@ -161,7 +184,7 @@ commandLine = describe "the command line" $ do
     it "reads a create with its seed, wallet and provider" $
         parseCommand
             ( ["registry", "create", "--seed", seedText]
-                <> reg
+                <> createReg
                 <> provider
                 <> wallet
             )
@@ -185,7 +208,7 @@ commandLine = describe "the command line" $ do
                     parseCommand
                         ( ["registry", "create", "--seed", seedText]
                             <> ["--process-time", processing, "--retract-time", retracting]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                         )
@@ -199,7 +222,7 @@ commandLine = describe "the command line" $ do
                         )
                         ( parseCommand
                             ( ["registry", "create", "--seed", seedText]
-                                <> reg
+                                <> createReg
                                 <> provider
                                 <> wallet
                                 <> extra
@@ -239,7 +262,7 @@ commandLine = describe "the command line" $ do
                 $ \argument ->
                     parseCommand
                         ( ["registry", "create", "--seed", seedText, flag, argument]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                         )
@@ -248,7 +271,7 @@ commandLine = describe "the command line" $ do
             it ("refuses a missing " <> flag <> " value") $
                 parseCommand
                     ( ["registry", "create", "--seed", seedText]
-                        <> reg
+                        <> createReg
                         <> provider
                         <> wallet
                         <> [flag]
@@ -265,6 +288,7 @@ commandLine = describe "the command line" $ do
                 ( Insert
                     EntryArgs
                         { entryRegistry = "/srv/reg"
+                        , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
                         , entryKey = Key "key"
@@ -538,7 +562,7 @@ commandLine = describe "the command line" $ do
     removedFlag = "--" <> "envelope"
     commands =
         [ ["registry", "create", "--seed", seedText]
-            <> reg
+            <> createReg
             <> provider
             <> wallet
         , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
@@ -1241,6 +1265,7 @@ previewRows = describe "--preview" $ do
                 ( Insert
                     EntryArgs
                         { entryRegistry = "/srv/reg"
+                        , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode =
                             Preview
@@ -1307,7 +1332,7 @@ previewRows = describe "--preview" $ do
         let create extra =
                 parseCommand
                     ( ["registry", "create", "--preview"]
-                        <> reg
+                        <> createReg
                         <> previewNode "1"
                         <> extra
                     )
@@ -1345,7 +1370,7 @@ previewRows = describe "--preview" $ do
                 create extra =
                     parseCommand
                         ( ["registry", "create", "--seed", funded]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                             <> extra
@@ -1457,6 +1482,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 ( Fold
                     FoldArgs
                         { foldRegistry = "/srv/reg"
+                        , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
                         , foldRequest = Nothing
@@ -1481,6 +1507,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 ( Fold
                     FoldArgs
                         { foldRegistry = "/srv/reg"
+                        , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
                         , foldRequest =
@@ -1597,6 +1624,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                 ( Reject
                     RejectArgs
                         { rejectRegistry = "/srv/reg"
+                        , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
                         , rejectFund = Nothing
@@ -1618,6 +1646,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                 ( Reject
                     RejectArgs
                         { rejectRegistry = "/srv/reg"
+                        , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
                         , rejectFund =
@@ -1730,7 +1759,7 @@ outputsAtRows = describe "reading the outputs at an address with inspect" $ do
             _ -> Nothing
         others =
             [ ["registry", "create", "--seed", seedText]
-                <> reg
+                <> createReg
                 <> provider
                 <> wallet
             , ["registry", "insert", "--key", "key", "--payload", "/p.json"]

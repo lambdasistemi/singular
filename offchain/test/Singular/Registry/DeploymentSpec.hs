@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -41,7 +42,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word8)
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Data.Aeson qualified as Aeson
@@ -71,7 +72,7 @@ import MPF.Backend.Pure (MPFInMemoryDB (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -206,17 +207,38 @@ spec = do
                 `shouldThrow` refusalContaining "proof mirror: not hex"
 
     describe "attaching a run" $ do
-        it "resolves recorded reference and state outputs in order" $ do
-            (logRef, prov) <- providerServing agreeingServes
-            attached <- attach prov manifest parts
-            reverse <$> readIORef logRef
-                `shouldReturn` [refAddr1, refAddr2, stateAddr]
-            attRefUtxos attached `shouldBe` [refUtxo1, refUtxo2]
-            attStateUtxo attached `shouldBe` stateUtxo
-            attToken attached `shouldBe` recordedToken
-            cfgOf (attCfg attached) `shouldBe` cfgOf fixtureCfg
+        it
+            "finds each recorded role's reference by its hash, wherever it now sits, and the state by its token"
+            $ do
+                -- The recorded outputs are gone; other carriers of the same
+                -- scripts are live at other addresses.
+                let serves =
+                        Map.fromList
+                            [ (refAddr2, [movedState])
+                            , (refAddr1, [movedRequest])
+                            , (stateAddr, [decoyUtxo, stateUtxo])
+                            ]
+                (logRef, prov) <- providerServing serves
+                attached <- attach prov manifest parts
+                reverse <$> readIORef logRef `shouldReturn` [stateAddr]
+                attRefUtxos attached `shouldBe` [movedState, movedRequest]
+                attStateUtxo attached `shouldBe` stateUtxo
+                attToken attached `shouldBe` recordedToken
+                cfgOf (attCfg attached) `shouldBe` cfgOf fixtureCfg
 
-        it "refuses a recorded reference whose live script hash differs" $ do
+        it "takes the lowest output reference among a role's carriers" $ do
+            let serves =
+                    Map.insert
+                        refAddr2
+                        [lowerState, refUtxo2]
+                        (Map.insert refAddr1 [refUtxo1, movedRequest] agreeingServes)
+                -- Below the recorded state carrier; above the recorded request one.
+                lowerState = (outRefOf '3' 1, publishedAt refAddr2 stateProgram 9_000_000)
+            (_, prov) <- providerServing serves
+            attached <- attach prov manifest parts
+            attRefUtxos attached `shouldBe` [lowerState, refUtxo2]
+
+        it "never takes an output that carries another script than its role's" $ do
             let serves =
                     Map.insert
                         refAddr1
@@ -224,31 +246,13 @@ spec = do
                         agreeingServes
             (_, prov) <- providerServing serves
             attach prov manifest parts
-                `shouldThrow` refusalContaining "but the manifest pins 0x"
+                `shouldThrow` refusalContaining "reference-missing state"
 
-        it "refuses a recorded reference output that is not live" $ do
-            let serves = Map.delete refAddr1 agreeingServes
+        it "refuses a role whose script no live output carries, naming it" $ do
+            let serves = Map.delete refAddr2 agreeingServes
             (_, prov) <- providerServing serves
             attach prov manifest parts
-                `shouldThrow` refusalContaining "cannot be attached to"
-
-        it "refuses a reference output that carries no reference script" $ do
-            let serves =
-                    Map.insert
-                        refAddr1
-                        [(refIn1, mkBasicTxOut refAddr1 (MaryValue (Coin 5_000_000) mempty))]
-                        agreeingServes
-            (_, prov) <- providerServing serves
-            attach prov manifest parts
-                `shouldThrow` refusalContaining "carries no reference script"
-
-        it "refuses an unreadable recorded address" $ do
-            let unreadable = case depReferenceScripts manifest of
-                    (r : rest) -> manifest{depReferenceScripts = r{refAddressBytes = "zz"} : rest}
-                    [] -> manifest
-            (_, prov) <- providerServing agreeingServes
-            attach prov unreadable parts
-                `shouldThrow` refusalContaining "address is not readable"
+                `shouldThrow` refusalContaining "reference-missing request"
 
         it "refuses a seed whose derived token contradicts the manifest" $ do
             (_, prov) <- providerServing agreeingServes
@@ -303,7 +307,7 @@ spec = do
                             <> " carries the recorded token"
                        ]
             reverse <$> readIORef logRef
-                `shouldReturn` [refAddr1, refAddr2, stateAddr]
+                `shouldReturn` [stateAddr]
 
         it "refuses a live state whose windows disagree with the manifest" $ do
             (_, prov) <-
@@ -560,13 +564,34 @@ providerServing serves = do
     logRef <- newIORef []
     pure
         ( logRef
-        , withAddressOutputs
-            ( \a -> do
-                modifyIORef' logRef (a :)
-                pure (Map.findWithDefault [] a serves)
+        , withCarriers
+            ( withAddressOutputs
+                ( \a -> do
+                    modifyIORef' logRef (a :)
+                    pure (Map.findWithDefault [] a serves)
+                )
+                stubSession
             )
-            stubSession
         )
+  where
+    -- The provider's existence index over everything served.
+    withCarriers session =
+        session
+            { Cage.outputs = \case
+                Cage.CarryingReferenceScript script ->
+                    pure
+                        ( Right
+                            ( Evidenced
+                                [ u
+                                | u@(_, o) <- Map.toAscList (Map.fromList (concat (Map.elems serves)))
+                                , SJust carried <- [o ^. referenceScriptTxOutL]
+                                , hashScript carried == script
+                                ]
+                                Nothing
+                            )
+                        )
+                other -> Cage.outputs session other
+            }
 
 agreeingServes :: Map Addr [(TxIn, TxOut ConwayEra)]
 agreeingServes = servingState agreeingState
@@ -705,3 +730,11 @@ withTempDir = withSystemTempDirectory "s269-deployment-spec"
 
 newlineByte :: Word8
 newlineByte = 0x0A
+
+{- | Carriers of the recorded scripts at outputs other than the recorded
+ones: the state script's under the second address, the request script's
+under the first.
+-}
+movedState, movedRequest :: (TxIn, TxOut ConwayEra)
+movedState = (outRefOf 'c' 1, publishedAt refAddr2 stateProgram 7_000_000)
+movedRequest = (outRefOf 'd' 2, publishedAt refAddr1 requestProgram 8_000_000)

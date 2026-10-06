@@ -493,6 +493,7 @@ withInputFixture use = withFixture $ \fx -> do
                 cfg
                 Booking.codes
                 tid
+                []
     (boot, ()) <-
         submitBuilt
             (writeContext fx)
