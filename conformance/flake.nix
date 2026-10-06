@@ -869,6 +869,7 @@
                 LC_ALL = "C.UTF-8";
               }
               ''
+                cd ${src}/conformance
                 ${pkgs.lib.getExe appendixTests} > "$out" 2>&1 || { cat "$out"; exit 1; }
               '';
           coverage-gate-tests = coverageGateTests;

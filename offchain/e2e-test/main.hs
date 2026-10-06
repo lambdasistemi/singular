@@ -29,41 +29,41 @@ main = do
             describe
                 "Unit checks (local files, no node or script execution)"
                 Singular.Registry.E2E.NodeSpec.walletSpec
-        describe (tagged "Singular.Registry.E2E.OpenBoot" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.OpenBootSpec.spec blueprint
-        describe (tagged "Singular.Registry.E2E.InsertActive" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.InsertActiveSpec.spec blueprint
+        describe (tagged "Singular.Registry.E2E.OpenBoot" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.OpenBootSpec.spec blueprint
+        describe (tagged "Singular.Registry.E2E.InsertActive" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.InsertActiveSpec.spec blueprint
         describe
-            (tagged "Singular.Registry.E2E.Fork81" [E2e, History, Recovery]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.Fork81Spec.spec blueprint
+            (tagged "Singular.Registry.E2E.Fork81" [E2e, History, Recovery])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.Fork81Spec.spec blueprint
         describe
-            (tagged "Singular.Registry.E2E.UpdateTerminal" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.UpdateTerminalSpec.spec blueprint
-        describe (tagged "Singular.Registry.E2E.Criterion3" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.Criterion3Spec.spec blueprint
-        describe (tagged "Singular.Registry.E2E.Cage" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.CageSpec.spec blueprint
-        describe (tagged "Singular.Registry.E2E.Driver" [E2e, Builders]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.DriverSpec.spec blueprint
+            (tagged "Singular.Registry.E2E.UpdateTerminal" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.UpdateTerminalSpec.spec blueprint
+        describe (tagged "Singular.Registry.E2E.Criterion3" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.Criterion3Spec.spec blueprint
+        describe (tagged "Singular.Registry.E2E.Cage" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.CageSpec.spec blueprint
+        describe (tagged "Singular.Registry.E2E.Driver" [E2e, Builders])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.DriverSpec.spec blueprint
         describe
-            (tagged "Singular.Registry.E2E.Replay" [E2e, History, Recovery]) $
-            describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)" $
-                Singular.Registry.E2E.ReplaySpec.spec blueprint
+            (tagged "Singular.Registry.E2E.Replay" [E2e, History, Recovery])
+            $ describe
+                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+            $ Singular.Registry.E2E.ReplaySpec.spec blueprint
         describe (tagged "Singular.Registry.E2E.Node" [E2e, Provider]) $
             describe
                 "Live node checks (devnet queries, submission and connection refusals)"

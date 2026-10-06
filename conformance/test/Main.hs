@@ -66,8 +66,8 @@ suite = do
     describe (tagged "Conformance.Support.Fixture" [Conformance]) $
         describe "Appendix — how we check the evidence" Fixture.spec
     describe
-        (tagged "Conformance.Support.RegistrationComparison" [Conformance]) $
-        describe
+        (tagged "Conformance.Support.RegistrationComparison" [Conformance])
+        $ describe
             "Appendix — how we check the evidence"
             RegistrationComparison.spec
     describe (tagged "Conformance.Support.Payments" [Conformance]) $
@@ -91,8 +91,8 @@ suite = do
     describe (tagged "Conformance.Support.HeldView" [Conformance]) $
         describe "Appendix — how we check the evidence" HeldView.spec
     describe
-        (tagged "Conformance.Support.PurposeUnits" [Conformance, Evaluation]) $
-        describe "Appendix — how we check the evidence" PurposeUnits.spec
+        (tagged "Conformance.Support.PurposeUnits" [Conformance, Evaluation])
+        $ describe "Appendix — how we check the evidence" PurposeUnits.spec
     describe (tagged "Conformance.Story.Usage" [Conformance]) $
         describe "Appendix — how we check the evidence" Usage.spec
     describe (tagged "Conformance.Support.Binding" [Conformance]) $
@@ -102,14 +102,14 @@ suite = do
     describe (tagged "Conformance.Support.CliProof" [Conformance, Cli]) $
         describe "Appendix — how we check the evidence" CliProof.spec
     describe
-        (tagged "Conformance.Support.CliAdmission" [Conformance, Cli]) $
-        describe "Appendix — how we check the evidence" CliAdmission.spec
+        (tagged "Conformance.Support.CliAdmission" [Conformance, Cli])
+        $ describe "Appendix — how we check the evidence" CliAdmission.spec
     describe (tagged "Conformance.Support.CliAttach" [Conformance, Cli]) $
         describe "Appendix — how we check the evidence" CliAttach.spec
     describe (tagged "Conformance.Support.Replay" [Conformance, History]) $
         describe "Appendix — how we check the evidence" Replay.spec
     describe
-        (tagged "Conformance.Support.RunReplay" [Conformance, History]) $
-        describe "Appendix — how we check the evidence" RunReplay.spec
+        (tagged "Conformance.Support.RunReplay" [Conformance, History])
+        $ describe "Appendix — how we check the evidence" RunReplay.spec
     describe (tagged "Conformance.Support.Extent" [Conformance]) $
         describe "Appendix — how we check the evidence" Extent.spec
