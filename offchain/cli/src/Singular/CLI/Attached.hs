@@ -15,7 +15,7 @@ module Singular.CLI.Attached
     , attached
     , callerKey
     , provider
-    , reading
+    , readingBack
     , savedOf
     , tokenName
     ) where
@@ -25,8 +25,11 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
+import Data.IORef (readIORef)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
     ( ProviderSettings (..)
@@ -131,12 +134,27 @@ provider at =
     let wc = atWrite at
     in  readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
 
--- | One read step: acquire a view, read through it, and report what was read.
-reading
-    :: Attached -> [Text] -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
-reading at items =
+{- | A read-back of what a confirmed transaction made: one read step, inside
+the scopes the transaction's build placed it in, so it sits with the
+observation it serves.
+-}
+readingBack
+    :: Attached
+    -> Text
+    -> ConwayTx
+    -> [Text]
+    -> (Cage.Session Cage.NoWitness IO -> IO a)
+    -> IO a
+readingBack at step tx items body = do
     let wc = atWrite at
-    in  readStep (wcTracer wc) (wcSource wc) items (wcCapabilities wc)
+    placed <-
+        Map.findWithDefault [] (txIdHex tx) <$> readIORef (wcPlaced wc)
+    readStep
+        (inScopes (placed <> [InTransaction step]) (wcTracer wc))
+        (wcSource wc)
+        items
+        (wcCapabilities wc)
+        body
 
 savedOf :: Attached -> Saved
 savedOf = liveSaved . atLive

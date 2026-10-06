@@ -293,7 +293,7 @@ rejectPending at a = do
     -- Observed: every rejected request output is gone, the root is where it was,
     -- and each refund is live at its owner's address as built.
     after <-
-        reading at ["requests", "state", "owner outputs"] $ \v -> do
+        readingBack at "reject" tx ["requests", "state", "owner outputs"] $ \v -> do
             left <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             owners <-

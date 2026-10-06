@@ -577,7 +577,7 @@ foldPending at FoldSpec{..} = do
     let key = plKey plan
         edge = plEdge plan
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
-    local <- reading at ["state"] $ \v -> do
+    local <- readingBack at "fold" fold ["state"] $ \v -> do
         afterFold <- attachLive v s
         context <- openTrie s
         requireTrieSelection s afterFold context
@@ -589,7 +589,7 @@ foldPending at FoldSpec{..} = do
         pure root
     (delivery, detail) <- case (plKind plan, plEnvelope plan, plHolding plan) of
         (FoldInsertion, Just envelope, _) -> do
-            outs <- reading at ["key outputs"] (`liveOutputs` s)
+            outs <- readingBack at "fold" fold ["key outputs"] (`liveOutputs` s)
             ((liveIn, _), seen) <-
                 either (failWith Partial) pure (liveOutputFor s key outs)
             unless (seen == envelope) $
@@ -602,7 +602,7 @@ foldPending at FoldSpec{..} = do
                     <> hexT local
                 )
         (FoldTermination, _, Just ((liveIn, _), envelope)) -> do
-            after <- reading at ["key outputs"] (`liveOutputs` s)
+            after <- readingBack at "fold" fold ["key outputs"] (`liveOutputs` s)
             when (any ((== liveIn) . fst) after) $
                 failWith
                     Partial

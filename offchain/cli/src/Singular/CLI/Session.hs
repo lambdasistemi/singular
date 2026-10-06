@@ -52,6 +52,7 @@ module Singular.CLI.Session
     , Building (..)
     , readStep
     , timedRead
+    , inScopes
     , Expectation (..)
     , expecting
     , journalObserved

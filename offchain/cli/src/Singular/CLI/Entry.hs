@@ -190,7 +190,7 @@ book at a key plan = do
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
     deadline <-
-        reading at ["requests", "state"] $ \v -> do
+        readingBack at "book" booking ["requests", "state"] $ \v -> do
             reqs <-
                 Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
             unless (any ((== request) . fst) reqs) $
@@ -330,14 +330,15 @@ runUpdate env a = case entryMode a of
                         refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
                         pure (unsigned, envelope)
                     )
-            after <- reading at ["key outputs"] (`liveOutputs` s)
+            after <-
+                readingBack at "update" signed ["key outputs"] (`liveOutputs` s)
             ((liveIn, _), seen) <-
                 either (failWith Partial) pure (liveOutputFor s key after)
             unless (seen == envelope{envPayload = payload}) $
                 failWith
                     Partial
                     "the updated output carries another envelope than the one sent"
-            state <- reading at ["state"] (`attachLive` s)
+            state <- readingBack at "update" signed ["state"] (`attachLive` s)
             rootAfter <- either (failWith Partial) pure (observedRoot state)
             when (rootAfter /= rootBefore) $
                 failWith StaleState "the registry root moved during an update"

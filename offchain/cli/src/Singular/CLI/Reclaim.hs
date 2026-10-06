@@ -221,7 +221,7 @@ runReclaim env a = attached
                     refuseOver (reclaimMaxOutlay a) (updateOutlay unsigned)
                     pure
                         (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
-        (pendingAfter, liveAfter, ownerOuts) <- reading at ["requests", "state", "owner outputs"] $ \v -> do
+        (pendingAfter, liveAfter, ownerOuts) <- readingBack at "reclaim" tx ["requests", "state", "owner outputs"] $ \v -> do
             requests <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             ownerOuts <- Cage.outputsAt v recipient

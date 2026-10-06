@@ -40,7 +40,6 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
@@ -257,12 +256,18 @@ inspectSaved
 inspectSaved env dir key settings a = do
     let magic = providerMagic settings
     saved <- loadSaved dir (inspectBlueprint a)
+    -- everything inspect reads and finds is inside its registry
+    let registryEnv =
+            env
+                { envTracer =
+                    within (InRegistry (hexT (tokenName saved))) (envTracer env)
+                }
     either
         (failWith ClientRefusal . renderIdentityError)
         pure
         (checkNetwork (savedConfig saved) magic)
     reached <-
-        try $ readOnce env settings ["state", "key outputs", "requests"] $ \caps v -> do
+        try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved
@@ -302,38 +307,34 @@ inspectSaved env dir key settings a = do
                 keyOutput = liveOutputFor saved key outs
             entries <- readJournal dir
             let pending = unresolved entries
-            let tracer = within (InRegistry (hexT (tokenName saved))) (envTracer env)
-                pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
-            report
-                tracer
-                []
-                ( RegistrySeen
-                    (txInText (fst (liveState live)))
-                    (hexT root)
-                    (Just (length pendingOuts))
-                )
-            forM_ leaf $ \l ->
-                report
-                    tracer
-                    [InKey key]
-                    ( KeySeen
-                        key
-                        (leafName l)
-                        (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
+            let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
+                -- what the read found, reported once its read step closes
+                findings =
+                    ( []
+                    , RegistrySeen
+                        (txInText (fst (liveState live)))
+                        (hexT root)
+                        (Just (length pendingOuts))
                     )
-            forM_ pendingOuts $ \(i, o) -> case extractCageDatum o of
-                Just (RequestDatum r) ->
-                    report
-                        tracer
-                        [InRequest (txInText i)]
-                        ( RequestSeen
-                            (txInText i)
-                            (T.pack (edgeName (requestEdge r)))
-                            (requestKey r)
-                            Nothing
-                            Nothing
-                        )
-                _ -> pure ()
+                        : [ ( [InKey key]
+                            , KeySeen
+                                key
+                                (leafName l)
+                                (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
+                            )
+                          | Right l <- [leaf]
+                          ]
+                            <> [ ( [InRequest (txInText i)]
+                                 , RequestSeen
+                                    (txInText i)
+                                    (T.pack (edgeName (requestEdge r)))
+                                    (requestKey r)
+                                    Nothing
+                                    Nothing
+                                 )
+                               | (i, o) <- pendingOuts
+                               , Just (RequestDatum r) <- [extractCageDatum o]
+                               ]
             let chainPoint = renderPoint point
                 application = case keyOutput of
                     Right ((i, o), e) ->
@@ -383,7 +384,7 @@ inspectSaved env dir key settings a = do
                 agrees = \case
                     Active -> length holdings == 1
                     _ -> null holdings
-            pure $ case (pending, leaf) of
+            pure . (,) findings $ case (pending, leaf) of
                 (Just e, _) ->
                     receipt
                         "inspect"
@@ -438,7 +439,9 @@ inspectSaved env dir key settings a = do
                                    ]
                             )
     case reached of
-        Right v -> pure v
+        Right (findings, v) -> do
+            mapM_ (uncurry (report (envTracer registryEnv))) findings
+            pure v
         Left (e :: SomeException) -> case fromException e of
             Just (failure :: CommandFailure) -> throwIO failure
             Nothing ->
