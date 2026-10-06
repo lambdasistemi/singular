@@ -2012,7 +2012,10 @@ theorem fold_batch_refuses_past_deadline (s : RegistryState) (batch : List Reque
     (w : FoldWitness) (t : Nat) (ht : t ∈ w.submittedAt)
     (hpast : t + s.config.processTime < w.validTo) :
     admittedFoldBatch s batch w = .error "not-phase1" := by
-  sorry
+  have hnot : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = false := by
+    rw [List.all_eq_false]
+    exact ⟨t, ht, by simp [inPhase1]; omega⟩
+  simp [admittedFoldBatch, foldAdmission, hnot]
 
 /-- **#396, inside the window a fold is the law** — a fold whose validity upper
 bound is at or before the deadline of every request it folds is exactly
@@ -2020,7 +2023,11 @@ bound is at or before the deadline of every request it folds is exactly
 theorem fold_admitted_in_window_is_fold_batch (s : RegistryState) (batch : List Request)
     (w : FoldWitness) (hin : ∀ t ∈ w.submittedAt, w.validTo ≤ t + s.config.processTime) :
     admittedFoldBatch s batch w = foldBatch s batch := by
-  sorry
+  have hall : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = true := by
+    rw [List.all_eq_true]
+    intro t ht
+    simp [inPhase1, hin t ht]
+  simp [admittedFoldBatch, foldAdmission, hall]
 
 /-- **#396, the boundary of the window** — one request folded under an upper
 bound equal to its deadline is admitted and is exactly its step; one millisecond
@@ -2030,7 +2037,10 @@ theorem fold_admission_boundary (s : RegistryState) (r : Request) (t : Nat) :
     admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime } = step s r ∧
     admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime + 1 }
       = .error "not-phase1" := by
-  sorry
+  have hpast : ¬ (t + s.config.processTime + 1 ≤ t + s.config.processTime) := by omega
+  constructor
+  · simp [admittedFold, foldAdmission, inPhase1]
+  · simp [admittedFold, foldAdmission, inPhase1, hpast]
 
 /-- **#396, a batch cannot consume what it creates** — when one request of a
 batch creates an active holding (`insertActive`, `updateActive`) or a custody
@@ -2048,7 +2058,24 @@ theorem fold_batch_refuses_consuming_created (s : RegistryState) (a b : Request)
     ((a.edge = .insertAbsent ∧ (b.edge = .updateActive ∨ b.edge = .deleteAbsent)) →
       batchConsumesCreated [a, b] = some "not-booked" ∧
         ∀ t, foldBatch s [a, b] ≠ .ok t) := by
-  sorry
+  have hrefused : ∀ why, batchConsumesCreated [a, b] = some why →
+      ∀ t, foldBatch s [a, b] ≠ .ok t := by
+    intro why hwhy t hok
+    have hnone := ((foldBatch_ok_iff s [a, b] t).mp hok).2.2.2
+    rw [hwhy] at hnone
+    exact Option.noConfusion hnone
+  have hcreated : ∀ why, batchConsumesCreated [a, b] = some why →
+      batchConsumesCreated [a, b] = some why ∧ ∀ t, foldBatch s [a, b] ≠ .ok t :=
+    fun why hwhy => ⟨hwhy, hrefused why hwhy⟩
+  constructor
+  · rintro ⟨ha, hb⟩
+    apply hcreated
+    rcases ha with ha | ha <;> rcases hb with hb | hb <;>
+      simp [batchConsumesCreated, consumesCreated, creates, ha, hb, hkey]
+  · rintro ⟨ha, hb⟩
+    apply hcreated
+    rcases hb with hb | hb <;>
+      simp [batchConsumesCreated, consumesCreated, creates, ha, hb, hkey]
 
 end Statements
 end Singular

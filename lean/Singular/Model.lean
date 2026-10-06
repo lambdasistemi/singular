@@ -701,8 +701,13 @@ def creates (c : Created) (a : Action) : Created :=
 /-- The first request of a batch that consumes a holding or custody entry an
 earlier request of the same batch creates, refused for its reason; `none` when
 no request does. -/
-def batchConsumesCreated (_batch : List Action) : Option String :=
-  none
+def batchConsumesCreated (batch : List Action) : Option String :=
+  (batch.foldl
+    (fun (acc : Created × Option String) a =>
+      match acc.2 with
+      | some why => (acc.1, some why)
+      | none => (creates acc.1 a, consumesCreated acc.1 a))
+    ({}, none)).2
 
 /-- The atomic fold: a zero-request batch is refused; every request applies or
 the whole batch refuses; any claimed mint differing from the summed delta of
@@ -1344,8 +1349,8 @@ def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
 
 /-- Why a fold is not admitted: `not-phase1` when its validity upper bound
 passes any folded request's deadline. `none` admits. -/
-def foldAdmission (_c : Config) (_w : FoldWitness) : Option String :=
-  none
+def foldAdmission (c : Config) (w : FoldWitness) : Option String :=
+  if w.submittedAt.all (fun t => inPhase1 c t w.validTo) then none else some "not-phase1"
 
 /-- A batch folded admission first: refused with the admission's reason,
 otherwise exactly `foldBatch`. -/
