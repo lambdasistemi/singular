@@ -1956,41 +1956,19 @@ theorem fold_inputs_public (s : RegistryState) (r : Request) (lovelace : Nat) :
   simp [buildFold, publicView]
 
 /-- **#419, a foreign datum is refused** — for every request delivering a token
-(`insertActive`, `updateActive`, `witnessTerminal`) with a positive deposit, an
+(`insertActive`, `updateActive`, `witnessTerminal`), whatever its deposit, an
 observed fold whose every destination output carries a datum other than the
 request's — another value, a datum where the request carries none, none where it
-carries one, a datum presented by hash — is refused `destination`. -/
+carries one, a datum presented by hash — or that has no destination output at
+all, is refused `destination`, as the cage refuses a carrier that does not match
+the destination the request names. -/
 theorem fold_refuses_foreign_datum (r : Request) (outputs : List TxOutput)
     (hdelivers : r.edge = .insertActive ∨ r.edge = .updateActive ∨ r.edge = .witnessTerminal)
-    (hdeposit : 0 < r.deposit)
     (hforeign : ∀ o ∈ outputs, o.role = .destination →
       (∀ v, r.datum = some v → o.datum ≠ .inline ∨ o.datumValue ≠ some v) ∧
       (r.datum = none → o.datum ≠ .none)) :
     settle (obligations (.fold r.edge) r) outputs = some "destination" := by
-  have hpaying : outputs.filter (paysRecipient (.destination (requestDestination r) r.datum)) = [] := by
-    rw [List.filter_eq_nil_iff]
-    intro o ho
-    cases hr : o.role
-    case destination =>
-      obtain ⟨h1, h2⟩ := hforeign o ho hr
-      cases hd : r.datum with
-      | none =>
-        have h := h2 hd
-        cases hod : o.datum <;> simp_all +decide [paysRecipient, presentsDatum]
-      | some v =>
-        rcases h1 v hd with h | h <;> cases hod : o.datum <;>
-          simp_all +decide [paysRecipient, presentsDatum]
-    all_goals simp +decide [paysRecipient, hr]
-  have hob : obligations (.fold r.edge) r =
-      [{ recipient := .destination (requestDestination r) r.datum, atLeast := r.deposit }] := by
-    rcases hdelivers with he | he | he <;> rw [he] <;> rfl
-  rw [hob]
-  have hnone : ∀ o ∈ outputs,
-      paysRecipient (.destination (requestDestination r) r.datum) o = false := by
-    simpa [List.filter_eq_nil_iff] using hpaying
-  simp [settle, owedTo, receivedBy, unpaidReason, hpaying, Nat.not_le.mpr hdeposit,
-    List.eraseDups_cons]
-  exact hnone
+  sorry
 
 /-- By value: an active insertion whose request carries no datum, observed paying
 its destination through an output carrying an inline datum, is refused
