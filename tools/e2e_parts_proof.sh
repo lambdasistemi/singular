@@ -17,7 +17,14 @@ count() {
     printf '%s\n' "$out" | tail -20 >&2
     exit 1
   fi
-  printf '%s\n' "$out" | awk '/ examples?, /{n=$1} END{print n+0}'
+  local n
+  n="$(printf '%s\n' "$out" | awk '/ examples?, /{n=$1} END{if (n != "") print n}')"
+  if [ -z "$n" ]; then
+    echo "FAIL: the dry run printed no example count (args: $*); its last lines:" >&2
+    printf '%s\n' "$out" | tail -20 >&2
+    exit 1
+  fi
+  echo "$n"
 }
 total="$(count)"
 [ "$total" -gt 0 ] || { echo "FAIL: the full suite selects no example"; exit 1; }
