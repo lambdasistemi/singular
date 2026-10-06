@@ -7,7 +7,7 @@ Module      : Singular.Registry.PhaseLogSpec
 Description : #363 — the opt-in phase log of the read interface
 License     : Apache-2.0
 
-'loggedProvider' is the one place the read interface is logged: every
+'tracedProvider' is the one place the read interface is traced: every
 acquisition of a view and every query read through it. These rows drive
 a counting provider through it and compare the log with what the provider
 itself counted, so a query that bypasses the log is a count that does not
@@ -129,12 +129,6 @@ import Singular.Registry.Node.Options
     , ExternalNode (..)
     , NodeMode (..)
     )
-import Singular.Registry.Node.PhaseLog
-    ( isoNow
-    , logPhase
-    , loggedProvider
-    , phaseLogAt
-    )
 import Singular.Registry.Node.Session
     ( NodeReads (..)
     , NodeSession (..)
@@ -145,11 +139,14 @@ import Singular.Registry.Node.Session
     )
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.ProviderTrace (tracedProvider)
 import Singular.Registry.RawNodeFixture
     ( recordingRawFixture
     , syntheticMaterial
     )
 import Singular.Registry.StubView (stubView)
+import Singular.Registry.Trace (isoNow)
+import Singular.Registry.TraceRender (appendPhaseLine, readPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -169,8 +166,8 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let path = dir </> "phase.log"
                     existing = "{\"ts\":\"old\",\"phase\":\"old\"}\nnot json\n"
                 BS.writeFile path existing
-                logPhase (phaseLogAt path) "first" []
-                logPhase (phaseLogAt path) "second" []
+                appendPhaseLine path "first" []
+                appendPhaseLine path "second" []
                 raw <- BS.readFile path
                 BS.take (BS.length existing) raw `shouldBe` existing
                 let new = BC.lines (BS.drop (BS.length existing) raw)
@@ -186,12 +183,11 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ withSystemTempDirectory "phase-log"
             $ \dir -> do
                 let path = dir </> "phase.log"
-                    lg = phaseLogAt path
                 mapConcurrently_
                     ( \t ->
                         replicateM_
                             25
-                            (logPhase lg "tick" [("thread", Aeson.toJSON (t :: Int))])
+                            (appendPhaseLine path "tick" [("thread", Aeson.toJSON (t :: Int))])
                     )
                     [1 .. 8]
                 lines' <- logLines path
@@ -206,7 +202,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             withSystemTempDirectory "phase-log" $ \dir -> do
                 let path = dir </> "phase.log"
                 t0 <- getCurrentTime
-                logPhase (phaseLogAt path) "now" []
+                appendPhaseLine path "now" []
                 t1 <- getCurrentTime
                 [o] <- logLines path
                 stamp <- maybe (fail "no ts") pure (field "ts" o)
@@ -223,7 +219,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ \dir -> do
                 let path = dir </> "phase.log"
                 counters <- newCounters
-                let prov = loggedProvider (phaseLogAt path) (countingProvider counters)
+                let prov = tracedProvider (readPhaseLog path) (countingProvider counters)
                 Cage.withView prov driveEveryQuery
                 counted <- readCounters counters
                 lines' <- logLines path
@@ -266,7 +262,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let path = dir </> "phase.log"
                 counters <- newCounters
                 let bare = countingProvider counters
-                    wrapped = loggedProvider (phaseLogAt path) bare
+                    wrapped = tracedProvider (readPhaseLog path) bare
                     bypass = Cage.Provider $ \action ->
                         Cage.withView bare $ \raw ->
                             Cage.withView wrapped $ \loggedView ->
@@ -297,7 +293,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ \dir -> do
                 counters <- newCounters
                 let bare = countingProvider counters
-                    wrapped = loggedProvider (phaseLogAt (dir </> "phase.log")) bare
+                    wrapped = tracedProvider (readPhaseLog (dir </> "phase.log")) bare
                 a <- Cage.withView bare (`Services.floorSlot` 5_000)
                 b <- Cage.withView wrapped (`Services.floorSlot` 5_000)
                 b `shouldBe` a
@@ -316,7 +312,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                                     }
                 r <-
                     try @SomeException $
-                        Cage.withView (loggedProvider (phaseLogAt path) failing) $ \v ->
+                        Cage.withView (tracedProvider (readPhaseLog path) failing) $ \v ->
                             void (Cage.viewUTxOsAt v (error "unused address"))
                 r
                     `shouldSatisfy` either (("CRED-7f3a9" `isInfixOf`) . show) (const False)
@@ -336,7 +332,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let path = dir </> "phase.log"
                 chain <- newMemoryChain memoryState
                 mutate chain id
-                let prov = loggedProvider (phaseLogAt path) (memoryProvider chain)
+                let prov = tracedProvider (readPhaseLog path) (memoryProvider chain)
                     acquire = do
                         p <- Cage.withView prov (pure . Cage.viewPoint)
                         mutate chain id
@@ -364,7 +360,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 let path = dir </> "phase.log"
                 chain <- newMemoryChain memoryState
                 mutate chain id
-                let prov = loggedProvider (phaseLogAt path) (memoryProvider chain)
+                let prov = tracedProvider (readPhaseLog path) (memoryProvider chain)
                 replicateM_
                     2
                     (Cage.withView prov (\v -> void (Services.floorSlot v 1_000)))
@@ -378,7 +374,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ withSystemTempDirectory "phase-log"
             $ \dir -> do
                 let path = dir </> "phase.log"
-                    prov = loggedProvider (phaseLogAt path) evaluationProvider
+                    prov = tracedProvider (readPhaseLog path) evaluationProvider
                 _ <- Cage.withView prov (`Services.evaluateTx` evaluationTx)
                 lines' <- logLines path
                 let evals = [o | o <- lines', field "phase" o == Just ("eval" :: Text)]
@@ -401,9 +397,10 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ \path -> do
                 (node, asked) <- recordingNode
                 let prov =
-                        loggedProvider
-                            (phaseLogAt path)
+                        tracedProvider
+                            (readPhaseLog path)
                             ( nodeProvider
+                                (readPhaseLog path)
                                 (NetworkMagic 42)
                                 syntheticMaterial
                                 ( recordingRawFixture
@@ -430,7 +427,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ withLogFile
             $ \path -> do
                 (node, asked) <- recordingNode
-                let lg = phaseLogAt path
+                let lg = readPhaseLog path
                     sess =
                         assembleSession
                             lg
@@ -457,7 +454,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
             $ withLogFile
             $ \path -> do
                 (node, asked) <- recordingNode
-                let lg = phaseLogAt path
+                let lg = readPhaseLog path
                 started <- followerStart lg NodeBackend node
                 started `shouldSatisfy` isJust
                 recorded <- readIORef asked
@@ -478,7 +475,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                 (node, asked) <- recordingNode
                 served <-
                     serveSession
-                        (phaseLogAt path)
+                        (readPhaseLog path)
                         (pure 0)
                         Nothing
                         NodeBackend
@@ -486,6 +483,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                         (NetworkMagic 42)
                         "node.socket"
                         ( nodeProvider
+                            (readPhaseLog path)
                             (NetworkMagic 42)
                             syntheticMaterial
                             ( recordingRawFixture
@@ -531,7 +529,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                             }
                         $ void
                         $ serveSession
-                            (phaseLogAt path)
+                            (readPhaseLog path)
                             (pure 0)
                             Nothing
                             IndexerBackend
@@ -539,6 +537,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
                             (NetworkMagic 42)
                             "node.socket"
                             ( nodeProvider
+                                (readPhaseLog path)
                                 (NetworkMagic 42)
                                 syntheticMaterial
                                 ( recordingRawFixture
@@ -556,7 +555,7 @@ spec = describe "the phase log of the read interface (#363)" $ do
         it "a key-free reader's provider is the logged one" $
             withLogFile $ \path -> do
                 counters <- newCounters
-                let reads' = readsOf (phaseLogAt path) (countingProvider counters)
+                let reads' = readsOf (readPhaseLog path) (countingProvider counters)
                 Cage.withView (nrProvider reads') driveEveryQuery
                 counted <- readCounters counters
                 objects <- logObjects path

@@ -61,6 +61,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Word (Word32)
 
+import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Script
     ( Application (..)
     , applicationTitle
@@ -94,11 +95,14 @@ import Singular.CLI.Session
     , failWith
     , journalObserved
     , journalObservedId
+    , readOnce
+    , readsIn
     , submitBuilt
     , txIdHex
     , withSession
     , withWrite
     )
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
@@ -114,7 +118,6 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
@@ -136,8 +139,8 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
-runCreate :: CreateArgs -> IO Value
-runCreate a = do
+runCreate :: Tracer IO Trace -> CreateArgs -> IO Value
+runCreate tracer a = do
     let dir = createRegistry a
     refuseExisting dir
         >>= either (failWith ClientRefusal . renderIdentityError) pure
@@ -153,21 +156,24 @@ runCreate a = do
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            withReads settings $ \caps -> do
-                utxos <- Cage.withLatest (capReads caps) (`Cage.outputsAt` addr)
+            readOnce tracer settings $ \_ v -> do
+                utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
-        Submit ws -> createWith a rel ws
+        Submit ws -> createWith tracer a rel ws
 
-createWith :: CreateArgs -> Release -> WriteSettings -> IO Value
-createWith a rel ws = do
+createWith
+    :: Tracer IO Trace -> CreateArgs -> Release -> WriteSettings -> IO Value
+createWith tracer a rel ws = do
     let dir = createRegistry a
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
-    session dir "create" ws $ \wc -> do
+    session tracer dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
-            Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
+            Cage.withLatest
+                (readsIn (wcTracer wc) (wcCapabilities wc))
+                (`Cage.outputsAt` addr)
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
@@ -246,7 +252,7 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let prov = capReads (wcCapabilities wc)
+    let prov = readsIn (wcTracer wc) (wcCapabilities wc)
         addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
@@ -353,7 +359,9 @@ observeReference
     -> IO ()
 observeReference wc step addr script (i, _) = do
     utxos <-
-        Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
+        Cage.withLatest
+            (readsIn (wcTracer wc) (wcCapabilities wc))
+            (`Cage.outputsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]

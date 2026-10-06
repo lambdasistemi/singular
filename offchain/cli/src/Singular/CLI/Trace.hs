@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 {- |
 Module      : Singular.CLI.Trace
 Description : One typed event stream per command, and its renderers
@@ -35,6 +38,9 @@ module Singular.CLI.Trace
     , what
     , how
     , readsUnder
+    , backendUnder
+    , txUnder
+    , ended
 
       -- * Controls
     , TraceLevel (..)
@@ -60,15 +66,24 @@ module Singular.CLI.Trace
     , phaseLogSink
     ) where
 
-import Control.Tracer (Tracer, contramap, nullTracer)
-import Data.Aeson (Value)
+import Control.Tracer (Tracer (..), contramap, nullTracer)
+import Data.Aeson (Value (..), (.=))
 import Data.Aeson.Key (Key)
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Text (Text)
 import Data.Word (Word64)
 
-import Singular.Registry.Trace (BackendEvent, ErrorClass, ReadEvent)
+import Singular.Registry.Trace
+    ( BackendEvent
+    , ErrorClass (..)
+    , ReadEvent
+    )
+import Singular.Registry.TraceRender
+    ( appendPhaseLine
+    , backendPhase
+    , readPhase
+    )
 
 -- ---------------------------------------------------------
 -- Events
@@ -197,10 +212,9 @@ data Ended
     | FailedWith ErrorClass
     deriving stock (Eq, Show, Data)
 
--- | The tip a submission met, when the trace asked for it.
+-- | The tip a submission met.
 data TipAt
-    = TipNotRead
-    | TipSlot Word64
+    = TipSlot Word64
     | TipUnreadable
     deriving stock (Eq, Show, Data)
 
@@ -235,7 +249,8 @@ data TxEvent
         , submitVerdict :: SubmitVerdict
         }
     | TxConfirmed Text Text Double ConfirmVerdict
-    | TxObserved Text Text
+    | -- | Step, transaction id, and the milliseconds from its confirmation to its readback
+      TxObserved Text Text Double
     deriving stock (Eq, Show, Data)
 
 -- ---------------------------------------------------------
@@ -244,7 +259,7 @@ data TxEvent
 
 -- | Trace inside one more scope: the enclosing scope adds what it knows.
 within :: Scope -> Tracer m Trace -> Tracer m Trace
-within _ = id
+within s = contramap (\(Trace path e) -> Trace (s : path) e)
 
 -- | Trace protocol actions.
 what :: Tracer m Trace -> Tracer m What
@@ -257,6 +272,18 @@ how = contramap (Trace [] . How)
 -- | Trace a provider's reads.
 readsUnder :: Tracer m Trace -> Tracer m ReadEvent
 readsUnder = contramap (Trace [] . How . Read)
+
+-- | Trace a backend's own mechanics.
+backendUnder :: Tracer m Trace -> Tracer m BackendEvent
+backendUnder = contramap (Trace [] . How . Backend)
+
+-- | Trace a write's transaction mechanics.
+txUnder :: Tracer m Trace -> Tracer m TxEvent
+txUnder = contramap (Trace [] . How . Tx)
+
+-- | How a timed step ended, from what it returned or the type of what it threw.
+ended :: Either ErrorClass a -> Ended
+ended = either FailedWith (const Done)
 
 -- ---------------------------------------------------------
 -- Controls
@@ -323,7 +350,57 @@ decodeJsonLine _ = Nothing
 without the time stamp the sink adds.
 -}
 renderPhaseLog :: Trace -> Maybe (Text, [(Key, Value)])
-renderPhaseLog _ = Nothing
+renderPhaseLog (Trace _ event) = case event of
+    How (Read e) -> readPhase e
+    How (Backend e) -> backendPhase e
+    How (Tx e) -> txPhase e
+    _ -> Nothing
+
+-- | The phase-log line of a transaction mechanic.
+txPhase :: TxEvent -> Maybe (Text, [(Key, Value)])
+txPhase = \case
+    TxBuilt step ms end -> Just ("build", ["step" .= step] <> timed ms end)
+    TxSigned step tx _ ms end -> Just ("sign", ["step" .= step, "tx" .= tx] <> timed ms end)
+    TxSubmitted{..} ->
+        Just
+            ( "submit"
+            , [ "step" .= submitStep
+              , "tx" .= submitTx
+              , "validity_lower" .= submitLower
+              , "validity_upper" .= submitUpper
+              , "duration_ms" .= submitElapsed
+              ]
+                <> case submitTip of
+                    TipSlot s -> ["tip_slot" .= s]
+                    TipUnreadable -> ["tip_slot" .= Null]
+                <> case submitVerdict of
+                    Accepted -> outcome "submitted"
+                    LedgerRefusedIt -> outcome "rejected"
+                    ProviderFailed -> outcome "failed"
+                    WrongNetwork -> outcome "wrong-network"
+                    SubmitThrew c -> failedWith c
+            )
+    TxConfirmed step tx ms verdict ->
+        Just
+            ( "confirm"
+            , [ "step" .= step
+              , "tx" .= tx
+              , "duration_ms" .= ms
+              ]
+                <> outcome
+                    ( case verdict of
+                        Confirmed -> "confirmed"
+                        ConfirmTimedOut -> "timeout"
+                        ConfirmFailed -> "failed"
+                    )
+            )
+    TxObserved{} -> Nothing
+  where
+    outcome o = ["outcome" .= (o :: Text)]
+    timed ms = \case
+        Done -> ["duration_ms" .= ms] <> outcome "ok"
+        FailedWith c -> ("duration_ms" .= ms) : failedWith c
+    failedWith (ErrorClass c) = outcome "failed" <> ["error_class" .= c]
 
 -- ---------------------------------------------------------
 -- Sinks
@@ -345,7 +422,8 @@ withTracing
     -> TraceRequest
     -> (Tracer IO Trace -> IO a)
     -> IO a
-withTracing _ _ _ body = body nullTracer
+withTracing _ phaseLog _ body =
+    maybe (body nullTracer) (body . phaseLogSink) phaseLog
 
 -- | The tracer writing one output at a level.
 outputSink :: TraceLevel -> Output -> Tracer IO Trace
@@ -353,4 +431,6 @@ outputSink _ _ = nullTracer
 
 -- | The tracer appending the @SINGULAR_LOG@ phase log to a file.
 phaseLogSink :: FilePath -> Tracer IO Trace
-phaseLogSink _ = nullTracer
+phaseLogSink path =
+    Tracer
+        (maybe (pure ()) (uncurry (appendPhaseLine path)) . renderPhaseLog)

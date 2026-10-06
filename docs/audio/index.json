@@ -4348,8 +4348,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, PhaseLog, Services and TimeMaterial; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-    "v": "b02fcf0dda5a"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderTrace, Services, TimeMaterial, Trace and TraceRender; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+    "v": "51edad4cf425"
    }
   ],
   "what-this-reference-contains": [
@@ -6088,15 +6088,8 @@
     "index": 17,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-17",
     "pause_ms": 300,
-    "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-    "v": "c1c47dc30868"
-   },
-   {
-    "index": 18,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-18",
-    "pause_ms": 300,
     "text": "Submit — the write capability, which takes signed transactions only — source.",
-    "v": "cccd3ecced5b"
+    "v": "5f09f42a9a84"
    }
   ],
   "process-state-and-its-lifetimes": [
@@ -6227,15 +6220,22 @@
     "index": 10,
     "name": "docs-offchain-node-ownership/where-common-changes-land-10",
     "pause_ms": 300,
-    "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
-    "v": "38a3103dbb9f"
+    "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+    "v": "58c5a0f8cdbf"
    },
    {
     "index": 11,
     "name": "docs-offchain-node-ownership/where-common-changes-land-11",
     "pause_ms": 300,
+    "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
+    "v": "2c8ed7c04a35"
+   },
+   {
+    "index": 12,
+    "name": "docs-offchain-node-ownership/where-common-changes-land-12",
+    "pause_ms": 300,
     "text": "A shared named failure the runner prints: the diagnostic helper in Node.Options, the one cross-owner utility, at the graph's root.",
-    "v": "3dce0f71a9e5"
+    "v": "5c79410c4aab"
    }
   ]
  },

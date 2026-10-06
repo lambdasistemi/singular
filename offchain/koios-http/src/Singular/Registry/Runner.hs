@@ -13,6 +13,7 @@ module Singular.Registry.Runner
 import Control.Applicative ((<|>))
 import Control.Exception (ErrorCall (..), finally, throwIO)
 import Control.Monad qualified
+import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy qualified as LBS
 import Data.List (stripPrefix)
@@ -101,7 +102,7 @@ withRunner action = do
             (providerMagic (runnerProvider settings))
             (runnerWalletFile settings)
     target <- lookupEnv "SINGULAR_RUNNER_EVIDENCE"
-    withWrites (runnerProvider settings) wallet $ \capabilities ->
+    withWrites nullTracer nullTracer (runnerProvider settings) wallet $ \capabilities ->
         action wallet capabilities `finally` case target of
             Nothing -> pure ()
             Just path -> do

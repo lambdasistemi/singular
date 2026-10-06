@@ -51,7 +51,6 @@ module Singular.Registry.Node.IndexerView
 
 import Control.Concurrent.STM (STM, atomically, check)
 import Control.Exception (Exception (..), throwIO)
-import Data.Aeson ((.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -79,6 +78,7 @@ import Cardano.Node.Client.UTxOIndexer.Follower
     )
 import Cardano.Node.Client.UTxOIndexer.Indexer (IndexerHandle (..))
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
+import Control.Tracer (Tracer)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Node.IndexGate
     ( Coverage (..)
@@ -91,12 +91,6 @@ import Singular.Registry.Node.IndexGate
     , withHeldIndex
     )
 import Singular.Registry.Node.Options (die)
-import Singular.Registry.Node.PhaseLog
-    ( loggedProvider
-    , phaseLogFromEnv
-    , queryPhase
-    , timedPhase
-    )
 import Singular.Registry.Node.Wallet (bech32Address)
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -104,6 +98,14 @@ import Singular.Registry.Provider
     , SlotNo (..)
     , View (..)
     , scopedProvider
+    )
+import Singular.Registry.ProviderTrace (nodeSource, tracedProvider)
+import Singular.Registry.Trace
+    ( Query (..)
+    , QueryEnd (..)
+    , ReadEvent (..)
+    , timedTrace
+    , tracedQuery
     )
 
 -- | The follower's readiness and the slot lag it tolerates.
@@ -154,9 +156,14 @@ each view's point, within a bound (microseconds) for the index to reach
 it.
 -}
 indexerProvider
-    :: IndexGate -> IndexerReadiness -> Int -> Provider IO -> Provider IO
-indexerProvider gate readiness bound node =
-    scopedProvider $ \action -> agreedView gate readiness bound node $ \v ->
+    :: Tracer IO ReadEvent
+    -> IndexGate
+    -> IndexerReadiness
+    -> Int
+    -> Provider IO
+    -> Provider IO
+indexerProvider lg gate readiness bound node =
+    scopedProvider $ \action -> agreedView lg gate readiness bound node $ \v ->
         action
             v
                 { viewUTxOsAt = \addr -> covered gate addr <* countServed gate
@@ -167,27 +174,33 @@ whose own address reads are still the node's, or the refusal naming why
 the index cannot be brought there within the bound.
 -}
 agreedView
-    :: IndexGate
+    :: Tracer IO ReadEvent
+    -> IndexGate
     -> IndexerReadiness
     -> Int
     -> Provider IO
     -> (View IO -> IO a)
     -> IO a
-agreedView gate readiness bound node action = do
-    lg <- phaseLogFromEnv
+agreedView lg gate readiness bound node action = do
     withHeldIndex gate $ \admit ->
         withView node $ \v -> do
             let point = viewPoint v
             either throwIO pure (supported gate point)
             verdict <-
-                timedPhase
+                timedTrace
                     lg
-                    "query"
-                    ["query" .= ("indexAdmit" :: Text)]
-                    ( \r ->
-                        [ "answer_size" .= (1 :: Int)
-                        , "outcome" .= (either (const "lag") (const "ok") r :: Text)
-                        ]
+                    ( \ms end ->
+                        Queried
+                            Query
+                                { queryName = "indexAdmit"
+                                , querySource = nodeSource
+                                , querySession = Nothing
+                                , queryElapsed = ms
+                                , queryEnd = case end of
+                                    Right (Right ()) -> Answered (Just 1)
+                                    Right (Left _) -> Lagged
+                                    Left c -> QueryFailed c
+                                }
                     )
                     $ admit
                         (IndexedPoint (cpSlot point) (cpBlockHash point))
@@ -303,16 +316,27 @@ awaitIndexerReady readiness bound = do
 view point, the node holds an output there that the index does not.
 -}
 requireCovered
-    :: IndexGate -> IndexerReadiness -> Int -> Provider IO -> Addr -> IO ()
-requireCovered gate readiness bound node addr = do
-    lg <- phaseLogFromEnv
+    :: Tracer IO ReadEvent
+    -> IndexGate
+    -> IndexerReadiness
+    -> Int
+    -> Provider IO
+    -> Addr
+    -> IO ()
+requireCovered lg gate readiness bound node addr = do
     -- the node view this acquires is the command's own, before any session
     -- record exists to log it: it goes through the logger like every view
-    agreedView gate readiness bound (loggedProvider lg node) $ \v -> do
+    agreedView lg gate readiness bound (tracedProvider lg node) $ \v -> do
         held <- viewUTxOsAt v addr
         known <-
             map fst
-                <$> queryPhase lg "coverageIndexRead" length (covered gate addr)
+                <$> tracedQuery
+                    lg
+                    nodeSource
+                    Nothing
+                    "coverageIndexRead"
+                    (Just . length)
+                    (covered gate addr)
         case [i | (i, _) <- held, i `notElem` known] of
             [] -> pure ()
             missing ->

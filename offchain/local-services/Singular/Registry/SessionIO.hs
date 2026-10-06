@@ -17,15 +17,14 @@ module Singular.Registry.SessionIO
     ) where
 
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Plutus (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
-import Data.Aeson ((.=))
-import Data.Either (rights)
+import Control.Tracer (traceWith)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
+import Data.Text (Text)
 import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (Addr, ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
@@ -43,13 +42,18 @@ import Singular.Registry.NetworkTime
     ( NetworkTimeFailure (..)
     , ValidityWindow (..)
     )
-import Singular.Registry.PhaseLog
-    ( logPhase
-    , phaseLogFromEnv
-    , queryPhase
-    , timedPhase
-    )
+import Singular.Registry.ProviderTrace (localSource)
 import Singular.Registry.SessionServices qualified as Services
+import Singular.Registry.Trace
+    ( HorizonEnd (..)
+    , HorizonWait (..)
+    , ReadEvent (..)
+    , ValiditySelection (..)
+    , evaluationOf
+    , startTimer
+    , timedTrace
+    , tracedQuery
+    )
 import System.Timeout (timeout)
 
 -- | Request Latest on the caller's explicit network and preserve acquisition refusal.
@@ -70,9 +74,8 @@ outputsAt :: Session w IO -> Addr -> IO Outputs
 outputsAt session address = requireFact (outputs session (AtAddress address))
 
 parameters :: Session w IO -> IO (PParams ConwayEra)
-parameters session = do
-    logHandle <- phaseLogFromEnv
-    queryPhase logHandle "protocolMajorGuard" (const 1) $
+parameters session =
+    local session "protocolMajorGuard" $
         requireService (Services.parameters session)
 
 tip :: Session w IO -> IO TipObservation
@@ -95,50 +98,38 @@ input extent through this same session. Logging reports its actual result.
 evaluateTx
     :: Session w IO -> ConwayTx -> IO (EvaluateTxResult ConwayEra)
 evaluateTx session tx = do
-    logHandle <- phaseLogFromEnv
+    elapsed <- startTimer
     result <-
-        queryPhase
-            logHandle
+        tracedQuery
+            (sessionTracer session)
+            localSource
+            Nothing
             "evaluateTx"
-            Map.size
+            (Just . Map.size)
             (requireService (Services.evaluateTx session tx))
-    let done = rights (Map.elems result)
-        total f = sum [toInteger (f units) | units <- done]
-    logPhase
-        logHandle
-        "eval"
-        [ "redeemers" .= Map.size result
-        , "failed" .= (Map.size result - length done)
-        , "mem" .= total (\(ExUnits memory _) -> memory)
-        , "steps" .= total (\(ExUnits _ steps) -> steps)
-        ]
+    ms <- elapsed
+    traceWith (sessionTracer session) (Evaluated (evaluationOf ms result))
     pure result
 
 floorSlot :: Session w IO -> Integer -> IO SlotNo
-floorSlot session ms = do
-    logHandle <- phaseLogFromEnv
-    queryPhase
-        logHandle
+floorSlot session ms =
+    local
+        session
         "posixMsToSlot"
-        (const 1)
         (requireService (Services.floorSlot session ms))
 
 ceilingSlot :: Session w IO -> Integer -> IO SlotNo
-ceilingSlot session ms = do
-    logHandle <- phaseLogFromEnv
-    queryPhase
-        logHandle
+ceilingSlot session ms =
+    local
+        session
         "posixMsCeilSlot"
-        (const 1)
         (requireService (Services.ceilingSlot session ms))
 
 slotStart :: Session w IO -> SlotNo -> IO Integer
-slotStart session slot = do
-    logHandle <- phaseLogFromEnv
-    queryPhase
-        logHandle
+slotStart session slot =
+    local
+        session
         "slotStart"
-        (const 1)
         (requireService (Services.slotStart session slot))
 
 {- | Select before body construction/evaluation. A024 permits one bounded
@@ -148,9 +139,10 @@ through the original session; no additional acquisition or submission occurs.
 validityUpper
     :: Session w IO -> SlotNo -> Maybe SlotNo -> SlotNo -> IO SlotNo
 validityUpper session observed lower upper = do
-    logHandle <- phaseLogFromEnv
-    let select at =
-            queryPhase logHandle "ledgerHorizon" (const 1) $
+    let tracer = sessionTracer session
+        slot = unSlotNo
+        select at =
+            local session "ledgerHorizon" $
                 requireService (Services.validityWindow session at lower upper)
     initial <- select observed
     (selectedTip, selected) <-
@@ -165,7 +157,7 @@ validityUpper session observed lower upper = do
                         -- retaining a provider response for later reuse.
                         current <- observedSlot <$> tip session
                         horizon <-
-                            queryPhase logHandle "ledgerHorizon" (const 1) $
+                            local session "ledgerHorizon" $
                                 requireService (Services.observedHorizon session current)
                         writeIORef lastObservation (current, horizon)
                         if toInteger (unSlotNo current) > slotLimit
@@ -199,32 +191,50 @@ validityUpper session observed lower upper = do
                             Nothing -> do
                                 (lastTip, lastHorizon) <- readIORef lastObservation
                                 throwIO (HorizonWaitTimedOut lastTip lastHorizon)
-                timedPhase
-                    logHandle
-                    "horizon-wait"
-                    [ "tip" .= observed
-                    , "horizon" .= oldHorizon
-                    , "lower" .= lower
-                    , "windowUpper" .= upper
-                    , "minimumSlots" .= validityMinimumSlots initial
-                    , "slotLimit" .= slotLimit
-                    , "wallLimitMs" .= (20_000 :: Integer)
-                    ]
-                    ( \(at, window) -> ["observedTip" .= at, "observedHorizon" .= validityHorizon window]
+                timedTrace
+                    tracer
+                    ( \ms end ->
+                        HorizonWaited
+                            HorizonWait
+                                { waitTip = slot observed
+                                , waitHorizon = slot oldHorizon
+                                , waitLower = slot <$> lower
+                                , waitWindowUpper = slot upper
+                                , waitMinimumSlots = validityMinimumSlots initial
+                                , waitSlotLimit = slotLimit
+                                , waitWallLimitMs = 20_000
+                                , waitElapsed = ms
+                                , waitEnd =
+                                    either
+                                        HorizonFailed
+                                        ( \(at, window) ->
+                                            HorizonMoved (slot at) (slot (validityHorizon window))
+                                        )
+                                        end
+                                }
                     )
                     bounded
-    logPhase
-        logHandle
-        "validityUpper"
-        [ "tip" .= selectedTip
-        , "horizon" .= validityHorizon selected
-        , "lower" .= lower
-        , "effectiveLower"
-            .= max
-                (maybe 0 (toInteger . unSlotNo) lower)
-                (toInteger (unSlotNo selectedTip) + 1)
-        , "windowUpper" .= upper
-        , "upper" .= validitySelectedUpper selected
-        , "minimumSlots" .= validityMinimumSlots selected
-        ]
+    traceWith tracer . ValiditySelected $
+        ValiditySelection
+            { selectedTip = slot selectedTip
+            , selectedHorizon = slot (validityHorizon selected)
+            , selectedLower = slot <$> lower
+            , selectedEffectiveLower =
+                max
+                    (maybe 0 (toInteger . unSlotNo) lower)
+                    (toInteger (unSlotNo selectedTip) + 1)
+            , selectedWindowUpper = slot upper
+            , selectedUpper = slot (validitySelectedUpper selected)
+            , selectedMinimumSlots = validityMinimumSlots selected
+            }
     pure (validitySelectedUpper selected)
+
+-- | One local computation over the session, traced into the session's scope.
+local :: Session w IO -> Text -> IO a -> IO a
+local session name =
+    tracedQuery
+        (sessionTracer session)
+        localSource
+        Nothing
+        name
+        (const (Just 1))

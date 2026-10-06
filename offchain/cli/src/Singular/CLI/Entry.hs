@@ -57,6 +57,7 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -91,6 +92,7 @@ import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -220,13 +222,13 @@ foldAfter at a booking =
 -- insert
 -- ---------------------------------------------------------
 
-runInsert :: EntryArgs -> IO Value
-runInsert a = case entryMode a of
-    Preview node addr -> runPreview KInsert a node addr
+runInsert :: Tracer IO Trace -> EntryArgs -> IO Value
+runInsert tracer a = case entryMode a of
+    Preview node addr -> runPreview tracer KInsert a node addr
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
-        attached (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
+        attached tracer (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
             let s = savedOf at
                 envelope = insertionOf s a (callerKey at) payload
             -- The approval is decided in the booking's own view, from the
@@ -267,9 +269,9 @@ runInsert a = case entryMode a of
 -- update
 -- ---------------------------------------------------------
 
-runUpdate :: EntryArgs -> IO Value
-runUpdate a = case entryMode a of
-    Preview node addr -> runPreview KUpdate a node addr
+runUpdate :: Tracer IO Trace -> EntryArgs -> IO Value
+runUpdate tracer a = case entryMode a of
+    Preview node addr -> runPreview tracer KUpdate a node addr
     Submit ws -> do
         let Key key = entryKey a
         path <-
@@ -279,7 +281,7 @@ runUpdate a = case entryMode a of
                 (entryDocument a)
         payload <-
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
-        attached (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
+        attached tracer (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
             let s = savedOf at
                 wc = atWrite at
                 addr = walletAddr (wcWallet wc)
@@ -343,12 +345,12 @@ runUpdate a = case entryMode a of
 -- terminate
 -- ---------------------------------------------------------
 
-runTerminate :: EntryArgs -> IO Value
-runTerminate a = case entryMode a of
-    Preview node addr -> runPreview KTerminate a node addr
+runTerminate :: Tracer IO Trace -> EntryArgs -> IO Value
+runTerminate tracer a = case entryMode a of
+    Preview node addr -> runPreview tracer KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
-        attached (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
+        attached tracer (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
             let s = savedOf at
             -- The live output the booking releases is resolved in the
             -- booking's own view, with the state the approval binds.

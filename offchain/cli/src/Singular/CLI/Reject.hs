@@ -56,6 +56,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
+import Control.Tracer (Tracer)
 import Singular.CLI.Attached
 import Singular.CLI.Command (RejectArgs (..))
 import Singular.CLI.Fold (slotAt)
@@ -68,6 +69,7 @@ import Singular.CLI.Registry (hexT)
 import Singular.CLI.RejectRules
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -122,9 +124,10 @@ data Rejected = Rejected
 {- | @singular registry reject@: reject the registry's pending requests, signed
 and funded by this wallet, and journal it.
 -}
-runReject :: RejectArgs -> IO Value
-runReject a =
+runReject :: Tracer IO Trace -> RejectArgs -> IO Value
+runReject tracer a =
     attached
+        tracer
         (rejectRegistry a)
         (rejectBlueprint a)
         (rejectWrite a)

@@ -27,6 +27,8 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 
+import Control.Tracer (Tracer)
+
 import Singular.CLI.Command
     ( ProviderSettings (..)
     , WriteSettings (..)
@@ -43,6 +45,7 @@ import Singular.CLI.Registry
     , renderIdentityError
     )
 import Singular.CLI.Session
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -50,7 +53,6 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..))
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -71,21 +73,22 @@ transaction the write then builds reads the chain again, from a view of
 its own. The receipt says what the reconciliation did.
 -}
 attached
-    :: FilePath
+    :: Tracer IO Trace
+    -> FilePath
     -> FilePath
     -> WriteSettings
     -> Text
     -> (Attached -> IO Value)
     -> IO Value
-attached dir blueprint ws command body = do
+attached tracer dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
-    withWrite dir command ws $ \wc -> do
+    withWrite tracer dir command ws $ \wc -> do
         let ProviderSettings _ magic _ _ = writeProvider ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
             (checkNetwork (savedConfig saved) magic)
-        Cage.withLatest (capReads (wcCapabilities wc)) $ \v -> do
+        Cage.withLatest (readsIn (wcTracer wc) (wcCapabilities wc)) $ \v -> do
             reconciled <- reconcile command dir saved v
             refuseUnreconciled reconciled
             live <- attachLive v saved
@@ -105,7 +108,7 @@ callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
 
 provider
     :: Attached -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-provider = capReads . wcCapabilities . atWrite
+provider at = readsIn (wcTracer (atWrite at)) (wcCapabilities (atWrite at))
 
 -- | One read operation: acquire a view and read through it.
 reading

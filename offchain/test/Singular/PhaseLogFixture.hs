@@ -5,14 +5,12 @@ Module      : Singular.PhaseLogFixture
 Description : Reading the phase log in the rows that hold a path to it
 License     : Apache-2.0
 
-The rows of #363 that run a real constructor (a node adapter, an indexer
-view, a confirmation wait) cannot be handed a log; the constructor reads
-@SINGULAR_LOG@ as a command does. 'withLogEnv' sets it for one action
-and restores it, and the helpers read what the action appended.
+The rows of #363 hand a real constructor (a node adapter, an indexer view,
+a confirmation wait) the phase log's tracer for a fresh file
+('withLogFile'), and the helpers read what the action appended.
 -}
 module Singular.PhaseLogFixture
-    ( withLogEnv
-    , withLogFile
+    ( withLogFile
     , logObjects
     , phaseLines
     , queryNames
@@ -20,7 +18,6 @@ module Singular.PhaseLogFixture
     , numberField
     ) where
 
-import Control.Exception (bracket_)
 import Control.Monad (join)
 import Data.Aeson ((.:?))
 import Data.Aeson qualified as Aeson
@@ -30,22 +27,13 @@ import Data.ByteString.Char8 qualified as BC
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import System.Directory (doesFileExist)
-import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 
--- | Run with @SINGULAR_LOG@ set to a path or unset, restoring it after.
-withLogEnv :: Maybe FilePath -> IO a -> IO a
-withLogEnv new act = do
-    old <- lookupEnv "SINGULAR_LOG"
-    let put = maybe (unsetEnv "SINGULAR_LOG") (setEnv "SINGULAR_LOG")
-    bracket_ (put new) (put old) act
-
--- | Run an action with a fresh log file named by the environment.
+-- | Run an action with the path of a fresh log file.
 withLogFile :: (FilePath -> IO a) -> IO a
-withLogFile k = withSystemTempDirectory "phase-log" $ \dir -> do
-    let path = dir </> "phase.log"
-    withLogEnv (Just path) (k path)
+withLogFile k = withSystemTempDirectory "phase-log" $ \dir ->
+    k (dir </> "phase.log")
 
 -- | Every line of the log, each a JSON object; none when no file exists.
 logObjects :: FilePath -> IO [Aeson.Object]

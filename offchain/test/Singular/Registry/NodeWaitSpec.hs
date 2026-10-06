@@ -33,6 +33,7 @@ import Control.Exception
     , throwTo
     , try
     )
+import Control.Tracer (nullTracer)
 import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -43,6 +44,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Singular.Registry.TraceRender (readPhaseLog)
 import System.Timeout (timeout)
 import Test.Hspec
     ( Spec
@@ -216,7 +218,7 @@ spec =
                 $ \_ -> do
                     w <-
                         theWaitFailure 6_000_000 "the indexed wait" $
-                            awaitIndexedWithin 1 basicTx
+                            awaitIndexedWithin nullTracer 1 basicTx
                     waitStage w `shouldBe` IndexedConfirmationWait
                     waitTxId w `shouldBe` basicTxId
                     waitBound w `shouldBe` 1
@@ -234,7 +236,7 @@ spec =
                     r <-
                         timeout
                             6_000_000
-                            (awaitIndexedWithin 1 basicTx)
+                            (awaitIndexedWithin nullTracer 1 basicTx)
                     r `shouldBe` Just ()
 
             it "returns while already waiting for the output" $
@@ -247,7 +249,7 @@ spec =
                     r <-
                         timeout
                             6_000_000
-                            (awaitIndexedWithin 5 basicTx)
+                            (awaitIndexedWithin nullTracer 5 basicTx)
                     r `shouldBe` Just ()
 
         describe "the session confirmation limit" $ do
@@ -451,7 +453,7 @@ spec =
                         theWaitFailure 12_000_000 "a closed window" $
                             confirmWithin
                                 10
-                                pastDeadlineSession
+                                pastDeadlineSession{nsTracer = readPhaseLog path}
                                 "a closed window"
                                 basicTxId
                                 100_000
@@ -465,7 +467,7 @@ spec =
                     applyOutputZero idx
                     confirmWithin
                         10
-                        stubSession
+                        stubSession{nsTracer = readPhaseLog path}
                         "an indexed output"
                         basicTxId
                         100_000
@@ -650,6 +652,7 @@ stubSession =
         , nsTipSlot = pure (SlotNo 7)
         , nsTipTime = pure 7_000
         , nsMode = Devnet
+        , nsTracer = nullTracer
         }
 
 {- | A session whose tip read never returns, releasing the marker when

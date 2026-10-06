@@ -189,8 +189,8 @@ library local-services
     Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
-    Singular.Registry.PhaseLog
     Singular.Registry.Provider
+    Singular.Registry.ProviderTrace
     Singular.Registry.Services
     Singular.Registry.SessionServices
     Singular.Registry.SessionIO
@@ -202,6 +202,7 @@ library local-services
     Singular.Registry.TimeSource
     Singular.Registry.ProviderSettings
     Singular.Registry.Trace
+    Singular.Registry.TraceRender
 
   build-depends:
     , aeson
@@ -210,7 +211,6 @@ library local-services
     , bech32
     , bytestring
     , cardano-crypto-class
-    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
@@ -252,7 +252,6 @@ library node-internal
     Singular.Registry.Node.IndexGate
     Singular.Registry.Node.Memory
     Singular.Registry.Node.Options
-    Singular.Registry.Node.PhaseLog
     Singular.Registry.Node.RawView
     Singular.Registry.Node.Session
     Singular.Registry.Node.Submit
@@ -261,7 +260,6 @@ library node-internal
     Singular.Registry.Node.Wallet
 
   build-depends:
-    , aeson
     , async
     , base                                   >=4.14 && <5
     , base16-bytestring
@@ -306,6 +304,7 @@ executable local-services-record
     EvaluationFixture
 
   build-depends:
+    , contra-tracer
     , aeson
     , async
     , base                              >=4.14 && <5
@@ -384,6 +383,7 @@ library koios-http
     , cardano-ledger-mary
     , cardano-slotting
     , case-insensitive
+    , contra-tracer
     , cardano-tx-tools:tx-build
     , directory
     , filepath
@@ -1076,6 +1076,7 @@ test-suite contract-tests
     Singular.Registry.SyntheticTime
 
   build-depends:
+    , contra-tracer
     , aeson
     , async
     , base

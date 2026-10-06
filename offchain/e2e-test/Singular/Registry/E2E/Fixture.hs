@@ -17,6 +17,7 @@ import Cardano.Node.Client.E2E.Setup
     )
 import Control.Concurrent.MVar (newMVar, withMVar)
 import Control.Exception (finally)
+import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy qualified as LBS
 import Data.Unique (hashUnique, newUnique)
@@ -41,7 +42,7 @@ withDevnetCapabilities action = do
     let wallet = Wallet genesisAddr genesisSignKey Testnet
         run observer keep =
             withGeneratedFacade FundGenesis directory observer $ \start facade ->
-                withWrites (facadeSettings facade) wallet $ \caps ->
+                withWrites nullTracer nullTracer (facadeSettings facade) wallet $ \caps ->
                     action start caps `finally` keep caps
     evidence <- lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE"
     case evidence of

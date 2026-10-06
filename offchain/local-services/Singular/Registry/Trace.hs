@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
+
 {- |
 Module      : Singular.Registry.Trace
 Description : The typed events a command's reads report: views, queries, evaluations, waits and body builds
@@ -31,11 +34,30 @@ module Singular.Registry.Trace
 
       -- * Failures
     , ErrorClass (..)
+    , errorClassOf
+    , failureTag
+
+      -- * Measuring
+    , startTimer
+    , timedTrace
+    , tracedQuery
+    , isoNow
+    , evaluationOf
     ) where
 
+import Cardano.Ledger.Plutus (ExUnits (..))
+import Control.Exception (SomeException (..), throwIO, try)
+import Control.Tracer (Tracer, traceWith)
 import Data.Data (Data)
+import Data.Either (rights)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Time (defaultTimeLocale, formatTime, getCurrentTime)
+import Data.Typeable (typeOf)
 import Data.Word (Word64)
+import GHC.Clock (getMonotonicTimeNSec)
 
 {- | The type of what an operation threw, as @show (typeOf e)@ names it: never
 its message.
@@ -125,7 +147,9 @@ data ViewRelease
 
 -- | One evaluation: redeemers evaluated, failed, and the units of those that ran.
 data Evaluation = Evaluation
-    { evalRedeemers :: Int
+    { evalElapsed :: Double
+    -- ^ Milliseconds the evaluation took
+    , evalRedeemers :: Int
     , evalFailed :: Int
     , evalMemory :: Integer
     , evalSteps :: Integer
@@ -180,3 +204,84 @@ data BodyEnd
       BodyRefused
     | BodyFailed ErrorClass
     deriving stock (Eq, Show, Data)
+
+-- | The type of an exception, never its message.
+errorClassOf :: SomeException -> ErrorClass
+errorClassOf (SomeException inner) = ErrorClass (T.pack (show (typeOf inner)))
+
+{- | The constructor naming a failure a provider returned as a value: the
+first word of its rendering, never the text after it.
+-}
+failureTag :: (Show e) => e -> ErrorClass
+failureTag = ErrorClass . T.takeWhile (/= ' ') . T.pack . show
+
+{- | Start a monotonic timer; the action it returns reads the milliseconds
+elapsed since, to the microsecond.
+-}
+startTimer :: IO (IO Double)
+startTimer = do
+    t0 <- getMonotonicTimeNSec
+    pure $ do
+        t1 <- getMonotonicTimeNSec
+        pure (fromIntegral ((t1 - t0) `div` 1_000) / 1_000)
+
+{- | Run an action, and trace one event for it built from the milliseconds it
+took and how it ended: its result, or the type of what it threw, which is
+thrown again. The time is measured here, where the step happens.
+-}
+timedTrace
+    :: Tracer IO e -> (Double -> Either ErrorClass a -> e) -> IO a -> IO a
+timedTrace tracer event act = do
+    elapsed <- startTimer
+    try act >>= \case
+        Right a -> do
+            ms <- elapsed
+            traceWith tracer (event ms (Right a))
+            pure a
+        Left e -> do
+            ms <- elapsed
+            traceWith tracer (event ms (Left (errorClassOf e)))
+            throwIO e
+
+{- | One read, timed and traced as 'Queried': its name, its source, its
+session, and the size of its answer where it is counted.
+-}
+tracedQuery
+    :: Tracer IO ReadEvent
+    -> Text
+    -> Maybe Text
+    -> Text
+    -> (a -> Maybe Int)
+    -> IO a
+    -> IO a
+tracedQuery tracer source session name size =
+    timedTrace tracer $ \ms end ->
+        Queried
+            Query
+                { queryName = name
+                , querySource = source
+                , querySession = session
+                , queryElapsed = ms
+                , queryEnd = either QueryFailed (Answered . size) end
+                }
+
+-- | The current time, ISO-8601 UTC, to the millisecond.
+isoNow :: IO Text
+isoNow =
+    T.pack . formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S%3QZ"
+        <$> getCurrentTime
+
+{- | What an evaluation measured: the redeemers it evaluated, those that
+failed, and the units of those that ran.
+-}
+evaluationOf :: Double -> Map k (Either e ExUnits) -> Evaluation
+evaluationOf ms result =
+    Evaluation
+        { evalElapsed = ms
+        , evalRedeemers = Map.size result
+        , evalFailed = Map.size result - length done
+        , evalMemory = sum [toInteger m | ExUnits m _ <- done]
+        , evalSteps = sum [toInteger s | ExUnits _ s <- done]
+        }
+  where
+    done = rights (Map.elems result)

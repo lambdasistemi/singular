@@ -61,7 +61,6 @@ import Singular.Registry.Node.Indexer
     , currentFollower
     )
 import Singular.Registry.Node.Options (NodeMode (..), die, runMode)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Node.Session
     ( NodeSession (..)
     , sessionFor
@@ -75,7 +74,9 @@ import Singular.Registry.Node.Wait
     , tryOutcome
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.ProviderTrace (nodeSource)
 import Singular.Registry.Services qualified as Services
+import Singular.Registry.Trace (tracedQuery)
 
 {- | Wait until a submitted transaction is visible on the chain.
 
@@ -220,7 +221,7 @@ is asked only for its tip, and only while the output has not appeared.
 confirmOutputZero
     :: NodeSession -> String -> TxId -> Integer -> IO (Either Integer ())
 confirmOutputZero sess label tid deadline = do
-    lg <- phaseLogFromEnv
+    let lg = nsTracer sess
     currentFollower
         >>= maybe
             (die (label <> ": no indexer follows this session's chain"))
@@ -229,8 +230,13 @@ confirmOutputZero sess label tid deadline = do
     indexed lg idx = do
         let TxId h = tid
         seen <-
-            queryPhase lg "awaitTxIn" (maybe 0 (const 1)) $
-                awaitTxIn
+            tracedQuery
+                lg
+                nodeSource
+                Nothing
+                "awaitTxIn"
+                (Just . maybe 0 (const 1))
+                $ awaitTxIn
                     idx
                     (Indexer.TxIn (hashToBytes (extractHash h)) 0)
                     (Just confirmationPollSeconds)

@@ -86,7 +86,7 @@ import System.Posix.IO
 import System.Posix.IO.ByteString (fdWrite)
 import System.Posix.Unistd (fileSynchronise)
 
-import Singular.Registry.PhaseLog (isoNow)
+import Singular.Registry.Trace (isoNow)
 
 -- | One journal line: one phase of one submission.
 data JournalEntry = JournalEntry

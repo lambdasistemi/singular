@@ -35,6 +35,7 @@ refused by name rather than answered.
 module Singular.Registry.E2E.NodeSpec (spec, walletSpec) where
 
 import Control.Exception (ErrorCall (..), try)
+import Control.Tracer (nullTracer)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -266,7 +267,7 @@ spec = aroundAll withDevnetSocket $ do
 
 refuseReader :: FilePath -> Backend -> IO ()
 refuseReader sock backend = do
-    r <- try (withNodeReadsOn backend 999 sock (\_ -> pure ()))
+    r <- try (withNodeReadsOn nullTracer backend 999 sock (\_ -> pure ()))
     case r of
         Right () ->
             fail

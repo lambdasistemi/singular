@@ -31,6 +31,7 @@ import Control.Exception (handle, throwIO)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Credential (Credential (..))
@@ -42,11 +43,11 @@ import Ouroboros.Consensus.HardFork.Combinator.AcrossEras
 import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Control.Tracer (Tracer)
 import Singular.Registry.NetworkTime
     ( NetworkTimeFailure (..)
     , networkSystemStart
     )
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Node.RawView (RawProvider (..), RawView (..))
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -55,20 +56,27 @@ import Singular.Registry.Provider
     , ViewFailure (..)
     , scopedProvider
     )
+import Singular.Registry.ProviderTrace (nodeSource)
 import Singular.Registry.TimeMaterial (TimeMaterial, timeFromRaw)
+import Singular.Registry.Trace (ReadEvent, tracedQuery)
 
 -- | Raw facts and immutable time material from one held acquisition.
 nodeProvider
-    :: NetworkMagic -> TimeMaterial -> RawProvider IO -> Provider IO
-nodeProvider magic@(NetworkMagic magicWord) material raw = scopedProvider $ \action ->
+    :: Tracer IO ReadEvent
+    -> NetworkMagic
+    -> TimeMaterial
+    -> RawProvider IO
+    -> Provider IO
+nodeProvider tracer magic@(NetworkMagic magicWord) material raw = scopedProvider $ \action ->
     lost $ withRawView raw $ \h -> do
-        lg <- phaseLogFromEnv
-        snapshot <- queryPhase lg "ledgerSnapshot" (const 1) (rawSnapshot h)
+        let query :: Text -> IO a -> IO a
+            query name = tracedQuery tracer nodeSource Nothing name (const (Just 1))
+        snapshot <- query "ledgerSnapshot" (rawSnapshot h)
         point <-
             maybe (throwIO AcquiredAtOrigin) pure (chainPointOf magic snapshot)
-        pp <- queryPhase lg "protocolParams" (const 1) (rawParameters h)
-        start <- queryPhase lg "systemStart" (const 1) (rawSystemStart h)
-        history <- queryPhase lg "eraHistory" (const 1) (rawEraHistory h)
+        pp <- query "protocolParams" (rawParameters h)
+        start <- query "systemStart" (rawSystemStart h)
+        history <- query "eraHistory" (rawEraHistory h)
         context <-
             either
                 throwIO
@@ -88,12 +96,12 @@ nodeProvider magic@(NetworkMagic magicWord) material raw = scopedProvider $ \act
                     , viewTimeContext = lost $ do
                         -- The context stays immutable. The held raw read also
                         -- detects connection loss before a local computation.
-                        observed <- queryPhase lg "systemStart" (const 1) (rawSystemStart h)
+                        observed <- query "systemStart" (rawSystemStart h)
                         if observed == networkSystemStart context
                             then pure context
                             else throwIO (TimeSourceMismatch "held system start changed")
                     , viewResolvedOutputs = lost . rawUTxOsByRefs h
-                    , viewPhaseLog = lg
+                    , viewTracer = tracer
                     , viewUTxOsAt = lost . rawUTxOsAt h
                     , viewScriptRegistered = \sh -> lost $ do
                         let credential = ScriptHashObj sh

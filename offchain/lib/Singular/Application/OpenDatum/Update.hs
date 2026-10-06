@@ -23,9 +23,7 @@ module Singular.Application.OpenDatum.Update
     , releaseRedeemer
     ) where
 
-import Data.Aeson ((.=))
 import Data.ByteString.Short qualified as SBS
-import Data.Text (Text)
 import Data.Void (Void)
 import Lens.Micro ((&), (.~))
 
@@ -43,9 +41,14 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
+import Singular.Registry.LedgerProvider (Session (..))
 import Singular.Registry.SessionIO (parameters)
+import Singular.Registry.Trace
+    ( BodyBuild (..)
+    , BodyEnd (..)
+    , ReadEvent (..)
+    , timedTrace
+    )
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrWitnessKeyHash
@@ -97,13 +100,20 @@ an envelope, or that does not hold exactly one of its key's active
 token.
 -}
 updatePayloadTx :: UpdateArgs -> IO (Either String ConwayTx)
-updatePayloadTx args = do
-    lg <- phaseLogFromEnv
-    timedPhase
-        lg
-        "build-body"
-        ["builder" .= ("updatePayloadTx" :: Text)]
-        (either (const ["outcome" .= ("refused" :: Text)]) (const []))
+updatePayloadTx args =
+    timedTrace
+        (sessionTracer (uaSession args))
+        ( \ms end ->
+            BodyBuilt
+                BodyBuild
+                    { bodyBuilder = "updatePayloadTx"
+                    , bodyElapsed = ms
+                    , bodyEnd = case end of
+                        Left thrown -> BodyFailed thrown
+                        Right (Left _) -> BodyRefused
+                        Right (Right _) -> BodyReady
+                    }
+        )
         (updateBody args)
 
 -- | The update, unlogged.

@@ -45,6 +45,7 @@ module Singular.Registry.Provider
 
 import Control.Exception (Exception, finally, throwIO)
 import Control.Monad (unless)
+import Control.Tracer (Tracer)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Set (Set)
@@ -64,7 +65,7 @@ import Singular.Registry.Ledger
 
 import Singular.Registry.LocalEvaluation (EvaluateTxResult)
 import Singular.Registry.NetworkTime (NetworkTime)
-import Singular.Registry.PhaseLog (PhaseLog)
+import Singular.Registry.Trace (ReadEvent)
 
 {- | A point on a chain: the network it belongs to, the era of the
 ledger state there, its slot and the hash of the block header at that
@@ -94,8 +95,10 @@ data View m = View
     -- ^ The acquired view's immutable validated network time material
     , viewResolvedOutputs :: Set TxIn -> m [(TxIn, TxOut ConwayEra)]
     -- ^ Exact raw outputs for spent, collateral and reference inputs
-    , viewPhaseLog :: PhaseLog
-    -- ^ Observations for common local computations; no evaluation policy
+    , viewTracer :: Tracer m ReadEvent
+    {- ^ Where the common local computations over this view report what they
+    do: the tracer of the scope that acquired it; no evaluation policy
+    -}
     , viewUTxOsAt
         :: Addr
         -> m [(TxIn, TxOut ConwayEra)]

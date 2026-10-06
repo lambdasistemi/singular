@@ -82,6 +82,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -102,6 +103,7 @@ import Singular.CLI.Plan (outlayReport, refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
@@ -250,19 +252,25 @@ data Plan = Plan
 by this wallet, and journal it. Whoever booked the request, and whatever
 wallet, the registry directory they share says what the fold needs.
 -}
-runFold :: FoldArgs -> IO Value
-runFold a =
-    attached (foldRegistry a) (foldBlueprint a) (foldWrite a) "fold" $ \at -> do
-        folded <-
-            foldPending
-                at
-                FoldSpec
-                    { fsOrigin = Standalone
-                    , fsRequest = foldRequest a
-                    , fsFund = foldFund a
-                    , fsAllowance = foldMaxOutlay a
-                    }
-        pure (receipt "fold" Success (foldedFields folded))
+runFold :: Tracer IO Trace -> FoldArgs -> IO Value
+runFold tracer a =
+    attached
+        tracer
+        (foldRegistry a)
+        (foldBlueprint a)
+        (foldWrite a)
+        "fold"
+        $ \at -> do
+            folded <-
+                foldPending
+                    at
+                    FoldSpec
+                        { fsOrigin = Standalone
+                        , fsRequest = foldRequest a
+                        , fsFund = foldFund a
+                        , fsAllowance = foldMaxOutlay a
+                        }
+            pure (receipt "fold" Success (foldedFields folded))
 
 -- | A fold's receipt fields, in the order a reader meets them.
 foldedFields :: Folded -> [(Text, Value)]

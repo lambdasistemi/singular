@@ -21,6 +21,8 @@ import Control.Exception (bracket)
 import Control.Monad (forM_, replicateM)
 import Control.Tracer (Tracer (..), traceWith)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.Data
@@ -89,6 +91,7 @@ spec = describe "protocol narration (#416)" $ do
     narration
     jsonLines
     fanOutRows
+    phaseLogKeys
     entryPoint
 
 -- ---------------------------------------------------------
@@ -251,7 +254,7 @@ defaults = describe "the tracing defaults" $ do
             atLevel TraceWhat e `shouldBe` isWhat e
   where
     whatEvent = Trace [] (What (CommandEnded "fold" "success" 1_500))
-    howEvent = Trace [] (How (Tx (TxObserved "fold" (T.replicate 64 "b"))))
+    howEvent = Trace [] (How (Tx (TxObserved "fold" (T.replicate 64 "b") 1)))
     isWhat t = case traceEvent t of What _ -> True; How _ -> False
 
 -- ---------------------------------------------------------
@@ -314,7 +317,7 @@ foldStory =
     , Trace edge (What (EdgeStarted (Folding "insertActive")))
     , Trace
         tx
-        (How (Read (Evaluated (Evaluation 3 0 1_240_000 439_000_000))))
+        (How (Read (Evaluated (Evaluation 410.0 3 0 1_240_000 439_000_000))))
     , Trace tx (How (Tx (TxBuilt "fold" 612.0 Done)))
     , Trace tx (How (Tx (TxSigned "fold" foldTx (Just 889_465) 104.0 Done)))
     , Trace
@@ -333,7 +336,7 @@ foldStory =
             )
         )
     , Trace tx (How (Tx (TxConfirmed "fold" foldTx 17_400.0 Confirmed)))
-    , Trace tx (How (Tx (TxObserved "fold" foldTx)))
+    , Trace tx (How (Tx (TxObserved "fold" foldTx 2_000.0)))
     , Trace edge (What (Folded "insertActive" "alice-3" (foldTx <> "#1")))
     , Trace reg (What (RootSeen root rootAfter))
     , Trace [] (What (CommandEnded "fold" "success" 53_412.0))
@@ -354,12 +357,12 @@ narration = describe "the indented narration" $ do
                        , "  how  read state, requests via Koios ................................... 0.8s"
                        , "  request 5e0f19c2…#0 insertActive \"alice-3\" (deadline 2026-10-06 07:31:26Z, slot 135588686)"
                        , "    fold insertActive"
-                       , "      how  evaluate 3 scripts ✓ (mem 1.24M, steps 439M)"
+                       , "      how  evaluate 3 scripts ✓ (mem 1.24M, steps 439M) ................. 0.4s"
                        , "      how  build fold ................................................... 0.6s"
                        , "      how  sign 9a51d7e4…, fee 0.889465 tADA ............................ 0.1s"
                        , "      how  submit tx 9a51d7e4… at tip slot 135588101 .................... 0.4s"
                        , "      how  confirm tx 9a51d7e4… ........................................ 17.4s"
-                       , "      how  observe tx 9a51d7e4…"
+                       , "      how  observe tx 9a51d7e4… ......................................... 2.0s"
                        , "    result \"alice-3\" insertActive folded, output 9a51d7e4…#1"
                        , "  root 58397587… → 4f2be0a1…"
                        , "fold success ........................................................... 53.4s"
@@ -578,8 +581,7 @@ genTx =
             <*> genMaybe (fromIntegral <$> genWord)
             <*> genMaybe (fromIntegral <$> genWord)
             <*> oneof
-                [ pure TipNotRead
-                , TipSlot . fromIntegral <$> genWord
+                [ TipSlot . fromIntegral <$> genWord
                 , pure TipUnreadable
                 ]
             <*> genMs
@@ -595,7 +597,7 @@ genTx =
             <*> genHex
             <*> genMs
             <*> elements [Confirmed, ConfirmTimedOut, ConfirmFailed]
-        , TxObserved <$> genText <*> genHex
+        , TxObserved <$> genText <*> genHex <*> genMs
         ]
 
 genRead :: Gen ReadEvent
@@ -606,7 +608,8 @@ genRead =
         , ViewReleased <$> genRelease
         , Evaluated
             <$> ( Evaluation
-                    <$> chooseInt (0, 9)
+                    <$> genMs
+                    <*> chooseInt (0, 9)
                     <*> chooseInt (0, 9)
                     <*> chooseInteger (0, 2 ^ (40 :: Int))
                     <*> chooseInteger (0, 2 ^ (40 :: Int))
@@ -829,3 +832,208 @@ redirecting target path act =
             closeFd saved
         )
         (const act)
+
+-- ---------------------------------------------------------
+-- The phase log's line kinds
+-- ---------------------------------------------------------
+
+{- | One event of every line kind the phase log has, with the key set of the
+line its call site wrote at the base revision (#363): the expectation is the
+pre-change log's, read from those call sites, not from the renderer. An event
+that is not a phase-log line expects none.
+-}
+lineKinds :: [(Trace, Maybe [Text])]
+lineKinds =
+    [ query
+        ( Read
+            (Queried (Query "utxosAt" "node" Nothing 1.5 (Answered (Just 3))))
+        )
+        answered
+    , query
+        ( Read
+            (Queried (Query "evaluateTx" "local" Nothing 1.5 (QueryFailed failure)))
+        )
+        failedQuery
+    , query
+        (Read (Queried (Query "indexAdmit" "node" Nothing 1.5 Lagged)))
+        answered
+    ,
+        ( how'
+            ( Read
+                ( Queried
+                    (Query "outputs" "Koios" (Just "koios-1") 1.5 (Answered (Just 2)))
+                )
+            )
+        , Nothing
+        )
+    , query
+        ( Backend
+            ( Exchanged
+                (Query "address_utxos" "Koios" (Just "koios-1") 1.5 (Answered Nothing))
+            )
+        )
+        exchanged
+    , query
+        ( Backend
+            ( Exchanged
+                (Query "tx_info" "Koios" (Just "koios-1") 1.5 (QueryFailed failure))
+            )
+        )
+        (exchanged <> ["error_class"])
+    , line
+        (Read (ViewOpened (NodeViewOpened 1.5 7 "ab" "Conway")))
+        ["duration_ms", "era", "hash", "outcome", "phase", "slot", "ts"]
+    , line
+        (Read (ViewOpened (NodeViewFailed 1.5 failure)))
+        ["duration_ms", "error_class", "outcome", "phase", "ts"]
+    , line
+        (Backend (BackendViewOpened (SessionViewOpened "koios-1" "Unbound")))
+        ["binding", "phase", "session", "ts"]
+    , line
+        (Read (ViewReleased (NodeViewHeld 1.5)))
+        ["held_ms", "phase", "ts"]
+    , line
+        (Backend (BackendViewReleased (SessionViewClosed "koios-1")))
+        ["phase", "session", "ts"]
+    , line
+        (Read (Evaluated (Evaluation 1.5 2 0 10 20)))
+        ["failed", "mem", "phase", "redeemers", "steps", "ts"]
+    , line (Read (SessionOpened 1.5)) ["duration_ms", "phase", "ts"]
+    , line
+        (Read (HorizonWaited (wait (HorizonMoved 9 99))))
+        (horizon <> ["observedHorizon", "observedTip"])
+    , line
+        (Read (HorizonWaited (wait (HorizonFailed failure))))
+        (horizon <> ["error_class"])
+    , line
+        (Read (ValiditySelected (ValiditySelection 7 99 Nothing 8 50 50 2)))
+        [ "effectiveLower"
+        , "horizon"
+        , "lower"
+        , "minimumSlots"
+        , "phase"
+        , "tip"
+        , "ts"
+        , "upper"
+        , "windowUpper"
+        ]
+    , line
+        (Read (BodyBuilt (BodyBuild "bookEdgeMeasured" 1.5 BodyReady)))
+        body
+    , line
+        (Read (BodyBuilt (BodyBuild "updatePayloadTx" 1.5 BodyRefused)))
+        body
+    , line
+        ( Read
+            (BodyBuilt (BodyBuild "updatePayloadTx" 1.5 (BodyFailed failure)))
+        )
+        (body <> ["error_class"])
+    , line
+        (Tx (TxBuilt "fold" 1.5 Done))
+        ["duration_ms", "outcome", "phase", "step", "ts"]
+    , line
+        (Tx (TxBuilt "fold" 1.5 (FailedWith failure)))
+        ["duration_ms", "error_class", "outcome", "phase", "step", "ts"]
+    , line (Tx (TxSigned "fold" tx (Just 1) 1.5 Done)) signing
+    , line
+        (Tx (TxSigned "fold" tx Nothing 1.5 (FailedWith failure)))
+        (signing <> ["error_class"])
+    , line (Tx (submitted (TipSlot 7) Accepted)) submitting
+    , line (Tx (submitted TipUnreadable LedgerRefusedIt)) submitting
+    , line (Tx (submitted (TipSlot 7) ProviderFailed)) submitting
+    , line (Tx (submitted (TipSlot 7) WrongNetwork)) submitting
+    , line
+        (Tx (submitted (TipSlot 7) (SubmitThrew failure)))
+        (submitting <> ["error_class"])
+    , line (Tx (TxConfirmed "fold" tx 1.5 Confirmed)) confirming
+    , line (Tx (TxConfirmed "fold" tx 1.5 ConfirmTimedOut)) confirming
+    , line (Tx (TxConfirmed "fold" tx 1.5 ConfirmFailed)) confirming
+    , (how' (Tx (TxObserved "fold" tx 1.5)), Nothing)
+    , (how' (Fetched (Fetch ["state"] "Koios" 1.5 Done)), Nothing)
+    ]
+  where
+    how' = Trace [] . How
+    line h keys = (how' h, Just keys)
+    query h = line h
+    failure = ErrorClass "IOException"
+    tx = T.replicate 64 "a"
+    answered = ["answer_size", "duration_ms", "outcome", "phase", "query", "ts"]
+    failedQuery = ["duration_ms", "error_class", "outcome", "phase", "query", "ts"]
+    exchanged = ["duration_ms", "outcome", "phase", "query", "session", "ts"]
+    horizon =
+        [ "duration_ms"
+        , "horizon"
+        , "lower"
+        , "minimumSlots"
+        , "outcome"
+        , "phase"
+        , "slotLimit"
+        , "tip"
+        , "ts"
+        , "wallLimitMs"
+        , "windowUpper"
+        ]
+    wait = HorizonWait 7 99 Nothing 50 2 60 20_000 1.5
+    body = ["builder", "duration_ms", "outcome", "phase", "ts"]
+    signing = ["duration_ms", "outcome", "phase", "step", "ts", "tx"]
+    submitting =
+        [ "duration_ms"
+        , "outcome"
+        , "phase"
+        , "step"
+        , "tip_slot"
+        , "ts"
+        , "tx"
+        , "validity_lower"
+        , "validity_upper"
+        ]
+    submitted tip verdict = TxSubmitted "fold" tx (Just 1) (Just 9) tip 1.5 verdict
+    confirming = ["duration_ms", "outcome", "phase", "step", "ts", "tx"]
+
+phaseLogKeys :: Spec
+phaseLogKeys = describe "the phase log's lines" $ do
+    it
+        "keeps every line kind's keys as the call sites before the typed stream wrote them"
+        $ withSystemTempDirectory "phase-keys"
+        $ \dir ->
+            forM_ (zip [0 :: Int ..] lineKinds) $ \(n, (event, expected)) -> do
+                let path = dir </> (show n <> ".jsonl")
+                traceWith (phaseLogSink path) event
+                there <- doesFileExist path
+                keys <-
+                    if there
+                        then do
+                            raw <- BS.readFile path
+                            case Aeson.decodeStrict raw of
+                                Just (Aeson.Object o) -> pure (Just (sort (map Key.toText (KeyMap.keys o))))
+                                _ -> fail ("not one JSON object: " <> show raw)
+                        else pure Nothing
+                (event, keys) `shouldBe` (event, sort <$> expected)
+    it
+        "has a line kind for every constructor the provider and transaction events declare"
+        $ do
+            let covered =
+                    Map.fromListWith
+                        Set.union
+                        [ (ty, Set.singleton c)
+                        | (e, _) <- lineKinds
+                        , (ty, c, _) <- constructorsIn e
+                        ]
+                declared =
+                    Map.fromList
+                        [ (ty, Set.fromList cs)
+                        | (e, _) <- lineKinds
+                        , (ty, _, cs) <- constructorsIn e
+                        ]
+                mechanics =
+                    [ ty
+                    | ty <- Map.keys declared
+                    , ty
+                        `notElem` [ "Singular.CLI.Trace.Trace"
+                                  , "Singular.CLI.Trace.Event"
+                                  , "Singular.CLI.Trace.Scope"
+                                  ]
+                    ]
+            mechanics `shouldSatisfy` (> 10) . length
+            [(ty, Map.lookup ty covered) | ty <- mechanics]
+                `shouldBe` [(ty, Map.lookup ty declared) | ty <- mechanics]

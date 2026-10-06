@@ -22,6 +22,7 @@ import Cardano.Node.Client.Provider qualified as Node
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Slotting.Time (SystemStart (..))
 import Control.Exception (SomeException, displayException, try)
+import Control.Tracer (nullTracer)
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteArray (convert)
@@ -44,7 +45,6 @@ import Singular.Registry.NetworkTime
     , validateNetworkTime
     )
 import Singular.Registry.Node (confirmDeadline)
-import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider (..)
@@ -99,7 +99,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                 , viewProtocolParams = pp
                 , viewTimeContext = modifyIORef' requests (+ 1) >> pure context
                 , viewResolvedOutputs = const unused
-                , viewPhaseLog = noPhaseLog
+                , viewTracer = nullTracer
                 , viewUTxOsAt = const unused
                 , viewScriptRegistered = const unused
                 }

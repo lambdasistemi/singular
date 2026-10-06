@@ -32,6 +32,7 @@ import Control.Concurrent.Async (async)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Exception (ErrorCall (..), throwIO, try)
 import Control.Monad (forever)
+import Control.Tracer (nullTracer)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -188,7 +189,12 @@ nodeSpec = describe "node adapter over withAcquired" $ do
             fakeNode (Just (7, BS.replicate 32 0xab)) Nothing
         (point, utxos, registered) <-
             withView
-                (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake))
+                ( nodeProvider
+                    nullTracer
+                    (NetworkMagic 42)
+                    syntheticMaterial
+                    (rawFixture fake)
+                )
                 $ \v -> do
                     utxos <- viewUTxOsAt v payer
                     registered <- viewScriptRegistered v credential
@@ -212,7 +218,12 @@ nodeSpec = describe "node adapter over withAcquired" $ do
         r <-
             try
                 ( withView
-                    (nodeProvider (NetworkMagic 42) syntheticMaterial (rawFixture fake))
+                    ( nodeProvider
+                        nullTracer
+                        (NetworkMagic 42)
+                        syntheticMaterial
+                        (rawFixture fake)
+                    )
                     (pure . viewPoint)
                 )
         r `shouldBe` Left ViewConnectionLost
@@ -349,7 +360,7 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         \outside the view it answers"
         $ do
             (n2c, _, _, raw) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
+            let prov = nodeProvider nullTracer (NetworkMagic 42) syntheticMaterial raw
             inside <- withView prov $ \_ -> try (N2C.queryLedgerSnapshot n2c)
             either
                 (\e -> e `shouldBe` NodeCallInView "queryLedgerSnapshot")
@@ -362,7 +373,7 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         \the view it is acquired"
         $ do
             (_, _, _, raw) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
+            let prov = nodeProvider nullTracer (NetworkMagic 42) syntheticMaterial raw
             inside <- withView prov $ \_ -> try (withView prov (pure . viewPoint))
             either
                 (\e -> e `shouldBe` NodeCallInView "withAcquired")
@@ -375,7 +386,7 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         \reaches the node; outside the view it does"
         $ do
             (_, submitter, sent, raw) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
+            let prov = nodeProvider nullTracer (NetworkMagic 42) syntheticMaterial raw
                 tx = mkBasicTx mkBasicTxBody
             inside <- withView prov $ \_ -> try (submitTx submitter tx)
             either
@@ -389,7 +400,7 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
         "a query another thread issues while a view is held is not refused"
         $ do
             (n2c, _, _, raw) <- guarded
-            let prov = nodeProvider (NetworkMagic 42) syntheticMaterial raw
+            let prov = nodeProvider nullTracer (NetworkMagic 42) syntheticMaterial raw
             answered <- newEmptyMVar
             withView prov $ \_ -> do
                 _ <- forkIO (try (N2C.queryLedgerSnapshot n2c) >>= putMVar answered)
@@ -414,7 +425,7 @@ guardSpec = describe "no node call inside a view by another route (#326)" $ do
             r <-
                 timeout 5_000_000 . try $
                     withView
-                        (nodeProvider (NetworkMagic 42) syntheticMaterial raw)
+                        (nodeProvider nullTracer (NetworkMagic 42) syntheticMaterial raw)
                         readAfterEnd
             r `shouldBe` Just (Left ViewConnectionLost)
   where

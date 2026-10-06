@@ -140971,17 +140971,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "b02fcf0dda5a7bed7248a5b97e9d29ad9536cafe57b57d3d65f524caaef2c5dc",
-   "characters": 1704,
-   "cost": 0.00105648,
-   "duration": 115.625,
+   "audio_sha256": "51edad4cf42579268b9a1e4ca6be674d44fc425861bbbae9721e17550188b3f2",
+   "characters": 1729,
+   "cost": 0.00107198,
+   "duration": 117.175,
    "index": 1,
-   "key": "196dea8910e6512e2e34fd0d6d5c8c7050d09eab68977265ddf7bb400186ac48",
+   "key": "73fded2a6ffd219e8e83b1eaf62bf880a13740a828d92d6941e6d4b29365793c",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, PhaseLog, Services and TimeMaterial; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, PhaseLog, Services and TimeMaterial; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderTrace, Services, TimeMaterial, Trace and TraceRender; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderTrace, Services, TimeMaterial, Trace and TraceRender; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
    "words": [
     {
      "end": 0.375,
@@ -141759,608 +141759,628 @@
      "text": "."
     },
     {
-     "end": 64.7,
-     "start": 64.625,
+     "end": 64.675,
+     "start": 64.6,
      "text": "The"
     },
     {
-     "end": 65.1,
-     "start": 64.7,
+     "end": 65.075,
+     "start": 64.675,
      "text": "public"
     },
     {
-     "end": 65.975,
-     "start": 65.1,
+     "end": 65.95,
+     "start": 65.075,
      "text": "local-services"
     },
     {
-     "end": 66.537,
-     "start": 65.975,
+     "end": 66.562,
+     "start": 65.95,
      "text": "component"
     },
     {
-     "end": 66.95,
-     "start": 66.537,
+     "end": 66.975,
+     "start": 66.562,
      "text": "also"
     },
     {
-     "end": 67.637,
-     "start": 66.95,
+     "end": 67.662,
+     "start": 66.975,
      "text": "exposes"
     },
     {
-     "end": 68.8,
-     "start": 67.637,
+     "end": 68.825,
+     "start": 67.662,
      "text": "LocalEvaluation"
     },
     {
-     "end": 68.912,
-     "start": 68.8,
+     "end": 68.925,
+     "start": 68.825,
      "text": ","
     },
     {
-     "end": 69.8,
-     "start": 68.912,
+     "end": 70.275,
+     "start": 68.925,
      "text": "NetworkTime"
     },
     {
-     "end": 69.912,
-     "start": 69.8,
+     "end": 70.5,
+     "start": 70.275,
      "text": ","
     },
     {
-     "end": 70.65,
-     "start": 69.912,
-     "text": "PhaseLog"
-    },
-    {
-     "end": 70.762,
-     "start": 70.65,
-     "text": ","
+     "end": 71.35,
+     "start": 70.675,
+     "text": "ProviderTrace"
     },
     {
      "end": 71.4,
-     "start": 70.762,
+     "start": 71.35,
+     "text": ","
+    },
+    {
+     "end": 71.975,
+     "start": 71.4,
      "text": "Services"
     },
     {
-     "end": 71.525,
-     "start": 71.4,
-     "text": "and"
+     "end": 72.025,
+     "start": 71.975,
+     "text": ","
     },
     {
-     "end": 73.025,
-     "start": 71.525,
+     "end": 72.85,
+     "start": 72.025,
      "text": "TimeMaterial"
     },
     {
-     "end": 73.25,
-     "start": 73.025,
+     "end": 72.912,
+     "start": 72.85,
+     "text": ","
+    },
+    {
+     "end": 73.287,
+     "start": 72.912,
+     "text": "Trace"
+    },
+    {
+     "end": 73.4,
+     "start": 73.287,
+     "text": "and"
+    },
+    {
+     "end": 74.575,
+     "start": 73.4,
+     "text": "TraceRender"
+    },
+    {
+     "end": 74.8,
+     "start": 74.575,
      "text": ";"
     },
     {
-     "end": 73.637,
-     "start": 73.45,
+     "end": 75.188,
+     "start": 75.0,
      "text": "their"
     },
     {
-     "end": 74.137,
-     "start": 73.637,
+     "end": 75.688,
+     "start": 75.188,
      "text": "sources"
     },
     {
-     "end": 74.375,
-     "start": 74.137,
+     "end": 75.925,
+     "start": 75.688,
      "text": "live"
     },
     {
-     "end": 74.662,
-     "start": 74.375,
+     "end": 76.213,
+     "start": 75.925,
      "text": "under"
     },
     {
-     "end": 79.725,
-     "start": 74.662,
+     "end": 81.275,
+     "start": 76.213,
      "text": "offchain/local-services/Singular/Registry/."
     },
     {
-     "end": 80.062,
-     "start": 79.9,
+     "end": 81.613,
+     "start": 81.45,
      "text": "Their"
     },
     {
-     "end": 80.625,
-     "start": 80.062,
+     "end": 82.175,
+     "start": 81.613,
      "text": "generated"
     },
     {
-     "end": 81.162,
-     "start": 80.625,
+     "end": 82.713,
+     "start": 82.175,
      "text": "pages"
     },
     {
-     "end": 81.325,
-     "start": 81.162,
+     "end": 82.875,
+     "start": 82.713,
      "text": "are"
     },
     {
-     "end": 81.625,
-     "start": 81.325,
+     "end": 83.175,
+     "start": 82.875,
      "text": "not"
     },
     {
-     "end": 81.713,
-     "start": 81.625,
+     "end": 83.262,
+     "start": 83.175,
      "text": "in"
     },
     {
-     "end": 81.9,
-     "start": 81.713,
+     "end": 83.45,
+     "start": 83.262,
      "text": "this"
     },
     {
-     "end": 82.575,
-     "start": 81.9,
+     "end": 84.125,
+     "start": 83.45,
      "text": "main-library"
     },
     {
-     "end": 83.65,
-     "start": 82.575,
+     "end": 85.2,
+     "start": 84.125,
      "text": "reference"
     },
     {
-     "end": 83.85,
-     "start": 83.65,
+     "end": 85.4,
+     "start": 85.2,
      "text": "."
     },
     {
-     "end": 84.2,
-     "start": 84.025,
+     "end": 85.75,
+     "start": 85.575,
      "text": "This"
     },
     {
-     "end": 84.6,
-     "start": 84.2,
+     "end": 86.15,
+     "start": 85.75,
      "text": "coverage"
     },
     {
-     "end": 84.875,
-     "start": 84.6,
+     "end": 86.425,
+     "start": 86.15,
      "text": "gap"
     },
     {
-     "end": 85.225,
-     "start": 84.875,
+     "end": 86.775,
+     "start": 86.425,
      "text": "stays"
     },
     {
-     "end": 86.125,
-     "start": 85.225,
+     "end": 87.675,
+     "start": 86.775,
      "text": "visible"
     },
     {
-     "end": 86.325,
-     "start": 86.125,
+     "end": 87.875,
+     "start": 87.675,
      "text": ";"
     },
     {
-     "end": 86.912,
-     "start": 86.55,
+     "end": 88.463,
+     "start": 88.1,
      "text": "wider"
     },
     {
-     "end": 87.537,
-     "start": 86.912,
+     "end": 89.088,
+     "start": 88.463,
      "text": "generated"
     },
     {
-     "end": 88.113,
-     "start": 87.537,
+     "end": 89.662,
+     "start": 89.088,
      "text": "coverage"
     },
     {
-     "end": 88.275,
-     "start": 88.113,
+     "end": 89.825,
+     "start": 89.662,
      "text": "is"
     },
     {
-     "end": 88.4,
-     "start": 88.275,
+     "end": 89.95,
+     "start": 89.825,
      "text": "a"
     },
     {
-     "end": 88.825,
-     "start": 88.4,
+     "end": 90.375,
+     "start": 89.95,
      "text": "separate"
     },
     {
-     "end": 89.35,
-     "start": 88.825,
+     "end": 90.9,
+     "start": 90.375,
      "text": "decision"
     },
     {
-     "end": 89.463,
-     "start": 89.35,
+     "end": 91.012,
+     "start": 90.9,
      "text": "for"
-    },
-    {
-     "end": 89.6,
-     "start": 89.463,
-     "text": "the"
-    },
-    {
-     "end": 89.975,
-     "start": 89.6,
-     "text": "epic's"
-    },
-    {
-     "end": 90.45,
-     "start": 89.975,
-     "text": "owner"
-    },
-    {
-     "end": 90.55,
-     "start": 90.45,
-     "text": ","
-    },
-    {
-     "end": 90.762,
-     "start": 90.55,
-     "text": "not"
-    },
-    {
-     "end": 90.825,
-     "start": 90.762,
-     "text": "a"
     },
     {
      "end": 91.15,
-     "start": 90.825,
-     "text": "claim"
+     "start": 91.012,
+     "text": "the"
     },
     {
-     "end": 91.338,
+     "end": 91.525,
      "start": 91.15,
-     "text": "this"
+     "text": "epic's"
     },
     {
-     "end": 91.725,
-     "start": 91.338,
-     "text": "page"
+     "end": 92.0,
+     "start": 91.525,
+     "text": "owner"
     },
     {
-     "end": 92.675,
-     "start": 91.725,
-     "text": "makes"
-    },
-    {
-     "end": 92.875,
-     "start": 92.675,
-     "text": "."
-    },
-    {
-     "end": 93.463,
-     "start": 93.125,
-     "text": "Nothing"
-    },
-    {
-     "end": 93.625,
-     "start": 93.463,
-     "text": "on"
-    },
-    {
-     "end": 93.838,
-     "start": 93.625,
-     "text": "this"
-    },
-    {
-     "end": 94.275,
-     "start": 93.838,
-     "text": "page"
-    },
-    {
-     "end": 94.387,
-     "start": 94.275,
-     "text": "is"
-    },
-    {
-     "end": 94.45,
-     "start": 94.387,
-     "text": "a"
-    },
-    {
-     "end": 95.312,
-     "start": 94.45,
-     "text": "publication"
-    },
-    {
-     "end": 95.5,
-     "start": 95.312,
-     "text": "or"
-    },
-    {
-     "end": 95.9,
-     "start": 95.5,
-     "text": "release"
-    },
-    {
-     "end": 96.488,
-     "start": 95.9,
-     "text": "claim"
-    },
-    {
-     "end": 96.575,
-     "start": 96.488,
-     "text": "—"
-    },
-    {
-     "end": 96.7,
-     "start": 96.575,
-     "text": "the"
-    },
-    {
-     "end": 97.262,
-     "start": 96.7,
-     "text": "reference"
-    },
-    {
-     "end": 97.6,
-     "start": 97.262,
-     "text": "ships"
-    },
-    {
-     "end": 97.738,
-     "start": 97.6,
-     "text": "with"
-    },
-    {
-     "end": 97.825,
-     "start": 97.738,
-     "text": "the"
-    },
-    {
-     "end": 98.363,
-     "start": 97.825,
-     "text": "candidate"
-    },
-    {
-     "end": 98.738,
-     "start": 98.363,
-     "text": "site"
-    },
-    {
-     "end": 98.863,
-     "start": 98.738,
-     "text": "and"
-    },
-    {
-     "end": 99.037,
-     "start": 98.863,
-     "text": "its"
-    },
-    {
-     "end": 99.45,
-     "start": 99.037,
-     "text": "future"
-    },
-    {
-     "end": 100.725,
-     "start": 99.45,
-     "text": "archives"
-    },
-    {
-     "end": 100.95,
-     "start": 100.725,
+     "end": 92.1,
+     "start": 92.0,
      "text": ","
     },
     {
-     "end": 101.238,
-     "start": 101.15,
-     "text": "and"
-    },
-    {
-     "end": 101.4,
-     "start": 101.238,
-     "text": "no"
-    },
-    {
-     "end": 101.725,
-     "start": 101.4,
-     "text": "version"
-    },
-    {
-     "end": 101.887,
-     "start": 101.725,
-     "text": "is"
-    },
-    {
-     "end": 102.375,
-     "start": 101.887,
-     "text": "tagged"
-    },
-    {
-     "end": 102.525,
-     "start": 102.375,
-     "text": "or"
-    },
-    {
-     "end": 102.95,
-     "start": 102.525,
-     "text": "published"
-    },
-    {
-     "end": 103.1,
-     "start": 102.95,
-     "text": "by"
-    },
-    {
-     "end": 103.625,
-     "start": 103.1,
-     "text": "existing"
-    },
-    {
-     "end": 104.35,
-     "start": 103.625,
-     "text": "here"
-    },
-    {
-     "end": 104.575,
-     "start": 104.35,
-     "text": "."
-    },
-    {
-     "end": 104.825,
-     "start": 104.75,
-     "text": "The"
-    },
-    {
-     "end": 105.4,
-     "start": 104.825,
-     "text": "behavioral"
-    },
-    {
-     "end": 105.85,
-     "start": 105.4,
-     "text": "evidence"
-    },
-    {
-     "end": 105.963,
-     "start": 105.85,
-     "text": "for"
-    },
-    {
-     "end": 106.05,
-     "start": 105.963,
-     "text": "the"
-    },
-    {
-     "end": 106.325,
-     "start": 106.05,
-     "text": "moved"
-    },
-    {
-     "end": 107.125,
-     "start": 106.325,
-     "text": "builder"
-    },
-    {
-     "end": 107.35,
-     "start": 107.125,
-     "text": ","
-    },
-    {
-     "end": 108.075,
-     "start": 107.55,
-     "text": "blueprint"
-    },
-    {
-     "end": 108.2,
-     "start": 108.075,
-     "text": "and"
-    },
-    {
-     "end": 108.575,
-     "start": 108.2,
-     "text": "wire"
-    },
-    {
-     "end": 108.938,
-     "start": 108.575,
-     "text": "code"
-    },
-    {
-     "end": 109.3,
-     "start": 108.938,
-     "text": "lives"
-    },
-    {
-     "end": 109.412,
-     "start": 109.3,
-     "text": "in"
-    },
-    {
-     "end": 109.537,
-     "start": 109.412,
-     "text": "the"
-    },
-    {
-     "end": 109.938,
-     "start": 109.537,
-     "text": "check"
-    },
-    {
-     "end": 110.363,
-     "start": 109.938,
-     "text": "commands"
-    },
-    {
-     "end": 110.512,
-     "start": 110.363,
-     "text": "the"
-    },
-    {
-     "end": 111.075,
-     "start": 110.512,
-     "text": "off-chain"
-    },
-    {
-     "end": 111.625,
-     "start": 111.075,
-     "text": "development"
-    },
-    {
-     "end": 111.925,
-     "start": 111.625,
-     "text": "guide"
-    },
-    {
-     "end": 113.0,
-     "start": 111.925,
-     "text": "records"
-    },
-    {
-     "end": 113.2,
-     "start": 113.0,
-     "text": ","
-    },
-    {
-     "end": 113.562,
-     "start": 113.4,
+     "end": 92.312,
+     "start": 92.1,
      "text": "not"
     },
     {
-     "end": 113.637,
-     "start": 113.562,
-     "text": "in"
+     "end": 92.375,
+     "start": 92.312,
+     "text": "a"
     },
     {
-     "end": 113.713,
-     "start": 113.637,
+     "end": 92.7,
+     "start": 92.375,
+     "text": "claim"
+    },
+    {
+     "end": 92.887,
+     "start": 92.7,
+     "text": "this"
+    },
+    {
+     "end": 93.275,
+     "start": 92.887,
+     "text": "page"
+    },
+    {
+     "end": 94.225,
+     "start": 93.275,
+     "text": "makes"
+    },
+    {
+     "end": 94.425,
+     "start": 94.225,
+     "text": "."
+    },
+    {
+     "end": 95.012,
+     "start": 94.675,
+     "text": "Nothing"
+    },
+    {
+     "end": 95.175,
+     "start": 95.012,
+     "text": "on"
+    },
+    {
+     "end": 95.387,
+     "start": 95.175,
+     "text": "this"
+    },
+    {
+     "end": 95.825,
+     "start": 95.387,
+     "text": "page"
+    },
+    {
+     "end": 95.938,
+     "start": 95.825,
+     "text": "is"
+    },
+    {
+     "end": 96.0,
+     "start": 95.938,
+     "text": "a"
+    },
+    {
+     "end": 96.863,
+     "start": 96.0,
+     "text": "publication"
+    },
+    {
+     "end": 97.05,
+     "start": 96.863,
+     "text": "or"
+    },
+    {
+     "end": 97.45,
+     "start": 97.05,
+     "text": "release"
+    },
+    {
+     "end": 98.037,
+     "start": 97.45,
+     "text": "claim"
+    },
+    {
+     "end": 98.125,
+     "start": 98.037,
+     "text": "—"
+    },
+    {
+     "end": 98.25,
+     "start": 98.125,
      "text": "the"
     },
     {
-     "end": 114.213,
-     "start": 113.713,
+     "end": 98.812,
+     "start": 98.25,
+     "text": "reference"
+    },
+    {
+     "end": 99.15,
+     "start": 98.812,
+     "text": "ships"
+    },
+    {
+     "end": 99.287,
+     "start": 99.15,
+     "text": "with"
+    },
+    {
+     "end": 99.375,
+     "start": 99.287,
+     "text": "the"
+    },
+    {
+     "end": 99.912,
+     "start": 99.375,
+     "text": "candidate"
+    },
+    {
+     "end": 100.287,
+     "start": 99.912,
+     "text": "site"
+    },
+    {
+     "end": 100.412,
+     "start": 100.287,
+     "text": "and"
+    },
+    {
+     "end": 100.588,
+     "start": 100.412,
+     "text": "its"
+    },
+    {
+     "end": 101.0,
+     "start": 100.588,
+     "text": "future"
+    },
+    {
+     "end": 102.275,
+     "start": 101.0,
+     "text": "archives"
+    },
+    {
+     "end": 102.5,
+     "start": 102.275,
+     "text": ","
+    },
+    {
+     "end": 102.787,
+     "start": 102.7,
+     "text": "and"
+    },
+    {
+     "end": 102.95,
+     "start": 102.787,
+     "text": "no"
+    },
+    {
+     "end": 103.275,
+     "start": 102.95,
+     "text": "version"
+    },
+    {
+     "end": 103.438,
+     "start": 103.275,
+     "text": "is"
+    },
+    {
+     "end": 103.925,
+     "start": 103.438,
+     "text": "tagged"
+    },
+    {
+     "end": 104.075,
+     "start": 103.925,
+     "text": "or"
+    },
+    {
+     "end": 104.5,
+     "start": 104.075,
+     "text": "published"
+    },
+    {
+     "end": 104.65,
+     "start": 104.5,
+     "text": "by"
+    },
+    {
+     "end": 105.175,
+     "start": 104.65,
+     "text": "existing"
+    },
+    {
+     "end": 105.9,
+     "start": 105.175,
+     "text": "here"
+    },
+    {
+     "end": 106.125,
+     "start": 105.9,
+     "text": "."
+    },
+    {
+     "end": 106.375,
+     "start": 106.3,
+     "text": "The"
+    },
+    {
+     "end": 106.95,
+     "start": 106.375,
+     "text": "behavioral"
+    },
+    {
+     "end": 107.4,
+     "start": 106.95,
+     "text": "evidence"
+    },
+    {
+     "end": 107.512,
+     "start": 107.4,
+     "text": "for"
+    },
+    {
+     "end": 107.6,
+     "start": 107.512,
+     "text": "the"
+    },
+    {
+     "end": 107.875,
+     "start": 107.6,
+     "text": "moved"
+    },
+    {
+     "end": 108.675,
+     "start": 107.875,
+     "text": "builder"
+    },
+    {
+     "end": 108.9,
+     "start": 108.675,
+     "text": ","
+    },
+    {
+     "end": 109.625,
+     "start": 109.1,
+     "text": "blueprint"
+    },
+    {
+     "end": 109.75,
+     "start": 109.625,
+     "text": "and"
+    },
+    {
+     "end": 110.125,
+     "start": 109.75,
+     "text": "wire"
+    },
+    {
+     "end": 110.488,
+     "start": 110.125,
+     "text": "code"
+    },
+    {
+     "end": 110.85,
+     "start": 110.488,
+     "text": "lives"
+    },
+    {
+     "end": 110.963,
+     "start": 110.85,
+     "text": "in"
+    },
+    {
+     "end": 111.088,
+     "start": 110.963,
+     "text": "the"
+    },
+    {
+     "end": 111.488,
+     "start": 111.088,
+     "text": "check"
+    },
+    {
+     "end": 111.912,
+     "start": 111.488,
+     "text": "commands"
+    },
+    {
+     "end": 112.062,
+     "start": 111.912,
+     "text": "the"
+    },
+    {
+     "end": 112.625,
+     "start": 112.062,
+     "text": "off-chain"
+    },
+    {
+     "end": 113.175,
+     "start": 112.625,
+     "text": "development"
+    },
+    {
+     "end": 113.475,
+     "start": 113.175,
+     "text": "guide"
+    },
+    {
+     "end": 114.55,
+     "start": 113.475,
+     "text": "records"
+    },
+    {
+     "end": 114.75,
+     "start": 114.55,
+     "text": ","
+    },
+    {
+     "end": 115.113,
+     "start": 114.95,
+     "text": "not"
+    },
+    {
+     "end": 115.188,
+     "start": 115.113,
+     "text": "in"
+    },
+    {
+     "end": 115.262,
+     "start": 115.188,
+     "text": "the"
+    },
+    {
+     "end": 115.762,
+     "start": 115.262,
      "text": "existence"
     },
     {
-     "end": 114.287,
-     "start": 114.213,
+     "end": 115.838,
+     "start": 115.762,
      "text": "of"
     },
     {
-     "end": 114.5,
-     "start": 114.287,
+     "end": 116.05,
+     "start": 115.838,
      "text": "these"
     },
     {
-     "end": 115.425,
-     "start": 114.5,
+     "end": 116.975,
+     "start": 116.05,
      "text": "pages"
     },
     {
-     "end": 115.625,
-     "start": 115.425,
+     "end": 117.175,
+     "start": 116.975,
      "text": "."
     }
    ]
@@ -194716,201 +194736,11 @@
    ]
   },
   "docs-offchain-node-ownership/one-owner-per-runtime-concern-17": {
-   "audio_sha256": "c1c47dc3086808a2ba0334c69d398353aa498bead975efb2103b8e7ad7224035",
-   "characters": 186,
-   "cost": 0.00011532,
-   "duration": 11.825,
-   "index": 17,
-   "key": "6e9bac7f13f185f0da348bd16fe908ad244dcd0f375167ce8ce453c374706ada",
-   "page": "docs/offchain-node-ownership.md",
-   "pause_ms": 300,
-   "section": "one-owner-per-runtime-concern",
-   "sent_text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-   "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-   "words": [
-    {
-     "end": 0.9,
-     "start": 0.275,
-     "text": "PhaseLog"
-    },
-    {
-     "end": 0.962,
-     "start": 0.9,
-     "text": "—"
-    },
-    {
-     "end": 1.087,
-     "start": 0.962,
-     "text": "the"
-    },
-    {
-     "end": 1.675,
-     "start": 1.087,
-     "text": "opt-in"
-    },
-    {
-     "end": 1.75,
-     "start": 1.675,
-     "text": ","
-    },
-    {
-     "end": 2.675,
-     "start": 1.75,
-     "text": "append-only"
-    },
-    {
-     "end": 2.763,
-     "start": 2.675,
-     "text": ","
-    },
-    {
-     "end": 3.537,
-     "start": 2.763,
-     "text": "timestamped"
-    },
-    {
-     "end": 3.925,
-     "start": 3.537,
-     "text": "log"
-    },
-    {
-     "end": 4.012,
-     "start": 3.925,
-     "text": "of"
-    },
-    {
-     "end": 4.075,
-     "start": 4.012,
-     "text": "a"
-    },
-    {
-     "end": 4.588,
-     "start": 4.075,
-     "text": "command's"
-    },
-    {
-     "end": 5.25,
-     "start": 4.588,
-     "text": "phases"
-    },
-    {
-     "end": 5.325,
-     "start": 5.25,
-     "text": ","
-    },
-    {
-     "end": 5.438,
-     "start": 5.325,
-     "text": "and"
-    },
-    {
-     "end": 5.562,
-     "start": 5.438,
-     "text": "the"
-    },
-    {
-     "end": 5.975,
-     "start": 5.562,
-     "text": "logged"
-    },
-    {
-     "end": 6.162,
-     "start": 5.975,
-     "text": "read"
-    },
-    {
-     "end": 6.675,
-     "start": 6.162,
-     "text": "interface"
-    },
-    {
-     "end": 6.85,
-     "start": 6.675,
-     "text": "that"
-    },
-    {
-     "end": 7.162,
-     "start": 6.85,
-     "text": "writes"
-    },
-    {
-     "end": 7.425,
-     "start": 7.162,
-     "text": "one"
-    },
-    {
-     "end": 7.775,
-     "start": 7.425,
-     "text": "line"
-    },
-    {
-     "end": 7.938,
-     "start": 7.775,
-     "text": "for"
-    },
-    {
-     "end": 8.262,
-     "start": 7.938,
-     "text": "each"
-    },
-    {
-     "end": 8.5,
-     "start": 8.262,
-     "text": "view"
-    },
-    {
-     "end": 9.2,
-     "start": 8.5,
-     "text": "acquisition"
-    },
-    {
-     "end": 9.337,
-     "start": 9.2,
-     "text": "and"
-    },
-    {
-     "end": 9.637,
-     "start": 9.337,
-     "text": "each"
-    },
-    {
-     "end": 9.913,
-     "start": 9.637,
-     "text": "read"
-    },
-    {
-     "end": 10.15,
-     "start": 9.913,
-     "text": "through"
-    },
-    {
-     "end": 10.35,
-     "start": 10.15,
-     "text": "it"
-    },
-    {
-     "end": 10.438,
-     "start": 10.35,
-     "text": "—"
-    },
-    {
-     "end": 11.575,
-     "start": 10.438,
-     "text": "source"
-    },
-    {
-     "end": 11.825,
-     "start": 11.575,
-     "text": "."
-    }
-   ]
-  },
-  "docs-offchain-node-ownership/one-owner-per-runtime-concern-18": {
-   "audio_sha256": "cccd3ecced5b2cf8026271d9796e07b0ade69b2fd0557eb6a31901a00d4d4e3e",
+   "audio_sha256": "5f09f42a9a844282762ceb98d431b5388b66bb0980f3c54f93d7fe1a676f9f5a",
    "characters": 77,
    "cost": 4.774000000000001e-05,
    "duration": 4.85,
-   "index": 18,
+   "index": 17,
    "key": "e5781a3bf4392b55c93c59e49e8e449f1d78bec6438b0439c6f9b9eefa1b6342",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
@@ -198716,11 +198546,486 @@
    ]
   },
   "docs-offchain-node-ownership/where-common-changes-land-10": {
-   "audio_sha256": "38a3103dbb9f30560a9a484eb5f59e9fd12592763a51e9a6791e7ed87731facf",
+   "audio_sha256": "58c5a0f8cdbff36c9fcccff7733a47159acdc52a5f8bdee5ebcec3b16e6d5777",
+   "characters": 469,
+   "cost": 0.00029078,
+   "duration": 32.375,
+   "index": 10,
+   "key": "9524b8122afd878af64346cb8b425face2436232177a0aae76ef3932cc42e0f7",
+   "page": "docs/offchain-node-ownership.md",
+   "pause_ms": 300,
+   "section": "where-common-changes-land",
+   "sent_text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+   "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.675,
+     "start": 0.375,
+     "text": "node"
+    },
+    {
+     "end": 1.25,
+     "start": 0.675,
+     "text": "runtime"
+    },
+    {
+     "end": 1.688,
+     "start": 1.25,
+     "text": "reports"
+    },
+    {
+     "end": 1.913,
+     "start": 1.688,
+     "text": "about"
+    },
+    {
+     "end": 2.075,
+     "start": 1.913,
+     "text": "its"
+    },
+    {
+     "end": 2.412,
+     "start": 2.075,
+     "text": "reads"
+    },
+    {
+     "end": 2.525,
+     "start": 2.412,
+     "text": "and"
+    },
+    {
+     "end": 3.375,
+     "start": 2.525,
+     "text": "waits"
+    },
+    {
+     "end": 3.575,
+     "start": 3.375,
+     "text": ":"
+    },
+    {
+     "end": 4.012,
+     "start": 3.75,
+     "text": "typed"
+    },
+    {
+     "end": 4.312,
+     "start": 4.012,
+     "text": "events"
+    },
+    {
+     "end": 4.488,
+     "start": 4.312,
+     "text": "into"
+    },
+    {
+     "end": 4.575,
+     "start": 4.488,
+     "text": "the"
+    },
+    {
+     "end": 5.113,
+     "start": 4.575,
+     "text": "tracer"
+    },
+    {
+     "end": 5.325,
+     "start": 5.113,
+     "text": "its"
+    },
+    {
+     "end": 5.675,
+     "start": 5.325,
+     "text": "caller"
+    },
+    {
+     "end": 6.037,
+     "start": 5.675,
+     "text": "hands"
+    },
+    {
+     "end": 6.675,
+     "start": 6.037,
+     "text": "it"
+    },
+    {
+     "end": 6.875,
+     "start": 6.675,
+     "text": "."
+    },
+    {
+     "end": 7.375,
+     "start": 7.1,
+     "text": "Node"
+    },
+    {
+     "end": 7.45,
+     "start": 7.375,
+     "text": "."
+    },
+    {
+     "end": 7.675,
+     "start": 7.45,
+     "text": "View"
+    },
+    {
+     "end": 7.725,
+     "start": 7.675,
+     "text": ","
+    },
+    {
+     "end": 8.075,
+     "start": 7.725,
+     "text": "Node"
+    },
+    {
+     "end": 8.15,
+     "start": 8.075,
+     "text": "."
+    },
+    {
+     "end": 8.5,
+     "start": 8.15,
+     "text": "Session"
+    },
+    {
+     "end": 8.55,
+     "start": 8.5,
+     "text": ","
+    },
+    {
+     "end": 8.925,
+     "start": 8.55,
+     "text": "Node"
+    },
+    {
+     "end": 9.0,
+     "start": 8.925,
+     "text": "."
+    },
+    {
+     "end": 9.625,
+     "start": 9.0,
+     "text": "IndexerView"
+    },
+    {
+     "end": 9.675,
+     "start": 9.625,
+     "text": ","
+    },
+    {
+     "end": 10.075,
+     "start": 9.675,
+     "text": "Node"
+    },
+    {
+     "end": 10.15,
+     "start": 10.075,
+     "text": "."
+    },
+    {
+     "end": 10.725,
+     "start": 10.15,
+     "text": "Indexer"
+    },
+    {
+     "end": 10.85,
+     "start": 10.725,
+     "text": "and"
+    },
+    {
+     "end": 11.225,
+     "start": 10.85,
+     "text": "Node"
+    },
+    {
+     "end": 11.3,
+     "start": 11.225,
+     "text": "."
+    },
+    {
+     "end": 12.0,
+     "start": 11.3,
+     "text": "Confirmation"
+    },
+    {
+     "end": 12.225,
+     "start": 12.0,
+     "text": "take"
+    },
+    {
+     "end": 13.1,
+     "start": 12.225,
+     "text": "one"
+    },
+    {
+     "end": 13.325,
+     "start": 13.1,
+     "text": ";"
+    },
+    {
+     "end": 13.8,
+     "start": 13.55,
+     "text": "none"
+    },
+    {
+     "end": 14.087,
+     "start": 13.8,
+     "text": "reads"
+    },
+    {
+     "end": 14.163,
+     "start": 14.087,
+     "text": "an"
+    },
+    {
+     "end": 14.675,
+     "start": 14.163,
+     "text": "environment"
+    },
+    {
+     "end": 15.325,
+     "start": 14.675,
+     "text": "variable"
+    },
+    {
+     "end": 15.475,
+     "start": 15.325,
+     "text": "or"
+    },
+    {
+     "end": 16.05,
+     "start": 15.475,
+     "text": "decides"
+    },
+    {
+     "end": 16.325,
+     "start": 16.05,
+     "text": "whether"
+    },
+    {
+     "end": 16.45,
+     "start": 16.325,
+     "text": "to"
+    },
+    {
+     "end": 17.3,
+     "start": 16.45,
+     "text": "log"
+    },
+    {
+     "end": 17.5,
+     "start": 17.3,
+     "text": "."
+    },
+    {
+     "end": 17.8,
+     "start": 17.675,
+     "text": "The"
+    },
+    {
+     "end": 18.138,
+     "start": 17.8,
+     "text": "event"
+    },
+    {
+     "end": 18.575,
+     "start": 18.138,
+     "text": "types"
+    },
+    {
+     "end": 18.688,
+     "start": 18.575,
+     "text": "and"
+    },
+    {
+     "end": 18.775,
+     "start": 18.688,
+     "text": "the"
+    },
+    {
+     "end": 19.25,
+     "start": 18.775,
+     "text": "provider"
+    },
+    {
+     "end": 19.862,
+     "start": 19.25,
+     "text": "boundary's"
+    },
+    {
+     "end": 20.337,
+     "start": 19.862,
+     "text": "tracing"
+    },
+    {
+     "end": 20.65,
+     "start": 20.337,
+     "text": "live"
+    },
+    {
+     "end": 20.775,
+     "start": 20.65,
+     "text": "in"
+    },
+    {
+     "end": 22.3,
+     "start": 20.775,
+     "text": "local-services"
+    },
+    {
+     "end": 22.5,
+     "start": 22.3,
+     "text": ","
+    },
+    {
+     "end": 23.175,
+     "start": 22.725,
+     "text": "Singular"
+    },
+    {
+     "end": 23.225,
+     "start": 23.175,
+     "text": "."
+    },
+    {
+     "end": 23.8,
+     "start": 23.225,
+     "text": "Registry"
+    },
+    {
+     "end": 23.9,
+     "start": 23.8,
+     "text": "."
+    },
+    {
+     "end": 24.275,
+     "start": 23.9,
+     "text": "Trace"
+    },
+    {
+     "end": 24.413,
+     "start": 24.275,
+     "text": "and"
+    },
+    {
+     "end": 24.9,
+     "start": 24.413,
+     "text": "Singular"
+    },
+    {
+     "end": 24.95,
+     "start": 24.9,
+     "text": "."
+    },
+    {
+     "end": 25.45,
+     "start": 24.95,
+     "text": "Registry"
+    },
+    {
+     "end": 25.5,
+     "start": 25.45,
+     "text": "."
+    },
+    {
+     "end": 26.8,
+     "start": 25.5,
+     "text": "ProviderTrace"
+    },
+    {
+     "end": 27.0,
+     "start": 26.8,
+     "text": ","
+    },
+    {
+     "end": 27.288,
+     "start": 27.2,
+     "text": "and"
+    },
+    {
+     "end": 27.388,
+     "start": 27.288,
+     "text": "the"
+    },
+    {
+     "end": 28.163,
+     "start": 27.388,
+     "text": "SINGULAR_LOG"
+    },
+    {
+     "end": 28.55,
+     "start": 28.163,
+     "text": "lines"
+    },
+    {
+     "end": 28.7,
+     "start": 28.55,
+     "text": "they"
+    },
+    {
+     "end": 29.05,
+     "start": 28.7,
+     "text": "stand"
+    },
+    {
+     "end": 29.275,
+     "start": 29.05,
+     "text": "for"
+    },
+    {
+     "end": 29.438,
+     "start": 29.275,
+     "text": "in"
+    },
+    {
+     "end": 30.125,
+     "start": 29.438,
+     "text": "Singular"
+    },
+    {
+     "end": 30.25,
+     "start": 30.125,
+     "text": "."
+    },
+    {
+     "end": 30.85,
+     "start": 30.25,
+     "text": "Registry"
+    },
+    {
+     "end": 30.95,
+     "start": 30.85,
+     "text": "."
+    },
+    {
+     "end": 32.15,
+     "start": 30.95,
+     "text": "TraceRender"
+    },
+    {
+     "end": 32.375,
+     "start": 32.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-node-ownership/where-common-changes-land-11": {
+   "audio_sha256": "2c8ed7c04a35e0761709282dc616f8923198f0d1f64c900becac2dc2f5c06f3c",
    "characters": 257,
    "cost": 0.00015934,
    "duration": 16.575,
-   "index": 10,
+   "index": 11,
    "key": "1b99b04657d215a06e2e2cc8a5150acc2355b0805a3f205628999976609d4fb0",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
@@ -198975,12 +199280,12 @@
     }
    ]
   },
-  "docs-offchain-node-ownership/where-common-changes-land-11": {
-   "audio_sha256": "3dce0f71a9e5095fa3b9260368089f874392c603f29e44cd0f10b6896eec7187",
+  "docs-offchain-node-ownership/where-common-changes-land-12": {
+   "audio_sha256": "5c79410c4aabb10cb711bf7d6de2c3b8393d4d379093ec3f1b992ef3db25d162",
    "characters": 130,
    "cost": 8.060000000000001e-05,
    "duration": 8.65,
-   "index": 11,
+   "index": 12,
    "key": "361727b8d929d4310e5adfabc3ef95c6a3e900163be11ab1e04e428d2175071a",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,

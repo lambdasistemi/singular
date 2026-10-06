@@ -24,6 +24,7 @@ import Cardano.Node.Client.E2E.Setup (genesisAddr, genesisSignKey)
 import Control.Concurrent.MVar (newMVar, withMVar)
 import Control.Exception (finally, throwIO)
 import Control.Monad (unless)
+import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as LBS
@@ -64,7 +65,11 @@ runFacadeSmoke genesisDirectory outputDirectory = do
                         (encode event <> "\n")
                 )
     withGeneratedFacade FundGenesis genesisDirectory observe $ \_ facade ->
-        withReads (facadeSettings facade) (exercise facade)
+        withReads
+            nullTracer
+            nullTracer
+            (facadeSettings facade)
+            (exercise facade)
             `finally` ( facadeSources facade
                             >>= LBS.writeFile (outputDirectory </> "independent-facade-sources.json")
                                 . encode

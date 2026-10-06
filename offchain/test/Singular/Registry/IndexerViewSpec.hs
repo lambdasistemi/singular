@@ -79,6 +79,7 @@ import Cardano.Node.Client.UTxOIndexer.Indexer
     )
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 
+import Control.Tracer (nullTracer)
 import Singular.PhaseLogFixture
     ( logObjects
     , numberField
@@ -115,14 +116,15 @@ import Singular.Registry.Node.Memory
     ( ChainState (..)
     , memoryProvider
     )
-import Singular.Registry.Node.PhaseLog (loggedProvider, phaseLogAt)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider (..)
     , SlotNo (..)
     , View (..)
     )
+import Singular.Registry.ProviderTrace (tracedProvider)
 import Singular.Registry.StubFollowing (withStubFollowing)
+import Singular.Registry.TraceRender (readPhaseLog)
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 
 spec :: Spec
@@ -150,7 +152,10 @@ phaseLogSpec = describe "the phase log of the index's reads (#363)" $ do
             _ <- produce rig firstBlock >>= indexed rig
             answer <-
                 withView
-                    (loggedProvider (phaseLogAt path) (adapter rig longBound))
+                    ( tracedProvider
+                        (readPhaseLog path)
+                        (adapterTraced (readPhaseLog path) rig longBound)
+                    )
                     (`viewUTxOsAt` payer)
             objects <- logObjects path
             sort (queryNames objects) `shouldBe` ["indexAdmit", "utxosAt"]
@@ -172,7 +177,13 @@ phaseLogSpec = describe "the phase log of the index's reads (#363)" $ do
                     Provider $ \act -> do
                         atomicModifyIORef' acquired (\n -> (n + 1, ()))
                         withView (memoryProvider (rigChain rig)) act
-            requireCovered (rigGate rig) (readinessOf rig) longBound node payer
+            requireCovered
+                (readPhaseLog path)
+                (rigGate rig)
+                (readinessOf rig)
+                longBound
+                node
+                payer
             objects <- logObjects path
             -- the node's own count of acquisitions is the expectation
             readIORef acquired >>= (`shouldBe` 1)
@@ -298,7 +309,7 @@ gateSpec = describe "the gated index" $ do
                 []
             r <- timeout 2_000_000 $ withHeldIndex gate $ \admit -> do
                 _ <- admit blockOne (pure True) 1_000_000
-                try (awaitIndexedWithin 5 (mkBasicTx mkBasicTxBody))
+                try (awaitIndexedWithin nullTracer 5 (mkBasicTx mkBasicTxBody))
             case r of
                 Nothing -> expectationFailure "the wait outlived its hold"
                 Just (Right ()) -> expectationFailure "the wait returned inside the hold"
@@ -352,6 +363,7 @@ agreementSpec = describe "agreement" $ do
             ix <-
                 observeAt
                     ( indexerProvider
+                        nullTracer
                         (rigGate rig)
                         (readinessOf rig)
                         longBound
@@ -696,6 +708,7 @@ backendSpec = describe "the indexer backend a session opens" $ do
             r <-
                 try
                     ( requireCovered
+                        nullTracer
                         (rigGate rig)
                         (readinessOf rig)
                         shortBound
@@ -823,6 +836,7 @@ backendSpec = describe "the indexer backend a session opens" $ do
   where
     cover rig =
         requireCovered
+            nullTracer
             (rigGate rig)
             (readinessOf rig)
             longBound

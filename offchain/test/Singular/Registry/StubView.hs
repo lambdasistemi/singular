@@ -18,7 +18,7 @@ module Singular.Registry.StubView
 import Data.ByteString qualified as BS
 
 import Cardano.Ledger.Api.PParams (emptyPParams)
-import Singular.Registry.PhaseLog (noPhaseLog)
+import Control.Tracer (nullTracer)
 
 import Singular.Registry.Provider
     ( ChainPoint (..)
@@ -41,7 +41,7 @@ stubView =
         , viewProtocolParams = emptyPParams
         , viewTimeContext = fail "the stub view supplies no time context"
         , viewResolvedOutputs = \_ -> fail "the stub view resolves no inputs"
-        , viewPhaseLog = noPhaseLog
+        , viewTracer = nullTracer
         , viewUTxOsAt = \_ -> fail "the stub view reads no address"
         , viewScriptRegistered = \_ -> fail "the stub view reads no registration"
         }

@@ -24,7 +24,6 @@ module Singular.CLI.WriteSpec (spec) where
 import Control.Exception
     ( SomeException
     , bracket
-    , bracket_
     , fromException
     , throwIO
     , try
@@ -72,7 +71,6 @@ import System.Directory
     , listDirectory
     , withCurrentDirectory
     )
-import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.FilePath (takeDirectory, (</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -176,6 +174,7 @@ import Singular.CLI.Trace
     , TxEvent (..)
     , What (..)
     , outputSink
+    , phaseLogSink
     , renderJsonLine
     , renderPhaseLog
     , renderText
@@ -536,6 +535,7 @@ data Fixture = Fixture
     , fxBuiltAt :: IORef (Maybe (Aeson.Value, Cage.TipObservation))
     , fxUnsigned :: IORef (Maybe ConwayTx)
     , fxFacts :: IORef [FactRecord]
+    , fxConfirmations :: IORef (Map.Map Text (IO Double))
     }
 
 magic :: Word32
@@ -573,6 +573,7 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
         <*> newIORef Nothing
         <*> newIORef Nothing
         <*> newIORef []
+        <*> newIORef Map.empty
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -601,9 +602,11 @@ writeContext fx =
                 , capConfirm = \tx -> modifyIORef' (fxConfirmed fx) (<> [T.unpack (txIdHex tx)])
                 , capFacts = readIORef (fxFacts fx)
                 , capTrace = pure []
+                , capSource = "fixture"
                 }
         , wcTimeout = Just 5
         , wcTracer = nullTracer
+        , wcConfirmed = fxConfirmations fx
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the
@@ -671,7 +674,7 @@ outRef c =
 -- The phase log of a write (#363)
 -- ---------------------------------------------------------
 
-{- | The write of the ordinary CLI with @SINGULAR_LOG@ set or unset. Every
+{- | The write of the ordinary CLI with the phase log on or off. Every
 compared value is obtained at run time: the transaction id from the
 signed body, the tip from a fresh acquisition after the write, the
 validity interval from the body that was built, and the secrets from the
@@ -688,7 +691,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                 -- the process runs in a directory of its own, so a log written
                 -- to a default path would show there
                 withSystemTempDirectory "singular-cwd" $ \cwd ->
-                    withCurrentDirectory cwd $ withLogEnv Nothing $ do
+                    withCurrentDirectory cwd $ do
                         ((), out, err) <- captured (void (write fx))
                         here <- listDirectory (takeDirectory (fxDir fx))
                         there <- listDirectory (fxDir fx)
@@ -700,11 +703,11 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                            , ["journal.jsonl", "submissions"]
                            )
             (out, err) `shouldBe` ("", "")
-            -- the control: the variable is what makes the file appear
+            -- the control: the phase-log tracer is what makes the file appear
             logged <- withFixture $ \fx -> do
                 let path = takeDirectory (fxDir fx) </> "phase.log"
-                withLogEnv (Just path) $ do
-                    _ <- writeVia (writeContext fx) id fx
+                do
+                    _ <- writeVia (loggedTo path (writeContext fx)) id fx
                     doesFileExist path
             logged `shouldBe` True
     it
@@ -718,8 +721,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     bodyTxL . vldtTxBodyL
                         .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
             (signed, ()) <-
-                withLogEnv (Just path) $
-                    writeVia (writeContext fx) bounded fx
+                writeVia (loggedTo path (writeContext fx)) bounded fx
             built <- readIORef (fxBuiltAt fx)
             builtPoint <- maybe (fail "the build never ran") pure built
             tip <-
@@ -762,7 +764,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = writeContext fx
+                ctx = loggedTo path (writeContext fx)
                 caps = wcCapabilities ctx
                 broken =
                     ctx
@@ -772,8 +774,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                     throwIO (userError "403 for project_id=CRED-5c1d2")
                                 }
                         }
-            _ <-
-                withLogEnv (Just path) (try @SomeException (writeVia broken id fx))
+            _ <- try @SomeException (writeVia broken id fx)
             objects <- logObjects path
             outcomesOf "confirm" objects `shouldBe` [Just "failed"]
             raw <- BS.readFile path
@@ -784,7 +785,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = writeContext fx
+                ctx = loggedTo path (writeContext fx)
                 caps = wcCapabilities ctx
                 key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
                 hex = B16.encode key
@@ -805,7 +806,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                     throwIO (userError "401 for project_id=CRED-9e4b7")
                                 }
                         }
-            _ <- withLogEnv (Just path) $ do
+            _ <- do
                 _ <- writeVia ctx id fx
                 try @SomeException (writeVia rejecting id fx)
             raw <- BS.readFile path
@@ -829,12 +830,12 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                         , journalSession = normalizeSessionIds <$> journalSession e
                         }
                 run logPath = withFixture $ \fx -> do
-                    ((), out, err) <- withLogEnv logPath $ captured $ do
+                    ((), out, err) <- captured $ do
                         _ <-
                             writeVia
                                 ( maybe
                                     (writeContext fx)
-                                    (\_ -> writeContext fx)
+                                    (\p -> loggedTo p (writeContext fx))
                                     logPath
                                 )
                                 id
@@ -869,7 +870,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     let ctx0 =
                             maybe
                                 (writeContext fx)
-                                (\_ -> writeContext fx)
+                                (\p -> loggedTo p (writeContext fx))
                                 logPath
                         caps = wcCapabilities ctx0
                         ctx
@@ -879,7 +880,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                         caps{capConfirm = \_ -> throwIO (userError "the wait broke")}
                                     }
                             | otherwise = ctx0
-                    r <- withLogEnv logPath (try @SomeException (writeVia ctx id fx))
+                    r <- try @SomeException (writeVia ctx id fx)
                     events <- map journalEvent <$> readJournal (fxDir fx)
                     pure
                         ( events
@@ -904,7 +905,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             t0 <- getCurrentTime
-            (signed, ()) <- withLogEnv Nothing (write fx)
+            (signed, ()) <- write fx
             let ctx = writeContext fx
             journalObserved ctx "fold" signed "read back"
             earlier <-
@@ -971,12 +972,9 @@ normalizeSessionIds = \case
     Aeson.Array values -> Aeson.Array (fmap normalizeSessionIds values)
     value -> value
 
--- | Run with @SINGULAR_LOG@ set to a path or unset, restoring it after.
-withLogEnv :: Maybe FilePath -> IO a -> IO a
-withLogEnv new act = do
-    old <- lookupEnv "SINGULAR_LOG"
-    let put = maybe (unsetEnv "SINGULAR_LOG") (setEnv "SINGULAR_LOG")
-    bracket_ (put new) (put old) act
+-- | The write's context with its events also written to the phase log at a path.
+loggedTo :: FilePath -> WriteContext -> WriteContext
+loggedTo path ctx = ctx{wcTracer = phaseLogSink path}
 
 -- | The log's lines, each a JSON object.
 logObjects :: FilePath -> IO [Aeson.Object]
@@ -1062,13 +1060,13 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     TxSigned _ t _ _ _ -> Just t
                     TxSubmitted{submitTx = t} -> Just t
                     TxConfirmed _ t _ _ -> Just t
-                    TxObserved _ t -> Just t
+                    TxObserved _ t _ -> Just t
                 stepOf = \case
                     TxBuilt s _ _ -> s
                     TxSigned s _ _ _ _ -> s
                     TxSubmitted{submitStep = s} -> s
                     TxConfirmed s _ _ _ -> s
-                    TxObserved s _ -> s
+                    TxObserved s _ _ -> s
                 txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
             journalled
                 `shouldBe` [("fold", txIdHex folded), ("book", txIdHex booked)]
@@ -1080,7 +1078,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
                 mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
                 [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
                 [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
-                [t | TxObserved _ t <- mine] `shouldBe` [txIdHex signed]
+                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex signed]
             length txEvents `shouldBe` 10
     it
         "names the four places a failure happens as four distinct events, \
@@ -1092,7 +1090,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     EvaluationRefused -> \fx ctx -> writeBuilding ctx fx $ \v -> do
                         traceWith
                             (Cage.sessionTracer v)
-                            (Evaluated (Evaluation 2 1 0 0))
+                            (Evaluated (Evaluation 3 2 1 0 0))
                         failWith ClientRefusal "its fold could not be built"
                     LedgerRejected -> \fx ctx ->
                         writeVia

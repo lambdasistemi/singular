@@ -41,6 +41,7 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, wait, withAsync)
 import Control.Exception (bracket, onException, throwIO, try)
 import Control.Monad (unless, void, when)
+import Control.Tracer (nullTracer)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -111,7 +112,6 @@ import Singular.PhaseLogFixture
     ( logObjects
     , phaseLines
     , queryNames
-    , withLogEnv
     , withLogFile
     )
 import Singular.Registry.ContractSuite
@@ -136,12 +136,15 @@ import Singular.Registry.Node.RawView (rawNodeProvider)
 import Singular.Registry.Node.Session
     ( NodeCallInView (..)
     , withNodeModeOn
+    , withNodeModeTraced
+    , withNodeReadsOn
     )
 import Singular.Registry.Node.Submit (signTx, signedTx)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Provider (Provider (..), View (..))
 import Singular.Registry.Services qualified as Services
 import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import Singular.Registry.TraceRender (readPhaseLog)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
@@ -359,7 +362,7 @@ atOrigin use = withDevnetNode False 1 $ \sock _ -> do
     bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \_ ->
         do
             material <- loadTimeMaterial devnetMagicWord (takeDirectory sock)
-            use (nodeProvider magic material (rawNodeProvider lsqCh))
+            use (nodeProvider nullTracer magic material (rawNodeProvider lsqCh))
 
 {- | A development node from the pinned genesis, its start @offset@ seconds
 ahead, in a directory of its own, producing blocks or not; the action that stops it is handed
@@ -518,7 +521,7 @@ phaseLogOnDevnet =
                     wallet <- loadWallet devnetMagicWord skey
                     let node = External (ExternalNode sock devnetMagicWord skey)
                     withLogFile $ \path -> do
-                        answer <- withNodeModeOn NodeBackend node $ \sess -> do
+                        answer <- withNodeModeTraced (readPhaseLog path) NodeBackend node $ \sess -> do
                             utxos <-
                                 withView (nsProvider sess) $ \v ->
                                     viewUTxOsAt v (walletAddr wallet)
@@ -539,15 +542,14 @@ phaseLogOnDevnet =
                             `shouldBe` 1 + length (filter (== "protocolParams") (queryNames objects))
                         length (phaseLines "view" objects)
                             `shouldSatisfy` (>= length (phaseLines "view-release" objects))
-                    -- unset: the same session leaves no file behind
-                    withLogEnv Nothing $
-                        withNodeModeOn NodeBackend node $ \sess ->
-                            void (nsTipSlot sess)
+                    -- untraced: the same session runs with nothing to write to
+                    withNodeModeOn NodeBackend node $ \sess ->
+                        void (nsTipSlot sess)
             it "a key-free reader, as preview opens one, logs its views and reads" $
                 withGeneratedNode $ \sock _ -> withFundedKey sock $ \_ ->
                     withLogFile $ \path -> do
                         _ <-
-                            withNodeReads devnetMagicWord sock $ \r ->
+                            withNodeReadsOn (readPhaseLog path) NodeBackend devnetMagicWord sock $ \r ->
                                 withView (nrProvider r) $ \v -> do
                                     start <- Services.slotStart v 0
                                     Services.floorSlot v start
@@ -561,7 +563,7 @@ phaseLogOnDevnet =
                     wallet <- loadWallet devnetMagicWord skey
                     let node = External (ExternalNode sock devnetMagicWord skey)
                     withLogFile $ \path -> do
-                        _ <- withNodeModeOn IndexerBackend node $ \sess ->
+                        _ <- withNodeModeTraced (readPhaseLog path) IndexerBackend node $ \sess ->
                             withView (nsProvider sess) $ \v ->
                                 viewUTxOsAt v (walletAddr wallet)
                         objects <- logObjects path

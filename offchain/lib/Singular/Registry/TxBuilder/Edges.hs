@@ -62,7 +62,6 @@ module Singular.Registry.TxBuilder.Edges
     ) where
 
 import Control.Monad (unless, when)
-import Data.Aeson ((.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
@@ -71,7 +70,6 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Data.Text (Text)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
@@ -130,8 +128,13 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
 import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.PhaseLog (phaseLogFromEnv, timedPhase)
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Trace
+    ( BodyBuild (..)
+    , BodyEnd (..)
+    , ReadEvent (..)
+    , timedTrace
+    )
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
@@ -805,13 +808,17 @@ bookEdgeMeasured
     -> Maybe TxIn
     -- ^ The wallet output the caller chose to fund and collateralise
     -> IO ConwayTx
-bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
-    lg <- phaseLogFromEnv
-    timedPhase
-        lg
-        "build-body"
-        ["builder" .= ("bookEdgeMeasured" :: Text)]
-        (const [])
+bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs chosen =
+    timedTrace
+        (Cage.sessionTracer v)
+        ( \ms end ->
+            BodyBuilt
+                BodyBuild
+                    { bodyBuilder = "bookEdgeMeasured"
+                    , bodyElapsed = ms
+                    , bodyEnd = either BodyFailed (const BodyReady) end
+                    }
+        )
         ( measuredBody
             cfg
             v
