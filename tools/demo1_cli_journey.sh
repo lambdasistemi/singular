@@ -203,9 +203,9 @@ trace_disagreements() {
         or ($c == "insert" and (.edge | IN("book", "fold")) and .on == "insertActive")
         or ($c == "terminate" and (.edge | IN("book", "fold")) and .on == "updateTerminal")
         or ($c == "update" and .edge == "update")
-        or ($c == "fold" and .edge == "fold" and .on == $re)
+        or ($c == "fold" and .edge == "fold" and (.on == $re or $re == null))
         or ($c == "reject" and .edge == "reject")
-        or ($c == "reclaim" and .edge == "reclaim" and .on == $re);
+        or ($c == "reclaim" and .edge == "reclaim" and (.on == $re or $re == null));
       def fits($v; $c):
         if $v == "accepted" then ($c | IN("acknowledged", "timeout", "included", "rolled-back", "excluded"))
         elif $v == "ledger-refused" or $v == "wrong-network" then $c == "rejected"
