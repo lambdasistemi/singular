@@ -1,0 +1,5 @@
+# The defining generic Signing module's exports (tools/signed_tx_control.sh).
+# The retained Submit facade keeps its original signed-tx-exports.allow.
+SignedTx
+signTx
+signedTx

@@ -42,7 +42,7 @@ let
       '';
   # #326 R4: a SignedTx is constructible only by signing. The project's
   # GHC type-checks the fixtures under signed-tx-control against the
-  # Submit module's source, with the package databases of node-internal's
+  # defining Signing module and retained Submit facade, with node-internal's
   # compiled dependencies: no cabal, no package index (D-011).
   signedTxControl =
     pkgs.runCommand "signed-tx-control"
@@ -53,8 +53,10 @@ let
           fileset = pkgs.lib.fileset.unions [
             ../../tools/signed_tx_control.sh
             ../../tools/signed-tx-exports.allow
+            ../../tools/signing-exports.allow
             ../signed-tx-control
             ../node-internal/Singular/Registry/Node/Submit.hs
+            ../local-services/Singular/Registry/Signing.hs
           ];
         };
       }
