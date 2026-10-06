@@ -662,6 +662,45 @@ jobs:
       # refuses partial, and the verdict table fails.
       - name: Run the recovery controls for a process killed at its hold points
         run: nix run --quiet .#cli-recovery-killed
+  # #449: the demonstration's refusals on one existing registry, as parallel
+  # parts; each part creates its own registry on its own node.
+  demo1-attach-part:
+    name: "Demo 1 refusals on one existing registry — ${{ matrix.part }}"
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [takes, indexer-reads, tampered-a, tampered-b, over-allowance]
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run this part of the demonstration's refusals
+        run: nix run --quiet .#demo1-cli-attach-${{ matrix.part }}
+  demo1-attach:
+    name: Demo 1 refusals on one existing registry
+    needs: demo1-attach-part
+    if: always()
+    runs-on: nixos
+    timeout-minutes: 5
+    steps:
+      - name: Every part passed
+        env:
+          PARTS: ${{ needs.demo1-attach-part.result }}
+        run: |
+          echo "Demo 1 attach parts: $PARTS"
+          [ "$PARTS" = success ]
   cli-flags:
     name: Documented CLI flags and refusal controls
     needs: blueprint

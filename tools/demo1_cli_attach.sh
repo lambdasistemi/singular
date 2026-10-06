@@ -165,6 +165,12 @@ take() {
   say "take $name held: four refusals, each beside its accepting control, and the key read from two indexers while Active"
 }
 
+# Parts (#449): CLI_ATTACH_PARTS names the parts to run, space separated;
+# unset runs them all. Each part creates its own registry on its own node,
+# so separate CI jobs run separate parts in parallel.
+part() { [ -z "${CLI_ATTACH_PARTS:-}" ] || [[ " $CLI_ATTACH_PARTS " == *" $1 "* ]]; }
+tamper="$here/demo1_readback_tamper.sh"
+if part takes; then
 take one demo1-take-one
 before="$(wc -l <"$registry/journal.jsonl")"
 take two demo1-take-two
@@ -218,7 +224,6 @@ say "artifact controls: the honest copy holds; each changed copy fails for its r
 # on copies of the first take's receipts, the Koios record changed in one raw
 # fact at a time, every stated comparison left true and its digest renewed in the
 # receipt, each fails for that fact.
-tamper="$here/demo1_readback_tamper.sh"
 read_receipt="$(grep -l '"action": "read-indexer koios"' "$work"/one/receipts/*.json || true)"
 read_receipt="${read_receipt%%$'\n'*}"
 [ -n "$read_receipt" ] || fail_control "the first take left no koios read receipt"
@@ -237,6 +242,7 @@ expect record-quantity "is 1.4, not an exact whole number"
 expect record-index ", not an exact output index"
 expect record-entry "is \"0.5\", not an exact whole number"
 say "artifact controls: a record whose raw datum, tip or token census contradicts its stated verdict, or whose quantity or output index of the token is not an exact whole number, fails for that fact"
+fi
 # Continuation controls. They run last because the stopped takes leave their key
 # Active (and the over-allowance take leaves a request pending, by design: a take
 # that stops does not retract).
@@ -267,6 +273,7 @@ actions_of() { jq -r .action "$work/$1"/receipts/*.json; }
 last_receipt() { find "$work/$1/receipts" -name "*.json" | sort | tail -n1; }
 
 before="$(journal_lines)"
+if part indexer-reads; then
 start_indexer controls honest
 status=0
 # shellcheck disable=SC2046
@@ -277,6 +284,7 @@ status=0
 attach_with no-readback demo1-take-none --collateral-allowance 10000000 --max-outlay 40000000 || status=$?
 expect_refused_before_writing no-readback "--readback is required"
 stop_indexer
+fi
 
 # An indexer that cannot honestly confirm the key stops the take before its termination.
 indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
@@ -302,8 +310,10 @@ indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
     || fail_control "$name: the key is not still Active, so something was written after the stop"
   say "continuation control $name: stopped at the koios read ($outcome), the key still Active, no later action ran"
 }
+if part indexer-reads; then
 indexer_stop mismatch demo1-take-mismatch provider-mismatch datum-changed ""
 indexer_stop unreachable demo1-take-unreachable provider-unavailable honest "http://127.0.0.1:1"
+fi
 
 # A record that holds by its stated verdict but not by its facts stops the take at
 # that read, before its next write: the readback runs as given, then one raw fact
@@ -333,15 +343,20 @@ tampered_stop() { # NAME KEY FACT NEEDLE
     || fail_control "$name: the key is not still Active, so something was written after the stop"
   say "continuation control $name: a koios record whose $fact contradicts its stated verdict stopped the take before its next write"
 }
+if part tampered-a; then
 tampered_stop tampered-datum demo1-take-datum datum "the indexer's datum bytes are not the node's"
 tampered_stop tampered-lag demo1-take-lag lag "slots behind the node, beyond the 600 allowed"
 tampered_stop tampered-census demo1-take-census census "counts 2 outputs holding the token"
+fi
+if part tampered-b; then
 tampered_stop tampered-quantity demo1-take-quantity quantity "is 1.4, not an exact whole number"
 tampered_stop tampered-index demo1-take-index index ", not an exact output index"
 tampered_stop tampered-entry demo1-take-entry entry "is \"0.5\", not an exact whole number"
+fi
 
 # Last, because it leaves a request pending by design: a take that stops does not
 # retract, and the next take's fold would take it.
+if part over-allowance; then
 start_indexer controls honest
 status=0
 # shellcheck disable=SC2046
@@ -362,4 +377,5 @@ last="$(last_receipt stopped)"
   || fail_control "an action ran after the take had to stop"
 say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
 
+fi
 echo "attach: PASS — two takes on one registry, four refusals and two indexer reads each, every verdict from retained receipts"
