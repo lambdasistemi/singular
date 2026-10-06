@@ -43,11 +43,20 @@ setup_fail() {
   echo "attach: SETUP: $*" >&2
   exit 3
 }
-say() { echo "attach: $*"; }
+declare -A part_checks=()
+current_part=""
+say() {
+  [ -z "$current_part" ] || part_checks[$current_part]=$(( ${part_checks[$current_part]:-0} + 1 ))
+  echo "attach: $*"
+}
 fail_control() {
   echo "attach: CONTROL FAILED: $*" >&2
   exit 1
 }
+known_parts="takes indexer-reads tampered-a tampered-b over-allowance"
+for requested in ${CLI_ATTACH_PARTS:-}; do
+  [[ " $known_parts " == *" $requested "* ]] || setup_fail "CLI_ATTACH_PARTS names an unknown part: $requested (known: $known_parts)"
+done
 
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
@@ -167,8 +176,17 @@ take() {
 
 # Parts (#449): CLI_ATTACH_PARTS names the parts to run, space separated;
 # unset runs them all. Each part creates its own registry on its own node,
-# so separate CI jobs run separate parts in parallel.
-part() { [ -z "${CLI_ATTACH_PARTS:-}" ] || [[ " $CLI_ATTACH_PARTS " == *" $1 "* ]]; }
+# so separate CI jobs run separate parts in parallel. A name that is not a
+# part fails here, and every part that runs must report at least one held
+# check, so a selection that matches nothing can never read as a pass.
+part() {
+  if [ -z "${CLI_ATTACH_PARTS:-}" ] || [[ " $CLI_ATTACH_PARTS " == *" $1 "* ]]; then
+    current_part="$1"
+    part_checks[$1]="${part_checks[$1]:-0}"
+    return 0
+  fi
+  return 1
+}
 tamper="$here/demo1_readback_tamper.sh"
 if part takes; then
 take one demo1-take-one
@@ -378,4 +396,10 @@ last="$(last_receipt stopped)"
 say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
 
 fi
-echo "attach: PASS — two takes on one registry, four refusals and two indexer reads each, every verdict from retained receipts"
+for requested in ${CLI_ATTACH_PARTS:-$known_parts}; do
+  [ -n "${part_checks[$requested]+x}" ] || fail_control "part $requested never ran"
+  [ "${part_checks[$requested]}" -gt 0 ] || fail_control "part $requested reported no held check"
+done
+current_part=""
+say "parts run: $(for ran in "${!part_checks[@]}"; do printf "%s=%s " "$ran" "${part_checks[$ran]}"; done)"
+echo "attach: PASS — parts ${CLI_ATTACH_PARTS:-$known_parts}, every verdict from retained receipts"
