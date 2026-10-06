@@ -1,5 +1,38 @@
 <!--
 Sync impact report
+Version: 1.13.0 -> 1.14.0 (a fold is admitted inside its requests' processing windows; a batch
+cannot consume what it creates)
+Amended: 2026-10-06
+Authority: issue #396, operator rulings 2026-10-06 recorded in
+specs/396-fold-every-pending/ruling.md: option A, the model gains the fold-time admission
+for every fold, single and batch; and option A, a batch cannot consume what it creates.
+Changed obligations: a fold carrying a `Singular.FoldWitness` (each folded request's
+`submittedAt` and the fold's finite validity upper bound, excluded) is admitted first by
+`Singular.foldAdmission`: refused `not-phase1` when the bound passes any folded request's
+`submittedAt + processTime`, as the chain's `in_phase1` refuses it, and otherwise exactly the
+law (`Singular.admittedFold`, `Singular.admittedFoldBatch`;
+`Singular.Statements.fold_batch_refuses_past_deadline`,
+`Singular.Statements.fold_admitted_in_window_is_fold_batch`,
+`Singular.Statements.fold_admission_boundary`). `Singular.foldBatch` refuses a request
+consuming an active holding or a custody entry an earlier request of the same batch creates,
+`token-missing` for a holding and `not-booked` for a custody entry
+(`Singular.Statements.fold_batch_refuses_consuming_created`), and
+`Singular.Statements.fold_batch_cons` states that condition. Rows restated: the paragraph
+above the table, `foldBatch`, outcome class.
+Consumers: `lean/driver-corpus.json` (a single fold at and one past its deadline, a batch in
+and past its window, every create-then-consume pair), `lean/corpus.json` (an accepted batch of
+two keys, the refused custody pair), the theorem manifest and `docs/theorems.md`, the
+simulator mirror, `tools/check_model.py` (admission and creation re-derived from the model),
+and the selection of `registry fold`, which leaves a request the law refuses this way.
+Checked: declared operations, observations, unobservable names, judgements and batch
+questions unchanged; the surface digest and protocol version unchanged, since a fold witness
+is a scenario's field and not part of the surface.
+Named limit: no live conformance row compares a fold's admission or a batch with the model;
+the live run does not translate a fold's witness from the chain yet.
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.12.0 -> 1.13.0 (a request carries the datum it names; every fold is built from public
 inputs)
 Amended: 2026-10-06
@@ -464,11 +497,18 @@ Each operation is one of the nine exits a request can take, executed through
 `Singular.admittedExitStep` at the request the scenario carries: a fold of one of
 the seven edges, a reject, or a retract. A retract is admitted first, by
 `Singular.retractAdmission` under the witness its scenario carries; a fold and a
-reject have no admission and are exactly `Singular.exitStep`
+reject have no retraction admission and are exactly `Singular.exitStep`
 (`Singular.Statements.admitted_exit_is_the_exit`). A fold is `Singular.step`
 itself, and is refused `exit-edge-mismatch` when the request names another edge.
-An operation is refused when `Singular.retractAdmission`, `Singular.refusal` or
-`Singular.exitStep` returns a reason; the driver reports that reason verbatim and
+A fold carrying a fold witness (`Singular.FoldWitness`: each folded request's
+submission time and the fold's validity upper bound, excluded) is admitted first by
+`Singular.foldAdmission`, refused `not-phase1` when the bound passes any folded
+request's `submittedAt + processTime`, as the chain refuses it, and is otherwise
+exactly that step (`Singular.admittedFold`,
+`Singular.Statements.fold_admission_boundary`); a fold carrying none has no fold
+admission. An operation is refused when `Singular.retractAdmission`,
+`Singular.foldAdmission`, `Singular.refusal` or `Singular.exitStep` returns a
+reason; the driver reports that reason verbatim and
 never manufactures one. The driver also declares two judgements, `spend` then
 `settle`, answered about a transaction a caller observed rather than one the
 model built, after a retraction's admission has been answered. Beside the exits
@@ -488,7 +528,7 @@ checked first, and observes no transaction, since the model builds none for it.
 | `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: attests an already terminal key, adding a terminal holding and changing no leaf. |
 | `reject` | realization | `Singular.exitStep` with `Exit.reject`: a folder turns the request away. It carries no admission, leaves the registry state as it was, mints nothing, and pays the owner the deposit back, as `Singular.obligations` states. |
 | `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the scenario's witness (`Singular.RetractWitness`: the request's submission time, the transaction's validity bounds, lower included and upper excluded, and its signatories). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. The chain runs an owner-signed retraction of an insertion whose finite validity interval starts before phase 2, and one whose finite interval ends after it; the request script refuses both and the model answers `not-phase2` (the retract-outside-window conformance receipt carries both). The chain's refusal reason is not observed (#287); the two finite live cases establish the request script's refusal and the model's named reason separately. The model states only finite validity bounds; an open interval is outside them — a named non-goal whose `not-phase2` refusal the Aiken validator tests name; no live or model comparison of an open interval is claimed. |
-| `foldBatch` | realization | a batch question, in `Singular.Driver.runFoldBatch`: `Singular.foldBatch` verbatim over an ordered list of requests, each folded by `Singular.step` on its own edge from the state the previous left. It is refused `empty-fold` for no request, then for the first request's `step` reason, then `net-mint-mismatch` when the batch's claimed mint differs from what its edges mint at any `(kind, key)`; otherwise it reports `config`, `custody`, `held`, `mint`, `paid`, `root` and `state` of the result, its mint the edges' keyed deltas summed per asset and its `paid` the custody refunds its steps pay, concatenated, and `leaf` at every distinct key the batch names, in the order it first names them. Beside the answer the row carries each request's step until the first the law refuses. A batch of one request whose claim is its own edge's delta folds exactly as `Singular.step` (`Singular.Statements.fold_batch_of_one_is_step`). No transaction is built or observed. |
+| `foldBatch` | realization | a batch question, in `Singular.Driver.runFoldBatch`: `Singular.foldBatch` verbatim over an ordered list of requests, each folded by `Singular.step` on its own edge from the state the previous left. A batch carrying a fold witness is admitted first by `Singular.foldAdmission` (`Singular.admittedFoldBatch`): refused `not-phase1` when its validity upper bound passes any folded request's `submittedAt + processTime`, and otherwise exactly `Singular.foldBatch` (`Singular.Statements.fold_batch_refuses_past_deadline`, `Singular.Statements.fold_admitted_in_window_is_fold_batch`). It is refused `empty-fold` for no request, then for the first request's `step` reason, then `net-mint-mismatch` when the batch's claimed mint differs from what its edges mint at any `(kind, key)`, then for a request consuming an active holding or a custody entry an earlier request of the batch creates, `token-missing` for a holding and `not-booked` for a custody entry, since what a batch creates is not live for it (`Singular.Statements.fold_batch_refuses_consuming_created`); otherwise it reports `config`, `custody`, `held`, `mint`, `paid`, `root` and `state` of the result, its mint the edges' keyed deltas summed per asset and its `paid` the custody refunds its steps pay, concatenated, and `leaf` at every distinct key the batch names, in the order it first names them. Beside the answer the row carries each request's step until the first the law refuses. A batch of one request whose claim is its own edge's delta folds exactly as `Singular.step` (`Singular.Statements.fold_batch_of_one_is_step`). No transaction is built or observed. |
 | `rejectBatch` | realization | a batch question, in `Singular.Driver.runRejectBatch`: a non-empty list of requests, each taken by `Exit.reject`, stepped by `Singular.exitStep` from the state the previous left. It leaves the registry state as it was, mints nothing and pays each owner the deposit back, as `Singular.obligations` states, reporting the same fields as `foldBatch`. Given the outputs of a transaction a caller observed, its one judgement is `Singular.settle` over the concatenated obligations of its requests (`Singular.Driver.judgeRejectBatch`), so one owner owed by two requests must receive their sum; a batch of one judges exactly as the single reject (`Singular.Statements.reject_batch_of_one_is_reject`). An empty batch, and one naming a fold or a retract, is `unsupported`. No transaction is built or observed. |
 | `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
 | `custody` | realization | the custody census after the step: every outstanding absent token with its refund address and value. |
@@ -506,7 +546,7 @@ checked first, and observes no transaction, since the model builds none for it.
 | surface digest | identity | `definitionDigest` is taken over the declared operation, observation, unobservable and judgement names and each batch question's name and observation extent together, so a silently widened or narrowed surface changes it. A scenario's fields, a retraction's witness among them, are not part of the surface and do not move it. |
 | law premise | identity | `Singular.Driver.consistentB`, the decidable finite characterization of `Singular.Consistent` over the keys a state actually mentions. It is checked on the state reached by the setup trace *before* any accepted observation is reported. A key the state mentions nowhere satisfies every conjunct trivially, which is why the finite extent does not weaken the premise. |
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
-| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.retractAdmission`, `Singular.refusal` or `Singular.exitStep` can produce, a retraction only one of admission's, and a fold batch only one `Singular.foldBatch` gives; `unsupported` is the driver failing to reach the case — a retraction with no witness among them — and is never reported as a ledger refusal. |
+| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.retractAdmission`, `Singular.foldAdmission`, `Singular.refusal` or `Singular.exitStep` can produce, a retraction only one of its admission's, and a fold batch only one `Singular.foldAdmission` or `Singular.foldBatch` gives; `unsupported` is the driver failing to reach the case — a retraction with no witness among them — and is never reported as a ledger refusal. |
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and the executable specification introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
 | `outputMinimumAda` | unobservable | The ledger's actual minimum ada remains outside the model. Each transaction output's model `lovelace` is a floor — the cage output's deposit, a delivering fold's destination deposit, an owner output's payment, zero on an output paying no recipient — so a consumer requires observed `lovelace >= model`, reads each payment's value in `paid` and `tx.refunds` by the same rule, and compares every other field for equality. Surplus above the model floor remains unobservable. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
@@ -546,4 +586,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.13.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-06
+**Version**: 1.14.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-06
