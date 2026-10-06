@@ -1219,7 +1219,7 @@ a terminal, and the @SINGULAR_LOG@ phase log when a path is given. Nothing is
 opened here: a file sink opens per line, inside its containment.
 -}
 withTracing
-    :: Handle
+    :: Maybe Handle
     -> Bool
     -> Maybe FilePath
     -> TraceRequest
@@ -1239,12 +1239,17 @@ level, each written whole as it happens (standard error, the handle given, is fl
 each line; a file is opened, appended and closed per line). A line of text
 is written as UTF-8 whatever the locale.
 -}
-outputSink :: Handle -> TraceLevel -> Output -> Tracer IO Trace
-outputSink errors level (Output sink format) =
-    condTracing (atLevel level) $
-        Tracer $ \t -> forM_ (rendered t) $ \bytes -> case sink of
-            ToStderr -> BS.hPut errors bytes >> hFlush errors
-            ToFile path -> BS.appendFile path bytes
+outputSink :: Maybe Handle -> TraceLevel -> Output -> Tracer IO Trace
+outputSink errors level (Output sink format) = case (sink, errors) of
+    (ToStderr, Nothing) -> nullTracer
+    (ToStderr, Just h) ->
+        condTracing (atLevel level) $
+            Tracer $ \t -> forM_ (rendered t) $ \bytes ->
+                BS.hPut h bytes >> hFlush h
+    (ToFile path, _) ->
+        condTracing (atLevel level) $
+            Tracer $ \t -> forM_ (rendered t) $ \bytes ->
+                BS.appendFile path bytes
   where
     rendered t = case format of
         TextFormat -> (\l -> TE.encodeUtf8 (l <> "\n")) <$> renderText t

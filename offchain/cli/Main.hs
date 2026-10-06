@@ -13,11 +13,10 @@ module Main (main) where
 import System.Environment (getArgs, getEnvironment)
 import System.Exit (exitWith)
 
-import Singular.CLI.Root (runSingular, standardError)
+import Singular.CLI.Root (runPackaged)
 
 main :: IO ()
 main = do
     args <- getArgs
     environment <- getEnvironment
-    errors <- standardError
-    runSingular errors environment args >>= exitWith
+    runPackaged args environment >>= exitWith

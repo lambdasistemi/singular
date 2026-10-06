@@ -88,7 +88,7 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Root (runSingular, standardError)
+import Singular.CLI.Root (runPackagedWith, runSingular, standardError)
 import Singular.CLI.Session (failWith)
 import Singular.CLI.Trace
 import Singular.Registry.Trace
@@ -685,7 +685,7 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
             (seen, collect) <- collector
             tracer <-
                 fanOut
-                    [ outputSink stderr TraceHow (Output (ToFile path) JsonFormat)
+                    [ outputSink (Just stderr) TraceHow (Output (ToFile path) JsonFormat)
                     , collect
                     ]
             mapConcurrently_
@@ -707,7 +707,7 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
         $ withSystemTempDirectory "trace-flush"
         $ \dir -> do
             let path = dir </> "trace.jsonl"
-                sink = outputSink stderr TraceHow (Output (ToFile path) JsonFormat)
+                sink = outputSink (Just stderr) TraceHow (Output (ToFile path) JsonFormat)
             forM_ (zip [1 :: Int ..] foldStory) $ \(n, t) -> do
                 traceWith sink t
                 there <- doesFileExist path
@@ -720,10 +720,10 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
             tracer <-
                 fanOut
                     [ outputSink
-                        stderr
+                        (Just stderr)
                         TraceHow
                         (Output (ToFile (dir </> "missing" </> "trace.jsonl")) JsonFormat)
-                    , outputSink stderr TraceHow (Output (ToFile dir) JsonFormat)
+                    , outputSink (Just stderr) TraceHow (Output (ToFile dir) JsonFormat)
                     , collect
                     ]
             mapM_ (traceWith tracer) foldStory
@@ -799,17 +799,70 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , ["--trace", "how", "--trace-to", "stderr", "--trace-format", "json"]
                     ]
             (_, open) <- openTempFile dir "stderr"
-            (plainCode, plainOut, _) <- captured (runSingular open [] command)
+            (plainCode, plainOut, _) <- captured (runSingular (Just open) [] command)
             hClose open
             plainCode `shouldBe` ExitFailure 10
             closed <- closedHandle
             forM_ asked $ \flags -> do
-                (code, out, _) <- captured (runSingular closed [] (command <> flags))
+                (code, out, _) <- captured (runSingular (Just closed) [] (command <> flags))
                 (flags, code, out) `shouldBe` (flags, plainCode, plainOut)
+    it
+        "keeps the packaged command's receipt and exit when every setup step fails in turn"
+        $ withSystemTempDirectory "trace-packaged-setup"
+        $ \dir -> do
+            let refused =
+                    [ "registry"
+                    , "inspect"
+                    , "--key"
+                    , "alice-1"
+                    , "--registry"
+                    , dir </> "none"
+                    , "--blueprint"
+                    , dir </> "none.json"
+                    , "--koios-url"
+                    , "http://127.0.0.1:1/api/v1"
+                    , "--network-magic"
+                    , "1"
+                    ]
+                help = ["registry", "--help"]
+                asked =
+                    [ []
+                    , ["--trace", "off"]
+                    , ["--trace-to", "file:" <> (dir </> "missing" </> "t.jsonl")]
+                    , ["--trace", "how", "--trace-to", "stderr"]
+                    ]
+            (_, open) <- openTempFile dir "stderr"
+            -- baselines at the real composition: a local refusal and help, each
+            -- writing no journal (the registry is missing; help prints usage).
+            (refusedCode, refusedOut, _) <-
+                captured (runPackagedWith (pure (Just open)) refused [])
+            refusedCode `shouldBe` ExitFailure 10
+            (helpCode, helpOut, _) <-
+                captured (runPackagedWith (pure (Just open)) help [])
+            helpCode `shouldBe` ExitSuccess
+            hClose open
+            closed <- closedHandle
+            let broken :: IO (Maybe Handle)
+                broken = throwIO (userError "the standard error is gone")
+                faults :: [(String, IO (Maybe Handle))]
+                faults =
+                    [ ("probe", pure (Just closed))
+                    , ("replacement", broken)
+                    , ("both", broken)
+                    ]
+            forM_ asked $ \flags -> do
+                forM_ faults $ \(name, getErrors) -> do
+                    (code, out, _) <-
+                        captured (runPackagedWith getErrors (refused <> flags) [])
+                    (flags, name, code, out)
+                        `shouldBe` (flags, name, refusedCode, refusedOut)
+            forM_ faults $ \(name, getErrors) -> do
+                (code, out, _) <- captured (runPackagedWith getErrors help [])
+                (name, code, out) `shouldBe` (name, helpCode, helpOut)
     it "takes a standard error that is not a stream as closed" $
         withSystemTempDirectory "trace-not-a-stream" $ \dir -> do
             -- whether the entry point takes descriptor 2 as the process's standard error
-            let probe = (== stderr) <$> standardError
+            let probe = (== Just stderr) <$> standardError
             onFile <- redirecting stdError (dir </> "err") probe
             onDirectory <- bracket (openFd dir ReadOnly defaultFileFlags) closeFd $ \fd ->
                 bracket
@@ -869,7 +922,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         let receiptPath = dir </> (name <> ".json")
         (code, out, err) <-
             captured $
-                withTracing stderr False Nothing asked $ \tracer ->
+                withTracing (Just stderr) False Nothing asked $ \tracer ->
                     finish
                         tracer
                         "fold"

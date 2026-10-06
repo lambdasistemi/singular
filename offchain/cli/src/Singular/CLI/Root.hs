@@ -12,12 +12,16 @@ the tracer built and the command run. @main@ is this with the process's own
 arguments, environment and standard error.
 
 Nothing tracing does here can change the command's receipt, journal, outcome
-class or exit status: a standard error that cannot be asked whether it is a
-terminal is taken as not one, sinks open nothing until they write and contain
-what they throw, and a diagnostic that cannot be written is dropped.
+class or exit status: every setup step runs inside the same containment as
+emission. A standard error that cannot be asked whether it is a terminal is
+taken as not one; when no standard error is available its sink is dropped;
+sinks open nothing until they write and contain what they throw, and a
+diagnostic that cannot be written is dropped.
 -}
 module Singular.CLI.Root
     ( runSingular
+    , runPackaged
+    , runPackagedWith
     , standardError
     ) where
 
@@ -31,11 +35,8 @@ import Control.Exception
 import System.Exit (ExitCode (..))
 import System.IO
     ( Handle
-    , IOMode (WriteMode)
-    , hClose
     , hIsTerminalDevice
     , hPutStrLn
-    , openFile
     , stderr
     )
 import System.Posix.Files
@@ -57,16 +58,21 @@ import Singular.CLI.Session (koiosEnv)
 import Singular.CLI.Trace (withTracing)
 
 -- | Run one command line, with this environment and standard error.
-runSingular :: Handle -> [(String, String)] -> [String] -> IO ExitCode
+runSingular :: Maybe Handle -> [(String, String)] -> [String] -> IO ExitCode
 runSingular errors environment args =
     case parseInvocation environment args of
         Left err -> do
-            quietly (hPutStrLn errors ("singular: " <> renderCLIError err))
-            quietly (hPutStrLn errors usage)
+            case errors of
+                Just h -> do
+                    quietly (hPutStrLn h ("singular: " <> renderCLIError err))
+                    quietly (hPutStrLn h usage)
+                Nothing -> pure ()
             pure (ExitFailure 2)
         Right (command, request) -> do
-            terminal <-
-                either (const False) id <$> attempt (hIsTerminalDevice errors)
+            terminal <- case errors of
+                Nothing -> pure False
+                Just h ->
+                    either (const False) id <$> attempt (hIsTerminalDevice h)
             withTracing
                 errors
                 terminal
@@ -89,19 +95,28 @@ attempt act =
 {- | The process's standard error, when descriptor 2 is one: a file, a pipe,
 a terminal or a socket. A process started with it closed finds that number
 taken by the runtime's own descriptors (a timer, an event queue), and writing
-there would corrupt them; standard error is then a closed handle, which every
-write treats as a sink that fails.
+there would corrupt them; standard error is then unavailable and its sink is
+dropped. No file is opened here, so this cannot fail synchronously.
 -}
-standardError :: IO Handle
+standardError :: IO (Maybe Handle)
 standardError = do
     usable <-
         either (const False) streamLike <$> attempt (getFdStatus (Fd 2))
-    if usable
-        then pure stderr
-        else do
-            closed <- openFile "/dev/null" WriteMode
-            hClose closed
-            pure closed
+    pure (if usable then Just stderr else Nothing)
   where
     streamLike s =
         any ($ s) [isRegularFile, isCharacterDevice, isNamedPipe, isSocket]
+
+{- | The packaged command with its standard error taken inside the same
+containment as emission: a synchronous failure taking it leaves no handle
+and its sink dropped, never an aborted command. Asynchronous exceptions
+propagate.
+-}
+runPackagedWith :: IO (Maybe Handle) -> [String] -> [(String, String)] -> IO ExitCode
+runPackagedWith getErrors args environment = do
+    errors <- either (const Nothing) id <$> attempt getErrors
+    runSingular errors environment args
+
+-- | The packaged command with the process's own standard error.
+runPackaged :: [String] -> [(String, String)] -> IO ExitCode
+runPackaged = runPackagedWith standardError
