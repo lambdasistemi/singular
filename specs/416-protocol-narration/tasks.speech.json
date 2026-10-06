@@ -1,0 +1,36 @@
+{
+  "protocol-narration-tasks": [
+    {
+      "text": "Protocol narration: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "One commit per task, in order.",
+      "pause": 400
+    }
+  ],
+  "slice-narration": [
+    {
+      "text": "Slice: narration.",
+      "pause": 500
+    },
+    {
+      "text": "First, the narration tests, committed failing. Second, the typed tracer replaces the phase log, byte-compatible. Third, protocol events from all eight commands with four refusal kinds. Fourth, the tracing controls, the indented text renderer and the JSON renderer. Fifth, Demo 1 runs with trace how, and the node guide documents the flags.",
+      "pause": 400
+    }
+  ],
+  "slice-socket-sink": [
+    {
+      "text": "Slice: socket sink.",
+      "pause": 500
+    },
+    {
+      "text": "A contra-tracer-contrib pull request adds the socket sink, the pin is bumped, trace-to socket is accepted, and a test reads the socket and asserts the typed events.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "95d35d12811ee75b61c8df7565018c59593c4146ce1d86089dac9c8ed980299f"
+  }
+}

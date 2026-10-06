@@ -1,0 +1,134 @@
+{
+  "protocol-narration-stories-and-requirements": [
+    {
+      "text": "Protocol narration: stories and requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 416, a child of epic 301. The plan has the module rows and the tasks have the commit boundaries. Base: main 2cafe6b2.",
+      "pause": 400
+    }
+  ],
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "Someone watching a singular command sees, while it runs, the registry it reads, the request it handles, the edge and key, the transaction it submits and the block that confirms it, each step indented under the action it serves, with its elapsed time.",
+      "pause": 400
+    },
+    {
+      "text": "An operator recording Demo 1 runs every command with trace how to standard error, and standard output still carries only the receipt.",
+      "pause": 400
+    },
+    {
+      "text": "A machine consumer asks for the same events as JSON lines on a file or a Unix socket, and the existing phase log keeps its exact format.",
+      "pause": 400
+    },
+    {
+      "text": "Someone reading a failure sees whether the client refused, a script failed in local evaluation, the ledger rejected the transaction, or the provider's transport failed.",
+      "pause": 400
+    }
+  ],
+  "one-event-stream": [
+    {
+      "text": "One event stream.",
+      "pause": 500
+    },
+    {
+      "text": "Every output is a renderer of one stream of typed events: the indented narration, the JSON lines, the phase log and the test collector. Only the command-line entry point builds the tracer.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "typed-events-per-protocol-level": [
+    {
+      "text": "Typed events per protocol level.",
+      "pause": 500
+    },
+    {
+      "text": "Events are typed per level: registry, request, edge, transaction and provider reads. Each enclosing scope adds the context it knows. Edge names are the receipt's edge names. No event carries key material, credentials or free error text.",
+      "pause": 400
+    }
+  ],
+  "what-and-how": [
+    {
+      "text": "What and how.",
+      "pause": 500
+    },
+    {
+      "text": "What events are protocol actions and verdicts. How events are the mechanics under an action: reads and their source, the build, evaluation with units, signing, submission and the confirmation wait, each timed.",
+      "pause": 400
+    }
+  ],
+  "tracing-controls-on-every-command": [
+    {
+      "text": "Tracing controls on every command.",
+      "pause": 500
+    },
+    {
+      "text": "All eight commands accept trace with off, what or how; trace-to, repeatable, with standard error, a file or a socket; and trace-format, text or JSON. The default level is what on a terminal and off otherwise. Tracing never writes to standard output, so the receipt is unchanged. Unknown values are refused at parse.",
+      "pause": 400
+    }
+  ],
+  "indented-text": [
+    {
+      "text": "Indented text.",
+      "pause": 500
+    },
+    {
+      "text": "The text renderer indents by protocol nesting, registry, request, edge, transaction, with each how step under the what it serves. It is a pure function, tested with its indentation.",
+      "pause": 400
+    }
+  ],
+  "the-phase-log-keeps-its-format": [
+    {
+      "text": "The phase log keeps its format.",
+      "pause": 500
+    },
+    {
+      "text": "The SINGULAR_LOG phase log keeps producing the same JSON lines, now as one renderer at the entry point, which is the only place that reads the variable.",
+      "pause": 400
+    }
+  ],
+  "refusals-named-where-they-happen": [
+    {
+      "text": "Refusals named where they happen.",
+      "pause": 500
+    },
+    {
+      "text": "Client refusal, local script failure, ledger rejection and provider transport failure are distinct events and lines. The Koios HTTP 400 classification is issue 415; once it lands the stream shows transport with no change here.",
+      "pause": 400
+    }
+  ],
+  "the-stream-agrees-with-the-receipt": [
+    {
+      "text": "The stream agrees with the receipt.",
+      "pause": 500
+    },
+    {
+      "text": "For every command, key, edge, request, transaction id and verdict in the events equal the receipt's, and a test fails when they disagree.",
+      "pause": 400
+    }
+  ],
+  "success": [
+    {
+      "text": "Success.",
+      "pause": 500
+    },
+    {
+      "text": "Each command's events are compared with its receipt; the text renderer is checked as a pure function; the receipt is unchanged under every flag; the phase-log tests pass unchanged; a test reads the socket sink; Demo 1 runs with trace how; the node guide documents the flags; and PR CI is green on the exact head.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "6cbec44832edef8ac26bfd282b9b427a00ca88b05fb7fbfc8a380242a0ff496f"
+  }
+}
