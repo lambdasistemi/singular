@@ -131,6 +131,7 @@
               bash
               coreutils
               curl
+              diffutils
               findutils
               gawk
               git

@@ -1078,7 +1078,14 @@ body_bound "$(flip "$reject_tx")" "$reg/submissions/$reject_tx.cbor.hex" \
 body="$(cat "$reg/submissions/$reject_tx.cbor.hex")"
 if [ "${body: -1}" = 0 ]; then last=1; else last=0; fi
 printf "%s%s" "${body%?}" "$last" >"$work/body-tampered.hex"
-cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" && setup_fail "the tampered body equals the saved one"
+cmp_status=0
+cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" \
+  || cmp_status=$?
+case "$cmp_status" in
+  0) setup_fail "the tampered body equals the saved one" ;;
+  1) ;;
+  *) setup_fail "the tampered body comparison could not run" ;;
+esac
 body_bound "$reject_tx" "$work/body-tampered.hex" \
   && fail "a body with changed bytes passed the journal's saved-body hash"
 booking_outs="$(tx_outputs_of "$booking_tx")" || fail "the booking's saved body could not be read"
@@ -1164,20 +1171,20 @@ say "a reject past both windows: refunded to the owner, root unmoved, and a new 
 run insert-to-reclaim success -- registry insert --key keyF --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert-to-reclaim
+run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}" "${node[@]}"
+root_before="$(field inspect-before-reclaim .root)"
+files_before="$(local_files)"
+before="$(journal_lines "$reg")"
 deadline_ms="$(field insert-to-reclaim .foldDeadline.posixMs)"
-wait_ms=$((deadline_ms + 3000 - $(date +%s%3N)))
+wait_ms=$((deadline_ms + 1 - $(date +%s%3N)))
 if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s to attempt the owner's reclaim; the command judges the window from its own view"
-  sleep $((wait_ms / 1000 + 1))
+  say "waiting $wait_ms ms to attempt the owner's reclaim; the command judges the window from its own view"
+  sleep "$((wait_ms / 1000)).$(printf '%03d' "$((wait_ms % 1000))")"
 fi
 refused fold-before-reclaim client-refusal -- registry fold --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 jq -e '.reason | contains("processing deadline") and contains("has passed")' \
   "$receipts/fold-before-reclaim.json" >/dev/null || fail "the fold before reclaim was not refused for its deadline"
-run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}" "${node[@]}"
-root_before="$(field inspect-before-reclaim .root)"
-files_before="$(local_files)"
-before="$(journal_lines "$reg")"
 # A build failure, an unconverted window or a ledger refusal fails this success
 # assertion. None can stand in for a reclaim or for a named refusal control.
 run reclaim success -- registry reclaim --request "$(field insert-to-reclaim .request)" \
