@@ -109,16 +109,21 @@ through the provider ticket's Koios-shaped development-network provider.
 
 ```mermaid
 flowchart TD
-  AliceDir[Alice's directory] -->|Create and announce identity| Chain[Development network]
-  BobDir[Bob's directory] -->|Join from published identity| Chain
+  Creator[Private creator-only fixture] -->|Create registry| Chain[Development network]
+  Chain -->|Generated registry page: pending 437| Page[Public registry page]
+  Page --> AliceDir[Alice's empty directory]
+  Page --> BobDir[Bob's empty directory]
   Chain -->|Asset history| Provider[Koios-shaped provider]
   Provider -->|Same history| AliceRun[Alice's singular]
   Provider -->|Same history| BobRun[Bob's singular]
 ```
 
-Alice creates the registry in her own directory. Bob's directory starts empty
-and is initialised from the published identity, under the joining decision in
-the [decisions](decisions.md#joining-a-registry-from-public-data). Then:
+A private creator-only fixture makes the registry. Alice and Bob both start
+with empty homes and registry directories, using only the registry page generated
+from the chain and Koios. Token joining is owned by #437, under the updated
+[decision](decisions.md#joining-a-registry-from-public-data). Every step below is
+published pending until that integration runs, with no copied identity or
+simulated joined directory:
 
 1. Bob inspects his key, proving its absence, and books and folds its
    insertion. Alice's directory is hashed before and after, and never read.
@@ -132,8 +137,10 @@ the [decisions](decisions.md#joining-a-registry-from-public-data). Then:
 5. Rejection and reclaim run across actors, as today.
 6. After every fold, both actors' inspect roots equal the fold's state root.
 
-The journey runs Alice and Bob with separate `HOME` and registry directories.
-It fails if either process opens the other's directory. The current
+The harness starts Alice and Bob with separate empty `HOME` and registry
+directories and traces creator processes so any attempted actor-directory read
+fails. Once #437 supplies the real joining interface, actor processes are traced
+and foreign directories are hashed before and after every step as well. The current
 mirror-dependent controls become history controls: the provider withholds one
 fold, then serves an altered request edge, and each refusal is named.
 
@@ -146,7 +153,8 @@ and stacks on the provider ticket's published slices.
 | --- | --- | --- |
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
-| Separate actors | The joining path, separate directories, cross-actor terminate folds, reject and reclaim, and history-based controls in a two-actor journey app; superseded statements corrected. The cross-actor insertion fold is a pending row until [issue 419](https://github.com/lambdasistemi/singular/issues/419) is decided. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. The journey names joining and all subsequent CLI steps pending under #437, with cross-actor insertion folding also pending #419. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Separate actors integrated | Actual token/page-driven joining and the full two-user CLI journey, in a separate pull request. No creator identity file is shared. | #437 merged and its actual interface available |
 | Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
@@ -165,7 +173,7 @@ the provider.
 | Edge semantics | `walkEdge`, unchanged |
 | The in-memory trie | The provider ticket's pure fixture trie representation, not a new one |
 | The trie-state instance | One lineage backend over a session, chosen at terminal composition |
-| Joining from a published identity | The registry directory owner in the CLI |
+| Registry page and joining by state token | #437 under epic #301; integration point only in this slice |
 
 ## Invariant-to-test map and controlled faults
 

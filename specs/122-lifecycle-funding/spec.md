@@ -1,5 +1,12 @@
 # Public lifecycle funding from live protocol parameters
 
+> **Historical deployment journey.** This record describes its original
+> deployment-manifest callers and retained evidence. The ordinary CLI under #381
+> reconstructs its proof trie from public
+> state-token history. It does not copy a deployment mirror, another user's
+> journal or private preimages, and does not persist a saved root. The file-based
+> deployment library below remains available to its historical journey callers.
+
 Retroactive record, written 2026-09-15 from PR #122 merged at
 `6ab1093367e00290a4b74638f03f5ef44b3137e6`.
 

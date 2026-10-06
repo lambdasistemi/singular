@@ -180,8 +180,13 @@ naming is runnable. The retained `register-rows`, `recovery-rows` and
 and the [preprod record](preprod.md) preserves its historical executed values.
 This page does not present those naming commands as a current accepted runbook.
 
-A deployment manifest and its mirror travel together. Writing a proof needs
-the trie, not only the root an API reports; a root mismatch must stop rather
-than build against the wrong registry. Historical deployment and naming
+Demo 1 has two users, Alice and Bob, starting with empty homes and registry
+directories. Neither creates the registry or receives its creation files; each
+reads the registry's web page generated from the chain and Koios. Joining by
+state token is pending under [issue #437](https://github.com/lambdasistemi/singular/issues/437),
+which owns deriving the seed, pins, windows, tip and reference outputs from the
+state token, state datum and release. Joining by a copied identity file is
+superseded. Public replay reconstructs the trie; missing history or a root that
+does not chain remains a named refusal. Historical deployment and naming
 receipts remain evidence of their recorded revision and public chain, not a
 pass for this provider candidate.

@@ -121,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "A booking-only command submits exactly one transaction and never moves the mirror, the root or the saved state.",
+      "text": "A booking-only command submits exactly one transaction and leaves the live registry root unchanged. The ordinary CLI reconstructs proof state from public history rather than persisting a mirror or saved root.",
       "pause": 300
     },
     {
@@ -191,7 +191,7 @@
       "pause": 300
     },
     {
-      "text": "Shared registry directory. The folder finds an insertion's envelope only when it shares the requester's registry directory. A folder elsewhere would need fold --envelope FILE, which is a separate change.",
+      "text": "Independent folders. A folder uses its own public replay to fold another actor's termination, without that actor's directory or journal. Folding an insertion still needs the booker's private envelope preimage today. The cross-actor insertion fold remains pending under issue #419; a refusal for that missing preimage is not evidence of a passing insertion fold.",
       "pause": 300
     },
     {
@@ -225,6 +225,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "010ac165ea1573f7646afb9cf0f759e45d82aa1a247d6001b3147451116ecdd8"
+    "sha256": "3d6410b26f4fab3dfc9c50afd93253c6bc25a30d8ed7e96a0be37fff20b183c4"
   }
 }

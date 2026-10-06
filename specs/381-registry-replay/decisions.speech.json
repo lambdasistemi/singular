@@ -1,4 +1,14 @@
 {
+  "decisions-for-rebuilding-registry-tries-from-history": [
+    {
+      "text": "Decisions for rebuilding registry tries from history.",
+      "pause": 500
+    },
+    {
+      "text": "As the epic owner, I want the choices this intake makes separated from the rulings already in force. The intake was accepted on October 4. The edge coverage and the cross-actor step were then ruled by the operator; the rest are engineering choices accepted with the intake.",
+      "pause": 400
+    }
+  ],
   "rulings-in-force": [
     {
       "text": "Rulings in force.",
@@ -6,10 +16,6 @@
     },
     {
       "text": "As a registry user, I get the operator's rulings of October 2 to 4 unchanged.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 5 rows is shown here.",
       "pause": 400
     }
   ],
@@ -43,15 +49,15 @@
       "pause": 500
     },
     {
-      "text": "As Bob, I need a registry directory before any command will run, and today only create makes one. The saved identity, registry.json, is documented as public: network, pins and the deployment record, with no key (offchain/cli/src/Singular/CLI/Registry.hs:11-15). Its reference outputs sit at the creator's wallet and are not in the state token's history.",
+      "text": "The operator's October 6 definition supersedes the proposed identity-file join: \"demo-1 is Alice and Bob on separate terminals and directories, starting empty, reading the web page and provider (Koios)\". Neither actor is the creator. A third creator-only fixture may make the development registry, but its creation files are never shared with either user.",
       "pause": 400
     },
     {
-      "text": "Proposed: a read-only joining path takes the published identity record and the blueprint the actor brings. It checks the record against public data before writing anything: the create transaction found through the state token's history spends the seed, mints assetName(seed) and carries the pins; every reference output is live and holds the script whose hash the record names. It then writes a fresh directory holding that identity and an empty journal. A creator's mirror, journal and envelopes are never needed.",
+      "text": "Issue #437, owned by another team under epic #301, owns the registry page generated from the chain and joining by state token. Every command derives the seed, pins, windows, tip and reference outputs from the state token, state datum and release. The former proposal to import a creator's registry.json and verify its fields is withdrawn; this slice ships no joining command and no substitute joined directory.",
       "pause": 400
     },
     {
-      "text": "Rejected alternative: deriving the identity from the seed and blueprint alone, then scanning the creator's address for reference outputs. Those outputs are ordinary wallet outputs the creator may spend, so the scan cannot be complete.",
+      "text": "The pre-#437 part of #381 lands as part of the ticket: public replay and cross-actor decision controls at unit level, the creator fixture and empty-user journey harness, and these superseded statements. Joining and every later journey step are pending by name under #437. The complete integrated journey is a separate pull request after #437 merges. Cross-actor insertion folding also remains pending under #419.",
       "pause": 400
     }
   ],
@@ -79,6 +85,16 @@
       "pause": 400
     }
   ],
+  "recovery-is-observed-from-public-history": [
+    {
+      "text": "Recovery is observed from public history.",
+      "pause": 500
+    },
+    {
+      "text": "As a user whose process died after a fold was confirmed, my next command observes that fold once from public history and never submits it again; after a rollback it reads the restored public root. With the mirror and the saved root gone, the receipt fields that reported their writes (stateFollowed, mirrorRewound, mirrorAdvanced, and applied where it meant a mirror write) are removed, and the recovery controls check the replayed root, a single journal entry and no second submission instead. One conformance clause, inspect with the saved proof material moved aside, loses its witness because inspect no longer reads that material; it is published uncovered with that reason, by the epic owner's ruling of October 6.",
+      "pause": 400
+    }
+  ],
   "mixed-folds-are-evidenced-by-the-chain": [
     {
       "text": "Mixed folds are evidenced by the chain.",
@@ -86,6 +102,24 @@
     },
     {
       "text": "As a reviewer, I need a mixed fold's expected root to come from somewhere other than the replay. The model composes per-request exits, and a reject leaves the state unchanged (lean/Singular/Model.lean:1068-1075), but it has no single transaction mixing the two. The test's oracle is the state validator accepting the fold: on the development network, or under the ledger evaluator the provider ticket brings, over the compiled validator. Building such a fold needs a test-only builder variant; production builders are unchanged. No model correspondence is claimed for mixed folds as one transaction.",
+      "pause": 400
+    }
+  ],
+  "failed-transactions-and-named-refusals-land-first": [
+    {
+      "text": "Failed transactions and named refusals land first.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry user, I need the replay to ignore a transaction that failed its scripts. A provider lists every transaction that carried the state token, and a transaction whose isValid flag is false spent only its collateral, whatever its body inputs name. Read as a spend, it would look like a fork. The replay leaves it out of the lineage, so the lineage and the trie are those of the same history without it.",
+      "pause": 400
+    },
+    {
+      "text": "As a person reading a refusal, I need it to say which registry, which transaction and what went wrong. The epic owner ruled on October 4 that the shared TrieFailure type carries that payload, and that this ticket makes the change: incomplete history names its reason, roots that part name both roots or the record that cannot be read, and a wrong registry, a stale state or a missing proof name what a person needs to act. An instance passes only what it knows. Existing commands keep their refusal names, outcome classes and exit statuses.",
+      "pause": 400
+    },
+    {
+      "text": "Both changes land on main before the commands move onto the replay, so the provider ticket builds on the payload-carrying type rather than rebasing across it.",
       "pause": 400
     }
   ],
@@ -105,34 +139,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "75f67c64812749a470c7ad5a620e069a3065db9524bee30b103eb68b17b46d86"
-  },
-  "failed-transactions-and-named-refusals-land-first": [
-    {
-      "text": "Failed transactions and named refusals land first.",
-      "pause": 500
-    },
-    {
-      "text": "As a registry user, I need the replay to ignore a transaction that failed its scripts. A provider lists every transaction that carried the state token, and a transaction whose isValid flag is false spent only its collateral, whatever its body inputs name. Read as a spend, it would look like a fork. The replay leaves it out of the lineage, so the lineage and the trie are those of the same history without it.",
-      "pause": 400
-    },
-    {
-      "text": "As a person reading a refusal, I need it to say which registry, which transaction and what went wrong. The epic owner ruled on October 4 that the shared TrieFailure type carries that payload, and that this ticket makes the change: incomplete history names its reason, roots that part name both roots or the record that cannot be read, and a wrong registry, a stale state or a missing proof name what a person needs to act. An instance passes only what it knows. Existing commands keep their refusal names, outcome classes and exit statuses.",
-      "pause": 400
-    },
-    {
-      "text": "Both changes land on main before the commands move onto the replay, so the provider ticket builds on the payload-carrying type rather than rebasing across it.",
-      "pause": 400
-    }
-  ],
-  "recovery-is-observed-from-public-history": [
-    {
-      "text": "Recovery is observed from public history.",
-      "pause": 500
-    },
-    {
-      "text": "As a user whose process died after a fold was confirmed, my next command observes that fold once from public history and never submits it again; after a rollback it reads the restored public root. With the mirror and the saved root gone, the receipt fields that reported their writes (stateFollowed, mirrorRewound, mirrorAdvanced, and applied where it meant a mirror write) are removed, and the recovery controls check the replayed root, a single journal entry and no second submission instead. One conformance clause, inspect with the saved proof material moved aside, loses its witness because inspect no longer reads that material; it is published uncovered with that reason, by the epic owner's ruling of October 6.",
-      "pause": 400
-    }
-  ]
+    "sha256": "c23352bb37c44c1c572ffadf2481b6fceb96e7aff8ec22bcbe87420149a72ec0"
+  }
 }

@@ -48,23 +48,25 @@ of October 4.
 
 ## Joining a registry from public data
 
-As Bob, I need a registry directory before any command will run, and today only
-`create` makes one. The saved identity, `registry.json`, is documented as public:
-network, pins and the deployment record, with no key
-(`offchain/cli/src/Singular/CLI/Registry.hs:11-15`). Its reference outputs sit
-at the creator's wallet and are not in the state token's history.
+The operator's October 6 definition supersedes the proposed identity-file join:
+"demo-1 is Alice and Bob on separate terminals and directories, starting empty,
+reading the web page and provider (Koios)". Neither actor is the creator. A third
+creator-only fixture may make the development registry, but its creation files
+are never shared with either user.
 
-Proposed: a read-only joining path takes the published identity record and the
-blueprint the actor brings. It checks the record against public data before
-writing anything: the create transaction found through the state token's
-history spends the seed, mints `assetName(seed)` and carries the pins; every
-reference output is live and holds the script whose hash the record names. It
-then writes a fresh directory holding that identity and an empty journal.
-A creator's mirror, journal and envelopes are never needed.
+[Issue #437](https://github.com/lambdasistemi/singular/issues/437), owned by another
+team under epic #301, owns the registry page generated from the chain and joining
+by state token. Every command derives the seed, pins, windows, tip and reference
+outputs from the state token, state datum and release. The former proposal to
+import a creator's `registry.json` and verify its fields is withdrawn; this slice
+ships no joining command and no substitute joined directory.
 
-Rejected alternative: deriving the identity from the seed and blueprint alone,
-then scanning the creator's address for reference outputs. Those outputs are
-ordinary wallet outputs the creator may spend, so the scan cannot be complete.
+The pre-#437 part of #381 lands as part of the ticket: public replay and
+cross-actor decision controls at unit level, the creator fixture and empty-user
+journey harness, and these superseded statements. Joining and every later
+journey step are pending by name under #437. The complete integrated journey is
+a separate pull request after #437 merges. Cross-actor insertion folding also
+remains pending under #419.
 
 ## The directory keeps nothing the replay replaces
 

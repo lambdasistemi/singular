@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+      "pause": 400
+    },
+    {
       "text": "A contributor changing what a deployment carries — a manifest field, a mirror entry, the checks a run makes before it attaches to a recorded registry — wants to edit one module beside the concern it owns, and have the review ask one question. Before the extraction, all of it lived in one 677-line Deployment module where a JSON key change, a mirror persistence change and a node query change were reviewed side by side with nothing between them. Now the record has three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, which way the dependencies run, what the record may never do while it moves, and where the evidence boundary sits.",
       "pause": 400
     }
@@ -69,6 +73,6 @@
   ],
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "e2ed4d1de449d49f086599d362daec30ff6c8c1da94228e0b0567f1563dd068d"
+    "sha256": "7add7abac888f271e85f9305a556d57c8eae66791c383ffaaeff416132573d6b"
   }
 }

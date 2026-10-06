@@ -41,7 +41,7 @@
       "pause": 300
     },
     {
-      "text": "no-upstream-reimplementation-no-index-state-reconstruction no upstream reimplementation: no index state reconstruction, history replay or chain-sync logic copied into Singular.",
+      "text": "no-upstream-reimplementation-no-index-state-reconstruction No index state reconstruction or chain-sync logic is copied into this indexer adapter. The ordinary CLI separately reconstructs registry proofs from public state-token history under #381; that replay does not reimplement the upstream indexer.",
       "pause": 300
     },
     {
@@ -97,12 +97,12 @@
       "pause": 300
     },
     {
-      "text": "Constraints. No lean/, validator, blueprint or conformance-row change. Singular.Registry.Provider and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. Journal, mirror and recovery flow are #325's.",
+      "text": "Constraints. No lean/, validator, blueprint or conformance-row change. Singular.Registry.Provider and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. The ordinary CLI keeps its submission journal under #325 and derives proof state from public replay under #381, without a persisted mirror or saved root.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "ed7b62c11fe99ed002d6bfc4d26de5ff2c2a42af9af113fe36a73b0a0e1cf6b6"
+    "sha256": "4d37d39ab5386b01c3a0c69f26246b10f7ee0e8b4881d3a9dfaa4b655cfc7a9b"
   }
 }

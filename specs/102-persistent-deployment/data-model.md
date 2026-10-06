@@ -1,5 +1,12 @@
 # Data
 
+> **Historical deployment journey.** This record describes its original
+> deployment-manifest callers and retained evidence. The ordinary CLI under #381
+> reconstructs its proof trie from public
+> state-token history. It does not copy a deployment mirror, another user's
+> journal or private preimages, and does not persist a saved root. The file-based
+> deployment library below remains available to its historical journey callers.
+
 Retroactive record, written 2026-09-15 from PR #106 merged at
 `f558d0e8fc916eef494fffcef09cfe2ac5582b8e`.
 
