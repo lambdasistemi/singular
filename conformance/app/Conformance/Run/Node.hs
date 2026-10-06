@@ -83,7 +83,7 @@ openHarnessNode body = case runMode of
         directory <- genesisDir
         let wallet = Wallet genesisAddr genesisSignKey Testnet
         withGeneratedFacade FundGenesis directory (const (pure ())) $ \_ facade ->
-            withWrites (facadeSettings facade) wallet $
+            withWrites mempty mempty (facadeSettings facade) wallet $
                 body (NetworkMagic 42) (facadeSocket facade)
     External external -> do
         url <- required "SINGULAR_KOIOS_URL"
@@ -97,7 +97,7 @@ openHarnessNode body = case runMode of
                     , providerTokenFile = tokenFile
                     , providerTimeDirectory = Just timeDirectory
                     }
-        withWrites settings wallet $
+        withWrites mempty mempty settings wallet $
             body (NetworkMagic (extMagic external)) (extSocket external)
   where
     required name =

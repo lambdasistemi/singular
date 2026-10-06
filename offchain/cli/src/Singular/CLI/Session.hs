@@ -171,7 +171,7 @@ import Singular.Registry.Terminal
     , withReads
     , withWrites
     )
-import Singular.Registry.Trace (startTimer, timedTrace)
+import Singular.Registry.Trace (errorClassOf, startTimer, timedTrace)
 import Singular.Registry.Wait qualified as Wait
 import Singular.Registry.WaitTypes (WaitFailure)
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
@@ -678,10 +678,10 @@ journalledSubmit tracer wc step ex scope unsigned = do
             txs
             ( \ms end ->
                 TxConfirmed step txid ms $ case end of
-                    Right (Left (_ :: SomeException)) -> ConfirmFailed
+                    Right (Left e) -> ConfirmFailed (errorClassOf e)
                     Right (Right Nothing) -> ConfirmTimedOut
                     Right (Right (Just ())) -> Confirmed
-                    Left _ -> ConfirmFailed
+                    Left c -> ConfirmThrew c
             )
             $ do
                 waiter <- async (capConfirm caps signed)

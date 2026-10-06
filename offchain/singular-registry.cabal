@@ -1030,6 +1030,7 @@ test-suite cage-tests
     , case-insensitive
     , containers
     , contra-tracer
+    , contra-tracer-contrib
     , crypton
     , directory
     , filepath
@@ -1340,6 +1341,7 @@ executable singular
     , cardano-tx-tools:tx-build
     , containers
     , contra-tracer
+    , contra-tracer-contrib
     , directory
     , filepath
     , microlens

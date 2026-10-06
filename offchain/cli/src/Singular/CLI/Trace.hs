@@ -66,12 +66,20 @@ module Singular.CLI.Trace
     , phaseLogSink
     ) where
 
-import Control.Tracer (Tracer (..), contramap, nullTracer)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , catch
+    , fromException
+    , throwIO
+    )
+import Control.Tracer (Tracer (..), contramap, nullTracer, traceWith)
 import Data.Aeson (Value (..), (.=))
 import Data.Aeson.Key (Key)
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Text (Text)
+import Data.Tracer.ThreadSafe (newThreadSafeTracer)
 import Data.Word (Word64)
 
 import Singular.Registry.Trace
@@ -231,7 +239,10 @@ data SubmitVerdict
 data ConfirmVerdict
     = Confirmed
     | ConfirmTimedOut
-    | ConfirmFailed
+    | -- | The wait ended in a failure of this type
+      ConfirmFailed ErrorClass
+    | -- | The wait itself threw this type
+      ConfirmThrew ErrorClass
     deriving stock (Eq, Show, Data)
 
 -- | The transaction mechanics of a write, each under its journal step.
@@ -387,12 +398,12 @@ txPhase = \case
               , "tx" .= tx
               , "duration_ms" .= ms
               ]
-                <> outcome
-                    ( case verdict of
-                        Confirmed -> "confirmed"
-                        ConfirmTimedOut -> "timeout"
-                        ConfirmFailed -> "failed"
-                    )
+                <> case verdict of
+                    Confirmed -> outcome "confirmed"
+                    ConfirmTimedOut -> outcome "timeout"
+                    -- the wait's own failure was always written without its class
+                    ConfirmFailed _ -> outcome "failed"
+                    ConfirmThrew c -> failedWith c
             )
     TxObserved{} -> Nothing
   where
@@ -410,7 +421,18 @@ txPhase = \case
 of events and no line interleaves with another.
 -}
 fanOut :: [Tracer IO Trace] -> IO (Tracer IO Trace)
-fanOut _ = pure nullTracer
+fanOut sinks = newThreadSafeTracer (foldMap contained sinks)
+
+{- | A sink whose failure stays its own: whatever it throws (a closed handle, an
+unwritable file, a full disk, a fault of its own) reaches neither the other
+sinks nor the command. An asynchronous exception still propagates.
+-}
+contained :: Tracer IO Trace -> Tracer IO Trace
+contained sink = Tracer $ \event ->
+    traceWith sink event `catch` \(e :: SomeException) ->
+        case fromException e of
+            Just (_ :: SomeAsyncException) -> throwIO e
+            Nothing -> pure ()
 
 {- | Run the command with the tracer the entry point composes: every output
 the request resolves to, given whether standard error is a terminal, and the
@@ -422,8 +444,11 @@ withTracing
     -> TraceRequest
     -> (Tracer IO Trace -> IO a)
     -> IO a
-withTracing _ phaseLog _ body =
-    maybe (body nullTracer) (body . phaseLogSink) phaseLog
+withTracing _ phaseLog _ body = case sinks of
+    [] -> body nullTracer
+    _ -> fanOut sinks >>= body
+  where
+    sinks = maybe [] (pure . phaseLogSink) phaseLog
 
 -- | The tracer writing one output at a level.
 outputSink :: TraceLevel -> Output -> Tracer IO Trace

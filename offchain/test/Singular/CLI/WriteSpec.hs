@@ -28,7 +28,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, void)
+import Control.Monad (forM_, void, when)
 import Data.Aeson ((.:))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
@@ -69,10 +69,18 @@ import System.Directory
     ( doesDirectoryExist
     , doesFileExist
     , listDirectory
+    , removeFile
     , withCurrentDirectory
     )
 import System.FilePath (takeDirectory, (</>))
-import System.IO (hFlush, stderr, stdout)
+import System.IO
+    ( hClose
+    , hFlush
+    , hPutStrLn
+    , openTempFile
+    , stderr
+    , stdout
+    )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.IO
     ( OpenFileFlags (..)
@@ -161,6 +169,7 @@ import Singular.CLI.Session
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
     , EdgeAction (..)
+    , Ended (..)
     , Event (..)
     , How (..)
     , Output (..)
@@ -173,6 +182,7 @@ import Singular.CLI.Trace
     , TraceSink (..)
     , TxEvent (..)
     , What (..)
+    , fanOut
     , outputSink
     , phaseLogSink
     , renderJsonLine
@@ -214,7 +224,11 @@ import Singular.Registry.StubSession
     , stubSession
     , withAddressOutputs
     )
-import Singular.Registry.Trace (Evaluation (..), ReadEvent (..))
+import Singular.Registry.Trace
+    ( ErrorClass (..)
+    , Evaluation (..)
+    , ReadEvent (..)
+    )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -1195,7 +1209,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
               ]
                 `shouldSatisfy` ((== 1) . length)
             [v | Trace _ (How (Tx (TxConfirmed _ _ _ v))) <- events]
-                `shouldBe` [Confirmed, ConfirmFailed]
+                `shouldBe` [Confirmed, ConfirmFailed (ErrorClass "IOException")]
             forM_
                 [("text" :: Text, texts), ("json", jsons), ("phase log", phases)]
                 $ \(renderer, bytes) -> do
@@ -1213,6 +1227,55 @@ narrationRows = describe "the narration of a write (#416)" $ do
             ((), out, err) <- captured (void (writeVia ctx id fx))
             out `shouldBe` ""
             err `shouldSatisfy` ("how  sign " `BS.isInfixOf`)
+    it
+        "keeps tracing total: a sink that throws and one on a closed handle change \
+        \no outcome, journal or exception, and the other sinks still see every event"
+        $ do
+            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConwayTx, ()))]
+                scenarios =
+                    [ ("submitted, confirmed", \ctx -> writeVia ctx id)
+                    ,
+                        ( "the build fails"
+                        , \ctx fx ->
+                            writeBuilding ctx fx (\_ -> failWith ClientRefusal "no fold is built")
+                        )
+                    ,
+                        ( "the confirmation fails"
+                        , \ctx ->
+                            writeVia
+                                ctx
+                                    { wcCapabilities =
+                                        (wcCapabilities ctx)
+                                            { capConfirm = \_ -> throwIO (userError "the wait broke")
+                                            }
+                                    }
+                                id
+                        )
+                    ]
+                outcome = \case
+                    Right _ -> "completed"
+                    Left e -> case fromException e of
+                        Just (CommandFailure c why _) -> outcomeName c <> ": " <> T.pack why
+                        Nothing -> "uncaught: " <> T.pack (show e)
+                run act tracing = withFixture $ \fx -> do
+                    tracer <- tracing
+                    r <- try @SomeException (act (writeContext fx){wcTracer = tracer} fx)
+                    events <- map journalEvent <$> readJournal (fxDir fx)
+                    pure (outcome r, events)
+            forM_ scenarios $ \(name, act) -> do
+                plain <- run act (pure nullTracer)
+                (seen, collect) <- traceCollector
+                closed <- closedHandleSink
+                traced <- run act (fanOut [throwingSink, closed, collect])
+                (name, traced) `shouldBe` (name, plain)
+                events <- readIORef seen
+                -- the live sink saw the write, after its submission and around its failure
+                (name, null events) `shouldBe` (name, False)
+                when (name /= "the build fails") $
+                    [() | Trace _ (How (Tx TxSubmitted{})) <- events] `shouldBe` [()]
+                when (name == "the build fails") $
+                    [() | Trace _ (How (Tx (TxBuilt _ _ (FailedWith _)))) <- events]
+                        `shouldBe` [()]
     forM_ [(2, "key-two"), (5, "key-five")] $ \(edge, key) ->
         it
             ( "a fold names the request, its key and its edge before it refuses "
@@ -1329,3 +1392,15 @@ writeBuilding ctx _ build =
 submitting :: IO Cage.SubmitResult -> WriteContext -> WriteContext
 submitting answer ctx =
     ctx{wcCapabilities = (wcCapabilities ctx){capSubmit = const answer}}
+
+-- | A sink that throws on every event.
+throwingSink :: Tracer IO Trace
+throwingSink = Tracer (\_ -> throwIO (userError "the sink broke"))
+
+-- | A sink writing to a handle that is already closed.
+closedHandleSink :: IO (Tracer IO Trace)
+closedHandleSink = do
+    (path, h) <- openTempFile "/tmp" "closed-sink"
+    hClose h
+    removeFile path
+    pure (Tracer (hPutStrLn h . show))

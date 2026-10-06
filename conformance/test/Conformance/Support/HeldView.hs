@@ -60,6 +60,7 @@ viewOf utxos =
         { sessionNetwork = Network 42
         , sessionId = SessionId "held-input-control"
         , sessionBinding = Unbound
+        , sessionTracer = mempty
         , outputs = \case
             AtAddress address ->
                 pure

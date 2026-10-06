@@ -17,9 +17,9 @@ exit status are compared under every tracing setting.
 module Singular.CLI.TraceSpec (spec) where
 
 import Control.Concurrent.Async (mapConcurrently_)
-import Control.Exception (bracket)
+import Control.Exception (bracket, throwIO)
 import Control.Monad (forM_, replicateM)
-import Control.Tracer (Tracer (..), traceWith)
+import Control.Tracer (Tracer (..), nullTracer, traceWith)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -41,10 +41,17 @@ import Data.Maybe (isJust, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
-import System.IO (hFlush, stderr, stdout)
+import System.IO
+    ( hClose
+    , hFlush
+    , hPutStrLn
+    , openTempFile
+    , stderr
+    , stdout
+    )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.IO
     ( OpenFileFlags (..)
@@ -596,7 +603,12 @@ genTx =
             <$> genText
             <*> genHex
             <*> genMs
-            <*> elements [Confirmed, ConfirmTimedOut, ConfirmFailed]
+            <*> oneof
+                [ pure Confirmed
+                , pure ConfirmTimedOut
+                , ConfirmFailed <$> genClass
+                , ConfirmThrew <$> genClass
+                ]
         , TxObserved <$> genText <*> genHex <*> genMs
         ]
 
@@ -768,6 +780,21 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                 (Aeson.decodeStrict out :: Maybe Aeson.Value) `shouldSatisfy` isJust
                 (name, BS.null err)
                     `shouldBe` (name, not (narrates name))
+    it
+        "keeps its receipt and exit when a sink throws or writes to a closed handle"
+        $ do
+            (seen, collect) <- collector
+            closed <- closedHandleSink
+            let refusal = failWith ClientRefusal "no request is pending for this registry"
+            plain <- captured (finish nullTracer "fold" Nothing refusal)
+            tracer <-
+                fanOut
+                    [Tracer (\_ -> throwIO (userError "the sink broke")), closed, collect]
+            traced <- captured (finish tracer "fold" Nothing refusal)
+            traced `shouldBe` plain
+            events <- readIORef seen
+            [o | Trace [] (What (CommandEnded _ o _)) <- events]
+                `shouldBe` ["client-refusal"]
     it "names the command and its outcome at the end of the stream" $ do
         (seen, collect) <- collector
         _ <-
@@ -947,7 +974,12 @@ lineKinds =
         (submitting <> ["error_class"])
     , line (Tx (TxConfirmed "fold" tx 1.5 Confirmed)) confirming
     , line (Tx (TxConfirmed "fold" tx 1.5 ConfirmTimedOut)) confirming
-    , line (Tx (TxConfirmed "fold" tx 1.5 ConfirmFailed)) confirming
+    , line
+        (Tx (TxConfirmed "fold" tx 1.5 (ConfirmFailed failure)))
+        confirming
+    , line
+        (Tx (TxConfirmed "fold" tx 1.5 (ConfirmThrew failure)))
+        (confirming <> ["error_class"])
     , (how' (Tx (TxObserved "fold" tx 1.5)), Nothing)
     , (how' (Fetched (Fetch ["state"] "Koios" 1.5 Done)), Nothing)
     ]
@@ -1037,3 +1069,11 @@ phaseLogKeys = describe "the phase log's lines" $ do
             mechanics `shouldSatisfy` (> 10) . length
             [(ty, Map.lookup ty covered) | ty <- mechanics]
                 `shouldBe` [(ty, Map.lookup ty declared) | ty <- mechanics]
+
+-- | A sink writing to a handle that is already closed.
+closedHandleSink :: IO (Tracer IO Trace)
+closedHandleSink = do
+    (path, h) <- openTempFile "/tmp" "closed-sink"
+    hClose h
+    removeFile path
+    pure (Tracer (hPutStrLn h . show))

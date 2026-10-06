@@ -27,7 +27,7 @@ listed here; a constructor no run exercises fails the extent row.
 -}
 module Singular.CLI.CommandRunSpec (spec) where
 
-import Control.Exception (bracket)
+import Control.Exception (bracket, throwIO)
 import Control.Monad (forM_)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
@@ -62,9 +62,17 @@ import GHC.Generics
     , (:+:)
     )
 import Lens.Micro ((^.))
+import System.Directory (removeFile)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
-import System.IO (hFlush, stderr, stdout)
+import System.IO
+    ( hClose
+    , hFlush
+    , hPutStrLn
+    , openTempFile
+    , stderr
+    , stdout
+    )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.IO
     ( OpenFileFlags (..)
@@ -139,6 +147,21 @@ spec = describe
                     , disagreements (runReceipt r) (runEvents r)
                     )
                         `shouldBe` (runLabel r, outcomeOf (runReceipt r), [])
+        it
+            "changes no command's outcome or exit when a sink throws or writes to a \
+            \closed handle, and the live sink still sees every run"
+            $ do
+                plain <- withRig lifecycle
+                traced <-
+                    withRigVia
+                        ( \collect -> do
+                            closed <- closedHandleSink
+                            fanOut
+                                [Tracer (\_ -> throwIO (userError "the sink broke")), closed, collect]
+                        )
+                        lifecycle
+                map summary traced `shouldBe` map summary plain
+                [runLabel r | r <- traced, null (runEvents r)] `shouldBe` []
         it "fails a stream that contradicts its receipt in any one fact" $
             withRig $ \rig -> do
                 runs <- lifecycle rig
@@ -205,6 +228,8 @@ data Rig = Rig
     , rigEvents :: IORef [Trace]
     , rigAnswer :: IORef (Maybe Cage.SubmitResult)
     -- ^ When set, what the provider answers the next submission instead of taking it
+    , rigTracer :: Tracer IO Trace
+    -- ^ What the commands trace into: the collector, or a composition holding it
     }
 
 -- | One command run: its constructor, a label, its exit, its receipt and its events.
@@ -220,7 +245,12 @@ magic :: Integer
 magic = 42
 
 withRig :: (Rig -> IO a) -> IO a
-withRig use = withSystemTempDirectory "command-run" $ \dir -> do
+withRig = withRigVia pure
+
+-- | The rig, its commands tracing into a composition built around its collector.
+withRigVia
+    :: (Tracer IO Trace -> IO (Tracer IO Trace)) -> (Rig -> IO a) -> IO a
+withRigVia compose use = withSystemTempDirectory "command-run" $ \dir -> do
     let keyPath = dir </> "payment.skey"
         blueprint = dir </> "plutus.json"
     BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
@@ -253,7 +283,8 @@ withRig use = withSystemTempDirectory "command-run" $ \dir -> do
     advanceChain chain id
     events <- newIORef []
     answer <- newIORef Nothing
-    use (Rig dir chain wallet keyPath blueprint events answer)
+    tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))
+    use (Rig dir chain wallet keyPath blueprint events answer tracer)
 
 -- | A wallet output at the start of the chain.
 fundOutput :: Int -> TxIn
@@ -296,7 +327,7 @@ syntheticBlueprint =
 envOf :: Rig -> Env
 envOf rig =
     Env
-        { envTracer = Tracer (\t -> modifyIORef' (rigEvents rig) (<> [t]))
+        { envTracer = rigTracer rig
         , envSource = "fixture"
         , envReads = \_ k -> k (capabilities rig)
         , envWrites = \_ _ k -> k (capabilities rig)
@@ -743,7 +774,8 @@ disagreements receipt events =
         (Left (SubmitThrew _), Just x) -> x == "unknown"
         (Right Confirmed, Just x) -> x `elem` ["included", "rolled-back", "excluded"]
         (Right ConfirmTimedOut, Just x) -> x == "timeout"
-        (Right ConfirmFailed, Just x) -> x == "timeout"
+        (Right (ConfirmFailed _), Just x) -> x == "timeout"
+        (Right (ConfirmThrew _), Just x) -> x == "timeout"
         (_, Nothing) -> False
     refusalFits k o = case k of
         LedgerRejected -> o == Just "ledger-refusal"
@@ -872,3 +904,15 @@ redirecting target path act =
             closeFd saved
         )
         (const act)
+
+-- | What a run ended with: its label, outcome class and exit status.
+summary :: Run -> (String, Maybe Text, ExitCode)
+summary r = (runLabel r, outcomeOf (runReceipt r), runExit r)
+
+-- | A sink writing to a handle that is already closed.
+closedHandleSink :: IO (Tracer IO Trace)
+closedHandleSink = do
+    (path, h) <- openTempFile "/tmp" "closed-sink"
+    hClose h
+    removeFile path
+    pure (Tracer (hPutStrLn h . show))

@@ -17,7 +17,7 @@ module Singular.CLI.Finish
     ) where
 
 import Control.Exception (SomeException, fromException, try)
-import Control.Tracer (Tracer)
+import Control.Tracer (Tracer, traceWith)
 import Data.Aeson (Value (..), toJSON)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -32,14 +32,19 @@ import Singular.CLI.Receipt
     , outcomeName
     )
 import Singular.CLI.Session (CommandFailure (..))
-import Singular.CLI.Trace (Trace)
+import Singular.CLI.Trace (Event (..), Trace (..), What (..))
+import Singular.Registry.Trace (startTimer)
 
 {- | Print the receipt, write it where asked, and exit with the class of
-its outcome. A failure is its own receipt.
+its outcome. A failure is its own receipt. The command's stream opens with
+its start and closes with its outcome class and elapsed time, before the
+receipt is printed.
 -}
 finish
     :: Tracer IO Trace -> T.Text -> Maybe FilePath -> IO Value -> IO ExitCode
-finish _ command target action = do
+finish tracer command target action = do
+    traceWith tracer (Trace [] (What (CommandStarted command)))
+    elapsed <- startTimer
     result <- try action
     let (value, outcome) = case result of
             Right v -> (v, outcomeOf v)
@@ -51,6 +56,10 @@ finish _ command target action = do
                     , ClientRefusal
                     )
         rendered = encodePretty value
+    ms <- elapsed
+    traceWith
+        tracer
+        (Trace [] (What (CommandEnded command (outcomeName outcome) ms)))
     BLC.putStrLn rendered
     maybe (pure ()) (\p -> BLC.writeFile p (rendered <> "\n")) target
     pure (exitCodeOf outcome)
