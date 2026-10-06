@@ -49,9 +49,12 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Text (Text)
 
-import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.TxIn (TxId, TxIn)
+import Lens.Micro ((^.))
 
 import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig)
@@ -195,7 +198,9 @@ data ReferenceRefusal
 from the script itself, is the expected one.
 -}
 carriesReference :: ScriptHash -> TxOut ConwayEra -> Bool
-carriesReference _ _ = False
+carriesReference expected output = case output ^. referenceScriptTxOutL of
+    SJust script -> hashScript script == expected
+    SNothing -> False
 
 {- | Find a carrier for each needed role: from the provider's existence
 query, then the hints, then the wallet's outputs. A carrier is admitted

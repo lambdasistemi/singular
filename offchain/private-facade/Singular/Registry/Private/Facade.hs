@@ -26,10 +26,11 @@ import Cardano.Ledger.Alonzo.Scripts
     , toPlutusScript
     )
 import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
-import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     )
@@ -57,7 +58,11 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
 import Cardano.Ledger.Hashes (originalBytes)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.Plutus.Data (Datum (..), binaryDataToData)
 import Cardano.Ledger.Plutus.Language
     ( Language (..)
@@ -121,6 +126,7 @@ import Data.CaseInsensitive qualified as CI
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Maybe.Strict (StrictMaybe (..))
 import Data.Sequence.Strict qualified as Seq
 import Data.Set qualified as Set
@@ -570,6 +576,13 @@ answer server request body
     , rawPathInfo request
         `elem` ["/api/v1/address_utxos", "/api/v1/asset_utxos"] =
         answerOutputs server request body
+    | requestMethod request == "POST"
+    , rawPathInfo request
+        `elem` ["/api/v1/reference_script_utxos", "/api/v1/utxo_info"] =
+        answerCarriers server request body
+    | requestMethod request == "POST"
+    , rawPathInfo request == "/api/v1/asset_info" =
+        answerAssetInfo server body
     | otherwise = do
         source <- readLedgerSource (serverLSQ server)
         -- Publish from the HTTP request's own fresh acquired ledger facts.
@@ -724,6 +737,142 @@ answer server request body
 genesisReference :: TxIn -> Text
 genesisReference (TxIn identity (TxIx index)) =
     Wire.txIdHex identity <> "#" <> Text.pack (show index)
+
+{- | Reference-script carriers and output liveness from the whole current
+UTxO at one acquired point. A carrier's hash is computed from the script it
+carries; an output that is not current but was produced by an archived
+transaction is reported spent.
+-}
+answerCarriers
+    :: Server
+    -> Request
+    -> ByteString
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerCarriers server request body = do
+    source <- readOutputSourceFacts (serverLSQ server)
+    archive <- readIORef (serverArchive server)
+    let current = outputSourceOutputs source
+        origin extent =
+            object
+                [ "point" .= show (outputSourcePoint source)
+                , "queriedExtent" .= extent
+                ]
+    case rawPathInfo request of
+        "/api/v1/reference_script_utxos" -> do
+            asked <- jsonField "_script_hashes" body
+            let rows =
+                    [ object
+                        [ "script_hash"
+                            .= Wire.policyHex (PolicyID (hashScript @ConwayEra script))
+                        , "tx_hash" .= Wire.txIdHex identity
+                        , "tx_index" .= index
+                        ]
+                    | (TxIn identity (TxIx index), output) <- Map.toAscList current
+                    , SJust script <- [output ^. referenceScriptTxOutL]
+                    , Wire.policyHex (PolicyID (hashScript @ConwayEra script))
+                        `elem` (asked :: [Text])
+                    ]
+            (headers, value) <- paged request rows
+            pure
+                ( status200
+                , headers
+                , encode value
+                , origin
+                    (object ["query" .= ("GetUTxOWhole" :: Text), "scriptHashes" .= asked])
+                )
+        "/api/v1/utxo_info" -> do
+            asked <- jsonField "_utxo_refs" body
+            let byText pairs = Map.fromList [(genesisReference r, (r, o)) | (r, o) <- pairs]
+                live = byText (Map.toAscList current)
+                produced =
+                    byText
+                        [ pair
+                        | block <- archiveBlocks archive
+                        , tx <- archivedTransactions block
+                        , pair <- archivedBodyOutputs tx
+                        ]
+                row named = case Map.lookup named live of
+                    Just (reference, output) ->
+                        Just (withSpent False (outputValue False reference output))
+                    Nothing ->
+                        ( \(reference, output) -> withSpent True (outputValue False reference output)
+                        )
+                            <$> Map.lookup named produced
+            pure
+                ( status200
+                , []
+                , encode (mapMaybe row (asked :: [Text]))
+                , origin
+                    (object ["query" .= ("GetUTxOWhole" :: Text), "references" .= asked])
+                )
+        _ -> fail "private facade carrier endpoint is not mapped"
+  where
+    withSpent spent value = case value of
+        Object fields -> Object (KeyMap.insert "is_spent" (Bool spent) fields)
+        other -> other
+
+{- | An asset's mints and burns from the confirmed full-block archive: the
+latest transaction that minted it, its supply, and the counts. No row for
+an asset no archived transaction minted.
+-}
+answerAssetInfo
+    :: Server
+    -> ByteString
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerAssetInfo server body = do
+    archive <- readIORef (serverArchive server)
+    asked <- jsonField "_asset_list" body
+    let changes =
+            [ (archivedHeight block, archivedId tx, quantity)
+            | block <- archiveBlocks archive
+            , tx <- archivedTransactions block
+            , archivedValid tx
+            , let quantity = mintedOf (asked :: [[Text]]) tx
+            , quantity /= 0
+            ]
+        minted = [(height, identity) | (height, identity, q) <- changes, q > 0]
+        rows = case (asked, minted) of
+            ([[policy, name]], _ : _) ->
+                [ object
+                    [ "policy_id" .= policy
+                    , "asset_name" .= name
+                    , "minting_tx_hash" .= Wire.txIdHex (snd (maximum minted))
+                    , "total_supply" .= show (sum [q | (_, _, q) <- changes])
+                    , "mint_cnt" .= length minted
+                    , "burn_cnt" .= length [() | (_, _, q) <- changes, q < 0]
+                    ]
+                ]
+            _ -> []
+    pure
+        ( status200
+        , []
+        , encode rows
+        , object
+            [ "blocks" .= map archivedHeight (archiveBlocks archive)
+            , "asset" .= asked
+            ]
+        )
+  where
+    mintedOf asked tx = case asked of
+        [[policy, name]] -> case decodeArchived tx of
+            Right transaction ->
+                let MultiAsset assets = transaction ^. bodyTxL . mintTxBodyL
+                in  sum
+                        [ quantity
+                        | (actualPolicy, names) <- Map.toList assets
+                        , Wire.policyHex actualPolicy == policy
+                        , (actualName, quantity) <- Map.toList names
+                        , Wire.assetNameHex actualName == name
+                        ]
+            Left _ -> 0
+        _ -> 0
+    decodeArchived tx =
+        decodeFullAnnotator
+            (eraProtVerHigh @ConwayEra)
+            "private archived Conway transaction"
+            decCBOR
+            (LBS.fromStrict (archivedCBOR tx))
+            :: Either DecoderError ConwayTx
 
 -- | Keep current-output provenance to the actual acquired point and UTxO.
 answerOutputs

@@ -968,6 +968,26 @@ decodeAccountStatuses :: Value -> Either DecodeFailure [AccountStatus]
 decodeAccountStatuses = runParser $ rows $ \o ->
     AccountStatus <$> o .: "stake_address" <*> o .: "status"
 
+-- | Decode a @reference_script_utxos@ page: each row's hash and reference.
+decodeReferenceScriptUtxos
+    :: Value -> Either DecodeFailure [(ScriptHash, TxIn)]
+decodeReferenceScriptUtxos = runParser $ rows $ \o -> do
+    hash <- o .: "script_hash" >>= fmap ScriptHash . hashOf
+    reference <- txInOf o
+    pure (hash, reference)
+
+-- | Decode a @utxo_info@ answer.
+decodeUtxoInfos :: Value -> Either DecodeFailure [UtxoInfo]
+decodeUtxoInfos = runParser $ rows $ \o ->
+    UtxoInfo <$> txInOf o <*> o .: "is_spent"
+
+-- | Decode an @asset_info@ answer.
+decodeAssetInfos :: Value -> Either DecodeFailure [AssetInfo]
+decodeAssetInfos = runParser $ rows $ \o ->
+    AssetInfo
+        <$> (o .: "minting_tx_hash" >>= txIdOf)
+        <*> (o .: "total_supply" >>= integerText)
+
 -- | The bech32 rendering of a Shelley address.
 renderAddress :: Addr -> Text
 renderAddress a = bech32 hrp (serialiseAddr a)
@@ -1068,17 +1088,3 @@ integerText :: Text -> Parser Integer
 integerText t = case reads (T.unpack t) of
     [(n, "")] -> pure n
     _ -> fail ("not an integer: " <> T.unpack t)
-
--- | Decode a @reference_script_utxos@ page: each row's hash and reference.
-decodeReferenceScriptUtxos
-    :: Value -> Either DecodeFailure [(ScriptHash, TxIn)]
-decodeReferenceScriptUtxos _ =
-    Left (DecodeFailure "$" "reference_script_utxos is not decoded yet")
-
--- | Decode a @utxo_info@ answer.
-decodeUtxoInfos :: Value -> Either DecodeFailure [UtxoInfo]
-decodeUtxoInfos _ = Left (DecodeFailure "$" "utxo_info is not decoded yet")
-
--- | Decode an @asset_info@ answer.
-decodeAssetInfos :: Value -> Either DecodeFailure [AssetInfo]
-decodeAssetInfos _ = Left (DecodeFailure "$" "asset_info is not decoded yet")
