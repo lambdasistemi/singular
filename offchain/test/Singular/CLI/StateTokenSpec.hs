@@ -54,6 +54,7 @@ import Singular.CLI.Command
 import Singular.CLI.Live (Saved (..), resolveSaved)
 import Singular.CLI.Registry
     ( IdentityError (..)
+    , checkPendingToken
     , publicationFunding
     , refuseExisting
     )
@@ -129,9 +130,11 @@ commands =
     , ("fold", ["registry", "fold"] <> rest)
     , ("reject", ["registry", "reject"] <> rest)
     , ("reclaim", ["registry", "reclaim", "--request", request] <> rest)
+    , ("inspect", ["registry", "inspect", "--key", "k"] <> restInspect)
     ]
   where
     rest = dirAndRelease <> provider <> wallet
+    restInspect = dirAndRelease <> provider
 
 accessOf :: Command -> Maybe RegistryAccess
 accessOf = \case
@@ -189,16 +192,17 @@ tokenOnEveryCommand = describe "the state token" $ do
                 <> tokenFlag
             )
             `shouldSatisfy` refusedNaming "--state-token" "create"
-    it "may be omitted by inspect only to read back an interrupted create" $ do
-        let inspect extra =
-                parseCommand
-                    ( ["registry", "inspect", "--key", "k"]
-                        <> dirAndRelease
-                        <> provider
-                        <> extra
-                    )
-        fmap accessOf (inspect []) `shouldBe` Right Nothing
-        fmap accessOf (inspect tokenFlag) `shouldBe` Right (Just ours)
+    it "reads an interrupted create only with its own state token" $ do
+        let mismatched = \case
+                Left reason ->
+                    T.isInfixOf "pending" reason
+                        || T.isInfixOf "mismatch" reason
+                        || T.isInfixOf "state-token" reason
+                Right () -> False
+            other = tokenOf (refOf (T.replicate 64 "4" <> "#2"))
+        checkPendingToken token token `shouldBe` Right ()
+        checkPendingToken other token `shouldSatisfy` mismatched
+        checkPendingToken token other `shouldSatisfy` mismatched
     it "carries repeatable reference hints in the order given" $ do
         let hints = [replicate 64 'a' <> "#1", replicate 64 'b' <> "#0"]
         forM_ commands $ \(_, line) ->
@@ -248,9 +252,7 @@ rolesPerCommand = describe "the reference roles each command's transactions run"
         roles (line "reject")
             `shouldBe` Right (Set.fromList [RoleState, RoleRequest])
         roles (line "reclaim") `shouldBe` Right Set.empty
-        roles
-            (["registry", "inspect", "--key", "k"] <> dirAndRelease <> provider)
-            `shouldBe` Right Set.empty
+        roles (line "inspect") `shouldBe` Right Set.empty
         fmap
             neededRoles
             ( parseCommand
