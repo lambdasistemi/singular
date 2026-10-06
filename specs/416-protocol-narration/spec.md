@@ -75,7 +75,10 @@ inspect) accept:
 | `--trace-to SINK`, repeatable | `stderr`, `file:PATH`, `socket:PATH` | `stderr` |
 | `--trace-format FORMAT` | `text`, `json` | `text` for stderr, `json` for file and socket |
 
-Several sinks run at once from the same stream. Tracing never writes to
+`json` is JSON Lines: one typed event per line, each line a complete JSON
+object terminated by a newline, flushed as the event happens, and decodable
+back to the typed event. Several sinks run at once from the same stream.
+Tracing never writes to
 stdout: the receipt on stdout is byte-identical whatever the tracing flags.
 An unknown level, sink or format is refused at parse.
 

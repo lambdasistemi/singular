@@ -73,7 +73,7 @@
       "pause": 500
     },
     {
-      "text": "All eight commands accept trace with off, what or how; trace-to, repeatable, with standard error, a file or a socket; and trace-format, text or JSON. The default level is what on a terminal and off otherwise. Tracing never writes to standard output, so the receipt is unchanged. Unknown values are refused at parse.",
+      "text": "All eight commands accept trace with off, what or how; trace-to, repeatable, with standard error, a file or a socket; and trace-format, text or JSON. JSON means JSON Lines: one typed event per line, flushed as it happens, decodable back to the event. The default level is what on a terminal and off otherwise. Tracing never writes to standard output, so the receipt is unchanged. Unknown values are refused at parse.",
       "pause": 400
     }
   ],
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6cbec44832edef8ac26bfd282b9b427a00ca88b05fb7fbfc8a380242a0ff496f"
+    "sha256": "c7d17ae8865fecc825e61d7e3b5a8b628dbaed70480e14e311cbea7ce504103d"
   }
 }
