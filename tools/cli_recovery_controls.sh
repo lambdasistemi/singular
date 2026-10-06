@@ -55,14 +55,21 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
+known_parts="accepting lost-answer killed cross-wallet never-sent whole-journal rollback trie-capability"
+for requested in ${CLI_RECOVERY_PARTS:-}; do
+  [[ " $known_parts " == *" $requested "* ]] || setup_fail "CLI_RECOVERY_PARTS names an unknown part: $requested (known: $known_parts)"
+done
 
 printf '| control | clause | verdict |\n|---|---|---|\n' >"$verdicts"
 failed=0
+declare -A part_clauses=()
+current_part=""
 control=""
 # clause TEXT CMD...: the clause holds when CMD exits 0.
 clause() {
   local text="$1"
   shift
+  [ -z "$current_part" ] || part_clauses[$current_part]=$(( ${part_clauses[$current_part]:-0} + 1 ))
   if "$@" >/dev/null 2>&1; then
     printf '| %s | %s | holds |\n' "$control" "$text" >>"$verdicts"
     say "$control: holds: $text"
@@ -370,7 +377,16 @@ bobkey="$(field bob-preview .walletKeyHash)"
 # Parts (#449): CLI_RECOVERY_PARTS names the scenarios to run, space separated;
 # unset runs them all. Each part runs on this script's own node and registry,
 # so separate CI jobs run separate parts in parallel. "killed" needs "accepting".
-part() { [ -z "${CLI_RECOVERY_PARTS:-}" ] || [[ " $CLI_RECOVERY_PARTS " == *" $1 "* ]]; }
+# A name that is not a part fails here, and every part that runs must judge at
+# least one clause, so a selection that matches nothing can never read as a pass.
+part() {
+  if [ -z "${CLI_RECOVERY_PARTS:-}" ] || [[ " $CLI_RECOVERY_PARTS " == *" $1 "* ]]; then
+    current_part="$1"
+    part_clauses[$1]="${part_clauses[$1]:-0}"
+    return 0
+  fi
+  return 1
+}
 if part accepting; then
 # accepting
 # ------------------------------------------------------------------
@@ -1093,6 +1109,16 @@ control="trie capability"
 clause "completed real recovery commands have nonempty trie evidence bound to their key, leaf and root" trie_extent
 fi
 
+for ran in "${!part_clauses[@]}"; do
+  if [ "${part_clauses[$ran]}" -eq 0 ]; then
+    say "part $ran judged no clause"
+    failed=1
+  fi
+done
+for requested in ${CLI_RECOVERY_PARTS:-}; do
+  [ -n "${part_clauses[$requested]+x}" ] || { say "part $requested never ran"; failed=1; }
+done
+say "parts judged: $(for ran in "${!part_clauses[@]}"; do printf "%s=%s " "$ran" "${part_clauses[$ran]}"; done)"
 cat "$verdicts"
 if [ "$failed" -ne 0 ]; then
   say "RECOVERY-CONTROLS-FAILED"
