@@ -10,6 +10,7 @@ let
     runtimeInputs = [ pkgs.python3 ];
     text = ''
       python3 ${src}/tools/code_inventory.py --root ${src}
+      python3 ${src}/tools/test_tags_controls.py
     '';
   };
 in

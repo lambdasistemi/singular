@@ -86,7 +86,9 @@ def check(root: Path) -> list[str]:
         count += 1
         source = entry.read_text()
         wrappers = list(
-            re.finditer(r'describe\s*\(tagged\s+"([^"]+)"\s*\[([^\]]*)\]\)', source)
+            re.finditer(
+                r'describe\s*\(\s*tagged\s+"([^"]+)"\s*\[([^\]]*)\]\s*\)', source
+            )
         )
         for wrapper in wrappers:
             tags = [t.strip() for t in wrapper[2].split(",") if t.strip()]
@@ -123,7 +125,11 @@ def check(root: Path) -> list[str]:
             previous = [
                 w
                 for w in wrappers
-                if w.end() <= offset and not source[w.end() : offset].strip().strip("$")
+                if w.end() <= offset
+                and re.fullmatch(
+                    r'\s*(?:\$\s*)?(?:describe\s*"[^"]*"\s*\$?\s*)*',
+                    source[w.end() : offset],
+                )
             ]
             if not previous:
                 problems.append(f"{name}: unwrapped {module}.{function}")

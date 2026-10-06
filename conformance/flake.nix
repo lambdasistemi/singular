@@ -861,7 +861,16 @@
           format-check = formatCheckRun;
           hlint-check = hlintCheckRun;
           conformance-exe = components.exes.conformance;
-          inherit (components.tests) conformance-tests;
+          conformance-tests =
+            pkgs.runCommand "conformance-appendix-tests-check"
+              {
+                nativeBuildInputs = [ pkgs.glibcLocales ];
+                LANG = "C.UTF-8";
+                LC_ALL = "C.UTF-8";
+              }
+              ''
+                ${pkgs.lib.getExe appendixTests} > "$out" 2>&1 || { cat "$out"; exit 1; }
+              '';
           coverage-gate-tests = coverageGateTests;
           coverage-gate-snapshot = coverageGateSnapshot;
           registry-blueprint-correspondence = registryBlueprintCorrespondence;
