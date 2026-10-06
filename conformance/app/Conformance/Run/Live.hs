@@ -1273,7 +1273,9 @@ batchRecord env state cage exit alteration booked asked signed result units (mea
         _ -> pure Nothing
     (_, startValue, setup) <- modelStart state cage
     foldWitness <-
-        if exit == Live.Fold then Just <$> foldWitnessOf env signed else pure Nothing
+        if exit == Live.Fold
+            then Just <$> foldWitnessOf env signed
+            else pure Nothing
     let batchName = if exit == Live.Fold then "foldBatch" else "rejectBatch" :: T.Text
         question =
             object $
@@ -3265,7 +3267,9 @@ askModel _env state step judged = do
                 , "request" .= lsModelRequest step
                 , "lovelace" .= lsRequestLovelace step
                 ]
-                    <> [admissionKey (lsExit step) .= witness | Just witness <- [lsRetraction step]]
+                    <> [ admissionKey (lsExit step) .= witness
+                       | Just witness <- [lsRetraction step]
+                       ]
                     <> concat
                         [ ["inputs" .= inputs, "outputs" .= outputs]
                         | Just (inputs, outputs) <- [judged]
@@ -3519,7 +3523,9 @@ compareStep env state step observation = do
                 , "perturbation" .= perturbation
                 , "differences" .= map differenceJson differing
                 ]
-                    <> [admissionKey (lsExit step) .= witness | Just witness <- [lsRetraction step]]
+                    <> [ admissionKey (lsExit step) .= witness
+                       | Just witness <- [lsRetraction step]
+                       ]
                     <> [ "requestScript" .= requestMarkerOf stepCfg stepTid
                        | lsExit step == Live.Retract
                        , lsTamper step
