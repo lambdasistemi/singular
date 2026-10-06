@@ -100,6 +100,10 @@
           inherit (project.project) shell;
           inherit cardanoNode;
           ghc = project.project.pkg-set.config.ghc.package;
+          namingBlueprint =
+            ((import ../naming-onchain/flake.nix).outputs {
+              inherit nixpkgs flake-utils;
+            }).packages.${system}.plutus-blueprint;
         };
 
         # #278 terminal-attestation-permanent: the pinned house formatter. Fourmolu is resolved by the
@@ -534,7 +538,7 @@
         # vectors-freshness was deleted from ./nix/checks.nix (break 5,
         # D-003): the golden lives in the onchain tree, outside this
         # flake root. The procedure lives in ./justfile (vectors-check).
-        checks = haskellChecks;
+        checks = builtins.removeAttrs haskellChecks [ "apps" ];
 
         apps = haskellApps // {
           # #326.

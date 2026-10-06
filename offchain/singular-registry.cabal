@@ -886,8 +886,9 @@ test-suite record-value-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   record-value-test
+  hs-source-dirs:   record-value-test test-tags
   main-is:          Main.hs
+  other-modules: Test.Tags
   build-depends:
     , base               >=4.14 && <5
     , bytestring
@@ -900,10 +901,11 @@ test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test cli/src private-facade
+  hs-source-dirs:   test cli/src private-facade test-tags
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
+    Test.Tags
     Naming.CompleteVerifySpec
     Naming.RecordValueSpec
     Naming.RegisterSpec
@@ -1056,9 +1058,10 @@ test-suite contract-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   contract-test test
+  hs-source-dirs:   contract-test test test-tags
   main-is:          Main.hs
   other-modules:
+    Test.Tags
     Singular.PhaseLogFixture
     Singular.Registry.ContractMemory
     Singular.Registry.ContractNode
@@ -1110,9 +1113,10 @@ test-suite e2e-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   e2e-test private-facade
+  hs-source-dirs:   e2e-test private-facade test-tags
   main-is:          main.hs
   other-modules:
+    Test.Tags
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec

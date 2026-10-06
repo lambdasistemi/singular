@@ -15,7 +15,8 @@ import Singular.Registry.Blueprint
     , loadBlueprint
     )
 import System.Environment (getEnv)
-import Test.Hspec (hspec, it, shouldBe)
+import Test.Hspec (describe, hspec, it, shouldBe)
+import Test.Tags (Area (..), tagged)
 import UntypedPlutusCore
     ( Program (..)
     , fakeNameDeBruijn
@@ -45,7 +46,7 @@ main = do
                     counting
                     logEmitter
                     (termMapNames fakeNameDeBruijn term)
-    hspec $ do
+    hspec $ describe (tagged "Main" [Naming, Application, Evaluation]) $ do
         it "accepts maintenance preserving the representative" $ do
             let report = evaluate (recordContext False False (Constr 0 []))
             succeeded (_cekReportResult report) `shouldBe` True

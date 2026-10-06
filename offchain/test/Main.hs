@@ -49,56 +49,169 @@ import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Singular.Registry.WaitSpec qualified
-import Test.Hspec (hspec)
+import Test.Hspec (describe, hspec)
+import Test.Tags (Area (..), tagged)
 
 main :: IO ()
 main = hspec $ do
-    Singular.Registry.BlueprintParametersSpec.spec
-    Singular.Registry.TxBuilder.BookEdgeSpec.spec
-    Singular.Registry.TxBuilder.MeasuredBookingSpec.spec
-    Singular.Registry.TxBuilder.RetractFundingSpec.spec
-    Singular.Registry.TxBuilder.BootSpec.spec
-    Singular.Registry.TxBuilder.BurnSourceSpec.spec
-    Singular.Registry.TxBuilder.SkipEvalUnitsSpec.spec
-    Singular.Registry.TxBuilder.UpperSlotSpec.spec
-    Singular.Registry.CandidateSpec.spec
-    Singular.Registry.DeploymentSpec.spec
-    Singular.Registry.FailureMatchSpec.spec
-    Singular.Registry.NodeCleanupSpec.spec
-    Singular.Registry.NetworkTimeSpec.spec
-    Singular.Registry.LocalEvaluationSpec.spec
-    Singular.Registry.SessionServicesSpec.spec
-    Singular.Registry.WaitSpec.spec
-    Singular.Registry.LocalServicesCallerSpec.spec
-    Singular.Registry.NodeSpec.spec
-    Singular.Registry.NodeWaitSpec.spec
-    Singular.Registry.OneViewSpec.spec
-    Singular.Registry.PhaseLogSpec.spec
-    Singular.Registry.ProviderSpec.spec
-    Singular.Registry.Private.ArchiveSpec.spec
-    Singular.Registry.IndexerViewSpec.spec
-    Singular.Registry.LifecycleSpec.spec
-    Singular.Registry.LineageSpec.spec
-    Singular.Registry.TypesSpec.spec
-    Singular.Registry.TrieStateSpec.spec
-    Singular.Registry.TrieStateContractSpec.spec
-    Naming.CompleteVerifySpec.spec
-    Naming.RegisterSpec.spec
-    Naming.RetireVerifySpec.spec
-    Naming.RecordValueSpec.spec
-    Singular.Application.OpenDatum.EnvelopeSpec.spec
-    Singular.Application.OpenDatum.BuildersSpec.spec
-    Singular.Application.OpenDatum.BuildSpec.spec
-    Singular.CLI.InsertEnvelopeSpec.spec
-    Singular.CLISpec.spec
-    Singular.CLI.OutlaySpec.spec
-    Singular.CLI.FoldSpec.spec
-    Singular.CLI.TrieRefusalSpec.spec
-    Singular.CLI.RejectSpec.spec
-    Singular.CLI.ReclaimSpec.spec
-    Singular.CLI.WriteSpec.spec
-    Singular.Provider.Koios.ClientSpec.spec
-    Singular.Provider.Koios.ProviderSpec.spec
-    Singular.Provider.Koios.HttpSpec.spec
-    Singular.Provider.Koios.RecorderSpec.spec
-    Singular.Provider.Koios.RecordedSpec.spec
+    describe
+        (tagged "Singular.Registry.BlueprintParameters" [Builders])
+        Singular.Registry.BlueprintParametersSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
+        Singular.Registry.TxBuilder.BookEdgeSpec.spec
+    describe
+        ( tagged
+            "Singular.Registry.TxBuilder.MeasuredBooking"
+            [Builders, Evaluation]
+        )
+        Singular.Registry.TxBuilder.MeasuredBookingSpec.spec
+    describe
+        ( tagged
+            "Singular.Registry.TxBuilder.RetractFunding"
+            [Builders, Time, Validity]
+        )
+        Singular.Registry.TxBuilder.RetractFundingSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
+        Singular.Registry.TxBuilder.BootSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.BurnSource" [Builders])
+        Singular.Registry.TxBuilder.BurnSourceSpec.spec
+    describe
+        ( tagged
+            "Singular.Registry.TxBuilder.SkipEvalUnits"
+            [Builders, Evaluation]
+        )
+        Singular.Registry.TxBuilder.SkipEvalUnitsSpec.spec
+    describe
+        ( tagged
+            "Singular.Registry.TxBuilder.UpperSlot"
+            [Builders, Time, Validity]
+        )
+        Singular.Registry.TxBuilder.UpperSlotSpec.spec
+    describe
+        (tagged "Singular.Registry.Candidate" [Validity, Builders])
+        Singular.Registry.CandidateSpec.spec
+    describe
+        (tagged "Singular.Registry.Deployment" [Builders])
+        Singular.Registry.DeploymentSpec.spec
+    describe
+        (tagged "Singular.Registry.FailureMatch" [Provider])
+        Singular.Registry.FailureMatchSpec.spec
+    describe
+        (tagged "Singular.Registry.NodeCleanup" [Provider, Recovery])
+        Singular.Registry.NodeCleanupSpec.spec
+    describe
+        (tagged "Singular.Registry.NetworkTime" [Time, Provider])
+        Singular.Registry.NetworkTimeSpec.spec
+    describe
+        (tagged "Singular.Registry.LocalEvaluation" [Evaluation, Provider])
+        Singular.Registry.LocalEvaluationSpec.spec
+    describe
+        (tagged "Singular.Registry.SessionServices" [Provider])
+        Singular.Registry.SessionServicesSpec.spec
+    describe
+        (tagged "Singular.Registry.Wait" [Time, Provider])
+        Singular.Registry.WaitSpec.spec
+    describe
+        (tagged "Singular.Registry.LocalServicesCaller" [Provider])
+        Singular.Registry.LocalServicesCallerSpec.spec
+    describe
+        (tagged "Singular.Registry.Node" [Provider, Wallet])
+        Singular.Registry.NodeSpec.spec
+    describe
+        (tagged "Singular.Registry.NodeWait" [Time, Provider])
+        Singular.Registry.NodeWaitSpec.spec
+    describe
+        (tagged "Singular.Registry.OneView" [Provider])
+        Singular.Registry.OneViewSpec.spec
+    describe
+        (tagged "Singular.Registry.PhaseLog" [History, Recovery])
+        Singular.Registry.PhaseLogSpec.spec
+    describe
+        (tagged "Singular.Registry.Provider" [Provider])
+        Singular.Registry.ProviderSpec.spec
+    describe
+        (tagged "Singular.Registry.Private.Archive" [History, Recovery])
+        Singular.Registry.Private.ArchiveSpec.spec
+    describe
+        (tagged "Singular.Registry.IndexerView" [Provider])
+        Singular.Registry.IndexerViewSpec.spec
+    describe
+        (tagged "Singular.Registry.Lifecycle" [Provider])
+        Singular.Registry.LifecycleSpec.spec
+    describe
+        (tagged "Singular.Registry.Lineage" [History, Provider, Trie])
+        Singular.Registry.LineageSpec.spec
+    describe
+        (tagged "Singular.Registry.Types" [Provider])
+        Singular.Registry.TypesSpec.spec
+    describe
+        (tagged "Singular.Registry.TrieState" [Trie])
+        Singular.Registry.TrieStateSpec.spec
+    describe
+        (tagged "Singular.Registry.TrieStateContract" [Trie])
+        Singular.Registry.TrieStateContractSpec.spec
+    describe
+        (tagged "Naming.CompleteVerify" [Naming, Application])
+        Naming.CompleteVerifySpec.spec
+    describe
+        (tagged "Naming.Register" [Naming, Application])
+        Naming.RegisterSpec.spec
+    describe
+        (tagged "Naming.RetireVerify" [Naming, Application])
+        Naming.RetireVerifySpec.spec
+    describe
+        (tagged "Naming.RecordValue" [Naming, Application])
+        Naming.RecordValueSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.Envelope"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.EnvelopeSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.Builders"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.BuildersSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.Build" [Application, Builders])
+        Singular.Application.OpenDatum.BuildSpec.spec
+    describe
+        (tagged "Singular.CLI.InsertEnvelope" [Cli])
+        Singular.CLI.InsertEnvelopeSpec.spec
+    describe (tagged "Singular.CLI" [Cli]) Singular.CLISpec.spec
+    describe
+        (tagged "Singular.CLI.Outlay" [Cli])
+        Singular.CLI.OutlaySpec.spec
+    describe (tagged "Singular.CLI.Fold" [Cli]) Singular.CLI.FoldSpec.spec
+    describe
+        (tagged "Singular.CLI.TrieRefusal" [Cli])
+        Singular.CLI.TrieRefusalSpec.spec
+    describe
+        (tagged "Singular.CLI.Reject" [Cli])
+        Singular.CLI.RejectSpec.spec
+    describe
+        (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
+        Singular.CLI.ReclaimSpec.spec
+    describe
+        (tagged "Singular.CLI.Write" [Cli, Recovery])
+        Singular.CLI.WriteSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.Client" [Provider])
+        Singular.Provider.Koios.ClientSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.Provider" [Provider])
+        Singular.Provider.Koios.ProviderSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.Http" [Provider])
+        Singular.Provider.Koios.HttpSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.Recorder" [Provider, History])
+        Singular.Provider.Koios.RecorderSpec.spec
+    describe
+        (tagged "Singular.Provider.Koios.Recorded" [Provider, History])
+        Singular.Provider.Koios.RecordedSpec.spec

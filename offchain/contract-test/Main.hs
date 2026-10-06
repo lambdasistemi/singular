@@ -19,7 +19,8 @@ module Main (main) where
 import Data.Word (Word32)
 import System.Environment (getArgs, withArgs)
 import System.Exit (die)
-import Test.Hspec (hspec)
+import Test.Hspec (describe, hspec)
+import Test.Tags (Area (..), tagged)
 import Text.Read (readMaybe)
 
 import Singular.Registry.ContractMemory
@@ -42,16 +43,26 @@ main = do
         Left problem -> die ("contract-tests: " <> problem)
         Right (Just (sock, magic, skey)) ->
             withArgs [] . hspec $ do
-                contractSuite (nodeHarness (Outside sock magic skey) NodeBackend)
-                contractSuite (nodeHarness (Outside sock magic skey) IndexerBackend)
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite (nodeHarness (Outside sock magic skey) NodeBackend)
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite (nodeHarness (Outside sock magic skey) IndexerBackend)
         Right Nothing ->
             withArgs args . hspec $ do
-                contractSuite memoryHarness
-                contractSuite indexerMemoryHarness
-                contractSuite (nodeHarness Generated NodeBackend)
-                contractSuite (nodeHarness Generated IndexerBackend)
-                guardOnDevnet
-                phaseLogOnDevnet
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite memoryHarness
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite indexerMemoryHarness
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite (nodeHarness Generated NodeBackend)
+                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
+                    contractSuite (nodeHarness Generated IndexerBackend)
+                describe
+                    (tagged "Singular.Registry.ContractNode" [Provider, E2e])
+                    guardOnDevnet
+                describe
+                    (tagged "Singular.Registry.ContractNode" [Provider, E2e])
+                    phaseLogOnDevnet
 
 {- | The external node the command line names: all three settings, none,
 or a refusal naming what is missing.

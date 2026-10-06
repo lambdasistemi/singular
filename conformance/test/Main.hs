@@ -34,6 +34,7 @@ import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, hspec)
+import Test.Tags (Area (..), tagged)
 
 {- | Normally the suite. With the rendezvous variable set, the second process
 the temporary-directory checks need: it claims directories through the same
@@ -48,32 +49,67 @@ main = do
 
 suite :: Spec
 suite = do
-    describe "Appendix — how we check the evidence" $ do
-        Receipt.spec
-        ReceiptBound.spec
-        Refusal.spec
-        Rows.spec
-        Programs.spec
-        EvidencePage.spec
-        Identity.spec
-        Fixture.spec
-        RegistrationComparison.spec
-        Payments.spec
-        ObservedTx.spec
-        ObservedTx.mintTamperSpec
-        Oracle.spec
-        DriverTransport.spec
-        Step.spec
-        Retraction.spec
-        Specification.spec
-        HeldView.spec
-        PurposeUnits.spec
-        Usage.spec
-        Binding.spec
-        CliControls.spec
-        CliProof.spec
-        CliAdmission.spec
-        CliAttach.spec
-        Replay.spec
-        RunReplay.spec
-        Extent.spec
+    describe (tagged "Conformance.Support.Receipt" [Conformance]) $
+        describe "Appendix — how we check the evidence" Receipt.spec
+    describe (tagged "Conformance.Support.ReceiptBound" [Conformance]) $
+        describe "Appendix — how we check the evidence" ReceiptBound.spec
+    describe (tagged "Conformance.Support.Refusal" [Conformance]) $
+        describe "Appendix — how we check the evidence" Refusal.spec
+    describe (tagged "Conformance.Support.Rows" [Conformance]) $
+        describe "Appendix — how we check the evidence" Rows.spec
+    describe (tagged "Conformance.Support.Programs" [Conformance]) $
+        describe "Appendix — how we check the evidence" Programs.spec
+    describe (tagged "Conformance.Support.EvidencePage" [Conformance]) $
+        describe "Appendix — how we check the evidence" EvidencePage.spec
+    describe (tagged "Conformance.Support.Identity" [Conformance]) $
+        describe "Appendix — how we check the evidence" Identity.spec
+    describe (tagged "Conformance.Support.Fixture" [Conformance]) $
+        describe "Appendix — how we check the evidence" Fixture.spec
+    describe
+        (tagged "Conformance.Support.RegistrationComparison" [Conformance])
+        $ describe
+            "Appendix — how we check the evidence"
+            RegistrationComparison.spec
+    describe (tagged "Conformance.Support.Payments" [Conformance]) $
+        describe "Appendix — how we check the evidence" Payments.spec
+    describe (tagged "Conformance.Support.ObservedTx" [Conformance]) $
+        describe "Appendix — how we check the evidence" ObservedTx.spec
+    describe (tagged "Conformance.Support.ObservedTx" [Conformance]) $
+        describe
+            "Appendix — how we check the evidence"
+            ObservedTx.mintTamperSpec
+    describe (tagged "Conformance.Support.Oracle" [Conformance]) $
+        describe "Appendix — how we check the evidence" Oracle.spec
+    describe (tagged "Conformance.Support.DriverTransport" [Conformance]) $
+        describe "Appendix — how we check the evidence" DriverTransport.spec
+    describe (tagged "Conformance.Support.Step" [Conformance]) $
+        describe "Appendix — how we check the evidence" Step.spec
+    describe (tagged "Conformance.Support.Retraction" [Conformance]) $
+        describe "Appendix — how we check the evidence" Retraction.spec
+    describe (tagged "Conformance.Support.Specification" [Conformance]) $
+        describe "Appendix — how we check the evidence" Specification.spec
+    describe (tagged "Conformance.Support.HeldView" [Conformance]) $
+        describe "Appendix — how we check the evidence" HeldView.spec
+    describe
+        (tagged "Conformance.Support.PurposeUnits" [Conformance, Evaluation])
+        $ describe "Appendix — how we check the evidence" PurposeUnits.spec
+    describe (tagged "Conformance.Story.Usage" [Conformance]) $
+        describe "Appendix — how we check the evidence" Usage.spec
+    describe (tagged "Conformance.Support.Binding" [Conformance]) $
+        describe "Appendix — how we check the evidence" Binding.spec
+    describe (tagged "Conformance.Support.CliControls" [Conformance, Cli]) $
+        describe "Appendix — how we check the evidence" CliControls.spec
+    describe (tagged "Conformance.Support.CliProof" [Conformance, Cli]) $
+        describe "Appendix — how we check the evidence" CliProof.spec
+    describe
+        (tagged "Conformance.Support.CliAdmission" [Conformance, Cli])
+        $ describe "Appendix — how we check the evidence" CliAdmission.spec
+    describe (tagged "Conformance.Support.CliAttach" [Conformance, Cli]) $
+        describe "Appendix — how we check the evidence" CliAttach.spec
+    describe (tagged "Conformance.Support.Replay" [Conformance, History]) $
+        describe "Appendix — how we check the evidence" Replay.spec
+    describe
+        (tagged "Conformance.Support.RunReplay" [Conformance, History])
+        $ describe "Appendix — how we check the evidence" RunReplay.spec
+    describe (tagged "Conformance.Support.Extent" [Conformance]) $
+        describe "Appendix — how we check the evidence" Extent.spec

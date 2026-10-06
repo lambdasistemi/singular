@@ -168,10 +168,17 @@ in
     ${pkgs.lib.getExe releaseCheck}
     touch "$out"
   '';
-  check = pkgs.runCommand "singular-docs-check" { } ''
-    ${pkgs.lib.getExe checker}
-    touch "$out"
-  '';
+  check =
+    pkgs.runCommand "singular-docs-check"
+      {
+        nativeBuildInputs = [ pkgs.glibcLocales ];
+        LANG = "C.UTF-8";
+        LC_ALL = "C.UTF-8";
+      }
+      ''
+        ${pkgs.lib.getExe checker}
+        touch "$out"
+      '';
   apps = {
     release-check = {
       type = "app";

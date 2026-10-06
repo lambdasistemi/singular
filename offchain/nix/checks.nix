@@ -4,6 +4,7 @@
   shell,
   cardanoNode,
   ghc,
+  namingBlueprint,
 }:
 let
   # Recorded tests read fixtures relative to cwd and copy them for mutation.
@@ -39,6 +40,19 @@ let
         mkdir -p $out/bin
         makeWrapper ${pkgs.lib.getExe e2eTestsRaw} $out/bin/cage-tests-e2e \
           --prefix PATH : ${cardanoNode}/bin
+      '';
+  # A check executes the same binary as its app and retains its output.
+  # No devnet process belongs in these sandboxed unit checks.
+  unitCheck =
+    name: app:
+    pkgs.runCommand "${name}-check"
+      {
+        nativeBuildInputs = [ pkgs.glibcLocales ];
+        LANG = "C.UTF-8";
+        LC_ALL = "C.UTF-8";
+      }
+      ''
+        ${pkgs.lib.getExe app} > "$out" 2>&1 || { cat "$out"; exit 1; }
       '';
   # #326 R4: a SignedTx is constructible only by signing. The project's
   # GHC type-checks the fixtures under signed-tx-control against the
@@ -90,10 +104,25 @@ in
 {
   inherit (components) library;
   signed-tx-control = signedTxControl;
-  cage-tests = cageTestsWrapped;
-  inherit (components.tests) record-value-tests;
+  apps = {
+    cage-tests = cageTestsWrapped;
+    inherit (components.tests) record-value-tests;
+    inherit (components.exes) cage-test-vectors;
+  };
+  cage-tests = unitCheck "cage-tests" cageTestsWrapped;
+  record-value-tests =
+    pkgs.runCommand "record-value-tests-check"
+      {
+        nativeBuildInputs = [ pkgs.glibcLocales ];
+        LANG = "C.UTF-8";
+        LC_ALL = "C.UTF-8";
+        NAMING_BLUEPRINT = namingBlueprint;
+      }
+      ''
+        ${pkgs.lib.getExe components.tests.record-value-tests} > "$out" 2>&1 || { cat "$out"; exit 1; }
+      '';
   cage-tests-e2e = e2eTestsWrapped;
-  inherit (components.exes) cage-test-vectors;
+  cage-test-vectors = unitCheck "cage-test-vectors" components.exes.cage-test-vectors;
   lint = pkgs.writeShellApplication {
     name = "lint";
     # Strict runtime closure for every external tool the text execs. The
