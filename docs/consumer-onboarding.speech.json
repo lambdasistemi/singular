@@ -113,12 +113,12 @@
       "pause": 400
     },
     {
-      "text": "A deployment manifest and its mirror travel together. Writing a proof needs the trie, not only the root an API reports; a root mismatch must stop rather than build against the wrong registry. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+      "text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "95f024f33522fa564438cd6d4955472dfddea91689b0ebe9a7bf7f15ffb50c0c"
+    "sha256": "eed5be3390a2a128890aa08bff04e149029ecc21405b9fce8ada985bb573fa52"
   }
 }

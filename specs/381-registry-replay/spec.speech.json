@@ -1,11 +1,25 @@
 {
+  "registry-tries-rebuilt-from-public-history": [
+    {
+      "text": "Registry tries rebuilt from public history.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice and Bob, each with our own machine, wallet and registry directory, we want to insert, terminate, fold and inspect keys of one registry through a hosted provider, so that neither of us needs the other's files, a node or a shared directory. This is the intake for the reconstruction ticket, under the Koios demonstration. It consumes the trie-state and history interfaces proposed by the provider interface ticket. It is a proposal. No implementation or behavioral acceptance is claimed.",
+      "pause": 400
+    }
+  ],
   "the-user-stories": [
     {
       "text": "The user stories.",
       "pause": 500
     },
     {
-      "text": "As Bob, starting with an empty registry directory and the registry's published identity, I prove that a key is absent and insert it. My singular rebuilds the registry's trie from the transactions that moved its state token since create. Alice's mirror, journal and envelopes are never read.",
+      "text": "The October 6 ruling assigns the registry page and joining by state token to issue #437. Importing a creator's identity file is superseded. The pre-#437 part ships a private creator fixture, two empty independent users and unit controls; joining and every subsequent CLI journey step remain pending by name. These integration stories remain requirements, not executed acceptance for that part.",
+      "pause": 400
+    },
+    {
+      "text": "As Bob, starting with an empty home and registry directory and reading only the registry page generated from the chain and Koios, I prove a key absent and insert it. Alice starts the same way; neither user is the creator. My singular rebuilds the registry's trie from the transactions that moved its state token since create. Alice's mirror, journal and envelopes are never read.",
       "pause": 400
     },
     {
@@ -31,10 +45,6 @@
       "pause": 400
     },
     {
-      "text": "A diagram is shown here.",
-      "pause": 400
-    },
-    {
       "text": "Everything the trie holds is public. The state policy takes no parameters (onchain/validators/state.ak:125). Its mint redeemer is Minting(seed) (state.ak:128), and the token name is assetName(seed) (onchain/validators/registry/genesis.ak:49). The trie is empty at create (genesis.ak:57). Each request datum carries its key and edge (onchain/validators/types.ak:320-374), and the edge fixes the leaf bytes (types.ak:247-262). Each fold's redeemer is Modify(List<RequestAction>), one action per own-token request in the transaction's input order. An action is UpdateAction(proof) or Rejected (types.ak:137-142,180; onchain/validators/registry/fold.ak:129-238).",
       "pause": 400
     },
@@ -50,10 +60,6 @@
     },
     {
       "text": "As a reader of a rebuilt trie, I need the replay to make exactly the chain's decisions, so that its root is the chain's root.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 6 rows is shown here.",
       "pause": 400
     },
     {
@@ -89,12 +95,32 @@
       "pause": 400
     },
     {
-      "text": "Rebuilt root is the chain's root at every fold. A CI test maps one edge.",
+      "text": "Rebuilt root is the chain's root at every fold. A CI test maps one edge wrongly and observes the refusal that names the registry and the fold.",
       "pause": 300
     },
     {
-      "text": "wrongly and observes the refusal that names the registry and the fold. - Mixed folds. A fold that applies some requests and rejects others changes   the trie by the applied ones only. The test's fold is accepted by the state   validator, and applying a rejected request turns it red. - Rollback-free by construction. Replay consumes the history as served. A   history whose roots do not chain from create to the selected state output   is refused by name. A test drops one fold. - Proofs verify. At every fold of the journey's history, every journey key   has a membership proof, or a non-membership proof if absent, that verifies   against that fold's rebuilt root. - Independent actors on the CLI's two edges. An actor starting with no   other actor's files operates insert (insertActive) and terminate   (updateTerminal) from public data alone. Alice and Bob run the   development-network journey with separate registry directories on one   registry, covering both edges plus reject and reclaim. Bob proves absence and   inserts a key Alice never saw locally. Each key is updated and terminated only   by its controller; the cross-actor step is the fold: Alice folds the   termination of a key Bob created, with the membership proof from her own   replay, and Bob folds Alice's likewise. The other five edges are outside the   Koios demonstration, by the operator's ruling in the decisions. - Superseded statements corrected in the same change: #324's plan item   (specs/324-indexer-view/plan.md:14), docs/consumer-onboarding.md:304-306,   docs/singular-node.md:60-64 and specs/362-separate-fold/spec.md:68. Each   exists at the intake base. - This directory carries spec, plan and decisions, each page with a stamped   speech companion, from the first push.",
-      "pause": 400
+      "text": "Mixed folds. A fold that applies some requests and rejects others changes the trie by the applied ones only. The test's fold is accepted by the state validator, and applying a rejected request turns it red.",
+      "pause": 300
+    },
+    {
+      "text": "Rollback-free by construction. Replay consumes the history as served. A history whose roots do not chain from create to the selected state output is refused by name. A test drops one fold.",
+      "pause": 300
+    },
+    {
+      "text": "Proofs verify. At every fold of the journey's history, every journey key has a membership proof, or a non-membership proof if absent, that verifies against that fold's rebuilt root.",
+      "pause": 300
+    },
+    {
+      "text": "Independent actors on the CLI's two edges. An actor starting with no other actor's files operates insert (insertActive) and terminate (updateTerminal) from public data alone. Alice and Bob run the development-network journey with separate registry directories on one registry, covering both edges plus reject and reclaim. Bob proves absence and inserts a key Alice never saw locally. Each key is updated and terminated only by its controller; the cross-actor step is the fold: Alice folds the termination of a key Bob created, with the membership proof from her own replay, and Bob folds Alice's likewise. The other five edges are outside the Koios demonstration, by the operator's ruling in the decisions.",
+      "pause": 300
+    },
+    {
+      "text": "Superseded statements corrected in the same change: #324's plan item (specs/324-indexer-view/plan.md:14), docs/consumer-onboarding.md:304-306, docs/singular-node.md:60-64 and specs/362-separate-fold/spec.md:68. Each exists at the intake base.",
+      "pause": 300
+    },
+    {
+      "text": "This directory carries spec, plan and decisions, each page with a stamped speech companion, from the first push.",
+      "pause": 300
     },
     {
       "text": "Proof: nix develop --quiet -c just ci and the two-actor development-network journey, green in CI on the exact PR head.",
@@ -113,6 +139,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "034114152b8271deea3531642e5145b9763b0ea6a5a2947dae01231a07b7d171"
+    "sha256": "dd3d1e1520bfc9f9b42cfd2f18559d13a894492d412a8c98a6d4ecbeb48971a2"
   }
 }

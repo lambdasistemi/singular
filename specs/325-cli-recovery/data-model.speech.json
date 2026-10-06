@@ -5,6 +5,20 @@
       "pause": 500
     },
     {
+      "text": "Replay supersedes the former local proof state. This record preserves the",
+      "pause": 400
+    }
+  ],
+  "325-recovery-design-and-its-original-requirement-names-under-381-ordinary": [
+    {
+      "text": "325 recovery design and its original requirement names. Under #381, ordinary.",
+      "pause": 500
+    },
+    {
+      "text": "commands reconstruct proof state from public state-token history. They neither read nor write a proof mirror or state.json, and the journal supplies no replay edge or root. Recovery still appends submission phases and observations; public history selects the trie, including after a rollback. References below to the former local mirror commit are historical and are superseded by this rule.",
+      "pause": 400
+    },
+    {
       "text": "journal-events-existing-prepared-submitted-acknowledged-rejected Journal events. Existing: prepared, submitted (acknowledged), rejected, submit-unknown (unknown outcome), confirmed (included), unconfirmed (timeout, or the wait failed), observed. Added: rolled-back (a line after confirmed or observed for the same transaction whose effect is no longer on chain) and excluded written by recovery when chain evidence shows the transaction can never land. Settled: observed, rejected, excluded. Every other last event is unresolved, rolled-back included.",
       "pause": 300
     },
@@ -23,6 +37,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "4dcde00290727b915e56e61fe1b6f393d025bcb1165aa0ba3387ab135a6ae1ae"
+    "sha256": "4f3e2907c90eda18b880a96b92f9a08763b42e6dac6ce1219b3ab31d81514996"
   }
 }

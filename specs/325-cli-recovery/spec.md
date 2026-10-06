@@ -1,5 +1,13 @@
 # #325 Recover CLI state after uncertain submission and rollback
 
+> **Replay supersedes the former local proof state.** This record preserves the
+> #325 recovery design and its original requirement names. Under #381, ordinary
+> commands reconstruct proof state from public state-token history. They neither
+> read nor write a proof mirror or `state.json`, and the journal supplies no replay
+> edge or root. Recovery still appends submission phases and observations; public
+> history selects the trie, including after a rollback. References below to the
+> former local mirror commit are historical and are superseded by this rule.
+
 Parent epic #322. Stacked on #323 at `7ca7fceb409c65c186713743889d29aa229b3aec` (branch `refactor/323-acquired-node-interface`). Application model pin `de34300540223ccedf1ca85216b131fd09a148b4`. The CLI's recovery behaviour is a client obligation of `specs/299-singular-cli/spec.md` (R299-05, INV299-PARTIAL); no Lean statement describes it, and this ticket adds none.
 
 **Story.** As a CLI user, when a submission acknowledgement is lost, local persistence is interrupted, or an included transaction is rolled back, the ordinary `singular registry create`, `insert`, `update`, `terminate` and `inspect` stop or reconcile without resending, double-applying or inventing state, and their receipts tell me which case happened and what I do next.
