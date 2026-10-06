@@ -41,7 +41,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: blueprint-${{ github.workflow }}-${{ github.ref }}
+  group: blueprint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   naming-validators:
