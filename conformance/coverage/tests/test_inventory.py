@@ -66,10 +66,14 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Public fold inputs (#419) replace the statement that a delivered
-        # output carries the datum form its request named with three: a
-        # delivered output carries exactly the request's datum, a fold is built
-        # from the public view, and a foreign datum is refused: 126 = 67 + 59.
+        # Folding every pending request (#396) adds four statements, the fold's
+        # admission at and past its window and a batch refusing to consume what
+        # it creates, restates the batch characterization, and adds one helper
+        # characterizing an accepted batch: 131 = 71 + 60. Before it, public
+        # fold inputs (#419) replaced the statement that a delivered output
+        # carries the datum form its request named with three: a delivered
+        # output carries exactly the request's datum, a fold is built from the
+        # public view, and a foreign datum is refused: 126 = 67 + 59.
         # Before them, the batch questions (#344) added two statements, a batch of one
         # answering as the single request for a fold and for a reject, and six
         # helpers stating keyed mint sums pointwise: 124 = 65 + 59. Before
@@ -83,9 +87,9 @@ class RealInventoryTest(unittest.TestCase):
         # statements before #419 and 46 after; naming, lifecycle and wire retain
         # 7, 9 and 5.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 67)
-        self.assertEqual(inv.unclassified, 59)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 126)
+        self.assertEqual(inv.manifest_bound, 71)
+        self.assertEqual(inv.unclassified, 60)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 131)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

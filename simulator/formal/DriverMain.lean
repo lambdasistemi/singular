@@ -69,16 +69,16 @@ def insertAbsentDigest : String :=
   "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
+  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
+  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
-  "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"
+  "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
 def updateTerminalInversion : String := "Singular.Statements.update_terminal_inversion"
 def updateTerminalInversionDigest : String :=
   "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
@@ -94,13 +94,6 @@ def retractAdmittedIffDigest : String :=
 def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
 def retractRefusalFirstFailingDigest : String :=
   "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
-def deliveredDatumIsRequestDatum : String :=
-  "Singular.Statements.delivered_datum_is_request_datum"
-def deliveredDatumIsRequestDatumDigest : String :=
-  "76247fab5884aefffb7639b05675206c16b48c191fb0bd8c63ce87afba58c4a5"
-def foldRefusesForeignDatum : String := "Singular.Statements.fold_refuses_foreign_datum"
-def foldRefusesForeignDatumDigest : String :=
-  "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
 def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
 def bookedAtMostOnceDigest : String :=
   "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
@@ -112,10 +105,22 @@ def emptyFoldErrorDigest : String :=
   "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
 def foldBatchCons : String := "Singular.Statements.fold_batch_cons"
 def foldBatchConsDigest : String :=
-  "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+  "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
 def foldBatchOfOne : String := "Singular.Statements.fold_batch_of_one_is_step"
 def foldBatchOfOneDigest : String :=
   "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+def foldPastDeadline : String := "Singular.Statements.fold_batch_refuses_past_deadline"
+def foldPastDeadlineDigest : String :=
+  "2195f8d24a7aad10b51f42f1e5c6c578b236eb9ad736a07b6507c8ea9479b0ec"
+def foldInWindow : String := "Singular.Statements.fold_admitted_in_window_is_fold_batch"
+def foldInWindowDigest : String :=
+  "bdb88cbaa8898e97fc22a0435a90e53388ad0c98395d550e9b620d837fb401b1"
+def foldAdmissionBoundary : String := "Singular.Statements.fold_admission_boundary"
+def foldAdmissionBoundaryDigest : String :=
+  "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a"
+def foldConsumingCreated : String := "Singular.Statements.fold_batch_refuses_consuming_created"
+def foldConsumingCreatedDigest : String :=
+  "0707908378fa9d1e58191e8758dbe198f7cd9dfe56974b240aedac2ece0d9b10"
 def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_reject"
 def rejectBatchOfOneDigest : String :=
   "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
@@ -167,37 +172,6 @@ def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with 
 def ownerPaid (owner lovelace : Nat) : TxOutput :=
   { role := .owner, datum := .none, address := some owner, stateTokens := 0, config := none
   , commitment := none, assets := [], lovelace := lovelace }
-
-/-- An active registration of key 5 for owner 42, routed to output 99 with no
-deposit, whose request carries the datum 7. -/
-def zeroDepositCarryingDatum : Request :=
-  { request .insertActive 5 42 99 0 0 with datum := some 7 }
-
-/-- The token carrier of that registration as a caller observed it: at output 99,
-carrying the datum 8 inline rather than the request's 7. -/
-def foreignCarrier : TxOutput :=
-  { role := .destination, datum := .inline, address := some 99, stateTokens := 0
-  , config := none, commitment := none, assets := [], lovelace := 0, datumValue := some 8 }
-
-/-- The registration folded with a carrier bearing a foreign datum: the deposit is
-zero, so no floor is short, and the delivery is still refused `destination`. -/
-def foreignDatumDelivery : Scenario :=
-  { id := "DR16-deliver-foreign-datum-without-deposit"
-  , theoremName := foldRefusesForeignDatum, statementSha256 := foldRefusesForeignDatumDigest
-  , kind := "witness", mutates := none, requiresReachableState := false
-  , start := s0, setup := [], exit := .fold .insertActive
-  , request := zeroDepositCarryingDatum, lovelace := lovelace
-  , outputs := some [foreignCarrier] }
-
-/-- Its twin with no carrier at all: nothing reaches the destination. -/
-def carrierlessDelivery : Scenario :=
-  { foreignDatumDelivery with
-    id := "DR17-deliver-without-carrier-or-deposit", outputs := some [] }
-
--- A delivery whose carrier bears another datum, and one with no carrier at all,
--- is refused `destination` whatever the deposit, as the cage refuses it.
-#guard [foreignDatumDelivery, carrierlessDelivery].all fun sc =>
-  judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
@@ -288,18 +262,52 @@ def scenarios : List Scenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
     , request := registerActiveClaimed, lovelace := lovelace }
-    -- An active registration whose request carries a datum: the destination output
-    -- carries that very datum, inline.
-  , { id := "DR15-register-active-carrying-datum"
-    , theoremName := deliveredDatumIsRequestDatum
-    , statementSha256 := deliveredDatumIsRequestDatumDigest
+    -- The registration of key 42 folded under an upper bound equal to its
+    -- deadline under `sTimed`: submitted at 10000, processing 1000, the excluded
+    -- upper bound 11000 reaches the deadline and is admitted; at 11001 it passes
+    -- it and the fold is refused, as the chain refuses it.
+  , { id := "DR15-register-at-deadline"
+    , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
     , kind := "witness", mutates := none, requiresReachableState := false
-    , start := s0, setup := [], exit := .fold .insertActive
-    , request := { request .insertActive 43 42 556 0 55 with datum := some 7 }
-    , lovelace := lovelace }
-  , foreignDatumDelivery
-  , carrierlessDelivery
+    , start := sTimed, setup := [], exit := .fold .insertActive
+    , request := registerActive, lovelace := lovelace
+    , foldWitness := some { submittedAt := [10000], validTo := 11000 } }
+  , { id := "DR16-register-past-deadline"
+    , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
+    , kind := "mutant", mutates := some "DR15-register-at-deadline"
+    , requiresReachableState := false, start := sTimed, setup := [], exit := .fold .insertActive
+    , request := registerActive, lovelace := lovelace
+    , foldWitness := some { submittedAt := [10000], validTo := 11001 } }
   ]
+
+/-- A batch of two requests at key 60, the first creating what the second
+consumes, each claiming its own edge's mint so the mint guard holds; the law
+admits both steps, and the batch is refused for consuming what it created. The
+requests that consume a custody entry or an update's holding start from key 60
+booked absent, by a real `insertAbsent` run through the law. -/
+def consumeCreated (id : String) (setup : List Request) (create consume : Edge) :
+    BatchScenario :=
+  { id := id
+  , theoremName := foldConsumingCreated, statementSha256 := foldConsumingCreatedDigest
+  , kind := "witness", mutates := none, requiresReachableState := !setup.isEmpty
+  , start := s0, setup := setup
+  , question := .foldBatch
+      [ claiming (request create 60 60 600 60 55), claiming (request consume 60 60 600 60 55) ] }
+
+/-- Key 60 booked absent: the starting point of the pairs that update it. -/
+def bookedAbsent : Request := request .insertAbsent 60 60 0 60 55
+
+/-- Every create-then-consume pair: a holding created by `insertActive` or
+`updateActive` and consumed by `updateTerminal` or `deleteActive`, refused
+`token-missing`; a custody entry created by `insertAbsent` and consumed by
+`updateActive` or `deleteAbsent`, refused `not-booked`. -/
+def consumeCreatedRows : List BatchScenario :=
+  [ consumeCreated "BR15-insert-then-retire" [] .insertActive .updateTerminal
+  , consumeCreated "BR16-insert-then-delete" [] .insertActive .deleteActive
+  , consumeCreated "BR17-update-then-retire" [bookedAbsent] .updateActive .updateTerminal
+  , consumeCreated "BR18-update-then-delete" [bookedAbsent] .updateActive .deleteActive
+  , consumeCreated "BR19-book-then-update" [] .insertAbsent .updateActive
+  , consumeCreated "BR20-book-then-delete" [] .insertAbsent .deleteAbsent ]
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a
 crossed claim, an empty batch, a later request the law refuses — a batch of one
@@ -380,7 +388,24 @@ def batchScenarios : List BatchScenario :=
     , kind := "mutant", mutates := some "BR06-reject-two-paid"
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.retract, registerTaken)] }
-  ]
+    -- Two registrations folded inside both windows under `sTimed`, then the same
+    -- batch with one request submitted early enough that the bound passes its
+    -- deadline: admission refuses the whole batch.
+  , { id := "BR13-fold-two-in-window"
+    , theoremName := foldInWindow, statementSha256 := foldInWindowDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := sTimed, setup := []
+    , question := .foldBatch
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
+    , foldWitness := some { submittedAt := [10000, 10500], validTo := 11000 } }
+  , { id := "BR14-fold-two-one-expired"
+    , theoremName := foldPastDeadline, statementSha256 := foldPastDeadlineDigest
+    , kind := "mutant", mutates := some "BR13-fold-two-in-window"
+    , requiresReachableState := false, start := sTimed, setup := []
+    , question := .foldBatch
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
+    , foldWitness := some { submittedAt := [10000, 9000], validTo := 11000 } }
+  ] ++ consumeCreatedRows
 
 /-- The digest the surface carries is over the declared names themselves, so a
 silently widened or narrowed surface changes it. -/

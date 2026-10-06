@@ -486,7 +486,7 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .active, output := r.output
-                     , datum := r.datum } :: s.held ∧
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.active, r.key), 1)] ∧ t.paid = [] := by
   constructor
   · intro hok
@@ -550,7 +550,7 @@ theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody.filter (·.key != r.key) ∧
     t.state.held = { key := r.key, kind := .active, output := r.output
-                     , datum := r.datum } :: s.held ∧
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.absent, r.key), -1), ((.active, r.key), 1)] ∧
     t.paid = [(c.refundAddress, c.value)] := by
   constructor
@@ -800,7 +800,7 @@ theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result
     trieGet s.trie r.key = .known .terminal ∧ s.config.root = rootOf s.trie ∧
     t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .terminal, output := r.output
-                     , datum := r.datum } :: s.held ∧
+                     , datum := deliveredDatum r } :: s.held ∧
     t.mint = [((.terminal, r.key), 1)] ∧ t.paid = [] := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := applyEdge_witnessTerminal s r he
   constructor
@@ -839,24 +839,18 @@ theorem empty_fold_error (s : RegistryState) (batch : List Request)
   subst h
   rfl
 
-/-- A fold succeeds iff every request applies in order and the claimed mint
-matches the summed delta of the folded edges. -/
+/-- A fold succeeds iff every request applies in order, the claimed mint
+matches the summed delta of the folded edges, and no request consumes a holding
+or custody entry an earlier request of the batch creates. -/
 theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
     foldBatch s (b :: bs) = .ok t ↔
     ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
       t = { state := r.state, mint := assetPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
-      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
+      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) ∧
+      batchConsumesCreated (b :: bs) = none := by
+  rw [foldBatch_ok_iff]
   constructor
-  · intro hok
-    have hacts := (foldBatch_inv s (b :: bs) t hok).2
-    have hdelta : assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
-      unfold foldBatch at hok
-      rw [if_neg (by simp)] at hok
-      rw [hacts] at hok
-      simp only [bind, Except.bind, pure, Except.pure] at hok
-      split at hok
-      · assumption
-      · exact Except.noConfusion hok
+  · rintro ⟨_, hacts, hdelta, hcreated⟩
     unfold foldActions at hacts
     simp only [bind, Except.bind, pure, Except.pure] at hacts
     cases hs : step s b with
@@ -869,22 +863,15 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
       | ok r =>
         rw [hr] at hacts
         have hEq : combineResults m r = t := by injection hacts
-        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta⟩
-  · rintro ⟨m, r, hs, hr, hEq, hdelta⟩
-    unfold foldBatch
-    rw [if_neg (by simp)]
-    have hacts : foldActions s (b :: bs) = .ok t := by
-      unfold foldActions
-      simp only [bind, Except.bind, pure, Except.pure]
-      rw [hs]
-      simp only [bind, Except.bind, pure, Except.pure]
-      rw [hr, hEq]
-      rfl
-    rw [hacts]
+        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta, hcreated⟩
+  · rintro ⟨m, r, hs, hr, hEq, hdelta, hcreated⟩
+    refine ⟨by simp, ?_, hdelta, hcreated⟩
+    unfold foldActions
     simp only [bind, Except.bind, pure, Except.pure]
-    split
-    · rfl
-    · rename_i hc; exact absurd hdelta hc
+    rw [hs]
+    simp only [bind, Except.bind, pure, Except.pure]
+    rw [hr, hEq]
+    rfl
 
 /-- A read changes nothing: the leaf, the root and custody survive an admitted
 `witnessTerminal` step unchanged. -/
@@ -1014,10 +1001,10 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := datumFormOf r.datum
+              , { role := .destination, datum := if r.namesDatum then .inline else .none
                 , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [((.active, r.key), 1)], lovelace := r.deposit, datumValue := r.datum } ]
+                , assets := [((.active, r.key), 1)], lovelace := r.deposit } ]
           , mint := [((.active, r.key), 1)]
           , signers := []
           , refunds := [(r.output, r.deposit)] } ∧
@@ -1028,7 +1015,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     t.state.custody = s.custody ∧
     kindCount t.state .active r.key = 1 ∧
     ({ key := r.key, kind := .active, output := r.output
-      , datum := r.datum } : Holding) ∈ t.state.held ∧
+      , datum := deliveredDatum r } : Holding) ∈ t.state.held ∧
     kindPolicy s.config .active = s.config.activePolicy ∧
     tokenAssetName .active r.key = r.key ∧
     openPolicyParameters = [] ∧
@@ -1122,10 +1109,10 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
-              , { role := .destination, datum := datumFormOf r.datum
+              , { role := .destination, datum := if r.namesDatum then .inline else .none
                 , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
-                , assets := [((.active, r.key), 1)], lovelace := r.deposit, datumValue := r.datum } ]
+                , assets := [((.active, r.key), 1)], lovelace := r.deposit } ]
           , mint := [((.active, r.key), 1)]
           , signers := []
           , refunds := [(r.output, r.deposit)] } := by
@@ -1212,8 +1199,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
                 , approvals := 1, lovelace := lovelace, assets := [] }
               , { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
                 , approvals := 0, lovelace := 0
-                , assets := [((.active, r.key), 1)]
-                , datumValue := heldValue s r.key .active } ]
+                , assets := [((.active, r.key), 1)] } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
@@ -1317,9 +1303,8 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
   have hburn : txBurnInputs s t r =
       [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
         , approvals := 0, lovelace := 0
-        , assets := [((TokenKind.active, r.key), 1)]
-        , datumValue := heldValue s r.key .active } ] := by
-    unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum, burnSourceValue]
+        , assets := [((TokenKind.active, r.key), 1)] } ] := by
+    unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum]
   have htx : txOf s r lovelace =
       .ok { inputs :=
               [ { role := .state, datum := .inline, stateTokens := 1
@@ -1328,8 +1313,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
                 , approvals := 1, lovelace := lovelace, assets := [] }
               , { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
                 , approvals := 0, lovelace := 0
-                , assets := [((.active, r.key), 1)]
-                , datumValue := heldValue s r.key .active } ]
+                , assets := [((.active, r.key), 1)] } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
                 , config := some t.state.config, commitment := none, assets := [] }
@@ -1370,9 +1354,8 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     have hbi : txBurnInputs s t { r with approval := some { ap with signatures := sigs } } =
         [ { role := .witness, datum := heldDatum s r.key .active, stateTokens := 0
           , approvals := 0, lovelace := 0
-          , assets := [((TokenKind.active, r.key), 1)]
-          , datumValue := heldValue s r.key .active } ] := by
-      unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum, burnSourceValue]
+          , assets := [((TokenKind.active, r.key), 1)] } ] := by
+      unfold txBurnInputs; rw [hmint]; simp [route, burnSourceRole, burnSourceDatum]
     have hb : datumHash (destinationDatum
         { r with approval := some { ap with signatures := sigs } }) = ap.assetName := by
       unfold datumHash destinationDatum
@@ -1444,21 +1427,13 @@ theorem fold_batch_claimed_mint_by_kind_key :
         foldBatch s [b₁, b₂] = .error "net-mint-mismatch") := by
   refine ⟨?_, ?_, ?_⟩
   · intro s batch t hok
-    obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
-    unfold foldBatch at hok
-    rw [if_neg (by simpa using hne)] at hok
-    rw [hacts] at hok
-    simp only [bind, Except.bind, pure, Except.pure] at hok
-    split at hok
-    · assumption
-    · exact Except.noConfusion hok
+    exact ((foldBatch_ok_iff s batch t).mp hok).2.2.1
   · intro s batch m hne hacts hfalse
     unfold foldBatch
-    rw [if_neg (by simpa using hne)]
-    rw [hacts]
-    simp only [bind, Except.bind, pure, Except.pure]
-    rw [if_neg (by simp [hfalse])]
-    rfl
+    cases hb : batch.isEmpty
+    · simp [hacts, hfalse, bind, Except.bind, pure, Except.pure, throw, throwThe,
+        MonadExcept.throw]
+    · simp_all [List.isEmpty_iff]
   · refine ⟨{ config := { Oracle.referenceConfig with root := rootOf [] }
             , trie := [], custody := [], held := [] },
       { edge := .insertActive, key := 5, owner := 0, output := 555
@@ -1488,10 +1463,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, namesDatum⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, namesDatum⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1506,21 +1481,16 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
 /-- Value an exit does not owe is unconstrained, for every exit alike.
 
 For every exit, every request and any two lists of transaction outputs: when each
-recipient the exit owes that some output of the first list reaches is reached by
-some output of the second, and receives (`receivedBy`: the summed lovelace of the
-outputs that pay it by role, address and, for a destination, datum, or, for a
-retraction's return bound to its request, the largest such output) at least as
-much from the second list as from the first, the second list settles whenever the
-first does. Adding outputs, or adding lovelace to an output, therefore never turns
-a settled transaction into an unsettled one, and whether a transaction settles
-depends only on which recipients the exit owes are reached and the lovelace
-reaching them: fees, the folder's tip and every output that pays none of them play
+recipient the exit owes receives (`receivedBy`: the summed lovelace of the outputs
+that pay it by role and address, or, for a retraction's return bound to its
+request, the largest such output) at least as much from the second list as from
+the first, the second list settles whenever the first does. Adding outputs, or adding lovelace to
+an output, therefore never turns a settled transaction into an unsettled one, and
+whether a transaction settles depends only on the lovelace reaching the recipients
+the exit owes: fees, the folder's tip and every output that pays none of them play
 no part. -/
 theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
     (outputs more : List TxOutput)
-    (reached : ∀ payment ∈ obligations exit request,
-      (outputs.filter (paysRecipient payment.recipient)).isEmpty = false →
-      (more.filter (paysRecipient payment.recipient)).isEmpty = false)
     (received : ∀ payment ∈ obligations exit request,
       receivedBy payment.recipient outputs ≤ receivedBy payment.recipient more) :
     settle (obligations exit request) outputs = none →
@@ -1551,22 +1521,9 @@ theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
   have owed := (named _ [] recipient judged).resolve_right (by simp)
   obtain ⟨payment, owedPayment, rfl⟩ := List.mem_map.mp owed
   have before := settled _ judged
-  dsimp only at before ⊢
   split at before
+  · next paid => rw [if_pos (Nat.le_trans paid (received payment owedPayment))]
   · cases before
-  · next notMissing =>
-    split at before
-    · next paid =>
-      have keep : ¬ ((requiresCarrier payment.recipient &&
-          (more.filter (paysRecipient payment.recipient)).isEmpty) = true) := by
-        intro h
-        simp only [Bool.and_eq_true] at h
-        cases hb : (outputs.filter (paysRecipient payment.recipient)).isEmpty
-        · rw [reached payment owedPayment hb] at h
-          exact Bool.false_ne_true h.2
-        · exact notMissing (by simp [h.1, hb])
-      rw [if_neg keep, if_pos (Nat.le_trans paid (received payment owedPayment))]
-    · cases before
 
 /-- No exit strands a deposit.
 
@@ -1602,15 +1559,13 @@ theorem only_retract_owes_the_tip (exit : Exit) :
 /-- What an exit owes is read off the request alone.
 
 For every exit and any two requests with the same owner, deposit, tip, destination
-— its address and the datum it carries — and output reference, the exit owes the
-same payments. The obligations read no registry state, and nothing else of the
-request: not its edge beyond the destination it names, its key, its refund address,
-its approval or its claimed mint. -/
+and output reference, the exit owes the same payments. The obligations read no
+registry state, and nothing else of the request: not its edge beyond the destination
+it names, its key, its refund address, its approval or its claimed mint. -/
 theorem obligations_read_only_the_request (exit : Exit) (request other : Request)
     (sameOwner : other.owner = request.owner) (sameDeposit : other.deposit = request.deposit)
     (sameTip : other.tip = request.tip)
     (sameDestination : requestDestination other = requestDestination request)
-    (sameDatum : other.datum = request.datum)
     (sameReference : other.reference = request.reference) :
     obligations exit other = obligations exit request := by
   cases exit with
@@ -1652,10 +1607,9 @@ theorem built_transaction_settles (state : RegistryState) (exit : Exit) (request
           simp only [txOfExit, exitStep, beq_self_eq_true, if_true, hs, Except.ok.injEq] at built
           subst built
           cases hedge : request.edge <;> simp only [hedge, obligations] <;> apply settle_one <;>
-            cases hd : request.datum <;>
             simp +decide [paysRecipient, txDestinationOutputs, owedTo, ownerOutputs, txCageOutputs,
               routedPayment, mintRoutedTo, happ, applyEdge, assetDelta, hedge, delta, route,
-              requestDestination, presentsDatum, deliveredDatum, datumFormOf, hd]
+              requestDestination]
       · simp [he] at hstep
 
 /-- What an executed retract pays is exactly what it owes.
@@ -1794,16 +1748,55 @@ theorem destination_output_iff_delivers (s : RegistryState) (r : Request) (lovel
   · intro o
     rfl
 
+/-- **#304** — a delivered output carries the datum its request named: for every
+state, request, lovelace and admitted fold, over all seven edges, each output in
+the destination role presents an inline datum when the request names one and no
+datum when it names none, because the chain refuses a delivery carrying a datum
+its request did not name. -/
+theorem delivered_datum_follows_request (s : RegistryState) (r : Request)
+    (lovelace : Nat) (t : Result) (tx : Tx) (hok : step s r = .ok t)
+    (htx : txOf s r lovelace = .ok tx) :
+    ∀ o ∈ tx.outputs, o.role = .destination →
+      o.datum = if r.namesDatum then .inline else .none := by
+  rw [txOf_of_step_ok s r lovelace t hok] at htx
+  injection htx with htx
+  subst htx
+  intro o ho hrole
+  dsimp only at ho
+  rw [List.mem_append, List.mem_append, List.mem_cons] at ho
+  rcases ho with ((ho | ho) | ho) | ho
+  · subst ho
+    simp [txStateOutput] at hrole
+  · rw [List.mem_map] at ho
+    obtain ⟨d, hd, rfl⟩ := ho
+    unfold txDestinationOutputs at hd
+    dsimp only at hd
+    split at hd
+    · simp at hd
+    · rw [List.mem_singleton] at hd
+      subst hd
+      rfl
+  · unfold txCageOutputs at ho
+    dsimp only at ho
+    split at ho
+    · simp at ho
+    · rw [List.mem_singleton] at ho
+      subst ho
+      simp at hrole
+  · rw [ownerOutputs, List.mem_filterMap] at ho
+    obtain ⟨p, -, hp⟩ := ho
+    split at hp <;> (cases hp <;> simp at hrole)
+
 /-- **#304** — a witness a fold spends presents the datum its holding carries: for
 every state, request, lovelace and admitted fold, over all seven edges, each input
-in the witness role presents, for the asset it supplies, the datum the state
-records for that holding, in its form and its value. A holding records the datum
-the fold that delivered it wrote, the request's own (as the inversions state), so
-a retirement or a deletion spends a witness as the chain holds it. -/
+in the witness role presents, for the asset it supplies, the datum form the state
+records for that holding. A holding records the form the fold that delivered it
+gave its output (`deliveredDatum`, as the inversions state), so a retirement or a
+deletion spends a witness as the chain holds it, never as an inline datum the
+delivery did not write. -/
 theorem witness_input_datum_is_held (s : RegistryState) (r : Request) (lovelace : Nat)
     (t : Result) (tx : Tx) (hok : step s r = .ok t) (htx : txOf s r lovelace = .ok tx) :
-    ∀ i ∈ tx.inputs, i.role = .witness → ∀ a ∈ i.assets,
-      i.datum = heldDatum s a.1.2 a.1.1 ∧ i.datumValue = heldValue s a.1.2 a.1.1 := by
+    ∀ i ∈ tx.inputs, i.role = .witness → ∀ a ∈ i.assets, i.datum = heldDatum s a.1.2 a.1.1 := by
   rw [txOf_of_step_ok s r lovelace t hok] at htx
   injection htx with htx
   subst htx
@@ -1823,23 +1816,21 @@ theorem witness_input_datum_is_held (s : RegistryState) (r : Request) (lovelace 
       simp only [List.mem_singleton] at ha
       subst ha
       simp only [burnSourceRole] at hrole
-      simp only [burnSourceDatum, burnSourceValue]
+      simp only [burnSourceDatum]
       split at hrole <;> simp_all
     · cases hp
 
-/-- By value: a delivered output carries the request's datum inline when the
-request carries one, and no datum when it carries none. -/
+/-- By value: a delivered output carries an inline datum when its request names
+one and none when it names none. -/
 example (s : RegistryState) (k : Key) :
     (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
-      { edge := .insertActive, key := k, datum := some 7 }).map (fun o => (o.datum, o.datumValue))
-      = [(.inline, some 7)] := by
-  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum, datumFormOf]
+      { edge := .insertActive, key := k, namesDatum := true }).map (·.datum) = [.inline] := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum]
 
 example (s : RegistryState) (k : Key) :
     (txDestinationOutputs { state := s, mint := [((.active, k), 1)], paid := [] }
-      { edge := .insertActive, key := k }).map (fun o => (o.datum, o.datumValue))
-      = [(.none, none)] := by
-  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum, datumFormOf]
+      { edge := .insertActive, key := k }).map (·.datum) = [.none] := by
+  simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route, deliveredDatum]
 
 /-- By value, one edge each way: an absent insertion routes its token to custody
 and describes no destination output. -/
@@ -1896,6 +1887,9 @@ theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request)
   have hnil : assetPlus (assetDelta r) [] = assetDelta r := by
     rcases r with ⟨edge, key⟩
     cases edge <;> simp [assetPlus, assetDelta, delta, assetKind, List.eraseDups_cons]
+  have hcreated : batchConsumesCreated [r] = none := by
+    rcases r with ⟨edge, key⟩
+    cases edge <;> rfl
   unfold foldBatch
   cases hs : step s r with
   | error why => simp [foldActions, hs]; rfl
@@ -1921,106 +1915,78 @@ theorem reject_batch_of_one_is_reject (r : Request) (sc : Driver.Scenario)
   simp [Driver.judgeRejectBatch, Driver.rejectBatchPayments, Driver.judgeSurface, hexit,
     spendRefusal]
 
-/-! ### Public fold inputs (#419)
+/-- **#396, a fold past a request's deadline is refused** — a fold whose validity
+upper bound passes the deadline of any request it folds, `submittedAt +
+processTime`, is refused `not-phase1`, as the chain refuses it, whatever the
+batch and whatever its requests' steps. -/
+theorem fold_batch_refuses_past_deadline (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (t : Nat) (ht : t ∈ w.submittedAt)
+    (hpast : t + s.config.processTime < w.validTo) :
+    admittedFoldBatch s batch w = .error "not-phase1" := by
+  have hnot : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = false := by
+    rw [List.all_eq_false]
+    exact ⟨t, ht, by simp [inPhase1]; omega⟩
+  simp [admittedFoldBatch, foldAdmission, hnot]
 
-A fold is built from what the chain shows: the registry's state output, the
-holdings it commits to and the pending requests at the cage. The request carries
-the datum it names, so no booker's file is an input of any fold. -/
+/-- **#396, inside the window a fold is the law** — a fold whose validity upper
+bound is at or before the deadline of every request it folds is exactly
+`foldBatch`: admission changes nothing inside the window. -/
+theorem fold_admitted_in_window_is_fold_batch (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (hin : ∀ t ∈ w.submittedAt, w.validTo ≤ t + s.config.processTime) :
+    admittedFoldBatch s batch w = foldBatch s batch := by
+  have hall : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = true := by
+    rw [List.all_eq_true]
+    intro t ht
+    simp [inPhase1, hin t ht]
+  simp [admittedFoldBatch, foldAdmission, hall]
 
-/-- **#419, the delivered datum is the request's datum** — for every state,
-request, lovelace and admitted fold, over all seven edges, each output in the
-destination role carries exactly the datum the request carries: inline with that
-value when the request carries one, no datum when it carries none. -/
-theorem delivered_datum_is_request_datum (s : RegistryState) (r : Request)
-    (lovelace : Nat) (t : Result) (tx : Tx) (hok : step s r = .ok t)
-    (htx : txOf s r lovelace = .ok tx) :
-    ∀ o ∈ tx.outputs, o.role = .destination →
-      o.datum = datumFormOf r.datum ∧ o.datumValue = r.datum := by
-  rw [txOf_of_step_ok s r lovelace t hok] at htx
-  injection htx with htx
-  subst htx
-  intro o ho hrole
-  dsimp only at ho
-  rw [List.mem_append, List.mem_append, List.mem_cons] at ho
-  rcases ho with ((ho | ho) | ho) | ho
-  · subst ho
-    simp [txStateOutput] at hrole
-  · rw [List.mem_map] at ho
-    obtain ⟨d, hd, rfl⟩ := ho
-    unfold txDestinationOutputs at hd
-    dsimp only at hd
-    split at hd
-    · simp at hd
-    · rw [List.mem_singleton] at hd
-      subst hd
-      exact ⟨rfl, rfl⟩
-  · unfold txCageOutputs at ho
-    dsimp only at ho
-    split at ho
-    · simp at ho
-    · rw [List.mem_singleton] at ho
-      subst ho
-      simp at hrole
-  · rw [ownerOutputs, List.mem_filterMap] at ho
-    obtain ⟨p, -, hp⟩ := ho
-    split at hp <;> (cases hp <;> simp at hrole)
+/-- **#396, the boundary of the window** — one request folded under an upper
+bound equal to its deadline is admitted and is exactly its step; one millisecond
+past it is refused `not-phase1`. The upper bound is excluded, so it may reach
+the deadline and not pass it, as `interval.is_entirely_before` reads it. -/
+theorem fold_admission_boundary (s : RegistryState) (r : Request) (t : Nat) :
+    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime } = step s r ∧
+    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime + 1 }
+      = .error "not-phase1" := by
+  have hpast : ¬ (t + s.config.processTime + 1 ≤ t + s.config.processTime) := by omega
+  constructor
+  · simp [admittedFold, foldAdmission, inPhase1]
+  · simp [admittedFold, foldAdmission, inPhase1, hpast]
 
-/-- **#419, fold inputs are public** — for every state, request and lovelace, the
-transaction a fold builds is the one any party builds from the public view: the
-registry state as its outputs show it, with the holdings and their datums, and
-the request pending at the cage, found by its own output reference. -/
-theorem fold_inputs_public (s : RegistryState) (r : Request) (lovelace : Nat) :
-    txOf s r lovelace = buildFold (publicView s [r]) r.reference lovelace := by
-  simp [buildFold, publicView]
-
-/-- **#419, a foreign datum is refused** — for every request delivering a token
-(`insertActive`, `updateActive`, `witnessTerminal`), whatever its deposit, an
-observed fold whose every destination output carries a datum other than the
-request's — another value, a datum where the request carries none, none where it
-carries one, a datum presented by hash — or that has no destination output at
-all, is refused `destination`, as the cage refuses a carrier that does not match
-the destination the request names. -/
-theorem fold_refuses_foreign_datum (r : Request) (outputs : List TxOutput)
-    (hdelivers : r.edge = .insertActive ∨ r.edge = .updateActive ∨ r.edge = .witnessTerminal)
-    (hforeign : ∀ o ∈ outputs, o.role = .destination →
-      (∀ v, r.datum = some v → o.datum ≠ .inline ∨ o.datumValue ≠ some v) ∧
-      (r.datum = none → o.datum ≠ .none)) :
-    settle (obligations (.fold r.edge) r) outputs = some "destination" := by
-  have hpaying : outputs.filter (paysRecipient (.destination (requestDestination r) r.datum)) = [] := by
-    rw [List.filter_eq_nil_iff]
-    intro o ho
-    cases hr : o.role
-    case destination =>
-      obtain ⟨h1, h2⟩ := hforeign o ho hr
-      cases hd : r.datum with
-      | none =>
-        have h := h2 hd
-        cases hod : o.datum <;> simp_all +decide [paysRecipient, presentsDatum]
-      | some v =>
-        rcases h1 v hd with h | h <;> cases hod : o.datum <;>
-          simp_all +decide [paysRecipient, presentsDatum]
-    all_goals simp +decide [paysRecipient, hr]
-  have hob : obligations (.fold r.edge) r =
-      [{ recipient := .destination (requestDestination r) r.datum, atLeast := r.deposit }] := by
-    rcases hdelivers with he | he | he <;> rw [he] <;> rfl
-  rw [hob]
-  have hnone : ∀ o ∈ outputs,
-      paysRecipient (.destination (requestDestination r) r.datum) o = false := by
-    simpa [List.filter_eq_nil_iff] using hpaying
-  simp [settle, requiresCarrier, unpaidReason, hpaying, List.eraseDups_cons]
-  rw [if_pos hnone, if_pos hnone]
-
-
-/-- By value: an active insertion whose request carries no datum, observed paying
-its destination through an output carrying an inline datum, is refused
-`destination`. -/
-example :
-    settle (obligations (.fold .insertActive)
-        { edge := .insertActive, key := 5, output := 99, deposit := 2 })
-      [{ role := .destination, datum := .inline, address := some 99, stateTokens := 0
-       , config := none, commitment := none, assets := [], lovelace := 2 }]
-      = some "destination" := by
-  decide
+/-- **#396, a batch cannot consume what it creates** — when one request of a
+batch creates an active holding (`insertActive`, `updateActive`) or a custody
+entry (`insertAbsent`) and the next consumes it at the same key
+(`updateTerminal` or `deleteActive` a holding, `updateActive` or `deleteAbsent`
+a custody entry), the batch is never accepted, and the consuming request is
+refused `token-missing` for a holding and `not-booked` for a custody entry: what
+the batch creates is not live for it. -/
+theorem fold_batch_refuses_consuming_created (s : RegistryState) (a b : Request)
+    (hkey : a.key = b.key) :
+    (((a.edge = .insertActive ∨ a.edge = .updateActive) ∧
+        (b.edge = .updateTerminal ∨ b.edge = .deleteActive)) →
+      batchConsumesCreated [a, b] = some "token-missing" ∧
+        ∀ t, foldBatch s [a, b] ≠ .ok t) ∧
+    ((a.edge = .insertAbsent ∧ (b.edge = .updateActive ∨ b.edge = .deleteAbsent)) →
+      batchConsumesCreated [a, b] = some "not-booked" ∧
+        ∀ t, foldBatch s [a, b] ≠ .ok t) := by
+  have hrefused : ∀ why, batchConsumesCreated [a, b] = some why →
+      ∀ t, foldBatch s [a, b] ≠ .ok t := by
+    intro why hwhy t hok
+    have hnone := ((foldBatch_ok_iff s [a, b] t).mp hok).2.2.2
+    rw [hwhy] at hnone
+    exact Option.noConfusion hnone
+  have hcreated : ∀ why, batchConsumesCreated [a, b] = some why →
+      batchConsumesCreated [a, b] = some why ∧ ∀ t, foldBatch s [a, b] ≠ .ok t :=
+    fun why hwhy => ⟨hwhy, hrefused why hwhy⟩
+  constructor
+  · rintro ⟨ha, hb⟩
+    apply hcreated
+    rcases ha with ha | ha <;> rcases hb with hb | hb <;>
+      simp [batchConsumesCreated, consumesCreated, creates, ha, hb, hkey]
+  · rintro ⟨ha, hb⟩
+    apply hcreated
+    rcases hb with hb | hb <;>
+      simp [batchConsumesCreated, consumesCreated, creates, ha, hb, hkey]
 
 end Statements
 end Singular

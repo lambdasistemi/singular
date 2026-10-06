@@ -231,6 +231,7 @@ structure Scenario where
   request : Request
   lovelace : Nat
   witness : Option RetractWitness := none
+  foldWitness : Option FoldWitness := none
   /-- The outputs of a transaction a caller observed for this exit, judged by
   `judgeSurface`; none when the scenario judges nothing. -/
   outputs : Option (List TxOutput) := none
@@ -303,6 +304,15 @@ def admissionWitness (sc : Scenario) : Option RetractWitness :=
   | .fold _ | .reject =>
     some { submittedAt := 0, validFrom := 0, validTo := 0, signatories := [] }
 
+/-- A fold scenario's admission: a fold carrying a `Singular.FoldWitness` is
+admitted by `Singular.foldAdmission` before its step, as
+`Singular.admittedFold` takes it; one carrying none, and every other exit, has
+no fold admission. -/
+def foldRefusal (s : RegistryState) (sc : Scenario) : Option String :=
+  match sc.exit, sc.foldWitness with
+  | .fold _, some w => foldAdmission s.config w
+  | _, _ => none
+
 /-- F01 `runSurface`: execute one scenario against the model's law.
 
 The order is the requirement: reach the state by running the law, check the
@@ -331,6 +341,11 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
       (steps, { outcome := .unsupported, reason := some "retraction-without-witness"
               , premiseChecked := true, observations := none })
     | some witness =>
+    match foldRefusal s sc with
+    | some why =>
+      (steps, { outcome := .refused, reason := some why
+              , premiseChecked := true, observations := none })
+    | none =>
     match admittedExitStep s sc.exit sc.request witness with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
@@ -390,6 +405,7 @@ def scenarioJson (sc : Scenario) : Json :=
     , ("request", toJson sc.request)
     , ("lovelace", toJson sc.lovelace) ]
     ++ (match sc.witness with | none => [] | some w => [("witness", toJson w)])
+    ++ (match sc.foldWitness with | none => [] | some w => [("foldWitness", toJson w)])
     ++
     [ ("setup", Json.arr ((steps.map setupStepJson).toArray))
     , ("outcome", toJson (outcomeName result.outcome))
@@ -480,16 +496,24 @@ def reachBatchStart (start : RegistryState) (setup : List Request) :
   else (steps, .ok s)
 
 /-- F04 `runFoldBatch`: the `foldBatch` question. From the state the setup trace
-reaches, with the premise checked, the batch is `Singular.foldBatch` verbatim:
+reaches, with the premise checked, a batch carrying a `Singular.FoldWitness` is
+admitted first by `Singular.foldAdmission` (`Singular.admittedFoldBatch`), and
+the batch is then `Singular.foldBatch` verbatim:
 refused for its reason, or accepted with the declared batch boundary. Beside the
 answer it returns the batch's step trace, each request through `Singular.step`
 from the state the previous left until the first one the law refuses, so a
 reader can see which request a refusal came from. -/
-def runFoldBatch (start : RegistryState) (setup batch : List Request) :
+def runFoldBatch (start : RegistryState) (setup batch : List Request)
+    (witness : Option FoldWitness := none) :
     List SetupStep × List SetupStep × DriverResult :=
   match reachBatchStart start setup with
   | (steps, .error result) => (steps, [], result)
   | (steps, .ok s) =>
+    match witness.bind (foldAdmission s.config) with
+    | some why =>
+      (steps, [], { outcome := .refused, reason := some why
+                  , premiseChecked := true, observations := none })
+    | none =>
     let (folded, _, _) := runSetup s batch
     match foldBatch s batch with
     | .error why =>
@@ -537,7 +561,7 @@ structure BatchScenario where
   setup : List Request
   question : BatchQuestion
   outputs : Option (List TxOutput) := none
-
+  foldWitness : Option FoldWitness := none
 /-- One executed batch scenario, serialized as the corpus row the checker reads.
 A fold batch row carries its step trace (`folded`); a batch of rejects carries
 each request with its exit, and, when it was given outputs, `settle`'s judgement
@@ -547,7 +571,7 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
       List SetupStep × Option (List SetupStep) × DriverResult × Json × Option Json :=
     match sc.question with
     | .foldBatch batch =>
-      let (steps, folded, result) := runFoldBatch sc.start sc.setup batch
+      let (steps, folded, result) := runFoldBatch sc.start sc.setup batch sc.foldWitness
       (steps, some folded, result, Json.arr (batch.map toJson).toArray, none)
     | .rejectBatch batch =>
       let (steps, result) := runRejectBatch sc.start sc.setup batch
@@ -579,6 +603,7 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
     ++ (match sc.outputs with
         | none => []
         | some outputs => [("outputs", Json.arr ((outputs.map judgedOutputJson).toArray))])
+    ++ (match sc.foldWitness with | none => [] | some w => [("foldWitness", toJson w)])
     ++ (match settled with | none => [] | some j => [("settle", j)])
     ++
     [ ("outcome", toJson (outcomeName result.outcome))

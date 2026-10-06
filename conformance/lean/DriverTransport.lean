@@ -139,6 +139,15 @@ def toWitness (j : Json) (exit : Exit) : Except String (Option RetractWitness) :
   | .ok w, .retract => some <$> fromJson? w
   | .ok _, _ => throw "only a retraction question carries a witness"
 
+/-- What a fold's admission reads beyond its requests, as the caller established
+it: each folded request's submission time and the fold's validity upper bound
+(`Singular.FoldWitness`). Only a fold question may carry it; one carrying none
+has no fold admission. -/
+def toFoldWitness (j : Json) (isFold : Bool) : Except String (Option FoldWitness) :=
+  match j.getObjVal? "foldWitness" with
+  | .error _ => pure none
+  | .ok w => if isFold then some <$> fromJson? w else throw "only a fold question carries a fold witness"
+
 /-- The setup trace a question names, as requests. -/
 def toSetup (j : Json) : Except String (List Request) :=
   match j.getObjVal? "setup" with
@@ -158,11 +167,12 @@ def toScenario (j : Json) : Except String Scenario := do
   let id ← (j.getObjVal? "id") >>= fromJson?
   let exit ← toExit j request
   let witness ← toWitness j exit
+  let foldWitness ← toFoldWitness j (match exit with | .fold _ => true | _ => false)
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, exit, request, lovelace, witness }
+    , start, setup, exit, request, lovelace, witness, foldWitness }
 
 /-- One input a caller observed, as the driver's judgement reads it: the state
 tokens it holds. `spend` reads nothing else of an input, so nothing else is taken
@@ -229,11 +239,12 @@ def toBatchScenario (j : Json) (question : String) : Except String BatchScenario
         let exit ← toExit item request
         pure (exit, request)
     | other => throw s!"no declared batch question is named {other}"
+  let foldWitness ← toFoldWitness j (question == "foldBatch")
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, question := batch, outputs }
+    , start, setup, question := batch, outputs, foldWitness }
 
 /-- Evaluate, and answer with the row the driver produces. A question carrying the
 inputs and outputs of a transaction the caller observed is also answered with the

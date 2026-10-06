@@ -398,7 +398,7 @@ def driver_surface(corpus):
 
 
 def check_driver_scenarios(
-    corpus, generic_names, statement_digests, vocabulary, exits, retraction
+    corpus, generic_names, statement_digests, vocabulary, exits, retraction, fold_admission
 ):
     """R01-R03 over every scenario the driver executed.
 
@@ -477,7 +477,9 @@ def check_driver_scenarios(
             # R03 — a refusal is the model's, with the model's own words.
             assert s["reason"], f"{sid}: refused with no reason"
             allowed = (
-                retraction["vocabulary"] if s["operation"] == "retract" else vocabulary
+                retraction["vocabulary"]
+                if s["operation"] == "retract"
+                else vocabulary | ({fold_admission} if "foldWitness" in s else set())
             )
             assert s["reason"] in allowed, (
                 f"{sid}: refusal reason {s['reason']!r} is not one the model can produce for "
@@ -510,6 +512,26 @@ def check_driver_scenarios(
             assert "witness" not in s, (
                 f"{sid}: a {s['operation']} row carries a retraction witness"
             )
+        # A fold carrying a fold witness is admitted before its step: past a
+        # request's deadline it is refused for admission's reason, and inside
+        # the window admission never names the refusal.
+        if "foldWitness" in s:
+            assert s["operation"] in edges, (
+                f"{sid}: a {s['operation']} row carries a fold witness"
+            )
+            before = s["setup"][-1]["state"] if s["setup"] else s["start"]
+            expected = fold_admission_expectation(
+                sid, s["foldWitness"], before, fold_admission
+            )
+            if expected is not None:
+                assert (s["outcome"], s["reason"]) == ("refused", expected), (
+                    f"{sid}: Singular.foldAdmission refuses this fold {expected!r}; "
+                    f"the row reports {(s['outcome'], s['reason'])}"
+                )
+            else:
+                assert s["reason"] != fold_admission, (
+                    f"{sid}: a fold inside its window is refused for admission"
+                )
 
     # Each class must actually occur, or the classification is untested.
     assert accepted, "driver corpus contains no accepted transition"
@@ -789,7 +811,65 @@ def model_batch_refusals(root):
         "empty": reason_on("isEmpty"),
         "mismatch": reason_on("assetSame"),
         "step": vocabulary,
+        "admission": model_fold_admission(root),
+        "created": model_consumes_created(root),
     }
+
+
+def model_fold_admission(root):
+    """The one reason `Singular.foldAdmission` refuses a fold for."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef foldAdmission ", 1)[1].split("\n/--", 1)[0]
+    reasons = REFUSAL_LITERAL.findall(body)
+    assert len(reasons) == 1, f"Singular.foldAdmission names {reasons}, not one reason"
+    return reasons[0]
+
+
+def model_consumes_created(root):
+    """What a batch creates and what consuming it is refused for, read off the
+    model: per created kind (`holdings`, `custody`), the edges `Singular.creates`
+    adds to it, and the edges `Singular.consumesCreated` refuses on it with the
+    reason it gives."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    creates = source.split("\ndef creates ", 1)[1].split("\n/--", 1)[0]
+    consumes = source.split("\ndef consumesCreated ", 1)[1].split("\n/--", 1)[0]
+    made = {}
+    for line in creates.splitlines():
+        for kind in ("holdings", "custody"):
+            if f"{kind} :=" in line:
+                made[kind] = set(re.findall(r"\.(\w+)", line.split("=>", 1)[0]))
+    refused = {}
+    edges = None
+    for line in consumes.splitlines():
+        if "=>" in line and line.strip().startswith("|"):
+            edges = set(re.findall(r"\.(\w+)", line.split("=>", 1)[0]))
+        for kind in ("holdings", "custody"):
+            if f"c.{kind}.contains" in line:
+                reasons = REFUSAL_LITERAL.findall(line)
+                assert edges and len(reasons) == 1, (
+                    f"Singular.consumesCreated: no edges or no single reason for {kind}"
+                )
+                refused[kind] = (edges, reasons[0])
+    assert set(made) == set(refused) == {"holdings", "custody"}, (
+        "EMPTY EXTENT: Singular.creates or Singular.consumesCreated lost a kind"
+    )
+    return {"made": made, "refused": refused}
+
+
+FOLD_WITNESS_FIELDS = {"submittedAt", "validTo"}
+
+
+def fold_admission_expectation(rid, witness, before, reason):
+    """The refusal `Singular.foldAdmission` gives a fold under this witness from
+    the state it runs against, or None: refused when the excluded upper bound
+    passes any folded request's deadline, `submittedAt + processTime`."""
+    assert isinstance(witness, dict) and set(witness) == FOLD_WITNESS_FIELDS, (
+        f"{rid}: a fold witness carries {witness!r}"
+    )
+    process = before["config"]["processTime"]
+    if any(witness["validTo"] > t + process for t in witness["submittedAt"]):
+        return reason
+    return None
 
 
 def model_unpaid_reasons(root):
@@ -950,6 +1030,14 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     """What `Singular.foldBatch` must answer for this row, re-derived from the
     model's tables and the step trace the row carries: `(outcome, reason)`."""
     requests = row["requests"]
+    if "foldWitness" in row:
+        before = row["setup"][-1]["state"] if row["setup"] else row["start"]
+        admission = fold_admission_expectation(
+            row["id"], row["foldWitness"], before, refusals["admission"]
+        )
+        if admission is not None:
+            assert row["folded"] == [], f"{row['id']}: a fold refused admission folds nothing"
+            return "refused", admission
     if not requests:
         assert row["folded"] == [], f"{row['id']}: an empty batch folds nothing"
         return "refused", refusals["empty"]
@@ -992,6 +1080,14 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     )
     if claimed != actual:
         return "refused", refusals["mismatch"]
+    created = {kind: set() for kind in refusals["created"]["made"]}
+    for r in requests:
+        for kind, (edges, reason) in refusals["created"]["refused"].items():
+            if r["edge"] in edges and r["key"] in created[kind]:
+                return "refused", reason
+        for kind, edges in refusals["created"]["made"].items():
+            if r["edge"] in edges:
+                created[kind].add(r["key"])
     return "accepted", None
 
 
@@ -1639,6 +1735,7 @@ def main():
         model_refusal_vocabulary(root),
         model_exits(root),
         model_retraction(root),
+        model_fold_admission(root),
     )
     leaf_bytes, deltas = model_constants(root)
     transitions = model_transitions(root)

@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "46740419fe4423e5bd3cc2e3f01e358dc7db00bf34946eae64fc99a32d10925c",
+  "payloadSha256": "6bb3db376e331d3cbe8f85b0c6c36d2302a3b273679ddd5753d153a19bf30a4e",
   "recovery": [
     {
       "detail": true,
@@ -104,15 +104,15 @@
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "f390c1f484e8a62e9e1efee7b77b18ac87d5f403d423ef7a77ca852ace79275b",
+    "lean/DriverMain.lean": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
     "lean/NamingMain.lean": "09945659c24ea4ac7601e509ae66dbf26d7c0bcc8dc3b2716a3ecf015e159ec9",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
-    "lean/Singular/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
+    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
     "lean/Singular/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -123,7 +123,7 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
   },
   "steps": [
     {

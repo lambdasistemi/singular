@@ -32,7 +32,7 @@
     "Singular.Statements.delete_active_inversion@39b91a52340027b5062725a24c38ee9cb5e568518b6c44727946556be0a903f8",
     "Singular.Statements.empty_fold_error@8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06",
     "Singular.Statements.fold_batch_claimed_mint_by_kind_key@9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
-    "Singular.Statements.fold_batch_cons@9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153",
+    "Singular.Statements.fold_batch_cons@a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f",
     "Singular.Statements.insert_absent_inversion@b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d",
     "Singular.Statements.insert_active_inversion@df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d",
     "Singular.Statements.insert_active_transaction_row@3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",

@@ -171,15 +171,25 @@ def custodyRows : List Case :=
 def foldRows : List (String × Bool × String) :=
   [ ("GF01-empty-fold-refused", false, "empty-fold")
   , ("GF02-batch-accepted", true, "")
-  , ("GF03-mint-mismatch-refused", false, "net-mint-mismatch") ]
+  , ("GF03-mint-mismatch-refused", false, "net-mint-mismatch")
+  , ("GF04-consume-created-refused", false, "not-booked") ]
 
 def batchOk : Bool :=
   match foldBatch s0
     [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
       , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 1)] }
+    , { edge := .insertActive, key := 6, owner := 42, output := 555
+      , approval := apFor .insertActive 6 42 555, claimed := [(.active, 1)] } ] with
+  | .ok _ => true | .error _ => false
+
+-- a custody entry the batch creates is not live for a later request of it
+def batchCreated : Option String :=
+  match foldBatch s0
+    [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
+      , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 1)] }
     , { edge := .updateActive, key := 5, owner := 42, output := 555
       , approval := apFor .updateActive 5 42 555, claimed := [(.absent, -1), (.active, 1)] } ] with
-  | .ok _ => true | .error _ => false
+  | .error e => some e | .ok _ => none
 
 def batchEmpty : Option String :=
   match foldBatch s0 [] with
@@ -1183,6 +1193,7 @@ def main : IO Unit := do
   unless batchOk do throw (IO.userError "GF02 batch-accepted failed")
   unless batchEmpty == some "empty-fold" do throw (IO.userError "GF01 empty-fold failed")
   unless batchMint == some "net-mint-mismatch" do throw (IO.userError "GF03 mint failed")
+  unless batchCreated == some "not-booked" do throw (IO.userError "GF04 consume-created failed")
   for (id, expectNonEmpty, paid) in adaRows do
     let ok := if expectNonEmpty then !paid.isEmpty && paid.all (fun p => p.1 == 91) else paid.isEmpty
     unless ok do throw (IO.userError s!"{id}: {repr paid}")
@@ -1243,7 +1254,8 @@ def main : IO Unit := do
   let foldJson := foldRows.map fun p =>
     Json.mkObj [("id", p.1), ("ok", p.2.1), ("reason", p.2.2),
       ("verified", Json.mkObj [("empty", batchEmpty == some "empty-fold"),
-        ("batch", batchOk), ("mint", batchMint == some "net-mint-mismatch")])]
+        ("batch", batchOk), ("mint", batchMint == some "net-mint-mismatch"),
+        ("created", batchCreated == some "not-booked")])]
   let adaJson := adaRows.map fun p =>
     Json.mkObj [("id", p.1), ("paidTo", toJson ((p.2.2).map (·.1)))]
   let codecJson := codecRows.map fun p =>

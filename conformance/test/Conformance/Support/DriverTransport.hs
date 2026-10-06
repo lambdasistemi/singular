@@ -70,6 +70,7 @@ scenarioQuestion row =
                     , "request"
                     , "lovelace"
                     , "witness"
+                    , "foldWitness"
                     ]
                     row
                 )
@@ -89,6 +90,7 @@ batchQuestion row =
                     , "start"
                     , "requests"
                     , "outputs"
+                    , "foldWitness"
                     ]
                     row
                 )

@@ -112,10 +112,22 @@ def emptyFoldErrorDigest : String :=
   "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
 def foldBatchCons : String := "Singular.Statements.fold_batch_cons"
 def foldBatchConsDigest : String :=
-  "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+  "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
 def foldBatchOfOne : String := "Singular.Statements.fold_batch_of_one_is_step"
 def foldBatchOfOneDigest : String :=
   "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+def foldPastDeadline : String := "Singular.Statements.fold_batch_refuses_past_deadline"
+def foldPastDeadlineDigest : String :=
+  "2195f8d24a7aad10b51f42f1e5c6c578b236eb9ad736a07b6507c8ea9479b0ec"
+def foldInWindow : String := "Singular.Statements.fold_admitted_in_window_is_fold_batch"
+def foldInWindowDigest : String :=
+  "bdb88cbaa8898e97fc22a0435a90e53388ad0c98395d550e9b620d837fb401b1"
+def foldAdmissionBoundary : String := "Singular.Statements.fold_admission_boundary"
+def foldAdmissionBoundaryDigest : String :=
+  "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a"
+def foldConsumingCreated : String := "Singular.Statements.fold_batch_refuses_consuming_created"
+def foldConsumingCreatedDigest : String :=
+  "0707908378fa9d1e58191e8758dbe198f7cd9dfe56974b240aedac2ece0d9b10"
 def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_reject"
 def rejectBatchOfOneDigest : String :=
   "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
@@ -299,7 +311,53 @@ def scenarios : List Scenario :=
     , lovelace := lovelace }
   , foreignDatumDelivery
   , carrierlessDelivery
+
+    -- The registration of key 42 folded under an upper bound equal to its
+    -- deadline under `sTimed`: submitted at 10000, processing 1000, the excluded
+    -- upper bound 11000 reaches the deadline and is admitted; at 11001 it passes
+    -- it and the fold is refused, as the chain refuses it.
+  , { id := "DR18-register-at-deadline"
+    , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := sTimed, setup := [], exit := .fold .insertActive
+    , request := registerActive, lovelace := lovelace
+    , foldWitness := some { submittedAt := [10000], validTo := 11000 } }
+  , { id := "DR19-register-past-deadline"
+    , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
+    , kind := "mutant", mutates := some "DR18-register-at-deadline"
+    , requiresReachableState := false, start := sTimed, setup := [], exit := .fold .insertActive
+    , request := registerActive, lovelace := lovelace
+    , foldWitness := some { submittedAt := [10000], validTo := 11001 } }
   ]
+
+/-- A batch of two requests at key 60, the first creating what the second
+consumes, each claiming its own edge's mint so the mint guard holds; the law
+admits both steps, and the batch is refused for consuming what it created. The
+requests that consume a custody entry or an update's holding start from key 60
+booked absent, by a real `insertAbsent` run through the law. -/
+def consumeCreated (id : String) (setup : List Request) (create consume : Edge) :
+    BatchScenario :=
+  { id := id
+  , theoremName := foldConsumingCreated, statementSha256 := foldConsumingCreatedDigest
+  , kind := "witness", mutates := none, requiresReachableState := !setup.isEmpty
+  , start := s0, setup := setup
+  , question := .foldBatch
+      [ claiming (request create 60 60 600 60 55), claiming (request consume 60 60 600 60 55) ] }
+
+/-- Key 60 booked absent: the starting point of the pairs that update it. -/
+def bookedAbsent : Request := request .insertAbsent 60 60 0 60 55
+
+/-- Every create-then-consume pair: a holding created by `insertActive` or
+`updateActive` and consumed by `updateTerminal` or `deleteActive`, refused
+`token-missing`; a custody entry created by `insertAbsent` and consumed by
+`updateActive` or `deleteAbsent`, refused `not-booked`. -/
+def consumeCreatedRows : List BatchScenario :=
+  [ consumeCreated "BR15-insert-then-retire" [] .insertActive .updateTerminal
+  , consumeCreated "BR16-insert-then-delete" [] .insertActive .deleteActive
+  , consumeCreated "BR17-update-then-retire" [bookedAbsent] .updateActive .updateTerminal
+  , consumeCreated "BR18-update-then-delete" [bookedAbsent] .updateActive .deleteActive
+  , consumeCreated "BR19-book-then-update" [] .insertAbsent .updateActive
+  , consumeCreated "BR20-book-then-delete" [] .insertAbsent .deleteAbsent ]
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a
 crossed claim, an empty batch, a later request the law refuses — a batch of one
@@ -380,7 +438,24 @@ def batchScenarios : List BatchScenario :=
     , kind := "mutant", mutates := some "BR06-reject-two-paid"
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.retract, registerTaken)] }
-  ]
+    -- Two registrations folded inside both windows under `sTimed`, then the same
+    -- batch with one request submitted early enough that the bound passes its
+    -- deadline: admission refuses the whole batch.
+  , { id := "BR13-fold-two-in-window"
+    , theoremName := foldInWindow, statementSha256 := foldInWindowDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := sTimed, setup := []
+    , question := .foldBatch
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
+    , foldWitness := some { submittedAt := [10000, 10500], validTo := 11000 } }
+  , { id := "BR14-fold-two-one-expired"
+    , theoremName := foldPastDeadline, statementSha256 := foldPastDeadlineDigest
+    , kind := "mutant", mutates := some "BR13-fold-two-in-window"
+    , requiresReachableState := false, start := sTimed, setup := []
+    , question := .foldBatch
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
+    , foldWitness := some { submittedAt := [10000, 9000], validTo := 11000 } }
+  ] ++ consumeCreatedRows
 
 /-- The digest the surface carries is over the declared names themselves, so a
 silently widened or narrowed surface changes it. -/
