@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -67,6 +68,7 @@ module Singular.CLI.Trace
     , phaseLogSink
     ) where
 
+import Control.Applicative ((<|>))
 import Control.Exception
     ( SomeAsyncException
     , SomeException
@@ -74,19 +76,49 @@ import Control.Exception
     , fromException
     , throwIO
     )
-import Control.Tracer (Tracer (..), contramap, nullTracer, traceWith)
-import Data.Aeson (Value (..), (.=))
+import Control.Monad (forM_)
+import Control.Tracer
+    ( Tracer (..)
+    , condTracing
+    , contramap
+    , nullTracer
+    , traceWith
+    )
+import Data.Aeson (Value (..), (.:), (.:?), (.=))
+import Data.Aeson qualified as Aeson
 import Data.Aeson.Key (Key)
+import Data.Aeson.Types (Pair, Parser, parseMaybe)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Lazy qualified as BL
+import Data.Char (isPrint)
 import Data.Data (Data)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Tracer.ThreadSafe (newThreadSafeTracer)
 import Data.Word (Word64)
+import System.IO (hFlush, stderr)
+import Text.Printf (printf)
 
 import Singular.Registry.Trace
-    ( BackendEvent
+    ( BackendEvent (..)
+    , BodyBuild (..)
+    , BodyEnd (..)
     , ErrorClass (..)
-    , ReadEvent
+    , Evaluation (..)
+    , HorizonEnd (..)
+    , HorizonWait (..)
+    , Query (..)
+    , QueryEnd (..)
+    , ReadEvent (..)
+    , ValiditySelection (..)
+    , ViewOpening (..)
+    , ViewRelease (..)
     )
 import Singular.Registry.TraceRender
     ( appendPhaseLine
@@ -333,34 +365,776 @@ data Output = Output TraceSink TraceFormat
     deriving stock (Eq, Show)
 
 {- | The level and outputs a request resolves to, given whether standard
-error is a terminal.
+error is a terminal. With no level named, a terminal narrates @what@ and
+anything else narrates nothing; with no sink named, the narration goes to
+standard error. Standard error takes text and a file takes JSON lines, unless
+a format is named. At @off@ nothing is opened.
 -}
 resolveOutputs :: Bool -> TraceRequest -> (TraceLevel, [Output])
-resolveOutputs _ _ = (TraceOff, [])
+resolveOutputs terminal TraceRequest{..} = case level of
+    TraceOff -> (TraceOff, [])
+    _ ->
+        ( level
+        , [ Output sink (fromMaybe (formatOf sink) requestFormat) | sink <- sinks
+          ]
+        )
+  where
+    level =
+        fromMaybe (if terminal then TraceWhat else TraceOff) requestLevel
+    sinks = if null requestSinks then [ToStderr] else requestSinks
+    formatOf = \case
+        ToStderr -> TextFormat
+        ToFile _ -> JsonFormat
 
 -- | Whether an event is a protocol action (@what@) or a mechanic (@how@).
 levelOf :: Trace -> TraceLevel
-levelOf _ = TraceOff
+levelOf (Trace _ event) = case event of
+    What _ -> TraceWhat
+    How _ -> TraceHow
 
 -- | Whether an event is shown at a level.
 atLevel :: TraceLevel -> Trace -> Bool
-atLevel _ _ = False
+atLevel level t = level /= TraceOff && levelOf t <= level
 
 -- ---------------------------------------------------------
 -- Renderers
 -- ---------------------------------------------------------
 
--- | One event as an indented line of narration, or none.
+{- | One event as an indented line of narration, or none. The indentation is
+read from the event's own scope path: registry, then key or request, then
+edge; a transaction adds none, so its mechanics sit under their edge. The
+line that opens a scope (a registry, key or request seen, an edge started)
+and an edge's result sit at that scope's own depth. A timed line ends in its
+seconds, aligned at column 78. Provider calls, views and backend mechanics
+are left to the JSON lines.
+-}
 renderText :: Trace -> Maybe Text
-renderText _ = Nothing
+renderText (Trace scope event) = place <$> line
+  where
+    place (label, time) =
+        let prefix = T.replicate (2 * depth) " " <> label
+        in  case time of
+                Nothing -> prefix
+                Just ms ->
+                    let s = seconds ms
+                        n = max 3 (76 - T.length prefix - T.length s)
+                    in  prefix <> " " <> T.replicate n "." <> " " <> s
+    depth = max 0 (length [() | s <- scope, not (isTransaction s)] - lifted)
+    lifted = case event of
+        What w | opensScope w -> 1
+        _ -> 0
+    registry = listToMaybe (reverse [t | InRegistry t <- scope])
+    line = case event of
+        What w -> whatLine registry w
+        How h -> (\(l, t) -> ("how  " <> l, t)) <$> howLine h
 
--- | One event as one JSON object on one line, newline-terminated.
+isTransaction :: Scope -> Bool
+isTransaction = \case
+    InTransaction _ -> True
+    _ -> False
+
+-- | Whether a protocol line opens its scope or closes its edge.
+opensScope :: What -> Bool
+opensScope = \case
+    RegistrySeen{} -> True
+    KeySeen{} -> True
+    RequestSeen{} -> True
+    EdgeStarted _ -> True
+    Booked{} -> True
+    Folded{} -> True
+    Updated{} -> True
+    Rejected _ -> True
+    Reclaimed{} -> True
+    Created{} -> True
+    _ -> False
+
+whatLine :: Maybe Text -> What -> Maybe (Text, Maybe Double)
+whatLine registry = \case
+    CommandStarted _ -> Nothing
+    CommandEnded command outcome ms -> Just (command <> " " <> outcome, Just ms)
+    RegistrySeen _ root pending ->
+        untimed $
+            "registry "
+                <> maybe "" ((<> " ") . short) registry
+                <> "(root "
+                <> short root
+                <> maybe "" (\n -> ", " <> tshow n <> " pending") pending
+                <> ")"
+    KeySeen key leaf holding ->
+        untimed $
+            "key "
+                <> keyText key
+                <> " "
+                <> leaf
+                <> maybe "" ((", held at " <>) . shortRef) holding
+    RequestSeen request edge key deadline slot ->
+        untimed $
+            "request "
+                <> shortRef request
+                <> " "
+                <> edge
+                <> " "
+                <> keyText key
+                <> case (deadline, slot) of
+                    (Just ms, Just s) -> " (deadline " <> utcText ms <> ", slot " <> tshow s <> ")"
+                    (Just ms, Nothing) -> " (deadline " <> utcText ms <> ")"
+                    (Nothing, Just s) -> " (slot " <> tshow s <> ")"
+                    (Nothing, Nothing) -> ""
+    EdgeStarted action -> untimed (actionText action)
+    Booked request deadline ->
+        untimed $
+            "result request "
+                <> shortRef request
+                <> " booked"
+                <> maybe "" ((", fold before " <>) . utcText) deadline
+    Folded edge key output ->
+        untimed $
+            "result "
+                <> keyText key
+                <> " "
+                <> edge
+                <> " folded, output "
+                <> shortRef output
+    Updated key output ->
+        untimed
+            ("result " <> keyText key <> " updated, output " <> shortRef output)
+    Rejected requests ->
+        untimed $
+            "result "
+                <> tshow (length requests)
+                <> " rejected: "
+                <> T.intercalate ", " (map shortRef requests)
+    Reclaimed request returned ->
+        untimed $
+            "result request "
+                <> shortRef request
+                <> " reclaimed, "
+                <> ada returned
+                <> " returned"
+    Created tokenName stateOut ->
+        untimed $
+            "result registry "
+                <> short tokenName
+                <> " created, state "
+                <> shortRef stateOut
+    RootSeen before after -> untimed ("root " <> short before <> " → " <> short after)
+    Refused kind cls ->
+        untimed $
+            ( case kind of
+                ClientRefused -> "refused by the client: nothing was submitted"
+                EvaluationRefused -> "refused by local script evaluation: nothing was submitted"
+                LedgerRejected -> "rejected by the ledger"
+                TransportFailed -> "refused by the provider, not the ledger: no ledger judged it"
+            )
+                <> maybe "" (\(ErrorClass c) -> " (" <> c <> ")") cls
+  where
+    untimed l = Just (l, Nothing)
+
+howLine :: How -> Maybe (Text, Maybe Double)
+howLine = \case
+    Fetched (Fetch items source ms end) ->
+        timed
+            ( "read "
+                <> T.intercalate ", " items
+                <> " via "
+                <> source
+                <> endText end
+            )
+            ms
+    Read r -> case r of
+        Evaluated Evaluation{..} ->
+            timed
+                ( "evaluate "
+                    <> tshow evalRedeemers
+                    <> (if evalRedeemers == 1 then " script " else " scripts ")
+                    <> (if evalFailed == 0 then "✓" else "✗ " <> tshow evalFailed <> " failed")
+                    <> " (mem "
+                    <> compact evalMemory
+                    <> ", steps "
+                    <> compact evalSteps
+                    <> ")"
+                )
+                evalElapsed
+        HorizonWaited HorizonWait{..} ->
+            timed
+                ( "wait for the conversion horizon past slot "
+                    <> tshow waitWindowUpper
+                    <> case waitEnd of
+                        HorizonMoved _ horizon -> ", now at slot " <> tshow horizon
+                        HorizonFailed (ErrorClass c) -> ": failed (" <> c <> ")"
+                )
+                waitElapsed
+        _ -> Nothing
+    Backend _ -> Nothing
+    Tx t -> case t of
+        TxBuilt step ms end -> timed ("build " <> step <> endText end) ms
+        TxSigned _ tx fee ms end ->
+            timed
+                ( "sign "
+                    <> short tx
+                    <> maybe "" ((", fee " <>) . ada) fee
+                    <> endText end
+                )
+                ms
+        TxSubmitted{..} ->
+            timed
+                ( "submit tx "
+                    <> short submitTx
+                    <> " at "
+                    <> ( case submitTip of
+                            TipSlot s -> "tip slot " <> tshow s
+                            TipUnreadable -> "an unreadable tip"
+                       )
+                    <> case submitVerdict of
+                        Accepted -> ""
+                        LedgerRefusedIt -> ": the ledger refused it"
+                        ProviderFailed -> ": the provider failed"
+                        WrongNetwork -> ": another network"
+                        SubmitThrew (ErrorClass c) -> ": threw " <> c
+                )
+                submitElapsed
+        TxConfirmed _ tx ms verdict ->
+            timed
+                ( "confirm tx "
+                    <> short tx
+                    <> case verdict of
+                        Confirmed -> ""
+                        ConfirmTimedOut -> ": timed out"
+                        ConfirmFailed (ErrorClass c) -> ": failed (" <> c <> ")"
+                        ConfirmThrew (ErrorClass c) -> ": threw " <> c
+                )
+                ms
+        TxObserved _ tx ms -> timed ("observe tx " <> short tx) ms
+  where
+    timed l ms = Just (l, Just ms)
+    endText = \case
+        Done -> ""
+        FailedWith (ErrorClass c) -> ": failed (" <> c <> ")"
+
+actionText :: EdgeAction -> Text
+actionText = \case
+    Booking edge -> "book " <> edge
+    Folding edge -> "fold " <> edge
+    Updating -> "update"
+    Rejecting -> "reject"
+    Reclaiming edge -> "reclaim " <> edge
+    Booting -> "boot"
+    Inspecting -> "inspect"
+
+-- | An identifier, shortened to its first eight characters.
+short :: Text -> Text
+short t
+    | T.length t > 8 = T.take 8 t <> "…"
+    | otherwise = t
+
+-- | An output reference, its transaction id shortened.
+shortRef :: Text -> Text
+shortRef t = case T.breakOn "#" t of
+    (txid, ix) -> short txid <> ix
+
+-- | A key, quoted when its bytes are printable text, else base16.
+keyText :: ByteString -> Text
+keyText key = case TE.decodeUtf8' key of
+    Right t | not (T.null t), T.all isPrint t -> "\"" <> t <> "\""
+    _ -> "0x" <> short (hexText key)
+
+-- | Lovelace as tADA, six decimals.
+ada :: Integer -> Text
+ada lovelace =
+    (if lovelace < 0 then "-" else "")
+        <> tshow whole
+        <> "."
+        <> T.justifyRight 6 '0' (tshow part)
+        <> " tADA"
+  where
+    (whole, part) = abs lovelace `divMod` 1_000_000
+
+-- | A count, to three significant digits with its magnitude.
+compact :: Integer -> Text
+compact n
+    | n >= 1_000_000_000 = scaled 1e9 "G"
+    | n >= 1_000_000 = scaled 1e6 "M"
+    | n >= 1_000 = scaled 1e3 "K"
+    | otherwise = tshow n
+  where
+    scaled :: Double -> Text -> Text
+    scaled unit suffix = digits (fromIntegral n / unit) <> suffix
+    digits x
+        | x >= 100 = tshow (round x :: Integer)
+        | x >= 10 = trimmed (T.pack (printf "%.1f" x))
+        | otherwise = trimmed (T.pack (printf "%.2f" x))
+    trimmed = T.dropWhileEnd (== '.') . T.dropWhileEnd (== '0')
+
+-- | Milliseconds as seconds, one decimal.
+seconds :: Double -> Text
+seconds ms = T.pack (printf "%.1f" (ms / 1000)) <> "s"
+
+-- | POSIX milliseconds as a UTC time.
+utcText :: Integer -> Text
+utcText ms =
+    T.pack
+        ( formatTime
+            defaultTimeLocale
+            "%Y-%m-%d %H:%M:%SZ"
+            (posixSecondsToUTCTime (fromIntegral ms / 1000))
+        )
+
+tshow :: (Show a) => a -> Text
+tshow = T.pack . show
+
+hexText :: ByteString -> Text
+hexText = TE.decodeUtf8 . B16.encode
+
+{- | One event as one JSON object on one line, newline-terminated: its level,
+its scope path and its event's fields. Keys are base16; nothing else is
+transformed, so the line decodes back to the event ('decodeJsonLine').
+-}
 renderJsonLine :: Trace -> ByteString
-renderJsonLine _ = mempty
+renderJsonLine (Trace scope event) =
+    BL.toStrict (Aeson.encode (Aeson.object fields)) <> "\n"
+  where
+    fields =
+        [ "level" .= (case event of What _ -> "what"; How _ -> "how" :: Text)
+        , "scope" .= map scopeJson scope
+        ]
+            <> case event of
+                What w -> whatJson w
+                How h -> howJson h
 
 -- | Read one JSON line back to its event.
 decodeJsonLine :: ByteString -> Maybe Trace
-decodeJsonLine _ = Nothing
+decodeJsonLine line =
+    Aeson.decodeStrict (fromMaybe line (BS.stripSuffix "\n" line))
+        >>= parseMaybe traceParser
+
+scopeJson :: Scope -> Value
+scopeJson = \case
+    InRegistry t -> Aeson.object ["registry" .= t]
+    InKey k -> Aeson.object ["key" .= hexText k]
+    InRequest r -> Aeson.object ["request" .= r]
+    InEdge a -> Aeson.object (actionJson a)
+    InTransaction s -> Aeson.object ["transaction" .= s]
+
+actionJson :: EdgeAction -> [Pair]
+actionJson a =
+    ("edge" .= name) : maybe [] (\e -> ["on" .= e]) on
+  where
+    (name, on) = case a of
+        Booking e -> ("book" :: Text, Just e)
+        Folding e -> ("fold", Just e)
+        Updating -> ("update", Nothing)
+        Rejecting -> ("reject", Nothing)
+        Reclaiming e -> ("reclaim", Just e)
+        Booting -> ("boot", Nothing)
+        Inspecting -> ("inspect", Nothing)
+
+named :: Text -> [Pair] -> [Pair]
+named name = (("event" .= name) :)
+
+failure :: ErrorClass -> [Pair]
+failure (ErrorClass c) = ["errorClass" .= c]
+
+kindName :: RefusalKind -> Text
+kindName = \case
+    ClientRefused -> "client"
+    EvaluationRefused -> "evaluation"
+    LedgerRejected -> "ledger"
+    TransportFailed -> "transport"
+
+whatJson :: What -> [Pair]
+whatJson = \case
+    CommandStarted c -> named "command-started" ["command" .= c]
+    CommandEnded c o ms ->
+        named
+            "command-ended"
+            ["command" .= c, "outcome" .= o, "elapsedMs" .= ms]
+    RegistrySeen s r p -> named "registry" ["state" .= s, "root" .= r, "pending" .= p]
+    KeySeen k l h -> named "key" ["key" .= hexText k, "leaf" .= l, "holding" .= h]
+    RequestSeen r e k d s ->
+        named
+            "request"
+            [ "request" .= r
+            , "edge" .= e
+            , "key" .= hexText k
+            , "deadlineMs" .= d
+            , "deadlineSlot" .= s
+            ]
+    EdgeStarted a -> named "edge-started" (actionJson a)
+    Booked r d -> named "booked" ["request" .= r, "deadlineMs" .= d]
+    Folded e k o -> named "folded" ["edge" .= e, "key" .= hexText k, "output" .= o]
+    Updated k o -> named "updated" ["key" .= hexText k, "output" .= o]
+    Rejected rs -> named "rejected" ["requests" .= rs]
+    Reclaimed r v -> named "reclaimed" ["request" .= r, "returned" .= v]
+    Created t s -> named "created" ["token" .= t, "state" .= s]
+    RootSeen b a -> named "root" ["before" .= b, "after" .= a]
+    Refused k c ->
+        named
+            "refused"
+            ["kind" .= kindName k, "errorClass" .= fmap (\(ErrorClass x) -> x) c]
+
+howJson :: How -> [Pair]
+howJson = \case
+    Fetched (Fetch items source ms end) ->
+        named
+            "fetched"
+            ( ["reads" .= items, "source" .= source, "elapsedMs" .= ms]
+                <> endJson end
+            )
+    Read r -> case r of
+        Queried q -> named "query" (queryJson q)
+        ViewOpened o -> named "view-opened" (openingJson o)
+        ViewReleased o -> named "view-released" (releaseJson o)
+        Evaluated Evaluation{..} ->
+            named
+                "evaluated"
+                [ "elapsedMs" .= evalElapsed
+                , "redeemers" .= evalRedeemers
+                , "failed" .= evalFailed
+                , "memory" .= evalMemory
+                , "steps" .= evalSteps
+                ]
+        SessionOpened ms -> named "session-opened" ["elapsedMs" .= ms]
+        HorizonWaited HorizonWait{..} ->
+            named "horizon-waited" $
+                [ "tip" .= waitTip
+                , "horizon" .= waitHorizon
+                , "lower" .= waitLower
+                , "windowUpper" .= waitWindowUpper
+                , "minimumSlots" .= waitMinimumSlots
+                , "slotLimit" .= waitSlotLimit
+                , "wallLimitMs" .= waitWallLimitMs
+                , "elapsedMs" .= waitElapsed
+                ]
+                    <> case waitEnd of
+                        HorizonMoved t h ->
+                            [ "outcome" .= ("moved" :: Text)
+                            , "observedTip" .= t
+                            , "observedHorizon" .= h
+                            ]
+                        HorizonFailed c -> ("outcome" .= ("failed" :: Text)) : failure c
+        ValiditySelected ValiditySelection{..} ->
+            named
+                "validity-selected"
+                [ "tip" .= selectedTip
+                , "horizon" .= selectedHorizon
+                , "lower" .= selectedLower
+                , "effectiveLower" .= selectedEffectiveLower
+                , "windowUpper" .= selectedWindowUpper
+                , "upper" .= selectedUpper
+                , "minimumSlots" .= selectedMinimumSlots
+                ]
+        BodyBuilt (BodyBuild builder ms end) ->
+            named "body-built" $
+                ["builder" .= builder, "elapsedMs" .= ms]
+                    <> case end of
+                        BodyReady -> ["outcome" .= ("ready" :: Text)]
+                        BodyRefused -> ["outcome" .= ("refused" :: Text)]
+                        BodyFailed c -> ("outcome" .= ("failed" :: Text)) : failure c
+    Backend b -> case b of
+        Exchanged q -> named "exchange" (queryJson q)
+        BackendViewOpened o -> named "backend-view-opened" (openingJson o)
+        BackendViewReleased o -> named "backend-view-released" (releaseJson o)
+    Tx t -> case t of
+        TxBuilt step ms end ->
+            named "tx-built" (["step" .= step, "elapsedMs" .= ms] <> endJson end)
+        TxSigned step tx fee ms end ->
+            named
+                "tx-signed"
+                ( ["step" .= step, "tx" .= tx, "fee" .= fee, "elapsedMs" .= ms]
+                    <> endJson end
+                )
+        TxSubmitted{..} ->
+            named "tx-submitted" $
+                [ "step" .= submitStep
+                , "tx" .= submitTx
+                , "validityLower" .= submitLower
+                , "validityUpper" .= submitUpper
+                , "tipSlot" .= tipSlot submitTip
+                , "elapsedMs" .= submitElapsed
+                ]
+                    <> case submitVerdict of
+                        Accepted -> verdict "accepted"
+                        LedgerRefusedIt -> verdict "ledger-refused"
+                        ProviderFailed -> verdict "provider-failed"
+                        WrongNetwork -> verdict "wrong-network"
+                        SubmitThrew c -> verdict "threw" <> failure c
+        TxConfirmed step tx ms v ->
+            named "tx-confirmed" $
+                ["step" .= step, "tx" .= tx, "elapsedMs" .= ms]
+                    <> case v of
+                        Confirmed -> verdict "confirmed"
+                        ConfirmTimedOut -> verdict "timed-out"
+                        ConfirmFailed c -> verdict "failed" <> failure c
+                        ConfirmThrew c -> verdict "threw" <> failure c
+        TxObserved step tx ms ->
+            named
+                "tx-observed"
+                ["step" .= step, "tx" .= tx, "sinceConfirmedMs" .= ms]
+  where
+    verdict v = ["verdict" .= (v :: Text)]
+    tipSlot = \case
+        TipSlot s -> Just s
+        TipUnreadable -> Nothing
+
+endJson :: Ended -> [Pair]
+endJson = \case
+    Done -> ["outcome" .= ("done" :: Text)]
+    FailedWith c -> ("outcome" .= ("failed" :: Text)) : failure c
+
+queryJson :: Query -> [Pair]
+queryJson Query{..} =
+    [ "name" .= queryName
+    , "source" .= querySource
+    , "session" .= querySession
+    , "elapsedMs" .= queryElapsed
+    ]
+        <> case queryEnd of
+            Answered size -> ["outcome" .= ("answered" :: Text), "size" .= size]
+            Lagged -> ["outcome" .= ("lagged" :: Text)]
+            QueryFailed c -> ("outcome" .= ("failed" :: Text)) : failure c
+
+openingJson :: ViewOpening -> [Pair]
+openingJson = \case
+    NodeViewOpened{..} ->
+        [ "view" .= ("node" :: Text)
+        , "elapsedMs" .= openedElapsed
+        , "slot" .= openedSlot
+        , "hash" .= openedHash
+        , "era" .= openedEra
+        ]
+    NodeViewFailed ms c ->
+        ["view" .= ("node-failed" :: Text), "elapsedMs" .= ms] <> failure c
+    SessionViewOpened{..} ->
+        [ "view" .= ("session" :: Text)
+        , "session" .= openedSession
+        , "binding" .= openedBinding
+        ]
+
+releaseJson :: ViewRelease -> [Pair]
+releaseJson = \case
+    NodeViewHeld ms -> ["view" .= ("node" :: Text), "heldMs" .= ms]
+    SessionViewClosed s -> ["view" .= ("session" :: Text), "session" .= s]
+
+traceParser :: Value -> Parser Trace
+traceParser = Aeson.withObject "trace" $ \o -> do
+    scope <- o .: "scope" >>= mapM scopeParser
+    level <- o .: "level"
+    name <- o .: "event"
+    Trace scope <$> case level :: Text of
+        "what" -> What <$> whatParser name o
+        "how" -> How <$> howParser name o
+        _ -> fail "a level is what or how"
+
+scopeParser :: Value -> Parser Scope
+scopeParser = Aeson.withObject "scope" $ \o ->
+    (InRegistry <$> o .: "registry")
+        <|> (InKey <$> (o .: "key" >>= unhex))
+        <|> (InRequest <$> o .: "request")
+        <|> (InEdge <$> actionParser o)
+        <|> (InTransaction <$> o .: "transaction")
+
+actionParser :: Aeson.Object -> Parser EdgeAction
+actionParser o = do
+    name <- o .: "edge"
+    on <- o .:? "on"
+    case (name :: Text, on) of
+        ("book", Just e) -> pure (Booking e)
+        ("fold", Just e) -> pure (Folding e)
+        ("update", Nothing) -> pure Updating
+        ("reject", Nothing) -> pure Rejecting
+        ("reclaim", Just e) -> pure (Reclaiming e)
+        ("boot", Nothing) -> pure Booting
+        ("inspect", Nothing) -> pure Inspecting
+        _ -> fail "not an edge action"
+
+unhex :: Text -> Parser ByteString
+unhex = either fail pure . B16.decode . TE.encodeUtf8
+
+classParser :: Aeson.Object -> Parser ErrorClass
+classParser o = ErrorClass <$> o .: "errorClass"
+
+whatParser :: Text -> Aeson.Object -> Parser What
+whatParser name o = case name of
+    "command-started" -> CommandStarted <$> o .: "command"
+    "command-ended" ->
+        CommandEnded
+            <$> o .: "command"
+            <*> o .: "outcome"
+            <*> o .: "elapsedMs"
+    "registry" -> RegistrySeen <$> o .: "state" <*> o .: "root" <*> o .:? "pending"
+    "key" ->
+        KeySeen <$> (o .: "key" >>= unhex) <*> o .: "leaf" <*> o .:? "holding"
+    "request" ->
+        RequestSeen
+            <$> o .: "request"
+            <*> o .: "edge"
+            <*> (o .: "key" >>= unhex)
+            <*> o .:? "deadlineMs"
+            <*> o .:? "deadlineSlot"
+    "edge-started" -> EdgeStarted <$> actionParser o
+    "booked" -> Booked <$> o .: "request" <*> o .:? "deadlineMs"
+    "folded" ->
+        Folded <$> o .: "edge" <*> (o .: "key" >>= unhex) <*> o .: "output"
+    "updated" -> Updated <$> (o .: "key" >>= unhex) <*> o .: "output"
+    "rejected" -> Rejected <$> o .: "requests"
+    "reclaimed" -> Reclaimed <$> o .: "request" <*> o .: "returned"
+    "created" -> Created <$> o .: "token" <*> o .: "state"
+    "root" -> RootSeen <$> o .: "before" <*> o .: "after"
+    "refused" -> do
+        kind <- o .: "kind"
+        k <- case kind :: Text of
+            "client" -> pure ClientRefused
+            "evaluation" -> pure EvaluationRefused
+            "ledger" -> pure LedgerRejected
+            "transport" -> pure TransportFailed
+            _ -> fail "not a refusal kind"
+        Refused k . fmap ErrorClass <$> o .:? "errorClass"
+    _ -> fail "not a protocol event"
+
+howParser :: Text -> Aeson.Object -> Parser How
+howParser name o = case name of
+    "fetched" ->
+        fmap Fetched $
+            Fetch
+                <$> o .: "reads"
+                <*> o .: "source"
+                <*> o .: "elapsedMs"
+                <*> endParser
+    "query" -> Read . Queried <$> queryParser
+    "view-opened" -> Read . ViewOpened <$> openingParser
+    "view-released" -> Read . ViewReleased <$> releaseParser
+    "evaluated" ->
+        fmap (Read . Evaluated) $
+            Evaluation
+                <$> o .: "elapsedMs"
+                <*> o .: "redeemers"
+                <*> o .: "failed"
+                <*> o .: "memory"
+                <*> o .: "steps"
+    "session-opened" -> Read . SessionOpened <$> o .: "elapsedMs"
+    "horizon-waited" -> do
+        outcome <- o .: "outcome"
+        end <- case outcome :: Text of
+            "moved" -> HorizonMoved <$> o .: "observedTip" <*> o .: "observedHorizon"
+            "failed" -> HorizonFailed <$> classParser o
+            _ -> fail "not a horizon outcome"
+        fmap (Read . HorizonWaited) $
+            HorizonWait
+                <$> o .: "tip"
+                <*> o .: "horizon"
+                <*> o .:? "lower"
+                <*> o .: "windowUpper"
+                <*> o .: "minimumSlots"
+                <*> o .: "slotLimit"
+                <*> o .: "wallLimitMs"
+                <*> o .: "elapsedMs"
+                <*> pure end
+    "validity-selected" ->
+        fmap (Read . ValiditySelected) $
+            ValiditySelection
+                <$> o .: "tip"
+                <*> o .: "horizon"
+                <*> o .:? "lower"
+                <*> o .: "effectiveLower"
+                <*> o .: "windowUpper"
+                <*> o .: "upper"
+                <*> o .: "minimumSlots"
+    "body-built" -> do
+        outcome <- o .: "outcome"
+        end <- case outcome :: Text of
+            "ready" -> pure BodyReady
+            "refused" -> pure BodyRefused
+            "failed" -> BodyFailed <$> classParser o
+            _ -> fail "not a body outcome"
+        fmap (Read . BodyBuilt) $
+            BodyBuild <$> o .: "builder" <*> o .: "elapsedMs" <*> pure end
+    "exchange" -> Backend . Exchanged <$> queryParser
+    "backend-view-opened" -> Backend . BackendViewOpened <$> openingParser
+    "backend-view-released" -> Backend . BackendViewReleased <$> releaseParser
+    "tx-built" ->
+        fmap Tx $ TxBuilt <$> o .: "step" <*> o .: "elapsedMs" <*> endParser
+    "tx-signed" ->
+        fmap Tx $
+            TxSigned
+                <$> o .: "step"
+                <*> o .: "tx"
+                <*> o .:? "fee"
+                <*> o .: "elapsedMs"
+                <*> endParser
+    "tx-submitted" -> do
+        v <- o .: "verdict"
+        submitted <- case v :: Text of
+            "accepted" -> pure Accepted
+            "ledger-refused" -> pure LedgerRefusedIt
+            "provider-failed" -> pure ProviderFailed
+            "wrong-network" -> pure WrongNetwork
+            "threw" -> SubmitThrew <$> classParser o
+            _ -> fail "not a submission verdict"
+        fmap Tx $
+            TxSubmitted
+                <$> o .: "step"
+                <*> o .: "tx"
+                <*> o .:? "validityLower"
+                <*> o .:? "validityUpper"
+                <*> (maybe TipUnreadable TipSlot <$> o .:? "tipSlot")
+                <*> o .: "elapsedMs"
+                <*> pure submitted
+    "tx-confirmed" -> do
+        v <- o .: "verdict"
+        confirmed <- case v :: Text of
+            "confirmed" -> pure Confirmed
+            "timed-out" -> pure ConfirmTimedOut
+            "failed" -> ConfirmFailed <$> classParser o
+            "threw" -> ConfirmThrew <$> classParser o
+            _ -> fail "not a confirmation verdict"
+        fmap Tx $
+            TxConfirmed
+                <$> o .: "step"
+                <*> o .: "tx"
+                <*> o .: "elapsedMs"
+                <*> pure confirmed
+    "tx-observed" ->
+        fmap Tx $
+            TxObserved <$> o .: "step" <*> o .: "tx" <*> o .: "sinceConfirmedMs"
+    _ -> fail "not a mechanic"
+  where
+    endParser = do
+        outcome <- o .: "outcome"
+        case outcome :: Text of
+            "done" -> pure Done
+            "failed" -> FailedWith <$> classParser o
+            _ -> fail "not an end"
+    queryParser = do
+        outcome <- o .: "outcome"
+        end <- case outcome :: Text of
+            "answered" -> Answered <$> o .:? "size"
+            "lagged" -> pure Lagged
+            "failed" -> QueryFailed <$> classParser o
+            _ -> fail "not a query outcome"
+        Query
+            <$> o .: "name"
+            <*> o .: "source"
+            <*> o .:? "session"
+            <*> o .: "elapsedMs"
+            <*> pure end
+    openingParser = do
+        view <- o .: "view"
+        case view :: Text of
+            "node" ->
+                NodeViewOpened
+                    <$> o .: "elapsedMs"
+                    <*> o .: "slot"
+                    <*> o .: "hash"
+                    <*> o .: "era"
+            "node-failed" -> NodeViewFailed <$> o .: "elapsedMs" <*> classParser o
+            "session" -> SessionViewOpened <$> o .: "session" <*> o .: "binding"
+            _ -> fail "not a view"
+    releaseParser = do
+        view <- o .: "view"
+        case view :: Text of
+            "node" -> NodeViewHeld <$> o .: "heldMs"
+            "session" -> SessionViewClosed <$> o .: "session"
+            _ -> fail "not a view"
 
 {- | The @SINGULAR_LOG@ line an event stands for: its phase and its fields,
 without the time stamp the sink adds.
@@ -449,15 +1223,30 @@ withTracing
     -> TraceRequest
     -> (Tracer IO Trace -> IO a)
     -> IO a
-withTracing _ phaseLog _ body = case sinks of
+withTracing terminal phaseLog request body = case sinks of
     [] -> body nullTracer
     _ -> fanOut sinks >>= body
   where
-    sinks = maybe [] (pure . phaseLogSink) phaseLog
+    (level, outputs) = resolveOutputs terminal request
+    sinks =
+        map (outputSink level) outputs
+            <> maybe [] (pure . phaseLogSink) phaseLog
 
--- | The tracer writing one output at a level.
+{- | The tracer writing one output at a level: only the events shown at that
+level, each written whole as it happens (standard error is flushed after
+each line; a file is opened, appended and closed per line). A line of text
+is written as UTF-8 whatever the locale.
+-}
 outputSink :: TraceLevel -> Output -> Tracer IO Trace
-outputSink _ _ = nullTracer
+outputSink level (Output sink format) =
+    condTracing (atLevel level) $
+        Tracer $ \t -> forM_ (rendered t) $ \bytes -> case sink of
+            ToStderr -> BS.hPut stderr bytes >> hFlush stderr
+            ToFile path -> BS.appendFile path bytes
+  where
+    rendered t = case format of
+        TextFormat -> (\l -> TE.encodeUtf8 (l <> "\n")) <$> renderText t
+        JsonFormat -> Just (renderJsonLine t)
 
 -- | The tracer appending the @SINGULAR_LOG@ phase log to a file.
 phaseLogSink :: FilePath -> Tracer IO Trace

@@ -1351,6 +1351,7 @@ executable singular
     , singular-registry:local-services
     , singular-registry:koios-http
     , text
+    , time
     , unix
 
   ghc-options:      -threaded -with-rtsopts=-N
