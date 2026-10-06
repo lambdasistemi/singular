@@ -41,9 +41,11 @@ import Singular.CLI.Reconcile
     )
 import Singular.CLI.Registry
     ( checkNetwork
+    , hexT
     , renderIdentityError
     )
 import Singular.CLI.Session
+import Singular.CLI.Trace (Scope (..), What (..), report, within)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -80,8 +82,14 @@ attached
     -> IO Value
 attached env dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
-    withWrite env dir command ws $ \wc -> do
-        let ProviderSettings _ magic _ _ = writeProvider ws
+    withWrite env dir command ws $ \connected -> do
+        -- everything the write reports is inside its registry
+        let wc =
+                connected
+                    { wcTracer =
+                        within (InRegistry (hexT (tokenName saved))) (wcTracer connected)
+                    }
+            ProviderSettings _ magic _ _ = writeProvider ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
@@ -94,6 +102,11 @@ attached env dir blueprint ws command body = do
                 live <- attachLive v saved
                 context <- openTrie saved
                 requireTrieSelection saved live context
+                observed <- either (failWith StaleState) pure (observedRoot live)
+                report
+                    (wcTracer wc)
+                    []
+                    (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
                 printed <-
                     body Attached{atWrite = wc, atLive = live, atTrie = context}
                 pure $ case printed of

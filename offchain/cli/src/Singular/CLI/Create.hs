@@ -98,9 +98,16 @@ import Singular.CLI.Session
     , readOnce
     , readsIn
     , submitBuilt
+    , submitBuiltIn
     , txIdHex
     , withSession
     , withWrite
+    )
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (Created, EdgeStarted, RegistrySeen)
+    , report
     )
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -284,10 +291,12 @@ boot wc cfg pinned seedIn = do
         (scriptFromBytes "state" (cageScriptBytes cfg))
         stateRef
     -- The boot, consuming the seed.
+    report (wcTracer wc) [InEdge Booting] (EdgeStarted Booting)
     (signedBoot, ()) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "boot"
+            (const [InEdge Booting])
             (const (expecting "state"))
             (\v -> (,()) <$> bootTokenImpl cfg v addr)
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
@@ -310,6 +319,19 @@ boot wc cfg pinned seedIn = do
                 "boot"
                 signedBoot
                 "the state output holds the registry token"
+            let registry = InRegistry (tokenHex tid)
+            report
+                (wcTracer wc)
+                [registry, InEdge Booting]
+                (Created (tokenHex tid) (txInText output))
+            report
+                (wcTracer wc)
+                [registry]
+                ( RegistrySeen
+                    (txInText output)
+                    (hexT (unOnChainRoot (stateRoot state)))
+                    (Just 0)
+                )
             pure (output, state)
     -- The references every later command resolves its scripts through.
     let scripts =

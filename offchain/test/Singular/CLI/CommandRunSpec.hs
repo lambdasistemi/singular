@@ -27,8 +27,8 @@ listed here; a constructor no run exercises fails the extent row.
 -}
 module Singular.CLI.CommandRunSpec (spec) where
 
+import Control.Applicative ((<|>))
 import Control.Exception (bracket, throwIO)
-import Control.Monad (forM_)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -48,6 +48,7 @@ import Data.IORef
     )
 import Data.List (nub, sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust, listToMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -128,6 +129,11 @@ import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
     )
+import Singular.Registry.Types
+    ( edgeInsertActive
+    , edgeName
+    , edgeUpdateTerminal
+    )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
@@ -141,12 +147,12 @@ spec = describe
                 runs <- lifecycle rig
                 let ran = nub (sort [name | Run{runName = name} <- runs])
                 ran `shouldBe` sort commandNames
-                forM_ runs $ \r ->
-                    ( runLabel r
-                    , outcomeOf (runReceipt r)
-                    , disagreements (runReceipt r) (runEvents r)
-                    )
-                        `shouldBe` (runLabel r, outcomeOf (runReceipt r), [])
+                [ (runLabel r, outcomeOf (runReceipt r), found)
+                  | r <- runs
+                  , let found = disagreements (runKey r) (runReceipt r) (runEvents r)
+                  , not (null found)
+                  ]
+                    `shouldBe` []
         it
             "changes no command's outcome or exit when a sink throws or writes to a \
             \closed handle, and the live sink still sees every run"
@@ -168,17 +174,18 @@ spec = describe
                 -- the control is only a control over a stream that agrees
                 [ runLabel r
                   | r <- runs
-                  , not (null (disagreements (runReceipt r) (runEvents r)))
+                  , not (null (disagreements (runKey r) (runReceipt r) (runEvents r)))
                   ]
                     `shouldBe` []
                 let altered =
-                        [ (runLabel r, what', disagreements (runReceipt r) events')
+                        [ (runLabel r, what', disagreements (runKey r) (runReceipt r) events')
                         | r <- runs
-                        , (what', events') <- alterations (runEvents r)
+                        , (what', events') <- alterations (runReceipt r) (runEvents r)
                         ]
                     kinds = nub [w | (_, w, _) <- altered]
                 length altered `shouldSatisfy` (> 50)
-                length kinds `shouldSatisfy` (>= 12)
+                -- every fact the comparison binds is planted somewhere in the lifecycle
+                sort kinds `shouldBe` sort plantedFacts
                 [(l, w) | (l, w, []) <- altered] `shouldBe` []
 
 -- ---------------------------------------------------------
@@ -239,6 +246,8 @@ data Run = Run
     , runExit :: ExitCode
     , runReceipt :: Aeson.Value
     , runEvents :: [Trace]
+    , runKey :: Maybe Text
+    -- ^ The key the command line names, base16
     }
 
 magic :: Integer
@@ -583,6 +592,11 @@ runAt rig registry label args = do
             , runExit = code
             , runReceipt = receipt
             , runEvents = events
+            , runKey =
+                listToMaybe
+                    [ hexText (TE.encodeUtf8 (T.pack k))
+                    | ("--key", k) <- zip args (drop 1 args)
+                    ]
             }
 
 -- ---------------------------------------------------------
@@ -605,21 +619,61 @@ objectsIn = \case
     Aeson.Array xs -> concatMap objectsIn (toList xs)
     _ -> []
 
--- | The receipt's request facts: each object naming a request, with the key and edge it names.
-requestFacts :: Aeson.Value -> [(Text, Maybe Text, Maybe Text)]
+{- | A request the receipt names: its key, edge and processing deadline, where
+the object naming it states them.
+-}
+data RequestFact = RequestFact
+    { factRequest :: Text
+    , factKey :: Maybe Text
+    , factEdge :: Maybe Text
+    , factDeadline :: Maybe Integer
+    }
+
+{- | The receipt's request facts: each object naming a request, and the
+request a booking left (its output 0).
+-}
+requestFacts :: Aeson.Value -> [RequestFact]
 requestFacts receipt =
-    [ (r, field "key" o, field "edge" o)
+    [ RequestFact r (fieldOf "key" o) (fieldOf "edge" o) (deadlineIn o)
     | o <- objectsIn receipt
-    , Just r <- [field "request" o]
+    , Just r <- [fieldOf "request" o]
     ]
-        <> [ (r, Nothing, Nothing)
+        <> [ RequestFact r Nothing Nothing Nothing
            | o <- objectsIn receipt
-           , Just r <- [field "pendingRequest" o]
+           , Just r <- [fieldOf "pendingRequest" o]
+           ]
+        <> [ RequestFact (b <> "#0") (fieldOf "key" o) Nothing Nothing
+           | Aeson.Object o <- [receipt]
+           , Just b <- [fieldOf "booking" o]
            ]
   where
-    field k o = case KeyMap.lookup k o of
-        Just (Aeson.String t) -> Just t
-        _ -> Nothing
+    deadlineIn o = case KeyMap.lookup "foldDeadline" o of
+        Just d -> integerAt "posixMs" d
+        Nothing -> integerAt "processingEnds" (Aeson.Object o)
+
+fieldOf :: Aeson.Key -> Aeson.Object -> Maybe Text
+fieldOf k o = case KeyMap.lookup k o of
+    Just (Aeson.String t) -> Just t
+    _ -> Nothing
+
+integerAt :: Aeson.Key -> Aeson.Value -> Maybe Integer
+integerAt k = \case
+    Aeson.Object o
+        | Just v <- KeyMap.lookup k o
+        , Aeson.Success i <- Aeson.fromJSON v ->
+            Just i
+    _ -> Nothing
+
+valueAt :: Aeson.Key -> Aeson.Value -> Maybe Aeson.Value
+valueAt k = \case
+    Aeson.Object o -> KeyMap.lookup k o
+    _ -> Nothing
+
+-- | The elements of an array field.
+elementsAt :: Aeson.Key -> Aeson.Value -> Maybe [Aeson.Value]
+elementsAt k v = case valueAt k v of
+    Just (Aeson.Array xs) -> Just (toList xs)
+    _ -> Nothing
 
 -- | The receipt's submissions: step, transaction id, case and whether observed.
 submissionsOf :: Aeson.Value -> [(Text, Text, Maybe Text, Bool)]
@@ -637,32 +691,113 @@ submissionsOf = \case
             ]
     _ -> []
 
-{- | Every way the typed events contradict the receipt; empty when every event
-that carries a receipt-bound fact agrees with it.
+{- | The edge actions a command performs, by its receipt's command: create
+boots, insert and terminate book the edge their plan books (and fold it when
+asked), update updates, reject rejects, fold and reclaim act on the edge
+their receipt names. Inspect performs none.
 -}
-disagreements :: Aeson.Value -> [Trace] -> [String]
-disagreements receipt events =
+inRole :: Maybe Text -> Maybe Text -> EdgeAction -> Bool
+inRole command receiptEdge action = case (command, action) of
+    (Just "create", Booting) -> True
+    (Just "insert", Booking e) -> e == booked edgeInsertActive
+    (Just "insert", Folding e) -> e == booked edgeInsertActive
+    (Just "terminate", Booking e) -> e == booked edgeUpdateTerminal
+    (Just "terminate", Folding e) -> e == booked edgeUpdateTerminal
+    (Just "update", Updating) -> True
+    (Just "fold", Folding e) -> Just e == receiptEdge
+    (Just "reject", Rejecting) -> True
+    (Just "reclaim", Reclaiming e) -> Just e == receiptEdge
+    _ -> False
+  where
+    booked = T.pack . edgeName
+
+-- | Whether a refusal kind can stand under a receipt's outcome.
+refusalFits :: RefusalKind -> Maybe Text -> Bool
+refusalFits k o = case k of
+    LedgerRejected -> o == Just "ledger-refusal"
+    TransportFailed -> o `elem` map Just ["partial", "node-unavailable", "timeout"]
+    ClientRefused ->
+        o
+            `elem` map
+                Just
+                ["client-refusal", "partial", "concurrent-writer", "stale-state"]
+    EvaluationRefused -> o `elem` map Just ["client-refusal", "partial"]
+
+{- | Every way the typed events contradict the receipt; empty when every event
+that carries a receipt-bound fact agrees with it. The key is the receipt's,
+or the one the command line named when the receipt names none (a refusal's
+receipt carries no key).
+-}
+disagreements :: Maybe Text -> Aeson.Value -> [Trace] -> [String]
+disagreements invokedKey receipt events =
     concat
         [ ends
-        , ["key " <> show k | k <- eventKeys, Just k /= receiptKey]
+        , ["key " <> show k | k <- eventKeys, Just k /= expectedKey]
         , [ "request " <> show r <> " not named by the receipt"
           | r <- eventRequests
-          , r `notElem` [q | (q, _, _) <- facts]
+          , r `notElem` map factRequest facts
           ]
-        , [ "request " <> show r <> " " <> what' <> " " <> show v
-          | Trace _ (What (RequestSeen r e k _ _)) <- events
-          , (q, fk, fe) <- facts
-          , q == r
-          , (what', v, fv) <- [("key", hexText k, fk), ("edge", e, fe)]
+        , [ "request " <> show r <> " " <> what' <> " " <> v
+          | Trace _ (What (RequestSeen r e k d _)) <- events
+          , f <- facts
+          , factRequest f == r
+          , (what', v, fv) <-
+                [ ("key", show (hexText k), show <$> factKey f)
+                , ("edge", show e, show <$> factEdge f)
+                ]
+                    <> [ ("deadline", show d, show . Just <$> factDeadline f)
+                       | isJust d
+                       ]
           , Just w <- [fv]
           , w /= v
           ]
-        , ["edge " <> show e | e <- eventEdges, Just e /= receiptEdge]
+        , [ "booked " <> show r <> " deadline " <> show d
+          | Trace _ (What (Booked r (Just d))) <- events
+          , f <- facts
+          , factRequest f == r
+          , Just d' <- [factDeadline f]
+          , d /= d'
+          ]
+        , [ "edge " <> show a <> " outside the command's role"
+          | a <- eventEdges
+          , not (inRole command receiptEdge a)
+          ]
+        , [ "leaf " <> show l
+          | Trace _ (What (KeySeen _ l _)) <- events
+          , Just l' <- [textAt "leaf" receipt]
+          , l /= l'
+          ]
+        , [ "holding " <> show h
+          | Trace _ (What (KeySeen _ _ h)) <- events
+          , Just application <- [valueAt "applicationOutput" receipt]
+          , h /= textAt "output" application
+          ]
+        , [ "pending " <> show n
+          | Trace _ (What (RegistrySeen _ _ (Just n))) <- events
+          , Just ps <- [elementsAt "pendingRequests" receipt]
+          , n /= length ps
+          ]
+        , [ "registry root " <> show r
+          | Trace _ (What (RegistrySeen _ r _)) <- events
+          , Just expected <- [rootBefore]
+          , r /= expected
+          ]
         , [ "transaction "
                 <> show (s, t)
                 <> " not among the receipt's submissions"
-          | (s, t) <- eventTxs
+          | (s, t, observedOnly) <- eventTxs
           , (s, t) `notElem` [(s', t') | (s', t', _, _) <- subs]
+          , not (observedOnly && (s, t) `elem` reused)
+          ]
+        , [ "reference " <> show (s, t) <> " read back " <> show n <> " times"
+          | (s, t) <- reused
+          , let n =
+                    length
+                        [ ()
+                        | Trace _ (How (Tx (TxObserved s' t' _))) <- events
+                        , (s', t') == (s, t)
+                        ]
+          , n /= 1
           ]
         , [ "submission " <> show (s, t) <> " has no signing and submission event"
           | (s, t, _, _) <- subs
@@ -694,6 +829,26 @@ disagreements receipt events =
           | Trace _ (What (Created tok _)) <- events
           , Just tok /= textAt "token" receipt
           ]
+        , [ "created state " <> show st
+          | Trace _ (What (Created _ st)) <- events
+          , Just (T.takeWhile (/= '#') st) /= textAt "boot" receipt
+          ]
+        , [ "rejected " <> show rs
+          | Trace _ (What (Rejected rs)) <- events
+          , sort rs /= sort receiptRejected
+          ]
+        , [ "reclaimed " <> show v
+          | Trace _ (What (Reclaimed _ v)) <- events
+          , Just v /= (valueAt "returned" receipt >>= integerAt "lovelace")
+          ]
+        , [ "updated output " <> show o
+          | Trace _ (What (Updated _ o)) <- events
+          , Just o /= textAt "liveOutput" receipt
+          ]
+        , [ "folded output " <> show o
+          | Trace _ (What (Folded _ _ o)) <- events
+          , Just o /= (textAt "liveOutput" receipt <|> textAt "released" receipt)
+          ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
           , not (refusalFits k outcome)
@@ -705,13 +860,32 @@ disagreements receipt events =
         ]
   where
     outcome = textAt "outcome" receipt
-    receiptKey = textAt "key" receipt
+    command = textAt "command" receipt
+    expectedKey = textAt "key" receipt <|> invokedKey
     receiptEdge = textAt "edge" receipt
     facts = requestFacts receipt
     subs = submissionsOf receipt
+    -- a reference the command found already published: read back, not submitted
+    reused =
+        [ ("publish-" <> role, T.takeWhile (/= '#') out)
+        | Just rs <- [elementsAt "references" receipt]
+        , Aeson.Object o <- rs
+        , Just role <- [fieldOf "role" o]
+        , Just out <- [fieldOf "output" o]
+        , T.takeWhile (/= '#') out `notElem` [t | (_, t, _, _) <- subs]
+        ]
+    receiptRejected =
+        [ r
+        | Just xs <- [elementsAt "rejected" receipt]
+        , Aeson.Object o <- xs
+        , Just r <- [fieldOf "request" o]
+        ]
+    rootBefore = case [b | Trace _ (What (RootSeen b _)) <- events] of
+        b : _ -> Just b
+        [] -> textAt "root" receipt
     ends = case [(c, o) | Trace [] (What (CommandEnded c o _)) <- events] of
         [(c, o)]
-            | Just c == textAt "command" receipt
+            | Just c == command
             , Just o == outcome
             , isEnd (lastMaybe events) ->
                 []
@@ -735,11 +909,17 @@ disagreements receipt events =
             <> [r | Trace _ (What (Reclaimed r _)) <- events]
             <> concat [rs | Trace _ (What (Rejected rs)) <- events]
             <> [r | Trace scope _ <- events, InRequest r <- scope]
-    eventEdges = [e | Trace _ (What (Folded e _ _)) <- events]
+    eventEdges =
+        [a | Trace _ (What (EdgeStarted a)) <- events]
+            <> [a | Trace scope _ <- events, InEdge a <- scope]
+            <> [Folding e | Trace _ (What (Folded e _ _)) <- events]
     eventTxs =
-        [ (s, t)
+        [ (s, t, observedOnly)
         | Trace _ (How (Tx e)) <- events
         , Just (s, t) <- [txOf e]
+        , let observedOnly = case e of
+                TxObserved{} -> True
+                _ -> False
         ]
     txOf = \case
         TxBuilt{} -> Nothing
@@ -777,25 +957,18 @@ disagreements receipt events =
         (Right (ConfirmFailed _), Just x) -> x == "timeout"
         (Right (ConfirmThrew _), Just x) -> x == "timeout"
         (_, Nothing) -> False
-    refusalFits k o = case k of
-        LedgerRejected -> o == Just "ledger-refusal"
-        TransportFailed -> o `elem` map Just ["partial", "node-unavailable", "timeout"]
-        ClientRefused ->
-            o
-                `elem` map
-                    Just
-                    ["client-refusal", "partial", "concurrent-writer", "stale-state"]
-        EvaluationRefused -> o `elem` map Just ["client-refusal", "partial"]
 
 hexText :: BS.ByteString -> Text
 hexText = TE.decodeUtf8 . B16.encode
 
-{- | One contradiction planted per fact a stream carries: each altered stream
-must disagree with the unaltered receipt. Every event is altered in each
-fact it carries, its scopes included; an observation is also removed.
+{- | One contradiction planted per fact a stream carries, wherever the
+receipt binds that fact: each altered stream must disagree with the
+unaltered receipt. Every event is altered in each fact it carries, its
+scopes included; an observation is also removed. A refusal is altered only to
+kinds its outcome cannot stand under.
 -}
-alterations :: [Trace] -> [(String, [Trace])]
-alterations events =
+alterations :: Aeson.Value -> [Trace] -> [(String, [Trace])]
+alterations receipt events =
     [ ( label
       , [if i == n then e' else x | (i, x) <- zip [0 :: Int ..] events]
       )
@@ -808,8 +981,23 @@ alterations events =
            | (n, Trace _ (How (Tx TxObserved{}))) <- zip [0 ..] events
            ]
   where
+    outcome = textAt "outcome" receipt
+    bound k = isJust (valueAt k receipt)
+    deadlineOf r =
+        listToMaybe
+            [ d
+            | f <- requestFacts receipt
+            , factRequest f == r
+            , Just d <- [factDeadline f]
+            ]
     flipText t = if T.take 1 t == "0" then "1" <> T.drop 1 t else "0" <> T.drop 1 t
     flipBytes b = "x" <> b
+    otherEdge = \case
+        Booking e -> Booking (e <> "x")
+        Folding e -> Folding (e <> "x")
+        Reclaiming e -> Reclaiming (e <> "x")
+        Updating -> Rejecting
+        _ -> Updating
     scoped (Trace scope event) =
         [ (label, Trace (outer <> [s'] <> inner) event)
         | (k, s) <- zip [0 :: Int ..] scope
@@ -818,6 +1006,7 @@ alterations events =
         , (label, s') <- case s of
             InKey key -> [("scope key", InKey (flipBytes key))]
             InRequest r -> [("scope request", InRequest (flipText r))]
+            InEdge a -> [("scope edge", InEdge (otherEdge a))]
             _ -> []
         ]
     alter (Trace scope event) = case event of
@@ -825,7 +1014,24 @@ alterations events =
             [ ("outcome", Trace scope (What (CommandEnded c (o <> "-altered") ms)))
             , ("command", Trace scope (What (CommandEnded (c <> "-altered") o ms)))
             ]
-        What (KeySeen k l h) -> [("key", Trace scope (What (KeySeen (flipBytes k) l h)))]
+        What (KeySeen k l h) ->
+            [("key", Trace scope (What (KeySeen (flipBytes k) l h)))]
+                <> [ ("leaf", Trace scope (What (KeySeen k (l <> "x") h)))
+                   | bound "leaf"
+                   ]
+                <> [ ( "holding"
+                     , Trace scope (What (KeySeen k l (maybe (Just "x") (const Nothing) h)))
+                     )
+                   | bound "applicationOutput"
+                   ]
+        What (RegistrySeen st r p) ->
+            [ ("pending", Trace scope (What (RegistrySeen st r ((+ 1) <$> p))))
+            | isJust p
+            , bound "pendingRequests"
+            ]
+                <> [ ("registry root", Trace scope (What (RegistrySeen st (flipText r) p)))
+                   | bound "root"
+                   ]
         What (RequestSeen r e k d s) ->
             [ ("request", Trace scope (What (RequestSeen (flipText r) e k d s)))
             ,
@@ -834,23 +1040,47 @@ alterations events =
                 )
             , ("request edge", Trace scope (What (RequestSeen r (e <> "x") k d s)))
             ]
-        What (Booked r d) -> [("booked request", Trace scope (What (Booked (flipText r) d)))]
+                <> [ ( "request deadline"
+                     , Trace scope (What (RequestSeen r e k ((+ 1) <$> d) s))
+                     )
+                   | isJust d
+                   , isJust (deadlineOf r)
+                   ]
+        What (EdgeStarted a) -> [("edge started", Trace scope (What (EdgeStarted (otherEdge a))))]
+        What (Booked r d) ->
+            [("booked request", Trace scope (What (Booked (flipText r) d)))]
+                <> [ ("booked deadline", Trace scope (What (Booked r ((+ 1) <$> d))))
+                   | isJust d
+                   , isJust (deadlineOf r)
+                   ]
         What (Folded e k o) ->
             [ ("fold edge", Trace scope (What (Folded (e <> "x") k o)))
             , ("fold key", Trace scope (What (Folded e (flipBytes k) o)))
+            , ("fold output", Trace scope (What (Folded e k (flipText o))))
             ]
-        What (Updated k o) -> [("update key", Trace scope (What (Updated (flipBytes k) o)))]
+        What (Updated k o) ->
+            [ ("update key", Trace scope (What (Updated (flipBytes k) o)))
+            , ("update output", Trace scope (What (Updated k (flipText o))))
+            ]
         What (Rejected rs) ->
             [ ("rejected request", Trace scope (What (Rejected (map flipText rs))))
             ]
+                <> [ ("rejected dropped", Trace scope (What (Rejected (drop 1 rs))))
+                   | not (null rs)
+                   ]
         What (Reclaimed r v) ->
-            [("reclaimed request", Trace scope (What (Reclaimed (flipText r) v)))]
-        What (Created t s) -> [("token", Trace scope (What (Created (flipText t) s)))]
+            [ ("reclaimed request", Trace scope (What (Reclaimed (flipText r) v)))
+            , ("reclaimed amount", Trace scope (What (Reclaimed r (v + 1))))
+            ]
+        What (Created t s) ->
+            [ ("token", Trace scope (What (Created (flipText t) s)))
+            , ("created state", Trace scope (What (Created t (flipText s))))
+            ]
         What (RootSeen b a) -> [("root", Trace scope (What (RootSeen b (flipText a))))]
-        What (Refused k c) ->
+        What (Refused _ c) ->
             [ ("refusal kind", Trace scope (What (Refused k' c)))
             | k' <- [minBound .. maxBound]
-            , k' /= k
+            , not (refusalFits k' outcome)
             ]
         How (Tx (TxSigned s t f ms end)) ->
             [
@@ -916,3 +1146,43 @@ closedHandleSink = do
     hClose h
     removeFile path
     pure (Tracer (hPutStrLn h . show))
+
+-- | Every fact 'alterations' plants a contradiction in.
+plantedFacts :: [String]
+plantedFacts =
+    [ "outcome"
+    , "command"
+    , "key"
+    , "leaf"
+    , "holding"
+    , "pending"
+    , "registry root"
+    , "request"
+    , "request key"
+    , "request edge"
+    , "request deadline"
+    , "edge started"
+    , "booked request"
+    , "booked deadline"
+    , "fold edge"
+    , "fold key"
+    , "fold output"
+    , "update key"
+    , "update output"
+    , "rejected request"
+    , "rejected dropped"
+    , "reclaimed request"
+    , "reclaimed amount"
+    , "token"
+    , "created state"
+    , "root"
+    , "refusal kind"
+    , "signed id"
+    , "submitted verdict"
+    , "confirmed verdict"
+    , "observed step"
+    , "observation removed"
+    , "scope key"
+    , "scope request"
+    , "scope edge"
+    ]

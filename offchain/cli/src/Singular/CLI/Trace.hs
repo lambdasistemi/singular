@@ -35,6 +35,7 @@ module Singular.CLI.Trace
 
       -- * Scoping
     , within
+    , report
     , what
     , how
     , readsUnder
@@ -271,6 +272,10 @@ data TxEvent
 -- | Trace inside one more scope: the enclosing scope adds what it knows.
 within :: Scope -> Tracer m Trace -> Tracer m Trace
 within s = contramap (\(Trace path e) -> Trace (s : path) e)
+
+-- | Report one protocol action or verdict inside these scopes, outermost first.
+report :: Tracer m Trace -> [Scope] -> What -> m ()
+report tracer scopes = traceWith tracer . Trace scopes . What
 
 -- | Trace protocol actions.
 what :: Tracer m Trace -> Tracer m What

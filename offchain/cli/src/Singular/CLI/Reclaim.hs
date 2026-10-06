@@ -51,6 +51,12 @@ import Singular.CLI.ReclaimRules
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, Reclaimed, RequestSeen, RootSeen)
+    , report
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.SessionIO qualified as Services
@@ -94,11 +100,15 @@ runReclaim env a = attached
             boundDatum = mkInlineDatum (toPlcData (txInToRef named))
             requestField = [("request", toJSON (txInText named))]
             stop why = failWithFields ClientRefusal why requestField
+            edgeText = T.pack . edgeName . requestEdge
+            placed r =
+                [InRequest (txInText named), InEdge (Reclaiming (edgeText r))]
         root <- selectedTrieRoot (atTrie at)
         (tx, (locked, req, bounds, tipSlot, opens, closes, returned)) <-
-            submitBuilt
+            submitBuiltIn
                 wc
                 "reclaim"
+                (\(_, req, _, _, _, _, _) -> placed req)
                 (const (expecting ("reclaim:" <> txInText named)))
                 $ \v -> do
                     allRequests <- Cage.outputsAt v requestAddr
@@ -127,6 +137,20 @@ runReclaim env a = attached
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (processingEnds b)
                     closes <-
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (retractEnds b)
+                    report
+                        (wcTracer wc)
+                        [InRequest (txInText named)]
+                        ( RequestSeen
+                            (txInText named)
+                            (edgeText req)
+                            (requestKey req)
+                            (Just (processingEnds b))
+                            (fromInteger <$> opens)
+                        )
+                    report
+                        (wcTracer wc)
+                        (placed req)
+                        (EdgeStarted (Reclaiming (edgeText req)))
                     bounds <-
                         either (stop . renderReclaimRefusal) pure $
                             reclaimGate
@@ -222,6 +246,11 @@ runReclaim env a = attached
             "reclaim"
             tx
             "the request is gone and its whole bound owner return is live; root unchanged"
+        report
+            (wcTracer wc)
+            (placed req)
+            (Reclaimed (txInText named) (coinOf returned))
+        report (wcTracer wc) [] (RootSeen (hexT root) (hexT rootAfter))
         pure $
             receipt
                 "reclaim"

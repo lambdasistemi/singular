@@ -46,6 +46,7 @@ module Singular.CLI.Session
     , readsIn
     , readOnce
     , submitBuilt
+    , submitBuiltIn
     , Expectation (..)
     , expecting
     , journalObserved
@@ -75,7 +76,7 @@ import Control.Exception
     , try
     )
 import Control.Monad (void, when)
-import Control.Tracer (Tracer, traceWith)
+import Control.Tracer (Tracer (..), traceWith)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
@@ -147,15 +148,18 @@ import Singular.CLI.Receipt
     )
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
+    , RefusalKind (..)
     , Scope (..)
     , SubmitVerdict (..)
     , TipAt (..)
     , Trace
     , TxEvent (..)
+    , What (..)
     , backendUnder
     , ended
     , readsUnder
     , txUnder
+    , what
     , within
     )
 import Singular.Provider.Koios.Runtime (koiosSource)
@@ -171,7 +175,13 @@ import Singular.Registry.Terminal
     , withReads
     , withWrites
     )
-import Singular.Registry.Trace (errorClassOf, startTimer, timedTrace)
+import Singular.Registry.Trace
+    ( Evaluation (..)
+    , ReadEvent (..)
+    , errorClassOf
+    , startTimer
+    , timedTrace
+    )
 import Singular.Registry.Wait qualified as Wait
 import Singular.Registry.WaitTypes (WaitFailure)
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
@@ -529,20 +539,66 @@ submitBuilt
     -> (r -> Expectation)
     -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuilt wc step expect build = do
-    let tracer = within (InTransaction step) (wcTracer wc)
-    (scope, (unsigned, extra)) <-
-        Cage.withLatest (readsIn (wcSource wc) tracer (wcCapabilities wc)) $ \v -> do
-            built <-
+submitBuilt wc step = submitBuiltIn wc step (const [])
+
+{- | 'submitBuilt', with the scopes the build decides placing the transaction:
+a fold learns its request and edge only from the view it builds from, so
+its signing, submission, confirmation and readback sit under them while its
+build's own reads sit under the registry.
+
+A build that fails is a refusal where it happens: by local script evaluation
+when a script failed in the build's own view, by the client otherwise. A
+submission the ledger refuses is a ledger rejection; a submission with no
+answer, or a failed one, is the provider's transport. The command's outcome
+class is unchanged.
+-}
+submitBuiltIn
+    :: WriteContext
+    -> Text
+    -> (r -> [Scope])
+    -> (r -> Expectation)
+    -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
+    -> IO (ConwayTx, r)
+submitBuiltIn wc step placed expect build = do
+    let building = within (InTransaction step) (wcTracer wc)
+    evaluationFailed <- newIORef False
+    let noting = Tracer $ \case
+            Evaluated e | evalFailed e > 0 -> writeIORef evaluationFailed True
+            _ -> pure ()
+        reads' = noting <> readsUnder building
+        provider = tracedReads (wcSource wc) reads' (wcCapabilities wc)
+    built <-
+        try $ Cage.withLatest provider $ \v -> do
+            made <-
                 timedTrace
-                    (txUnder tracer)
+                    (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
                     (build v)
             scope <- sessionReceipt (wcCapabilities wc) v
-            pure (scope, built)
+            pure (scope, made)
+    (scope, (unsigned, extra)) <- case built of
+        Right made -> pure made
+        Left (e :: SomeException)
+            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+            | otherwise -> do
+                failed <- readIORef evaluationFailed
+                refused building $
+                    Refused
+                        (if failed then EvaluationRefused else ClientRefused)
+                        (Just (errorClassOf e))
+                throwIO e
+    let tracer = within (InTransaction step) (inScopes (placed extra) (wcTracer wc))
     signed <-
         journalledSubmit tracer wc step (expect extra) scope unsigned
     pure (signed, extra)
+
+-- | The tracer inside these scopes, outermost first.
+inScopes :: [Scope] -> Tracer IO Trace -> Tracer IO Trace
+inScopes scopes tracer = foldl (flip within) tracer scopes
+
+-- | Report a refusal where it happened.
+refused :: Tracer IO Trace -> What -> IO ()
+refused tracer = traceWith (what tracer)
 
 -- | The capabilities' provider, its reads traced into this scope.
 readsIn
@@ -645,6 +701,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
     case answer of
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))
+            refused tracer (Refused TransportFailed (Just (errorClassOf e)))
             failWith
                 Partial
                 ( "no answer from the node for "
@@ -654,14 +711,17 @@ journalledSubmit tracer wc step ex scope unsigned = do
                 )
         Right (Cage.SubmitRefused reason) -> do
             journal "rejected" (Just (T.pack (show reason)))
+            refused tracer (Refused LedgerRejected Nothing)
             failWith
                 LedgerRefusal
                 (T.unpack step <> " refused by the node: " <> show reason)
         Right (Cage.SubmitFailed reason) -> do
             journal "submit-unknown" (Just reason)
+            refused tracer (Refused TransportFailed Nothing)
             failWith Partial ("no submission answer: " <> T.unpack reason)
         Right (Cage.SubmitWrongNetwork wanted actual) -> do
             journal "rejected" (Just (T.pack (show (wanted, actual))))
+            refused tracer (Refused ClientRefused Nothing)
             failWith ClientRefusal "submission refused on the configured network"
         Right (Cage.SubmitAccepted _) -> do
             journal "submitted" Nothing

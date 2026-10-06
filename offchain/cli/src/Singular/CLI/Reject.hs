@@ -36,7 +36,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM, unless)
+import Control.Monad (forM, forM_, unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.Foldable (toList)
@@ -68,6 +68,13 @@ import Singular.CLI.Registry (hexT)
 import Singular.CLI.RejectRules
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, RequestSeen, RootSeen)
+    , report
+    )
+import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -143,9 +150,10 @@ rejectPending at a = do
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
     rootBefore <- selectedTrieRoot (atTrie at)
     (tx, plan) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "reject"
+            (const [InEdge Rejecting])
             (const (expecting "state"))
             ( \v -> do
                 allAtRequestAddr <- Cage.outputsAt v requestAddr
@@ -189,6 +197,18 @@ rejectPending at a = do
                         | ((i, o, r), (_, b)) <- zip booked taken
                         ]
                     tip = stateMaxFee st
+                forM_ rows $ \r ->
+                    report
+                        (wcTracer wc)
+                        [InRequest (txInText (rowRequest r))]
+                        ( RequestSeen
+                            (txInText (rowRequest r))
+                            (T.pack (edgeName (rowEdge r)))
+                            (rowKey r)
+                            Nothing
+                            Nothing
+                        )
+                report (wcTracer wc) [InEdge Rejecting] (EdgeStarted Rejecting)
                 funded <-
                     fundedView (rejectFund a) addr v
                         >>= either
@@ -317,6 +337,14 @@ rejectPending at a = do
         ( T.pack (show (length rejectedIns))
             <> " request(s) rejected and refunded; root unchanged"
         )
+    report
+        (wcTracer wc)
+        [InEdge Rejecting]
+        (Trace.Rejected (map (txInText . rowRequest) (plRows plan)))
+    report
+        (wcTracer wc)
+        []
+        (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
     pure Rejected{rjTx = tx, rjPlan = plan, rjRejector = callerKey at}
   where
     refuse tip = \case

@@ -40,6 +40,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (forM_)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
@@ -69,6 +70,7 @@ import Singular.Application.OpenDatum.Envelope
     , dataToJson
     , envelopeToJson
     )
+import Singular.CLI.Attached (tokenName)
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
@@ -108,10 +110,16 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( CommandFailure (..)
-    , Env
+    , Env (..)
     , failWith
     , readOnce
     , withTargetLockOr
+    )
+import Singular.CLI.Trace
+    ( Scope (..)
+    , What (KeySeen, RegistrySeen, RequestSeen)
+    , report
+    , within
     )
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Ledger (ConwayEra)
@@ -294,6 +302,38 @@ inspectSaved env dir key settings a = do
                 keyOutput = liveOutputFor saved key outs
             entries <- readJournal dir
             let pending = unresolved entries
+            let tracer = within (InRegistry (hexT (tokenName saved))) (envTracer env)
+                pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
+            report
+                tracer
+                []
+                ( RegistrySeen
+                    (txInText (fst (liveState live)))
+                    (hexT root)
+                    (Just (length pendingOuts))
+                )
+            forM_ leaf $ \l ->
+                report
+                    tracer
+                    [InKey key]
+                    ( KeySeen
+                        key
+                        (leafName l)
+                        (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
+                    )
+            forM_ pendingOuts $ \(i, o) -> case extractCageDatum o of
+                Just (RequestDatum r) ->
+                    report
+                        tracer
+                        [InRequest (txInText i)]
+                        ( RequestSeen
+                            (txInText i)
+                            (T.pack (edgeName (requestEdge r)))
+                            (requestKey r)
+                            Nothing
+                            Nothing
+                        )
+                _ -> pure ()
             let chainPoint = renderPoint point
                 application = case keyOutput of
                     Right ((i, o), e) ->
@@ -334,7 +374,7 @@ inspectSaved env dir key settings a = do
                                , toJSON
                                     ( map
                                         pendingJson
-                                        (sortOn fst (findRequestUtxos (savedToken saved) requests))
+                                        pendingOuts
                                     )
                                )
                            ]

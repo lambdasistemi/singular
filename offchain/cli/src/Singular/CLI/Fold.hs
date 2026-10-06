@@ -102,6 +102,13 @@ import Singular.CLI.Plan (outlayReport, refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, RequestSeen, RootSeen)
+    , report
+    )
+import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
@@ -315,9 +322,14 @@ foldPending at FoldSpec{..} = do
             Standalone -> fsRequest
     rootBefore <- selectedTrieRoot (atTrie at)
     (fold, plan) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "fold"
+            ( \p ->
+                [ InRequest (txInText (plRequest p))
+                , InEdge (Folding (edgeText (plEdge p)))
+                ]
+            )
             ( \p ->
                 Expectation
                     (Just (plKey p))
@@ -352,9 +364,20 @@ foldPending at FoldSpec{..} = do
                     Just (RequestDatum r) -> pure r
                     _ ->
                         stop' ClientRefusal "the pending request carries no request datum" []
+                let seen dl =
+                        report
+                            (wcTracer wc)
+                            [InRequest (txInText request)]
+                            ( RequestSeen
+                                (txInText request)
+                                (edgeText (requestEdge req))
+                                (requestKey req)
+                                (deadlineMs <$> dl)
+                                (unSlotNo <$> (dl >>= deadlineSlot))
+                            )
                 kind <-
                     either
-                        (\why -> stop' ClientRefusal why [])
+                        (\why -> seen Nothing >> stop' ClientRefusal why [])
                         pure
                         (foldKind (requestEdge req))
                 live <- attachLive v s
@@ -366,6 +389,13 @@ foldPending at FoldSpec{..} = do
                             "the registry's state output carries no state datum"
                             []
                 deadline <- deadlineOf v req st
+                seen (Just deadline)
+                report
+                    (wcTracer wc)
+                    [ InRequest (txInText request)
+                    , InEdge (Folding (edgeText (requestEdge req)))
+                    ]
+                    (EdgeStarted (Folding (edgeText (requestEdge req))))
                 now <- currentPosixMs
                 remaining <- case foldWindow foldMarginMs now (deadlineMs deadline) of
                     FoldOpen left -> pure left
@@ -594,6 +624,16 @@ foldPending at FoldSpec{..} = do
                 "the fold's plan carries neither an envelope nor a holding"
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
     journalObserved wc "fold" fold detail
+    report
+        (wcTracer wc)
+        [ InRequest (txInText (plRequest plan))
+        , InEdge (Folding (edgeText edge))
+        ]
+        ( Trace.Folded (edgeText edge) key $ case delivery of
+            Delivered out _ -> txInText out
+            Released out _ -> txInText out
+        )
+    report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT local))
     pure
         Folded
             { fdRequest = plRequest plan
@@ -675,3 +715,7 @@ briefly = go
         | otherwise = case s of
             [] -> []
             (c : rest) -> c : go rest
+
+-- | An edge as the receipt names it.
+edgeText :: Edge -> Text
+edgeText = T.pack . edgeName

@@ -51,6 +51,7 @@ import Control.Monad (unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.ByteString (ByteString)
 import Data.Text (Text)
+import Data.Text qualified as T
 
 import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
@@ -72,7 +73,7 @@ import Singular.CLI.Command
     , Key (..)
     )
 import Singular.CLI.Fold
-    ( Deadline
+    ( Deadline (..)
     , Delivery (..)
     , FoldOrigin (..)
     , FoldSpec (..)
@@ -91,6 +92,13 @@ import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, RootSeen, Updated)
+    , report
+    )
+import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -103,6 +111,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest
     , OnChainTokenState
+    , edgeName
     )
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -146,14 +155,20 @@ book at a key plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    (booking, decided) <-
-        submitBuilt
+    (booking, (decided, _)) <-
+        submitBuiltIn
             wc
             "book"
+            (\(_, edge) -> [InKey key, InEdge (Booking edge)])
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
             ( \v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
+                let edge = T.pack (edgeName (bookedEdge b))
+                report
+                    (wcTracer wc)
+                    [InKey key, InEdge (Booking edge)]
+                    (EdgeStarted (Booking edge))
                 tx <-
                     bookEdgeMeasured
                         cfg
@@ -171,7 +186,7 @@ book at a key plan = do
                 refuseOver
                     (entryMaxOutlay a)
                     (bookingOutlay pp (liveRefs live) tx)
-                pure (tx, decided)
+                pure (tx, (decided, edge))
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
     deadline <-
@@ -193,6 +208,10 @@ book at a key plan = do
         "book"
         booking
         ("request " <> txInText request <> " live")
+    report
+        (wcTracer wc)
+        [InRequest (txInText request)]
+        (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
     pure (booking, decided, deadline)
 
 -- | What a booking-only command's receipt names of its pending request.
@@ -287,10 +306,13 @@ runUpdate env a = case entryMode a of
             -- The live output, its controller, the funding output, the
             -- parameters, the script evaluation and the outlay judged against
             -- the allowance all come from the update's one view.
+            let placed = [InKey key, InEdge Updating]
+            report (wcTracer wc) placed (EdgeStarted Updating)
             (signed, envelope) <-
-                submitBuilt
+                submitBuiltIn
                     wc
                     "update"
+                    (const placed)
                     ( \envelope ->
                         Expectation
                             (Just key)
@@ -327,6 +349,8 @@ runUpdate env a = case entryMode a of
                     <> txInText liveIn
                     <> " with the new payload; root unchanged"
                 )
+            report (wcTracer wc) placed (Updated key (txInText liveIn))
+            report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
             pure $
                 receipt
                     "update"
