@@ -1048,10 +1048,26 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           pattern: conformance-part-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/merged
-      - name: Point at the merged receipts
+          path: ${{ runner.temp }}/parts
+      # Each part wrote its own replay index (receipts/replay/index.json, a
+      # JSON array); the merged index is their concatenation, never one
+      # part's copy overwriting the others.
+      - name: Merge the parts' receipts
         run: |
+          merged="$RUNNER_TEMP/merged"
+          mkdir -p "$merged/receipts/replay" "$merged/dedicated" "$merged/story"
+          for part in "$RUNNER_TEMP"/parts/*/; do
+            for kind in receipts dedicated story; do
+              if [ -d "$part/$kind" ]; then
+                cp -r "$part/$kind/." "$merged/$kind/"
+              fi
+            done
+          done
+          shopt -s nullglob
+          indexes=("$RUNNER_TEMP"/parts/*/receipts/replay/index.json)
+          if [ "${#indexes[@]}" -gt 0 ]; then
+            nix run --quiet nixpkgs#jq -- -s 'add' "${indexes[@]}" > "$merged/receipts/replay/index.json"
+          fi
           {
             printf 'CONFORMANCE_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/receipts"
             printf 'CONFORMANCE_DEDICATED_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/dedicated"
