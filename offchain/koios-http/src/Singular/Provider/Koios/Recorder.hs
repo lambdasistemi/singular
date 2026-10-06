@@ -48,6 +48,8 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -59,7 +61,11 @@ import System.FilePath ((</>))
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress, Addr)
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL)
-import Cardano.Ledger.BaseTypes (EpochNo (..), TxIx (..))
+import Cardano.Ledger.BaseTypes
+    ( EpochNo (..)
+    , TxIx (..)
+    , txIxFromIntegral
+    )
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Hashes (ScriptHash (..), unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
@@ -78,14 +84,17 @@ import Singular.Provider.Koios.Client
     , Transport (..)
     , accountRegistered
     , addressUtxos
+    , assetInfo
     , assetTxs
     , assetUtxos
     , cliProtocolParams
     , epochParams
+    , referenceScriptUtxos
     , tip
     , txCbor
     , txInfo
     , txStatus
+    , utxoInfo
     )
 import Singular.Provider.Koios.Http
     ( HttpClient
@@ -102,12 +111,14 @@ import Singular.Provider.Koios.Recorded
     , fixtureRequestOf
     )
 import Singular.Provider.Koios.Wire
-    ( AssetTx (..)
+    ( AssetInfo (..)
+    , AssetTx (..)
     , Call (..)
     , Tip (..)
     , TxCbor (..)
     , TxInfo (..)
     , TxStatus (..)
+    , UtxoInfo (..)
     , callName
     , parseAddress
     , parseRewardAccount
@@ -128,6 +139,9 @@ data ReadCall
     | ReadCliProtocolParams
     | ReadTxStatus
     | ReadAccountInfo
+    | ReadReferenceScriptUtxos
+    | ReadUtxoInfo
+    | ReadAssetInfo
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The command-line name of a read call: its Koios endpoint name.
@@ -147,6 +161,9 @@ readCallCall = \case
     ReadCliProtocolParams -> CallCliProtocolParams
     ReadTxStatus -> CallTxStatus
     ReadAccountInfo -> CallAccountInfo
+    ReadReferenceScriptUtxos -> CallReferenceScriptUtxos
+    ReadUtxoInfo -> CallUtxoInfo
+    ReadAssetInfo -> CallAssetInfo
 
 -- | One read request with its arguments.
 data ReadRequest
@@ -160,6 +177,9 @@ data ReadRequest
     | CliProtocolParamsOf
     | TxStatusOf [TxId]
     | AccountInfoOf AccountAddress
+    | ReferenceScriptUtxosOf (NonEmpty ScriptHash)
+    | UtxoInfoOf (NonEmpty TxIn)
+    | AssetInfoOf PolicyID AssetName
     deriving stock (Eq, Show)
 
 -- | The read call a request makes.
@@ -175,6 +195,9 @@ readRequestCall = \case
     CliProtocolParamsOf -> ReadCliProtocolParams
     TxStatusOf _ -> ReadTxStatus
     AccountInfoOf _ -> ReadAccountInfo
+    ReferenceScriptUtxosOf _ -> ReadReferenceScriptUtxos
+    UtxoInfoOf _ -> ReadUtxoInfo
+    AssetInfoOf _ _ -> ReadAssetInfo
 
 {- | Parse @<call>@ or @<call>:<argument>[,<argument>]@, where the call
 is a 'readCallName': an address or stake address in bech32, an asset as
@@ -206,6 +229,17 @@ parseReadRequest text = do
             [(e, "")] -> Right (EpochParamsOf (EpochNo e))
             _ -> Left ("not an epoch number: " <> argument)
         ReadAccountInfo -> AccountInfoOf <$> parseRewardAccount argument
+        ReadReferenceScriptUtxos ->
+            ReferenceScriptUtxosOf
+                <$> nonEmpty
+                    "script hashes"
+                    (traverse scriptHash (T.splitOn "," argument))
+        ReadUtxoInfo ->
+            UtxoInfoOf
+                <$> nonEmpty
+                    "output references"
+                    (traverse outputReference (T.splitOn "," argument))
+        ReadAssetInfo -> uncurry AssetInfoOf <$> asset argument
   where
     none argument r
         | T.null argument = Right r
@@ -224,6 +258,21 @@ parseReadRequest text = do
                     >>= Right . TxId . unsafeMakeSafeHash
             )
             (T.splitOn "," argument)
+    scriptHash t =
+        hex t
+            >>= maybe (Left ("not a script hash: " <> t)) (Right . ScriptHash)
+                . hashFromBytes
+    outputReference t = do
+        let (txId, index) = T.breakOn "#" t
+        key <-
+            txIds txId >>= \case
+                [one] -> Right one
+                _ -> Left ("not an output reference: " <> t)
+        case reads (T.unpack (T.drop 1 index)) of
+            [(i, "")] | Just ix <- txIxFromIntegral (i :: Integer) -> Right (TxIn key ix)
+            _ -> Left ("not an output reference: " <> t)
+    nonEmpty what parsed =
+        parsed >>= maybe (Left ("names no " <> what)) Right . NE.nonEmpty
     hex t = either (Left . T.pack) Right (Base16.decode (TE.encodeUtf8 t))
 
 -- | Run one read request and render its decoded facts, one per line.
@@ -247,6 +296,12 @@ probe k = \case
                 ]
             )
             <$> accountRegistered k account
+    ReferenceScriptUtxosOf hashes ->
+        fmap (map carrierLine) <$> referenceScriptUtxos k hashes
+    UtxoInfoOf references -> fmap (map spentLine) <$> utxoInfo k references
+    AssetInfoOf p n ->
+        fmap (maybe ["no record"] (pure . assetInfoLine))
+            <$> assetInfo k (p, n)
   where
     tipLine t =
         "slot "
@@ -281,6 +336,17 @@ probe k = \case
             <> tshow (txCborValid c)
             <> " bytes "
             <> tshow (BS.length (txCborBytes c))
+    carrierLine (h, reference) =
+        referenceText reference <> " named for script " <> tshow h
+    spentLine i =
+        referenceText (utxoInfoReference i)
+            <> if utxoInfoSpent i then " spent" else " unspent"
+    assetInfoLine a =
+        "minted by "
+            <> txIdHex (assetInfoMintingTx a)
+            <> " supply "
+            <> tshow (assetInfoSupply a)
+    referenceText (TxIn txId (TxIx ix)) = txIdHex txId <> "#" <> tshow ix
     statusLine s =
         txIdHex (txStatusId s)
             <> maybe
