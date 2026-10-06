@@ -13,9 +13,11 @@ module Singular.Registry.Private.Source
     , readTimeSourceFacts
     , OutputSourceFacts (..)
     , readOutputSourceFacts
+    , readAddressOutputSourceFacts
     , readRegistrations
     ) where
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Coin (Coin)
 import Cardano.Ledger.Conway (ConwayEra)
@@ -54,6 +56,7 @@ import Ouroboros.Consensus.Shelley.Ledger.Query
     ( pattern GetCurrentPParams
     , pattern GetEpochNo
     , pattern GetFilteredDelegationsAndRewardAccounts
+    , pattern GetUTxOByAddress
     , pattern GetUTxOWhole
     )
 import Ouroboros.Consensus.Shelley.Ledger.SupportsProtocol ()
@@ -124,7 +127,7 @@ readTimeSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
                 (BlockQuery (QueryIfCurrentConway GetCurrentPParams))
     pure (TimeSourceFacts point start history parameters)
 
--- | A current output response needs the exact acquired point and full UTxO.
+-- | A current output response retains the actual acquired point and queried UTxO extent.
 data OutputSourceFacts = OutputSourceFacts
     { outputSourcePoint :: Point Block
     , outputSourceOutputs :: Map TxIn (TxOut ConwayEra)
@@ -138,6 +141,18 @@ readOutputSourceFacts channel = withAcquiredLSQ channel $ \handle -> do
             =<< queryAcquiredLSQ
                 handle
                 (BlockQuery (QueryIfCurrentConway GetUTxOWhole))
+    pure (OutputSourceFacts point outputs)
+
+-- | A fresh address-filtered raw LSQ, without retained or reused output state.
+readAddressOutputSourceFacts
+    :: LSQChannel -> Set Addr -> IO OutputSourceFacts
+readAddressOutputSourceFacts channel addresses = withAcquiredLSQ channel $ \handle -> do
+    point <- queryAcquiredLSQ handle GetChainPoint
+    UTxO outputs <-
+        expectConway "address UTxO"
+            =<< queryAcquiredLSQ
+                handle
+                (BlockQuery (QueryIfCurrentConway (GetUTxOByAddress addresses)))
     pure (OutputSourceFacts point outputs)
 
 readRegistrations

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -183,7 +184,8 @@ tokenHeldOut lovelace =
         )
 publicationOut lovelace =
     mkBasicTxOut payer (MaryValue (Coin lovelace) mempty)
-        & referenceScriptTxOutL .~ SJust applicationScript
+        & referenceScriptTxOutL
+            .~ SJust applicationScript
 
 data Scenario = Scenario
     { scAda :: [Integer]
@@ -230,17 +232,17 @@ chainView sc submittedAt horizon =
             1
             0
         )
-        $ ( withAddressOutputs
-                ( \addr ->
-                    pure $
-                        if addr == requestAddrFromCfg cfg tokenId Testnet
-                            then [(requestIn, requestOut submittedAt)]
-                            else
-                                if addr == cageAddrFromCfg cfg Testnet
-                                    then [(stateIn, stateOut)]
-                                    else wallet sc
-                )
-                $ withParameters (withSyntheticCosts preprodParams)
+        $ withAddressOutputs
+            ( \addr ->
+                pure $
+                    if addr == requestAddrFromCfg cfg tokenId Testnet
+                        then [(requestIn, requestOut submittedAt)]
+                        else
+                            if addr == cageAddrFromCfg cfg Testnet
+                                then [(stateIn, stateOut)]
+                                else wallet sc
+            )
+            ( withParameters (withSyntheticCosts preprodParams)
                 $ withTime
                     ( pure $ case horizon of
                         Nothing -> syntheticTime
@@ -255,8 +257,8 @@ chainView sc submittedAt horizon =
                             , reference `Set.member` wanted
                             ]
                     )
-                $ stubSession
-          )
+                    stubSession
+            )
 
 spec :: Spec
 spec = do
@@ -296,16 +298,19 @@ rejectValidity = describe "a reject's validity starts at the acquired view's tip
                         , property (upper > lower)
                         ]
     it
-        "refuses a window with no usable slot after a tip ahead of the host clock" $ do
-        now <- currentPosixMs
-        let view = rejectView (slotOf (now + 300_000)) Nothing
-        actualTip <- SessionIO.tip view
-        rejectRequestsImpl cfg view tokenId payer
-            `shouldThrow` ( \failure -> case failure of
-                                WindowPastLedgerHorizon tip _ lower upper ->
-                                    tip == observedSlot actualTip && lower == Just tip && upper == tip + 1
-                                _ -> False
-                          )
+        "refuses a window with no usable slot after a tip ahead of the host clock"
+        $ do
+            now <- currentPosixMs
+            let view = rejectView (slotOf (now + 300_000)) Nothing
+            actualTip <- SessionIO.tip view
+            rejectRequestsImpl cfg view tokenId payer
+                `shouldThrow` ( \case
+                                    WindowPastLedgerHorizon tip _ lower upper ->
+                                        tip == observedSlot actualTip
+                                            && lower == Just tip
+                                            && upper == tip + 1
+                                    _ -> False
+                              )
     it
         "caps the requested upper-bound window at the ledger horizon from its observed tip"
         $ do

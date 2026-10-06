@@ -58,33 +58,34 @@ probe sock magicWord txIns = do
     withAsync
         ( runNodeClient magic sock lsqCh ltxsCh
             >>= either throwIO (const (fail "private probe connection ended"))
-        ) $ \thread -> do
-        link thread
-        let observed = do
-                source <- readLedgerSource lsqCh
-                case sourcePoint source of
-                    Chain.GenesisPoint -> threadDelay 100_000 >> observed
-                    _ -> pure source
-        source <-
-            timeout 120_000_000 observed
-                >>= maybe
-                    ( fail
-                        "private probe did not acquire a non-origin ledger state within120seconds"
-                    )
-                    pure
-        let unspent = sourceOutputs source
-        let (live, spent) = partition (`Map.member` unspent) txIns
-            tip = case sourcePoint source of
-                Chain.GenesisPoint -> Aeson.Null
-                Chain.BlockPoint (SlotNo slot) (OneEraHash h) ->
+        )
+        $ \thread -> do
+            link thread
+            let observed = do
+                    source <- readLedgerSource lsqCh
+                    case sourcePoint source of
+                        Chain.GenesisPoint -> threadDelay 100_000 >> observed
+                        _ -> pure source
+            source <-
+                timeout 120_000_000 observed
+                    >>= maybe
+                        ( fail
+                            "private probe did not acquire a non-origin ledger state within120seconds"
+                        )
+                        pure
+            let unspent = sourceOutputs source
+            let (live, spent) = partition (`Map.member` unspent) txIns
+                tip = case sourcePoint source of
+                    Chain.GenesisPoint -> Aeson.Null
+                    Chain.BlockPoint (SlotNo slot) (OneEraHash h) ->
+                        object
+                            [ "slot" .= slot
+                            , "hash" .= BC.unpack (B16.encode (SBS.fromShort h))
+                            ]
+            BL8.putStrLn $
+                Aeson.encode $
                     object
-                        [ "slot" .= slot
-                        , "hash" .= BC.unpack (B16.encode (SBS.fromShort h))
+                        [ "tip" .= tip
+                        , "live" .= map renderOutRef live
+                        , "spent" .= map renderOutRef spent
                         ]
-        BL8.putStrLn $
-            Aeson.encode $
-                object
-                    [ "tip" .= tip
-                    , "live" .= map renderOutRef live
-                    , "spent" .= map renderOutRef spent
-                    ]

@@ -1,0 +1,156 @@
+{
+  "singular-on-chain-release-how-to-use-this-archive": [
+    {
+      "text": "Singular on-chain release — how to use this archive.",
+      "pause": 500
+    },
+    {
+      "text": "You are an integrator who received a tagged release and wants to run what this release verifiably carries: the bounded registry journey — boot a registry, fold a request, apply it and read the state back — plus the identity and contract-fixture checks, all re-derived from the artifact itself. You need none of the repository to do it. Sections 1–4 run from this directory alone; section 5 documents retained commands that are history, not runnable instructions. The only external requirement is Nix for the runnable parts (the identity verification also runs without it, with just jq).",
+      "pause": 400
+    },
+    {
+      "text": "The archive also carries the naming-lifecycle row runners of earlier releases (claim, recovery, retirement and their independent reader). They are retained legacy commands: kept so the archive stays faithful to its history, but not currently buildable and verified against this release's source — see the retained legacy commands before relying on any name documented here. Release instructions are corrected forward: a future correction changes the current source and the archives built from it; already published archives are never rewritten, so an older archive can still carry the previous instructions that presented every row runner as runnable.",
+      "pause": 400
+    },
+    {
+      "text": "A zero exit is the verified journey's claim: it exits non-zero on any mismatch, and the identity and fixture checks re-derive every binding from retained bytes rather than trusting anyone's word.",
+      "pause": 400
+    }
+  ],
+  "the-naming-lifecycle-the-retained-rows-exercise": [
+    {
+      "text": "The naming lifecycle the retained rows exercise.",
+      "pause": 500
+    },
+    {
+      "text": "Claiming writes the name, recovery rotates its control without moving its representative, retirement moves the representative into completion-only custody, and completion burns it while folding the retirement's own pending registry update. The key stays occupied forever afterwards: re-registering it is refused, which is what \"Over\" means on chain. The row runners that exercised this lifecycle end to end are the retained legacy commands of section 5; the verified journey covers the registry protocol (boot, request, apply, read back), not yet this naming lifecycle.",
+      "pause": 400
+    }
+  ],
+  "what-the-archive-carries": [
+    {
+      "text": "What the archive carries.",
+      "pause": 500
+    },
+    {
+      "text": "The pinned identities are the unapplied hashes — the stable, reviewable identity of each validator. The identities a concrete instance carries on chain are applied (parameterised) hashes, derived from the pins at run time; the journey asserts that derivation on every run.",
+      "pause": 400
+    }
+  ],
+  "1-verify-the-archive": [
+    {
+      "text": "1. Verify the archive.",
+      "pause": 500
+    },
+    {
+      "text": "From the directory you extracted this archive into (the release's SHA256SUMS, published next to the archive file, covers the archive itself):",
+      "pause": 400
+    },
+    {
+      "text": "To check a published release end to end without a checkout — the sums, the stated model revision, and the ordinary commands run from this archive on a development network — run nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z; the documentation page \"Download and verify a release\" explains each refusal.",
+      "pause": 400
+    }
+  ],
+  "2-verify-the-identities-from-this-artifact": [
+    {
+      "text": "2. Verify the identities from this artifact.",
+      "pause": 500
+    },
+    {
+      "text": "The hashes CI enforces, checked against the compiled blueprints this archive carries — not against any repository:",
+      "pause": 400
+    },
+    {
+      "text": "With Nix, you can instead run the exact checks CI runs:",
+      "pause": 400
+    }
+  ],
+  "3-the-contract-fixtures": [
+    {
+      "text": "3. The contract fixtures.",
+      "pause": 500
+    },
+    {
+      "text": "The four vendored v0.2.0 wire vectors and their provenance are in fixtures/. The codec suite that checks the naming datum encoding against them runs with:",
+      "pause": 400
+    }
+  ],
+  "4-the-runnable-journey": [
+    {
+      "text": "4. The runnable journey.",
+      "pause": 500
+    },
+    {
+      "text": "The one lifecycle command this archive ships verified is the bounded registry journey: the release pipeline runs it against a real devnet on every candidate and asserts what it observes on chain — boot, request, apply, read back, with the pinned and applied script identities. It covers the registry protocol, not the naming lifecycle of the retained rows below.",
+      "pause": 400
+    },
+    {
+      "text": "The packaged journey defaults to a private generated devnet behind the Koios HTTP facade. To use a test-network API and your own wallet, pass --koios-url URL --network-magic N --wallet-skey FILE; the matching environment variables are SINGULAR_KOIOS_URL, SINGULAR_NETWORK_MAGIC and SINGULAR_WALLET_SKEY. --network-time DIR (or SINGULAR_NETWORK_TIME) supplies pinned genesis/history material; preprod otherwise uses the reviewed packaged recording. The launcher checks configuration before spawning its private fixture. Old ordinary socket and backend settings refuse before provider acquisition. This route remains an obligation of the unchanged journey gate; its command description alone is not a current release or hosted pass. The onboarding runbook explains the API, time and wallet settings. The legacy naming commands below retain their stated unverified status.",
+      "pause": 400
+    },
+    {
+      "text": "Build the two compiled blueprints from this archive's own flakes, then run the journey from offchain/ (it reads the pinned identity manifests from ../onchain/ and ../naming-onchain/ by default). Use a shallow private TMPDIR (the node socket path length is limited):",
+      "pause": 400
+    },
+    {
+      "text": "Then, from offchain/:",
+      "pause": 400
+    },
+    {
+      "text": "The journey exits non-zero on any mismatch; a zero exit is the run's claim. What each step does is documented in offchain/journey/README.md. It retains every submitted transaction (S77_EVIDENCE_DIR overrides the default evidence directory).",
+      "pause": 400
+    }
+  ],
+  "5-the-retained-legacy-commands": [
+    {
+      "text": "5. The retained legacy commands.",
+      "pause": 500
+    },
+    {
+      "text": "The archive also carries the row runners and the independent reader of the earlier naming design. They stay declared and shipped so the archive remains faithful to its history. All nine are retained legacy surfaces: not currently buildable or verified against this release's source, and none is exercised by the release pipeline. The table below binds each to its status and its owning issue. None of the nine has passing build evidence at this source. Three carry direct build failures on record from earlier, pre-integration revisions of the project — li01, recovery-rows and connected-verifier — and their sources in this archive still name identifiers the carried library no longer exports, a source-level lead you can check against the bytes shipped here, not a build result. The rest carry no passing build evidence either — unverified rather than proven broken — and for retirement-verify buildability is simply untested. Their re-cut against the current registry mode is owned by #172 — and by #283 for register-rows. Seven of these are the commands earlier release instructions advertised; do not rely on any row below, and do not read a documented name here as a working command:",
+      "pause": 400
+    },
+    {
+      "text": "Two of the rows — repair-rows and connected-verifier — were never advertised as commands in this archive or its predecessors; they are declared executables of the shipped source, listed here so the availability statement covers every retained declaration. What the retained rows exercised, when they were current: the initialization, refusal, maintenance, register, recovery and retirement rows, and the permanent-retirement journey with controller and quorum retires, recovery-then-retire on both routes, permissionless completion into Over, and their attributed refusals:",
+      "pause": 400
+    },
+    {
+      "text": "The independent reader of that design, retirement-verify, was built to replay a retirement exhibit from retained transaction bytes plus the run log alone — re-deriving the creation control hash, the applied representative policy, the registry-bound name, the custody triple, the burn, the registry transition, the co-created request pairing and the permissionless authorization, trusting no runner narration, no setup constant and no key. As designed it printed one VERIFIED line per retirement, one VERIFIED-COMPLETE per permissionless completion it closed (or COMPLETION-ABSENT where custody correctly remained intact), and failed loudly on the first mismatch. Its availability is the row it holds in the table above.",
+      "pause": 400
+    }
+  ],
+  "6-ordinary-user-completion-what-permissionless-means": [
+    {
+      "text": "6. Ordinary-user completion (what permissionless means).",
+      "pause": 500
+    },
+    {
+      "text": "In the retained design, completion needs no controller or quorum approval: the spending transaction carries empty required signers. It does carry exactly one witness — the fresh fee-input owner's key, outside every route — because ledger conservation needs the fee paid from somewhere and a spent fee input needs its owner's witness. That witness is fee mechanics, not approval: the custody script, the registry transition and the burn check no signature. Calling this an empty witness set or \"no signature of any kind\" would be inaccurate; calling it operator-free is exact.",
+      "pause": 400
+    }
+  ],
+  "7-how-refusals-are-attributed": [
+    {
+      "text": "7. How refusals are attributed.",
+      "pause": 500
+    },
+    {
+      "text": "In the retained rows, some refusals surface before submission, when the builder locally evaluates the transaction (the occupied-key fold, the mismatched pair): the failure names the refusing script's hash in the evaluation error at the exact spending purpose. Others surface on submission as ledger phase-1 errors (a consumed output re-spent) or phase-2 script failures naming the refusing script. The retained rows pinned the actual shape — a budget exhaustion or a build failure is never accepted as the claimed refusal — and the run log quotes the full reason. The reader cross-checks the accepted transactions from the same log against the retained bytes.",
+      "pause": 400
+    }
+  ],
+  "scope-and-limits": [
+    {
+      "text": "Scope and limits.",
+      "pause": 500
+    },
+    {
+      "text": "The verified part of this archive is the bounded registry journey with the identity and fixture checks. The retained rows — claim, recovery, retirement and permanent Over, plus all retained earlier rows — are finite fixture executions on a devnet, not a statement about arbitrary transactions, and none of that row evidence was re-established against this release's source. Live-node assertions (spends accepted, refusals with named reasons, chain reads) belong to the retained row runners; the reader re-derives the same bindings from retained accepted-transaction logs and bytes. Coverage debt stands at 196 live obligations against the certified 196 baseline (192 preserved only as the historical predecessor; mapping 196, implementation layer 196, findings 0, unclassified 83, stale 0); the baseline ceremony belongs to the release owner. Conformance beyond this artifact is a separate track.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "README.md",
+    "sha256": "a626256e9892e8bda79c60b161b14f77204f8f401f174e15c19802e7ab8de99f"
+  }
+}

@@ -70,22 +70,29 @@ export TMPDIR="$work"
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
 sock=""
+provider_url=""
+time_directory=""
+network_magic=""
 for _ in $(seq 1 900); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  [ -n "$sock" ] && [ -S "$sock" ] && break
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -S "$sock" ] && [ -r "$time_directory/time-manifest.json" ] && break
   kill -0 "$devnet_pid" 2>/dev/null || break
   sleep 1
 done
-if [ -z "$sock" ] || [ ! -S "$sock" ]; then
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [ ! -r "$time_directory/time-manifest.json" ]; then
   tail -40 "$work/devnet.err" >&2 || true
-  setup_fail "the development node never printed a usable socket"
+  setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
-say "one development node at $sock"
+say "one private development source at $provider_url"
 
 status=0
 "$controls" run \
   --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
-  --node-socket "$sock" --network-magic 42 --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
+  --koios-url "$provider_url" --network-time "$time_directory" --node-socket "$sock" --network-magic "$network_magic" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
   --work "$work" >"$work/controls.md" 2> >(tee "$work/controls.err" >&2) || status=$?
 tail -1 "$work/controls.md"
 say "verdict section at $work/controls.md (exit $status)"

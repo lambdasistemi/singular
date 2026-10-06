@@ -7,6 +7,7 @@ receives a node socket; its clients use the normal shared HTTP/client/Wire.
 -}
 module Singular.Registry.Private.Facade
     ( Facade (..)
+    , GenesisFunding (..)
     , withGeneratedFacade
     ) where
 
@@ -91,7 +92,8 @@ import ChainFollower
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (link, withAsync)
 import Control.Exception (throwIO)
-import Control.Monad (unless, void)
+import Control.Monad (unless, void, when)
+import Control.Monad qualified
 import Control.Tracer (nullTracer)
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson
@@ -179,19 +181,30 @@ data Facade = Facade
     -- ^ Private independent probes only; never part of ProviderSettings.
     }
 
+{- | Only the private source actor's funding action changes for the retained
+genesis-only coverage control. The ledger/node/time parameters stay identical.
+-}
+data GenesisFunding = FundGenesis | LeaveGenesis
+    deriving stock (Eq, Show)
+
 data Server = Server
     { serverLSQ :: LSQChannel
     , serverSubmit :: LTxSChannel
     , serverArchive :: IORef Archive
     , serverLog :: IORef [Value]
     , serverGenesis :: ByteString
+    , serverGenesisOutputs :: Map.Map TxIn (TxOut ConwayEra)
     , serverTimeRoot :: FilePath
     , serverObserver :: Value -> IO ()
     }
 
 withGeneratedFacade
-    :: FilePath -> (Value -> IO ()) -> (Integer -> Facade -> IO a) -> IO a
-withGeneratedFacade genesisDirectory observer action =
+    :: GenesisFunding
+    -> FilePath
+    -> (Value -> IO ())
+    -> (Integer -> Facade -> IO a)
+    -> IO a
+withGeneratedFacade funding genesisDirectory observer action =
     withCardanoNode genesisDirectory $ \socket startMs -> do
         lsq <- newLSQChannel 16
         submit <- newLTxSChannel 16
@@ -232,7 +245,16 @@ withGeneratedFacade genesisDirectory observer action =
                 archive <- newIORef (emptyArchive (sourceOutputs initial))
                 events <- newIORef [initialEvent]
                 let timeRoot = takeDirectory socket </> "facade-time"
-                    server = Server lsq submit archive events genesis timeRoot observer
+                    server =
+                        Server
+                            lsq
+                            submit
+                            archive
+                            events
+                            genesis
+                            (sourceOutputs initial)
+                            timeRoot
+                            observer
                 createDirectoryIfMissing True timeRoot
                 void (publishTime timeRoot genesis (timeFactsOf initial))
                 withAsync
@@ -251,7 +273,7 @@ withGeneratedFacade genesisDirectory observer action =
                     $ \follower -> do
                         link follower
                         withinStartup (awaitArchive server initial)
-                        bootstrapGenesis server initial
+                        when (funding == FundGenesis) (bootstrapGenesis server)
                         testWithApplication (pure (application server)) $ \port ->
                             action
                                 startMs
@@ -277,12 +299,12 @@ confirmed outputs before commands start, through an independent private
 actor. The full-block follower observes this transaction itself; no fake
 genesis transaction is inserted into tx_info or tx_cbor.
 -}
-bootstrapGenesis :: Server -> LedgerSource -> IO ()
-bootstrapGenesis server initial = withinStartup $ do
+bootstrapGenesis :: Server -> IO ()
+bootstrapGenesis server = withinStartup $ do
     let owned =
             Map.filter
                 ((== genesisAddr) . (^. addrTxOutL))
-                (sourceOutputs initial)
+                (serverGenesisOutputs server)
         originals = Map.toAscList owned
         total =
             sum
@@ -660,10 +682,13 @@ answer server request body
                         toJSON
                             [ object
                                 [ "stake_address" .= Wire.renderRewardAccount account
-                                , "status" .= ("registered" :: Text)
+                                , "status"
+                                    .= ( if Map.member credential registrations
+                                            then "registered"
+                                            else "not registered" :: Text
+                                       )
                                 ]
                             | account@(AccountAddress _ (AccountId credential)) <- accounts
-                            , Map.member credential registrations
                             ]
                 pure
                     ( status200
@@ -672,6 +697,9 @@ answer server request body
                     , object
                         [ "ledger" .= sourceValue source
                         , "registrationPoint" .= show registrationPoint
+                        , "registrationCredentials"
+                            .= [ show credential | AccountAddress _ (AccountId credential) <- accounts
+                               ]
                         , "registrationRewards"
                             .= [ (show credential, reward)
                                | (credential, reward) <- Map.toAscList registrations
@@ -686,6 +714,10 @@ answer server request body
                     , Null
                     )
 
+genesisReference :: TxIn -> Text
+genesisReference (TxIn identity (TxIx index)) =
+    Wire.txIdHex identity <> "#" <> Text.pack (show index)
+
 -- | Keep current-output provenance to the actual acquired point and UTxO.
 answerOutputs
     :: Server
@@ -693,40 +725,80 @@ answerOutputs
     -> ByteString
     -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
 answerOutputs server request body = do
-    source <- readOutputSourceFacts (serverLSQ server)
+    (source, extent) <- case rawPathInfo request of
+        "/api/v1/address_utxos" -> do
+            names <- jsonField "_addresses" body
+            addresses <-
+                traverse
+                    (either (fail . Text.unpack) pure . Wire.parseAddress)
+                    (names :: [Text])
+            source <-
+                readAddressOutputSourceFacts
+                    (serverLSQ server)
+                    (Set.fromList addresses)
+            pure
+                ( source
+                , object ["query" .= ("GetUTxOByAddress" :: Text), "addresses" .= names]
+                )
+        "/api/v1/asset_utxos" -> do
+            source <- readOutputSourceFacts (serverLSQ server)
+            pure (source, object ["query" .= ("GetUTxOWhole" :: Text)])
+        _ -> fail "private facade output endpoint is not mapped"
     let outputs = Map.toAscList (outputSourceOutputs source)
-    values <- case rawPathInfo request of
+    selected <- case rawPathInfo request of
         "/api/v1/address_utxos" -> do
             addresses <- jsonField "_addresses" body
             pure
-                [ outputValue False reference output
+                [ (reference, output)
                 | (reference, output) <- outputs
                 , Wire.renderAddress (output ^. addrTxOutL) `elem` (addresses :: [Text])
                 ]
         "/api/v1/asset_utxos" -> do
             assets <- jsonField "_asset_list" body
             pure
-                [ outputValue False reference output
+                [ (reference, output)
                 | (reference, output) <- outputs
                 , any (matchesAsset output) (assets :: [[Text]])
                 ]
         _ -> fail "private facade output endpoint is not mapped"
-    (headers, value) <- paged request values
-    pure
-        ( status200
-        , headers
-        , encode value
-        , object
-            [ "point" .= show (outputSourcePoint source)
-            , "outputsCBOR"
-                .= [ object
-                        [ "reference" .= show reference
-                        , "bytes" .= hex (serialize' (eraProtVerHigh @ConwayEra) output)
-                        ]
-                   | (reference, output) <- outputs
-                   ]
+    let genesisOnly =
+            [ reference
+            | (reference, _) <- selected
+            , Map.member reference (serverGenesisOutputs server)
             ]
-        )
+        origin =
+            object
+                [ "point" .= show (outputSourcePoint source)
+                , "queriedExtent" .= extent
+                , "outputsCBOR"
+                    .= [ object
+                            [ "reference" .= show reference
+                            , "bytes" .= hex (serialize' (eraProtVerHigh @ConwayEra) output)
+                            ]
+                       | (reference, output) <- outputs
+                       ]
+                , "unindexedGenesisReferences" .= map genesisReference genesisOnly
+                ]
+    if null genesisOnly
+        then do
+            (headers, value) <-
+                paged
+                    request
+                    [outputValue False reference output | (reference, output) <- selected]
+            pure (status200, headers, encode value, origin)
+        else
+            -- These are actual unspent genesis allocations, carried by no
+            -- full block. Refuse their indexed coverage explicitly rather
+            -- than fabricating transaction CBOR or silently returning empty.
+            pure
+                ( status400
+                , []
+                , encode
+                    ( "(coverage-incomplete) genesis outputs have no indexed full-block transaction: "
+                        <> Text.intercalate ", " (map genesisReference genesisOnly)
+                    )
+                , origin
+                )
 
 {- | These endpoints consume confirmed full-block material only. A fresh
 whole-UTxO/parameter acquisition contributes no fact to their answer.
@@ -823,14 +895,14 @@ requiredQuery field request =
     maybe
         (fail ("missing query " <> Text.unpack field))
         pure
-        (lookup field (queryText request) >>= id)
+        (Control.Monad.join (lookup field (queryText request)))
 
 queryText :: Request -> [(Text, Maybe Text)]
 queryText = parseQueryText . rawQueryString
 
 paged :: Request -> [Value] -> IO ([(HeaderName, ByteString)], Value)
 paged request values = do
-    let number field defaultValue = case lookup field (queryText request) >>= id of
+    let number field defaultValue = case Control.Monad.join (lookup field (queryText request)) of
             Nothing -> pure defaultValue
             Just text ->
                 maybe (fail "invalid page extent") pure (readMaybe (Text.unpack text))

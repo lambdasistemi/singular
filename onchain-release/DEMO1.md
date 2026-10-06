@@ -1,7 +1,6 @@
 # `singular registry` — Alice's open-datum story, from this archive
 
-You have the extracted archive and no checkout. This page is the
-command's authority: what the ordinary `singular registry` commands do,
+You have the extracted archive and no checkout. The accepted Lean model governs behavior; this page describes what the ordinary `singular registry` commands do,
 what to run, what you should see, and what they do not claim.
 
 ## The story
@@ -14,7 +13,9 @@ protected deposit — and a free payload. Only the controller may replace
 the payload; the deposit is released only when the registry terminates
 the key.
 
-Each step below is a separate process against one development node, and
+The Demo 1 journey runs on the Koios path only; its former node/indexer
+backend comparison is retired. A private generated node supplies the harness
+API and independent probes. Each step below is a separate process, and
 each prints one JSON receipt. The saved registry directory carries the
 identity from one process to the next.
 
@@ -62,69 +63,74 @@ they fund nothing outside this node. Alice books, and Bob folds.
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > alice.skey
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > bob.skey
 "$devnet" --fund-skey alice.skey --fund-skey bob.skey --fund-outputs 6 --fund-lovelace 2000000000 > devnet.out &
-sock="$(head -n1 devnet.out)"   # the node's socket, once it is printed
-node=(--node-socket "$sock" --network-magic 42)
+# Wait for the launcher to print its settings, then check the JSON.
+# If it exits without settings, inspect its diagnostic before continuing.
+jq -e . devnet.out
+koios_url="$(jq -r .providerUrl devnet.out)"
+time_dir="$(jq -r .networkTimeDirectory devnet.out)"
+sock="$(jq -r .privateProbeSocket devnet.out)" # independent private probes only
+provider=(--koios-url "$koios_url" --network-time "$time_dir" --network-magic 42)
 ```
 
 ## Run the story
 
 ```bash
 # 1. Preview the identity a seed gives, then create the registry on it.
-"$singular" registry create --preview --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
-"$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
+"$singular" registry create --preview --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
+"$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
 
 # 2. Book an insertion of a key with its first payload; Alice's wallet is its controller.
 #    The request stays pending; the receipt names it and its fold deadline.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key alice \
-  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 3. Fold it, before that deadline. Any wallet may fold: here, Bob's.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey bob.skey
 
 # 4. Read it back: no signing key, nothing submitted.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${provider[@]}"
 
 # 5. Replace the payload.
 "$singular" registry update --registry reg --blueprint "$blueprint" --key alice \
-  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 6. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${provider[@]}"
 
 # 7. Book the termination of the key.
 "$singular" registry terminate --registry reg --blueprint "$blueprint" --key alice \
-  "${node[@]}" --wallet-skey alice.skey
+  "${provider[@]}" --wallet-skey alice.skey
 
 # 8. Fold it: the fold burns the token and releases the deposit.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey bob.skey
 
 # 9. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${node[@]}"
+"$singular" registry inspect --registry reg --blueprint "$blueprint" --key alice "${provider[@]}"
 
 # 10. A request nobody folded or took back stays pending past both its windows and
 #     blocks the registry's fold. Reject it; any wallet may: here, Bob's.
-"$singular" registry reject --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+"$singular" registry reject --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey bob.skey
 
 # 11. The registry takes requests again: book a new insertion.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key bob \
-  --payload payload.json "${node[@]}" --wallet-skey bob.skey
+  --payload payload.json "${provider[@]}" --wallet-skey bob.skey
 
 # 12. Fold it.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey alice.skey
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
 
 # 13. Book a different insertion and keep its request reference from the receipt.
 #     Let its processing deadline pass, then reclaim during its retract window.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key carol \
-  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 "$singular" registry reclaim --registry reg --blueprint "$blueprint" --request TXID#IX \
-  "${node[@]}" --wallet-skey alice.skey
+  "${provider[@]}" --wallet-skey alice.skey
 
 # 14. The reclaimed request no longer blocks the next insertion.
 "$singular" registry insert --registry reg --blueprint "$blueprint" --key dave \
-  --payload payload.json "${node[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 15. Fold it with Bob's wallet.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${node[@]}" --wallet-skey bob.skey
+"$singular" registry fold --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey bob.skey
 ```
 
 Run the fold of a request before the deadline its booking's receipt names
@@ -160,7 +166,7 @@ insert receipt and the preview receipt print the envelope it built.
    refuses a registry directory whose saved pins differ.
 2. **`singular registry insert`** books the insertion through the application: its
    receipt names the pending request, the booking's transaction, the envelope kept
-   for the fold and `foldDeadline`, the time (and, where the node converts it, the slot) by which the fold must
+   for the fold and `foldDeadline`, the time (and, where pinned time converts it, the slot) by which the fold must
    happen. Nothing is folded, and the registry's root and your saved state do not
    move.
 3. **`singular registry fold`** folds that one pending request with the wallet that runs
@@ -169,7 +175,8 @@ insert receipt and the preview receipt print the envelope it built.
    request, the key, the edge, the fold's transaction, the output it delivered, the
    new root, the host clock at which it was decided and how many milliseconds remained before the deadline.
 4. **`singular registry inspect`** reads the key `active`, with the holding, its envelope and
-   payload, the registry's root and the chain point it read at.
+   payload, the registry's root and its separately observed tip. Its Unbound facts do not prove a common
+   chain point for the reads used to prepare a write.
 5. **`singular registry update`** replaces only the payload. The receipt's root equals the
    root before it.
 6. **`singular registry inspect`** shows the new payload, the same control and deposit, and
@@ -199,15 +206,20 @@ insert receipt and the preview receipt print the envelope it built.
     it opens; another wallet is refused as not the request's owner. The owner's
     successful receipt names the request, retract transaction, actual locked value,
     recipient and returned output, with the request reference as its inline datum.
-    The journey reads the pending request before and the return after from the node
-    independently, and checks them against the receipt and saved signed bodies.
+    The journey reads the pending request before and the return after through the
+    provider separately, and checks them against the receipt and saved signed bodies.
     Edits to those amounts, recipient, output reference or binding fail the checks.
     The tip slot against the converted deadline slots decides the window, never the
     host clock. Opening requires a converted processing deadline that the tip has
     reached. An unconverted retract deadline counts as still open, exactly as
     reject reads it, while a known reached deadline proves closure. The built
     interval must fit the window; a build failure fails the success check. The
-    devnet's conversion horizon remains a known availability limit (#370).
+    pinned final era permits conversion beyond the recording's former end.
+    A separate moving ledger horizon caps the selected upper bound. A nonempty
+    registry-limited interval with fewer than ten seconds of usable slots
+    refuses `WindowTooShort` before signing; only a horizon-limited otherwise
+    longer interval may wait once, bounded by slots and 20 seconds. A stalled
+    wait refuses `HorizonWaitTimedOut`. No build failure proves a reclaim.
     After the window closes the refusal names `registry reject`. Updates and
     deletions cannot be retracted; Lean allows insertions and terminal witnesses.
     The root, mirror and `state.json` stay where they were.
@@ -243,8 +255,11 @@ overwrites on its own:
 
 ## On a public network
 
-The same commands run against a public node. Nothing on this page has
-been run there; receipts from such a run are published separately, and
+The same ordinary commands use a Koios API on the requested test network.
+Set `koios_url` to that network's API base URL. Preprod uses the reviewed
+packaged time recording unless `--network-time DIR` supplies another validated
+recording. No ordinary command accepts a node socket or backend selector. Nothing on this
+page has been run there; receipts from such a run are published separately, and
 this page only says how to make one and what stops it.
 
 **Fund the wallet with two ada-only outputs.** The registry's first
@@ -262,13 +277,14 @@ directory is byte for byte the same afterwards.
 ```bash
 # The identity a seed gives, and what each write would cost, from public facts alone.
 "$singular" registry create --preview --registry reg --blueprint "$blueprint" \
-  --node-socket "$sock" --network-magic 1 --wallet-address "$address"
+  --koios-url "$koios_url" --network-magic 1 --wallet-address "$address"
 "$singular" registry insert --preview --registry reg --blueprint "$blueprint" --key "$key" \
-  --payload payload.json --node-socket "$sock" --network-magic 1 --wallet-address "$address"
+  --payload payload.json --koios-url "$koios_url" --network-magic 1 --wallet-address "$address"
 ```
 
 The preview receipt names the wallet outputs it selects, each body's fee,
-the execution units the node's own evaluator measured for each script, the
+the execution units the local evaluator measured for each script using the
+raw protocol parameters and resolved inputs consumed through the session, the
 total collateral each states and the collateral it returns, a digest of the
 protocol parameters it was built under, and the outlay: the fee, the bond
 the booking locks and a bound on the fold that follows. An insertion or a
@@ -286,24 +302,27 @@ only if it costs no more than the booking left of the allowance; past that, the
 command stops partial, naming its pending request, and nothing more is signed or
 sent. `create` and
 `inspect` enforce neither flag, so they refuse both by name, before any key is
-read, rather than ignore them. Each transaction a command builds rests on one
-snapshot of the network's protocol parameters, read once for it: the booking's
-build, measurement and allowance decision share one, and the preview's digest
-names it; the fold, which cannot exist until the booking confirms, is built and
-judged under a snapshot of its own. A fee is never declared: the booking's units are measured on the
+read, rather than ignore them. Each transaction
+uses the protocol parameters consumed for that build: the booking's
+build, measurement and allowance decision share those consumed parameters, and the preview's digest names them; the
+fold, which cannot exist until the booking confirms, consumes its own build
+parameters. The Koios session is Unbound: its several reads need not belong to
+one chain state, and its facts remain Unverified with no configured witness. A fee is never declared: the booking's units are measured on the
 body that will be submitted, and its total collateral is stated and the
 rest of its funding output returned. A funding output that cannot leave a return
 of at least its minimum ada is refused before anything is submitted, never
 collateralised whole.
 
 **The four refusals on a registry that already exists.** `cli-controls`
-takes an existing registry directory and a fresh key, through a node someone
-else runs, and never creates a registry or starts, stops or resets a node:
+takes an existing registry directory and a fresh key, through the supplied Koios API, and never creates a registry or starts,
+stops or resets a node. This test executable also requires `--node-socket`
+for its separate independent LSQ probe; that socket is never sent to ordinary
+`singular`. Its attach behavior is a harness surface, not another provider:
 
 ```bash
 cli-controls attach --singular "$singular" --blueprint "$blueprint" \
   --ledger applications/open-datum/ledgers.json \
-  --node-socket "$sock" --network-magic 1 --wallet-skey wallet.skey --stranger-skey stranger.skey \
+  --koios-url "$koios_url" --network-magic 1 --node-socket "$sock" --wallet-skey wallet.skey --stranger-skey stranger.skey \
   --registry reg --key take-one --collateral-allowance 10000000 --max-outlay 40000000 \
   --readback tools/demo1_readback.sh --blockfrost-credential-file "$BLOCKFROST_KEY_FILE" --work take-one
 ```
@@ -332,13 +351,14 @@ The take reads its key from two public indexers while the key is Active: after
 the controller's own update and the fresh inspect that follows it, before any
 refusal of a release or the termination, it runs `tools/demo1_readback.sh`
 for Koios and for Blockfrost from the policy id and asset name that inspect
-names, and compares the output reference, the inline datum's bytes and hash
-and the chain position with that inspect. The take keeps the script's record,
+names, and compares the output reference and the inline datum's bytes and hash
+with that inspect. It measures lag against inspect's separately observed tip;
+the output read and that tip are not a coherent snapshot. The take keeps the script's record,
 digested, and judges it from the facts it keeps, never from the summary it
 states: the provider's own answers counted into the outputs holding the token,
 the reported output, datum bytes and tip, each checked against those answers,
 the datum's hash computed again from its bytes, and the lag measured from the
-inspect's chain point against the maximum lag the take was run with. A record
+inspect's observed tip against the maximum lag the take was run with. A record
 whose stated verdict its facts contradict does not hold. An indexer that is
 missing, unreachable, behind the node or in disagreement is never a
 confirmation, and the take stops before its next write. The record's digest
@@ -382,7 +402,7 @@ starts from the policy id and asset name alone:
 
 ```bash
 "$singular" registry inspect --registry reg --blueprint "$blueprint" --key "$key" \
-  --node-socket "$sock" --network-magic 1 > inspect.json
+  --koios-url "$koios_url" --network-magic 1 > inspect.json
 tools/demo1_readback.sh --provider koios --policy "$policy" --name "$name" \
   --inspect inspect.json --out koios.json
 tools/demo1_readback.sh --provider blockfrost --policy "$policy" --name "$name" \
@@ -391,10 +411,10 @@ tools/demo1_readback.sh --provider blockfrost --policy "$policy" --name "$name" 
 
 It records each request and the complete response, the output the indexer
 says holds the asset, its inline datum, that datum's hash recomputed here,
-the indexer's own tip and the node's chain point, and the lag between them;
+the indexer's own tip and inspect's separately observed tip, and the lag between them;
 it succeeds only when the indexer finds exactly one output holding exactly
 one of the asset and its output reference, datum bytes and datum hash are the
-node's, within `--max-lag` slots. A provider that needs a key reads it from
+inspect's, within `--max-lag` slots. A provider that needs a key reads it from
 the file named, hands it to curl on standard input, and never puts it in an
 argument, the environment, a log, a receipt or a recording.
 

@@ -146,16 +146,11 @@ observeSession verifier sink session =
                 Right stream -> pure (Right (observedStream (historyQuery asset range) stream))
         }
   where
-    base query content verdict reason present =
+    base =
         FactRecord
             (sessionId session)
             (sessionNetwork session)
             (sessionBinding session)
-            query
-            content
-            verdict
-            reason
-            present
     refused query failure =
         sink
             ( base

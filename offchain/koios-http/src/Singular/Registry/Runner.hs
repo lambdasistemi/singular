@@ -12,9 +12,11 @@ module Singular.Registry.Runner
 
 import Control.Applicative ((<|>))
 import Control.Exception (ErrorCall (..), finally, throwIO)
+import Control.Monad qualified
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Lazy qualified as LBS
 import Data.List (stripPrefix)
+import Data.Maybe qualified
 import Data.Word (Word32)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Evidence (NoWitness)
@@ -49,10 +51,8 @@ runnerSettings args environment = do
             (Left ("network magic is not a number: " <> magicText))
             Right
             (readMaybe magicText :: Maybe Word32)
-    if magic == 764824073
-        then
-            Left "these submitting runners refuse mainnet network magic764824073"
-        else pure ()
+    Control.Monad.when (magic == 764824073) $
+        Left "these submitting runners refuse mainnet network magic764824073"
     key <- required "--wallet-skey" "SINGULAR_WALLET_SKEY"
     token <- selected "--koios-token-file" "SINGULAR_KOIOS_TOKEN_FILE"
     time <- selected "--network-time" "SINGULAR_NETWORK_TIME"
@@ -61,7 +61,7 @@ runnerSettings args environment = do
     obsolete argument =
         argument `elem` ["--backend", "--node-socket"]
             || any
-                (\prefix -> maybe False (const True) (stripPrefix prefix argument))
+                (\prefix -> Data.Maybe.isJust (stripPrefix prefix argument))
                 ["--backend=", "--node-socket="]
     selected flag variable = do
         chosen <- named flag args

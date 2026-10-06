@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 {- |
 Module      : Singular.Registry.Node.Wait
 Description : The bound every wait on a submitted transaction obeys

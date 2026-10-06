@@ -83,11 +83,13 @@ import Singular.Registry.Blueprint
     ( NamingCodes
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..))
-import Singular.Registry.Node (Capabilities (..))
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TrieState
     ( RegistryIdentity (..)
     , StatePolicyId (..)
@@ -170,7 +172,7 @@ recordHistory
 recordHistory stateBytes requestBytes =
     withE2E stateBytes requestBytes $ \cfg prov caps tm -> do
         codes <- loadRegistryCodesFromEnv
-        wallet <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+        wallet <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
         rec <-
             Recorder <$> newIORef (Map.fromList wallet) <*> newIORef Map.empty
         let submit = recordingSubmit caps rec
@@ -197,7 +199,7 @@ recordHistory stateBytes requestBytes =
         _ <-
             book cfg codes prov submit tid "replay-key-e" edgeInsertActive wallet'
         rejectTx <-
-            Cage.withView
+            Cage.withLatest
                 prov
                 (\v -> rejectRequestsWithRefs cfg v tid genesisAddr refs)
                 >>= submit
@@ -215,7 +217,7 @@ recordHistory stateBytes requestBytes =
                 [] -> fail "ORDER-WITNESS: booking order equals ledger order"
         (decoySpent, decoyReferenced) <- makeDecoys cfg prov submit tid
         mixedTx <-
-            Cage.withView prov $ \v ->
+            Cage.withLatest prov $ \v ->
                 mixedFold
                     cfg
                     codes
@@ -262,7 +264,8 @@ the transaction spends or references from the known outputs. An input the
 recorder cannot resolve fails the scenario: the history would be missing
 material, and the replay's verdict on it would mean nothing.
 -}
-recordingSubmit :: Capabilities -> Recorder -> ConwayTx -> IO ConwayTx
+recordingSubmit
+    :: Capabilities Cage.NoWitness IO -> Recorder -> ConwayTx -> IO ConwayTx
 recordingSubmit caps rec unsigned = do
     known <- readIORef (recKnown rec)
     let body = unsigned ^. bodyTxL
@@ -298,16 +301,16 @@ firstOutput tx = TxIn (txIdTx tx) (TxIx 0)
 -- | The state output the chain holds after a transaction, and its root.
 statePoint
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> TokenId
     -> ConwayTx
     -> String
     -> IO StatePoint
 statePoint cfg prov tid tx label = do
     utxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     (i, out) <-
         maybe
             (fail ("no state output after " <> label))
@@ -330,7 +333,7 @@ statePoint cfg prov tid tx label = do
 book
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> Edges.SubmitSigned
     -> TokenId
     -> ByteString
@@ -346,7 +349,7 @@ bookings in the ledger's order happen once in 720; that fails the setup.
 bookUntilOrdersDiffer
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> Edges.SubmitSigned
     -> TokenId
     -> (ByteString, ByteString)
@@ -376,12 +379,12 @@ inline request datum names this registry's token (the fold references it).
 -}
 makeDecoys
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> Edges.SubmitSigned
     -> TokenId
     -> IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
 makeDecoys cfg prov submit tid = do
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     fund <-
         case [ u
              | u@(_, o) <- utxos
@@ -446,9 +449,12 @@ lockedAddr cfg = addrFromKeyHashBytes (network cfg) (BS.replicate 28 0xcd)
 {- | Split the wallet's largest output into four plain ada outputs and the
 rest, which keeps every token the output carried.
 -}
-splitPlainAda :: Cage.Provider IO -> Edges.SubmitSigned -> IO ()
+splitPlainAda
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Edges.SubmitSigned
+    -> IO ()
 splitPlainAda prov submit = do
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     (i, o) <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)

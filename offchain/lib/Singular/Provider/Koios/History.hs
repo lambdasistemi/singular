@@ -17,6 +17,7 @@ import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Control.Monad (unless)
+import Control.Monad qualified
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Data.Bifunctor (first)
 import Data.Foldable (toList)
@@ -189,18 +190,16 @@ reconstruct client asset height rows = do
                     )
         mapM_
             ( \(reference@(TxIn creator _), output) ->
-                if creator == key && holds asset output
-                    then
-                        unless
-                            ( Wire.txCborValid parent
-                                && Map.lookup reference produced == Just output
-                            )
-                            $ throwError
-                                ( HistoryMaterialMismatch
-                                    (Wire.txInfoId info)
-                                    "resolved earlier asset output"
-                                )
-                    else pure ()
+                Control.Monad.when (creator == key && holds asset output)
+                    $ unless
+                        ( Wire.txCborValid parent
+                            && Map.lookup reference produced == Just output
+                        )
+                    $ throwError
+                        ( HistoryMaterialMismatch
+                            (Wire.txInfoId info)
+                            "resolved earlier asset output"
+                        )
             )
             (Wire.txInfoInputs info)
 

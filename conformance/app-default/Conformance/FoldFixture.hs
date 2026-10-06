@@ -4,9 +4,13 @@ The regression target supplies its own module from test/fold-budget.
 module Conformance.FoldFixture (Fixture, newFixture, prepare) where
 
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ExUnits)
-import Singular.Registry.Node (SubmitResult)
-import Singular.Registry.Provider (Provider)
+import Singular.Registry.LedgerProvider
+    ( LedgerProvider
+    , Network
+    , SubmitResult
+    )
 
 data Fixture = Fixture
 
@@ -15,7 +19,7 @@ newFixture = pure Fixture
 
 prepare
     :: Fixture
-    -> Provider IO
+    -> (Network, LedgerProvider NoWitness IO)
     -> (ExUnits -> IO ConwayTx)
     -> (ConwayTx -> IO SubmitResult)
     -> ExUnits

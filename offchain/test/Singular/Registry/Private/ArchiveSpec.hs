@@ -48,90 +48,99 @@ import Test.Hspec
 spec :: Spec
 spec = describe "Private full-block source archive" $ do
     it
-        "resolves a spender after its creator despite opposite transaction hash order" $ do
-        let (parent, child) = dependentPair
-            parentReference = TxIn (txIdTx parent) (TxIx 0)
-            referenceOnly = TxIn (txIdTx parent) (TxIx 1)
-        Wire.txIdHex (txIdTx child)
-            `shouldSatisfy` (< Wire.txIdHex (txIdTx parent))
-        archive <- reached (appendBlock (point 1) 1 1 [parent, child] initial)
-        block <- single "source block" (archiveBlocks archive)
-        let records = archivedTransactions block
-        map archivedId records `shouldBe` map txIdTx [parent, child]
-        map decodeArchived records `shouldBe` map Right [parent, child]
-        childRecord <-
-            single
-                "source child"
-                (filter ((== txIdTx child) . archivedId) records)
-        archivedInputs childRecord
-            `shouldBe` Map.singleton parentReference (output 8_000_000)
-        archivedReferences childRecord
-            `shouldBe` Map.singleton referenceOnly (output 1_000_000)
-        Map.member parentReference (archiveOutputs archive) `shouldBe` False
-        Map.lookup referenceOnly (archiveOutputs archive)
-            `shouldBe` Just (output 1_000_000)
-        case appendBlock (point 1) 1 1 [child, parent] initial of
-            Left failure ->
-                failure `shouldBe` ArchiveMissingInput (txIdTx child) parentReference
-            Right _ -> expectationFailure "spender-before-creator material was accepted"
+        "resolves a spender after its creator despite opposite transaction hash order"
+        $ do
+            let (parent, child) = dependentPair
+                parentReference = TxIn (txIdTx parent) (TxIx 0)
+                referenceOnly = TxIn (txIdTx parent) (TxIx 1)
+            Wire.txIdHex (txIdTx child)
+                `shouldSatisfy` (< Wire.txIdHex (txIdTx parent))
+            archive <- reached (appendBlock (point 1) 1 1 [parent, child] initial)
+            block <- single "source block" (archiveBlocks archive)
+            let records = archivedTransactions block
+            map archivedId records `shouldBe` map txIdTx [parent, child]
+            map decodeArchived records `shouldBe` map Right [parent, child]
+            childRecord <-
+                single
+                    "source child"
+                    (filter ((== txIdTx child) . archivedId) records)
+            archivedInputs childRecord
+                `shouldBe` Map.singleton parentReference (output 8_000_000)
+            archivedReferences childRecord
+                `shouldBe` Map.singleton referenceOnly (output 1_000_000)
+            Map.member parentReference (archiveOutputs archive) `shouldBe` False
+            Map.lookup referenceOnly (archiveOutputs archive)
+                `shouldBe` Just (output 1_000_000)
+            case appendBlock (point 1) 1 1 [child, parent] initial of
+                Left failure ->
+                    failure `shouldBe` ArchiveMissingInput (txIdTx child) parentReference
+                Right _ -> expectationFailure "spender-before-creator material was accepted"
     it
-        "keeps attempted normal inputs of a failed script and applies only collateral" $ do
-        let transaction =
-                mkBasicTx
-                    ( mkBasicTxBody
-                        & inputsTxBodyL .~ Set.singleton funding
-                        & collateralInputsTxBodyL .~ Set.singleton collateral
-                        & outputsTxBodyL .~ Seq.fromList [output 4_000_000, output 5_000_000]
-                        & collateralReturnTxBodyL .~ SJust (output 900_000)
-                    )
-                    & isValidTxL .~ IsValid False
-            identity = txIdTx transaction
-        archive <- reached (appendBlock (point 1) 1 1 [transaction] initial)
-        block <- single "failed-script source block" (archiveBlocks archive)
-        record <-
-            single "failed-script source transaction" (archivedTransactions block)
-        let live = archiveOutputs archive
-        decodeArchived record `shouldBe` Right transaction
-        archivedValid record `shouldBe` False
-        archivedInputs record
-            `shouldBe` Map.singleton funding (output 10_000_000)
-        Map.lookup funding live `shouldBe` Just (output 10_000_000)
-        Map.member collateral live `shouldBe` False
-        Map.lookup (TxIn identity (TxIx 2)) live
-            `shouldBe` Just (output 900_000)
-        Map.member (TxIn identity (TxIx 0)) live `shouldBe` False
-        Map.member (TxIn identity (TxIx 1)) live `shouldBe` False
+        "keeps attempted normal inputs of a failed script and applies only collateral"
+        $ do
+            let transaction =
+                    mkBasicTx
+                        ( mkBasicTxBody
+                            & inputsTxBodyL
+                                .~ Set.singleton funding
+                            & collateralInputsTxBodyL
+                                .~ Set.singleton collateral
+                            & outputsTxBodyL
+                                .~ Seq.fromList [output 4_000_000, output 5_000_000]
+                            & collateralReturnTxBodyL
+                                .~ SJust (output 900_000)
+                        )
+                        & isValidTxL
+                            .~ IsValid False
+                identity = txIdTx transaction
+            archive <- reached (appendBlock (point 1) 1 1 [transaction] initial)
+            block <- single "failed-script source block" (archiveBlocks archive)
+            record <-
+                single "failed-script source transaction" (archivedTransactions block)
+            let live = archiveOutputs archive
+            decodeArchived record `shouldBe` Right transaction
+            archivedValid record `shouldBe` False
+            archivedInputs record
+                `shouldBe` Map.singleton funding (output 10_000_000)
+            Map.lookup funding live `shouldBe` Just (output 10_000_000)
+            Map.member collateral live `shouldBe` False
+            Map.lookup (TxIn identity (TxIx 2)) live
+                `shouldBe` Just (output 900_000)
+            Map.member (TxIn identity (TxIx 0)) live `shouldBe` False
+            Map.member (TxIn identity (TxIx 1)) live `shouldBe` False
     it
-        "rolls back complete material and spent outputs, then accepts a different branch" $ do
-        let (parent, child) = dependentPair
-        first <- reached (appendBlock (point 1) 1 1 [parent] initial)
-        second <- reached (appendBlock (point 2) 2 2 [child] first)
-        restored <- reached (rollbackArchive (point 1) second)
-        archiveBlocks restored `shouldBe` archiveBlocks first
-        archiveOutputs restored `shouldBe` archiveOutputs first
-        alternative <- reached (appendBlock (point 3) 3 2 [child] restored)
-        map archivedPoint (archiveBlocks alternative)
-            `shouldBe` [point 1, point 3]
-        genesis <- reached (rollbackArchive Chain.GenesisPoint alternative)
-        archiveBlocks genesis `shouldBe` []
-        archiveOutputs genesis `shouldBe` archiveOutputs initial
-        case rollbackArchive (point 9) alternative of
-            Left failure -> failure `shouldBe` ArchiveUnknownRollback (point 9)
-            Right _ -> expectationFailure "unknown source rollback was accepted"
+        "rolls back complete material and spent outputs, then accepts a different branch"
+        $ do
+            let (parent, child) = dependentPair
+            first <- reached (appendBlock (point 1) 1 1 [parent] initial)
+            second <- reached (appendBlock (point 2) 2 2 [child] first)
+            restored <- reached (rollbackArchive (point 1) second)
+            archiveBlocks restored `shouldBe` archiveBlocks first
+            archiveOutputs restored `shouldBe` archiveOutputs first
+            alternative <- reached (appendBlock (point 3) 3 2 [child] restored)
+            map archivedPoint (archiveBlocks alternative)
+                `shouldBe` [point 1, point 3]
+            genesis <- reached (rollbackArchive Chain.GenesisPoint alternative)
+            archiveBlocks genesis `shouldBe` []
+            archiveOutputs genesis `shouldBe` archiveOutputs initial
+            case rollbackArchive (point 9) alternative of
+                Left failure -> failure `shouldBe` ArchiveUnknownRollback (point 9)
+                Right _ -> expectationFailure "unknown source rollback was accepted"
     it
-        "refuses missing references and duplicate source transactions by their identity" $ do
-        let missing = TxIn (txIdOfByte 88) (TxIx 9)
-            transaction =
-                mkBasicTx
-                    (mkBasicTxBody & referenceInputsTxBodyL .~ Set.singleton missing)
-        case appendBlock (point 1) 1 1 [transaction] initial of
-            Left failure ->
-                failure `shouldBe` ArchiveMissingInput (txIdTx transaction) missing
-            Right _ -> expectationFailure "unresolved reference material was accepted"
-        let (parent, _) = dependentPair
-        case appendBlock (point 1) 1 1 [parent, parent] initial of
-            Left failure -> failure `shouldBe` ArchiveDuplicateTransaction (txIdTx parent)
-            Right _ -> expectationFailure "duplicate source transaction was accepted"
+        "refuses missing references and duplicate source transactions by their identity"
+        $ do
+            let missing = TxIn (txIdOfByte 88) (TxIx 9)
+                transaction =
+                    mkBasicTx
+                        (mkBasicTxBody & referenceInputsTxBodyL .~ Set.singleton missing)
+            case appendBlock (point 1) 1 1 [transaction] initial of
+                Left failure ->
+                    failure `shouldBe` ArchiveMissingInput (txIdTx transaction) missing
+                Right _ -> expectationFailure "unresolved reference material was accepted"
+            let (parent, _) = dependentPair
+            case appendBlock (point 1) 1 1 [parent, parent] initial of
+                Left failure -> failure `shouldBe` ArchiveDuplicateTransaction (txIdTx parent)
+                Right _ -> expectationFailure "duplicate source transaction was accepted"
 
 reached :: Either ArchiveFailure a -> IO a
 reached = either (fail . show) pure
@@ -180,17 +189,22 @@ dependentPair = choose [1 .. 10000]
         let parent =
                 mkBasicTx
                     ( mkBasicTxBody
-                        & inputsTxBodyL .~ Set.singleton funding
-                        & outputsTxBodyL .~ Seq.fromList [output 8_000_000, output 1_000_000]
-                        & feeTxBodyL .~ Coin salt
+                        & inputsTxBodyL
+                            .~ Set.singleton funding
+                        & outputsTxBodyL
+                            .~ Seq.fromList [output 8_000_000, output 1_000_000]
+                        & feeTxBodyL
+                            .~ Coin salt
                     )
             child =
                 mkBasicTx
                     ( mkBasicTxBody
-                        & inputsTxBodyL .~ Set.singleton (TxIn (txIdTx parent) (TxIx 0))
+                        & inputsTxBodyL
+                            .~ Set.singleton (TxIn (txIdTx parent) (TxIx 0))
                         & referenceInputsTxBodyL
                             .~ Set.singleton (TxIn (txIdTx parent) (TxIx 1))
-                        & outputsTxBodyL .~ Seq.singleton (output 7_000_000)
+                        & outputsTxBodyL
+                            .~ Seq.singleton (output 7_000_000)
                     )
         in  if Wire.txIdHex (txIdTx child) < Wire.txIdHex (txIdTx parent)
                 then (parent, child)

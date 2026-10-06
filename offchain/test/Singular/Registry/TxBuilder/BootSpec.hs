@@ -103,8 +103,7 @@ bootsByReference = describe "a registry boots only by reference" $ do
         let session =
                 withAddressOutputs (\_ -> modifyIORef calls (+ 1) >> pure []) $
                     withParameters (preprodParams & ppProtocolVersionL .~ ProtVer major 0) $
-                        withTime (pure syntheticTime) $
-                            stubSession
+                        withTime (pure syntheticTime) stubSession
         result <-
             try (bootTokenImpl cfg session payer)
                 :: IO (Either SomeException ConwayTx)
@@ -214,8 +213,7 @@ publish run wallet = do
     let provider =
             servingSession
                 ( withAddressOutputs (\_ -> pure wallet) $
-                    withTime (pure syntheticTime) $
-                        stubSession
+                    withTime (pure syntheticTime) stubSession
                 )
         submit tx = do
             modifyIORef kept (<> [tx])
@@ -230,18 +228,18 @@ material, returning its completed transaction. A refusal propagates.
 boot :: [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
 boot wallet =
     let provider =
-            ( withAddressOutputs (\_ -> pure wallet)
-                $ withParameters (withSyntheticCosts preprodParams)
-                $ withTime (pure syntheticTime)
-                $ withResolvedOutputs
-                    ( \wanted ->
-                        pure
-                            [ (reference, output)
-                            | (reference, output) <- wallet
-                            , reference `Set.member` wanted
-                            ]
-                    )
-                $ stubSession
+            ( withAddressOutputs (\_ -> pure wallet) $
+                withParameters (withSyntheticCosts preprodParams) $
+                    withTime (pure syntheticTime) $
+                        withResolvedOutputs
+                            ( \wanted ->
+                                pure
+                                    [ (reference, output)
+                                    | (reference, output) <- wallet
+                                    , reference `Set.member` wanted
+                                    ]
+                            )
+                            stubSession
             )
     in  bootTokenImpl cfg provider payer
 

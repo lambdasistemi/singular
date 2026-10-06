@@ -112,11 +112,11 @@ fail() {
   exit 1
 }
 
-# What the node read, from the inspect receipt.
+# Inspect's separately consumed output and observed tip; no common-point promise.
 node_output="$(jq -r '.applicationOutput.output // empty' "$inspect")"
 node_cbor="$(jq -r '.applicationOutput.datumCbor // empty' "$inspect")"
 node_hash="$(jq -r '.applicationOutput.datumHash // empty' "$inspect")"
-node_point="$(jq -r '.chainPoint // empty' "$inspect")"
+node_point="$(jq -r '.observedTip // empty' "$inspect")"
 node_slot="${node_point%%.*}"
 [ -n "$node_output" ] && [ -n "$node_cbor" ] && [ -n "$node_hash" ] && [[ "$node_slot" =~ ^[0-9]+$ ]] \
   || {
@@ -142,7 +142,7 @@ finish() {
        requests: $requests,
        indexer: {output: $utxo, address: $address, blockHeight: $blockHeight, blockTime: $blockTime,
                  datumCbor: $cbor, datumHashRecomputed: $dhash, tipSlot: $tipSlot, tipTime: $tipTime},
-       node: {output: $nodeOutput, datumCbor: $nodeCbor, datumHash: $nodeHash, chainPoint: $nodePoint},
+       inspect: {output: $nodeOutput, datumCbor: $nodeCbor, datumHash: $nodeHash, observedTip: $nodePoint},
        lagSlots: (if ($tipSlot | length) > 0 then (($nodeSlot | tonumber) - ($tipSlot | tonumber)) else null end),
        maxLagSlots: ($maxLag | tonumber),
        comparisons: {

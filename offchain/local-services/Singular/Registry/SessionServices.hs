@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 {- | Fixed local computations over one generic ledger session's raw facts.
 The caller's monad supplies reads; these services acquire no session, perform
 no transport operation of their own, and select no evaluation or time policy.
@@ -12,6 +10,8 @@ module Singular.Registry.SessionServices
     , ceilingSlot
     , slotStart
     , validityUpper
+    , validityWindow
+    , observedHorizon
     ) where
 
 import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
@@ -44,8 +44,10 @@ import Singular.Registry.LocalEvaluation
 import Singular.Registry.NetworkTime
     ( NetworkTime
     , NetworkTimeFailure (..)
+    , ValidityWindow
     , capValidityUpper
     , ledgerHorizon
+    , minimumValidityWindow
     , networkMagic
     , posixMsCeilingSlot
     , posixMsFloorSlot
@@ -148,3 +150,29 @@ validityUpper session observed lower upper = runExceptT $ do
         horizon <- ledgerHorizon time observed
         capped <- capValidityUpper time observed lower upper
         pure (horizon, capped)
+
+-- | Decide the usable interval from actual pinned time without clock effects.
+validityWindow
+    :: (Monad m)
+    => Session w m
+    -> SlotNo
+    -> Maybe SlotNo
+    -> SlotNo
+    -> m (Either ServiceFailure ValidityWindow)
+validityWindow session observed lower upper = runExceptT $ do
+    time <- timeOf session
+    ExceptT . pure . first ServiceTimeFailure $
+        minimumValidityWindow time observed lower upper
+
+{- | Observe only the moving horizon while a bounded wait is in progress.
+The caller selects its interval again only after the horizon has moved.
+-}
+observedHorizon
+    :: (Monad m)
+    => Session w m
+    -> SlotNo
+    -> m (Either ServiceFailure SlotNo)
+observedHorizon session observed = runExceptT $ do
+    time <- timeOf session
+    ExceptT . pure . first ServiceTimeFailure $
+        ledgerHorizon time observed

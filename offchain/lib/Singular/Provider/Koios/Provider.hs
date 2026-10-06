@@ -18,6 +18,7 @@ import Cardano.Ledger.Credential (Credential (ScriptHashObj))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Data.Bifunctor (first)
+import Data.Bifunctor qualified
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -122,7 +123,7 @@ koiosProvider runtime configured loadSource client =
                 guarded
                     identity
                     ( fmap
-                        (first backendFailure . fmap (\value -> Evidenced value Nothing))
+                        (first backendFailure . fmap (`Evidenced` Nothing))
                         action
                     )
             localTime = pure $ do
@@ -130,7 +131,7 @@ koiosProvider runtime configured loadSource client =
                 let Network magic = configured
                 first NetworkTimeRefusal $
                     fmap
-                        (\value -> Evidenced value Nothing)
+                        (`Evidenced` Nothing)
                         (validateNetworkTime magic manifest genesis eras)
             readHistory asset range = do
                 open <- sessionOpen runtime identity
@@ -144,23 +145,24 @@ koiosProvider runtime configured loadSource client =
                 { sessionNetwork = configured
                 , sessionId = identity
                 , sessionBinding = Unbound
-                , outputs = \query ->
+                , outputs =
                     guarded
                         identity
-                        ( fmap
-                            (fmap (\value -> Evidenced value Nothing))
-                            (runExceptT (queryOutputs scopedClient query))
-                        )
+                        . fmap
+                            (fmap (`Evidenced` Nothing))
+                        . runExceptT
+                        . queryOutputs scopedClient
                 , protocolParameters = readFact (Client.cliProtocolParams scopedClient)
                 , tipObservation =
                     readFact (fmap (fmap observation) (Client.tip scopedClient))
                 , networkTime = guarded identity localTime
-                , scriptRegistered = \script ->
+                , scriptRegistered =
                     readFact
-                        ( Client.accountRegistered
+                        . Client.accountRegistered
                             scopedClient
-                            (AccountAddress Ledger.Testnet (AccountId (ScriptHashObj script)))
-                        )
+                        . AccountAddress Ledger.Testnet
+                        . AccountId
+                        . ScriptHashObj
                 , history = readHistory
                 }
     guarded identity action = do
@@ -171,7 +173,11 @@ koiosProvider runtime configured loadSource client =
         if open
             then
                 fmap
-                    (fmap (fmap (\(block, rest) -> (block, guardStream identity rest))))
+                    ( fmap
+                        ( fmap
+                            (\pair -> pair `seq` Data.Bifunctor.second (guardStream identity) pair)
+                        )
+                    )
                     (nextBlock stream)
             else pure (Left (HistoryReadFailure (ReleasedSession identity)))
 

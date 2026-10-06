@@ -56,11 +56,11 @@ import Singular.Registry.Driver
     , renderRoot
     )
 import Singular.Registry.Ledger (Root (..))
-import Singular.Registry.Node (tryOutcome)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
+import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.E2E.CageSpec (submitWithGenesis, withE2E)
 
@@ -124,7 +124,7 @@ driverSpec stateBytes requestBytes = do
                     (registryTokenId reg)
                     seededKey
                     edgeInsertAbsent
-            unsigned <- Cage.withView prov $ \v -> do
+            unsigned <- Cage.withLatest prov $ \v -> do
                 ctx <- Edges.registryContextFor cfg codes v (registryRefs reg)
                 updateTokenWithDuties
                     cfg

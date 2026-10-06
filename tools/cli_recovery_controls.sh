@@ -111,19 +111,26 @@ export TMPDIR="$work"
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
 sock=""
+provider_url=""
+time_directory=""
+network_magic=""
 for _ in $(seq 1 900); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  [ -n "$sock" ] && [ -S "$sock" ] && break
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -S "$sock" ] && [ -r "$time_directory/time-manifest.json" ] && break
   kill -0 "$devnet_pid" 2>/dev/null || break
   sleep 1
 done
-if [ -z "$sock" ] || [ ! -S "$sock" ]; then
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [ ! -r "$time_directory/time-manifest.json" ]; then
   tail -40 "$work/devnet.err" >&2 || true
-  setup_fail "the development node never printed a usable socket"
+  setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
-say "one development node at $sock"
+say "one private development source at $provider_url"
 
-node=(--node-socket "$sock" --network-magic 42)
+node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 # probe_ins TXIN...: the node's own answer — its tip and which of TXIN
 # are unspent — read through `devnet probe`, never through the CLI.
 probe_ins() {
@@ -784,8 +791,8 @@ run update-d registry update --key-hex 6b0d --payload "$work/payload.json" "${co
 excluded_line="$(jq -c --arg t "$unsent" 'select(.journalTxId == $t and .journalEvent == "excluded")' "$journal")"
 clause "the next write journals the unsent fold excluded" \
   is_equal "$(events_of "$unsent")" '["prepared","submit-unknown","excluded"]'
-clause "the excluded line names the chain point it read" \
-  bash -c "[[ '$(jq -r '.journalChainPoint // ""' <<<"$excluded_line")' =~ ^[0-9]+\.[0-9a-f]{64}$ ]]"
+clause "the excluded line names its latest observed tip" \
+  bash -c "[[ '$(jq -r '.journalObservedTip // ""' <<<"$excluded_line")' =~ ^[0-9]+\.[0-9a-f]{64}$ ]]"
 clause "the excluded line names inputs the node reports unspent" \
   jq -n -e --argjson l "${excluded_line:-null}" --argjson p "$unsent_live" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
 clause "its receipt names the fold excluded" is_equal "$(field update-d ".reconciled.excluded | tojson")" "[\"$unsent\"]"
@@ -1051,8 +1058,8 @@ clause "after the fold's rollback only an exclusion follows" \
 say "$control: the fold's latest phase is $(last_event "$rb_fold")"
 rolled_line() { jq -c --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "rolled-back")' "$journal"; }
 for t in "$rb_book" "$rb_fold"; do
-  clause "the rolled-back line of $t names a chain point on the restored chain" \
-    on_restored_chain "$(rolled_line "$t" | jq -r '.journalChainPoint // "" | split(".") | last')"
+  clause "the rolled-back line of $t names a latest observed tip on the restored chain" \
+    on_restored_chain "$(rolled_line "$t" | jq -r '.journalObservedTip // "" | split(".") | last')"
   clause "the rolled-back line of $t names spent inputs the node reports unspent" \
     jq -n -e --argjson l "$(rolled_line "$t")" --argjson p "$post" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
 done

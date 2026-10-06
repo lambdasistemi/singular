@@ -119,18 +119,19 @@ apply, read back, with the pinned and applied script identities. It
 covers the registry protocol, not the naming lifecycle of the retained
 rows below.
 
-The journey boots a real devnet node (spawned locally,
-node-to-client) and executes against it, unless you point it at a node
-of your own: pass `--node-socket PATH --network-magic N --wallet-skey
-FILE` (or the `SINGULAR_NODE_SOCKET`, `SINGULAR_NETWORK_MAGIC` and
-`SINGULAR_WALLET_SKEY` environment variables) and the same runner
-connects to your node and funds itself from your own signing key
-instead. The devnet stays the default; all three settings are required
-together. This two-way reachability is exercised by the release
-pipeline, and the
+The packaged journey defaults to a private generated devnet behind the Koios
+HTTP facade. To use a test-network API and your own wallet, pass
+`--koios-url URL --network-magic N --wallet-skey FILE`; the matching environment
+variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
+`SINGULAR_WALLET_SKEY`. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
+pinned genesis/history material; preprod otherwise uses the reviewed packaged
+recording. The launcher checks configuration before spawning its private
+fixture. Old ordinary socket and backend settings refuse before provider
+acquisition. This route remains an obligation of the unchanged journey gate;
+its command description alone is not a current release or hosted pass. The
 [onboarding runbook](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
-is the end-to-end runbook for it: release download, node and wallet
-setup, the funding diagnostic and the journey.
+explains the API, time and wallet settings. The legacy naming commands below
+retain their stated unverified status.
 
 Build the two compiled blueprints from this archive's own flakes, then run
 the journey from `offchain/` (it reads the pinned identity manifests from

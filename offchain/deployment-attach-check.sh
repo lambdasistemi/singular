@@ -46,27 +46,31 @@ export TMPDIR="$work"
 echo "attach-check: starting a devnet the deployment can outlive"
 nix run --quiet "$here#devnet" >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
+provider_url=""
+time_directory=""
+network_magic=""
 for _ in $(seq 1 300); do
-  sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
-  [ -n "$sock" ] && [ -S "$sock" ] && break
+  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
+  time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
+  network_magic="$(jq -er '.networkMagic' <<<"$settings" 2>/dev/null || true)"
+  [ -n "$provider_url" ] && [ "$network_magic" = 42 ] && [ -r "$time_directory/time-manifest.json" ] && break
   kill -0 "$devnet_pid" 2>/dev/null || break
   sleep 1
 done
-if [ -z "${sock:-}" ] || [ ! -S "${sock:-}" ]; then
-  echo "attach-check: the devnet never printed a usable socket" >&2
-  echo "--- devnet stdout ---" >&2
+if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -r "$time_directory/time-manifest.json" ]; then
+  echo "attach-check: the private devnet never printed usable provider/time settings" >&2
   cat "$work/devnet.out" >&2 || true
-  echo "--- devnet stderr ---" >&2
   tail -40 "$work/devnet.err" >&2 || true
   exit 1
 fi
-echo "attach-check: devnet socket $sock"
+echo "attach-check: private devnet provider $provider_url"
 
 # The devnet genesis key, in the file form a joiner supplies.
 genesis_skey="$work/joiner.skey"
 nix run --quiet "$here#deployment" -- genesis-skey --out "$genesis_skey"
 
-external=(--node-socket "$sock" --network-magic 42 --wallet-skey "$genesis_skey")
+external=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic" --wallet-skey "$genesis_skey")
 manifest="$work/devnet-deployment.json"
 
 count_state_outputs() { nix run --quiet "$here#deployment" -- count "${external[@]}" --deployment "$manifest" --what state; }

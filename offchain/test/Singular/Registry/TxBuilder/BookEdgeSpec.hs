@@ -103,14 +103,12 @@ every row fails with that message instead of a silent pass.
 provider :: (LedgerProvider.Network, LedgerProvider NoWitness IO)
 provider =
     servingSession $
-        ( withAddressOutputs
+        withAddressOutputs
             ( \_ ->
                 pure
                     [(fundIn, mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty))]
             )
-            $ withTime (pure syntheticTime)
-            $ stubSession
-        )
+            (withTime (pure syntheticTime) stubSession)
 
 -- | Run the builder and keep the transaction it submits.
 booked :: Edge -> ByteString -> IO ConwayTx

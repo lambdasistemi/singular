@@ -276,19 +276,18 @@ updates = describe "a payload update" $ do
         $ \path -> do
             evaluations <- newIORef (0 :: Int)
             let view =
-                    ( withParameters (withSyntheticCosts preprodParams)
-                        $ withTime (pure syntheticTime)
-                        $ withResolvedOutputs
-                            ( \wanted -> do
-                                atomicModifyIORef' evaluations (\n -> (n + 1, ()))
-                                pure
-                                    [ (reference, output)
-                                    | (reference, output) <- [(ref '4' 1, held), (ref '6' 0, funding)]
-                                    , reference `Set.member` wanted
-                                    ]
-                            )
-                        $ stubSession
-                    )
+                    withParameters (withSyntheticCosts preprodParams) $
+                        withTime (pure syntheticTime) $
+                            withResolvedOutputs
+                                ( \wanted -> do
+                                    atomicModifyIORef' evaluations (\n -> (n + 1, ()))
+                                    pure
+                                        [ (reference, output)
+                                        | (reference, output) <- [(ref '4' 1, held), (ref '6' 0, funding)]
+                                        , reference `Set.member` wanted
+                                        ]
+                                )
+                                stubSession
                 funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
                 held =
                     liveWith 1 (Just (envelopeToData envelope))

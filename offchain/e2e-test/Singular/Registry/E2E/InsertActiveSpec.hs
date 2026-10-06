@@ -64,11 +64,13 @@ import Singular.Registry.Blueprint
     , loadRegistryCodesFromEnv
     )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (AssetName (..), Root (..))
-import Singular.Registry.Node (tryOutcome)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.Types (edgeInsertActive)
+import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.Driver
     ( FoldOutcome (..)
@@ -201,9 +203,12 @@ sayFold act = do
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
 activeHeldAt
-    :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> CageConfig
+    -> ByteString
+    -> IO Integer
 activeHeldAt prov cfg key = do
-    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    walletUtxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     let policy = policyIdFromPin (cfgActivePolicy cfg)
     pure $
         sum

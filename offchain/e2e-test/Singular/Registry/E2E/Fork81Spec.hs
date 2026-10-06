@@ -38,8 +38,7 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Root (..)
     )
-import Singular.Registry.Node (tryOutcome)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -55,6 +54,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeInsertAbsent
     )
+import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.Driver
     ( bootRegistry
@@ -140,7 +140,7 @@ fork81Spec stateBytes requestBytes = do
             -- insertion created (#157 token-destinations-and-refunds), so the state UTxO is the
             -- one carrying the registry policy token, not the only one.
             let stateAddr = cageAddrFromCfg cfg Testnet
-            stateUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` stateAddr)
+            stateUtxos <- Cage.withLatest prov (`Cage.outputsAt` stateAddr)
             chainRoot <-
                 case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
                     Just (_, out) -> case extractCageDatum out of

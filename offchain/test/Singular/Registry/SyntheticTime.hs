@@ -9,7 +9,6 @@ module Singular.Registry.SyntheticTime (syntheticTime, syntheticHistory, synthet
 import Cardano.Ledger.Api.PParams (emptyPParams, ppProtocolVersionL)
 import Cardano.Ledger.BaseTypes (ProtVer (..))
 import Cardano.Ledger.Binary (getVersion)
-import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Slotting.Slot (EpochNo (..), EpochSize (..))
 import Cardano.Slotting.Time (mkSlotLength)
 import Codec.Serialise (serialise)
@@ -34,6 +33,7 @@ import Ouroboros.Consensus.HardFork.History.Summary
     , initBound
     , mkUpperBound
     )
+import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.NetworkTime
     ( NetworkTime
     , NetworkTimeManifest (..)

@@ -17,7 +17,7 @@
       "pause": 400
     },
     {
-      "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current preprod session follower confirms new transactions, while a node provider handles older outputs. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
+      "text": "The planned identity read path is the Cardano KERI follower store: use ckeri writes with --store PATH and status with explicit --backend local --store PATH, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by #107; the current ordinary Koios path provides raw outputs and history in Unbound sessions with Unverified facts, without that accepted persistent proof path. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "first-demo.md",
-    "sha256": "8e58a2f115c389712b5d7194f7758e1150e5df9fdd55ee18b4c7f702101d2fe3"
+    "sha256": "ff50b6c3866280e053ed4bc488b4e34ea96eed34b284fe3138790ccfc5dd175b"
   }
 }

@@ -63,7 +63,7 @@ runFacadeSmoke genesisDirectory outputDirectory = do
                         (outputDirectory </> "independent-facade-sources.jsonl")
                         (encode event <> "\n")
                 )
-    withGeneratedFacade genesisDirectory observe $ \_ facade ->
+    withGeneratedFacade FundGenesis genesisDirectory observe $ \_ facade ->
         withReads (facadeSettings facade) (exercise facade)
             `finally` ( facadeSources facade
                             >>= LBS.writeFile (outputDirectory </> "independent-facade-sources.json")

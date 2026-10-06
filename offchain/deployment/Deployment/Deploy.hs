@@ -45,6 +45,7 @@ import Deployment.Node
     , verifyRegisteredDeployment
     )
 import Deployment.Options (DeployOptions (..), deployOptions)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
     ( Deployment (..)
@@ -53,20 +54,18 @@ import Singular.Registry.Deployment
     , verifyDeployment
     , writeDeployment
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , bech32Address
-    , funderAddr
-    , withCapabilities
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Ledger
+import Singular.Registry.Runner (withRunner)
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , mkRequestScript
     , scriptFromBytes
     , scriptHashBytes
     )
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | Make the deployment these arguments describe, once.
 deploy :: [String] -> IO ()
@@ -80,7 +79,7 @@ deploy args = do
         } <-
         deployOptions args
     unbound <- loadCompiled
-    withCapabilities $ \caps -> do
+    withRunner $ \wallet caps -> do
         let prov = capReads caps
         refuseIfAlreadyDeployed prov out unbound
         txs <- newIORef []
@@ -88,16 +87,17 @@ deploy args = do
         -- published before the boot, which resolves it from there.
         (stateIn, _) <-
             publishOne
+                wallet
                 prov
                 caps
                 txs
                 (scriptFromBytes "state" (cStateBytes unbound))
         (cfg, tok, bootTx, seedIn, compiled) <-
-            bootRegistry prov caps unbound txs processTime retractTime
-        registerCredentials prov caps compiled txs
-        refs <- publishAll prov caps cfg tok compiled stateIn txs
+            bootRegistry wallet prov caps unbound txs processTime retractTime
+        registerCredentials wallet prov caps compiled txs
+        refs <- publishAll wallet prov caps cfg tok compiled stateIn txs
         bootstrap <- reverse <$> readIORef txs
-        magic <- Cage.withView prov (pure . Cage.cpNetwork . Cage.viewPoint)
+        let Ledger.Network magic = fst prov
         let dep =
                 Deployment
                     { depRelease = release
@@ -132,7 +132,7 @@ deploy args = do
                 <> "; "
                 <> show (length refs)
                 <> " reference scripts published; funded by "
-                <> bech32Address funderAddr
+                <> bech32Address (walletAddr wallet)
             )
 
 {- | A deployment is made once. Given a manifest a node still agrees
@@ -140,7 +140,10 @@ with, say so and stop, rather than booting a second registry that
 nothing recorded will ever point at.
 -}
 refuseIfAlreadyDeployed
-    :: Cage.Provider IO -> FilePath -> Compiled -> IO ()
+    :: (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> FilePath
+    -> Compiled
+    -> IO ()
 refuseIfAlreadyDeployed prov out unbound = do
     there <- doesFileExist out
     when there $ do
@@ -148,7 +151,7 @@ refuseIfAlreadyDeployed prov out unbound = do
         compiled <- bindDeployment unbound dep
         live <-
             ( True
-                <$ Cage.withView
+                <$ Cage.withLatest
                     prov
                     (\v -> verifyDeployment v dep (partsOf compiled))
             )

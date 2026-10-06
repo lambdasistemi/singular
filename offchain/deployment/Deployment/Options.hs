@@ -8,9 +8,9 @@ spellings, @--name value@ and @--name=value@ ('flagValue'); the manifest
 path of @verify@ and @count@ comes from
 'Singular.Registry.Deployment.deploymentPathFromArgs', which reads
 @--deployment@ the same two ways. Each verb's reader refuses its missing
-required flag by name before anything is loaded. The node and wallet
-flags (@--node-socket@, @--network-magic@, @--wallet-skey@) are not read
-here: "Singular.Registry.Node" reads them when a session opens.
+required flag by name before anything is loaded. The provider and wallet
+flags (@--koios-url@, @--network-magic@, @--wallet-skey@ and @--network-time@)
+are read by "Singular.Registry.Runner" when the session opens.
 
 Which verb runs is decided in @Main@: the first argument that is not a
 flag.
@@ -39,9 +39,9 @@ import Singular.Registry.Deployment (deploymentPathFromArgs)
 usage :: String
 usage =
     "usage: deployment deploy --out MANIFEST [--release TAG] \
-    \[--node-socket P --network-magic N --wallet-skey F]\n\
+    \[--koios-url URL --network-magic N --wallet-skey F --network-time DIR]\n\
     \       deployment verify --deployment MANIFEST \
-    \[--node-socket P --network-magic N --wallet-skey F]"
+    \[--koios-url URL --network-magic N --wallet-skey F --network-time DIR]"
 
 -- | The value of a flag, as @--name value@ or @--name=value@.
 flagValue :: String -> [String] -> Maybe String

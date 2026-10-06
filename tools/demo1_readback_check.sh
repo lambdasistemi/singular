@@ -44,7 +44,7 @@ mkdir -p "$work/fx"
 # The inspect receipt an ordinary `singular registry inspect` prints, in the
 # fields the readback compares.
 jq -n --arg tx "$tx" --arg cbor "$cbor" --arg hash "$hash" --arg slot "$node_slot" \
-  '{command: "inspect", outcome: "success", leaf: "active", chainPoint: ($slot + ".aa"),
+  '{command: "inspect", outcome: "success", leaf: "active", observedTip: ($slot + ".aa"),
     applicationOutput: {output: ($tx + "#0"), datumCbor: $cbor, datumHash: $hash}}' >"$work/inspect.json"
 
 # answers KIND VARIANT: write the indexer's answers into $work/fx.
@@ -148,6 +148,14 @@ expect_reason() {
   }
   jq -e '.holds == false' "$work/$1.json" >/dev/null || fail "$1 wrote no failing record"
 }
+
+# A historical chainPoint field cannot stand in for the observed tip the
+# current Unbound inspect reports. Refuse before any public-service request.
+cp "$work/inspect.json" "$work/current-inspect.json"
+jq '.chainPoint = .observedTip | del(.observedTip)' "$work/current-inspect.json" >"$work/inspect.json"
+run koios 2 historical-point-only
+[ ! -s "$work/received.log" ] || fail "a missing observed tip reached the indexer"
+cp "$work/current-inspect.json" "$work/inspect.json"
 
 for provider in koios blockfrost; do
   extra=()

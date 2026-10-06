@@ -25,6 +25,7 @@ import Conformance.Run.Submit
 import Conformance.Run.Units
 import Conformance.Run.Wallet
 import Control.Monad (when)
+import Singular.Registry.Evidence qualified as Cage
 
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (readIORef, writeIORef)
@@ -34,7 +35,6 @@ import Data.Maybe (isJust)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..))
@@ -65,6 +65,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (applyPreviousPolicies)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -74,15 +75,11 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -139,7 +136,10 @@ boot can ever consume the wrong UTxO as its funder, and the seed's
 outRef is published by the split transaction itself.
 -}
 designateSplit
-    :: Cage.Provider IO -> Capabilities -> String -> IO (TxIn, TxIn)
+    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
+    -> String
+    -> IO (TxIn, TxIn)
 designateSplit prov submit label = do
     (gIn, gOut) <- largestWalletUtxo prov
     let Coin total = gOut ^. coinTxOutL
@@ -159,16 +159,17 @@ designateSplit prov submit label = do
     require
         ("designation: wallet too small for the " <> label <> " split")
         (rest > seedCoin)
-    result <- submitSigned (capSubmit submit) (signTx genesisSignKey tx)
+    result <- capSubmit submit (signTx genesisSignKey tx)
     case result of
-        Submitted _ -> pure ()
-        Rejected reason ->
+        SubmitAccepted _ -> pure ()
+        SubmitRefused reason ->
             failWith
                 ( "designation split refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     capConfirm submit tx
-    after <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+    after <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     let txid = txIdHex tx
         mine =
             sortOn
@@ -197,18 +198,19 @@ runCanonicalSeedIdentity env w = do
     let cfg = caCfg w
         prov = envProv env
     unsignedBoot <-
-        Cage.withView prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedBoot
     let signedBootWitnessed = signTx genesisSignKey unsignedBoot
         signedBoot = signedTx signedBootWitnessed
     result <- submitTxResilient (envSubmit env) signedBootWitnessed
     case result of
-        Submitted _ -> pure ()
-        Rejected reason ->
+        SubmitAccepted _ -> pure ()
+        SubmitRefused reason ->
             failWith
                 ( "canonical-seed-identity: the node refused the canonical boot: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     confirmTx env signedBoot
     let size = txSizeBytes signedBoot
     emitMeasure env "canonical-seed-identity-boot" mem cpu size
@@ -311,22 +313,23 @@ runRivalSeedAuthentication env w = do
         cfgR = (caCfg w){cageSeed = rivalRef}
         prov = envProv env
     unsignedRival <-
-        Cage.withView prov (\v -> bootTokenImpl cfgR v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgR v genesisAddr)
     (mem, cpu) <- measureUnits env unsignedRival
     let signedRivalWitnessed = signTx genesisSignKey unsignedRival
         signedRival = signedTx signedRivalWitnessed
     result <- submitTxResilient (envSubmit env) signedRivalWitnessed
     case result of
-        Rejected reason ->
+        SubmitRefused reason ->
             failWith
                 ( "rival-seed-authentication FINDING: the ledger REFUSED the internally \
                   \consistent rival ("
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                     <> ") — contradicts the settled design \
                        \(naming-correspondence.md, What t50 settled); \
                        \reported, not relabelled"
                 )
-        Submitted _ -> pure ()
+        SubmitAccepted _ -> pure ()
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     confirmTx env signedRival
     let size = txSizeBytes signedRival
     emitMeasure env "rival-seed-authentication-rival-boot" mem cpu size
@@ -758,7 +761,7 @@ runTokenlessOutputAuthentication env w = do
     require
         "tokenless-output-authentication: the forged tx unexpectedly carries script witnesses"
         (null (txScriptWitnesses unsigned))
-    evalMap <- Cage.withView prov (`Services.evaluateTx` unsigned)
+    evalMap <- Cage.withLatest prov (`Services.evaluateTx` unsigned)
     require
         ( "tokenless-output-authentication: the node evaluated "
             <> show (Map.size evalMap)
@@ -769,19 +772,20 @@ runTokenlessOutputAuthentication env w = do
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of
-        Rejected reason ->
+        SubmitRefused reason ->
             failWith
                 ( "tokenless-output-authentication: the ledger refused the forged output ("
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                     <> ") — creating an output at an address needs \
                        \nobody's permission"
                 )
-        Submitted _ -> pure ()
+        SubmitAccepted _ -> pure ()
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
     confirmTx env signed
     let size = txSizeBytes signed
     emitMeasure env "tokenless-output-authentication-forged" 0 0 size
     -- read the forgery back from the chain
-    utxos <- Cage.withView prov (`Cage.viewUTxOsAt` scriptAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` scriptAddr)
     forgedLive <- case [o | (i, o) <- utxos, txInTxIdHex i == txIdHex signed] of
         [o] -> pure o
         other ->
@@ -867,9 +871,9 @@ stateUtxoByToken
 stateUtxoByToken env w tid = do
     let cfg = caCfg w
     utxos <-
-        Cage.withView
+        Cage.withLatest
             (envProv env)
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
         Just u -> pure u
         Nothing ->

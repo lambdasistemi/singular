@@ -10,8 +10,8 @@ node.
 
 With @--node-socket PATH --network-magic N --wallet-skey FILE@: the node
 and indexer adapters on the node at that socket, started outside the
-suite, built from those settings by the same constructor a @singular@
-write uses. A partial set is refused; the external leg never falls back
+suite, built by the retained private characterization constructor.
+Ordinary @singular@ writes use the shared HTTP provider. A partial set is refused; the external leg never falls back
 to a generated node.
 -}
 module Main (main) where

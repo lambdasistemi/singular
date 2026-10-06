@@ -22,6 +22,7 @@ ledger from its recorded @tx_cbor@. The protocol parameters decoded from
 module Singular.Provider.Koios.RecordedSpec (spec) where
 
 import Control.Monad (forM_, unless, (>=>))
+import Control.Monad qualified
 import Data.Aeson
     ( Value (..)
     , decodeStrict'
@@ -215,7 +216,7 @@ rawBlockFactsSpec = describe "required raw block facts" $ do
                                         `shouldSatisfy` T.isInfixOf (Key.toText key)
                                 Right () -> expectationFailure "malformed required raw field was accepted"
   where
-    voidRows decode = fmap (const ()) . decode
+    voidRows decode = Control.Monad.void . decode
     recordedBody call = do
         set <- loadSet
         let bodies =

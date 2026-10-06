@@ -328,6 +328,61 @@ spec = describe "Validity conversions from recorded preprod network data" $ do
             capValidityUpper context tip (Just tip) upper `shouldBe` Right upper
             horizon <- either (fail . show) pure (ledgerHorizon context tip)
             horizon `shouldSatisfy` (>= tip + 129_600)
+    it "keeps horizon1000 at970 and advances to1500 at971" $ do
+        (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+        context <-
+            either
+                (fail . show)
+                pure
+                (validateNetworkTime 42 manifest genesis history)
+        ledgerHorizon context (SlotNo 970) `shouldBe` Right (SlotNo 1000)
+        ledgerHorizon context (SlotNo 971) `shouldBe` Right (SlotNo 1500)
+        minimumValidityWindow context (SlotNo 970) Nothing (SlotNo 1250)
+            `shouldBe` Right (ValidityWindow (SlotNo 1000) (SlotNo 999) 100 True)
+        minimumValidityWindow context (SlotNo 971) Nothing (SlotNo 1250)
+            `shouldBe` Right (ValidityWindow (SlotNo 1500) (SlotNo 1250) 100 False)
+    it
+        "keeps empty refusal first and refuses short registry and exact horizon windows"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "devnet"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 42 manifest genesis history)
+            minimumValidityWindow context (SlotNo 917) Nothing (SlotNo 918)
+                `shouldBe` Left
+                    ( WindowPastLedgerHorizon
+                        (SlotNo 917)
+                        (SlotNo 1000)
+                        Nothing
+                        (SlotNo 918)
+                    )
+            forM_ [999, 1000] $ \upper ->
+                minimumValidityWindow context (SlotNo 917) Nothing (SlotNo upper)
+                    `shouldBe` Left
+                        (WindowTooShort (SlotNo 917) (SlotNo 1000) Nothing (SlotNo upper) 100)
+            minimumValidityWindow context (SlotNo 899) Nothing (SlotNo 1000)
+                `shouldBe` Left
+                    (WindowTooShort (SlotNo 899) (SlotNo 1000) Nothing (SlotNo 1000) 100)
+    it
+        "uses10slots on pinned preprod and never waits in its ordinary120slot window"
+        $ do
+            (manifest, genesis, history, _) <- loadNetworkFixture "preprod"
+            context <-
+                either
+                    (fail . show)
+                    pure
+                    (validateNetworkTime 1 manifest genesis history)
+            let tip = SlotNo 120_000_000
+            result <-
+                either
+                    (fail . show)
+                    pure
+                    (minimumValidityWindow context tip Nothing (tip + 120))
+            validityMinimumSlots result `shouldBe` 10
+            validityNeedsHorizonWait result `shouldBe` False
+            validitySelectedUpper result `shouldBe` tip + 120
     it
         "refuses before the pinned history start and accepts its exact start"
         $ forM_ [("devnet", 42), ("preprod", 1)]

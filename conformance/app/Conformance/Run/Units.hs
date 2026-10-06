@@ -39,8 +39,8 @@ import Singular.Registry.Ledger
     ( ConwayEra
     , ExUnits (..)
     )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
 
 import Conformance.Mirror
     ( emit
@@ -58,7 +58,7 @@ never hardcoded.
 -}
 measurePurposeUnits :: Env -> ConwayTx -> IO PurposeMeasurements
 measurePurposeUnits env tx = do
-    evalMap <- Cage.withView (envProv env) (`Services.evaluateTx` tx)
+    evalMap <- Cage.withLatest (envProv env) (`Services.evaluateTx` tx)
     pure $
         Map.fromList
             [ ( T.pack (show purpose)
@@ -139,7 +139,7 @@ maxima, with headroom. Maxima are queried, never hardcoded.
 -}
 emitMeasure :: Env -> String -> Integer -> Integer -> Integer -> IO ()
 emitMeasure env label mem cpu size = do
-    pp <- Cage.withView (envProv env) (pure . Cage.viewProtocolParams)
+    pp <- Cage.withLatest (envProv env) Cage.parameters
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
         maxSize = fromIntegral (pp ^. ppMaxTxSizeL) :: Integer
         pct :: Integer -> Integer -> Double

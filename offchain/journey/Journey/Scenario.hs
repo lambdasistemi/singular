@@ -98,7 +98,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- (D-013), never from this trie.
         mirrorRef <- newIORef emptyMPFInMemoryDB
         -- Verify the connection carries queries before building on it.
-        _ <- Cage.withLatest prov (Cage.parameters)
+        _ <- Cage.withLatest prov Cage.parameters
         -- #177 A-003: publish the state validator as a reference output
         -- BEFORE the seed is chosen, so the publication cannot spend
         -- the very output the seed pins. Boot then references the
@@ -112,7 +112,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- Pick the boot seed from the genesis wallet. The state
         -- script is unparameterized; boot carries the seed in the
         -- mint redeemer.
-        utxos <- Cage.withLatest prov (`Cage.outputsAt` (walletAddr wallet))
+        utxos <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
         -- #177 A-003: never seed from the reference publication; boot
         -- references that output and cannot also spend it.
         seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of

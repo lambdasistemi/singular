@@ -560,13 +560,12 @@ providerServing serves = do
     logRef <- newIORef []
     pure
         ( logRef
-        , ( withAddressOutputs
-                ( \a -> do
-                    modifyIORef' logRef (a :)
-                    pure (Map.findWithDefault [] a serves)
-                )
-                $ stubSession
-          )
+        , withAddressOutputs
+            ( \a -> do
+                modifyIORef' logRef (a :)
+                pure (Map.findWithDefault [] a serves)
+            )
+            stubSession
         )
 
 agreeingServes :: Map Addr [(TxIn, TxOut ConwayEra)]

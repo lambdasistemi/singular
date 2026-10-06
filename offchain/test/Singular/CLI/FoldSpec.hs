@@ -454,7 +454,7 @@ funding = describe "the funding a fold is built from" $ do
         tokened = ref 'c'
         theirs = ref 'd'
         serving =
-            ( withAddressOutputs
+            withAddressOutputs
                 ( \a ->
                     pure $
                         if a == wallet
@@ -466,8 +466,7 @@ funding = describe "the funding a fold is built from" $ do
                             else
                                 [(theirs, mkBasicTxOut other (MaryValue (Coin 7_000_000) mempty))]
                 )
-                $ stubSession
-            )
+                stubSession
         readWallet v = map fst <$> outputsAt v wallet
     it "is the wallet's own view when no funding is named" $ do
         Right v <- fundedView Nothing wallet serving

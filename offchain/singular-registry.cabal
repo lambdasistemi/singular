@@ -848,6 +848,8 @@ executable deployment
     , directory
     , microlens
     , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1107,7 +1109,7 @@ test-suite e2e-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   e2e-test
+  hs-source-dirs:   e2e-test private-facade
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
@@ -1124,8 +1126,32 @@ test-suite e2e-tests
     Singular.Registry.E2E.ReplayHistory
     Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.UpdateTerminalSpec
+    Singular.Registry.Private.Archive
+    Singular.Registry.Private.EpochParameters
+    Singular.Registry.Private.Facade
+    Singular.Registry.Private.Source
+    Singular.Registry.Private.TimePublication
 
   build-depends:
+    , aeson
+    , cardano-slotting
+    , chain-follower
+    , contra-tracer
+    , crypton
+    , http-types
+    , memory
+    , wai
+    , warp
+    , unix
+    , serialise
+    , time
+    , cardano-ledger-read
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , singular-registry:koios-http
+    , cardano-ledger-byron
+    , case-insensitive
     , async
     , base
     , base16-bytestring
@@ -1147,7 +1173,7 @@ test-suite e2e-tests
     , hspec
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-network:api
     , plutus-tx
     , process
     , singular-registry

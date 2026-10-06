@@ -65,6 +65,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
@@ -72,8 +73,9 @@ import Singular.Registry.Ledger
     , TokenId
     , TxIn
     )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
@@ -123,7 +125,7 @@ them.
 mixedFold
     :: CageConfig
     -> NamingCodes
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -138,11 +140,11 @@ mixedFold
     -- ^ Extra reference inputs
     -> IO ConwayTx
 mixedFold cfg codes v tm tid wallet refs applied extraSpends extraRefs = do
+    pp <- Cage.parameters v
     let net = network cfg
-        pp = Cage.viewProtocolParams v
-    cageUtxos <- Cage.viewUTxOsAt v (cageAddrFromCfg cfg net)
-    requestUtxos <- Cage.viewUTxOsAt v (requestAddrFromCfg cfg tid net)
-    walletUtxos <- Cage.viewUTxOsAt v wallet
+    cageUtxos <- Cage.outputsAt v (cageAddrFromCfg cfg net)
+    requestUtxos <- Cage.outputsAt v (requestAddrFromCfg cfg tid net)
+    walletUtxos <- Cage.outputsAt v wallet
     stateUtxo@(stateIn, stateOut) <-
         maybe
             (fail "mixedFold: no state output")
@@ -268,7 +270,7 @@ pairActions [] _ = []
 
 -- | The validity upper bound: the earliest processing deadline of the applied requests.
 upperSlotFor
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> OnChainTokenState
     -> [(TxIn, TxOut ConwayEra)]
     -> IO SlotNo
@@ -279,16 +281,18 @@ upperSlotFor v st appliedUtxos = do
             , Just (RequestDatum r) <- [extractCageDatum out]
             ]
     now <- currentPosixMs
-    case deadlines of
+    candidate <- case deadlines of
         [] -> tryUpperSlots v [now + 30_000, now + 5_000]
         ds ->
             trySync (Services.floorSlot v (minimum ds)) >>= \case
                 Right s -> pure s
                 Left _ -> tryUpperSlots v [now + 30_000, now + 5_000]
+    observed <- Cage.tip v
+    Cage.validityUpper v (Cage.observedSlot observed) Nothing candidate
 
 -- | Fixed common script evaluation over the view's raw facts.
 evaluate
-    :: Cage.View IO
+    :: Cage.Session Cage.NoWitness IO
     -> ConwayTx
     -> IO
         (Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits))

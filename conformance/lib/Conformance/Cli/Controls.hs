@@ -1925,10 +1925,10 @@ decodeIndexerRead v = do
     found <- str v ["indexer", "output"]
     cbor <- str v ["indexer", "datumCbor"]
     recomputed <- str v ["indexer", "datumHashRecomputed"]
-    nodeOut <- str v ["node", "output"]
-    nodeCbor <- str v ["node", "datumCbor"]
-    nodeHash <- str v ["node", "datumHash"]
-    point <- str v ["node", "chainPoint"]
+    nodeOut <- str v ["inspect", "output"]
+    nodeCbor <- str v ["inspect", "datumCbor"]
+    nodeHash <- str v ["inspect", "datumHash"]
+    point <- str v ["inspect", "observedTip"]
     let unit = policy <> name
         answers =
             [ (url, response)
@@ -2491,8 +2491,8 @@ holding exactly one of the token under the policy and asset name the inspect
 names, and that output is the one the record reports and the inspect's; the
 indexer's datum bytes are the inspect's and their blake2b-256, computed at
 admission, is the inspect's datum hash; the indexer's tip is no further behind
-the inspect's chain point than the maximum lag the take was configured with.
-The node side of the record must be the inspect's own, and a stated summary its
+the inspect's separately observed tip than the maximum lag the take was configured with.
+The inspect side of the record must be the inspect's own, and a stated summary its
 facts contradict is itself a failure. What this cannot establish is that the
 provider answered honestly: the record's digest proves the bytes judged are the
 bytes kept, not where they came from.
@@ -2515,7 +2515,7 @@ indexerAgrees inspect r =
     inspectOutput = inspected [field "applicationOutput", field "output"]
     inspectCbor = inspected [field "applicationOutput", field "datumCbor"]
     inspectHash = inspected [field "applicationOutput", field "datumHash"]
-    inspectPoint = inspected [field "chainPoint"]
+    inspectPoint = inspected [field "observedTip"]
     nodeSlot :: Maybe Integer
     nodeSlot = inspectPoint >>= readMaybe . T.unpack . T.takeWhile (/= '.')
     facts ir =

@@ -23,6 +23,10 @@ outputs, as a real wallet does, so a seed it chooses is one of them
 rather than the genesis output itself. The key file is read, never
 printed; only its public address is reported, on standard error.
 
+@--genesis-only@ retains the checked initial allocation without the private
+funding actor, for the retained coverage refusal control. It changes no
+ledger, genesis, epoch, slot, safe-zone or time-publication setting.
+
 @devnet probe --node-socket PATH [--network-magic N] [--tx-in TXID#IX]...@
 (#325) spawns nothing: it asks the node at @PATH@, from one acquired
 ledger state, for its chain tip and which of the named outputs are
@@ -38,6 +42,7 @@ import Control.Concurrent.MVar (newMVar, withMVar)
 import Control.Monad (forever, unless)
 import Data.List (isPrefixOf, sortOn)
 import Data.Maybe (fromMaybe)
+import Data.Maybe qualified
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -162,7 +167,7 @@ run command arguments = do
     let supplied =
             any configured arguments
                 || any
-                    (\name -> maybe False (const True) (lookup name environment))
+                    (\name -> Data.Maybe.isJust (lookup name environment))
                     [ "SINGULAR_KOIOS_URL"
                     , "SINGULAR_NETWORK_MAGIC"
                     , "SINGULAR_WALLET_SKEY"
@@ -239,7 +244,10 @@ withFixture args action = do
                         (evidence </> "independent-facade-sources.jsonl")
                         (encode event <> "\n")
                 )
-    withGeneratedFacade gDir observe $ \_ facade -> action evidence facade
+    let funding = if "--genesis-only" `elem` args then LeaveGenesis else FundGenesis
+    unless (funding /= LeaveGenesis || null (fundingFrom args)) $
+        die "devnet: --genesis-only cannot also fund caller wallets"
+    withGeneratedFacade funding gDir observe $ \_ facade -> action evidence facade
 
 {- | Read the funding flags: every @--fund-skey@ given (it may repeat, one
 wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@.

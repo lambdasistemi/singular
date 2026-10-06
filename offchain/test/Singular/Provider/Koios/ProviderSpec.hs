@@ -57,6 +57,8 @@ import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (permutations, sort, sortOn, subsequences)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isNothing)
+import Data.Maybe qualified
 import Data.Sequence.Strict qualified as Seq
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -255,7 +257,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     action = acquire provider (Latest (Network 1)) $ \session ->
                         history session asset (HistoryRange Nothing Nothing) >>= \case
                             Left failure -> pure (Left failure)
-                            Right stream -> fmap (fmap (fmap (\(block, _) -> block))) (nextBlock stream)
+                            Right stream -> fmap (fmap (fmap fst)) (nextBlock stream)
                     (result, state) = runState action initialProviderState
                 persist "complete-history-material" $
                     object
@@ -574,9 +576,9 @@ spec = describe "Koios ledger provider constructor" $ do
                             , AnyOf (AtAddress payer NE.:| [HoldingAsset asset])
                             , AllOf (AtAddress payer NE.:| [AtTxIn (TxIn p (TxIx 0))])
                             ]
-                    pp <- fmap (fmap (const ())) (protocolParameters session)
-                    observedTip <- fmap (fmap (const ())) (tipObservation session)
-                    time <- fmap (fmap (const ())) (networkTime session)
+                    pp <- fmap void (protocolParameters session)
+                    observedTip <- fmap void (tipObservation session)
+                    time <- fmap void (networkTime session)
                     registration <-
                         fmap (fmap value) (scriptRegistered session (scriptHashOfByte 11))
                     historyResult <-
@@ -690,12 +692,12 @@ spec = describe "Koios ledger provider constructor" $ do
                 provider = koiosProvider stateRuntime (Network 1) (pure (Left failure)) client
                 action = do
                     acquired <- acquire provider (Latest (Network 1)) $ \session -> do
-                        during <- fmap (fmap (const ())) (networkTime session)
+                        during <- fmap void (networkTime session)
                         pure (session, during)
                     case acquired of
                         Left refused -> pure (Left refused)
                         Right (session, during) -> do
-                            releasedResult <- fmap (fmap (const ())) (networkTime session)
+                            releasedResult <- fmap void (networkTime session)
                             pure (Right (sessionId session, during, releasedResult))
                 (result, state) = runState action initialProviderState
             persist "pinned-source-refusal" $
@@ -711,7 +713,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     expectationFailure
                         "source failure changed the acquisition or read refusal"
             [f | RawTimeFailure _ f <- providerEvents state] `shouldBe` [failure]
-            [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` []
+            [() | RawExchange{} <- providerEvents state] `shouldBe` []
 
     it
         "loads the reviewed packaged time bytes and requires an explicit private network source"
@@ -723,7 +725,7 @@ spec = describe "Koios ledger provider constructor" $ do
             genesis `shouldBe` expectedGenesis
             eras `shouldBe` expectedEras
             absent <- loadPinnedSource 42 Nothing
-            fmap (const ()) absent
+            void absent
                 `shouldBe` Left (NetworkTimeRefusal (UnknownTimeNetwork 42))
 
     it
@@ -748,7 +750,7 @@ spec = describe "Koios ledger provider constructor" $ do
                         Left failure -> pure (Left failure, Nothing)
                         Right session -> do
                             readAfter <- tipObservation session
-                            pure (Right (), Just (fmap (const ()) readAfter))
+                            pure (Right (), Just (void readAfter))
                 (result, state) = runState action initialProviderState
             persist
                 "pure-state-lifecycle"
@@ -762,7 +764,7 @@ spec = describe "Koios ledger provider constructor" $ do
             case snd result of
                 Just (Left (ReleasedSession _)) -> pure ()
                 _ -> expectationFailure "released read did not refuse"
-            length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 2
+            length [() | RawExchange{} <- providerEvents state] `shouldBe` 2
             length [() | RawTime _ _ <- providerEvents state] `shouldBe` 1
             Set.null (openSessions state) `shouldBe` True
 
@@ -914,7 +916,8 @@ spec = describe "Koios ledger provider constructor" $ do
                     pure (session, stream)
                 case acquired of
                     Right (session, Right stream) -> do
-                        let voidFact readAction = fmap (fmap (const ())) readAction
+                        let voidFact :: (Functor m, Functor f) => m (f a) -> m (f ())
+                            voidFact = fmap void
                         releasedAnswers <-
                             sequence
                                 [ voidFact (outputs session (AtAddress payer))
@@ -949,7 +952,7 @@ spec = describe "Koios ledger provider constructor" $ do
         Set.null (openSessions state) `shouldBe` True
         -- Acquiring the cursor fetches its first page. Released continuation
         -- refuses before fetching another page or reconstruction material.
-        length [() | RawExchange _ _ _ <- providerEvents state] `shouldBe` 1
+        length [() | RawExchange{} <- providerEvents state] `shouldBe` 1
 
     it
         "polls exact output visibility past the finite horizon in pure State"
@@ -976,7 +979,7 @@ spec = describe "Koios ledger provider constructor" $ do
                             target
                     (result, (state, now, bounds)) = runState action (initialProviderState, base, [])
                 persist
-                    ( if visibleAt == Nothing
+                    ( if isNothing visibleAt
                         then "pure-poll-expired"
                         else "pure-poll-visible"
                     )
@@ -1003,7 +1006,7 @@ spec = describe "Koios ledger provider constructor" $ do
                 [ Client.rawCall request
                   | RawExchange _ request _ <- providerEvents state
                   ]
-                    `shouldSatisfy` all (/= Wire.CallTxStatus)
+                    `shouldSatisfy` notElem Wire.CallTxStatus
 
     it "retains the validated upper-bound start and uncapped margin" $ do
         (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
@@ -1082,7 +1085,7 @@ spec = describe "Koios ledger provider constructor" $ do
             either (Left . show) Right result `shouldBe` Right ()
             bounds `shouldBe` [30, 180]
             now `shouldBe` base
-            length [() | RawExchange _ _ _ <- providerEvents state]
+            length [() | RawExchange{} <- providerEvents state]
                 `shouldSatisfy` (> 0)
             nextSessionNumber state `shouldBe` 2
             Set.null (openSessions state) `shouldBe` True
@@ -1380,9 +1383,8 @@ eventJson = \case
         let response = case Client.exchangeResult exchange of
                 Left failure -> object ["no_answer" .= show failure]
                 Right answer ->
-                    maybe
+                    Data.Maybe.fromMaybe
                         (error "could not retain encoded raw fixture")
-                        id
                         ( decodeStrict'
                             ( LBS.toStrict
                                 ( encodeFixture
@@ -1672,13 +1674,12 @@ pollingRuntime origin =
             modify' (\(state, now, bounds) -> (state, now, bounds <> [bound]))
             outcome <- action
             ended <- gets (\(_, now, _) -> now)
-            let failure closedAt =
+            let failure =
                     WaitFailure
                         SessionConfirmationWait
                         tid
                         (fromInteger (ended - origin) / 1000)
                         bound
-                        closedAt
             pure $ case outcome of
                 Left deadline -> Left (failure (Just deadline))
                 Right answer

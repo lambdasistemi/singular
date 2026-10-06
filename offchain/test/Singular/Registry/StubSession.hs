@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
 {- | Raw builder inputs. Evaluation and time conversion always use the
@@ -18,6 +17,7 @@ import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Exception (finally)
+import Data.Bifunctor qualified
 import Data.ByteString qualified as BS
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List.NonEmpty qualified as NE
@@ -155,7 +155,10 @@ servingSession supplied = (configured, provider)
                         guardedStream stream = HistoryStream $ guardedHistory $ do
                             result <- nextBlock stream
                             pure
-                                (fmap (fmap (\(block, rest) -> (block, guardedStream rest))) result)
+                                ( fmap
+                                    (fmap (\pair -> pair `seq` Data.Bifunctor.second guardedStream pair))
+                                    result
+                                )
                         acquired =
                             supplied
                                 { sessionId = identity

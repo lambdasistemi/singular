@@ -8,17 +8,18 @@ module Conformance.FoldFixture (Fixture, newFixture, prepare) where
 import Cardano.Ledger.Api.PParams (ppMaxTxExUnitsL)
 import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Node.Client.Submitter (SubmitResult (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Monad (unless, when)
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.List (sort)
 import Data.Map.Strict qualified as Map
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ExUnits (..))
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Services qualified as Services
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.SessionIO qualified as Services
 
 newtype Fixture = Fixture (IORef Bool)
 
@@ -27,7 +28,7 @@ newFixture = Fixture <$> newIORef False
 
 prepare
     :: Fixture
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> (ExUnits -> IO ConwayTx)
     -> (ConwayTx -> IO SubmitResult)
     -> ExUnits
@@ -41,11 +42,11 @@ prepare (Fixture used) provider assemble submit declared = do
             let Redeemers redeemers = template ^. witsTxL . rdmrsTxWitsL
                 purposes = Map.keys redeemers
             when (null purposes) $ fail "A1 fold has no redeemer purposes"
-            pp <- Cage.withView provider (pure . Cage.viewProtocolParams)
+            pp <- Cage.withLatest provider Cage.parameters
             let ExUnits maxMem maxCpu = pp ^. ppMaxTxExUnitsL
                 count = fromIntegral (length purposes)
             trial <- assemble (ExUnits (maxMem `div` count) (maxCpu `div` count))
-            measurements <- Cage.withView provider (`Services.evaluateTx` trial)
+            measurements <- Cage.withLatest provider (`Services.evaluateTx` trial)
             unless (sort (Map.keys measurements) == sort purposes) $
                 fail "A1 node evaluation map omits a redeemer purpose"
             measured <- traverse (either (fail . show) pure) measurements
@@ -71,12 +72,13 @@ prepare (Fixture used) provider assemble submit declared = do
             fixed <- assemble fallback
             result <- submit fixed
             case result of
-                Submitted _ -> fail "A1 fixed fallback unexpectedly accepted"
-                Rejected reason ->
+                SubmitAccepted _ -> fail "A1 fixed fallback unexpectedly accepted"
+                SubmitRefused reason ->
                     putStrLn
                         ( "A1 fixed fallback refused: purposes="
                             <> show overBudget
                             <> " reason="
-                            <> show (TE.decodeUtf8Lenient reason)
+                            <> show reason
                         )
+                unavailable -> fail ("submission unavailable: " <> show unavailable)
             pure fallback

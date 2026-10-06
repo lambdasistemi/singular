@@ -32,7 +32,7 @@ slotMs = 100
 -- | Raw synthetic finite history; the common interpreter opens its final era.
 horizonView :: Session NoWitness IO
 horizonView =
-    (withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) $ stubSession)
+    withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) stubSession
 
 spec :: Spec
 spec = describe "A fold's validity upper bound in the pinned final era" $ do

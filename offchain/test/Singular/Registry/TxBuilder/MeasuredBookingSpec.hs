@@ -279,7 +279,7 @@ parametersFor sc = withCostCoefficients (scUnits sc) (scSlope sc) preprodParams
 
 viewFor :: Scenario -> Session NoWitness IO
 viewFor sc =
-    ( withAddressOutputs (\_ -> pure (walletOuts sc))
+    withAddressOutputs (\_ -> pure (walletOuts sc))
         $ withParameters
             (withCostCoefficients (scUnits sc) (scSlope sc) preprodParams)
         $ withTime (pure syntheticTime)
@@ -291,8 +291,7 @@ viewFor sc =
                     , reference `Set.member` wanted
                     ]
             )
-        $ stubSession
-    )
+            stubSession
 
 -- | The provider every acquisition of which is that view.
 providerFor :: Scenario -> (Network, LedgerProvider NoWitness IO)
@@ -550,7 +549,7 @@ spec =
                     try
                         ( bookEdgeMeasured
                             cfg
-                            (withParameters (high) $ (viewFor sc))
+                            (withParameters high $ viewFor sc)
                             payer
                             tokenId
                             key0
@@ -641,7 +640,7 @@ spec =
                     withLatest moving $ \v -> do
                         capturedParameters <- parameters v
                         (,) capturedParameters <$> under v
-                handed2 <- under (withParameters (p2) $ (viewFor sc))
+                handed2 <- under (withParameters p2 $ viewFor sc)
                 acquisitions <- readIORef acquired
                 let feeOf t = let Coin f = t ^. bodyTxL . feeTxBodyL in f
                     -- the time a request is stamped with differs between two builds,

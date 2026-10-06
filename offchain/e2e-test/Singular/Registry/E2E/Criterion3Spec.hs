@@ -107,6 +107,7 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
@@ -116,13 +117,14 @@ import Singular.Registry.E2E.CageSpec
     , submitWithGenesis
     , withBootedCage
     )
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
     , TokenId
     )
-import Singular.Registry.Node (Capabilities)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie
     ( Trie (getRoot)
     , TrieManager (..)
@@ -330,8 +332,8 @@ correctness.
 orderingStage
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -369,7 +371,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- a future reordering of the calls must edit this list to match.
     let bookingSequence = [(keyB, refB), (keyA, refA)]
     -- The real provider's own observations, before anything is wrapped.
-    pending <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    pending <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     unless
         (length pending == 2 && sort (map fst pending) == sort [refA, refB])
         $ fail
@@ -403,10 +405,16 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
     -- function forwards to the real provider unchanged.
     let wrapped v =
             v
-                { Cage.viewUTxOsAt = \addr ->
-                    if addr == requestAddr
-                        then pure descending
-                        else Cage.viewUTxOsAt v addr
+                { Cage.outputs = \query -> do
+                    answer <- Cage.outputs v query
+                    case (query, answer) of
+                        (Cage.AtAddress addr, Right fact)
+                            | addr == requestAddr -> do
+                                unless (sort (map fst (Cage.value fact)) == sortedRefs) $
+                                    fail
+                                        "ORDER-WITNESS-NONDISCRIMINATING: the real pending requests changed"
+                                pure (Right fact{Cage.value = descending})
+                        _ -> pure answer
                 }
     -- Expected association: observed datums, ascending order, fresh
     -- speculative session of the committed trie.
@@ -421,7 +429,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         _ ->
             fail
                 "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
-    unsigned <- Cage.withView prov $ \v -> do
+    unsigned <- Cage.withLatest prov $ \v -> do
         ctx <- contextFor cfg codes v refs
         updateTokenWithDuties cfg (wrapped v) tm tokenId genesisAddr ctx
     decoded <- modifyActionsOf unsigned
@@ -469,7 +477,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             <> " mirror-root-after="
             <> show (unRoot rootAfter)
     -- Receipts through the REAL provider: both requests consumed.
-    after <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    after <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     forM_ sortedRefs $ \ref ->
         when (isJust (lookup ref after)) $
             expectationFailure
@@ -493,8 +501,8 @@ distinguishable holder candidates.
 connectedStages
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -549,8 +557,8 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
 bookFoldObserve
     :: CageConfig
     -> NamingCodes
-    -> Cage.Provider IO
-    -> Capabilities
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> Addr
@@ -571,15 +579,15 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
             key
             edge
             dest
-    pending <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    pending <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     (reqOut, req) <- observedRequestAt requestTxIn pending
     cageUtxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
-    walletUtxos <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
+    walletUtxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     rootBefore <- withTrie tm tokenId getRoot
-    unsigned <- Cage.withView prov $ \v -> do
+    unsigned <- Cage.withLatest prov $ \v -> do
         ctx <- contextFor cfg codes v refs
         updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
     let body = unsigned ^. bodyTxL
@@ -743,7 +751,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                  , inlineDatumData out == dsDatum
                  ] of
                 [(ix, built)] -> do
-                    landed <- Cage.withView prov (`Cage.viewUTxOsAt` dsAddress)
+                    landed <- Cage.withLatest prov (`Cage.outputsAt` dsAddress)
                     case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                         Just observed ->
                             unless (observed `sameOutputAs` built) $
@@ -776,7 +784,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                      , not (any (`carriesPolicyAsset` out) (witnessPolicies cfg))
                      ] of
                     [(ix, built)] -> do
-                        landed <- Cage.withView prov (`Cage.viewUTxOsAt` refundAddr)
+                        landed <- Cage.withLatest prov (`Cage.outputsAt` refundAddr)
                         case lookup (TxIn (txIdTx signed) (TxIx (fromIntegral ix))) landed of
                             Just observed ->
                                 unless (observed `sameOutputAs` built) $
@@ -792,7 +800,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                             )
             Nothing -> pure ()
     -- The request is spent; a burned asset is gone.
-    after <- Cage.withView prov (`Cage.viewUTxOsAt` requestAddr)
+    after <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     when (isJust (lookup requestTxIn after)) $
         expectationFailure
             ( "wrong effect: request "
@@ -800,7 +808,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
                 <> " still pending after fold"
             )
     when (edge == edgeUpdateTerminal || edge == edgeDeleteActive) $ do
-        walletAfter <- Cage.withView prov (`Cage.viewUTxOsAt` genesisAddr)
+        walletAfter <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
         let remaining =
                 length
                     [ ()
@@ -1021,16 +1029,16 @@ sameOutputAs a b =
 -}
 assertChainRootMatches
     :: CageConfig
-    -> Cage.Provider IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> TokenId
     -> Root
     -> String
     -> IO ()
 assertChainRootMatches cfg prov tokenId mirrorRoot what = do
     cageUtxos <-
-        Cage.withView
+        Cage.withLatest
             prov
-            (`Cage.viewUTxOsAt` cageAddrFromCfg cfg (network cfg))
+            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId cageUtxos of
         Just (_, stateOut) -> case extractCageDatum stateOut of
             Just (StateDatum st)
@@ -1209,7 +1217,7 @@ distinct destination-datum preimages.
 contextFor
     :: CageConfig
     -> NamingCodes
-    -> Cage.View IO
+    -> Cage.Session Cage.NoWitness IO
     -> [(TxIn, TxOut ConwayEra)]
     -> IO RegistryContext
 contextFor cfg codes v refs = do

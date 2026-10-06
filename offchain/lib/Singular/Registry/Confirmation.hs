@@ -24,7 +24,9 @@ import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (Exception, fromException, throwIO, try)
+import Control.Monad qualified
 import Data.Foldable (toList)
+import Data.Maybe qualified
 import Data.Text qualified as Text
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Lens.Micro ((^.))
@@ -122,7 +124,7 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
                             Left failure ->
                                 Left
                                     (ConfirmationReadFailure (BackendReadFailure (showService failure)))
-        let derived = either Left id attempted
+        let derived = Control.Monad.join attempted
         selected <- case derived of
             -- Preserve the historical synchronous context-read fallback. Its
             -- independent block-time read is still within the window-read bound.
@@ -137,7 +139,7 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
             Left failure -> pure (Left failure)
             Right supplied -> do
                 now <- currentPosixMs runtime
-                let deadline = maybe (now + 300000) id supplied
+                let deadline = Data.Maybe.fromMaybe (now + 300000) supplied
                     seconds = max 0 ((deadline - now + 999) `div` 1000)
                 pure (Right (deadline, fromInteger seconds + 10))
     poll deadline = do

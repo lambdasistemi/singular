@@ -151,16 +151,17 @@ jq -n --arg p "$policy_id" --arg n "$asset_name" \
 
 ## Reproduce it yourself
 
-From the release archive (or this repository), with your own node socket
-and wallet as [the onboarding page](consumer-onboarding.md) describes,
-you can point the two tools that produced this record at the deployment:
+The record above describes the historical node-backed tools. The current
+`deployment verify` uses a Koios API and your local wallet, as the
+[onboarding page](consumer-onboarding.md) describes. From the repository root:
 
 ```sh
-nix run .#deployment -- verify \
-  --node-socket /run/cardano-node/node.socket --network-magic 1 \
+nix run ./offchain#deployment -- verify \
+  --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ./joiner.skey \
   --deployment docs/preprod.json
 
+# Historical invocation only; register-rows remains unverified under #283.
 nix run .#register-rows -- \
   --node-socket /run/cardano-node/node.socket --network-magic 1 \
   --wallet-skey ./joiner.skey \
@@ -178,8 +179,9 @@ by [#283](https://github.com/lambdasistemi/singular/issues/283); until
 that repair lands the attached claim is this record's history, not a
 runnable instruction.
 
-`verify` re-runs the fourteen checks above against whatever node you
-point it at. The attached run folds your own spelling instead of alice —
+`verify` re-runs the manifest checks against facts returned by the selected
+API. Those facts remain Unbound and Unverified; a successful verifier run
+would not establish a coherent snapshot or a trust witness. The attached run folds your own spelling instead of alice —
 alice is already Active here, and an attached rerun that asks for a held
 spelling is refused by design, naming the refusal. The mirror file
 travels with the manifest: a fold needs the trie it records, and a run

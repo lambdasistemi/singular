@@ -1,5 +1,6 @@
 {- | IO consumers of the generic raw session. These functions acquire no
-extra session and choose no provider, evaluator or time conversion policy.
+extra session and choose no provider or evaluator. The bounded pre-signing
+horizon wait implements the explicit A024 minimum-window rule.
 Failures preserve their original type and payload at the IO boundary.
 -}
 module Singular.Registry.SessionIO
@@ -19,9 +20,11 @@ import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Plutus (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
 import Data.Aeson ((.=))
 import Data.Either (rights)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
 import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (Addr, ConwayEra, PParams)
@@ -33,15 +36,21 @@ import Singular.Registry.LedgerProvider
     , Outputs
     , ReadFailure (..)
     , Session (..)
-    , TipObservation
+    , TipObservation (..)
     )
 import Singular.Registry.LocalEvaluation (EvaluateTxResult)
+import Singular.Registry.NetworkTime
+    ( NetworkTimeFailure (..)
+    , ValidityWindow (..)
+    )
 import Singular.Registry.PhaseLog
     ( logPhase
     , phaseLogFromEnv
     , queryPhase
+    , timedPhase
     )
 import Singular.Registry.SessionServices qualified as Services
+import System.Timeout (timeout)
 
 -- | Request Latest on the caller's explicit network and preserve acquisition refusal.
 withLatest
@@ -132,25 +141,90 @@ slotStart session slot = do
         (const 1)
         (requireService (Services.slotStart session slot))
 
--- | Preserve the selected tip explicitly; later Unbound reads cannot replace it.
+{- | Select before body construction/evaluation. A024 permits one bounded
+wait only for a horizon-limited interval. Every tip remains an Unbound read
+through the original session; no additional acquisition or submission occurs.
+-}
 validityUpper
     :: Session w IO -> SlotNo -> Maybe SlotNo -> SlotNo -> IO SlotNo
 validityUpper session observed lower upper = do
     logHandle <- phaseLogFromEnv
-    (horizon, capped) <-
-        queryPhase logHandle "ledgerHorizon" (const 1) $
-            requireService (Services.validityUpper session observed lower upper)
+    let select at =
+            queryPhase logHandle "ledgerHorizon" (const 1) $
+                requireService (Services.validityWindow session at lower upper)
+    initial <- select observed
+    (selectedTip, selected) <-
+        if not (validityNeedsHorizonWait initial)
+            then pure (observed, initial)
+            else do
+                let oldHorizon = validityHorizon initial
+                    slotLimit = toInteger (unSlotNo observed) + validityMinimumSlots initial
+                lastObservation <- newIORef (observed, oldHorizon)
+                let wait = do
+                        -- A fresh actual observation, without reacquiring or
+                        -- retaining a provider response for later reuse.
+                        current <- observedSlot <$> tip session
+                        horizon <-
+                            queryPhase logHandle "ledgerHorizon" (const 1) $
+                                requireService (Services.observedHorizon session current)
+                        writeIORef lastObservation (current, horizon)
+                        if toInteger (unSlotNo current) > slotLimit
+                            then throwIO (HorizonWaitTimedOut current horizon)
+                            else
+                                if horizon > oldHorizon
+                                    then do
+                                        -- Reselect only at the actual wake point;
+                                        -- an intermediate short registry window
+                                        -- must not end the horizon observation.
+                                        next <- select current
+                                        if validityNeedsHorizonWait next
+                                            then
+                                                throwIO
+                                                    ( WindowTooShort
+                                                        current
+                                                        (validityHorizon next)
+                                                        lower
+                                                        upper
+                                                        (validityMinimumSlots next)
+                                                    )
+                                            else pure (current, next)
+                                    else
+                                        if toInteger (unSlotNo current) >= slotLimit
+                                            then throwIO (HorizonWaitTimedOut current horizon)
+                                            else threadDelay 100_000 >> wait
+                    bounded = do
+                        result <- timeout 20_000_000 wait
+                        case result of
+                            Just answer -> pure answer
+                            Nothing -> do
+                                (lastTip, lastHorizon) <- readIORef lastObservation
+                                throwIO (HorizonWaitTimedOut lastTip lastHorizon)
+                timedPhase
+                    logHandle
+                    "horizon-wait"
+                    [ "tip" .= observed
+                    , "horizon" .= oldHorizon
+                    , "lower" .= lower
+                    , "windowUpper" .= upper
+                    , "minimumSlots" .= validityMinimumSlots initial
+                    , "slotLimit" .= slotLimit
+                    , "wallLimitMs" .= (20_000 :: Integer)
+                    ]
+                    ( \(at, window) -> ["observedTip" .= at, "observedHorizon" .= validityHorizon window]
+                    )
+                    bounded
     logPhase
         logHandle
         "validityUpper"
-        [ "tip" .= observed
-        , "horizon" .= horizon
+        [ "tip" .= selectedTip
+        , "horizon" .= validityHorizon selected
         , "lower" .= lower
         , "effectiveLower"
             .= max
                 (maybe 0 (toInteger . unSlotNo) lower)
-                (toInteger (unSlotNo observed) + 1)
+                (toInteger (unSlotNo selectedTip) + 1)
         , "windowUpper" .= upper
-        , "upper" .= capped
+        , "upper" .= validitySelectedUpper selected
+        , "minimumSlots" .= validityMinimumSlots selected
         ]
-    pure capped
+    pure (validitySelectedUpper selected)

@@ -68,7 +68,7 @@ spec = describe "Common services through the existing transaction balancer"
                 else pure pp
         let
             view =
-                ( withParameters (supplied)
+                withParameters supplied
                     $ withTime (pure time)
                     $ withResolvedOutputs
                         ( \wanted -> do
@@ -80,7 +80,6 @@ spec = describe "Common services through the existing transaction balancer"
                                 ]
                         )
                     $ stubSession{sessionNetwork = Network 1}
-                )
         case inputs of
             [funding, collateral, reference] -> do
                 balanced <-

@@ -15,6 +15,7 @@ module Singular.Registry.Terminal
 
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (ErrorCall (..), throwIO)
+import Control.Monad qualified
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text qualified as Text
 import Singular.Provider.Koios.Client qualified as Client
@@ -76,7 +77,7 @@ newCapabilities settings = do
     pure
         Capabilities
             { capReads = (network, provider)
-            , capSubmit = \signed -> boundedSignedSubmission 300 (submitTx provider network) signed
+            , capSubmit = boundedSignedSubmission 300 (submitTx provider network)
             , capConfirm = awaitTransaction provider network
             , capFacts = readIORef facts
             , capTrace = readIORef raw
@@ -89,7 +90,7 @@ withReads settings action = do
     -- Startup validates the pinned network context in its own logged scope,
     -- as the former composition did. It is never spliced into a built body.
     withLatest (capReads capabilities) $ \session ->
-        SessionIO.parameters session >> pure ()
+        Control.Monad.void (SessionIO.parameters session)
     action capabilities
 
 withWrites

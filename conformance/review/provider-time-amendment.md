@@ -20,7 +20,33 @@ NOTE026/A021 first corrected finite-bound equality to `capped upper <= lower`. T
 
 `WindowPastLedgerHorizon` preserves tip, horizon and the original optional lower/upper window and refuses before signing. Fold and connected fold supply `Nothing` for their actual omitted lower; reject and retraction retain their finite lower. No lower is added to an upper-only body. All four paths select before body construction/evaluation, through common local services; phase logging records the actual optional lower separately from the effective lower, plus tip, horizon, original upper and resulting bound. The session remains `Unbound`; later reads do not make this observation a snapshot promise.
 
-No validity-window size, candidate fallback list, refund, authorization, signing, state/root or token rule changes. The moving-horizon selection is the explicit amendment to the earlier no-capping disposition; the captured artifact end stays irrelevant to conversion. Confirmation uses the resulting capped upper slot's POSIX start plus uncapped 120 seconds, or now plus uncapped 300 seconds without an upper bound, exact-output visibility, latest-block expiry and existing recovery. No internal wait or retry, genesis/epoch/node-setting change or separate test-ledger profile is authorized. Opening a conversion era does not open transaction validity intervals.
+The earlier moving-horizon amendment changed no validity-window size, candidate fallback list, refund, authorization, signing, state/root or token rule. The later A024 minimum and conditional harness timing amendments are stated below. The moving-horizon selection is the explicit amendment to the earlier no-capping disposition; the captured artifact end stays irrelevant to conversion. Confirmation uses the resulting capped upper slot's POSIX start plus uncapped 120 seconds, or now plus uncapped 300 seconds without an upper bound, exact-output visibility, latest-block expiry and existing recovery. The later minimum-window amendment below authorizes one bounded pre-signing horizon wait; it authorizes no repeated wait or submission retry. Genesis/epoch/node settings remain unchanged. Opening a conversion era does not open transaction validity intervals.
+
+## Minimum usable interval
+
+As a caller building under load, I require ten seconds of usable slots before
+signing. Parent NOTE032/A024 and slice contract v8 (2026-10-06) explicitly amend
+the earlier no-wait rule. The raw pinned slot conversion computes M100 on the
+0.1-second devnet and M10 on one-second preprod. Empty intervals keep
+`WindowPastLedgerHorizon`; nonempty registry-limited short intervals refuse
+`WindowTooShort` without waiting. The original optional body lower is preserved.
+
+A window made short only by the ledger horizon may wait once through the same
+Unbound session until `ledgerHorizon(newTip)` exceeds its original horizon,
+then construct/evaluate from the new selection. The at-or-after ceiling remains:
+devnet970 still yields1000;971 yields1500. Both the M-slot bound and20-second
+wall-clock bound apply. `HorizonWaitTimedOut` carries the last observed tip and
+horizon and occurs before signing/submission. Phase logs retain the wait and
+new selected tip; fresh observations do not imply a snapshot. Pure local
+services compute the decision without hidden clock or external effects; IO
+consumers perform the explicitly ruled wait.
+
+Conditional CI timing authority applies only after an actual journey stops on
+`WindowTooShort`: increase its CI registry process/retract windows to90s/30s,
+retain the original profile/trigger/source receipts and measured build durations.
+No such change has been made merely from the ruling. Minimum10s stays fixed.
+The previous full-native69/3/39pending and focused1/0 receipts remain historical;
+a restored full native E2E with no expired-submit failures is required.
 
 ## Bound model and limits
 

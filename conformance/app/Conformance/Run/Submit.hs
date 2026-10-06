@@ -17,6 +17,7 @@ module Conformance.Run.Submit
     ) where
 
 import Conformance.Run.Environment
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -25,21 +26,14 @@ import Control.Exception
     )
 import Data.List (isInfixOf)
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import GHC.Clock (getMonotonicTime)
 
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SignedSubmitter
-    , SignedTx
-    , SubmitResult (..)
-    , signTx
-    , signedTx
-    , submitSigned
-    , tryOutcome
-    )
+import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.LedgerProvider (SubmitResult (..))
+import Singular.Registry.Signing (SignedTx, signTx, signedTx)
+import Singular.Registry.Wait (tryOutcome)
 
 import Conformance.Mirror
     ( emit
@@ -118,15 +112,15 @@ submitExpectRefusedControl env row verdict marker tx = do
     let signed = signTx genesisSignKey tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Rejected reason ->
+        SubmitRefused reason ->
             attributeControlRefusal
                 env
                 row
                 verdict
                 marker
-                (T.unpack (TE.decodeUtf8Lenient reason))
+                (T.unpack reason)
                 (txIdHex (signedTx signed))
-        Submitted txid ->
+        SubmitAccepted txid ->
             failWith
                 ( row
                     <> " FINDING: the node ACCEPTED the control transaction "
@@ -134,6 +128,7 @@ submitExpectRefusedControl env row verdict marker tx = do
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
 attributeControlRefusal
     :: Env -> String -> Verdict -> String -> String -> String -> IO ()
@@ -194,14 +189,16 @@ yields the same verdict (a phase-2 failure is not a chain effect:
 a locally rejected transaction never entered the ledger, and no
 collateral moves).
 -}
-submitTxResilient :: SignedSubmitter -> SignedTx -> IO SubmitResult
+submitTxResilient
+    :: (SignedTx -> IO SubmitResult) -> SignedTx -> IO SubmitResult
 submitTxResilient submit signed = do
     start <- getMonotonicTime
     result <- go (4 :: Int)
     end <- getMonotonicTime
     let answer = case result of
-            Submitted _ -> "accepted"
-            Rejected _ -> "refused"
+            SubmitAccepted _ -> "accepted"
+            SubmitRefused _ -> "refused"
+            unavailable -> "unavailable: " <> show unavailable
     emit
         "submit"
         ( txIdHex (signedTx signed)
@@ -212,9 +209,9 @@ submitTxResilient submit signed = do
         )
     pure result
   where
-    go 0 = submitSigned submit signed
+    go 0 = submit signed
     go n = do
-        r <- tryOutcome (submitSigned submit signed)
+        r <- tryOutcome (submit signed)
         case r of
             Right res -> pure res
             Left e
@@ -233,12 +230,13 @@ submitExpectAccepted env signed = do
     result <- submitTxResilient (envSubmit env) signed
     let tx = signedTx signed
     case result of
-        Submitted _ -> confirmTx env tx >> pure tx
-        Rejected reason ->
+        SubmitAccepted _ -> confirmTx env tx >> pure tx
+        SubmitRefused reason ->
             failWith
                 ( "expected acceptance, the node refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
 {- | Submit a hand-built refusing transaction and close the row on
 the node's phase-2 attribution. A submission success is a FINDING:
@@ -254,15 +252,15 @@ submitExpectRefused env row verdict marker tx = do
     let signed = signTx genesisSignKey tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Rejected reason ->
+        SubmitRefused reason ->
             attributeSubmitRefusal
                 env
                 row
                 verdict
                 marker
-                (T.unpack (TE.decodeUtf8Lenient reason))
+                (T.unpack reason)
                 (txIdHex (signedTx signed))
-        Submitted txid ->
+        SubmitAccepted txid ->
             failWith
                 ( row
                     <> " FINDING: the node ACCEPTED the transaction the "
@@ -270,19 +268,22 @@ submitExpectRefused env row verdict marker tx = do
                     <> txInHex txid
                     <> ") — reported, not relabelled"
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
-submitWithGenesis :: Capabilities -> ConwayTx -> IO ConwayTx
+submitWithGenesis
+    :: Capabilities Cage.NoWitness IO -> ConwayTx -> IO ConwayTx
 submitWithGenesis caps unsignedTx = do
     let signed = signTx genesisSignKey unsignedTx
         tx = signedTx signed
     result <- submitTxResilient (capSubmit caps) signed
     case result of
-        Submitted _ -> capConfirm caps tx >> pure tx
-        Rejected reason ->
+        SubmitAccepted _ -> capConfirm caps tx >> pure tx
+        SubmitRefused reason ->
             failWith
                 ( "transaction rejected: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
+        unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
 -- | Wait until a submitted transaction is on chain (the session's confirmation).
 confirmTx :: Env -> ConwayTx -> IO ()

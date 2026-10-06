@@ -9,6 +9,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad qualified
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Singular.Provider.Koios.Scripted (signedTransaction)
 import Singular.Registry.Signing (signedTx)
@@ -22,7 +23,9 @@ spec = describe "Generic transport waits" $ do
         "cancels a stalled signed submission and retains its transaction identity"
         $ do
             released <- newIORef False
-            let send _ = (threadDelay 5000000 >> pure ()) `finally` writeIORef released True
+            let send _ =
+                    Control.Monad.void (threadDelay 5000000)
+                        `finally` writeIORef released True
             result <-
                 try
                     (timeout 3000000 (boundedSignedSubmission 1 send signedTransaction))

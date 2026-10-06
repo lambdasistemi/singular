@@ -354,12 +354,14 @@
 
         # #326 R5: the external leg. A devnet started as a process of its own
         # funds a fresh key; the contract suite then reaches that node only
-        # by the socket the devnet printed, the network magic and the key
-        # file, through the constructor a singular write uses.
+        # by the private probe socket in the devnet settings, magic and key.
+        # This is retained private legacy characterization, not the shipping
+        # Koios constructor or row16 production-deletion evidence.
         contract-external = pkgs.writeShellApplication {
           name = "contract-external";
           runtimeInputs = [
             pkgs.coreutils
+            pkgs.jq
             devnet
             contract-tests
           ];

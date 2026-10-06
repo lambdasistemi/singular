@@ -67,9 +67,9 @@ usage =
     unlines
         [ "usage:"
         , "  cli-controls run --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE --work DIR"
+        , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --work DIR"
         , "  cli-controls attach --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
-        , "      --node-socket PATH --network-magic N --wallet-skey FILE --stranger-skey FILE"
+        , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --stranger-skey FILE"
         , "      --registry DIR --key LABEL --work DIR"
         , "      --collateral-allowance LOVELACE [--max-outlay LOVELACE]"
         , "  cli-controls render RECEIPTS_DIR"

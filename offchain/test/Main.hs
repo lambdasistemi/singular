@@ -34,8 +34,8 @@ import Singular.Registry.NodeSpec qualified
 import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
-import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
+import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified

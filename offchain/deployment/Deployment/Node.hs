@@ -3,7 +3,7 @@ Module      : Deployment.Node
 Description : What @deployment@ does and asks at a node
 License     : Apache-2.0
 
-The node operations the verbs are made of. Each transaction is signed by
+The provider operations the verbs are made of. Each transaction is signed by
 the funding wallet, submitted, awaited, and its id recorded in the order
 the chain accepted it ('submitted'), so the manifest can list its
 bootstrap transactions.
@@ -62,6 +62,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Deployment.Compiled (Compiled (..), bindSeed, partsOf)
 import Deployment.Narration (emit, failWith, hexT, tokenText, txText)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
     ( CageParts (..)
@@ -71,22 +72,15 @@ import Singular.Registry.Deployment
     , renderOutRef
     , verifyDeployment
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SubmitResult (..)
-    , bech32Address
-    , funderAddr
-    , funderSignKey
-    , signTx
-    , signedTx
-    , submitSigned
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Ledger
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal
     ( cagePolicyIdFromCfg
@@ -98,14 +92,18 @@ import Singular.Registry.TxBuilder.Internal
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Register (registerScriptImpl)
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 {- | The manifest's claims against this node, then the three stake
 credentials a run withdraws from.
 -}
 verifyRegisteredDeployment
-    :: Cage.Provider IO -> Deployment -> Compiled -> IO [String]
+    :: (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> Deployment
+    -> Compiled
+    -> IO [String]
 verifyRegisteredDeployment prov dep compiled =
-    Cage.withView prov $ \v -> do
+    Cage.withLatest prov $ \v -> do
         claims <- verifyDeployment v dep (partsOf compiled)
         credentials <-
             mapM
@@ -117,15 +115,16 @@ verifyRegisteredDeployment prov dep compiled =
         pure (claims <> credentials)
   where
     check v (name, bytes) = do
-        registered <- Cage.viewScriptRegistered v (computeScriptHash bytes)
+        registered <- Cage.registered v (computeScriptHash bytes)
         unless registered $
             failWith (name <> " stake credential is not registered on this node")
         pure (name <> " stake credential is registered on this node")
 
 -- | Boot one registry from the funding wallet's largest output.
 bootRegistry
-    :: Cage.Provider IO
-    -> Capabilities
+    :: Wallet
+    -> (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> Compiled
     -> IORef [Text]
     -> Integer
@@ -133,10 +132,10 @@ bootRegistry
     -- ^ Process window (ms), from @--process-time@.
     -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
     -- ^ Retract window (ms), from @--retract-time@.
-bootRegistry prov caps unbound txs processTime retractTime = do
-    -- The seed and the boot that spends it are read from one view.
-    (seedIn, cfg, compiled, unsigned) <- Cage.withView prov $ \v -> do
-        utxos <- Cage.viewUTxOsAt v funderAddr
+bootRegistry wallet prov caps unbound txs processTime retractTime = do
+    -- The seed and the boot that spends it are read from one session.
+    (seedIn, cfg, compiled, unsigned) <- Cage.withLatest prov $ \v -> do
+        utxos <- Cage.outputsAt v (walletAddr wallet)
         -- Never seed from a reference publication: the boot references the
         -- state validator's and may not also spend it.
         seedIn <- case sortOn
@@ -166,9 +165,9 @@ bootRegistry prov caps unbound txs processTime retractTime = do
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }
-        unsigned <- bootTokenImpl cfg v funderAddr
+        unsigned <- bootTokenImpl cfg v (walletAddr wallet)
         pure (seedIn, cfg, compiled, unsigned)
-    signed <- submitted caps txs "boot" unsigned
+    signed <- submitted wallet caps txs "boot" unsigned
     let MultiAsset ma = signed ^. bodyTxL . mintTxBodyL
     tok <- case Map.toList (ma Map.! cagePolicyIdFromCfg cfg) of
         [(an, _)] -> pure (TokenId an)
@@ -195,12 +194,13 @@ these itself (a second registration is refused), so a deployment missing
 one turns that runner's row into a refusal with no evidence behind it.
 -}
 registerCredentials
-    :: Cage.Provider IO
-    -> Capabilities
+    :: Wallet
+    -> (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> Compiled
     -> IORef [Text]
     -> IO ()
-registerCredentials prov caps compiled txs = do
+registerCredentials wallet prov caps compiled txs = do
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
         registerOne
@@ -210,19 +210,20 @@ registerCredentials prov caps compiled txs = do
         ]
   where
     registerOne (name, script) = do
-        -- Registration and its transaction are read from one view.
-        tx <- Cage.withView prov $ \v -> do
-            registered <- Cage.viewScriptRegistered v (hashScript script)
+        -- Registration and its transaction are read from one session.
+        tx <- Cage.withLatest prov $ \v -> do
+            registered <- Cage.registered v (hashScript script)
             if registered
                 then pure Nothing
-                else Just <$> registerScriptImpl v funderAddr (hashScript script)
+                else
+                    Just <$> registerScriptImpl v (walletAddr wallet) (hashScript script)
         case tx of
             Nothing ->
                 emit
                     "credential"
                     (name <> " stake credential already registered; reused")
             Just unsigned -> do
-                _ <- submitted caps txs (name <> "-registration") unsigned
+                _ <- submitted wallet caps txs (name <> "-registration") unsigned
                 emit "credential" (name <> " stake credential registered")
 
 {- | The five reference scripts every runner reads: the registry's state
@@ -237,8 +238,9 @@ network without a funding pool: every step is confirmed before the next
 one needs its output.
 -}
 publishAll
-    :: Cage.Provider IO
-    -> Capabilities
+    :: Wallet
+    -> (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> CageConfig
     -> TokenId
     -> Compiled
@@ -246,11 +248,12 @@ publishAll
     -- ^ The state validator's publication, made before the boot.
     -> IORef [Text]
     -> IO [ReferenceScript]
-publishAll prov caps cfg tok compiled stateIn txs = do
+publishAll wallet prov caps cfg tok compiled stateIn txs = do
     state <- record ("state", mkCageScript cfg) stateIn
     rest <-
         mapM
-            (\p@(_, script) -> publishOne prov caps txs script >>= record p . fst)
+            ( \p@(_, script) -> publishOne wallet prov caps txs script >>= record p . fst
+            )
             [ ("request", mkRequestScript cfg tok)
             ,
                 ( "application"
@@ -273,31 +276,32 @@ publishAll prov caps cfg tok compiled stateIn txs = do
                 { refRole = role
                 , refHash = hexT (scriptHashBytes (hashScript script))
                 , refOutRef = renderOutRef txIn
-                , refAddress = T.pack (bech32Address funderAddr)
-                , refAddressBytes = renderAddrBytes funderAddr
+                , refAddress = T.pack (bech32Address (walletAddr wallet))
+                , refAddressBytes = renderAddrBytes (walletAddr wallet)
                 }
 
 publishOne
-    :: Cage.Provider IO
-    -> Capabilities
+    :: Wallet
+    -> (Ledger.Network, Ledger.LedgerProvider NoWitness IO)
+    -> Capabilities NoWitness IO
     -> IORef [Text]
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
-publishOne prov caps txs script = do
-    -- The funding output, the parameters and the body: one view.
-    unsigned <- Cage.withView prov $ \v -> do
-        let pp = Cage.viewProtocolParams v
-        utxos <- Cage.viewUTxOsAt v funderAddr
+publishOne wallet prov caps txs script = do
+    -- The funding output, the parameters and the body: one session.
+    unsigned <- Cage.withLatest prov $ \v -> do
+        pp <- Cage.parameters v
+        utxos <- Cage.outputsAt v (walletAddr wallet)
         fund <- case sortOn (Down . (^. coinTxOutL) . snd) (adaOnly utxos) of
             [] -> failWith "publish: the funding wallet has no ada-only output"
             (u : _) -> pure u
         let probe =
-                mkBasicTxOut funderAddr (MaryValue (Coin 0) mempty)
+                mkBasicTxOut (walletAddr wallet) (MaryValue (Coin 0) mempty)
                     & referenceScriptTxOutL .~ SJust script
             Coin minCoin = getMinCoinTxOut pp probe
             refOut =
                 mkBasicTxOut
-                    funderAddr
+                    (walletAddr wallet)
                     (MaryValue (Coin (minCoin + 1_000_000)) mempty)
                     & referenceScriptTxOutL .~ SJust script
             Coin inCoin = snd fund ^. coinTxOutL
@@ -316,13 +320,13 @@ publishOne prov caps txs script = do
                     & outputsTxBodyL
                         .~ StrictSeq.fromList
                             [ refOut
-                            , mkBasicTxOut funderAddr (MaryValue (Coin changeCoin) mempty)
+                            , mkBasicTxOut (walletAddr wallet) (MaryValue (Coin changeCoin) mempty)
                             ]
                     & feeTxBodyL .~ Coin 1_000_000
         pure (mkBasicTx body)
-    signed <- submitted caps txs "publish" unsigned
+    signed <- submitted wallet caps txs "publish" unsigned
     let published = txIdTx signed
-    after <- Cage.withView prov (`Cage.viewUTxOsAt` funderAddr)
+    after <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
     -- The output this transaction created, identified by the
     -- transaction rather than by the script: two publishes of the same
     -- script would otherwise be indistinguishable.
@@ -346,14 +350,20 @@ publishOne prov caps txs script = do
 
 -- | Sign with the funding wallet, submit, wait for the chain, record.
 submitted
-    :: Capabilities -> IORef [Text] -> String -> ConwayTx -> IO ConwayTx
-submitted caps txs label unsigned = do
-    let signed = signTx funderSignKey unsigned
+    :: Wallet
+    -> Capabilities NoWitness IO
+    -> IORef [Text]
+    -> String
+    -> ConwayTx
+    -> IO ConwayTx
+submitted wallet caps txs label unsigned = do
+    let signed = signTx (walletSignKey wallet) unsigned
         tx = signedTx signed
-    result <- submitSigned (capSubmit caps) signed
+    result <- capSubmit caps signed
     case result of
-        Submitted _ -> pure ()
-        Rejected reason -> failWith (label <> ": rejected: " <> show reason)
+        Ledger.SubmitAccepted _ -> pure ()
+        Ledger.SubmitRefused reason -> failWith (label <> ": rejected: " <> show reason)
+        other -> failWith (label <> ": submission unavailable: " <> show other)
     capConfirm caps tx
     old <- readIORef txs
     writeIORef txs (txText tx : old)

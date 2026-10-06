@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 {- | IO lifecycle effects for the same constructor used in pure State.
 Query timing wraps the actual raw read; disabled logging changes no facts.
 -}

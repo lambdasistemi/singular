@@ -26,6 +26,8 @@ module Singular.Registry.NetworkTime
     , validateProtocolMajor
     , ledgerHorizon
     , capValidityUpper
+    , ValidityWindow (..)
+    , minimumValidityWindow
     ) where
 
 import Control.Exception (Exception)
@@ -128,6 +130,8 @@ data NetworkTimeFailure
     | TimeBeforeHistory Integer
     | EraBeyondPinned Word64 Word64
     | WindowPastLedgerHorizon SlotNo SlotNo (Maybe SlotNo) SlotNo
+    | WindowTooShort SlotNo SlotNo (Maybe SlotNo) SlotNo Integer
+    | HorizonWaitTimedOut SlotNo SlotNo
     deriving stock (Eq, Show)
 
 instance Exception NetworkTimeFailure
@@ -395,6 +399,40 @@ capValidityUpper context tip lower upper = do
     if toInteger (unSlotNo capped) <= effectiveLower
         then Left (WindowPastLedgerHorizon tip horizon lower upper)
         else Right capped
+
+{- | A pure decision under the pinned ten-second minimum. A horizon wait is
+a request to the IO caller, never an effect hidden in these conversions.
+-}
+data ValidityWindow = ValidityWindow
+    { validityHorizon :: SlotNo
+    , validitySelectedUpper :: SlotNo
+    , validityMinimumSlots :: Integer
+    , validityNeedsHorizonWait :: Bool
+    }
+    deriving stock (Eq, Show)
+
+minimumValidityWindow
+    :: NetworkTime
+    -> SlotNo
+    -> Maybe SlotNo
+    -> SlotNo
+    -> Either NetworkTimeFailure ValidityWindow
+minimumValidityWindow context tip lower upper = do
+    -- Preserve the existing empty-interval refusal before the minimum rule.
+    capped <- capValidityUpper context tip lower upper
+    horizon <- ledgerHorizon context tip
+    start <- slotStartMs context tip
+    end <- posixMsCeilingSlot context (start + 10_000)
+    let minimumSlots = toInteger (unSlotNo end) - toInteger (unSlotNo tip)
+        effectiveLower =
+            max
+                (maybe 0 (toInteger . unSlotNo) lower)
+                (toInteger (unSlotNo tip) + 1)
+        registryShort = toInteger (unSlotNo upper) - effectiveLower < minimumSlots
+        cappedShort = toInteger (unSlotNo capped) - effectiveLower < minimumSlots
+    if registryShort || (cappedShort && upper <= horizon)
+        then Left (WindowTooShort tip horizon lower upper minimumSlots)
+        else Right (ValidityWindow horizon capped minimumSlots cappedShort)
 
 -- | POSIX milliseconds at a slot's start, using the same pinned history.
 slotStartMs

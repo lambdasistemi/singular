@@ -56,8 +56,8 @@ import Data.Text qualified as T
 import System.Environment (lookupEnv)
 
 import Singular.Registry.Ledger (ExUnits (..))
-import Singular.Registry.Node (signTx)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , leafAbsent
@@ -281,7 +281,7 @@ runFoldAgainstSupersededRoot env = do
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
     libFold <-
-        Cage.withView (envProv env) $ \v -> do
+        Cage.withLatest (envProv env) $ \v -> do
             ctxLive <- rowRegistryContext env v cage tid
             updateTokenWithDuties
                 cfg

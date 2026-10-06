@@ -34,6 +34,7 @@ module Conformance.Run.Environment
 import Conformance.FoldFixture qualified as FoldFixture
 import Conformance.Run.Control
 import Conformance.Run.Replay (ReplayIndex)
+import Singular.Registry.Evidence qualified as Cage
 
 import Control.Exception
     ( SomeException
@@ -88,6 +89,7 @@ import Singular.Registry.Blueprint
     , loadBlueprint
     , loadRegistryCodesFromEnv
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( Coin (..)
@@ -95,13 +97,12 @@ import Singular.Registry.Ledger
     , TokenId (..)
     , TxOut
     )
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , SignedSubmitter
-    , funderAddr
-    , funderSignKey
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (SubmitResult)
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.Node (funderAddr, funderSignKey)
+import Singular.Registry.SessionEvidence (FactRecord)
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (SignedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Internal
     ( cagePolicyIdFromCfg
@@ -124,10 +125,12 @@ import Conformance.Mirror
 
 data Env = Env
     { envCfg :: CageConfig
-    , envProv :: Cage.Provider IO
-    , envSubmit :: SignedSubmitter
+    , envProv :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    , envSubmit :: SignedTx -> IO SubmitResult
     -- ^ The session's signed-only write
     , envConfirm :: ConwayTx -> IO ()
+    , envFacts :: IO [FactRecord]
+    , envTrace :: IO [Value]
     -- ^ The session's confirmation of a submitted transaction
     , envTm :: TrieManager IO
     , envTid :: TokenId
@@ -491,32 +494,42 @@ txInHex (TxId h) =
 environment's provider — so a pinned environment's reads stay on its
 held view.
 -}
-envCaps :: Env -> Capabilities
+envCaps :: Env -> Capabilities Cage.NoWitness IO
 envCaps env =
     Capabilities
         { capReads = envProv env
         , capSubmit = envSubmit env
         , capConfirm = envConfirm env
+        , capFacts = envFacts env
+        , capTrace = envTrace env
         }
 
-{- | The environment with every read served by one held view. A fold is
-one transaction built from one acquired chain state, and so is its
-context; holding the view also spares the acquisitions that would
-otherwise spend a near-now validity window between assembly and
-submission. The view stays valid only inside the scope that acquired it.
+{- | Reuse one acquisition for a transaction's reads. The actual held
+session retains its Unbound binding: sharing its identity does not promise
+a ledger snapshot. Reads remain valid only while the acquisition is open.
 -}
-pinnedTo :: Cage.View IO -> Env -> Env
-pinnedTo v env = env{envProv = pinnedProvider v}
+pinnedTo :: Cage.Session Cage.NoWitness IO -> Env -> Env
+pinnedTo v env = env{envProv = pinnedProvider v (envProv env)}
 
--- | A provider whose every acquisition hands back one held view.
-pinnedProvider :: Cage.View IO -> Cage.Provider IO
-pinnedProvider v = Cage.Provider (\k -> k v)
+-- | A private harness provider reusing the already acquired session.
+pinnedProvider
+    :: Cage.Session Cage.NoWitness IO
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+pinnedProvider held (network, provider) =
+    ( network
+    , provider
+        { Cage.acquire = \request action -> case request of
+            Cage.Latest requested
+                | requested == Cage.sessionNetwork held -> Right <$> action held
+                | otherwise ->
+                    pure (Left (Cage.WrongNetwork (Cage.sessionNetwork held) requested))
+            Cage.AtPoint _ point -> pure (Left (Cage.PointNotSupported point))
+        }
+    )
 
-{- | Run one operation — one transaction's assembly — with every chain
-read it makes served by one view acquired here: the environment it is
-handed is pinned to that view. A read that may submit (publishing the
-reference outputs) must be taken before, never inside. Holding an
-already pinned environment hands back its view.
+{- | Build one transaction through the acquired session. Any operation
+that submits, such as publishing reference outputs, runs before this scope.
 -}
 withHeldView :: Env -> (Env -> IO a) -> IO a
-withHeldView env k = Cage.withView (envProv env) (\v -> k (pinnedTo v env))
+withHeldView env k = Cage.withLatest (envProv env) (\v -> k (pinnedTo v env))

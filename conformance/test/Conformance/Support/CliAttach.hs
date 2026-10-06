@@ -313,7 +313,7 @@ spec = do
                                     [ "outcome" .= ("success" :: T.Text)
                                     , "leaf" .= ("active" :: T.Text)
                                     , "key" .= key
-                                    , "chainPoint" .= ("1000.aa" :: T.Text)
+                                    , "observedTip" .= ("1000.aa" :: T.Text)
                                     , "applicationOutput"
                                         .= object
                                             [ "output" .= out
@@ -391,12 +391,12 @@ spec = do
                                 , "datumHashRecomputed" .= recomputed
                                 , "tipSlot" .= T.pack (show tip)
                                 ]
-                        , "node"
+                        , "inspect"
                             .= object
                                 [ "output" .= out
                                 , "datumCbor" .= cbor
                                 , "datumHash" .= hashOf cbor
-                                , "chainPoint" .= ("1000.aa" :: T.Text)
+                                , "observedTip" .= ("1000.aa" :: T.Text)
                                 ]
                         , "lagSlots" .= (0 :: Int)
                         , "maxLagSlots" .= (600 :: Int)

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -33,14 +34,22 @@ built body, not only the duties the fold accumulated.
 -}
 module Singular.Registry.TxBuilder.BurnSourceSpec (spec, builtFoldUnder) where
 
-import Control.Exception (ErrorCall, displayException, try)
+import Control.Exception
+    ( ErrorCall
+    , SomeException
+    , displayException
+    , try
+    )
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
+import Data.IORef (atomicModifyIORef', newIORef, readIORef)
+import Data.List (isPrefixOf)
 import Data.Set qualified as Set
 import Data.Word (Word8)
+import GHC.Clock (getMonotonicTimeNSec)
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -119,7 +128,10 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
-import Singular.Registry.LedgerProvider (Session, TipObservation (..))
+import Singular.Registry.LedgerProvider
+    ( Session (..)
+    , TipObservation (..)
+    )
 import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
@@ -183,7 +195,7 @@ import Singular.Registry.Types
 
 import Control.Monad (forM_, void)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.Text qualified as T
 
 -- ---------------------------------------------------------
@@ -1054,13 +1066,12 @@ rows inspect assembled bodies and do not establish registry script admission.
 -}
 foldProvider :: Session NoWitness IO
 foldProvider =
-    ( withAddressOutputs (pure . utxosAt)
-        $ withParameters (withSyntheticCosts preprodParams)
-        $ withTime (pure syntheticTime)
-        $ withResolvedOutputs
-            (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] [])
-        $ stubSession
-    )
+    withAddressOutputs (pure . utxosAt) $
+        withParameters (withSyntheticCosts preprodParams) $
+            withTime (pure syntheticTime) $
+                withResolvedOutputs
+                    (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] [])
+                    stubSession
 
 -- | Actual script address for the request the built fixture owns.
 builtRequest :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
@@ -1108,7 +1119,7 @@ builtFoldUnder pp = do
     createTrie tm foldTokenId
     updateTokenWithDuties
         builtCfg
-        (withParameters (withSyntheticCosts pp) $ foldProvider)
+        (withParameters (withSyntheticCosts pp) foldProvider)
         tm
         foldTokenId
         payer
@@ -1155,8 +1166,65 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
             ( "refuses upper "
                 <> show upper
                 <> " before returning a body for signing"
-            ) $
-            build upper `shouldThrow` refused upper
+            )
+            $ build upper `shouldThrow` refused upper
+    it "refuses the registry-limited upper999 at tip917 before signing" $
+        buildAt 917 999
+            `shouldThrow` ( (isPrefixOf "WindowTooShort" . displayException)
+                                :: SomeException -> Bool
+                          )
+    it
+        "waits through970 and rebuilds the upper-only body at971 before signing"
+        $ do
+            observations <- newIORef ([915, 970, 971], [])
+            let next = atomicModifyIORef' observations $ \(remainingTips, seen) -> case remainingTips of
+                    current : rest -> ((rest, seen <> [current]), current)
+                    [] -> (([], seen <> [971]), 971)
+            tx <- buildWith next 1250
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SNothing
+            upper `shouldBe` SJust (SlotNo 1250)
+            (_, observed) <- readIORef observations
+            observed `shouldBe` [915, 970, 971]
+    it
+        "waits for the later horizon before reselecting a registry window that becomes short"
+        $ do
+            observations <- newIORef ([915, 916, 970, 971], [])
+            let next = atomicModifyIORef' observations $ \(remainingTips, seen) -> case remainingTips of
+                    current : rest -> ((rest, seen <> [current]), current)
+                    [] -> (([], seen <> [971]), 971)
+            buildWith next 1016
+                `shouldThrow` (== WindowTooShort (SlotNo 971) (SlotNo 1500) Nothing (SlotNo 1016) 100)
+            (_, observed) <- readIORef observations
+            observed `shouldBe` [915, 916, 970, 971]
+    it
+        "checks the Mslot wait bound before reselecting an expired registry window"
+        $ do
+            observations <- newIORef [915, 1016]
+            let next = atomicModifyIORef' observations $ \case
+                    current : rest -> (rest, current)
+                    [] -> ([], 1016)
+            buildWith next 1016
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 1016) (SlotNo 1500))
+    it
+        "refuses stalled horizon after the actual20second bound before returning a body"
+        $ do
+            begin <- getMonotonicTimeNSec
+            buildAt 970 1250
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 970) (SlotNo 1000))
+            end <- getMonotonicTimeNSec
+            let elapsed = fromIntegral (end - begin) / 1_000_000_000 :: Double
+            elapsed `shouldSatisfy` (>= 19.9)
+            elapsed `shouldSatisfy` (< 25)
+    it
+        "enforces the Mslot wait bound even when a later observation jumps past it"
+        $ do
+            observations <- newIORef [915, 1016]
+            let next = atomicModifyIORef' observations $ \case
+                    current : rest -> (rest, current)
+                    [] -> ([], 1016)
+            buildWith next 1250
+                `shouldThrow` (== HorizonWaitTimedOut (SlotNo 1016) (SlotNo 1500))
     it "builds the accepting upper-999 twin with no lower bound" $ do
         tx <- build 999
         let body = tx ^. bodyTxL
@@ -1167,7 +1235,9 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
             `shouldSatisfy` (\inputs -> Set.member stateIn inputs && Set.member requestIn inputs)
         body ^. mintTxBodyL `shouldSatisfy` (/= mempty)
   where
-    build upper = do
+    build = buildAt 868
+    buildAt observed = buildWith (pure observed)
+    buildWith nextTip upper = do
         let (reference, output) = requestFor edgeInsertAbsent
             requested = case extractCageDatum output of
                 Just (RequestDatum request) ->
@@ -1184,10 +1254,17 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
                                 )
                     )
                 _ -> error "upper-only fixture: request datum absent"
+            raw =
+                withTime
+                    (pure (syntheticTimeWith 0 (1 / 10) 500))
+                    (providerWith requested)
             view =
-                withTip (TipObservation (SlotNo 868) (BS.replicate 32 0) 1 0) $
-                    withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) $
-                        providerWith requested
+                raw
+                    { tipObservation = do
+                        observed <- nextTip
+                        tipObservation
+                            (withTip (TipObservation (SlotNo observed) (BS.replicate 32 0) 1 0) raw)
+                    }
         tm <- trieWith Nothing
         updateTokenWithDuties
             builtCfg
@@ -1200,7 +1277,7 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
         WindowPastLedgerHorizon tip horizon lower windowUpper ->
             tip == SlotNo 868
                 && horizon == SlotNo 1000
-                && lower == Nothing
+                && isNothing lower
                 && windowUpper == SlotNo (fromInteger upper)
         _ -> False
 
@@ -1281,7 +1358,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                 ( \a ->
                     pure (if a == cageAddrFromCfg builtCfg Testnet then [] else utxosAt a)
                 )
-                $ foldProvider
+                foldProvider
             )
     it "still refuses a view without pending requests" $
         checkView
@@ -1294,12 +1371,13 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                             else utxosAt a
                         )
                 )
-                $ foldProvider
+                foldProvider
             )
     it "still refuses a view without an ada-only funding output" $
         checkView
             "updateToken: no ada-only UTxO to fund the fold"
-            ( withAddressOutputs (\a -> pure (if a == payer then [] else utxosAt a)) $
+            ( withAddressOutputs
+                (\a -> pure (if a == payer then [] else utxosAt a))
                 foldProvider
             )
   where
@@ -1320,7 +1398,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     )
     check name identity output state requests =
         checkWith name identity output $ \root ->
-            ( withAddressOutputs
+            withAddressOutputs
                 ( \a ->
                     pure $
                         if a == cageAddrFromCfg builtCfg Testnet
@@ -1330,8 +1408,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                                     then requests
                                     else utxosAt a
                 )
-                $ foldProvider
-            )
+                foldProvider
     checkView name view = checkWith name who stateIn (const view)
     checkWith name identity output viewAt = withSystemTempDirectory "fold-builder-refusals" $ \path -> do
         saveMirror path (Map.singleton foldTokenId emptyMPFInMemoryDB)
@@ -1518,16 +1595,16 @@ liveOutput =
 -- | A stub view whose one pending request is `request`.
 providerWith :: (TxIn, TxOut ConwayEra) -> Session NoWitness IO
 providerWith request =
-    ( withAddressOutputs
+    withAddressOutputs
         ( \a ->
             pure $
                 if a == requestAddrFromCfg builtCfg foldTokenId Testnet
                     then [builtRequest request]
                     else utxosAt a
         )
-        $ withResolvedOutputs (resolveBuilt [builtRequest request] [])
-        $ foldProvider
-    )
+        $ withResolvedOutputs
+            (resolveBuilt [builtRequest request] [])
+            foldProvider
 
 -- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
 trieWith :: Maybe ByteString -> IO (TrieManager IO)
@@ -1693,7 +1770,7 @@ retireWithReferences app = do
         builtCfg
         ( withResolvedOutputs
             (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive])
-            $ (providerWith (retirementAt 1 ownerKey keyA))
+            $ providerWith (retirementAt 1 ownerKey keyA)
         )
         tm
         foldTokenId

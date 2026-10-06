@@ -1,24 +1,7 @@
-{- |
-Module      : Conformance.Run.Node
-Description : The one place the conformance harness opens its node
-License     : Apache-2.0
-
-Composition for the harness's devnet sessions. The node is the devnet
-this process spawns and follows with the in-memory indexer, or the
-external node the joiner names; either way it is reached over
-node-to-client, and every row is handed capabilities only — the read
-interface (address reads answered by the indexer), the signed-only
-write and the confirmation. No row sees the node, the mode or the raw
-submitter.
-
-Confirmation follows the mode: on the devnet the indexer reports the
-block that carries the transaction, and how long that took is logged;
-against an external node the historical fixed five-second wait stands.
-
-A row session's node also replays every refused submission with traced
-validators before the next one goes out ('withReplayingNode', #287): the
-replay reads the refused transaction's inputs, the protocol parameters and
-the era history over the same node-to-client connection.
+{- | Shipping HTTP capabilities for conformance transactions. A generated
+private source exposes actual ledger queries and full blocks; a separate private
+LSQ connection supplies the independent accepting/refusing replay controls.
+The replay connection never submits a conformance transaction.
 -}
 module Conformance.Run.Node
     ( checkHarnessGenesis
@@ -26,126 +9,97 @@ module Conformance.Run.Node
     , withReplayingNode
     ) where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel)
-import Control.Exception (bracket)
+import Control.Concurrent.Async (link, withAsync)
 import Data.Text (Text)
-import GHC.Clock (getMonotonicTime)
+import System.Environment (lookupEnv)
 
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Node.Client.E2E.Setup (genesisDir)
 import Cardano.Node.Client.N2C.Connection
     ( newLSQChannel
     , newLTxSChannel
     , runNodeClient
     )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.N2C.Types (LSQChannel)
-import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (Submitter)
-import Cardano.Tx.Ledger (ConwayTx)
+import Ouroboros.Network.Magic (NetworkMagic (..))
+import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Node
-    ( Capabilities (..)
+    ( ExternalNode (..)
     , NodeMode (..)
-    , awaitConnection
-    , awaitIndexed
-    , boundedSubmitter
     , devnetGenesis
-    , followedProvider
-    , guardNodeConnection
     , runMode
-    , sessionMagic
-    , signedSubmitter
-    , submissionBound
-    , withNodeSocket
     )
+import Singular.Registry.Private.Facade
+    ( Facade (..)
+    , GenesisFunding (..)
+    , withGeneratedFacade
+    )
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.Terminal (withWrites)
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
-import Conformance.Mirror (emit, txIdHex)
-import Conformance.Run.Environment (checkGenesis)
+import Conformance.Run.Environment
+    ( checkGenesis
+    , genesisAddr
+    , genesisSignKey
+    )
 import Conformance.Run.Replay
     ( ReplayEnv (..)
     , ReplayIndex
-    , capturingSubmitter
+    , capturingSignedSubmission
     , newReplayEnv
     )
-import Conformance.Run.Submit (millis)
 
-{- | Before a devnet spawns, its genesis directory must carry the devnet
-files; nothing to check against an external node.
--}
 checkHarnessGenesis :: IO ()
 checkHarnessGenesis = devnetGenesis >>= mapM_ checkGenesis
 
-{- | Open the harness's node and run the body with its capabilities; the
-connection is closed when the body returns.
--}
-withHarnessNode :: (Capabilities -> IO a) -> IO a
-withHarnessNode body =
-    openHarnessNode
-        (\_ _ submit -> pure (submit, ()))
-        (\caps () -> body caps)
+withHarnessNode :: (Capabilities NoWitness IO -> IO a) -> IO a
+withHarnessNode body = openHarnessNode (\_ _ -> body)
 
-{- | Open the harness's node as 'withHarnessNode' does, with every refused
-submission captured and replayed before the next one: the blueprint the
-traced build is made from, the receipts directory the replay evidence goes
-beside, and the node's identity. The body also receives the replay index,
-to name the row each rejection belongs to.
--}
 withReplayingNode
     :: FilePath
     -> FilePath
     -> Text
-    -> (Capabilities -> ReplayIndex -> IO a)
+    -> (Capabilities NoWitness IO -> ReplayIndex -> IO a)
     -> IO a
-withReplayingNode blueprintPath receiptsDir nodeId =
-    openHarnessNode $ \n2c lsqCh submit -> do
-        replay <- newReplayEnv n2c lsqCh blueprintPath receiptsDir nodeId
-        pure (capturingSubmitter replay submit, reIndex replay)
-
-{- | The node connection, its submitter shaped by the first argument before
-anything submits through it.
--}
-openHarnessNode
-    :: ( N2C.Provider IO
-         -> LSQChannel
-         -> Submitter IO
-         -> IO (Submitter IO, r)
-       )
-    -> (Capabilities -> r -> IO a)
-    -> IO a
-openHarnessNode wrap body = withNodeSocket $ \sock -> do
-    lsqCh <- newLSQChannel 16
-    ltxsCh <- newLTxSChannel 16
-    bracket
-        (async (runNodeClient sessionMagic sock lsqCh ltxsCh))
-        cancel
-        $ \nodeThread -> do
-            (n2c, guardedSubmit, nodeProv) <-
-                guardNodeConnection
-                    nodeThread
-                    sessionMagic
-                    sock
-                    lsqCh
-                    (mkN2CProvider lsqCh)
-                    (boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh))
-            awaitConnection sessionMagic sock nodeThread nodeProv
-            (submit, extra) <- wrap n2c lsqCh guardedSubmit
-            prov <- followedProvider nodeProv submit
+withReplayingNode blueprintPath receiptsDir nodeId body =
+    openHarnessNode $ \magic socket caps -> do
+        lsq <- newLSQChannel 16
+        unusedSubmission <- newLTxSChannel 16
+        withAsync (runNodeClient magic socket lsq unusedSubmission) $ \connection -> do
+            link connection
+            replay <-
+                newReplayEnv (mkN2CProvider lsq) lsq blueprintPath receiptsDir nodeId
             body
-                Capabilities
-                    { capReads = prov
-                    , capSubmit = signedSubmitter submit
-                    , capConfirm = confirm
-                    }
-                extra
+                caps{capSubmit = capturingSignedSubmission replay (capSubmit caps)}
+                (reIndex replay)
 
--- | Wait until a submitted transaction is on chain, as the mode allows.
-confirm :: ConwayTx -> IO ()
-confirm tx = case runMode of
+openHarnessNode
+    :: (NetworkMagic -> FilePath -> Capabilities NoWitness IO -> IO a)
+    -> IO a
+openHarnessNode body = case runMode of
     Devnet -> do
-        start <- getMonotonicTime
-        awaitIndexed tx
-        end <- getMonotonicTime
-        emit
-            "confirm"
-            (txIdHex tx <> " indexed after " <> millis (end - start))
-    External _ -> threadDelay 5_000_000
+        directory <- genesisDir
+        let wallet = Wallet genesisAddr genesisSignKey Testnet
+        withGeneratedFacade FundGenesis directory (const (pure ())) $ \_ facade ->
+            withWrites (facadeSettings facade) wallet $
+                body (NetworkMagic 42) (facadeSocket facade)
+    External external -> do
+        url <- required "SINGULAR_KOIOS_URL"
+        timeDirectory <- required "SINGULAR_NETWORK_TIME"
+        tokenFile <- lookupEnv "SINGULAR_KOIOS_TOKEN_FILE"
+        wallet <- loadWallet (extMagic external) (extSkeyFile external)
+        let settings =
+                ProviderSettings
+                    { providerUrl = url
+                    , providerMagic = extMagic external
+                    , providerTokenFile = tokenFile
+                    , providerTimeDirectory = Just timeDirectory
+                    }
+        withWrites settings wallet $
+            body (NetworkMagic (extMagic external)) (extSocket external)
+  where
+    required name =
+        lookupEnv name
+            >>= maybe (fail (name <> " is required for external conformance")) pure

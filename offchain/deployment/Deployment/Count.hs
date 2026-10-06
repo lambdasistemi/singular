@@ -34,17 +34,15 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Deployment.Compiled (bindDeployment, loadCompiled, partsOf)
 import Deployment.Narration (failWith)
 import Deployment.Options (CountOptions (..), countOptions)
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (cageConfigFor, readDeployment)
-import Singular.Registry.Node
-    ( Capabilities (..)
-    , funderAddr
-    , withCapabilities
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Runner (withRunner)
+import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 -- | Count what these arguments ask for, at the node.
 count :: [String] -> IO ()
@@ -53,24 +51,24 @@ count args = do
     dep <- readDeployment (countManifest opts)
     compiled <- loadCompiled >>= (`bindDeployment` dep)
     cfg <- either failWith pure (cageConfigFor dep (partsOf compiled))
-    withCapabilities $ \caps -> do
+    withRunner $ \wallet caps -> do
         let prov = capReads caps
         case countWhat opts of
             "state" -> do
                 utxos <-
-                    Cage.withView prov (`Cage.viewUTxOsAt` cageAddrFromCfg cfg Testnet)
+                    Cage.withLatest prov (`Cage.outputsAt` cageAddrFromCfg cfg Testnet)
                 print (length [() | (_, o) <- utxos, carriesPolicy cfg o])
             "reference" -> do
                 addresses <- case countReferenceAddress opts of
-                    Nothing -> pure [funderAddr]
+                    Nothing -> pure [walletAddr wallet]
                     Just encoded -> do
                         raw <- either failWith pure (B16.decode (BC.pack encoded))
                         addr <- either (failWith . show) pure (decodeAddrEither raw)
-                        pure (Set.toList (Set.fromList [funderAddr, addr]))
+                        pure (Set.toList (Set.fromList [walletAddr wallet, addr]))
                 utxos <-
-                    Cage.withView
+                    Cage.withLatest
                         prov
-                        (\v -> concat <$> mapM (Cage.viewUTxOsAt v) addresses)
+                        (\v -> concat <$> mapM (Cage.outputsAt v) addresses)
                 print (length [() | (_, o) <- utxos, hasReferenceScript o])
             what ->
                 failWith ("count: --what must be state or reference, not " <> what)

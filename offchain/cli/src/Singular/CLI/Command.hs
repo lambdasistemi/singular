@@ -59,6 +59,7 @@ import Data.ByteString (ByteString)
 import Data.Char (GeneralCategory (Surrogate), generalCategory)
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
+import Data.Maybe qualified
 import Data.Text qualified as T
 import Text.Read (readMaybe)
 
@@ -558,7 +559,7 @@ parseCommand args = do
                 Left
                     ( UnsafeSettings
                         ( "network magic is not a number: "
-                            <> maybe "" id (optional "--network-magic" flags)
+                            <> Data.Maybe.fromMaybe "" (optional "--network-magic" flags)
                         )
                     )
             other -> other

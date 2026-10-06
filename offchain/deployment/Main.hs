@@ -26,13 +26,11 @@ Anything else is refused with the usage text, which names @deploy@ and
 @verify@ only. Every refusal and failure ends the run with
 @deployment: FAILED:@ on standard error and exit status 1.
 
-The verbs that reach a node take it and the wallet from
-@Singular.Registry.Node@ — the factory devnet by default, the joiner's
-node with @--node-socket@ \/ @--network-magic@ \/ @--wallet-skey@.
-Deploying against a devnet the process itself spawns is possible but
-pointless: the chain dies with the command. The devnet path exists so
-the deployment code is exercised by the same tests every other runner
-is.
+The verbs that read or submit use the shared HTTP provider and the caller's
+explicit wallet through @Singular.Registry.Runner@. Supply @--koios-url@,
+@--network-magic@ and @--wallet-skey@, plus @--network-time@ for a generated
+private network. The matching @SINGULAR_@ settings are also supported.
+The private devnet launcher supplies those settings for retained CI runners.
 
 Each verb has its own module — "Deployment.Deploy", "Deployment.Verify",
 "Deployment.Count", "Deployment.GenesisKey" — over the shared

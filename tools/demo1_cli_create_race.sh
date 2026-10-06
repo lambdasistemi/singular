@@ -6,22 +6,24 @@
 # RegistryExists, with the first registry's saved and pending identity,
 # state, mirror and journal byte-identical and its own seed still unspent.
 #
-# usage: demo1_cli_create_race.sh SINGULAR BLUEPRINT SOCKET FIRST_SKEY LATE_SKEY WORKDIR
+# usage: demo1_cli_create_race.sh SINGULAR BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR
 #
 # Exit 0: the control holds. Exit 1: it does not, with the reason. Exit 3:
 # setup failed before the race was reached; that is never a verdict.
 set -euo pipefail
 
-[ "$#" -eq 6 ] || {
-  echo "usage: $0 SINGULAR BLUEPRINT SOCKET FIRST_SKEY LATE_SKEY WORKDIR" >&2
+[ "$#" -eq 8 ] || {
+  echo "usage: $0 SINGULAR BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR" >&2
   exit 2
 }
 singular="$1"
 blueprint="$2"
-sock="$3"
-first_key="$4"
-late_key="$5"
-work="$6"
+provider_url="$3"
+time_directory="$4"
+network_magic="$5"
+first_key="$6"
+late_key="$7"
+work="$8"
 mkdir -p "$work/receipts"
 receipts="$work/receipts"
 target="$work/raced"
@@ -36,7 +38,7 @@ setup_fail() {
 }
 say() { echo "create-race: $*"; }
 
-node=(--node-socket "$sock" --network-magic 42)
+node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 # preview NAME SKEY [SEED]: an identity read that writes nothing; with a
 # seed it succeeds only while that seed is an unspent output of the wallet.
 preview() {
