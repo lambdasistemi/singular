@@ -85,6 +85,21 @@ ci:
     just lint
     just lint-controls
 
+# The checks no dedicated CI job runs: the Development shell build job runs
+# only these. Model, simulator, browser, docs and lint have their own jobs.
+ci-shell:
+    just application-model
+    just check-presentation
+    just rename-registry-test
+    bash tools/no-global-fixture-state.sh
+    just node-confinement
+    just node-confinement-controls
+    just inventory
+    just inventory-controls
+    just format-check
+    just format-controls
+    just lint-controls
+
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
 
