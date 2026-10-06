@@ -438,6 +438,30 @@
               }
             );
           };
+          registry-two-actors = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "registry-two-actors";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.strace
+                  pkgs.python3
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/journey"
+                  echo "two actors: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  python3 ${./tools/registry_two_actors.py} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                    ${onchain.packages.${system}.plutus-blueprint} "$work"
+                '';
+              }
+            );
+          };
           # #299: the ordinary CLI's refusal controls, judged from their
           # receipts: `nix run --quiet .#demo1-cli-controls`.
           demo1-cli-controls = {
