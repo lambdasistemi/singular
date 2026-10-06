@@ -292,7 +292,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-retire
@@ -410,7 +410,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-refund-controls
@@ -507,7 +507,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-reject-early
@@ -598,7 +598,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-retraction
@@ -649,7 +649,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-wrong-reason
@@ -696,7 +696,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-generic
@@ -783,7 +783,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-identity
@@ -940,7 +940,7 @@ jobs:
           [ -z "${CONFORMANCE_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_RECEIPTS/." "$out/receipts/"
           [ -z "${CONFORMANCE_DEDICATED_RECEIPTS:-}" ] || cp -r "$CONFORMANCE_DEDICATED_RECEIPTS/." "$out/dedicated/"
           [ -z "${STORY_RECEIPTS:-}" ] || cp -r "$STORY_RECEIPTS/." "$out/story/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-part-conformance-serialization
@@ -973,7 +973,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: conformance-part-*
           merge-multiple: true
@@ -1006,7 +1006,7 @@ jobs:
       # What proof-step-constructor-witnesses asserts now is the proof shape its own row builds.
       - name: Preserve candidate-bound conformance receipts
         if: always() && (env.CONFORMANCE_RECEIPTS != '' || env.CONFORMANCE_DEDICATED_RECEIPTS != '')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conformance-receipts
           path: |
@@ -1015,7 +1015,7 @@ jobs:
           if-no-files-found: error
       - name: Preserve the dedicated rows' candidate-bound receipts
         if: always() && env.STORY_RECEIPTS != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conformance-story-receipts
           path: ${{ env.STORY_RECEIPTS }}
