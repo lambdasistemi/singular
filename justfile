@@ -111,6 +111,7 @@ inventory:
 # Run the inventory's negative and positive controls.
 inventory-controls:
     bash tools/code_inventory_controls.sh
+    python3 tools/test_tags_controls.py
 
 # #278 terminal-attestation-permanent: apply the house Fourmolu configuration (fourmolu.yaml at the
 # repository root) to every discovered Haskell source — offchain and

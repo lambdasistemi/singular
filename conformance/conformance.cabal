@@ -279,9 +279,10 @@ executable conformance-extent
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   test app app-default app-cli
+  hs-source-dirs:   test app app-default app-cli ../offchain/test-tags
   main-is:          Main.hs
   other-modules:
+    Test.Tags
     Conformance.Mirror
     Conformance.FoldFixture
     Conformance.Run.Control

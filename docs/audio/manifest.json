@@ -279540,6 +279540,3991 @@
     }
    ]
   },
+  "docs-test-selection/area-vocabulary-00": {
+   "audio_sha256": "70ffb3dba25385ff4d451077926f8bf0c7b3ce0b9159fc775b78464fd0fb723f",
+   "characters": 16,
+   "cost": 9.92e-06,
+   "duration": 1.75,
+   "index": 0,
+   "key": "30064a42c906e6aa075c8b97b8173f103435f780c12c918ba1d04453bdbd76ad",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "area-vocabulary",
+   "sent_text": "Area vocabulary.",
+   "text": "Area vocabulary.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.175,
+     "text": "Area"
+    },
+    {
+     "end": 1.55,
+     "start": 0.425,
+     "text": "vocabulary"
+    },
+    {
+     "end": 1.75,
+     "start": 1.55,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/area-vocabulary-01": {
+   "audio_sha256": "bc75e61c254a79f98caae92701ab742471c1f413539f355d8d31fd7d5b7ce8f3",
+   "characters": 192,
+   "cost": 0.00011904000000000001,
+   "duration": 14.875,
+   "index": 1,
+   "key": "f2b228914e4574e9f7cd17a6e26c95f166fcf85a5f2d37b586ff3f0213000e3b",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "area-vocabulary",
+   "sent_text": "All suites compile the same Area type in offchain/test-tags/Test/Tags.hs. Its constructors produce the following lowercase labels. Add a label only when a gate needs it, then document it here.",
+   "text": "All suites compile the same Area type in offchain/test-tags/Test/Tags.hs. Its constructors produce the following lowercase labels. Add a label only when a gate needs it, then document it here.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.2,
+     "text": "All"
+    },
+    {
+     "end": 0.7,
+     "start": 0.375,
+     "text": "suites"
+    },
+    {
+     "end": 1.112,
+     "start": 0.7,
+     "text": "compile"
+    },
+    {
+     "end": 1.237,
+     "start": 1.112,
+     "text": "the"
+    },
+    {
+     "end": 1.525,
+     "start": 1.237,
+     "text": "same"
+    },
+    {
+     "end": 1.85,
+     "start": 1.525,
+     "text": "Area"
+    },
+    {
+     "end": 2.138,
+     "start": 1.85,
+     "text": "type"
+    },
+    {
+     "end": 2.287,
+     "start": 2.138,
+     "text": "in"
+    },
+    {
+     "end": 6.925,
+     "start": 2.287,
+     "text": "offchain/test-tags/Test/Tags.hs"
+    },
+    {
+     "end": 7.15,
+     "start": 6.925,
+     "text": "."
+    },
+    {
+     "end": 7.475,
+     "start": 7.325,
+     "text": "Its"
+    },
+    {
+     "end": 8.125,
+     "start": 7.475,
+     "text": "constructors"
+    },
+    {
+     "end": 8.575,
+     "start": 8.125,
+     "text": "produce"
+    },
+    {
+     "end": 8.712,
+     "start": 8.575,
+     "text": "the"
+    },
+    {
+     "end": 9.175,
+     "start": 8.712,
+     "text": "following"
+    },
+    {
+     "end": 9.725,
+     "start": 9.175,
+     "text": "lowercase"
+    },
+    {
+     "end": 10.675,
+     "start": 9.725,
+     "text": "labels"
+    },
+    {
+     "end": 10.875,
+     "start": 10.675,
+     "text": "."
+    },
+    {
+     "end": 11.238,
+     "start": 11.075,
+     "text": "Add"
+    },
+    {
+     "end": 11.3,
+     "start": 11.238,
+     "text": "a"
+    },
+    {
+     "end": 11.712,
+     "start": 11.3,
+     "text": "label"
+    },
+    {
+     "end": 12.062,
+     "start": 11.712,
+     "text": "only"
+    },
+    {
+     "end": 12.188,
+     "start": 12.062,
+     "text": "when"
+    },
+    {
+     "end": 12.25,
+     "start": 12.188,
+     "text": "a"
+    },
+    {
+     "end": 12.525,
+     "start": 12.25,
+     "text": "gate"
+    },
+    {
+     "end": 12.837,
+     "start": 12.525,
+     "text": "needs"
+    },
+    {
+     "end": 13.05,
+     "start": 12.837,
+     "text": "it"
+    },
+    {
+     "end": 13.125,
+     "start": 13.05,
+     "text": ","
+    },
+    {
+     "end": 13.35,
+     "start": 13.125,
+     "text": "then"
+    },
+    {
+     "end": 13.837,
+     "start": 13.35,
+     "text": "document"
+    },
+    {
+     "end": 13.925,
+     "start": 13.837,
+     "text": "it"
+    },
+    {
+     "end": 14.65,
+     "start": 13.925,
+     "text": "here"
+    },
+    {
+     "end": 14.875,
+     "start": 14.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/area-vocabulary-02": {
+   "audio_sha256": "0c3edf4daa05ae28e69a352862f6cf5a430c1c23959a67bb65fab48faf9679cb",
+   "characters": 229,
+   "cost": 0.00014198,
+   "duration": 14.5,
+   "index": 2,
+   "key": "0b98e45e12f435327cebcbcb5c7b6356fa03fd78ef29f6665999e43877ae8ce0",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "area-vocabulary",
+   "sent_text": "For example, network-time examples start under Singular.Registry.NetworkTime [time][provider]. A gate changing time material can select time; a broader adapter change can select provider. Module names omit a trailing Spec suffix.",
+   "text": "For example, network-time examples start under Singular.Registry.NetworkTime [time][provider]. A gate changing time material can select time; a broader adapter change can select provider. Module names omit a trailing Spec suffix.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "For"
+    },
+    {
+     "end": 0.825,
+     "start": 0.312,
+     "text": "example"
+    },
+    {
+     "end": 0.913,
+     "start": 0.825,
+     "text": ","
+    },
+    {
+     "end": 1.55,
+     "start": 0.913,
+     "text": "network-time"
+    },
+    {
+     "end": 2.162,
+     "start": 1.55,
+     "text": "examples"
+    },
+    {
+     "end": 2.525,
+     "start": 2.162,
+     "text": "start"
+    },
+    {
+     "end": 2.812,
+     "start": 2.525,
+     "text": "under"
+    },
+    {
+     "end": 3.475,
+     "start": 2.812,
+     "text": "Singular"
+    },
+    {
+     "end": 3.575,
+     "start": 3.475,
+     "text": "."
+    },
+    {
+     "end": 4.3,
+     "start": 3.575,
+     "text": "Registry"
+    },
+    {
+     "end": 4.425,
+     "start": 4.3,
+     "text": "."
+    },
+    {
+     "end": 5.1,
+     "start": 4.425,
+     "text": "NetworkTime"
+    },
+    {
+     "end": 5.387,
+     "start": 5.3,
+     "text": "A"
+    },
+    {
+     "end": 5.713,
+     "start": 5.387,
+     "text": "gate"
+    },
+    {
+     "end": 6.15,
+     "start": 5.713,
+     "text": "changing"
+    },
+    {
+     "end": 6.425,
+     "start": 6.15,
+     "text": "time"
+    },
+    {
+     "end": 6.95,
+     "start": 6.425,
+     "text": "material"
+    },
+    {
+     "end": 7.15,
+     "start": 6.95,
+     "text": "can"
+    },
+    {
+     "end": 7.588,
+     "start": 7.15,
+     "text": "select"
+    },
+    {
+     "end": 8.175,
+     "start": 7.588,
+     "text": "time"
+    },
+    {
+     "end": 8.275,
+     "start": 8.175,
+     "text": ";"
+    },
+    {
+     "end": 8.387,
+     "start": 8.275,
+     "text": "a"
+    },
+    {
+     "end": 8.825,
+     "start": 8.387,
+     "text": "broader"
+    },
+    {
+     "end": 9.337,
+     "start": 8.825,
+     "text": "adapter"
+    },
+    {
+     "end": 9.775,
+     "start": 9.337,
+     "text": "change"
+    },
+    {
+     "end": 9.975,
+     "start": 9.775,
+     "text": "can"
+    },
+    {
+     "end": 10.375,
+     "start": 9.975,
+     "text": "select"
+    },
+    {
+     "end": 11.45,
+     "start": 10.375,
+     "text": "provider"
+    },
+    {
+     "end": 11.675,
+     "start": 11.45,
+     "text": "."
+    },
+    {
+     "end": 12.188,
+     "start": 11.875,
+     "text": "Module"
+    },
+    {
+     "end": 12.45,
+     "start": 12.188,
+     "text": "names"
+    },
+    {
+     "end": 12.637,
+     "start": 12.45,
+     "text": "omit"
+    },
+    {
+     "end": 12.7,
+     "start": 12.637,
+     "text": "a"
+    },
+    {
+     "end": 13.075,
+     "start": 12.7,
+     "text": "trailing"
+    },
+    {
+     "end": 13.375,
+     "start": 13.075,
+     "text": "Spec"
+    },
+    {
+     "end": 14.3,
+     "start": 13.375,
+     "text": "suffix"
+    },
+    {
+     "end": 14.5,
+     "start": 14.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/checks-execute-unit-binaries-00": {
+   "audio_sha256": "df3e952e32290389a4e10cdc0d00d71ca38c42d8fc95265a4a685f84c94b602b",
+   "characters": 29,
+   "cost": 1.798e-05,
+   "duration": 2.3,
+   "index": 0,
+   "key": "0139af82eb609334b07df38e568b8b3453d60662cfc432df2146dda23450cd15",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "checks-execute-unit-binaries",
+   "sent_text": "Checks execute unit binaries.",
+   "text": "Checks execute unit binaries.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.2,
+     "text": "Checks"
+    },
+    {
+     "end": 0.875,
+     "start": 0.45,
+     "text": "execute"
+    },
+    {
+     "end": 1.125,
+     "start": 0.875,
+     "text": "unit"
+    },
+    {
+     "end": 2.1,
+     "start": 1.125,
+     "text": "binaries"
+    },
+    {
+     "end": 2.3,
+     "start": 2.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/checks-execute-unit-binaries-01": {
+   "audio_sha256": "78bed892f8c3d3aadc8d8a6583df2bb754ab0dd1244c4f6bf5e4c7d2273b8465",
+   "characters": 47,
+   "cost": 2.914e-05,
+   "duration": 3.3,
+   "index": 1,
+   "key": "720e60b6848cb696807172abad19ffff3f3fdb1fa57ead26f5b9d3b7ceda6561",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "checks-execute-unit-binaries",
+   "sent_text": "From offchain/, build the unit checks directly:",
+   "text": "From offchain/, build the unit checks directly:",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.175,
+     "text": "From"
+    },
+    {
+     "end": 1.15,
+     "start": 0.325,
+     "text": "offchain/"
+    },
+    {
+     "end": 1.2,
+     "start": 1.15,
+     "text": ","
+    },
+    {
+     "end": 1.438,
+     "start": 1.2,
+     "text": "build"
+    },
+    {
+     "end": 1.525,
+     "start": 1.438,
+     "text": "the"
+    },
+    {
+     "end": 1.775,
+     "start": 1.525,
+     "text": "unit"
+    },
+    {
+     "end": 2.075,
+     "start": 1.775,
+     "text": "checks"
+    },
+    {
+     "end": 3.075,
+     "start": 2.075,
+     "text": "directly"
+    },
+    {
+     "end": 3.3,
+     "start": 3.075,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-test-selection/checks-execute-unit-binaries-02": {
+   "audio_sha256": "694662769bfb1e7f0215900154c0972197a77cb66b208d20cb8cb1cc533c6428",
+   "characters": 533,
+   "cost": 0.00033046,
+   "duration": 37.475,
+   "index": 2,
+   "key": "0eb317b194d6c2b092594bfb903272ba6bf0fbf4b5cd34756641612a37a98ade",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "checks-execute-unit-binaries",
+   "sent_text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Record-value checks receive the naming validator blueprint compiled from the current source. Apps and supported package exports remain available.",
+   "text": "From conformance/, nix build .#checks.x86_64-linux.conformance-tests executes the Hspec appendix. Each check runs its existing app or binary during the Nix build, fails when that execution fails and retains the output at the check's store path. A cached result represents an earlier successful execution on the same inputs. The vector command generates vectors; it is not an Hspec suite. Record-value checks receive the naming validator blueprint compiled from the current source. Apps and supported package exports remain available.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.2,
+     "text": "From"
+    },
+    {
+     "end": 1.0,
+     "start": 0.35,
+     "text": "conformance/"
+    },
+    {
+     "end": 1.05,
+     "start": 1.0,
+     "text": ","
+    },
+    {
+     "end": 1.337,
+     "start": 1.05,
+     "text": "nix"
+    },
+    {
+     "end": 1.7,
+     "start": 1.337,
+     "text": "build"
+    },
+    {
+     "end": 5.787,
+     "start": 1.7,
+     "text": ".#checks.x86_64-linux.conformance-tests"
+    },
+    {
+     "end": 6.375,
+     "start": 5.787,
+     "text": "executes"
+    },
+    {
+     "end": 6.537,
+     "start": 6.375,
+     "text": "the"
+    },
+    {
+     "end": 7.1,
+     "start": 6.537,
+     "text": "Hspec"
+    },
+    {
+     "end": 8.35,
+     "start": 7.1,
+     "text": "appendix"
+    },
+    {
+     "end": 8.55,
+     "start": 8.35,
+     "text": "."
+    },
+    {
+     "end": 8.988,
+     "start": 8.75,
+     "text": "Each"
+    },
+    {
+     "end": 9.275,
+     "start": 8.988,
+     "text": "check"
+    },
+    {
+     "end": 9.538,
+     "start": 9.275,
+     "text": "runs"
+    },
+    {
+     "end": 9.663,
+     "start": 9.538,
+     "text": "its"
+    },
+    {
+     "end": 10.137,
+     "start": 9.663,
+     "text": "existing"
+    },
+    {
+     "end": 10.4,
+     "start": 10.137,
+     "text": "app"
+    },
+    {
+     "end": 10.55,
+     "start": 10.4,
+     "text": "or"
+    },
+    {
+     "end": 11.025,
+     "start": 10.55,
+     "text": "binary"
+    },
+    {
+     "end": 11.238,
+     "start": 11.025,
+     "text": "during"
+    },
+    {
+     "end": 11.325,
+     "start": 11.238,
+     "text": "the"
+    },
+    {
+     "end": 11.6,
+     "start": 11.325,
+     "text": "Nix"
+    },
+    {
+     "end": 12.4,
+     "start": 11.6,
+     "text": "build"
+    },
+    {
+     "end": 12.625,
+     "start": 12.4,
+     "text": ","
+    },
+    {
+     "end": 13.212,
+     "start": 12.825,
+     "text": "fails"
+    },
+    {
+     "end": 13.35,
+     "start": 13.212,
+     "text": "when"
+    },
+    {
+     "end": 13.512,
+     "start": 13.35,
+     "text": "that"
+    },
+    {
+     "end": 14.188,
+     "start": 13.512,
+     "text": "execution"
+    },
+    {
+     "end": 14.738,
+     "start": 14.188,
+     "text": "fails"
+    },
+    {
+     "end": 14.863,
+     "start": 14.738,
+     "text": "and"
+    },
+    {
+     "end": 15.337,
+     "start": 14.863,
+     "text": "retains"
+    },
+    {
+     "end": 15.45,
+     "start": 15.337,
+     "text": "the"
+    },
+    {
+     "end": 15.9,
+     "start": 15.45,
+     "text": "output"
+    },
+    {
+     "end": 15.988,
+     "start": 15.9,
+     "text": "at"
+    },
+    {
+     "end": 16.087,
+     "start": 15.988,
+     "text": "the"
+    },
+    {
+     "end": 16.362,
+     "start": 16.087,
+     "text": "check's"
+    },
+    {
+     "end": 16.625,
+     "start": 16.362,
+     "text": "store"
+    },
+    {
+     "end": 17.525,
+     "start": 16.625,
+     "text": "path"
+    },
+    {
+     "end": 17.75,
+     "start": 17.525,
+     "text": "."
+    },
+    {
+     "end": 18.038,
+     "start": 17.95,
+     "text": "A"
+    },
+    {
+     "end": 18.475,
+     "start": 18.038,
+     "text": "cached"
+    },
+    {
+     "end": 18.95,
+     "start": 18.475,
+     "text": "result"
+    },
+    {
+     "end": 19.45,
+     "start": 18.95,
+     "text": "represents"
+    },
+    {
+     "end": 19.65,
+     "start": 19.45,
+     "text": "an"
+    },
+    {
+     "end": 20.15,
+     "start": 19.65,
+     "text": "earlier"
+    },
+    {
+     "end": 20.775,
+     "start": 20.15,
+     "text": "successful"
+    },
+    {
+     "end": 21.55,
+     "start": 20.775,
+     "text": "execution"
+    },
+    {
+     "end": 21.688,
+     "start": 21.55,
+     "text": "on"
+    },
+    {
+     "end": 21.788,
+     "start": 21.688,
+     "text": "the"
+    },
+    {
+     "end": 22.125,
+     "start": 21.788,
+     "text": "same"
+    },
+    {
+     "end": 23.2,
+     "start": 22.125,
+     "text": "inputs"
+    },
+    {
+     "end": 23.4,
+     "start": 23.2,
+     "text": "."
+    },
+    {
+     "end": 23.65,
+     "start": 23.575,
+     "text": "The"
+    },
+    {
+     "end": 24.05,
+     "start": 23.65,
+     "text": "vector"
+    },
+    {
+     "end": 24.462,
+     "start": 24.05,
+     "text": "command"
+    },
+    {
+     "end": 25.0,
+     "start": 24.462,
+     "text": "generates"
+    },
+    {
+     "end": 25.625,
+     "start": 25.0,
+     "text": "vectors"
+    },
+    {
+     "end": 25.7,
+     "start": 25.625,
+     "text": ";"
+    },
+    {
+     "end": 25.825,
+     "start": 25.7,
+     "text": "it"
+    },
+    {
+     "end": 25.975,
+     "start": 25.825,
+     "text": "is"
+    },
+    {
+     "end": 26.212,
+     "start": 25.975,
+     "text": "not"
+    },
+    {
+     "end": 26.325,
+     "start": 26.212,
+     "text": "an"
+    },
+    {
+     "end": 26.888,
+     "start": 26.325,
+     "text": "Hspec"
+    },
+    {
+     "end": 27.775,
+     "start": 26.888,
+     "text": "suite"
+    },
+    {
+     "end": 27.975,
+     "start": 27.775,
+     "text": "."
+    },
+    {
+     "end": 28.875,
+     "start": 28.175,
+     "text": "Record-value"
+    },
+    {
+     "end": 29.35,
+     "start": 28.875,
+     "text": "checks"
+    },
+    {
+     "end": 29.825,
+     "start": 29.35,
+     "text": "receive"
+    },
+    {
+     "end": 29.962,
+     "start": 29.825,
+     "text": "the"
+    },
+    {
+     "end": 30.438,
+     "start": 29.962,
+     "text": "naming"
+    },
+    {
+     "end": 31.075,
+     "start": 30.438,
+     "text": "validator"
+    },
+    {
+     "end": 31.65,
+     "start": 31.075,
+     "text": "blueprint"
+    },
+    {
+     "end": 32.15,
+     "start": 31.65,
+     "text": "compiled"
+    },
+    {
+     "end": 32.287,
+     "start": 32.15,
+     "text": "from"
+    },
+    {
+     "end": 32.375,
+     "start": 32.287,
+     "text": "the"
+    },
+    {
+     "end": 32.737,
+     "start": 32.375,
+     "text": "current"
+    },
+    {
+     "end": 33.75,
+     "start": 32.737,
+     "text": "source"
+    },
+    {
+     "end": 33.95,
+     "start": 33.75,
+     "text": "."
+    },
+    {
+     "end": 34.388,
+     "start": 34.15,
+     "text": "Apps"
+    },
+    {
+     "end": 34.5,
+     "start": 34.388,
+     "text": "and"
+    },
+    {
+     "end": 34.975,
+     "start": 34.5,
+     "text": "supported"
+    },
+    {
+     "end": 35.35,
+     "start": 34.975,
+     "text": "package"
+    },
+    {
+     "end": 35.9,
+     "start": 35.35,
+     "text": "exports"
+    },
+    {
+     "end": 36.25,
+     "start": 35.9,
+     "text": "remain"
+    },
+    {
+     "end": 37.275,
+     "start": 36.25,
+     "text": "available"
+    },
+    {
+     "end": 37.475,
+     "start": 37.275,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/checks-execute-unit-binaries-03": {
+   "audio_sha256": "048a64ea09631de66f1f1abf166fc3bfc02a4c2f6ca7038379a9c8da1a1fd6d5",
+   "characters": 436,
+   "cost": 0.00027032,
+   "duration": 29.925,
+   "index": 3,
+   "key": "c53f2a62f2be25d1c67cf1227e26013675bb22c09282bf0cdf105414dfcfccdc",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "checks-execute-unit-binaries",
+   "sent_text": "The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
+   "text": "The development-node suites and the live conformance book stay executable apps. Compiling or listing their examples does not establish live ledger behavior. The inventory discovers the Hspec entrypoints from Cabal, rejects unwrapped spec calls and unknown tag constructors, and exercises removal and unknown-tag controls. It is a source inventory; compiled paths and before-and-after example counts supply the separate runtime evidence.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 1.038,
+     "start": 0.25,
+     "text": "development-node"
+    },
+    {
+     "end": 1.538,
+     "start": 1.038,
+     "text": "suites"
+    },
+    {
+     "end": 1.663,
+     "start": 1.538,
+     "text": "and"
+    },
+    {
+     "end": 1.75,
+     "start": 1.663,
+     "text": "the"
+    },
+    {
+     "end": 2.1,
+     "start": 1.75,
+     "text": "live"
+    },
+    {
+     "end": 2.75,
+     "start": 2.1,
+     "text": "conformance"
+    },
+    {
+     "end": 3.05,
+     "start": 2.75,
+     "text": "book"
+    },
+    {
+     "end": 3.388,
+     "start": 3.05,
+     "text": "stay"
+    },
+    {
+     "end": 4.113,
+     "start": 3.388,
+     "text": "executable"
+    },
+    {
+     "end": 5.05,
+     "start": 4.113,
+     "text": "apps"
+    },
+    {
+     "end": 5.25,
+     "start": 5.05,
+     "text": "."
+    },
+    {
+     "end": 6.162,
+     "start": 5.45,
+     "text": "Compiling"
+    },
+    {
+     "end": 6.325,
+     "start": 6.162,
+     "text": "or"
+    },
+    {
+     "end": 6.8,
+     "start": 6.325,
+     "text": "listing"
+    },
+    {
+     "end": 6.975,
+     "start": 6.8,
+     "text": "their"
+    },
+    {
+     "end": 7.65,
+     "start": 6.975,
+     "text": "examples"
+    },
+    {
+     "end": 7.85,
+     "start": 7.65,
+     "text": "does"
+    },
+    {
+     "end": 8.062,
+     "start": 7.85,
+     "text": "not"
+    },
+    {
+     "end": 8.637,
+     "start": 8.062,
+     "text": "establish"
+    },
+    {
+     "end": 8.975,
+     "start": 8.637,
+     "text": "live"
+    },
+    {
+     "end": 9.275,
+     "start": 8.975,
+     "text": "ledger"
+    },
+    {
+     "end": 10.375,
+     "start": 9.275,
+     "text": "behavior"
+    },
+    {
+     "end": 10.6,
+     "start": 10.375,
+     "text": "."
+    },
+    {
+     "end": 10.9,
+     "start": 10.775,
+     "text": "The"
+    },
+    {
+     "end": 11.525,
+     "start": 10.9,
+     "text": "inventory"
+    },
+    {
+     "end": 12.062,
+     "start": 11.525,
+     "text": "discovers"
+    },
+    {
+     "end": 12.212,
+     "start": 12.062,
+     "text": "the"
+    },
+    {
+     "end": 12.775,
+     "start": 12.212,
+     "text": "Hspec"
+    },
+    {
+     "end": 13.3,
+     "start": 12.775,
+     "text": "entrypoints"
+    },
+    {
+     "end": 13.475,
+     "start": 13.3,
+     "text": "from"
+    },
+    {
+     "end": 14.45,
+     "start": 13.475,
+     "text": "Cabal"
+    },
+    {
+     "end": 14.65,
+     "start": 14.45,
+     "text": ","
+    },
+    {
+     "end": 15.25,
+     "start": 14.85,
+     "text": "rejects"
+    },
+    {
+     "end": 15.725,
+     "start": 15.25,
+     "text": "unwrapped"
+    },
+    {
+     "end": 16.025,
+     "start": 15.725,
+     "text": "spec"
+    },
+    {
+     "end": 16.425,
+     "start": 16.025,
+     "text": "calls"
+    },
+    {
+     "end": 16.55,
+     "start": 16.425,
+     "text": "and"
+    },
+    {
+     "end": 16.975,
+     "start": 16.55,
+     "text": "unknown"
+    },
+    {
+     "end": 17.25,
+     "start": 16.975,
+     "text": "tag"
+    },
+    {
+     "end": 18.45,
+     "start": 17.25,
+     "text": "constructors"
+    },
+    {
+     "end": 18.65,
+     "start": 18.45,
+     "text": ","
+    },
+    {
+     "end": 18.925,
+     "start": 18.825,
+     "text": "and"
+    },
+    {
+     "end": 19.6,
+     "start": 18.925,
+     "text": "exercises"
+    },
+    {
+     "end": 20.125,
+     "start": 19.6,
+     "text": "removal"
+    },
+    {
+     "end": 20.25,
+     "start": 20.125,
+     "text": "and"
+    },
+    {
+     "end": 20.95,
+     "start": 20.25,
+     "text": "unknown-tag"
+    },
+    {
+     "end": 22.025,
+     "start": 20.95,
+     "text": "controls"
+    },
+    {
+     "end": 22.225,
+     "start": 22.025,
+     "text": "."
+    },
+    {
+     "end": 22.575,
+     "start": 22.425,
+     "text": "It"
+    },
+    {
+     "end": 22.7,
+     "start": 22.575,
+     "text": "is"
+    },
+    {
+     "end": 22.812,
+     "start": 22.7,
+     "text": "a"
+    },
+    {
+     "end": 23.15,
+     "start": 22.812,
+     "text": "source"
+    },
+    {
+     "end": 23.9,
+     "start": 23.15,
+     "text": "inventory"
+    },
+    {
+     "end": 24.0,
+     "start": 23.9,
+     "text": ";"
+    },
+    {
+     "end": 24.513,
+     "start": 24.0,
+     "text": "compiled"
+    },
+    {
+     "end": 25.075,
+     "start": 24.513,
+     "text": "paths"
+    },
+    {
+     "end": 25.188,
+     "start": 25.075,
+     "text": "and"
+    },
+    {
+     "end": 26.075,
+     "start": 25.188,
+     "text": "before-and-after"
+    },
+    {
+     "end": 26.663,
+     "start": 26.075,
+     "text": "example"
+    },
+    {
+     "end": 27.0,
+     "start": 26.663,
+     "text": "counts"
+    },
+    {
+     "end": 27.475,
+     "start": 27.0,
+     "text": "supply"
+    },
+    {
+     "end": 27.612,
+     "start": 27.475,
+     "text": "the"
+    },
+    {
+     "end": 28.05,
+     "start": 27.612,
+     "text": "separate"
+    },
+    {
+     "end": 28.525,
+     "start": 28.05,
+     "text": "runtime"
+    },
+    {
+     "end": 29.7,
+     "start": 28.525,
+     "text": "evidence"
+    },
+    {
+     "end": 29.925,
+     "start": 29.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/observed-selections-00": {
+   "audio_sha256": "b6c1acef9a006d0e5c55e7b104d41ab5f70145308679b8882826d3f031597a3d",
+   "characters": 20,
+   "cost": 1.24e-05,
+   "duration": 1.825,
+   "index": 0,
+   "key": "5672521b0ff67d414dd906dbeaee8f31a4689c8d6776602b22665caf6755f664",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "observed-selections",
+   "sent_text": "Observed selections.",
+   "text": "Observed selections.",
+   "words": [
+    {
+     "end": 0.6,
+     "start": 0.2,
+     "text": "Observed"
+    },
+    {
+     "end": 1.625,
+     "start": 0.6,
+     "text": "selections"
+    },
+    {
+     "end": 1.825,
+     "start": 1.625,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/observed-selections-01": {
+   "audio_sha256": "66d262c855e4853c9808c1fc64c2222e4501d596a28a61be9d923e0a406bf82a",
+   "characters": 222,
+   "cost": 0.00013764,
+   "duration": 18.4,
+   "index": 1,
+   "key": "c698b60f325fe1d165fbcd58df2c027b9ae56c6373b14a1c61e923280b3dac43",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "observed-selections",
+   "sent_text": "On 6 October 2026, the three selections above executed 69, 18 and 341 examples respectively, each with zero failures. Compare a future run's actual summary with this dated measurement; test additions can change the counts.",
+   "text": "On 6 October 2026, the three selections above executed 69, 18 and 341 examples respectively, each with zero failures. Compare a future run's actual summary with this dated measurement; test additions can change the counts.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.225,
+     "text": "On"
+    },
+    {
+     "end": 0.762,
+     "start": 0.425,
+     "text": "6"
+    },
+    {
+     "end": 1.225,
+     "start": 0.762,
+     "text": "October"
+    },
+    {
+     "end": 2.175,
+     "start": 1.225,
+     "text": "2026"
+    },
+    {
+     "end": 2.225,
+     "start": 2.175,
+     "text": ","
+    },
+    {
+     "end": 2.362,
+     "start": 2.225,
+     "text": "the"
+    },
+    {
+     "end": 2.638,
+     "start": 2.362,
+     "text": "three"
+    },
+    {
+     "end": 3.325,
+     "start": 2.638,
+     "text": "selections"
+    },
+    {
+     "end": 3.688,
+     "start": 3.325,
+     "text": "above"
+    },
+    {
+     "end": 4.338,
+     "start": 3.688,
+     "text": "executed"
+    },
+    {
+     "end": 5.2,
+     "start": 4.338,
+     "text": "69"
+    },
+    {
+     "end": 5.312,
+     "start": 5.2,
+     "text": ","
+    },
+    {
+     "end": 6.025,
+     "start": 5.312,
+     "text": "18"
+    },
+    {
+     "end": 6.162,
+     "start": 6.025,
+     "text": "and"
+    },
+    {
+     "end": 7.4,
+     "start": 6.162,
+     "text": "341"
+    },
+    {
+     "end": 8.0,
+     "start": 7.4,
+     "text": "examples"
+    },
+    {
+     "end": 8.925,
+     "start": 8.0,
+     "text": "respectively"
+    },
+    {
+     "end": 9.062,
+     "start": 8.925,
+     "text": ","
+    },
+    {
+     "end": 9.475,
+     "start": 9.062,
+     "text": "each"
+    },
+    {
+     "end": 9.688,
+     "start": 9.475,
+     "text": "with"
+    },
+    {
+     "end": 10.113,
+     "start": 9.688,
+     "text": "zero"
+    },
+    {
+     "end": 11.425,
+     "start": 10.113,
+     "text": "failures"
+    },
+    {
+     "end": 11.7,
+     "start": 11.425,
+     "text": "."
+    },
+    {
+     "end": 12.212,
+     "start": 11.875,
+     "text": "Compare"
+    },
+    {
+     "end": 12.288,
+     "start": 12.212,
+     "text": "a"
+    },
+    {
+     "end": 12.725,
+     "start": 12.288,
+     "text": "future"
+    },
+    {
+     "end": 13.05,
+     "start": 12.725,
+     "text": "run's"
+    },
+    {
+     "end": 13.512,
+     "start": 13.05,
+     "text": "actual"
+    },
+    {
+     "end": 14.062,
+     "start": 13.512,
+     "text": "summary"
+    },
+    {
+     "end": 14.225,
+     "start": 14.062,
+     "text": "with"
+    },
+    {
+     "end": 14.425,
+     "start": 14.225,
+     "text": "this"
+    },
+    {
+     "end": 14.8,
+     "start": 14.425,
+     "text": "dated"
+    },
+    {
+     "end": 15.775,
+     "start": 14.8,
+     "text": "measurement"
+    },
+    {
+     "end": 15.975,
+     "start": 15.775,
+     "text": ";"
+    },
+    {
+     "end": 16.388,
+     "start": 16.15,
+     "text": "test"
+    },
+    {
+     "end": 16.875,
+     "start": 16.388,
+     "text": "additions"
+    },
+    {
+     "end": 17.0,
+     "start": 16.875,
+     "text": "can"
+    },
+    {
+     "end": 17.288,
+     "start": 17.0,
+     "text": "change"
+    },
+    {
+     "end": 17.375,
+     "start": 17.288,
+     "text": "the"
+    },
+    {
+     "end": 18.2,
+     "start": 17.375,
+     "text": "counts"
+    },
+    {
+     "end": 18.4,
+     "start": 18.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/observed-selections-02": {
+   "audio_sha256": "3440f792da7d2505acab5bad2abb306e787fec3932a1e0224a769a5d4f6bb156",
+   "characters": 300,
+   "cost": 0.00018600000000000002,
+   "duration": 23.55,
+   "index": 2,
+   "key": "58387b865a229dda07e18e426537d2dd005e110b6d169bf9d29d56444e21296b",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "observed-selections",
+   "sent_text": "The full off-chain suite has 1,037 examples, the conformance appendix 573, the end-to-end suite 69, the contract suite 48 and the compiled record-value suite four. Tagging preserves their example counts. A dry run establishes the census of development-node examples, not execution of their scenarios.",
+   "text": "The full off-chain suite has 1,037 examples, the conformance appendix 573, the end-to-end suite 69, the contract suite 48 and the compiled record-value suite four. Tagging preserves their example counts. A dry run establishes the census of development-node examples, not execution of their scenarios.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.663,
+     "start": 0.35,
+     "text": "full"
+    },
+    {
+     "end": 1.337,
+     "start": 0.663,
+     "text": "off-chain"
+    },
+    {
+     "end": 1.725,
+     "start": 1.337,
+     "text": "suite"
+    },
+    {
+     "end": 1.962,
+     "start": 1.725,
+     "text": "has"
+    },
+    {
+     "end": 3.475,
+     "start": 1.962,
+     "text": "1,037"
+    },
+    {
+     "end": 4.15,
+     "start": 3.475,
+     "text": "examples"
+    },
+    {
+     "end": 4.2,
+     "start": 4.15,
+     "text": ","
+    },
+    {
+     "end": 4.3,
+     "start": 4.2,
+     "text": "the"
+    },
+    {
+     "end": 4.95,
+     "start": 4.3,
+     "text": "conformance"
+    },
+    {
+     "end": 5.537,
+     "start": 4.95,
+     "text": "appendix"
+    },
+    {
+     "end": 6.925,
+     "start": 5.537,
+     "text": "573"
+    },
+    {
+     "end": 7.025,
+     "start": 6.925,
+     "text": ","
+    },
+    {
+     "end": 7.175,
+     "start": 7.025,
+     "text": "the"
+    },
+    {
+     "end": 7.838,
+     "start": 7.175,
+     "text": "end-to-end"
+    },
+    {
+     "end": 8.188,
+     "start": 7.838,
+     "text": "suite"
+    },
+    {
+     "end": 9.05,
+     "start": 8.188,
+     "text": "69"
+    },
+    {
+     "end": 9.15,
+     "start": 9.05,
+     "text": ","
+    },
+    {
+     "end": 9.25,
+     "start": 9.15,
+     "text": "the"
+    },
+    {
+     "end": 9.825,
+     "start": 9.25,
+     "text": "contract"
+    },
+    {
+     "end": 10.113,
+     "start": 9.825,
+     "text": "suite"
+    },
+    {
+     "end": 10.812,
+     "start": 10.113,
+     "text": "48"
+    },
+    {
+     "end": 10.938,
+     "start": 10.812,
+     "text": "and"
+    },
+    {
+     "end": 11.025,
+     "start": 10.938,
+     "text": "the"
+    },
+    {
+     "end": 11.575,
+     "start": 11.025,
+     "text": "compiled"
+    },
+    {
+     "end": 12.288,
+     "start": 11.575,
+     "text": "record-value"
+    },
+    {
+     "end": 12.587,
+     "start": 12.288,
+     "text": "suite"
+    },
+    {
+     "end": 13.675,
+     "start": 12.587,
+     "text": "four"
+    },
+    {
+     "end": 13.975,
+     "start": 13.675,
+     "text": "."
+    },
+    {
+     "end": 14.475,
+     "start": 14.15,
+     "text": "Tagging"
+    },
+    {
+     "end": 14.913,
+     "start": 14.475,
+     "text": "preserves"
+    },
+    {
+     "end": 15.062,
+     "start": 14.913,
+     "text": "their"
+    },
+    {
+     "end": 15.525,
+     "start": 15.062,
+     "text": "example"
+    },
+    {
+     "end": 16.35,
+     "start": 15.525,
+     "text": "counts"
+    },
+    {
+     "end": 16.55,
+     "start": 16.35,
+     "text": "."
+    },
+    {
+     "end": 16.862,
+     "start": 16.775,
+     "text": "A"
+    },
+    {
+     "end": 17.263,
+     "start": 16.862,
+     "text": "dry"
+    },
+    {
+     "end": 17.625,
+     "start": 17.263,
+     "text": "run"
+    },
+    {
+     "end": 18.35,
+     "start": 17.625,
+     "text": "establishes"
+    },
+    {
+     "end": 18.487,
+     "start": 18.35,
+     "text": "the"
+    },
+    {
+     "end": 19.0,
+     "start": 18.487,
+     "text": "census"
+    },
+    {
+     "end": 19.1,
+     "start": 19.0,
+     "text": "of"
+    },
+    {
+     "end": 19.862,
+     "start": 19.1,
+     "text": "development-node"
+    },
+    {
+     "end": 20.625,
+     "start": 19.862,
+     "text": "examples"
+    },
+    {
+     "end": 20.725,
+     "start": 20.625,
+     "text": ","
+    },
+    {
+     "end": 20.975,
+     "start": 20.725,
+     "text": "not"
+    },
+    {
+     "end": 21.7,
+     "start": 20.975,
+     "text": "execution"
+    },
+    {
+     "end": 21.8,
+     "start": 21.7,
+     "text": "of"
+    },
+    {
+     "end": 22.0,
+     "start": 21.8,
+     "text": "their"
+    },
+    {
+     "end": 23.35,
+     "start": 22.0,
+     "text": "scenarios"
+    },
+    {
+     "end": 23.55,
+     "start": 23.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/select-an-area-or-module-00": {
+   "audio_sha256": "d5c21709ffd960423d13bedcaef814293d21c5804d56555e1909f6f74123ba52",
+   "characters": 25,
+   "cost": 1.55e-05,
+   "duration": 2.125,
+   "index": 0,
+   "key": "3713da90613192c1275e6e65771c67b870b2ee93d9ec67e3beb7f32742440fba",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "select-an-area-or-module",
+   "sent_text": "Select an area or module.",
+   "text": "Select an area or module.",
+   "words": [
+    {
+     "end": 0.538,
+     "start": 0.2,
+     "text": "Select"
+    },
+    {
+     "end": 0.625,
+     "start": 0.538,
+     "text": "an"
+    },
+    {
+     "end": 0.95,
+     "start": 0.625,
+     "text": "area"
+    },
+    {
+     "end": 1.075,
+     "start": 0.95,
+     "text": "or"
+    },
+    {
+     "end": 1.925,
+     "start": 1.075,
+     "text": "module"
+    },
+    {
+     "end": 2.125,
+     "start": 1.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/select-an-area-or-module-01": {
+   "audio_sha256": "c5c2f8d3d7b5775993b79f60c73103dc0a29007ea015d2c651485703a88d39cd",
+   "characters": 112,
+   "cost": 6.944e-05,
+   "duration": 7.475,
+   "index": 1,
+   "key": "2f8852742decb3ebe69f8a866f4dc143d62154fe6b3264448806d32cc7d3aa11",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "select-an-area-or-module",
+   "sent_text": "Run the off-chain commands from offchain/. Keep the brackets quoted so the shell passes them literally to Hspec:",
+   "text": "Run the off-chain commands from offchain/. Keep the brackets quoted so the shell passes them literally to Hspec:",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.2,
+     "text": "Run"
+    },
+    {
+     "end": 0.475,
+     "start": 0.387,
+     "text": "the"
+    },
+    {
+     "end": 0.95,
+     "start": 0.475,
+     "text": "off-chain"
+    },
+    {
+     "end": 1.312,
+     "start": 0.95,
+     "text": "commands"
+    },
+    {
+     "end": 1.45,
+     "start": 1.312,
+     "text": "from"
+    },
+    {
+     "end": 2.95,
+     "start": 1.45,
+     "text": "offchain/."
+    },
+    {
+     "end": 3.338,
+     "start": 3.125,
+     "text": "Keep"
+    },
+    {
+     "end": 3.425,
+     "start": 3.338,
+     "text": "the"
+    },
+    {
+     "end": 3.925,
+     "start": 3.425,
+     "text": "brackets"
+    },
+    {
+     "end": 4.375,
+     "start": 3.925,
+     "text": "quoted"
+    },
+    {
+     "end": 4.488,
+     "start": 4.375,
+     "text": "so"
+    },
+    {
+     "end": 4.613,
+     "start": 4.488,
+     "text": "the"
+    },
+    {
+     "end": 4.875,
+     "start": 4.613,
+     "text": "shell"
+    },
+    {
+     "end": 5.375,
+     "start": 4.875,
+     "text": "passes"
+    },
+    {
+     "end": 5.588,
+     "start": 5.375,
+     "text": "them"
+    },
+    {
+     "end": 6.0,
+     "start": 5.588,
+     "text": "literally"
+    },
+    {
+     "end": 6.125,
+     "start": 6.0,
+     "text": "to"
+    },
+    {
+     "end": 7.25,
+     "start": 6.125,
+     "text": "Hspec"
+    },
+    {
+     "end": 7.475,
+     "start": 7.25,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-test-selection/select-an-area-or-module-02": {
+   "audio_sha256": "853987815cc5ff26bca435f405cab6463f85feda9e61e06a164b45473170b1f6",
+   "characters": 542,
+   "cost": 0.00033604,
+   "duration": 35.65,
+   "index": 2,
+   "key": "1344f1cead9fd62d634a1b6cbbbb61ed4bac94d44d45f08e437258da863fe564",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "select-an-area-or-module",
+   "sent_text": "The time filter matches the literal tag wherever it occurs in a path. The module filter uses a leading slash for the path segment start and a trailing space for the end of the module name. The slash-terminated form selects nothing: Hspec matches substrings of the joined path, and the tags sit between the module name and the next slash. Combining match with skip first selects matching paths and then excludes the skipped paths. Different area tags on one module mean that either area can select its examples; they do not duplicate examples.",
+   "text": "The time filter matches the literal tag wherever it occurs in a path. The module filter uses a leading slash for the path segment start and a trailing space for the end of the module name. The slash-terminated form selects nothing: Hspec matches substrings of the joined path, and the tags sit between the module name and the next slash. Combining match with skip first selects matching paths and then excludes the skipped paths. Different area tags on one module mean that either area can select its examples; they do not duplicate examples.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.613,
+     "start": 0.25,
+     "text": "time"
+    },
+    {
+     "end": 1.025,
+     "start": 0.613,
+     "text": "filter"
+    },
+    {
+     "end": 1.45,
+     "start": 1.025,
+     "text": "matches"
+    },
+    {
+     "end": 1.575,
+     "start": 1.45,
+     "text": "the"
+    },
+    {
+     "end": 1.925,
+     "start": 1.575,
+     "text": "literal"
+    },
+    {
+     "end": 2.45,
+     "start": 1.925,
+     "text": "tag"
+    },
+    {
+     "end": 2.838,
+     "start": 2.45,
+     "text": "wherever"
+    },
+    {
+     "end": 2.912,
+     "start": 2.838,
+     "text": "it"
+    },
+    {
+     "end": 3.312,
+     "start": 2.912,
+     "text": "occurs"
+    },
+    {
+     "end": 3.388,
+     "start": 3.312,
+     "text": "in"
+    },
+    {
+     "end": 3.45,
+     "start": 3.388,
+     "text": "a"
+    },
+    {
+     "end": 4.35,
+     "start": 3.45,
+     "text": "path"
+    },
+    {
+     "end": 4.575,
+     "start": 4.35,
+     "text": "."
+    },
+    {
+     "end": 4.875,
+     "start": 4.775,
+     "text": "The"
+    },
+    {
+     "end": 5.262,
+     "start": 4.875,
+     "text": "module"
+    },
+    {
+     "end": 5.675,
+     "start": 5.262,
+     "text": "filter"
+    },
+    {
+     "end": 6.1,
+     "start": 5.675,
+     "text": "uses"
+    },
+    {
+     "end": 6.213,
+     "start": 6.1,
+     "text": "a"
+    },
+    {
+     "end": 6.562,
+     "start": 6.213,
+     "text": "leading"
+    },
+    {
+     "end": 7.05,
+     "start": 6.562,
+     "text": "slash"
+    },
+    {
+     "end": 7.162,
+     "start": 7.05,
+     "text": "for"
+    },
+    {
+     "end": 7.262,
+     "start": 7.162,
+     "text": "the"
+    },
+    {
+     "end": 7.6,
+     "start": 7.262,
+     "text": "path"
+    },
+    {
+     "end": 8.087,
+     "start": 7.6,
+     "text": "segment"
+    },
+    {
+     "end": 8.688,
+     "start": 8.087,
+     "text": "start"
+    },
+    {
+     "end": 8.812,
+     "start": 8.688,
+     "text": "and"
+    },
+    {
+     "end": 8.887,
+     "start": 8.812,
+     "text": "a"
+    },
+    {
+     "end": 9.413,
+     "start": 8.887,
+     "text": "trailing"
+    },
+    {
+     "end": 9.85,
+     "start": 9.413,
+     "text": "space"
+    },
+    {
+     "end": 9.962,
+     "start": 9.85,
+     "text": "for"
+    },
+    {
+     "end": 10.113,
+     "start": 9.962,
+     "text": "the"
+    },
+    {
+     "end": 10.337,
+     "start": 10.113,
+     "text": "end"
+    },
+    {
+     "end": 10.413,
+     "start": 10.337,
+     "text": "of"
+    },
+    {
+     "end": 10.5,
+     "start": 10.413,
+     "text": "the"
+    },
+    {
+     "end": 10.875,
+     "start": 10.5,
+     "text": "module"
+    },
+    {
+     "end": 11.9,
+     "start": 10.875,
+     "text": "name"
+    },
+    {
+     "end": 12.1,
+     "start": 11.9,
+     "text": "."
+    },
+    {
+     "end": 12.375,
+     "start": 12.275,
+     "text": "The"
+    },
+    {
+     "end": 13.225,
+     "start": 12.375,
+     "text": "slash-terminated"
+    },
+    {
+     "end": 13.525,
+     "start": 13.225,
+     "text": "form"
+    },
+    {
+     "end": 13.925,
+     "start": 13.525,
+     "text": "selects"
+    },
+    {
+     "end": 14.825,
+     "start": 13.925,
+     "text": "nothing"
+    },
+    {
+     "end": 15.025,
+     "start": 14.825,
+     "text": ":"
+    },
+    {
+     "end": 15.762,
+     "start": 15.225,
+     "text": "Hspec"
+    },
+    {
+     "end": 16.212,
+     "start": 15.762,
+     "text": "matches"
+    },
+    {
+     "end": 16.837,
+     "start": 16.212,
+     "text": "substrings"
+    },
+    {
+     "end": 16.913,
+     "start": 16.837,
+     "text": "of"
+    },
+    {
+     "end": 17.013,
+     "start": 16.913,
+     "text": "the"
+    },
+    {
+     "end": 17.438,
+     "start": 17.013,
+     "text": "joined"
+    },
+    {
+     "end": 17.925,
+     "start": 17.438,
+     "text": "path"
+    },
+    {
+     "end": 18.0,
+     "start": 17.925,
+     "text": ","
+    },
+    {
+     "end": 18.112,
+     "start": 18.0,
+     "text": "and"
+    },
+    {
+     "end": 18.212,
+     "start": 18.112,
+     "text": "the"
+    },
+    {
+     "end": 18.712,
+     "start": 18.212,
+     "text": "tags"
+    },
+    {
+     "end": 18.925,
+     "start": 18.712,
+     "text": "sit"
+    },
+    {
+     "end": 19.237,
+     "start": 18.925,
+     "text": "between"
+    },
+    {
+     "end": 19.325,
+     "start": 19.237,
+     "text": "the"
+    },
+    {
+     "end": 19.725,
+     "start": 19.325,
+     "text": "module"
+    },
+    {
+     "end": 20.125,
+     "start": 19.725,
+     "text": "name"
+    },
+    {
+     "end": 20.237,
+     "start": 20.125,
+     "text": "and"
+    },
+    {
+     "end": 20.325,
+     "start": 20.237,
+     "text": "the"
+    },
+    {
+     "end": 20.6,
+     "start": 20.325,
+     "text": "next"
+    },
+    {
+     "end": 21.725,
+     "start": 20.6,
+     "text": "slash"
+    },
+    {
+     "end": 21.95,
+     "start": 21.725,
+     "text": "."
+    },
+    {
+     "end": 22.65,
+     "start": 22.15,
+     "text": "Combining"
+    },
+    {
+     "end": 22.975,
+     "start": 22.65,
+     "text": "match"
+    },
+    {
+     "end": 23.125,
+     "start": 22.975,
+     "text": "with"
+    },
+    {
+     "end": 23.438,
+     "start": 23.125,
+     "text": "skip"
+    },
+    {
+     "end": 23.837,
+     "start": 23.438,
+     "text": "first"
+    },
+    {
+     "end": 24.25,
+     "start": 23.837,
+     "text": "selects"
+    },
+    {
+     "end": 24.675,
+     "start": 24.25,
+     "text": "matching"
+    },
+    {
+     "end": 25.237,
+     "start": 24.675,
+     "text": "paths"
+    },
+    {
+     "end": 25.362,
+     "start": 25.237,
+     "text": "and"
+    },
+    {
+     "end": 25.5,
+     "start": 25.362,
+     "text": "then"
+    },
+    {
+     "end": 26.025,
+     "start": 25.5,
+     "text": "excludes"
+    },
+    {
+     "end": 26.125,
+     "start": 26.025,
+     "text": "the"
+    },
+    {
+     "end": 26.5,
+     "start": 26.125,
+     "text": "skipped"
+    },
+    {
+     "end": 27.525,
+     "start": 26.5,
+     "text": "paths"
+    },
+    {
+     "end": 27.75,
+     "start": 27.525,
+     "text": "."
+    },
+    {
+     "end": 28.225,
+     "start": 27.95,
+     "text": "Different"
+    },
+    {
+     "end": 28.587,
+     "start": 28.225,
+     "text": "area"
+    },
+    {
+     "end": 29.05,
+     "start": 28.587,
+     "text": "tags"
+    },
+    {
+     "end": 29.25,
+     "start": 29.05,
+     "text": "on"
+    },
+    {
+     "end": 29.5,
+     "start": 29.25,
+     "text": "one"
+    },
+    {
+     "end": 30.087,
+     "start": 29.5,
+     "text": "module"
+    },
+    {
+     "end": 30.325,
+     "start": 30.087,
+     "text": "mean"
+    },
+    {
+     "end": 30.538,
+     "start": 30.325,
+     "text": "that"
+    },
+    {
+     "end": 30.875,
+     "start": 30.538,
+     "text": "either"
+    },
+    {
+     "end": 31.225,
+     "start": 30.875,
+     "text": "area"
+    },
+    {
+     "end": 31.425,
+     "start": 31.225,
+     "text": "can"
+    },
+    {
+     "end": 31.812,
+     "start": 31.425,
+     "text": "select"
+    },
+    {
+     "end": 31.95,
+     "start": 31.812,
+     "text": "its"
+    },
+    {
+     "end": 33.175,
+     "start": 31.95,
+     "text": "examples"
+    },
+    {
+     "end": 33.375,
+     "start": 33.175,
+     "text": ";"
+    },
+    {
+     "end": 33.662,
+     "start": 33.55,
+     "text": "they"
+    },
+    {
+     "end": 33.763,
+     "start": 33.662,
+     "text": "do"
+    },
+    {
+     "end": 33.95,
+     "start": 33.763,
+     "text": "not"
+    },
+    {
+     "end": 34.412,
+     "start": 33.95,
+     "text": "duplicate"
+    },
+    {
+     "end": 35.45,
+     "start": 34.412,
+     "text": "examples"
+    },
+    {
+     "end": 35.65,
+     "start": 35.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/select-tests-for-the-code-you-change-00": {
+   "audio_sha256": "d3f5ff05603bd2e5d344c3b0fa9c9aebbccdf7c684e262b70c3886be887b5d80",
+   "characters": 37,
+   "cost": 2.294e-05,
+   "duration": 2.4,
+   "index": 0,
+   "key": "742c3d7a7567f0378cfe891bde1b875daf0d353f837fbe9b5d5f3e3b6f775d75",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "select-tests-for-the-code-you-change",
+   "sent_text": "Select tests for the code you change.",
+   "text": "Select tests for the code you change.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "Select"
+    },
+    {
+     "end": 0.762,
+     "start": 0.5,
+     "text": "tests"
+    },
+    {
+     "end": 0.863,
+     "start": 0.762,
+     "text": "for"
+    },
+    {
+     "end": 0.95,
+     "start": 0.863,
+     "text": "the"
+    },
+    {
+     "end": 1.188,
+     "start": 0.95,
+     "text": "code"
+    },
+    {
+     "end": 1.337,
+     "start": 1.188,
+     "text": "you"
+    },
+    {
+     "end": 2.175,
+     "start": 1.337,
+     "text": "change"
+    },
+    {
+     "end": 2.4,
+     "start": 2.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/select-tests-for-the-code-you-change-01": {
+   "audio_sha256": "f8910ff904c45c22c9b26a9ff10a135a4c76df19f3df54ba9f97d3e7aef76e3d",
+   "characters": 395,
+   "cost": 0.0002449,
+   "duration": 27.275,
+   "index": 1,
+   "key": "5c1b4fbf0139e96b3836ef9d48fc361021fb60bfe5bf2c67903a971ef84a4326",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "select-tests-for-the-code-you-change",
+   "sent_text": "As a contributor, you want to run the tests for the areas your change can affect and see exactly which examples you selected. Each Hspec path starts with a stable module name and bracketed area tags. Selecting an area includes every module carrying that tag; selecting a module narrows the run to that module. A filtered run proves only its selected examples. Pending examples remain unexecuted.",
+   "text": "As a contributor, you want to run the tests for the areas your change can affect and see exactly which examples you selected. Each Hspec path starts with a stable module name and bracketed area tags. Selecting an area includes every module carrying that tag; selecting a module narrows the run to that module. A filtered run proves only its selected examples. Pending examples remain unexecuted.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.425,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 1.125,
+     "start": 0.425,
+     "text": "contributor"
+    },
+    {
+     "end": 1.2,
+     "start": 1.125,
+     "text": ","
+    },
+    {
+     "end": 1.35,
+     "start": 1.2,
+     "text": "you"
+    },
+    {
+     "end": 1.538,
+     "start": 1.35,
+     "text": "want"
+    },
+    {
+     "end": 1.625,
+     "start": 1.538,
+     "text": "to"
+    },
+    {
+     "end": 1.837,
+     "start": 1.625,
+     "text": "run"
+    },
+    {
+     "end": 1.962,
+     "start": 1.837,
+     "text": "the"
+    },
+    {
+     "end": 2.4,
+     "start": 1.962,
+     "text": "tests"
+    },
+    {
+     "end": 2.513,
+     "start": 2.4,
+     "text": "for"
+    },
+    {
+     "end": 2.662,
+     "start": 2.513,
+     "text": "the"
+    },
+    {
+     "end": 3.1,
+     "start": 2.662,
+     "text": "areas"
+    },
+    {
+     "end": 3.287,
+     "start": 3.1,
+     "text": "your"
+    },
+    {
+     "end": 3.8,
+     "start": 3.287,
+     "text": "change"
+    },
+    {
+     "end": 3.95,
+     "start": 3.8,
+     "text": "can"
+    },
+    {
+     "end": 4.425,
+     "start": 3.95,
+     "text": "affect"
+    },
+    {
+     "end": 4.562,
+     "start": 4.425,
+     "text": "and"
+    },
+    {
+     "end": 4.775,
+     "start": 4.562,
+     "text": "see"
+    },
+    {
+     "end": 5.4,
+     "start": 4.775,
+     "text": "exactly"
+    },
+    {
+     "end": 5.6,
+     "start": 5.4,
+     "text": "which"
+    },
+    {
+     "end": 6.225,
+     "start": 5.6,
+     "text": "examples"
+    },
+    {
+     "end": 6.375,
+     "start": 6.225,
+     "text": "you"
+    },
+    {
+     "end": 7.6,
+     "start": 6.375,
+     "text": "selected"
+    },
+    {
+     "end": 7.825,
+     "start": 7.6,
+     "text": "."
+    },
+    {
+     "end": 8.225,
+     "start": 8.025,
+     "text": "Each"
+    },
+    {
+     "end": 8.775,
+     "start": 8.225,
+     "text": "Hspec"
+    },
+    {
+     "end": 9.125,
+     "start": 8.775,
+     "text": "path"
+    },
+    {
+     "end": 9.488,
+     "start": 9.125,
+     "text": "starts"
+    },
+    {
+     "end": 9.613,
+     "start": 9.488,
+     "text": "with"
+    },
+    {
+     "end": 9.675,
+     "start": 9.613,
+     "text": "a"
+    },
+    {
+     "end": 10.1,
+     "start": 9.675,
+     "text": "stable"
+    },
+    {
+     "end": 10.5,
+     "start": 10.1,
+     "text": "module"
+    },
+    {
+     "end": 10.913,
+     "start": 10.5,
+     "text": "name"
+    },
+    {
+     "end": 11.05,
+     "start": 10.913,
+     "text": "and"
+    },
+    {
+     "end": 11.55,
+     "start": 11.05,
+     "text": "bracketed"
+    },
+    {
+     "end": 11.875,
+     "start": 11.55,
+     "text": "area"
+    },
+    {
+     "end": 12.9,
+     "start": 11.875,
+     "text": "tags"
+    },
+    {
+     "end": 13.1,
+     "start": 12.9,
+     "text": "."
+    },
+    {
+     "end": 13.738,
+     "start": 13.3,
+     "text": "Selecting"
+    },
+    {
+     "end": 13.825,
+     "start": 13.738,
+     "text": "an"
+    },
+    {
+     "end": 14.262,
+     "start": 13.825,
+     "text": "area"
+    },
+    {
+     "end": 14.738,
+     "start": 14.262,
+     "text": "includes"
+    },
+    {
+     "end": 15.075,
+     "start": 14.738,
+     "text": "every"
+    },
+    {
+     "end": 15.45,
+     "start": 15.075,
+     "text": "module"
+    },
+    {
+     "end": 15.875,
+     "start": 15.45,
+     "text": "carrying"
+    },
+    {
+     "end": 16.1,
+     "start": 15.875,
+     "text": "that"
+    },
+    {
+     "end": 16.975,
+     "start": 16.1,
+     "text": "tag"
+    },
+    {
+     "end": 17.2,
+     "start": 16.975,
+     "text": ";"
+    },
+    {
+     "end": 17.837,
+     "start": 17.4,
+     "text": "selecting"
+    },
+    {
+     "end": 17.9,
+     "start": 17.837,
+     "text": "a"
+    },
+    {
+     "end": 18.388,
+     "start": 17.9,
+     "text": "module"
+    },
+    {
+     "end": 18.812,
+     "start": 18.388,
+     "text": "narrows"
+    },
+    {
+     "end": 18.9,
+     "start": 18.812,
+     "text": "the"
+    },
+    {
+     "end": 19.15,
+     "start": 18.9,
+     "text": "run"
+    },
+    {
+     "end": 19.237,
+     "start": 19.15,
+     "text": "to"
+    },
+    {
+     "end": 19.475,
+     "start": 19.237,
+     "text": "that"
+    },
+    {
+     "end": 20.4,
+     "start": 19.475,
+     "text": "module"
+    },
+    {
+     "end": 20.6,
+     "start": 20.4,
+     "text": "."
+    },
+    {
+     "end": 20.9,
+     "start": 20.8,
+     "text": "A"
+    },
+    {
+     "end": 21.4,
+     "start": 20.9,
+     "text": "filtered"
+    },
+    {
+     "end": 21.763,
+     "start": 21.4,
+     "text": "run"
+    },
+    {
+     "end": 22.163,
+     "start": 21.763,
+     "text": "proves"
+    },
+    {
+     "end": 22.525,
+     "start": 22.163,
+     "text": "only"
+    },
+    {
+     "end": 22.7,
+     "start": 22.525,
+     "text": "its"
+    },
+    {
+     "end": 23.2,
+     "start": 22.7,
+     "text": "selected"
+    },
+    {
+     "end": 24.0,
+     "start": 23.2,
+     "text": "examples"
+    },
+    {
+     "end": 24.112,
+     "start": 24.0,
+     "text": "."
+    },
+    {
+     "end": 24.525,
+     "start": 24.112,
+     "text": "Pending"
+    },
+    {
+     "end": 25.15,
+     "start": 24.525,
+     "text": "examples"
+    },
+    {
+     "end": 25.638,
+     "start": 25.15,
+     "text": "remain"
+    },
+    {
+     "end": 27.05,
+     "start": 25.638,
+     "text": "unexecuted"
+    },
+    {
+     "end": 27.275,
+     "start": 27.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/suite-commands-and-evidence-limits-00": {
+   "audio_sha256": "118c19b5690493bc68ab11c0f1a68c954208599c269acc2c6d8dec7b4800eaac",
+   "characters": 35,
+   "cost": 2.17e-05,
+   "duration": 2.5,
+   "index": 0,
+   "key": "dfb39721e444b84666055e28d36a2d1fe90dab3c316494448840dcbf9a9889a7",
+   "page": "docs/test-selection.md",
+   "pause_ms": 500,
+   "section": "suite-commands-and-evidence-limits",
+   "sent_text": "Suite commands and evidence limits.",
+   "text": "Suite commands and evidence limits.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.2,
+     "text": "Suite"
+    },
+    {
+     "end": 0.9,
+     "start": 0.425,
+     "text": "commands"
+    },
+    {
+     "end": 1.025,
+     "start": 0.9,
+     "text": "and"
+    },
+    {
+     "end": 1.475,
+     "start": 1.025,
+     "text": "evidence"
+    },
+    {
+     "end": 2.3,
+     "start": 1.475,
+     "text": "limits"
+    },
+    {
+     "end": 2.5,
+     "start": 2.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/suite-commands-and-evidence-limits-01": {
+   "audio_sha256": "98002fe15c2e940e38073ebdd44e2e80fd9ace1d4f661bd94374d20b8d051d6b",
+   "characters": 524,
+   "cost": 0.00032488000000000005,
+   "duration": 35.925,
+   "index": 1,
+   "key": "5e5df0b05fb47f08a8c924f1125d4deb3482295fcba744611fa54b2db96ecd34",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "suite-commands-and-evidence-limits",
+   "sent_text": "The Cabal manifests declare five Hspec suites: cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, record-value-tests, and conformance-tests exposed for filtering as conformance-appendix-tests. The record-value entrypoint defines its examples inline, under the module name Main. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
+   "text": "The Cabal manifests declare five Hspec suites: cage-tests, e2e-tests exposed as cage-tests-e2e, contract-tests, record-value-tests, and conformance-tests exposed for filtering as conformance-appendix-tests. The record-value entrypoint defines its examples inline, under the module name Main. Contract checks include repeated runs of the same case list against different adapters, each wrapped under its defining module. Development-node evidence descriptions and conformance appendix markers remain inside the module groups.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.562,
+     "start": 0.25,
+     "text": "Cabal"
+    },
+    {
+     "end": 1.075,
+     "start": 0.562,
+     "text": "manifests"
+    },
+    {
+     "end": 1.438,
+     "start": 1.075,
+     "text": "declare"
+    },
+    {
+     "end": 1.75,
+     "start": 1.438,
+     "text": "five"
+    },
+    {
+     "end": 2.275,
+     "start": 1.75,
+     "text": "Hspec"
+    },
+    {
+     "end": 3.15,
+     "start": 2.275,
+     "text": "suites"
+    },
+    {
+     "end": 3.35,
+     "start": 3.15,
+     "text": ":"
+    },
+    {
+     "end": 4.3,
+     "start": 3.55,
+     "text": "cage-tests"
+    },
+    {
+     "end": 4.35,
+     "start": 4.3,
+     "text": ","
+    },
+    {
+     "end": 4.5,
+     "start": 4.35,
+     "text": "e"
+    },
+    {
+     "end": 4.625,
+     "start": 4.5,
+     "text": "2"
+    },
+    {
+     "end": 5.1,
+     "start": 4.625,
+     "text": "e-tests"
+    },
+    {
+     "end": 5.675,
+     "start": 5.1,
+     "text": "exposed"
+    },
+    {
+     "end": 5.838,
+     "start": 5.675,
+     "text": "as"
+    },
+    {
+     "end": 6.575,
+     "start": 5.838,
+     "text": "cage-tests-e"
+    },
+    {
+     "end": 6.7,
+     "start": 6.575,
+     "text": "2"
+    },
+    {
+     "end": 6.975,
+     "start": 6.7,
+     "text": "e"
+    },
+    {
+     "end": 7.075,
+     "start": 6.975,
+     "text": ","
+    },
+    {
+     "end": 8.0,
+     "start": 7.075,
+     "text": "contract-tests"
+    },
+    {
+     "end": 8.05,
+     "start": 8.0,
+     "text": ","
+    },
+    {
+     "end": 9.8,
+     "start": 8.05,
+     "text": "record-value-tests"
+    },
+    {
+     "end": 10.0,
+     "start": 9.8,
+     "text": ","
+    },
+    {
+     "end": 10.3,
+     "start": 10.2,
+     "text": "and"
+    },
+    {
+     "end": 11.25,
+     "start": 10.3,
+     "text": "conformance-tests"
+    },
+    {
+     "end": 11.85,
+     "start": 11.25,
+     "text": "exposed"
+    },
+    {
+     "end": 12.012,
+     "start": 11.85,
+     "text": "for"
+    },
+    {
+     "end": 12.587,
+     "start": 12.012,
+     "text": "filtering"
+    },
+    {
+     "end": 12.75,
+     "start": 12.587,
+     "text": "as"
+    },
+    {
+     "end": 14.75,
+     "start": 12.75,
+     "text": "conformance-appendix-tests"
+    },
+    {
+     "end": 14.95,
+     "start": 14.75,
+     "text": "."
+    },
+    {
+     "end": 15.225,
+     "start": 15.125,
+     "text": "The"
+    },
+    {
+     "end": 15.95,
+     "start": 15.225,
+     "text": "record-value"
+    },
+    {
+     "end": 16.55,
+     "start": 15.95,
+     "text": "entrypoint"
+    },
+    {
+     "end": 17.1,
+     "start": 16.55,
+     "text": "defines"
+    },
+    {
+     "end": 17.275,
+     "start": 17.1,
+     "text": "its"
+    },
+    {
+     "end": 17.938,
+     "start": 17.275,
+     "text": "examples"
+    },
+    {
+     "end": 18.525,
+     "start": 17.938,
+     "text": "inline"
+    },
+    {
+     "end": 18.625,
+     "start": 18.525,
+     "text": ","
+    },
+    {
+     "end": 18.862,
+     "start": 18.625,
+     "text": "under"
+    },
+    {
+     "end": 18.975,
+     "start": 18.862,
+     "text": "the"
+    },
+    {
+     "end": 19.35,
+     "start": 18.975,
+     "text": "module"
+    },
+    {
+     "end": 19.65,
+     "start": 19.35,
+     "text": "name"
+    },
+    {
+     "end": 20.6,
+     "start": 19.65,
+     "text": "Main"
+    },
+    {
+     "end": 20.8,
+     "start": 20.6,
+     "text": "."
+    },
+    {
+     "end": 21.513,
+     "start": 21.0,
+     "text": "Contract"
+    },
+    {
+     "end": 21.875,
+     "start": 21.513,
+     "text": "checks"
+    },
+    {
+     "end": 22.3,
+     "start": 21.875,
+     "text": "include"
+    },
+    {
+     "end": 22.775,
+     "start": 22.3,
+     "text": "repeated"
+    },
+    {
+     "end": 23.138,
+     "start": 22.775,
+     "text": "runs"
+    },
+    {
+     "end": 23.212,
+     "start": 23.138,
+     "text": "of"
+    },
+    {
+     "end": 23.337,
+     "start": 23.212,
+     "text": "the"
+    },
+    {
+     "end": 23.65,
+     "start": 23.337,
+     "text": "same"
+    },
+    {
+     "end": 23.95,
+     "start": 23.65,
+     "text": "case"
+    },
+    {
+     "end": 24.325,
+     "start": 23.95,
+     "text": "list"
+    },
+    {
+     "end": 24.725,
+     "start": 24.325,
+     "text": "against"
+    },
+    {
+     "end": 25.013,
+     "start": 24.725,
+     "text": "different"
+    },
+    {
+     "end": 26.2,
+     "start": 25.013,
+     "text": "adapters"
+    },
+    {
+     "end": 26.4,
+     "start": 26.2,
+     "text": ","
+    },
+    {
+     "end": 26.8,
+     "start": 26.6,
+     "text": "each"
+    },
+    {
+     "end": 27.062,
+     "start": 26.8,
+     "text": "wrapped"
+    },
+    {
+     "end": 27.237,
+     "start": 27.062,
+     "text": "under"
+    },
+    {
+     "end": 27.35,
+     "start": 27.237,
+     "text": "its"
+    },
+    {
+     "end": 27.8,
+     "start": 27.35,
+     "text": "defining"
+    },
+    {
+     "end": 28.65,
+     "start": 27.8,
+     "text": "module"
+    },
+    {
+     "end": 28.85,
+     "start": 28.65,
+     "text": "."
+    },
+    {
+     "end": 29.888,
+     "start": 29.05,
+     "text": "Development-node"
+    },
+    {
+     "end": 30.375,
+     "start": 29.888,
+     "text": "evidence"
+    },
+    {
+     "end": 31.175,
+     "start": 30.375,
+     "text": "descriptions"
+    },
+    {
+     "end": 31.3,
+     "start": 31.175,
+     "text": "and"
+    },
+    {
+     "end": 31.975,
+     "start": 31.3,
+     "text": "conformance"
+    },
+    {
+     "end": 32.5,
+     "start": 31.975,
+     "text": "appendix"
+    },
+    {
+     "end": 33.088,
+     "start": 32.5,
+     "text": "markers"
+    },
+    {
+     "end": 33.638,
+     "start": 33.088,
+     "text": "remain"
+    },
+    {
+     "end": 34.213,
+     "start": 33.638,
+     "text": "inside"
+    },
+    {
+     "end": 34.3,
+     "start": 34.213,
+     "text": "the"
+    },
+    {
+     "end": 34.675,
+     "start": 34.3,
+     "text": "module"
+    },
+    {
+     "end": 35.725,
+     "start": 34.675,
+     "text": "groups"
+    },
+    {
+     "end": 35.925,
+     "start": 35.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/suite-commands-and-evidence-limits-02": {
+   "audio_sha256": "f1678d6e189a4db696c271bc1a5da68b1c7d600fc90635898c55d82424183a38",
+   "characters": 349,
+   "cost": 0.00021638,
+   "duration": 22.562,
+   "index": 2,
+   "key": "6bc85f90939d02a0e554bd8c1ef364c1d4708575381119175ea6b71c4aeca7c3",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "suite-commands-and-evidence-limits",
+   "sent_text": "The public conformance command nix run .#conformance-tests, run from conformance/, executes the live product book as well as its appendix. Use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.",
+   "text": "The public conformance command nix run .#conformance-tests, run from conformance/, executes the live product book as well as its appendix. Use nix run .#conformance-appendix-tests -- --match \"[conformance]\" to filter the Hspec appendix alone. The published book's requirement text and receipt-computed coverage are unchanged by these harness labels.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.675,
+     "start": 0.275,
+     "text": "public"
+    },
+    {
+     "end": 1.3,
+     "start": 0.675,
+     "text": "conformance"
+    },
+    {
+     "end": 1.837,
+     "start": 1.3,
+     "text": "command"
+    },
+    {
+     "end": 2.162,
+     "start": 1.837,
+     "text": "nix"
+    },
+    {
+     "end": 2.6,
+     "start": 2.162,
+     "text": "run"
+    },
+    {
+     "end": 4.15,
+     "start": 2.6,
+     "text": ".#conformance-tests"
+    },
+    {
+     "end": 4.238,
+     "start": 4.15,
+     "text": ","
+    },
+    {
+     "end": 4.5,
+     "start": 4.238,
+     "text": "run"
+    },
+    {
+     "end": 4.7,
+     "start": 4.5,
+     "text": "from"
+    },
+    {
+     "end": 5.375,
+     "start": 4.7,
+     "text": "conformance/"
+    },
+    {
+     "end": 5.45,
+     "start": 5.375,
+     "text": ","
+    },
+    {
+     "end": 6.05,
+     "start": 5.45,
+     "text": "executes"
+    },
+    {
+     "end": 6.175,
+     "start": 6.05,
+     "text": "the"
+    },
+    {
+     "end": 6.5,
+     "start": 6.175,
+     "text": "live"
+    },
+    {
+     "end": 6.975,
+     "start": 6.5,
+     "text": "product"
+    },
+    {
+     "end": 7.238,
+     "start": 6.975,
+     "text": "book"
+    },
+    {
+     "end": 7.4,
+     "start": 7.238,
+     "text": "as"
+    },
+    {
+     "end": 7.625,
+     "start": 7.4,
+     "text": "well"
+    },
+    {
+     "end": 7.75,
+     "start": 7.625,
+     "text": "as"
+    },
+    {
+     "end": 7.925,
+     "start": 7.75,
+     "text": "its"
+    },
+    {
+     "end": 9.25,
+     "start": 7.925,
+     "text": "appendix"
+    },
+    {
+     "end": 9.475,
+     "start": 9.25,
+     "text": "."
+    },
+    {
+     "end": 9.962,
+     "start": 9.7,
+     "text": "Use"
+    },
+    {
+     "end": 10.25,
+     "start": 9.962,
+     "text": "nix"
+    },
+    {
+     "end": 10.575,
+     "start": 10.25,
+     "text": "run"
+    },
+    {
+     "end": 12.525,
+     "start": 10.575,
+     "text": ".#conformance-appendix-tests"
+    },
+    {
+     "end": 13.012,
+     "start": 12.575,
+     "text": "match"
+    },
+    {
+     "end": 13.075,
+     "start": 13.012,
+     "text": "\""
+    },
+    {
+     "end": 13.875,
+     "start": 13.075,
+     "text": "[conformance]"
+    },
+    {
+     "end": 13.962,
+     "start": 13.875,
+     "text": "\""
+    },
+    {
+     "end": 14.1,
+     "start": 13.962,
+     "text": "to"
+    },
+    {
+     "end": 14.512,
+     "start": 14.1,
+     "text": "filter"
+    },
+    {
+     "end": 14.738,
+     "start": 14.512,
+     "text": "the"
+    },
+    {
+     "end": 15.2,
+     "start": 14.738,
+     "text": "Hspec"
+    },
+    {
+     "end": 15.762,
+     "start": 15.2,
+     "text": "appendix"
+    },
+    {
+     "end": 16.038,
+     "start": 15.962,
+     "text": "The"
+    },
+    {
+     "end": 16.462,
+     "start": 16.038,
+     "text": "published"
+    },
+    {
+     "end": 16.737,
+     "start": 16.462,
+     "text": "book's"
+    },
+    {
+     "end": 17.4,
+     "start": 16.737,
+     "text": "requirement"
+    },
+    {
+     "end": 17.862,
+     "start": 17.4,
+     "text": "text"
+    },
+    {
+     "end": 17.987,
+     "start": 17.862,
+     "text": "and"
+    },
+    {
+     "end": 18.862,
+     "start": 17.987,
+     "text": "receipt-computed"
+    },
+    {
+     "end": 19.45,
+     "start": 18.862,
+     "text": "coverage"
+    },
+    {
+     "end": 19.612,
+     "start": 19.45,
+     "text": "are"
+    },
+    {
+     "end": 20.388,
+     "start": 19.612,
+     "text": "unchanged"
+    },
+    {
+     "end": 20.562,
+     "start": 20.388,
+     "text": "by"
+    },
+    {
+     "end": 20.837,
+     "start": 20.562,
+     "text": "these"
+    },
+    {
+     "end": 21.212,
+     "start": 20.837,
+     "text": "harness"
+    },
+    {
+     "end": 22.362,
+     "start": 21.212,
+     "text": "labels"
+    },
+    {
+     "end": 22.562,
+     "start": 22.362,
+     "text": "."
+    }
+   ]
+  },
+  "docs-test-selection/suite-commands-and-evidence-limits-03": {
+   "audio_sha256": "ac60a34a293054d2ef2e24a46f5069b74b822beceaede0c8e91c3d4441674977",
+   "characters": 385,
+   "cost": 0.00023870000000000003,
+   "duration": 27.75,
+   "index": 3,
+   "key": "c2296546d4e0906a08199d939e44bb6b5bdebcfd98b8e23f6a09c80479032615",
+   "page": "docs/test-selection.md",
+   "pause_ms": 400,
+   "section": "suite-commands-and-evidence-limits",
+   "sent_text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. Naming's direct-GHC codec and drift programs are not Hspec suites either. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
+   "text": "The evaluation spike's cleanup-control uses Tasty, so it is outside this Hspec vocabulary. Naming's direct-GHC codec and drift programs are not Hspec suites either. The Cabal-declared Conformance.Support.Authenticate module was already absent from the Hspec entrypoint; it remains inactive so tagging changes neither suite membership nor example counts. No new exclusion is introduced.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 1.05,
+     "start": 0.3,
+     "text": "evaluation"
+    },
+    {
+     "end": 1.425,
+     "start": 1.05,
+     "text": "spike's"
+    },
+    {
+     "end": 2.325,
+     "start": 1.425,
+     "text": "cleanup-control"
+    },
+    {
+     "end": 2.662,
+     "start": 2.325,
+     "text": "uses"
+    },
+    {
+     "end": 3.3,
+     "start": 2.662,
+     "text": "Tasty"
+    },
+    {
+     "end": 3.425,
+     "start": 3.3,
+     "text": ","
+    },
+    {
+     "end": 3.625,
+     "start": 3.425,
+     "text": "so"
+    },
+    {
+     "end": 3.725,
+     "start": 3.625,
+     "text": "it"
+    },
+    {
+     "end": 3.875,
+     "start": 3.725,
+     "text": "is"
+    },
+    {
+     "end": 4.5,
+     "start": 3.875,
+     "text": "outside"
+    },
+    {
+     "end": 4.738,
+     "start": 4.5,
+     "text": "this"
+    },
+    {
+     "end": 5.325,
+     "start": 4.738,
+     "text": "Hspec"
+    },
+    {
+     "end": 6.775,
+     "start": 5.325,
+     "text": "vocabulary"
+    },
+    {
+     "end": 7.0,
+     "start": 6.775,
+     "text": "."
+    },
+    {
+     "end": 7.7,
+     "start": 7.225,
+     "text": "Naming's"
+    },
+    {
+     "end": 8.613,
+     "start": 7.7,
+     "text": "direct-GHC"
+    },
+    {
+     "end": 9.075,
+     "start": 8.613,
+     "text": "codec"
+    },
+    {
+     "end": 9.2,
+     "start": 9.075,
+     "text": "and"
+    },
+    {
+     "end": 9.475,
+     "start": 9.2,
+     "text": "drift"
+    },
+    {
+     "end": 10.113,
+     "start": 9.475,
+     "text": "programs"
+    },
+    {
+     "end": 10.275,
+     "start": 10.113,
+     "text": "are"
+    },
+    {
+     "end": 10.525,
+     "start": 10.275,
+     "text": "not"
+    },
+    {
+     "end": 11.075,
+     "start": 10.525,
+     "text": "Hspec"
+    },
+    {
+     "end": 11.425,
+     "start": 11.075,
+     "text": "suites"
+    },
+    {
+     "end": 12.3,
+     "start": 11.425,
+     "text": "either"
+    },
+    {
+     "end": 12.525,
+     "start": 12.3,
+     "text": "."
+    },
+    {
+     "end": 12.8,
+     "start": 12.725,
+     "text": "The"
+    },
+    {
+     "end": 13.625,
+     "start": 12.8,
+     "text": "Cabal-declared"
+    },
+    {
+     "end": 14.425,
+     "start": 13.625,
+     "text": "Conformance"
+    },
+    {
+     "end": 14.525,
+     "start": 14.425,
+     "text": "."
+    },
+    {
+     "end": 15.15,
+     "start": 14.525,
+     "text": "Support"
+    },
+    {
+     "end": 15.25,
+     "start": 15.15,
+     "text": "."
+    },
+    {
+     "end": 15.875,
+     "start": 15.25,
+     "text": "Authenticate"
+    },
+    {
+     "end": 16.35,
+     "start": 15.875,
+     "text": "module"
+    },
+    {
+     "end": 16.538,
+     "start": 16.35,
+     "text": "was"
+    },
+    {
+     "end": 17.013,
+     "start": 16.538,
+     "text": "already"
+    },
+    {
+     "end": 17.475,
+     "start": 17.013,
+     "text": "absent"
+    },
+    {
+     "end": 17.638,
+     "start": 17.475,
+     "text": "from"
+    },
+    {
+     "end": 17.788,
+     "start": 17.638,
+     "text": "the"
+    },
+    {
+     "end": 18.35,
+     "start": 17.788,
+     "text": "Hspec"
+    },
+    {
+     "end": 19.6,
+     "start": 18.35,
+     "text": "entrypoint"
+    },
+    {
+     "end": 19.8,
+     "start": 19.6,
+     "text": ";"
+    },
+    {
+     "end": 20.1,
+     "start": 20.0,
+     "text": "it"
+    },
+    {
+     "end": 20.6,
+     "start": 20.1,
+     "text": "remains"
+    },
+    {
+     "end": 21.2,
+     "start": 20.6,
+     "text": "inactive"
+    },
+    {
+     "end": 21.388,
+     "start": 21.2,
+     "text": "so"
+    },
+    {
+     "end": 21.825,
+     "start": 21.388,
+     "text": "tagging"
+    },
+    {
+     "end": 22.388,
+     "start": 21.825,
+     "text": "changes"
+    },
+    {
+     "end": 22.763,
+     "start": 22.388,
+     "text": "neither"
+    },
+    {
+     "end": 23.075,
+     "start": 22.763,
+     "text": "suite"
+    },
+    {
+     "end": 23.612,
+     "start": 23.075,
+     "text": "membership"
+    },
+    {
+     "end": 23.825,
+     "start": 23.612,
+     "text": "nor"
+    },
+    {
+     "end": 24.325,
+     "start": 23.825,
+     "text": "example"
+    },
+    {
+     "end": 25.3,
+     "start": 24.325,
+     "text": "counts"
+    },
+    {
+     "end": 25.5,
+     "start": 25.3,
+     "text": "."
+    },
+    {
+     "end": 25.875,
+     "start": 25.7,
+     "text": "No"
+    },
+    {
+     "end": 26.013,
+     "start": 25.875,
+     "text": "new"
+    },
+    {
+     "end": 26.462,
+     "start": 26.013,
+     "text": "exclusion"
+    },
+    {
+     "end": 26.575,
+     "start": 26.462,
+     "text": "is"
+    },
+    {
+     "end": 27.55,
+     "start": 26.575,
+     "text": "introduced"
+    },
+    {
+     "end": 27.75,
+     "start": 27.55,
+     "text": "."
+    }
+   ]
+  },
   "docs-theorems/exact-declaration-inventory-00": {
    "audio_sha256": "da9a1240447b908d938d35ac5a3b35de631b6d61f258e5dbc7d26feb2de5de05",
    "characters": 28,

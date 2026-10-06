@@ -1,11 +1,13 @@
 { pkgs, checks }:
 let
   runnable = {
-    inherit (checks)
+    inherit (checks.apps)
       cage-tests
       record-value-tests
-      cage-tests-e2e
       cage-test-vectors
+      ;
+    inherit (checks)
+      cage-tests-e2e
       lint
       ;
   };

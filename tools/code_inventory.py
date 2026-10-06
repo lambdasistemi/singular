@@ -50,6 +50,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
+from test_tags import check as check_test_tags
+
 # ---------------------------------------------------------------------------
 # Policy registry
 # ---------------------------------------------------------------------------
@@ -1505,7 +1507,7 @@ def main(argv: list[str]) -> int:
         print(f"inventory: {exc}", file=sys.stderr)
         return 2
 
-    problems = self_check(rows)
+    problems = self_check(rows) + check_test_tags(root)
     exit_code = 0
     for f in findings:
         print(f"inventory: unmapped or unknown file — {f.render()}", file=sys.stderr)
