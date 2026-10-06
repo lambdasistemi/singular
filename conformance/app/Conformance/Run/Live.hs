@@ -307,7 +307,9 @@ data LiveStep = LiveStep
     , lsRequestOut :: Maybe (TxOut ConwayEra)
     , lsModelRequest :: Value
     , lsRetraction :: Maybe Value
-    -- ^ what the model's admission reads of a retraction, from the retraction as built
+    {- ^ what the model's admission reads of a retraction or a fold, from the
+    transaction as built
+    -}
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
@@ -819,12 +821,12 @@ submitEdge env state cage exit alteration placement request = do
                     <> compactJson (purposeDeclarationsJson measurements submittedBudgets)
                 )
             result <- submitTxResilient (envSubmit env) signedWitnessed
-            -- What the model's admission reads of a retraction is read off the
-            -- retraction as built, after it has been submitted.
-            retraction <-
-                if exit == Live.Retract
-                    then Just <$> retractionWitness env state cage reqOut signed
-                    else pure Nothing
+            -- What the model's admission reads of a retraction or a fold is read
+            -- off the transaction as built, after it has been submitted.
+            retraction <- case exit of
+                Live.Retract -> Just <$> retractionWitness env state cage reqOut signed
+                Live.Fold -> Just <$> foldWitnessOf env signed
+                Live.Reject -> pure Nothing
             case result of
                 SubmitAccepted _ -> do
                     modifyIORef' (livePendingRequests state) (Map.delete pendingKey)
@@ -1270,6 +1272,8 @@ batchRecord env state cage exit alteration booked asked signed result units (mea
                     owners
         _ -> pure Nothing
     (_, startValue, setup) <- modelStart state cage
+    foldWitness <-
+        if exit == Live.Fold then Just <$> foldWitnessOf env signed else pure Nothing
     let batchName = if exit == Live.Fold then "foldBatch" else "rejectBatch" :: T.Text
         question =
             object $
@@ -1282,6 +1286,7 @@ batchRecord env state cage exit alteration booked asked signed result units (mea
                 , "requests" .= asked
                 ]
                     <> ["outputs" .= outputs | Just outputs <- [judged]]
+                    <> ["foldWitness" .= w | Just w <- [foldWitness]]
     evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
     row <-
         LeanOracle.expectedObservation evaluator [] question
@@ -1967,6 +1972,25 @@ retractionWitness env state cage requestOut transaction = do
             ]
         )
 
+{- | What the model's fold admission reads of a fold beyond its requests: the
+fold transaction's validity upper bound, excluded, as the POSIX time its slot
+begins. Each request's submission time is the request's own.
+-}
+foldWitnessOf :: Env -> ConwayTx -> IO Value
+foldWitnessOf env transaction = case transaction ^. bodyTxL . vldtTxBodyL of
+    ValidityInterval _ (SJust upper) -> do
+        validTo <- slotStartMs (envProv env) upper
+        pure (object ["validTo" .= validTo])
+    _ -> failWith "a fold is built without a validity upper bound"
+
+{- | The key a question names the admission witness under: a retraction's
+@, a fold's @.
+-}
+admissionKey :: Live.Exit -> Key.Key
+admissionKey exit = case exit of
+    Live.Fold -> "foldWitness"
+    _ -> "witness"
+
 {- | The POSIX slot-start time from one acquired view's validated finite
 material, through the fixed common conversion.
 -}
@@ -2173,6 +2197,13 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
     approval <- case requestOut of
         Left decided -> pure (canonical decided)
         Right out -> canonical . snd <$> storyApprovalOn cfg out
+    -- When the request was submitted, read off its own datum, which a fold's
+    -- admission reads. A refused booking left no request UTxO, and nothing folds it.
+    submittedAt <- case requestOut of
+        Left _ -> pure 0
+        Right out -> case extractCageDatum out of
+            Just (RequestDatum booked) -> pure (requestSubmittedAt booked)
+            _ -> failWith "booked request output carries no request datum"
     -- The datum the request carries for its delivered output: read off the
     -- booked request's own datum, or, for a refused booking that left no
     -- request UTxO, the destination the booking decision named. The datum is
@@ -2201,6 +2232,7 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
             , "approval" .= approval
             , "tip" .= tip
             , "datum" .= datum
+            , "submittedAt" .= submittedAt
             ]
                 <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
                    ]
@@ -3233,7 +3265,7 @@ askModel _env state step judged = do
                 , "request" .= lsModelRequest step
                 , "lovelace" .= lsRequestLovelace step
                 ]
-                    <> ["witness" .= witness | Just witness <- [lsRetraction step]]
+                    <> [admissionKey (lsExit step) .= witness | Just witness <- [lsRetraction step]]
                     <> concat
                         [ ["inputs" .= inputs, "outputs" .= outputs]
                         | Just (inputs, outputs) <- [judged]
@@ -3487,7 +3519,7 @@ compareStep env state step observation = do
                 , "perturbation" .= perturbation
                 , "differences" .= map differenceJson differing
                 ]
-                    <> ["witness" .= witness | Just witness <- [lsRetraction step]]
+                    <> [admissionKey (lsExit step) .= witness | Just witness <- [lsRetraction step]]
                     <> [ "requestScript" .= requestMarkerOf stepCfg stepTid
                        | lsExit step == Live.Retract
                        , lsTamper step

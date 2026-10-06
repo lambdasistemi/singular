@@ -54,6 +54,9 @@ def toRequest (j : Json) : Except String Request := do
   -- caller allocated for it while booking: a caller that says nothing describes a
   -- booking carrying none.
   let datum ← datumOfJson j "datum"
+  -- When the request was submitted, its datum's `submitted_at`, which a fold's
+  -- admission reads: a caller that names none describes a request submitted at 0.
+  let submittedAt ← optionalNat j "submittedAt"
   -- The mint a request claims, which only a batch's mint guard reads: a caller
   -- that names none claims nothing. "canonical" asks for the claim an honest
   -- folder makes for this very request, the delta of its own edge, read off the
@@ -71,7 +74,7 @@ def toRequest (j : Json) : Except String Request := do
     | .ok _ => throw "claimed is not an array"
   let base : Request :=
     { edge, key, owner, refundAddress, deposit, output, approval := none, claimed, tip
-    , reference, datum }
+    , reference, datum, submittedAt }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none
