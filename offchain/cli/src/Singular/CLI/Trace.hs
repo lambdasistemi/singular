@@ -102,7 +102,7 @@ import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Tracer.ThreadSafe (newThreadSafeTracer)
 import Data.Word (Word64)
-import System.IO (hFlush, stderr)
+import System.IO (Handle, hFlush)
 import Text.Printf (printf)
 
 import Singular.Registry.Trace
@@ -1214,34 +1214,36 @@ contained sink = Tracer $ \event ->
             Nothing -> pure ()
 
 {- | Run the command with the tracer the entry point composes: every output
-the request resolves to, given whether standard error is a terminal, and the
-@SINGULAR_LOG@ phase log when a path is given.
+the request resolves to, given the process's standard error and whether it is
+a terminal, and the @SINGULAR_LOG@ phase log when a path is given. Nothing is
+opened here: a file sink opens per line, inside its containment.
 -}
 withTracing
-    :: Bool
+    :: Handle
+    -> Bool
     -> Maybe FilePath
     -> TraceRequest
     -> (Tracer IO Trace -> IO a)
     -> IO a
-withTracing terminal phaseLog request body = case sinks of
+withTracing errors terminal phaseLog request body = case sinks of
     [] -> body nullTracer
     _ -> fanOut sinks >>= body
   where
     (level, outputs) = resolveOutputs terminal request
     sinks =
-        map (outputSink level) outputs
+        map (outputSink errors level) outputs
             <> maybe [] (pure . phaseLogSink) phaseLog
 
 {- | The tracer writing one output at a level: only the events shown at that
-level, each written whole as it happens (standard error is flushed after
+level, each written whole as it happens (standard error, the handle given, is flushed after
 each line; a file is opened, appended and closed per line). A line of text
 is written as UTF-8 whatever the locale.
 -}
-outputSink :: TraceLevel -> Output -> Tracer IO Trace
-outputSink level (Output sink format) =
+outputSink :: Handle -> TraceLevel -> Output -> Tracer IO Trace
+outputSink errors level (Output sink format) =
     condTracing (atLevel level) $
         Tracer $ \t -> forM_ (rendered t) $ \bytes -> case sink of
-            ToStderr -> BS.hPut stderr bytes >> hFlush stderr
+            ToStderr -> BS.hPut errors bytes >> hFlush errors
             ToFile path -> BS.appendFile path bytes
   where
     rendered t = case format of

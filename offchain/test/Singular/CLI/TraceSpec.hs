@@ -45,7 +45,8 @@ import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO
-    ( hClose
+    ( Handle
+    , hClose
     , hFlush
     , hPutStrLn
     , openTempFile
@@ -87,6 +88,7 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Root (runSingular, standardError)
 import Singular.CLI.Session (failWith)
 import Singular.CLI.Trace
 import Singular.Registry.Trace
@@ -683,7 +685,9 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
             (seen, collect) <- collector
             tracer <-
                 fanOut
-                    [outputSink TraceHow (Output (ToFile path) JsonFormat), collect]
+                    [ outputSink stderr TraceHow (Output (ToFile path) JsonFormat)
+                    , collect
+                    ]
             mapConcurrently_
                 (mapM_ (traceWith tracer))
                 [ [e | (i, e) <- zip [0 :: Int ..] events, i `mod` 8 == thread]
@@ -703,7 +707,7 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
         $ withSystemTempDirectory "trace-flush"
         $ \dir -> do
             let path = dir </> "trace.jsonl"
-                sink = outputSink TraceHow (Output (ToFile path) JsonFormat)
+                sink = outputSink stderr TraceHow (Output (ToFile path) JsonFormat)
             forM_ (zip [1 :: Int ..] foldStory) $ \(n, t) -> do
                 traceWith sink t
                 there <- doesFileExist path
@@ -716,9 +720,10 @@ fanOutRows = describe "one serialised fan-out to every sink" $ do
             tracer <-
                 fanOut
                     [ outputSink
+                        stderr
                         TraceHow
                         (Output (ToFile (dir </> "missing" </> "trace.jsonl")) JsonFormat)
-                    , outputSink TraceHow (Output (ToFile dir) JsonFormat)
+                    , outputSink stderr TraceHow (Output (ToFile dir) JsonFormat)
                     , collect
                     ]
             mapM_ (traceWith tracer) foldStory
@@ -767,6 +772,51 @@ settings dir =
 
 entryPoint :: Spec
 entryPoint = describe "the receipt under every tracing setting" $ do
+    it
+        "keeps the packaged entry point's receipt and exit with a closed standard \
+        \error and an unopenable file sink, whatever is asked"
+        $ withSystemTempDirectory "trace-closed-stderr"
+        $ \dir -> do
+            let command =
+                    [ "registry"
+                    , "inspect"
+                    , "--key"
+                    , "alice-1"
+                    , "--registry"
+                    , dir </> "none"
+                    , "--blueprint"
+                    , dir </> "none.json"
+                    , "--koios-url"
+                    , "http://127.0.0.1:1/api/v1"
+                    , "--network-magic"
+                    , "1"
+                    ]
+                asked =
+                    [ []
+                    , ["--trace", "off"]
+                    , ["--trace-to", "file:" <> (dir </> "missing" </> "t.jsonl")]
+                    , ["--trace", "how", "--trace-to", "stderr"]
+                    , ["--trace", "how", "--trace-to", "stderr", "--trace-format", "json"]
+                    ]
+            (_, open) <- openTempFile dir "stderr"
+            (plainCode, plainOut, _) <- captured (runSingular open [] command)
+            hClose open
+            plainCode `shouldBe` ExitFailure 10
+            closed <- closedHandle
+            forM_ asked $ \flags -> do
+                (code, out, _) <- captured (runSingular closed [] (command <> flags))
+                (flags, code, out) `shouldBe` (flags, plainCode, plainOut)
+    it "takes a standard error that is not a stream as closed" $
+        withSystemTempDirectory "trace-not-a-stream" $ \dir -> do
+            -- whether the entry point takes descriptor 2 as the process's standard error
+            let probe = (== stderr) <$> standardError
+            onFile <- redirecting stdError (dir </> "err") probe
+            onDirectory <- bracket (openFd dir ReadOnly defaultFileFlags) closeFd $ \fd ->
+                bracket
+                    (dup stdError <* dupTo fd stdError)
+                    (\saved -> dupTo saved stdError >> closeFd saved)
+                    (const probe)
+            (onFile, onDirectory) `shouldBe` (True, False)
     it
         "prints the same receipt and exits the same, and never writes the trace on stdout"
         $ withSystemTempDirectory "trace-entry"
@@ -819,7 +869,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
         let receiptPath = dir </> (name <> ".json")
         (code, out, err) <-
             captured $
-                withTracing False Nothing asked $ \tracer ->
+                withTracing stderr False Nothing asked $ \tracer ->
                     finish
                         tracer
                         "fold"
@@ -1077,3 +1127,11 @@ closedHandleSink = do
     hClose h
     removeFile path
     pure (Tracer (hPutStrLn h . show))
+
+-- | A handle that is already closed: every write to it throws.
+closedHandle :: IO Handle
+closedHandle = do
+    (path, h) <- openTempFile "/tmp" "closed-stderr"
+    hClose h
+    removeFile path
+    pure h

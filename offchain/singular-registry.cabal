@@ -947,6 +947,7 @@ test-suite cage-tests
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
     Singular.CLI.RequestWindow
+    Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Trace
     Singular.CLI.TraceSpec
@@ -1319,6 +1320,7 @@ executable singular
     Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
+    Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Trace
     Singular.CLI.TrieHistory

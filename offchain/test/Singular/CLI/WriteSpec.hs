@@ -1225,7 +1225,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
         $ \fx -> do
             let ctx =
                     (writeContext fx)
-                        { wcTracer = outputSink TraceHow (Output ToStderr TextFormat)
+                        { wcTracer = outputSink stderr TraceHow (Output ToStderr TextFormat)
                         }
             ((), out, err) <- captured (void (writeVia ctx id fx))
             out `shouldBe` ""

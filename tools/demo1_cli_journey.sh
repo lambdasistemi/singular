@@ -641,6 +641,18 @@ refused insert-payload-not-data client-refusal -- registry insert --key "$key" \
   --payload "$work/payload-bad.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.reason | contains("not Plutus data")' "$receipts/insert-payload-not-data.json" >/dev/null \
   || fail "insert-payload-not-data: the refusal does not name the payload"
+# Narration cannot change a command: with standard error closed, the same
+# refusal, narrated to standard error, ends in bounded time with the same
+# receipt and exit status.
+closed_status=0
+timeout 120 "$singular" registry insert --key "$key" --payload "$work/payload-bad.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}" --trace how --trace-to stderr \
+  >"$receipts/insert-closed-stderr.json" 2>&- || closed_status=$?
+[ "$closed_status" -eq "$(exit_of client-refusal)" ] \
+  || fail "insert with standard error closed: exit $closed_status, expected the client refusal's"
+cmp -s <(jq -S . "$receipts/insert-payload-not-data.json") \
+  <(jq -S . "$receipts/insert-closed-stderr.json") \
+  || fail "insert with standard error closed: another receipt than with it open"
 refused insert-unknown-registry client-refusal -- registry insert --key "$key" \
   --payload "$work/payload-insert.json" --registry "$work/no-such-registry" --blueprint "$blueprint" \
   "${node[@]}" "${alice[@]}"
