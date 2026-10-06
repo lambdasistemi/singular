@@ -79,7 +79,7 @@
       "pause": 300
     },
     {
-      "text": "Reconciliation covers every included request. Observation proves every included key against its expected leaf; rollback returns every included request to pending and restores the transaction's root before.",
+      "text": "Reconciliation covers every included request. Observation proves each key the batch touches against the leaf its last transition in the batch expects, and the state output's root equal to the batch's last root after; the chained roots bind every transition to that root. Rollback returns every included request to pending and restores the transaction's root before.",
       "pause": 300
     },
     {
@@ -133,6 +133,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6d6529340079e414d88db49399bdbc00bc2eb14e7e22b776b2a67b6f894689f3"
+    "sha256": "f6255660283b169424f2613d96adf53213e08eee6a5e1bd7f0b41fd1201dbc25"
   }
 }

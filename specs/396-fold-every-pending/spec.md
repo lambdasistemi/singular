@@ -58,9 +58,11 @@ subset of pending requests, and the model's `Singular.foldBatch` folds a list.
   batch order, each request's key, edge, expected leaf and root pair; the pairs chain from
   the transaction's root before to its root after. A line written before this change reads
   as a batch of one.
-- **Reconciliation covers every included request.** Observation proves every included key
-  against its expected leaf; rollback returns every included request to pending and
-  restores the transaction's root before.
+- **Reconciliation covers every included request.** Observation proves each key the batch
+  touches against the leaf its last transition in the batch expects, and the state
+  output's root equal to the batch's last root after; the chained roots bind every
+  transition to that root. Rollback returns every included request to pending and restores
+  the transaction's root before.
 - **Losing the race is normal.** A fold whose state output was spent by another fold is
   refused `stale-state`, its journal is closed, and a rerun folds what is still pending.
 - **Public inputs only.** The tree comes from the chain replay; nothing is read from

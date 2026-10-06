@@ -129,7 +129,11 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     , txInToRef
     )
-import Singular.Registry.Types (CageDatum (..))
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 
 -- | What one reconciliation found and did.
 data Reconciliation = Reconciliation
@@ -525,10 +529,13 @@ type KeyRead =
         , Either String ((TxIn, TxOut ConwayEra), Envelope)
         )
 
-{- | Read back each included transaction's prepared after-state now, one
-verdict per transition it binds — every request a fold folded, or the one
-after-state of any other step — and journal @observed@ for a transaction only
-when every verdict holds. A key-bound after-state is read for the key its own
+{- | Read back each included transaction's prepared after-state now and
+journal @observed@ for a transaction only when every verdict holds. A fold
+gets one verdict for its state output carrying the batch's last root after,
+then one per distinct key it touches, against the after-state the key's last
+transition in the batch expects: the chained roots bind every transition to
+that root, and an intermediate leaf is not read. Any other step gets one
+verdict for its one after-state. A key-bound after-state is read for the key its own
 line names; without a key reader none is.
 -}
 observe
@@ -552,9 +559,11 @@ observe command dir readKey recovered = do
                         pure
                             . maybe (Left (command <> ": its after-state is not read back")) Right
                             <$> holds p out0
-                    ts -> forM ts $ \t -> case decodeKey (transitionKey t) of
-                        Nothing -> pure (Left ("the key " <> transitionKey t <> " is not hex"))
-                        Just key -> keyHolds key (transitionExpect t)
+                    ts -> do
+                        keys <- forM (lastPerKey ts) $ \t -> case decodeKey (transitionKey t) of
+                            Nothing -> pure (Left ("the key " <> transitionKey t <> " is not hex"))
+                            Just key -> keyHolds key (transitionExpect t)
+                        pure (rootHolds out0 (last ts) : keys)
     forM_ verdicts $ \(r, vs) ->
         when (not (null vs) && all isRight vs) $
             appendJournal
@@ -567,6 +576,27 @@ observe command dir readKey recovered = do
                 )
     pure [(recTx r, vs) | (r, vs) <- verdicts]
   where
+    -- Each key the batch touches, in the order it first touches it, with
+    -- the transition that moves it last: only that after-state is read.
+    lastPerKey ts =
+        [ last [t | t <- ts, transitionKey t == k]
+        | k <- nub (map transitionKey ts)
+        ]
+    -- The fold's first output is the registry's new state output.
+    rootHolds out0 t = case extractCageDatum out0 of
+        Just (StateDatum st)
+            | hexT (unOnChainRoot (stateRoot st)) == transitionRootAfter t ->
+                Right
+                    ( command
+                        <> ": the state output carries the fold's root after 0x"
+                        <> transitionRootAfter t
+                    )
+        _ ->
+            Left
+                ( command
+                    <> ": the state output does not carry the fold's root after 0x"
+                    <> transitionRootAfter t
+                )
     decodeKey = either (const Nothing) Just . B16.decode . BC.pack . T.unpack
     keyHolds key expect = case readKey of
         Nothing -> pure (Left (command <> ": no key reader for key 0x" <> hexT key))

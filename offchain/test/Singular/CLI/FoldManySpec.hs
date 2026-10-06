@@ -36,6 +36,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
+import Lens.Micro ((&), (.~))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 import Test.QuickCheck
@@ -52,7 +53,7 @@ import Test.QuickCheck
     , (===)
     )
 
-import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
@@ -88,11 +89,16 @@ import Singular.Registry.TrieState (Leaf (..))
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , approvalName
+    , mkInlineDatum
+    , toPlcData
     )
 import Singular.Registry.Types
-    ( Edge
+    ( CageDatum (..)
+    , Edge
     , OnChainRequest (..)
+    , OnChainRoot (..)
     , OnChainTokenId (..)
+    , OnChainTokenState (..)
     , edgeDeleteAbsent
     , edgeInsertAbsent
     , edgeInsertActive
@@ -181,55 +187,58 @@ included = map srInput . selIncluded
 selection :: Spec
 selection = describe "which pending requests it takes" $ do
     it
-        "takes two owners' insertions together, in the ledger's input order" $ do
-        let a =
-                ( outRef 'b' 0
-                , pendingOf (requestOf alice "keyA" edgeInsertActive open)
-                )
-            b =
-                (outRef 'a' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
-            s = selectFold now margin (lawWith []) [a, b]
-        included s `shouldBe` [outRef 'a' 1, outRef 'b' 0]
-        selExcluded s `shouldBe` []
-        map (requestOwner . srRequest) (selIncluded s)
-            `shouldBe` [toBuiltin bob, toBuiltin alice]
-    it
-        "takes three requests of two owners, an insertion and two terminations" $ do
-        let rs =
-                [
-                    ( outRef 'c' 0
-                    , pendingOf (requestOf alice "keyA" edgeUpdateTerminal open)
+        "takes two owners' insertions together, in the ledger's input order"
+        $ do
+            let a =
+                    ( outRef 'b' 0
+                    , pendingOf (requestOf alice "keyA" edgeInsertActive open)
                     )
-                , (outRef 'c' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
-                ,
-                    ( outRef 'c' 2
-                    , pendingOf (requestOf bob "keyC" edgeUpdateTerminal open)
-                    )
-                ]
-            s = selectFold now margin (lawWith ["keyA", "keyC"]) rs
-        included s `shouldBe` map fst rs
-        map srKind (selIncluded s)
-            `shouldBe` [FoldTermination, FoldInsertion, FoldTermination]
-        map srDeadlineMs (selIncluded s)
-            `shouldBe` replicate 3 (open + processTime)
+                b =
+                    (outRef 'a' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
+                s = selectFold now margin (lawWith []) [a, b]
+            included s `shouldBe` [outRef 'a' 1, outRef 'b' 0]
+            selExcluded s `shouldBe` []
+            map (requestOwner . srRequest) (selIncluded s)
+                `shouldBe` [toBuiltin bob, toBuiltin alice]
     it
-        "leaves a request whose window has closed, naming how far past it is" $ do
-        let expired =
-                ( outRef 'd' 0
-                , pendingOf (requestOf alice "keyA" edgeInsertActive (leaving (-5_000)))
-                )
-            near =
-                ( outRef 'd' 1
-                , pendingOf (requestOf bob "keyB" edgeInsertActive (leaving margin))
-                )
-            fresh =
-                (outRef 'd' 2, pendingOf (requestOf bob "keyC" edgeInsertActive open))
-            s = selectFold now margin (lawWith []) [expired, near, fresh]
-        included s `shouldBe` [outRef 'd' 2]
-        selExcluded s
-            `shouldBe` [ (outRef 'd' 0, WindowClosed (-5_000))
-                       , (outRef 'd' 1, WindowClosed margin)
-                       ]
+        "takes three requests of two owners, an insertion and two terminations"
+        $ do
+            let rs =
+                    [
+                        ( outRef 'c' 0
+                        , pendingOf (requestOf alice "keyA" edgeUpdateTerminal open)
+                        )
+                    , (outRef 'c' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
+                    ,
+                        ( outRef 'c' 2
+                        , pendingOf (requestOf bob "keyC" edgeUpdateTerminal open)
+                        )
+                    ]
+                s = selectFold now margin (lawWith ["keyA", "keyC"]) rs
+            included s `shouldBe` map fst rs
+            map srKind (selIncluded s)
+                `shouldBe` [FoldTermination, FoldInsertion, FoldTermination]
+            map srDeadlineMs (selIncluded s)
+                `shouldBe` replicate 3 (open + processTime)
+    it
+        "leaves a request whose window has closed, naming how far past it is"
+        $ do
+            let expired =
+                    ( outRef 'd' 0
+                    , pendingOf (requestOf alice "keyA" edgeInsertActive (leaving (-5_000)))
+                    )
+                near =
+                    ( outRef 'd' 1
+                    , pendingOf (requestOf bob "keyB" edgeInsertActive (leaving margin))
+                    )
+                fresh =
+                    (outRef 'd' 2, pendingOf (requestOf bob "keyC" edgeInsertActive open))
+                s = selectFold now margin (lawWith []) [expired, near, fresh]
+            included s `shouldBe` [outRef 'd' 2]
+            selExcluded s
+                `shouldBe` [ (outRef 'd' 0, WindowClosed (-5_000))
+                           , (outRef 'd' 1, WindowClosed margin)
+                           ]
     it "leaves an edge it does not fold and a datum it cannot read" $ do
         let other =
                 ( outRef 'e' 0
@@ -357,33 +366,36 @@ approvals = describe "the approval each request carries" $ do
         owned = approvalName edgeInsertActive "keyA" alice ("", "")
         other = approvalName edgeInsertActive "keyA" bob ("", "")
     it
-        "admits exactly one approval, at quantity one, named for this request" $
-        approvalVerdict r [(owned, 1)] `shouldBe` Nothing
+        "admits exactly one approval, at quantity one, named for this request"
+        $ approvalVerdict r [(owned, 1)] `shouldBe` Nothing
     it
-        "refuses no approval, more than one, or one at another quantity: no-approval" $ do
-        approvalVerdict r [] `shouldBe` Just "no-approval"
-        approvalVerdict r [(owned, 2)] `shouldBe` Just "no-approval"
-        approvalVerdict r [(owned, 1), (other, 1)]
-            `shouldBe` Just "no-approval"
+        "refuses no approval, more than one, or one at another quantity: no-approval"
+        $ do
+            approvalVerdict r [] `shouldBe` Just "no-approval"
+            approvalVerdict r [(owned, 2)] `shouldBe` Just "no-approval"
+            approvalVerdict r [(owned, 1), (other, 1)]
+                `shouldBe` Just "no-approval"
     it "refuses an approval named for another owner: approval-mismatch" $
         approvalVerdict r [(other, 1)] `shouldBe` Just "approval-mismatch"
     it
-        "leaves an unapproved request out by the model's reason and folds the other owner's" $ do
-        let bad =
-                (outRef 'a' 0, PendingUnapproved r (open + processTime) "no-approval")
-            good =
-                (outRef 'b' 0, pendingOf (requestOf bob "keyA" edgeInsertActive open))
-            s = selectFold now margin (lawWith []) [bad, good]
-        included s `shouldBe` [outRef 'b' 0]
-        selExcluded s `shouldBe` [(outRef 'a' 0, RefusedByLaw "no-approval")]
+        "leaves an unapproved request out by the model's reason and folds the other owner's"
+        $ do
+            let bad =
+                    (outRef 'a' 0, PendingUnapproved r (open + processTime) "no-approval")
+                good =
+                    (outRef 'b' 0, pendingOf (requestOf bob "keyA" edgeInsertActive open))
+                s = selectFold now margin (lawWith []) [bad, good]
+            included s `shouldBe` [outRef 'b' 0]
+            selExcluded s `shouldBe` [(outRef 'a' 0, RefusedByLaw "no-approval")]
     it
-        "names a closed window before a missing approval, as admission comes first" $ do
-        let late =
-                ( outRef 'a' 0
-                , PendingUnapproved r (leaving (-1) + processTime) "no-approval"
-                )
-            s = selectFold now margin (lawWith []) [late]
-        selExcluded s `shouldBe` [(outRef 'a' 0, WindowClosed (-1))]
+        "names a closed window before a missing approval, as admission comes first"
+        $ do
+            let late =
+                    ( outRef 'a' 0
+                    , PendingUnapproved r (leaving (-1) + processTime) "no-approval"
+                    )
+                s = selectFold now margin (lawWith []) [late]
+            selExcluded s `shouldBe` [(outRef 'a' 0, WindowClosed (-1))]
 
 -- ---------------------------------------------------------
 -- The law over the batch
@@ -399,20 +411,21 @@ law = describe "the model's verdict on each step of the batch" $ do
             leafLaw (leaves l) (Set.fromList ["k"]) [("k", edgeInsertActive)]
                 `shouldBe` Left "key-exists"
     it
-        "terminates an active key whose holding is live, naming every other case" $ do
-        leafLaw
-            (leaves Active)
-            (Set.fromList ["k"])
-            [("k", edgeUpdateTerminal)]
-            `shouldBe` Right ()
-        leafLaw (leaves Active) Set.empty [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "token-missing"
-        leafLaw Map.empty Set.empty [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "key-unknown"
-        leafLaw (leaves Absent) Set.empty [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "not-booked"
-        leafLaw (leaves Terminal) Set.empty [("k", edgeUpdateTerminal)]
-            `shouldBe` Left "terminal-immutable"
+        "terminates an active key whose holding is live, naming every other case"
+        $ do
+            leafLaw
+                (leaves Active)
+                (Set.fromList ["k"])
+                [("k", edgeUpdateTerminal)]
+                `shouldBe` Right ()
+            leafLaw (leaves Active) Set.empty [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "token-missing"
+            leafLaw Map.empty Set.empty [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "key-unknown"
+            leafLaw (leaves Absent) Set.empty [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "not-booked"
+            leafLaw (leaves Terminal) Set.empty [("k", edgeUpdateTerminal)]
+                `shouldBe` Left "terminal-immutable"
     it "judges each step from the state the steps before it leave" $ do
         leafLaw
             Map.empty
@@ -433,8 +446,8 @@ law = describe "the model's verdict on each step of the batch" $ do
             ]
             `shouldBe` Right ()
     it
-        "cannot terminate in the batch a key the batch inserts: its holding is not yet live" $
-        leafLaw
+        "cannot terminate in the batch a key the batch inserts: its holding is not yet live"
+        $ leafLaw
             Map.empty
             Set.empty
             [("k", edgeInsertActive), ("k", edgeUpdateTerminal)]
@@ -465,11 +478,12 @@ refusals = describe "the fold it refuses" $ do
         foldRequests (Just c) two
             `shouldBe` Right (taken a alice "keyA" :| [taken c bob "keyC"])
     it
-        "refuses a named request it leaves, naming why, and one not pending" $ do
-        foldRequests (Just b) two
-            `shouldBe` Left (NamedNotIncluded b (Just (WindowClosed (-3_000))))
-        let d = outRef 'd' 0
-        foldRequests (Just d) two `shouldBe` Left (NamedNotIncluded d Nothing)
+        "refuses a named request it leaves, naming why, and one not pending"
+        $ do
+            foldRequests (Just b) two
+                `shouldBe` Left (NamedNotIncluded b (Just (WindowClosed (-3_000))))
+            let d = outRef 'd' 0
+            foldRequests (Just d) two `shouldBe` Left (NamedNotIncluded d Nothing)
     it "refuses nothing-to-fold, naming every request it leaves" $ do
         foldRequests Nothing (FoldSelection [] [])
             `shouldBe` Left (NothingToFold [])
@@ -507,19 +521,20 @@ refusals = describe "the fold it refuses" $ do
 bound :: Spec
 bound = describe "the deadline that bounds the fold" $ do
     it
-        "is the earliest deadline among the included requests, whatever their order" $
-        property $
-            forAll (vectorOf 3 (chooseInteger (margin + 1, 10 * processTime))) $ \lefts ->
-                let rs =
-                        [ (outRef 'a' i, pendingOf (requestOf o k edgeInsertActive (leaving l)))
-                        | (i, o, k, l) <-
-                            zip4 [0 ..] [alice, bob, alice] ["keyA", "keyB", "keyC"] lefts
-                        ]
-                    s = selectFold now margin (lawWith []) rs
-                in  case NE.nonEmpty (selIncluded s) of
-                        Nothing -> counterexample "nothing included" False
-                        Just taken ->
-                            selectionDeadline taken === now + minimum lefts
+        "is the earliest deadline among the included requests, whatever their order"
+        $ property
+        $ forAll (vectorOf 3 (chooseInteger (margin + 1, 10 * processTime)))
+        $ \lefts ->
+            let rs =
+                    [ (outRef 'a' i, pendingOf (requestOf o k edgeInsertActive (leaving l)))
+                    | (i, o, k, l) <-
+                        zip4 [0 ..] [alice, bob, alice] ["keyA", "keyB", "keyC"] lefts
+                    ]
+                s = selectFold now margin (lawWith []) rs
+            in  case NE.nonEmpty (selIncluded s) of
+                    Nothing -> counterexample "nothing included" False
+                    Just taken ->
+                        selectionDeadline taken === now + minimum lefts
     it "is never set by a request the fold leaves" $ do
         let earliest =
                 ( outRef 'b' 0
@@ -552,42 +567,44 @@ spending = describe "what the built fold spends" $ do
         fee = outRef '7' 0
         booked = [outRef 'a' 0, outRef 'b' 0, outRef 'c' 0]
     it
-        "admits the state and exactly the included requests, beside the wallet's own inputs" $
-        spendsSelection
+        "admits the state and exactly the included requests, beside the wallet's own inputs"
+        $ spendsSelection
             state
             [outRef 'a' 0, outRef 'c' 0]
             booked
             [fee, outRef 'c' 0, state, outRef 'a' 0]
             `shouldBe` Right ()
     it
-        "refuses a fold that leaves out the state, an included request, or spends one it left" $ do
-        spendsSelection
-            state
-            [outRef 'a' 0, outRef 'c' 0]
-            booked
-            [fee, outRef 'a' 0, outRef 'c' 0]
-            `shouldSatisfy` isLeft
-        spendsSelection
-            state
-            [outRef 'a' 0, outRef 'c' 0]
-            booked
-            [fee, state, outRef 'a' 0]
-            `shouldSatisfy` isLeft
-        spendsSelection
-            state
-            [outRef 'a' 0, outRef 'c' 0]
-            booked
-            (state : booked)
-            `shouldSatisfy` isLeft
+        "refuses a fold that leaves out the state, an included request, or spends one it left"
+        $ do
+            spendsSelection
+                state
+                [outRef 'a' 0, outRef 'c' 0]
+                booked
+                [fee, outRef 'a' 0, outRef 'c' 0]
+                `shouldSatisfy` isLeft
+            spendsSelection
+                state
+                [outRef 'a' 0, outRef 'c' 0]
+                booked
+                [fee, state, outRef 'a' 0]
+                `shouldSatisfy` isLeft
+            spendsSelection
+                state
+                [outRef 'a' 0, outRef 'c' 0]
+                booked
+                (state : booked)
+                `shouldSatisfy` isLeft
     it
-        "admits a spent set exactly when it is the state, the selection and no other pending request" $
-        property $
-            forAll (sublistOf booked) $ \chosen ->
-                forAll (sublistOf (state : fee : booked)) $ \spent ->
-                    let exact =
-                            state `elem` spent
-                                && sort [i | i <- spent, i `elem` booked] == sort chosen
-                    in  isRight (spendsSelection state chosen booked spent) === exact
+        "admits a spent set exactly when it is the state, the selection and no other pending request"
+        $ property
+        $ forAll (sublistOf booked)
+        $ \chosen ->
+            forAll (sublistOf (state : fee : booked)) $ \spent ->
+                let exact =
+                        state `elem` spent
+                            && sort [i | i <- spent, i `elem` booked] == sort chosen
+                in  isRight (spendsSelection state chosen booked spent) === exact
 
 -- ---------------------------------------------------------
 -- Payouts
@@ -606,15 +623,16 @@ payouts = describe "each payout reaches its own owner" $ do
             [(alice, 3_000_000), (bob, 2_000_000)]
             `shouldBe` [(bob, 3_000_000, 2_000_000)]
     it
-        "sums what two requests owe one owner, and names a payment short of the sum" $ do
-        unpaidOwners
-            [(alice, 2_000_000), (alice, 2_000_000), (bob, 1)]
-            [(alice, 2_000_000), (bob, 1)]
-            `shouldBe` [(alice, 4_000_000, 2_000_000)]
-        unpaidOwners
-            [(alice, 2_000_000), (alice, 2_000_000)]
-            [(alice, 1_000_000), (alice, 3_000_000)]
-            `shouldBe` []
+        "sums what two requests owe one owner, and names a payment short of the sum"
+        $ do
+            unpaidOwners
+                [(alice, 2_000_000), (alice, 2_000_000), (bob, 1)]
+                [(alice, 2_000_000), (bob, 1)]
+                `shouldBe` [(alice, 4_000_000, 2_000_000)]
+            unpaidOwners
+                [(alice, 2_000_000), (alice, 2_000_000)]
+                [(alice, 1_000_000), (alice, 3_000_000)]
+                `shouldBe` []
     it "names an owner nothing is paid to" $
         unpaidOwners [(alice, 1), (bob, 1)] [(alice, 1)]
             `shouldBe` [(bob, 1, 0)]
@@ -626,22 +644,23 @@ payouts = describe "each payout reaches its own owner" $ do
 journalLines :: Spec
 journalLines = describe "the journal binds every transition to the fold" $ do
     it
-        "chains the transitions from the state's root before to its root after" $ do
-        let ts =
-                chainTransitions
-                    "r0"
-                    [ ("aa#0", "6b31", edgeInsertActive, "active:01", "r1")
-                    , ("bb#1", "6b32", edgeUpdateTerminal, "terminal", "r2")
-                    , ("cc#2", "6b33", edgeInsertActive, "active:03", "r3")
-                    ]
-        map transitionRootBefore ts `shouldBe` ["r0", "r1", "r2"]
-        map transitionRootAfter ts `shouldBe` ["r1", "r2", "r3"]
-        map transitionRequest ts `shouldBe` map Just ["aa#0", "bb#1", "cc#2"]
-        map transitionKey ts `shouldBe` ["6b31", "6b32", "6b33"]
-        map transitionEdge ts
-            `shouldBe` [edgeInsertActive, edgeUpdateTerminal, edgeInsertActive]
-        map transitionExpect ts
-            `shouldBe` ["active:01", "terminal", "active:03"]
+        "chains the transitions from the state's root before to its root after"
+        $ do
+            let ts =
+                    chainTransitions
+                        "r0"
+                        [ ("aa#0", "6b31", edgeInsertActive, "active:01", "r1")
+                        , ("bb#1", "6b32", edgeUpdateTerminal, "terminal", "r2")
+                        , ("cc#2", "6b33", edgeInsertActive, "active:03", "r3")
+                        ]
+            map transitionRootBefore ts `shouldBe` ["r0", "r1", "r2"]
+            map transitionRootAfter ts `shouldBe` ["r1", "r2", "r3"]
+            map transitionRequest ts `shouldBe` map Just ["aa#0", "bb#1", "cc#2"]
+            map transitionKey ts `shouldBe` ["6b31", "6b32", "6b33"]
+            map transitionEdge ts
+                `shouldBe` [edgeInsertActive, edgeUpdateTerminal, edgeInsertActive]
+            map transitionExpect ts
+                `shouldBe` ["active:01", "terminal", "active:03"]
     it "reads back the transitions a prepared line was written with" $
         withSystemTempDirectory "fold-journal" $ \dir -> do
             let ts =
@@ -739,25 +758,46 @@ reconciliation = describe "reconciliation covers every included request" $ do
     let keyA = "keyA"
         keyB = "keyB"
         envA = envelopeOf alice keyA
+        envB = envelopeOf bob keyB
+        root n = hex (BS.replicate 32 n)
         holding =
             ( outRef '9' 0
             , mkBasicTxOut
                 (addrFromKeyHashBytes Testnet alice)
                 (MaryValue (Coin 1) mempty)
             )
+        -- The fold's first output: the registry's state, at this root.
+        stateAt r =
+            snd holding
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        ( toPlcData
+                            ( StateDatum
+                                OnChainTokenState
+                                    { stateRoot = OnChainRoot (BS.replicate 32 r)
+                                    , stateMaxFee = 1_000_000
+                                    , stateProcessTime = processTime
+                                    , stateRetractTime = 30_000
+                                    , stateAppPolicy = toBuiltin (BS.replicate 28 1)
+                                    , stateActivePolicy = toBuiltin (BS.replicate 28 2)
+                                    , stateAbsentPolicy = toBuiltin (BS.replicate 28 3)
+                                    , stateTerminalPolicy = toBuiltin (BS.replicate 28 4)
+                                    }
+                            )
+                        )
         ts =
             chainTransitions
-                "r0"
+                (root 0)
                 [
                     ( "aa#0"
                     , hex keyA
                     , edgeInsertActive
                     , "active:" <> hex (envelopeHash envA)
-                    , "r1"
+                    , root 1
                     )
-                , ("bb#0", hex keyB, edgeUpdateTerminal, "terminal", "r2")
+                , ("bb#0", hex keyB, edgeUpdateTerminal, "terminal", root 2)
                 ]
-        recovery p =
+        recovery out0 p =
             Recovery
                 { recTx = journalTxId p
                 , recStep = "fold"
@@ -765,27 +805,29 @@ reconciliation = describe "reconciliation covers every included request" $ do
                 , recExcluded = False
                 , recNote = ""
                 , recPrepared = Just p
-                , recFirstOutput = Just (snd holding)
+                , recFirstOutput = Just out0
                 , recBody = Nothing
-                , recLast = (blank (journalTxId p) "confirmed")
+                , recLast = blank (journalTxId p) "confirmed"
                 }
         reader settled key
             | key == keyA = pure (Right Active, Right (holding, envA))
             | key == keyB && settled = pure (Right Terminal, Left "no holding")
-            | otherwise =
-                pure (Right Active, Right (holding, envelopeOf bob keyB))
+            | otherwise = pure (Right Active, Right (holding, envB))
         observedLines dir = filter ((== "observed") . journalEvent) <$> readJournal dir
-    it "observes a two-request fold once every included key reads back" $
+    it "observes a two-request fold once its root and every key read back" $
         withSystemTempDirectory "fold-observe" $ \dir -> do
-            let p = prepared "t1" ts
-            verdicts <- observe "update" dir (Just (reader True)) [recovery p]
+            verdicts <-
+                observe
+                    "update"
+                    dir
+                    (Just (reader True))
+                    [recovery (stateAt 2) (prepared "t1" ts)]
             map fst verdicts `shouldBe` ["t1"]
-            map (length . snd) verdicts `shouldBe` [2]
-            all (all isRight . snd) verdicts `shouldBe` True
+            map (map isRight . snd) verdicts `shouldBe` [[True, True, True]]
             seen <- observedLines dir
             map journalTxId seen `shouldBe` ["t1"]
-            forM_ [hex keyA, hex keyB] $ \k ->
-                fmap (T.isInfixOf k) (journalDetail =<< headOrNothing seen)
+            forM_ [hex keyA, hex keyB, root 2] $ \w ->
+                fmap (T.isInfixOf w) (journalDetail =<< headOrNothing seen)
                     `shouldBe` Just True
     it
         "does not observe it while one included key has not reached its after-state" $
@@ -795,9 +837,56 @@ reconciliation = describe "reconciliation covers every included request" $ do
                     "update"
                     dir
                     (Just (reader False))
-                    [recovery (prepared "t1" ts)]
-            map (map isRight . snd) verdicts `shouldBe` [[True, False]]
+                    [recovery (stateAt 2) (prepared "t1" ts)]
+            map (map isRight . snd) verdicts `shouldBe` [[True, True, False]]
             observedLines dir >>= (`shouldBe` [])
+    it "does not observe it while the state output carries another root" $
+        withSystemTempDirectory "fold-observe" $ \dir -> do
+            verdicts <-
+                observe
+                    "update"
+                    dir
+                    (Just (reader True))
+                    [recovery (stateAt 1) (prepared "t1" ts)]
+            map (map isRight . snd) verdicts `shouldBe` [[False, True, True]]
+            observedLines dir >>= (`shouldBe` [])
+    it
+        "reads a key the batch moves twice against its last transition only" $
+        withSystemTempDirectory "fold-observe" $ \dir -> do
+            let twice =
+                    chainTransitions
+                        (root 0)
+                        [
+                            ( "aa#0"
+                            , hex keyB
+                            , edgeInsertActive
+                            , "active:" <> hex (envelopeHash envB)
+                            , root 1
+                            )
+                        ,
+                            ( "bb#0"
+                            , hex keyA
+                            , edgeInsertActive
+                            , "active:" <> hex (envelopeHash envA)
+                            , root 2
+                            )
+                        , ("cc#0", hex keyB, edgeUpdateTerminal, "terminal", root 3)
+                        ]
+            verdicts <-
+                observe
+                    "update"
+                    dir
+                    (Just (reader True))
+                    [recovery (stateAt 3) (prepared "t3" twice)]
+            map (map isRight . snd) verdicts `shouldBe` [[True, True, True]]
+            map journalTxId <$> observedLines dir >>= (`shouldBe` ["t3"])
+            stale <-
+                observe
+                    "update"
+                    dir
+                    (Just (reader False))
+                    [recovery (stateAt 3) (prepared "t4" twice)]
+            map (map isRight . snd) stale `shouldBe` [[True, False, True]]
     it
         "still observes a fold journalled before batches, as a batch of one" $
         withSystemTempDirectory "fold-observe" $ \dir -> do
@@ -806,11 +895,12 @@ reconciliation = describe "reconciliation covers every included request" $ do
                         { journalKey = Just (hex keyA)
                         , journalEdge = Just edgeInsertActive
                         , journalExpect = Just ("active:" <> hex (envelopeHash envA))
-                        , journalRootBefore = Just "r0"
-                        , journalRootAfter = Just "r1"
+                        , journalRootBefore = Just (root 0)
+                        , journalRootAfter = Just (root 1)
                         }
-            verdicts <- observe "update" dir (Just (reader True)) [recovery old]
-            map (map isRight . snd) verdicts `shouldBe` [[True]]
+            verdicts <-
+                observe "update" dir (Just (reader True)) [recovery (stateAt 1) old]
+            map (map isRight . snd) verdicts `shouldBe` [[True, True]]
             map journalTxId <$> observedLines dir >>= (`shouldBe` ["t0"])
     it
         "returns every included request to pending and restores the root before" $ do
@@ -827,7 +917,7 @@ reconciliation = describe "reconciliation covers every included request" $ do
         journalTransitions line `shouldBe` Just ts
         map transitionRequest (foldTransitions line)
             `shouldBe` map Just ["aa#0", "bb#0"]
-        journalRootBefore line `shouldBe` Just "r0"
+        journalRootBefore line `shouldBe` Just (root 0)
   where
     headOrNothing (x : _) = Just x
     headOrNothing [] = Nothing
