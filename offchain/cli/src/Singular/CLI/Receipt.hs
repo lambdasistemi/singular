@@ -128,13 +128,13 @@ data JournalEntry = JournalEntry
     @payload:ENVELOPEHASH@ or @terminal@
     -}
     , journalEdge :: Maybe Integer
-    -- ^ At @prepared@, for a fold: the edge it commits to the mirror
+    -- ^ At @prepared@, for a fold: the edge its public fold applies
     , journalRootBefore :: Maybe Text
     {- ^ At @prepared@, for a fold: the root it folds from. At a fold's
-    @rolled-back@: the root the mirror returned to
+    @rolled-back@: the restored public root
     -}
     , journalRootAfter :: Maybe Text
-    -- ^ At @prepared@, for a fold: the root the mirror commits to after it
+    -- ^ At @prepared@, for a fold: the public root expected after it
     , journalTime :: Maybe Text
     {- ^ When the line was appended, ISO-8601 UTC with millisecond precision.
     Stamped by 'appendJournal'; absent from lines written before it was

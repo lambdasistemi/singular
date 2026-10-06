@@ -6,18 +6,13 @@ Module      : Singular.CLI.Registry
 Description : The saved registry a command attaches to, and its identity checks
 License     : Apache-2.0
 
-A registry directory holds four files, each with one owner:
+A registry directory keeps its identity and submission journal:
 
 * @registry.json@ — the public saved identity ('RegistryConfig'): the
   network, the wallet address the registry was booted from, the open
   application and the three witness policies, and the deployment record
   ("Singular.Registry.Deployment") naming the seed, the token and the
   published reference outputs. No signing key, no key path.
-* @registry.mirror.json@ — the authenticated trie, the deployment
-  family's own proof mirror.
-* @state.json@ — the commitment the last confirmed write left
-  ('LocalState'), kept apart from the mirror so an altered mirror and a
-  moved chain are told apart.
 * @journal.jsonl@ — every submission and confirmation, appended
   ("Singular.CLI.Receipt").
 
@@ -29,7 +24,6 @@ module Singular.CLI.Registry
     ( -- * Saved identity
       RegistryConfig (..)
     , Pins (..)
-    , LocalState (..)
     , configVersion
     , mkRegistryConfig
 
@@ -47,11 +41,8 @@ module Singular.CLI.Registry
       -- * Files
     , configPath
     , pendingPath
-    , statePath
     , readConfig
     , writeConfig
-    , readLocalState
-    , writeLocalState
 
       -- * Identity checks
     , IdentityError (..)
@@ -77,7 +68,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Word (Word32, Word64)
+import Data.Word (Word32)
 import GHC.Generics (Generic)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
@@ -111,10 +102,8 @@ import Singular.Registry.Config.Application
 import Singular.Registry.Deployment
     ( CageParts (..)
     , Deployment
-    , mirrorPathFor
     , renderAddrBytes
     , renderOutRef
-    , replaceDurably
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
@@ -154,21 +143,6 @@ data RegistryConfig = RegistryConfig
 instance ToJSON RegistryConfig where
     toJSON = Aeson.genericToJSON Aeson.defaultOptions
 instance FromJSON RegistryConfig where
-    parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
-
--- | The commitment the last confirmed write left.
-data LocalState = LocalState
-    { localVersion :: Int
-    , localToken :: Text
-    , localRoot :: Text
-    , localLastTx :: Maybe Text
-    , localLastSlot :: Maybe Word64
-    }
-    deriving stock (Eq, Show, Generic)
-
-instance ToJSON LocalState where
-    toJSON = Aeson.genericToJSON Aeson.defaultOptions
-instance FromJSON LocalState where
     parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
 
 -- | The file format version this build reads and writes.
@@ -295,9 +269,8 @@ interrupted create stays inspectable and is never booted again.
 pendingPath :: FilePath -> FilePath
 pendingPath dir = dir </> "registry.pending.json"
 
-configPath, statePath :: FilePath -> FilePath
+configPath :: FilePath -> FilePath
 configPath dir = dir </> "registry.json"
-statePath dir = dir </> "state.json"
 
 readJsonFile :: (FromJSON a) => String -> FilePath -> IO a
 readJsonFile what path =
@@ -323,16 +296,6 @@ readConfig dir = do
 
 writeConfig :: FilePath -> RegistryConfig -> IO ()
 writeConfig dir = writeJsonFile (configPath dir)
-
-readLocalState :: FilePath -> IO LocalState
-readLocalState dir = readJsonFile "registry state" (statePath dir)
-
-writeLocalState :: FilePath -> LocalState -> IO ()
-writeLocalState dir =
-    replaceDurably (statePath dir)
-        . BL.toStrict
-        . (<> "\n")
-        . encodePretty
 
 -- ---------------------------------------------------------
 -- Identity checks
@@ -481,8 +444,6 @@ refuseExisting dir = do
                 doesFileExist
                 [ configPath dir
                 , pendingPath dir
-                , statePath dir
-                , mirrorPathFor (configPath dir)
                 , dir </> "journal.jsonl"
                 ]
     pure (if present then Left (RegistryExists dir) else Right ())

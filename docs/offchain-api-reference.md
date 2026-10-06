@@ -94,7 +94,7 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/TrieState.hs" data-api="module">Singular.Registry.TrieState</a> — <a href="../offchain/lib/Singular/Registry/TrieState.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Core.hs" data-api="module">Singular.Registry.TrieState.Core</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Core.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="module">Singular.Registry.TrieState.Fixture</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Fixture.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/TrieState/Mirror.hs" data-api="module">Singular.Registry.TrieState.Mirror</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Mirror.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="module">Singular.Registry.TrieState.Lineage</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Lineage.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="module">Singular.Registry.TrieState.Types</a> — <a href="../offchain/lib/Singular/Registry/TrieState/Types.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="module">Singular.Registry.TxBuilder.Boot</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Boot.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="module">Singular.Registry.TxBuilder.ConnectedFold</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/ConnectedFold.hs" data-api="source">source</a>

@@ -146406,17 +146406,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-43": {
-   "audio_sha256": "b42922d687dcf415c90365caea9773b6fe4d349f6940035af5cb4cbdd313c91b",
-   "characters": 43,
-   "cost": 2.666e-05,
-   "duration": 2.75,
+   "audio_sha256": "d60bb57ef6181d2ff7686d2c179178c9ec99ef0f5d4d4467e5a30ef986a9972c",
+   "characters": 44,
+   "cost": 2.728e-05,
+   "duration": 2.875,
    "index": 43,
-   "key": "4e9d277f0e3c36c01f710d1309cfab3f4b9840337b321524b7206dbc2ceec4a3",
+   "key": "04d15770efecd48725cc64b432f59062f4c35d508734bbd116f50ba0e1e3feab",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 300,
    "section": "what-this-reference-contains",
-   "sent_text": "Singular.Registry.TrieState.Mirror — source",
-   "text": "Singular.Registry.TrieState.Mirror — source",
+   "sent_text": "Singular.Registry.TrieState.Lineage — source",
+   "text": "Singular.Registry.TrieState.Lineage — source",
    "words": [
     {
      "end": 0.575,
@@ -146449,18 +146449,18 @@
      "text": "."
     },
     {
-     "end": 1.987,
+     "end": 2.062,
      "start": 1.675,
-     "text": "Mirror"
+     "text": "Lineage"
     },
     {
-     "end": 2.062,
-     "start": 1.987,
+     "end": 2.125,
+     "start": 2.062,
      "text": "—"
     },
     {
-     "end": 2.75,
-     "start": 2.062,
+     "end": 2.875,
+     "start": 2.125,
      "text": "source"
     }
    ]

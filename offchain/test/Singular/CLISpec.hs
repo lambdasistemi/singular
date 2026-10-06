@@ -23,33 +23,28 @@ not these.
 -}
 module Singular.CLISpec (spec) where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception
     ( ErrorCall (..)
-    , SomeException
     , displayException
     , fromException
     , toException
-    , try
     )
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Either (fromLeft)
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
-import System.Directory (createDirectoryIfMissing, listDirectory)
+import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
-import System.Posix.Process (forkProcess, getProcessStatus)
-import System.Posix.Signals (sigKILL, signalProcess)
 import Test.Hspec
 
 import Data.Aeson qualified as Aeson
@@ -82,11 +77,8 @@ import Singular.CLI.Registry
 import Singular.CLI.Session (CommandFailure (..), admitSubmissions)
 import Singular.Registry.Deployment
     ( Deployment (..)
-    , loadMirror
-    , mirrorPathFor
     , parseOutRef
     , renderOutRef
-    , saveMirror
     )
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -766,16 +758,13 @@ savedIdentity = describe "the saved identity" $ do
             createDirectoryIfMissing True used
             BS.writeFile (journalPath used) ""
             refuseExisting used `shouldReturn` Left (RegistryExists used)
-    it "keeps the proof mirror's root across a save and a load" $
+    it "ignores retired trie files when admitting a registry directory" $
         withTempDir $ \dir -> do
-            (db, root) <- walked [(key, edgeInsertActive)]
-            let manifest = configPath dir
-                tid = TokenId (AssetName "tok")
-            saveMirror manifest (Map.singleton tid db)
-            loaded <- loadMirror manifest
-            case Map.lookup tid loaded of
-                Nothing -> expectationFailure "the mirror lost the registry"
-                Just back -> rootOfDb back `shouldReturn` root
+            let used = dir </> "retired-files"
+            createDirectoryIfMissing True used
+            BS.writeFile (used </> "state.json") "corrupted saved root"
+            BS.writeFile (used </> "registry.mirror.json") "corrupted mirror"
+            refuseExisting used `shouldReturn` Right ()
   where
     isWallet = \case WalletMismatch _ _ -> True; _ -> False
     isNotInWallet = \case SeedNotInWallet _ -> True; _ -> False
@@ -982,16 +971,6 @@ localProof = describe "a key's leaf proven against the observed root" $ do
             provesAbsent db root key `shouldBe` False
             provesAbsent db root "never-bound" `shouldBe` True
             provesAbsent db otherRoot "never-bound" `shouldBe` False
-    it "reads the same through a saved mirror whose key index was dropped" $
-        withTempDir $ \dir -> do
-            (db, root) <- walked [(key, edgeInsertActive)]
-            let manifest = configPath dir
-                tid = TokenId (AssetName "tok")
-            saveMirror manifest (Map.singleton tid db{mpfInMemoryKV = Map.empty})
-            loaded <- loadMirror manifest
-            case Map.lookup tid loaded of
-                Nothing -> expectationFailure "the mirror lost the registry"
-                Just back -> authenticatedLeaf back key root `shouldReturn` Right Active
     it "names the four leaves in the model's words" $
         map leafName [minBound .. maxBound]
             `shouldBe` ["unknown", "absent", "active", "terminal"]
@@ -1038,108 +1017,6 @@ recovery = describe "recovery after an uncertain submission" $ do
                        , Just CaseIncluded
                        , Nothing
                        ]
-    it
-        "applies a journalled fold's edge only from its root before, and only onto the ledger's root"
-        $ do
-            (_, r0) <- walked [("other", edgeInsertActive)]
-            (_, r1) <-
-                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
-            (_, r2) <-
-                walked
-                    [ ("other", edgeInsertActive)
-                    , (key, edgeInsertActive)
-                    , ("third", edgeInsertActive)
-                    ]
-            let fold = foldLine (hexT r0) (hexT r1)
-            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
-            mirrorDecision (hexT r1) (hexT r1) fold `shouldBe` AlreadyApplied
-            mirrorDecision (hexT r0) (hexT r2) fold `shouldBe` EdgeStale
-            mirrorDecision (hexT r2) (hexT r1) fold `shouldBe` EdgeStale
-            mirrorDecision (hexT r0) (hexT r1) (line "b" "prepared")
-                `shouldBe` NoEdge
-    it
-        "never applies an edge twice: once walked, the same line is already applied"
-        $ do
-            (_, r0) <- walked [("other", edgeInsertActive)]
-            (_, r1) <-
-                walked [("other", edgeInsertActive), (key, edgeInsertActive)]
-            let fold = foldLine (hexT r0) (hexT r1)
-                tid = TokenId (AssetName "tok")
-            (db0, _) <- walked [("other", edgeInsertActive)]
-            (tm, _) <- mkPureTrieManagerFrom (Map.singleton tid db0)
-            mirrorDecision (hexT r0) (hexT r1) fold `shouldBe` ApplyEdge
-            Root now <-
-                withTrie tm tid $ \t -> walkEdge t key edgeInsertActive >> getRoot t
-            now `shouldBe` r1
-            mirrorDecision (hexT now) (hexT r1) fold `shouldBe` AlreadyApplied
-    it "leaves state.json whole under a writer killed mid-replacement" $
-        withTempDir $ \dir -> do
-            let commitment r c =
-                    LocalState
-                        { localVersion = 1
-                        , localToken = "746f6b"
-                        , localRoot = r
-                        , localLastTx = Just (T.replicate 2_000_000 c)
-                        , localLastSlot = Nothing
-                        }
-                old = commitment "aa" "a"
-                new = commitment "bb" "b"
-            writeLocalState dir old
-            killedWriter
-                40
-                (\i -> writeLocalState dir (if even i then new else old))
-                $ do
-                    back <- try (readLocalState dir)
-                    case back of
-                        Right s
-                            | s == old || s == new -> pure ()
-                            | otherwise ->
-                                expectationFailure "state.json holds a third commitment"
-                        Left (e :: SomeException) ->
-                            expectationFailure
-                                ("state.json is torn: " <> take 160 (show e))
-    it "leaves the mirror whole under a writer killed mid-replacement" $
-        withTempDir $ \dir -> do
-            let manifest = configPath dir
-                tid = TokenId (AssetName "tok")
-                keys n =
-                    [ (BC.pack ("key-" <> show i), edgeInsertActive) | i <- [1 .. n :: Int]
-                    ]
-            (small, _) <- walked (keys 300)
-            (large, _) <- walked (keys 600)
-            saveMirror manifest (Map.singleton tid small)
-            oldBytes <- BS.readFile (mirrorFile manifest)
-            saveMirror manifest (Map.singleton tid large)
-            newBytes <- BS.readFile (mirrorFile manifest)
-            killedWriter
-                40
-                ( \i ->
-                    saveMirror
-                        manifest
-                        (Map.singleton tid (if even i then small else large))
-                )
-                $ do
-                    now <- BS.readFile (mirrorFile manifest)
-                    unless (now == oldBytes || now == newBytes) $
-                        expectationFailure
-                            ( "the mirror is torn: "
-                                <> show (BS.length now)
-                                <> " bytes, neither the old "
-                                <> show (BS.length oldBytes)
-                                <> " nor the new "
-                                <> show (BS.length newBytes)
-                            )
-    it "leaves no partial file behind a completed replacement" $
-        withTempDir $ \dir -> do
-            (db, _) <- walked [(key, edgeInsertActive)]
-            saveMirror
-                (configPath dir)
-                (Map.singleton (TokenId (AssetName "tok")) db)
-            writeLocalState
-                dir
-                (LocalState 1 "746f6b" "aa" Nothing Nothing)
-            sort <$> listDirectory dir
-                `shouldReturn` ["registry.mirror.json", "state.json"]
   where
     line t e =
         JournalEntry
@@ -1163,14 +1040,6 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalRootAfter = Nothing
             , journalTime = Nothing
             }
-    foldLine from to =
-        (line "f" "prepared")
-            { journalKey = Just (hexT key)
-            , journalEdge = Just edgeInsertActive
-            , journalRootBefore = Just from
-            , journalRootAfter = Just to
-            }
-    mirrorFile = mirrorPathFor
 
 -- ---------------------------------------------------------
 -- Rollback and exclusion
@@ -1293,100 +1162,11 @@ rollback = describe "a rolled-back inclusion and an excluded transaction" $ do
                 excludedAt (SlotNo 900) bound (Just c) Undetermined `shouldBe` False
             forM_ [CaseIncluded, CaseRejected, CaseExcluded] $ \c ->
                 excludedAt (SlotNo 900) bound (Just c) gone `shouldBe` False
-    it
-        "returns the mirror to the root before the earliest rolled-back fold, rebuilt from the folds still on chain"
-        $ do
-            (_, r0) <- walked []
-            (_, r1) <- walked [("k1", edgeInsertActive)]
-            (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
-            (_, r3) <-
-                walked
-                    [ ("k1", edgeInsertActive)
-                    , ("k2", edgeInsertActive)
-                    , ("k2", edgeUpdateTerminal)
-                    ]
-            (_, r4) <-
-                walked
-                    [ ("k1", edgeInsertActive)
-                    , ("k2", edgeInsertActive)
-                    , ("k4", edgeInsertActive)
-                    ]
-            let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
-                f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
-                f3 = foldPrepared "f3" "k2" edgeUpdateTerminal r2 r3
-                lost = foldPrepared "lost" "k9" edgeInsertActive r1 r1
-                settled t = phases t ["submitted", "confirmed", "observed"]
-                history =
-                    [f1]
-                        <> settled "f1"
-                        <> [lost]
-                        <> phases "lost" ["submit-unknown", "excluded"]
-                        <> [f2]
-                        <> settled "f2"
-                        <> [f3]
-                        <> settled "f3"
-                        <> phases "book" ["prepared", "submitted", "confirmed", "observed"]
-            rewindOf history `shouldBe` Nothing
-            rewindOf (history <> phases "book" ["rolled-back"]) `shouldBe` Nothing
-            rewindOf (history <> phases "f3" ["rolled-back"])
-                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
-            rewindOf
-                (history <> phases "f3" ["rolled-back"] <> phases "f2" ["rolled-back"])
-                `shouldBe` Just (Rewind (hexT r1) [f1])
-            rewindOf
-                (history <> phases "f3" ["rolled-back", "excluded"])
-                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
-            -- A fold built after the rollback was built on the returned root:
-            -- the rewind is done, until that fold is rolled back in turn.
-            let f4 = foldPrepared "f4" "k4" edgeInsertActive r2 r4
-                rebuilt =
-                    history
-                        <> phases "f3" ["rolled-back", "excluded"]
-                        <> [f4]
-                        <> phases "f4" ["submitted", "confirmed", "observed"]
-            rewindOf rebuilt `shouldBe` Nothing
-            rewindOf (rebuilt <> phases "f4" ["rolled-back"])
-                `shouldBe` Just (Rewind (hexT r2) [f1, f2])
-            rewindOf
-                ( history
-                    <> phases "f3" ["rolled-back"]
-                    <> phases "f3" ["confirmed", "observed"]
-                )
-                `shouldBe` Nothing
-    it
-        "replays fold edges from the empty trie, each from its journalled root before to its root after"
-        $ do
-            (_, r0) <- walked []
-            (_, r1) <- walked [("k1", edgeInsertActive)]
-            (_, r2) <- walked [("k1", edgeInsertActive), ("k2", edgeInsertActive)]
-            let f1 = foldPrepared "f1" "k1" edgeInsertActive r0 r1
-                f2 = foldPrepared "f2" "k2" edgeInsertActive r1 r2
-                replayed folds = do
-                    let tid = TokenId (AssetName "tok")
-                    (tm, _) <- mkPureTrieManagerFrom Map.empty
-                    createTrie tm tid
-                    withTrie tm tid (`replayFolds` folds)
-            replayed [f1, f2] `shouldReturn` Right r2
-            replayed [f1] `shouldReturn` Right r1
-            replayed [] `shouldReturn` Right r0
-            -- A fold that does not start from the root reached, or does not
-            -- end at its journalled root after, stops the replay.
-            isLeft <$> replayed [f2] `shouldReturn` True
-            isLeft <$> replayed [f1, f2{journalRootAfter = Just (hexT r1)}]
-                `shouldReturn` True
   where
     phases t = map (jline t)
     outRef c i =
         either error id $
             parseOutRef (T.pack (replicate 64 c <> "#" <> show (i :: Int)))
-    foldPrepared t k edge from to =
-        (jline t "prepared")
-            { journalKey = Just (hexT k)
-            , journalEdge = Just edge
-            , journalRootBefore = Just (hexT from)
-            , journalRootAfter = Just (hexT to)
-            }
-    isLeft = either (const True) (const False)
 
 -- | A bare journal line of one phase of one transaction.
 jline :: T.Text -> T.Text -> JournalEntry
@@ -1412,17 +1192,6 @@ jline t e =
         , journalRootAfter = Nothing
         , journalTime = Nothing
         }
-
-{- | Start a process that rewrites a file over and over, kill it at a
-different moment each round, and run the check on what it left.
--}
-killedWriter :: Int -> (Int -> IO ()) -> IO () -> IO ()
-killedWriter rounds write check = forM_ [1 .. rounds] $ \r -> do
-    pid <- forkProcess (mapM_ write [0 ..])
-    threadDelay (2_000 + (r * 7_919) `mod` 40_000)
-    signalProcess sigKILL pid
-    _ <- getProcessStatus True False pid
-    check
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir = withSystemTempDirectory "singular-cli-spec"

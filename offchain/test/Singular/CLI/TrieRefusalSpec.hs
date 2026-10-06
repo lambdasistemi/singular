@@ -216,6 +216,10 @@ expected f =
     causeOnly c = [("cause", String c)]
     withOutput c i = causeOnly c <> [("output", String (outRefText i))]
     incomplete = \case
+        ProviderHistoryFailure providerFailure ->
+            [ ("cause", toJSON ("provider-history-failure" :: Text))
+            , ("providerFailure", toJSON (show providerFailure))
+            ]
         MissingTransaction -> causeOnly "missing-transaction"
         UnresolvedInput i -> withOutput "unresolved-input" i
         ConflictingResolution i -> withOutput "conflicting-resolution" i

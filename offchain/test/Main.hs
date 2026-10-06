@@ -26,6 +26,7 @@ import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.IndexerViewSpec qualified
 import Singular.Registry.LifecycleSpec qualified
+import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
 import Singular.Registry.LocalServicesCallerSpec qualified
 import Singular.Registry.NetworkTimeSpec qualified
@@ -140,6 +141,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.Lifecycle" [Provider])
         Singular.Registry.LifecycleSpec.spec
+    describe
+        (tagged "Singular.Registry.Lineage" [History, Provider, Trie])
+        Singular.Registry.LineageSpec.spec
     describe
         (tagged "Singular.Registry.Types" [Provider])
         Singular.Registry.TypesSpec.spec

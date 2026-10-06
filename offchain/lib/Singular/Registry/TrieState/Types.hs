@@ -42,6 +42,7 @@ import Singular.Registry.Evidence
     , SessionId (..)
     )
 import Singular.Registry.Ledger (AssetName, Root, TxId, TxIn)
+import Singular.Registry.LedgerProvider (HistoryFailure)
 import Singular.Registry.Types (ProofStep)
 
 newtype StatePolicyId = StatePolicyId ByteString
@@ -126,6 +127,8 @@ data Parting
 data Incomplete
     = -- | A transaction the lineage spends through is not in the history.
       MissingTransaction
+    | -- | The acquired provider refused reconstruction; every datum is retained.
+      ProviderHistoryFailure HistoryFailure
     | -- | A spent input is resolved neither by the history nor by the map.
       UnresolvedInput TxIn
     | -- | The map resolves an input differently from the transaction that made it.

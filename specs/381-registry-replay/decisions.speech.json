@@ -69,13 +69,13 @@
       "pause": 400
     }
   ],
-  "only-the-booker-folds-an-insertion": [
+  "folding-an-insertion-needs-the-bookers-preimage-today": [
     {
-      "text": "Only the booker folds an insertion.",
+      "text": "Folding an insertion needs the booker's preimage today.",
       "pause": 500
     },
     {
-      "text": "As a folder, I can fold any request whose fold needs only public data. An insertion's request names the hash of its envelope, which the booker alone holds (offchain/cli/src/Singular/CLI/Preimage.hs:9-14). In the journey, each actor folds its own insertions. A cross-actor insertion fold is a control that must be refused by its existing name. A termination fold needs no envelope and runs across actors. Publishing envelopes, or a fold that takes an envelope file, is a separate change already named in the recovery ticket's limits.",
+      "text": "This is a limit, not a decision. An insertion's request carries only the hash of the datum it delivers, and today a fold that delivers a datum needs the booker's preimage file (offchain/cli/src/Singular/CLI/Preimage.hs:9-14), so only the booker can fold it. The operator contradicted that as a design on October 6: it would make every application invent an off-chain service. The design is open in issue 419. No control asserts the cross-actor refusal as correct behaviour; the existing unit test checks only today's refusal. A termination fold needs no preimage and runs across actors.",
       "pause": 400
     }
   ],
@@ -105,7 +105,7 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "282a79f43ee8882e684616cb5479692bfc586e1354732ebc300673a4316d1e5c"
+    "sha256": "75f67c64812749a470c7ad5a620e069a3065db9524bee30b103eb68b17b46d86"
   },
   "failed-transactions-and-named-refusals-land-first": [
     {
@@ -122,6 +122,16 @@
     },
     {
       "text": "Both changes land on main before the commands move onto the replay, so the provider ticket builds on the payload-carrying type rather than rebasing across it.",
+      "pause": 400
+    }
+  ],
+  "recovery-is-observed-from-public-history": [
+    {
+      "text": "Recovery is observed from public history.",
+      "pause": 500
+    },
+    {
+      "text": "As a user whose process died after a fold was confirmed, my next command observes that fold once from public history and never submits it again; after a rollback it reads the restored public root. With the mirror and the saved root gone, the receipt fields that reported their writes (stateFollowed, mirrorRewound, mirrorAdvanced, and applied where it meant a mirror write) are removed, and the recovery controls check the replayed root, a single journal entry and no second submission instead. One conformance clause, inspect with the saved proof material moved aside, loses its witness because inspect no longer reads that material; it is published uncovered with that reason, by the epic owner's ruling of October 6.",
       "pause": 400
     }
   ]

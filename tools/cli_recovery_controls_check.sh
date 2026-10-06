@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cli-recovery-controls (#325): the ordinary CLI's recovery controls from
-# this checkout — a lost acknowledgement, a local commit interrupted
-# before and after the mirror is saved, a transaction never sent, and an
+# this checkout — a lost acknowledgement, a confirmed fold interrupted
+# before public replay or observation, a transaction never sent, and an
 # accepting control — on one fresh development node.
 #
 # usage: cli_recovery_controls_check.sh REPO-ROOT
@@ -29,6 +29,10 @@ devnet="$(build .#devnet)/bin/devnet"
 blueprint="$(build ../onchain#plutus-blueprint)"
 
 status=0
-bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
+if command -v python3 >/dev/null; then
+  bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
+else
+  nix develop --quiet "$root" -c bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
+fi
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"
 exit "$status"

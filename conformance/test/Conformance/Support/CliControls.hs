@@ -146,6 +146,17 @@ honestReceipts story = do
                 emit "run inspect" t k $ \r ->
                     r
                         { rcOutcome = "success"
+                        , rcObservation =
+                            Just
+                                ( Observation
+                                    (if "process:killed" `elem` before then "r2" else "r1")
+                                    Nothing
+                                    Nothing
+                                    []
+                                    0
+                                    100
+                                    (Just (if "process:killed" `elem` before then "terminal" else "active"))
+                                )
                         , rcCommand =
                             Just
                                 ( withObserved
@@ -302,6 +313,9 @@ alter act target f =
     map
         (\r -> if rcAction r == act && rcTarget r == target then f r else r)
 
+clauseStatuses :: String -> [ClauseResult] -> [ClauseStatus]
+clauseStatuses phrase results = [crStatus r | r <- results, phrase `isInfixOf` crTitle r]
+
 spec :: Spec
 spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ do
     it
@@ -379,6 +393,65 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
             drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
+    it
+        "publishes the missing-proof control uncovered when its receipt records no reachable witness"
+        $ do
+            rs <- honestReceipts controlsStory
+            let unavailable =
+                    alter
+                        "provoke inspect-without-proof"
+                        "process"
+                        ( \r ->
+                            r
+                                { rcOutcome = "client-error"
+                                , rcCommand = Nothing
+                                , rcProcess = Nothing
+                                , rcReason = Just "no saved proof file is reachable"
+                                }
+                        )
+                        rs
+                results = judge unavailable controlsStory
+            clauseStatuses "proof material moved aside" (judge rs controlsStory)
+                `shouldBe` [Held]
+            putStrLn
+                ( "Harness receipt-computed missing-proof states: "
+                    <> show
+                        ( clauseStatuses "proof material moved aside" (judge rs controlsStory)
+                        , clauseStatuses "proof material moved aside" results
+                        )
+                )
+            clauseStatuses "proof material moved aside" results
+                `shouldSatisfy` (\ss -> length ss == 1 && all isUncovered ss)
+            clauseStatuses "root does not move" results
+                `shouldSatisfy` all (== Held)
+            show results
+                `shouldSatisfy` isInfixOf "no saved proof file is reachable"
+    it
+        "refuses interrupted-fold recovery with another root or a repeated submission"
+        $ do
+            rs <- honestReceipts controlsStory
+            let wrongRoot =
+                    alter
+                        "run inspect"
+                        "process"
+                        (\r -> r{rcCommand = setRoot "other" <$> rcCommand r})
+                        rs
+                resubmitted =
+                    alter
+                        "provoke update-after-kill"
+                        "process"
+                        ( \r ->
+                            r{rcProcess = fmap (\p -> p{peSubmitted = ["f9"]}) (rcProcess r)}
+                        )
+                        rs
+            clauseStatuses
+                "inspect reads the key Terminal"
+                (judge wrongRoot controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && any isNotHeld ss)
+            clauseStatuses
+                "inspect reads the key Terminal"
+                (judge resubmitted controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && any isNotHeld ss)
     it "does not accept a receipt answering another registry's action" $ do
         rs <- honestReceipts controlsStory
         let aliased =
@@ -1287,17 +1360,13 @@ setField name value v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v
 
--- | A terminal inspect that applied and observed the killed fold from the chain.
+-- | A terminal inspect that observed the killed fold from public history.
 withObserved :: Bool -> Value -> Value
 withObserved killed v = case v of
     Object o
         | killed ->
             Object
-                ( KeyMap.insert
-                    "mirrorAdvanced"
-                    (toJSON ["f9" :: String])
-                    (KeyMap.insert "observed" (toJSON ["f9" :: String]) o)
-                )
+                (KeyMap.insert "observed" (toJSON ["f9" :: String]) o)
     _ -> v
 
 -- | What each provoked command leaves when the client keeps its obligations.
@@ -1340,7 +1409,11 @@ provoked p r =
             SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
             WithoutProof -> noLeaf "proof-missing"
             WithoutNode -> noLeaf "node-unavailable"
-            TerminateKilled -> killed "fold" "f9"
+            TerminateKilled ->
+                (killed "fold" "f9")
+                    { rcObservation =
+                        Just (Observation "r2" Nothing Nothing [] 0 100 (Just "terminal"))
+                    }
             UpdateAfterKill ->
                 r
                     { rcOutcome = "partial"

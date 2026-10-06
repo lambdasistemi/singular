@@ -19,7 +19,7 @@ anything is signed: which request it takes ("Singular.CLI.FoldRules"), its
 edge, whether the request's processing window still leaves time, the
 envelope an insertion delivers (kept by the booking,
 "Singular.CLI.Preimage") or the live output a termination releases, the
-mirror's root after the edge, the built transaction, and its outlay. The
+replayed root after the edge, the built transaction, and its outlay. The
 production fold takes every request pending for the registry, so a fold is
 built only while exactly one is pending, and a built fold that spends any
 request input but that one is refused before it is signed.
@@ -295,11 +295,11 @@ foldedFields f =
            ]
 
 {- | Fold the one pending request with the application's context, commit its
-edge to the mirror, read the new root back, and journal the fold observed.
+edge speculatively, replay the new public root, and journal the fold observed.
 
 The request, its edge, the window, the preimage or the holding, the root
 after and the built fold all come from the fold's own view; any refusal
-there happens before anything is signed. The mirror walk and the
+there happens before anything is signed. The speculative walk and the
 journalled after-root are that one edge.
 -}
 foldPending :: Attached -> FoldSpec -> IO Folded
@@ -311,7 +311,7 @@ foldPending at FoldSpec{..} = do
         named = case fsOrigin of
             Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest
-    rootBefore <- selectedMirrorRoot (atMirror at)
+    rootBefore <- selectedTrieRoot (atTrie at)
     (fold, plan) <-
         submitBuilt
             wc
@@ -412,8 +412,16 @@ foldPending at FoldSpec{..} = do
                                 pure
                                 (liveOutputFor s key outs)
                         pure (Nothing, Just h)
-                requireMirrorSelection s live (atMirror at)
-                Root rootAfter <- withMirror (atMirror at) $ \snap -> do
+                freshRoot <- either (failWith ClientRefusal) pure (observedRoot live)
+                unless (freshRoot == rootBefore) $
+                    failTrie
+                        ( TS.StaleState
+                            (savedIdentity s)
+                            Nothing
+                            (TS.StaleRoot (Root rootBefore) (Root freshRoot))
+                        )
+                requireTrieSelection s live (atTrie at)
+                Root rootAfter <- withTrie (atTrie at) $ \snap -> do
                     walked <-
                         TS.speculateEdges snap ((key, requestEdge req) :| [])
                             >>= either
@@ -447,7 +455,7 @@ foldPending at FoldSpec{..} = do
                             pure
                 built <-
                     try
-                        ( withMirror (atMirror at) $ \snap ->
+                        ( withTrie (atTrie at) $ \snap ->
                             updateTokenWithTrieState cfg funded snap (savedToken s) addr ctx
                         )
                 unsigned <- case built of
@@ -544,25 +552,16 @@ foldPending at FoldSpec{..} = do
     let key = plKey plan
         edge = plEdge plan
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
-    acceptMirrorFold
-        (atMirror at)
-        key
-        edge
-        rootBefore
-        (plRootAfter plan)
-        fold
-    harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_MIRROR" Nothing
-    afterFold <- reading at (`attachLive` s)
-    onChain <- either (failWith Partial) pure (observedRoot afterFold)
-    local <- selectedMirrorRoot (atMirror at)
-    unless (onChain == local) $
-        failWith
-            StaleState
-            ( "after the fold the ledger holds root 0x"
-                <> T.unpack (hexT onChain)
-                <> " but the mirror commits to 0x"
-                <> T.unpack (hexT local)
-            )
+    local <- reading at $ \v -> do
+        afterFold <- attachLive v s
+        context <- openTrie s
+        requireTrieSelection s afterFold context
+        root <- selectedTrieRoot context
+        unless (root == plRootAfter plan) $
+            failWith
+                StaleState
+                "after the fold the public lineage reaches another root"
+        pure root
     (delivery, detail) <- case (plKind plan, plEnvelope plan, plHolding plan) of
         (FoldInsertion, Just envelope, _) -> do
             outs <- reading at (`liveOutputs` s)
@@ -594,7 +593,6 @@ foldPending at FoldSpec{..} = do
             failWith
                 Partial
                 "the fold's plan carries neither an envelope nor a holding"
-    commitLocal at fold local
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
     journalObserved wc "fold" fold detail
     pure

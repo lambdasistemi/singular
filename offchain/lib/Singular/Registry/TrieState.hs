@@ -46,6 +46,7 @@ module Singular.Registry.TrieState
     , walkProofs
     , CreateRecord (..)
     , ObservedFold (..)
+    , TrieObservation (..)
     ) where
 
 import Data.Aeson (Value, object, toJSON, (.=))
@@ -152,6 +153,9 @@ trieFailureFields failure = [("trieRefusal", object [(Key.fromText k, v) | (k, v
     reasonFields = case failure of
         HistoryIncomplete _ _ why -> case why of
             MissingTransaction -> reason "missing-transaction"
+            ProviderHistoryFailure providerFailure ->
+                reason "provider-history-failure"
+                    <> [("providerFailure", toJSON (show providerFailure))]
             UnresolvedInput i -> reason "unresolved-input" <> output i
             ConflictingResolution i -> reason "conflicting-resolution" <> output i
             ConflictingCopies -> reason "conflicting-copies"

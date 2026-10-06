@@ -18,13 +18,12 @@ seed (the seed survives the publication); the boot consumes the seed and
 creates the state output at the empty root; the request validator, the
 three witness policies and the applied application are published as
 reference outputs. Only then are the public files written: the saved
-identity with its deployment record, the empty authenticated mirror, and
+identity with its deployment record and
 the committed root. A directory that already holds any registry file is
 refused before a node is contacted: create never overwrites a registry.
 -}
 module Singular.CLI.Create (runCreate) where
 
-import Control.Monad (unless)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -72,12 +71,10 @@ import Singular.CLI.Command
     , ProviderSettings (..)
     , WriteSettings (..)
     )
-import Singular.CLI.Live (newStatePoint, receipt, txInText)
+import Singular.CLI.Live (receipt, txInText)
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
-    ( LocalState (..)
-    , Release
-    , configPath
+    ( Release
     , economics
     , hexT
     , loadRelease
@@ -90,13 +87,11 @@ import Singular.CLI.Registry
     , renderIdentityError
     , seedChecks
     , writeConfig
-    , writeLocalState
     )
 import Singular.CLI.Session
     ( WriteContext (..)
     , expecting
     , failWith
-    , failWithFields
     , journalObserved
     , journalObservedId
     , submitBuilt
@@ -104,7 +99,6 @@ import Singular.CLI.Session
     , withSession
     , withWrite
     )
-import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
@@ -117,13 +111,10 @@ import Singular.Registry.Deployment
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
-    , Root (..)
     , TokenId (..)
     )
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Terminal (Capabilities (..), withReads)
-import Singular.Registry.TrieState qualified as TS
-import Singular.Registry.TrieState.Mirror (createStoredMirror)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
@@ -207,44 +198,8 @@ createWith a rel ws = do
                 booted <- boot wc cfg pinned seedIn
                 let ProviderSettings _ magic _ _ = writeProvider ws
                     dep = deploymentOf magic cfg seedIn booted
-                point <- Cage.withLatest (capReads (wcCapabilities wc)) $ \selectionSession -> do
-                    outputs <-
-                        Cage.outputsAt selectionSession (cageAddrFromCfg cfg (network cfg))
-                    unless (bootedOutput booted `elem` map fst outputs) $
-                        failWith
-                            Partial
-                            "the boot output is no longer live before mirror creation"
-                    pure (newStatePoint selectionSession (bootedOutput booted))
-                let TokenId name = bootedToken booted
-                    who =
-                        TS.RegistryIdentity
-                            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
-                            name
-                    chosen = TS.TrieSelection who point (Root (bootedRoot booted))
-                createStoredMirror
-                    (configPath dir)
-                    chosen
-                    (bootedBody booted)
-                    observeTrie
-                    >>= either
-                        ( \why ->
-                            failWithFields
-                                StaleState
-                                ("TrieState " <> T.unpack (TS.trieFailureName why))
-                                (TS.trieFailureFields why)
-                        )
-                        pure
-                writeLocalState
-                    dir
-                    LocalState
-                        { localVersion = 1
-                        , localToken = tokenHex (bootedToken booted)
-                        , localRoot = hexT emptyRoot
-                        , localLastTx = Just (bootedBoot booted)
-                        , localLastSlot = Nothing
-                        }
-                -- The saved identity last: its presence marks a create
-                -- that finished, with its mirror and commitment in place.
+                -- The identity marks a create that finished; trie state is read
+                -- from public history by subsequent acquired commands.
                 writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
                 pure
                     ( receipt

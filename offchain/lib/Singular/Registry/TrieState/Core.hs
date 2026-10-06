@@ -8,6 +8,7 @@ module Singular.Registry.TrieState.Core
     , checkedCoverage
     , walkNodes
     , provenLeaf
+    , snapshotObserved
     ) where
 
 import Control.Monad (foldM)
@@ -148,7 +149,14 @@ capabilityObserved fetch persist emit = TrieState select accept
             Left why -> pure (Left why)
             Right (entry, coverage) -> do
                 emit (Selected (entrySelection entry))
-                Right <$> use (snapshot entry coverage)
+                Right
+                    <$> use
+                        ( snapshotObserved
+                            emit
+                            (entrySelection entry)
+                            (entryNodes entry)
+                            coverage
+                        )
     validate chosen entry
         | chosen /= entrySelection entry =
             Left
@@ -158,55 +166,6 @@ capabilityObserved fetch persist emit = TrieState select accept
                     (StaleSelection chosen (entrySelection entry))
                 )
         | otherwise = (entry,) <$> checkedCoverage entry
-    snapshot TrieEntry{..} coverage =
-        let who = trieSelectionIdentity entrySelection
-            noProof key = Left (MissingProof who (NoProofFor key))
-        in  TrieSnapshot
-                { snapshotTrieIdentity = trieSelectionIdentity entrySelection
-                , snapshotTriePoint = trieSelectionPoint entrySelection
-                , snapshotTrieRoot = trieSelectionRoot entrySelection
-                , snapshotTrieCoverage = coverage
-                , snapshotLeafAt = \key ->
-                    recordResult
-                        emit
-                        (provenLeaf who entryNodes (trieSelectionRoot entrySelection) key)
-                        (LeafRead entrySelection key)
-                , snapshotMembership = \key leaf ->
-                    recordResult
-                        emit
-                        ( do
-                            bytes <-
-                                maybe (noProof key) Right (membershipFromDb entryNodes key)
-                            if leaf /= Unknown
-                                && verifyAikenInclusionProof
-                                    (unRoot (trieSelectionRoot entrySelection))
-                                    key
-                                    (leafBytes leaf)
-                                    bytes
-                                then Right (MembershipProof bytes)
-                                else noProof key
-                        )
-                        (MemberProved entrySelection key leaf . membershipBytes)
-                , snapshotNonMembership = \key ->
-                    recordResult
-                        emit
-                        ( do
-                            if provesAbsent
-                                entryNodes
-                                (unRoot (trieSelectionRoot entrySelection))
-                                key
-                                then
-                                    NonMembershipProof key
-                                        <$> maybe (noProof key) Right (exclusionFromDb entryNodes key)
-                                else noProof key
-                        )
-                        (const (AbsenceProved entrySelection key))
-                , snapshotSpeculateEdges = \moves ->
-                    recordResult
-                        emit
-                        (fmap snd (walkNodes who entryNodes moves))
-                        (Speculated entrySelection)
-                }
     accept event@(ObservedFold from to edges) = do
         found <- fetch (trieSelectionIdentity from)
         case found >>= advance event from to edges of
@@ -254,6 +213,63 @@ capabilityObserved fetch persist emit = TrieState select accept
                                 , entryFolds = entryFolds entry <> [event]
                                 }
                         )
+
+snapshotObserved
+    :: (Monad m)
+    => (TrieObservation -> m ())
+    -> TrieSelection
+    -> MPFInMemoryDB
+    -> CompleteFromCreate
+    -> TrieSnapshot m
+snapshotObserved emit entrySelection entryNodes coverage =
+    let who = trieSelectionIdentity entrySelection
+        noProof key = Left (MissingProof who (NoProofFor key))
+    in  TrieSnapshot
+            { snapshotTrieIdentity = trieSelectionIdentity entrySelection
+            , snapshotTriePoint = trieSelectionPoint entrySelection
+            , snapshotTrieRoot = trieSelectionRoot entrySelection
+            , snapshotTrieCoverage = coverage
+            , snapshotLeafAt = \key ->
+                recordResult
+                    emit
+                    (provenLeaf who entryNodes (trieSelectionRoot entrySelection) key)
+                    (LeafRead entrySelection key)
+            , snapshotMembership = \key leaf ->
+                recordResult
+                    emit
+                    ( do
+                        bytes <-
+                            maybe (noProof key) Right (membershipFromDb entryNodes key)
+                        if leaf /= Unknown
+                            && verifyAikenInclusionProof
+                                (unRoot (trieSelectionRoot entrySelection))
+                                key
+                                (leafBytes leaf)
+                                bytes
+                            then Right (MembershipProof bytes)
+                            else noProof key
+                    )
+                    (MemberProved entrySelection key leaf . membershipBytes)
+            , snapshotNonMembership = \key ->
+                recordResult
+                    emit
+                    ( do
+                        if provesAbsent
+                            entryNodes
+                            (unRoot (trieSelectionRoot entrySelection))
+                            key
+                            then
+                                NonMembershipProof key
+                                    <$> maybe (noProof key) Right (exclusionFromDb entryNodes key)
+                            else noProof key
+                    )
+                    (const (AbsenceProved entrySelection key))
+            , snapshotSpeculateEdges = \moves ->
+                recordResult
+                    emit
+                    (fmap snd (walkNodes who entryNodes moves))
+                    (Speculated entrySelection)
+            }
 
 recordResult
     :: (Monad m)

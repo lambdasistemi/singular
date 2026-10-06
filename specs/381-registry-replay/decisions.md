@@ -79,15 +79,28 @@ Rejected alternative: keeping the mirror as a cache checked against the replay.
 The operator places caching in a later backend, and two trie sources in one
 release would need a reconciliation rule no ticket specifies.
 
-## Only the booker folds an insertion
+## Folding an insertion needs the booker's preimage today
 
-As a folder, I can fold any request whose fold needs only public data. An
-insertion's request names the hash of its envelope, which the booker alone
-holds (`offchain/cli/src/Singular/CLI/Preimage.hs:9-14`). In the journey, each
-actor folds its own insertions. A cross-actor insertion fold is a control that
-must be refused by its existing name. A termination fold needs no envelope and
-runs across actors. Publishing envelopes, or a fold that takes an envelope file,
-is a separate change already named in the recovery ticket's limits.
+This is a limit, not a decision. An insertion's request carries only the hash of
+the datum it delivers, and today a fold that delivers a datum needs the booker's
+preimage file (`offchain/cli/src/Singular/CLI/Preimage.hs:9-14`), so only the
+booker can fold it. The operator contradicted that as a design on October 6: it
+would make every application invent an off-chain service. The design is open in
+[issue 419](https://github.com/lambdasistemi/singular/issues/419). No control asserts
+the cross-actor refusal as correct behaviour; the existing unit test checks only
+today's refusal. A termination fold needs no preimage and runs across actors.
+
+## Recovery is observed from public history
+
+As a user whose process died after a fold was confirmed, my next command observes
+that fold once from public history and never submits it again; after a rollback it
+reads the restored public root. With the mirror and the saved root gone, the
+receipt fields that reported their writes (`stateFollowed`, `mirrorRewound`,
+`mirrorAdvanced`, and `applied` where it meant a mirror write) are removed, and the
+recovery controls check the replayed root, a single journal entry and no second
+submission instead. One conformance clause, inspect with the saved proof material
+moved aside, loses its witness because inspect no longer reads that material; it is
+published uncovered with that reason, by the epic owner's ruling of October 6.
 
 ## Mixed folds are evidenced by the chain
 

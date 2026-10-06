@@ -100,9 +100,10 @@ longer written or read; the replay replaces both. No local trie copy survives
 as a cache in this ticket. A later cache is a further trie-state backend and
 never overrides a replay.
 
-An insertion's request names only its envelope's hash, so only the booker can
-fold it. A fold by anyone else is refused by its existing name. A termination
-needs no envelope: the holding it releases is public.
+Today a fold that delivers a datum needs the booker's preimage, because an
+insertion's request names only its hash; that is an open limit
+([issue 419](https://github.com/lambdasistemi/singular/issues/419)), not a design. A
+termination needs no preimage: the holding it releases is public.
 
 ## Acceptance
 

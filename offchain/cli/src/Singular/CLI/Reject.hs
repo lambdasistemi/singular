@@ -18,8 +18,7 @@ only when none is still inside its processing or retract window
 signed, when one is, and when nothing is pending.
 
 A reject carries no admission and does not move the registry: the state
-output is continued unchanged, so neither the mirror, the root nor
-@state.json@ is touched. Each rejected request's owner is refunded the
+output is continued unchanged, so its public root stays the same. Each rejected request's owner is refunded the
 request's value less the tip, in the one output designated for that
 request; the wallet that runs the reject keeps the tip. The built
 transaction is checked before it is signed to carry exactly those refunds in
@@ -141,7 +140,7 @@ rejectPending at a = do
         wc = atWrite at
         addr = walletAddr (wcWallet wc)
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
-    rootBefore <- selectedMirrorRoot (atMirror at)
+    rootBefore <- selectedTrieRoot (atTrie at)
     (tx, plan) <-
         submitBuilt
             wc
@@ -289,13 +288,13 @@ rejectPending at a = do
     onChain <- either (failWith Partial) pure (observedRoot afterLive)
     unless (onChain == plRootBefore plan) $
         failWith StaleState "the registry's root moved during a reject"
-    local <- selectedMirrorRoot (atMirror at)
+    local <- selectedTrieRoot (atTrie at)
     unless (onChain == local) $
         failWith
             StaleState
             ( "after the reject the ledger holds root 0x"
                 <> T.unpack (hexT onChain)
-                <> " but the mirror commits to 0x"
+                <> " but the replay reaches to 0x"
                 <> T.unpack (hexT local)
             )
     let txid = txIdTx tx

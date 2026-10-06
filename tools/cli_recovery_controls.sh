@@ -5,41 +5,16 @@
 #
 # usage: cli_recovery_controls.sh SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT
 #
-#   accepting      an insert ends with both submissions included and
-#                  observed, and the local files at the ledger's root;
-#   lost answer    the node accepts an insert's fold but its answer is
-#                  lost: at the moment of the send the fold's prepared line
-#                  and its saved body are already on disk; the command
-#                  stops naming the case `unknown`, and the next ordinary
-#                  write reconciles the fold — applied to the mirror once,
-#                  observed once, never sent again — and proceeds;
-#   killed before  an insert is killed once its fold is confirmed, before
-#   the commit     the mirror is saved: the next write applies the edge
-#                  once, brings state.json along and proceeds;
-#   killed after   a terminate is killed once the mirror is saved, before
-#   the mirror     state.json: the next write applies nothing, brings
-#                  state.json to the mirror, observes the fold, proceeds;
-#   killed before  an insert is killed once state.json is written, before
-#   the            its fold is observed: the next write applies nothing,
-#   observation    leaves state.json, observes the fold and proceeds;
-#   never sent,    an insert's fold never reaches the node; once the tip
-#   past its       has passed the fold's validity upper bound, the next
-#   upper bound    write journals it excluded, with the chain point and
-#                  the live inputs it read, and proceeds from the root
-#                  before it;
-#   never sent,    an insert's booking never reaches the node; a booking
-#   without an     has no upper bound, so the next write stops before
-#   upper bound    building anything, naming the case and the transaction,
-#                  and the journal does not move;
-#   rolled back    on a second registry, an insert observed and then
-#                  undone by restarting the node on a copy of its database
-#                  taken before it — a generated-DevNet mechanism, not a
-#                  public-chain fork: the node's own reads show the blocks
-#                  that carried it gone and its inputs unspent; the next
-#                  command journals both transactions rolled back and
-#                  returns the mirror and state.json to the fold's root
-#                  before; nothing is sent again; the next write stops
-#                  naming the case and the transaction.
+#   accepting: public replay proves an included fold at the ledger root.
+#   lost answer: the next command observes the included fold once, never sends
+#     it again, and proceeds from the fold's recorded after-root.
+#   confirmed process killed: later commands recover observation through
+#     public history, with no mirror or saved-root files.
+#   never sent: an expired fold is excluded; an unbounded booking remains
+#     unresolved, naming its transaction and case, without resubmission.
+#   rolled back: restoring the generated DevNet database makes the public
+#     replay reach the restored root; rollbacks are journalled once and the
+#     next write names the unresolved case, sending nothing.
 #
 # The harness points are SINGULAR_HARNESS_* variables, inert when unset.
 # Every verdict is computed from the receipts the processes printed, the
@@ -255,17 +230,33 @@ trie_extent() {
     and (map(.command) | unique | length > 1)' "$work/trie-command-extent.jsonl" >/dev/null
 }
 
-# The registry's local files, as a later clause compares them.
+# Journal/body snapshots plus a read-only acquired public-root observation.
+# A POSIX lock makes inspect skip reconciliation, so this observation cannot
+# supply or alter the recovery journal being tested.
+cat >"$work/read-root.py" <<'PY'
+import fcntl, json, os, subprocess, sys
+binary, registry, blueprint, *settings = sys.argv[1:]
+with open(os.path.join(registry, ".lock"), "a") as lock:
+    try:
+        fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        pass  # a deliberately held command already prevents reconciliation
+    result = subprocess.run([binary, "registry", "inspect", "--key-hex", "00",
+        "--registry", registry, "--blueprint", blueprint, *settings], capture_output=True, text=True,
+        env={k: v for k, v in os.environ.items() if k != "SINGULAR_HARNESS_TRIE_TRACE"})
+    receipt = json.loads(result.stdout)
+    root = receipt.get("root")
+    if not isinstance(root, str) or len(root) != 64:
+        raise RuntimeError(f"public root unavailable: exit={result.returncode} receipt={receipt}")
+    print(root)
+PY
+root_now() { python3 "$work/read-root.py" "$singular" "$reg" "$blueprint" "${node[@]}"; }
+trie_files_absent() { [ ! -e "$reg/state.json" ] && [ ! -e "$reg/registry.mirror.json" ]; }
 snap() {
   if [ -f "$journal" ]; then cp "$journal" "$snaps/$1.jsonl"; else : >"$snaps/$1.jsonl"; fi
-  jq -r .localRoot "$reg/state.json" >"$snaps/$1.root"
-  sha256sum <"$reg/registry.mirror.json" | cut -d' ' -f1 >"$snaps/$1.mirror"
+  root_now >"$snaps/$1.root"
   find "$reg/submissions" -type f -exec sha256sum {} + 2>/dev/null | sort >"$snaps/$1.bodies" || true
 }
-root_now() { jq -r .localRoot "$reg/state.json"; }
-mirror_now() { sha256sum <"$reg/registry.mirror.json" | cut -d' ' -f1; }
-state_kept() { [ "$(root_now)" = "$(cat "$snaps/$1.root")" ]; }
-mirror_kept() { [ "$(mirror_now)" = "$(cat "$snaps/$1.mirror")" ]; }
 journal_same() { cmp -s "$snaps/$1.jsonl" "$journal"; }
 # The journal at snapshot NAME is a byte prefix of the journal now, and
 # every body saved then has the same bytes now.
@@ -378,6 +369,7 @@ bobkey="$(field bob-preview .walletKeyHash)"
 # accepting
 # ------------------------------------------------------------------
 control=accepting
+clause "create stores identity and no retired trie files" trie_files_absent
 snap s0
 insert_of 6b0a
 run insert-a "${args[@]}"
@@ -390,12 +382,40 @@ clause "the booking was prepared, acknowledged, included and observed, once each
   is_equal "$(events_of "$book")" '["prepared","submitted","confirmed","observed"]'
 clause "the fold was prepared, acknowledged, included and observed, once each" \
   is_equal "$(events_of "$fold")" '["prepared","submitted","confirmed","observed"]'
-clause "state.json commits to the fold's journalled root after" is_equal "$(root_now)" "$(root_after_of "$fold")"
 clause "the receipt's root is that root" is_equal "$(field insert-a .root)" "$(root_after_of "$fold")"
 run inspect-a registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
 clause "inspect reads the key active at that root" \
   is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
 clause "the journal was only appended to and no body changed" appended_only s0
+
+# The released executable reads the same public lineage in both directories.
+# Retired files are intentionally corrupted, without changing the identity,
+# journal or provider. The original directory remains available to the story.
+control="retired trie files are unreachable"
+clean_source="$work/clean-trie-source"
+corrupt_source="$work/corrupt-trie-source"
+cp -a "$reg" "$clean_source"
+cp -a "$reg" "$corrupt_source"
+rm -f "$clean_source/registry.mirror.json" "$clean_source/state.json"
+printf 'corrupted mirror\n' >"$corrupt_source/registry.mirror.json"
+printf 'corrupted saved root\n' >"$corrupt_source/state.json"
+for source in clean corrupt; do
+  source_dir="$clean_source"
+  [ "$source" != corrupt ] || source_dir="$corrupt_source"
+  run "inspect-$source-source" registry inspect --key-hex 6b0a \
+    --registry "$source_dir" --blueprint "$blueprint" "${node[@]}"
+  clause "$source directory reads the active key from public history" \
+    is_equal "$(field "inspect-$source-source" '.outcome + "/" + .leaf')" success/active
+done
+clause "missing and corrupted retired files give the same root and leaf" \
+  is_equal "$(field inspect-clean-source '[.outcome,.root,.leaf] | tojson')" \
+  "$(field inspect-corrupt-source '[.outcome,.root,.leaf] | tojson')"
+clause "the corrupted mirror is never rewritten" \
+  is_equal "$(cat "$corrupt_source/registry.mirror.json")" 'corrupted mirror'
+clause "the corrupted saved root is never rewritten" \
+  is_equal "$(cat "$corrupt_source/state.json")" 'corrupted saved root'
+clause "the clean directory creates neither retired file" \
+  bash -c '[ ! -e "$1/registry.mirror.json" ] && [ ! -e "$1/state.json" ]' _ "$clean_source"
 
 # Preview deliberately stays untraced in the release journey's ordinary
 # process control. Here its separate actual trace binds the selected root to
@@ -427,13 +447,17 @@ mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
 preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
 run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
   --registry "$preview_copy" --blueprint "$blueprint" "${node[@]}" --wallet-address "$(field preview .wallet)"
-clause "preview refuses missing create rather than trusting the matching root" exit_is preview-incomplete 14
-clause "preview names HistoryIncomplete" is_equal \
-  "$(field preview-incomplete '.outcome + "/" + .reason')" 'stale-state/TrieState HistoryIncomplete'
+clause "preview succeeds without the local boot journal" exit_is preview-incomplete 0
+clause "preview without local boot records reads the same public root" is_equal \
+  "$(field preview-incomplete .stateRoot)" "$(field update-active-preview .stateRoot)"
 clause "preview leaves its incomplete copy unchanged" is_equal \
   "$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_copy_before"
 clause "successful previews leave every original registry file unchanged" is_equal \
   "$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)" "$preview_before"
+if [ "${SINGULAR_RECOVERY_SOURCE_ONLY:-0}" = 1 ]; then
+  say "retired-files and preview controls only: exit $failed; full recovery was not executed"
+  exit "$failed"
+fi
 
 # ------------------------------------------------------------------
 # lost answer
@@ -462,8 +486,6 @@ clause "the insert stops partial (exit 15)" exit_is insert-b 15
 clause "its receipt names the booking's case included" is_equal "$(submission_case insert-b book)" included
 clause "its receipt names the fold's case unknown" is_equal "$(submission_case insert-b fold)" unknown
 clause "the fold's last journalled phase is submit-unknown" is_equal "$(last_event "$lost")" submit-unknown
-clause "nothing was committed locally: state.json unchanged" state_kept s1
-clause "nothing was committed locally: the mirror unchanged" mirror_kept s1
 # The next ordinary write. While the fold is not yet on chain it is
 # refused before building anything; once it is, it reconciles and proceeds.
 refusals_clean=0
@@ -472,7 +494,7 @@ for i in $(seq 1 40); do
   insert_of 6b0c
   run insert-c "${args[@]}"
   outcome_is insert-c partial || break
-  if ! journal_same "s1-try-$i" || ! state_kept "s1-try-$i" || ! mirror_kept "s1-try-$i" \
+  if ! journal_same "s1-try-$i" || ! trie_files_absent "s1-try-$i" || ! trie_files_absent "s1-try-$i" \
     || [ "$(field insert-c .unresolved.tx)" != "$lost" ]; then
     refusals_clean=1
   fi
@@ -480,7 +502,6 @@ for i in $(seq 1 40); do
 done
 clause "every write refused while the fold was unknown named it and moved nothing" is_equal "$refusals_clean" 0
 clause "the next write reconciles and succeeds" outcome_is insert-c success
-clause "it applied the lost fold's edge to the mirror" is_equal "$(field insert-c ".reconciled.applied | tojson")" "[\"$lost\"]"
 clause "it observed the lost fold" is_equal "$(field insert-c "[.reconciled.observed[]? | select(. == \"$lost\")] | length")" 1
 clause "the lost fold was prepared once, never sent again" prepared_once "$lost"
 clause "the lost fold is observed exactly once in the journal" is_equal "$(event_count "$lost" observed)" 1
@@ -496,58 +517,25 @@ clause "the journal was only appended to and no body changed" appended_only s1
 # ------------------------------------------------------------------
 # killed before the commit
 # ------------------------------------------------------------------
-control="killed before the commit"
+control="killed before observation"
 snap s2
 reached=0
 insert_of 6b0d
 held insert-d SINGULAR_HARNESS_HOLD_BEFORE_COMMIT "${args[@]}" || reached=1
-clause "the insert was killed after its fold was confirmed, before the commit" is_equal "$reached" 0
+clause "the insert was killed after its fold was confirmed, before observation" is_equal "$reached" 0
 killed_fold="$(fold_since s2)"
 clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$killed_fold")" confirmed
-clause "nothing was committed locally: state.json unchanged" state_kept s2
-clause "nothing was committed locally: the mirror unchanged" mirror_kept s2
 snap s2-killed
 run update-a registry update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 clause "the next write, an update of another key, reconciles and succeeds" outcome_is update-a success
-clause "it applied the killed fold's edge to the mirror once" is_equal "$(field update-a ".reconciled.applied | tojson")" "[\"$killed_fold\"]"
-clause "it brought state.json along" is_equal "$(field update-a .reconciled.stateFollowed)" true
 clause "the killed fold is observed exactly once, by the update" \
   is_equal "$(since s2-killed | jq -r --arg t "$killed_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" update
 clause "the killed fold was prepared once, never sent again" prepared_once "$killed_fold"
 clause "the fold started from the root before the kill" is_equal "$(root_before_of "$killed_fold")" "$(cat "$snaps/s2.root")"
-clause "state.json now commits to the fold's root after: one edge" is_equal "$(root_now)" "$(root_after_of "$killed_fold")"
+clause "the confirmed killed fold left no retired trie files" trie_files_absent
 run inspect-d registry inspect --key-hex 6b0d "${common[@]}" "${node[@]}"
 clause "inspect reads the killed insert's key active" is_equal "$(field inspect-d '.outcome + "/" + .leaf')" success/active
 clause "the journal was only appended to and no body changed" appended_only s2
-
-# ------------------------------------------------------------------
-# killed after the mirror
-# ------------------------------------------------------------------
-control="killed after the mirror"
-snap s3
-reached=0
-held terminate-a SINGULAR_HARNESS_HOLD_AFTER_MIRROR registry terminate --fold --key-hex 6b0a \
-  "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
-clause "the terminate was killed after its mirror was saved, before state.json" is_equal "$reached" 0
-saved_fold="$(fold_since s3)"
-clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$saved_fold")" confirmed
-clause "the mirror was saved" bash -c "[ '$(mirror_now)' != '$(cat "$snaps/s3.mirror")' ]"
-clause "state.json was not yet written" state_kept s3
-snap s3-killed
-insert_of 6b0e
-run insert-e "${args[@]}"
-clause "the next write reconciles and succeeds" outcome_is insert-e success
-clause "it applied nothing to the mirror: the edge was already applied" is_equal "$(field insert-e ".reconciled.applied | tojson")" "[]"
-clause "it brought state.json to the mirror's root" is_equal "$(field insert-e .reconciled.stateFollowed)" true
-clause "the killed fold is observed exactly once, by the insert" \
-  is_equal "$(since s3-killed | jq -r --arg t "$saved_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
-clause "the killed fold was prepared once, never sent again" prepared_once "$saved_fold"
-clause "the fold started from the root before the kill" is_equal "$(root_before_of "$saved_fold")" "$(cat "$snaps/s3.root")"
-clause "the next fold started from the killed fold's root after: one edge between" \
-  is_equal "$(root_before_of "$(submission_tx insert-e fold)")" "$(root_after_of "$saved_fold")"
-run inspect-t registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
-clause "inspect reads the terminated key terminal" is_equal "$(field inspect-t '.outcome + "/" + .leaf')" success/terminal
-clause "the journal was only appended to and no body changed" appended_only s3
 
 # ------------------------------------------------------------------
 # killed before the observation
@@ -557,16 +545,13 @@ snap s5
 reached=0
 insert_of 6b10
 held insert-g SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED "${args[@]}" || reached=1
-clause "the insert was killed after state.json, before its fold was observed" is_equal "$reached" 0
+clause "the insert reached the hold before observation" is_equal "$reached" 0
 written_fold="$(fold_since s5)"
 clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$written_fold")" confirmed
-clause "state.json already commits to the fold's root after" is_equal "$(root_now)" "$(root_after_of "$written_fold")"
 snap s5-killed
 insert_of 6b11
 run insert-h "${args[@]}"
 clause "the next write reconciles and succeeds" outcome_is insert-h success
-clause "it applied nothing to the mirror" is_equal "$(field insert-h ".reconciled.applied | tojson")" "[]"
-clause "it left state.json as it was" is_equal "$(field insert-h .reconciled.stateFollowed)" false
 clause "the killed fold is observed exactly once, by the insert" \
   is_equal "$(since s5-killed | jq -r --arg t "$written_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
 clause "the killed fold was prepared once, never sent again" prepared_once "$written_fold"
@@ -653,7 +638,7 @@ for cross_case in "${cross_cases[@]}"; do
     run "$cross-next" registry update --key-hex 6b0d --payload "$work/payload.json" \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     outcome_is "$cross-next" partial || break
-    if ! journal_same "$cross-try-$i" || ! state_kept "$cross-try-$i" || ! mirror_kept "$cross-try-$i" \
+    if ! journal_same "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" \
       || [ "$(field "$cross-next" .unresolved.tx)" != "$cross_fold" ]; then refusals_clean=1; fi
     # Retain every refusal; the next run otherwise reuses the receipt name.
     cp "$receipts/$cross-next.json" "$receipts/$cross-refused-$i.json"
@@ -673,18 +658,15 @@ for cross_case in "${cross_cases[@]}"; do
     --slurpfile after "$snaps/$cross-next.jsonl" \
     --arg beforeRoot "$(cat "$snaps/$cross-before.root")" --arg bookedRoot "$(cat "$snaps/$cross-booked.root")" \
     --arg heldRoot "$(cat "$snaps/$cross-held.root")" --arg afterRoot "$(root_now)" \
-    --arg beforeMirror "$(cat "$snaps/$cross-before.mirror")" --arg bookedMirror "$(cat "$snaps/$cross-booked.mirror")" \
-    --arg heldMirror "$(cat "$snaps/$cross-held.mirror")" --arg afterMirror "$(mirror_now)" \
     '{fold:$fold,key:$key,point:$point,reached:$reached,folder:$folder,signers:$signers,clean:$clean,exit:$exit,loss:$loss,
       booking:$booking[0],next:$next[0],inspect:$inspect[0],booked:$booked,held:$held,after:$after,
-      roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot},
-      mirrors:{before:$beforeMirror,booked:$bookedMirror,held:$heldMirror,after:$afterMirror}}' >"$cross_evidence"
+      roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot}}' >"$cross_evidence"
   cross_check=1
-  cross_clause "the requester booked only, leaving the root and mirror unchanged" \
+  cross_clause "the requester booked only, leaving the public root unchanged" \
     '. as $e | .booking.outcome == "success" and .booking.request == (.booking.booking + "#0")
       and ([.booked[] | select(.journalTxId == $e.booking.booking) | .journalEvent] == ["prepared","submitted","confirmed","observed"])
-      and .roots.before == .roots.booked and .mirrors.before == .mirrors.booked' \
-    '.roots.booked += "tampered"' '.mirrors.booked += "tampered"' '.booking.outcome = "partial"' \
+      and .roots.before == .roots.booked' \
+    '.roots.booked += "tampered"' '.booking.outcome = "partial"' \
     '.booking.request += "tampered"' '.booked += .booked'
   cross_clause "the fold's saved signed body carries the other wallet's payment key" \
     '(.folder | test("^[0-9a-f]{56}$")) and (.booking.requester | test("^[0-9a-f]{56}$"))
@@ -710,12 +692,10 @@ for cross_case in "${cross_cases[@]}"; do
   cross_clause "the next ordinary write proceeds, and any pending refusals name the fold and move nothing" \
     '.exit == 0 and .next.outcome == "success" and .clean == 0' \
     '.next.outcome = "partial"' '.exit = 15' '.clean = 1'
-  cross_clause "reconciliation applies the edge exactly when the killed command had not saved it" \
-    '.next.reconciled.applied == (if .mirrors.held == .mirrors.booked then [.fold] else [] end)
-      and .next.reconciled.stateFollowed == (.roots.held == .roots.before)
-      and (if .mirrors.held == .mirrors.booked then .mirrors.after != .mirrors.held else .mirrors.after == .mirrors.held end)' \
-    '.next.reconciled.applied += [.fold]' '.next.reconciled.stateFollowed |= not' \
-    '.mirrors.after = (if .mirrors.held == .mirrors.booked then .mirrors.held else "tampered" end)'
+  cross_clause "the public lineage reaches the confirmed fold's recorded after-root" \
+    '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")][0].journalRootAfter == .roots.after' \
+    '.roots.after += "tampered"' \
+    '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootAfter += "tampered" else . end)'
   cross_clause "the fold is confirmed and observed exactly once, by the requester's next write when needed" \
     '. as $e | .next.reconciled.observed == [.fold]
       and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 1
@@ -799,8 +779,6 @@ clause "the excluded line names inputs the node reports unspent" \
   jq -n -e --argjson l "${excluded_line:-null}" --argjson p "$unsent_live" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
 clause "its receipt names the fold excluded" is_equal "$(field update-d ".reconciled.excluded | tojson")" "[\"$unsent\"]"
 clause "the write then succeeds" outcome_is update-d success
-clause "state.json still commits to the unsent fold's root before: the excluded edge was never applied" \
-  is_equal "$(root_now)" "$(root_before_of "$unsent")"
 clause "the unsent fold was prepared once and never sent again" prepared_once "$unsent"
 clause "the journal was only appended to and no body changed" appended_only s4
 
@@ -823,7 +801,6 @@ clause "it names the unsent booking" is_equal "$(field update-e .unresolved.tx)"
 clause "it names the case unknown" is_equal "$(field update-e .unresolved.case)" unknown
 clause "its reason names the transaction" bash -c "jq -e --arg t '$unbooked' '.reason | contains(\$t)' '$receipts/update-e.json'"
 clause "it appended nothing to the journal" journal_same s6-refused
-clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/s6-refused.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/s6-refused.mirror")' ]"
 clause "the unsent booking was prepared once and never acknowledged" \
   is_equal "$(events_of "$unbooked")" '["prepared","submit-unknown"]'
 
@@ -1013,7 +990,6 @@ pre="$(probe_ins "${book_ins_a[@]}" "$rb_fold#0")"
 clause "before the restore the node reports the booking's inputs spent" \
   jq -n -e --argjson p "$pre" --arg f "$rb_fold#0" '($p.spent | length) > 0 and ($p.live == [$f])'
 snap rb1
-cp "$reg/registry.mirror.json" "$snaps/rb1.mirror.json"
 
 # The restore: stopped, the copy put back, restarted.
 mark="$(wc -l <"$nlog")"
@@ -1043,24 +1019,12 @@ clause "the fold's inputs the booking did not make are unspent again" \
 clause "neither the booking's nor the fold's first output exists" \
   jq -n -e --argjson p "$post" --arg b "$rb_book#0" --arg f "$rb_fold#0" '($p.spent | index($b)) != null and ($p.spent | index($f)) != null'
 
-# Killed after the rollback is journalled, before the mirror is rebuilt:
-# the files still hold the rolled-back fold's root after.
-reached=0
-held inspect-rb-k1 SINGULAR_HARNESS_HOLD_BEFORE_REWIND registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}" || reached=1
-clause "an inspect is killed after journalling the rollback, before rebuilding the mirror" is_equal "$reached" 0
-clause "at that moment both transactions are journalled rolled back" \
-  is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
-clause "at that moment the mirror and state.json are as the insert left them" \
-  bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb1.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
-# Killed after the mirror is rebuilt, before state.json follows it.
-reached=0
-held inspect-rb-k2 SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}" || reached=1
-clause "a second inspect is killed after rebuilding the mirror, before state.json" is_equal "$reached" 0
-clause "at that moment the mirror holds its bytes from before the insert and state.json the insert's root" \
-  bash -c "[ '$(mirror_now)' = '$(cat "$snaps/rb0.mirror")' ] && [ '$(root_now)' = '$(cat "$snaps/rb1.root")' ]"
 run inspect-rb registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
-clause "the next inspect journals no second rollback and rebuilds nothing more" \
-  jq -e 'has("mirrorRewound") and .mirrorRewound == null and .rolledBack == []' "$receipts/inspect-rb.json"
+clause "the first inspect journals both rollbacks" \
+  is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
+run inspect-rb registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
+clause "a second inspect journals no second rollback" \
+  jq -e '.rolledBack == []' "$receipts/inspect-rb.json"
 clause "the booking's rollback is journalled once, after its observation" \
   is_equal "$(events_of "$rb_book")" '["prepared","submitted","confirmed","observed","rolled-back"]'
 clause "and the fold rolled back after its observation" \
@@ -1078,14 +1042,10 @@ for t in "$rb_book" "$rb_fold"; do
   clause "the rolled-back line of $t names spent inputs the node reports unspent" \
     jq -n -e --argjson l "$(rolled_line "$t")" --argjson p "$post" '($l.journalInputs | length) > 0 and ($l.journalInputs - $p.live == [])'
 done
-clause "the fold's rolled-back line names the root the mirror returned to: the fold's root before" \
-  is_equal "$(rolled_line "$rb_fold" | jq -r .journalRootBefore)" "$(root_before_of "$rb_fold")"
 clause "inspect stops partial naming the booking's case rolled-back" \
   is_equal "$(field inspect-rb '.outcome + "/" + .unresolved.case + "/" + .unresolved.tx')" "partial/rolled-back/$rb_book"
+clause "the public replay after rollback created no retired trie files" trie_files_absent
 clause "inspect reads the ledger's root at the fold's root before" is_equal "$(field inspect-rb .root)" "$(root_before_of "$rb_fold")"
-clause "state.json returned to the fold's root before" is_equal "$(root_now)" "$(root_before_of "$rb_fold")"
-clause "the mirror returned to the bytes it had before the rolled-back insert" \
-  is_equal "$(mirror_now)" "$(cat "$snaps/rb0.mirror")"
 clause "the observations stay in the journal: it was only appended to and no body changed" appended_only rb1
 clause "the booking and the fold were each prepared once" bash -c "[ '$(event_count "$rb_book" prepared)$(event_count "$rb_fold" prepared)' = 11 ]"
 clause "the fold's edge is applied zero times: observed once, rolled back once after" \
@@ -1101,7 +1061,6 @@ clause "it names the case rolled-back" is_equal "$(field insert-rb2 .unresolved.
 clause "it names the rolled-back booking" is_equal "$(field insert-rb2 .unresolved.tx)" "$rb_book"
 clause "its reason names the transaction" bash -c "jq -e --arg t '$rb_book' '.reason | contains(\$t)' '$receipts/insert-rb2.json'"
 clause "it built and submitted nothing: the journal did not move" journal_same rb2
-clause "it committed nothing locally" bash -c "[ '$(root_now)' = '$(cat "$snaps/rb2.root")' ] && [ '$(mirror_now)' = '$(cat "$snaps/rb2.mirror")' ]"
 clause "the node's blocks since the restore still carry neither transaction" \
   is_equal "$(carried_since "$mark" "$rb_book")$(carried_since "$mark" "$rb_fold")" 00
 clause "at the end too, the adoption record covers every block the node forged" \

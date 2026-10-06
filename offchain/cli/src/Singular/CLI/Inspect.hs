@@ -10,7 +10,7 @@ License     : Apache-2.0
 
 Inspect takes a node socket and magic and nothing else: no signing key,
 no funding, no submission. It reads the registry's state output fresh
-and proves the key's leaf from the saved mirror against the root that
+and proves the key's leaf from the public replay against the root that
 output commits to ("Singular.CLI.Proof"); it reads the key's holding at
 the application — bound to this registry's state asset, pinned active
 policy and key — and reports its envelope, payload, deposit and value;
@@ -20,8 +20,8 @@ A leaf is printed only from a proof verified against that fresh root,
 and only when the holdings agree with it: @active@ with exactly one
 holding, any other leaf with none. @unknown@ means a verified exclusion
 proof. Every other case prints no leaf and ends in its own outcome — the
-node unusable (@node-unavailable@), the mirror or the registry's trie
-missing (@proof-missing@), the mirror committing to another root
+node unusable (@node-unavailable@), missing authenticated proof
+(@proof-missing@), incomplete history or a replay reaching another root
 (@stale-state@), no leaf proving itself or a leaf the holdings
 contradict (@proof-inconsistent@), or an unresolved journalled
 submission (@partial@).
@@ -154,16 +154,12 @@ reconciledFields = \case
         [ ("rolledBack", toJSON (rcRolledBack r))
         , ("recovery", recoveryJson (rcRecovered r))
         , ("excluded", toJSON (rcExcluded r))
-        , ("mirrorRewound", toJSON (rcRewound r))
-        , ("mirrorAdvanced", toJSON (rcApplied r))
-        , ("stateFollowed", toJSON (rcStateFollowed r))
         , ("observed", toJSON (rcObserved r))
         ]
     Nothing ->
         [ ("rolledBack", toJSON ([] :: [Text]))
         , ("recovery", toJSON ([] :: [Value]))
         , ("excluded", toJSON ([] :: [Text]))
-        , ("mirrorAdvanced", toJSON ([] :: [Text]))
         , ("observed", toJSON ([] :: [Text]))
         ,
             ( "reconciliation"
@@ -254,8 +250,6 @@ inspectSaved dir key settings a = do
         (failWith ClientRefusal . renderIdentityError)
         pure
         (checkNetwork (savedConfig saved) magic)
-    -- Missing proof material is refused before the node is contacted.
-    _ <- openMirror saved
     reached <-
         try $ withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
             point <- Cage.tip v
@@ -266,9 +260,9 @@ inspectSaved dir key settings a = do
                 _ ->
                     failWith Partial "the registry's state output carries no state datum"
             let root = unOnChainRoot (stateRoot state)
-            mirror <- openMirror saved
-            _ <- selectMirror saved live mirror
-            leaf <- mirrorLeaf mirror key root
+            context <- openTrie saved
+            requireTrieSelection saved live context
+            leaf <- trieLeaf context key root
             outs <- liveOutputs v saved
             requests <-
                 Cage.outputsAt
