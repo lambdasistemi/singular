@@ -106,8 +106,8 @@ exports_of() {
     echo "SETUP-FAIL: GHCi could not browse $scope from tree $tree" >&2
     return 2
   }
-  grep -vE '^[[:space:]]|^--|^(newtype|data) ' "$scratch/browse-$scope-$tree.txt" |
-    sed -E 's/^type //; s/[[:space:]].*$//; s/^.*\.//' | sort -u
+  grep -vE '^[[:space:]]|^--|^(newtype|data) ' "$scratch/browse-$scope-$tree.txt" \
+    | sed -E 's/^type //; s/[[:space:]].*$//; s/^.*\.//' | sort -u
 }
 
 status=0
@@ -167,8 +167,8 @@ for scope in signing submit; do
   else
     target="$scratch/$tree/Singular/Registry/Node/Submit.hs"
     cp "$scratch/broken/Singular/Registry/Signing.hs" "$scratch/$tree/Singular/Registry/Signing.hs"
-    awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" |
-      sed 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
+    awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" \
+      | sed 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
         >"$target"
     sed -i '/^import Singular.Registry.Signing /a import Cardano.Tx.Ledger (ConwayTx)' "$target"
   fi
