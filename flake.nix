@@ -113,6 +113,34 @@
           # #449: the recovery controls as one app per part, each on its own
           # development node, so CI runs the parts as parallel jobs. An empty
           # part list runs them all.
+          # #300/#449: the demonstration's four refusals on one existing
+          # registry; an empty part list runs every part.
+          attachApp = name: parts: {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                inherit name;
+                runtimeInputs = with pkgs; [
+                  bash
+                  python3
+                  curl
+                  xxd
+                  coreutils
+                  diffutils
+                  findutils
+                  git
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  jq
+                  procps
+                  nix
+                ];
+                text = ''CLI_ATTACH_PARTS="${parts}" bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
+              }
+            );
+          };
           recoveryApp = name: parts: {
             type = "app";
             program = pkgs.lib.getExe (
@@ -244,32 +272,14 @@
           };
           # #300: the demonstration's four refusals on one existing registry and
           # two fresh keys: `nix run --quiet .#demo1-cli-attach`.
-          demo1-cli-attach = {
-            type = "app";
-            program = pkgs.lib.getExe (
-              pkgs.writeShellApplication {
-                name = "demo1-cli-attach";
-                runtimeInputs = with pkgs; [
-                  bash
-                  python3
-                  curl
-                  xxd
-                  coreutils
-                  diffutils
-                  findutils
-                  git
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  jq
-                  procps
-                  nix
-                ];
-                text = ''bash ${./tools/demo1_cli_attach_check.sh} "$PWD"'';
-              }
-            );
-          };
+          demo1-cli-attach = attachApp "demo1-cli-attach" "";
+          # #449: one app per part, each with its own registry and node, so CI
+          # runs the parts as parallel jobs.
+          demo1-cli-attach-takes = attachApp "demo1-cli-attach-takes" "takes";
+          demo1-cli-attach-indexer-reads = attachApp "demo1-cli-attach-indexer-reads" "indexer-reads";
+          demo1-cli-attach-tampered-a = attachApp "demo1-cli-attach-tampered-a" "tampered-a";
+          demo1-cli-attach-tampered-b = attachApp "demo1-cli-attach-tampered-b" "tampered-b";
+          demo1-cli-attach-over-allowance = attachApp "demo1-cli-attach-over-allowance" "over-allowance";
           # #300: the public-indexer readback against a local indexer that answers
           # with the shapes the public services return:
           # `nix run --quiet .#demo1-readback-check`.
