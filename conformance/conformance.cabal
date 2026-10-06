@@ -225,6 +225,7 @@ executable cli-controls
     Conformance.Cli.Admission
     Conformance.Cli.Attach
     Conformance.Cli.Backend
+    Conformance.Cli.FoldHistory
     Conformance.Cli.Node
     Conformance.Cli.Proof
   build-depends:
@@ -319,11 +320,13 @@ test-suite conformance-tests
     Conformance.Support.Binding
     Conformance.Support.CliControls
     Conformance.Support.CliProof
+    Conformance.Support.FoldHistory
     Conformance.Support.CliAdmission
     Conformance.Support.CliAttach
     Conformance.Cli.Admission
     Conformance.Cli.Attach
     Conformance.Cli.Proof
+    Conformance.Cli.FoldHistory
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound
     Conformance.Support.Refusal

@@ -94,20 +94,20 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 
 # The registry, created once by the ordinary commands.
-"$singular" registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
+"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
   >"$receipts/preview.json"
 address="$(jq -r .wallet "$receipts/preview.json")"
-"$singular" registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
+"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
   >"$receipts/preview-public.json"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins' \
   "$receipts/preview-public.json" >/dev/null || setup_fail "the public preview names another registry"
-"$singular" registry create --process-time 45000 --retract-time 15000 --seed "$(jq -r .seed "$receipts/preview.json")" \
+"$singular" registry create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" >"$receipts/create.json"
 jq -e '.outcome == "success"' "$receipts/create.json" >/dev/null || setup_fail "the registry was not created"
-jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
+jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/create.json" >/dev/null \
   || setup_fail "the attach registry did not read back the short CI windows"
 "$singular" registry inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
-jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/windows.json" >/dev/null \
+jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/windows.json" >/dev/null \
   || setup_fail "inspect did not read the attach registry's short windows"
 say "registry $(jq -r .token "$receipts/create.json") created once, from its seed beside one funding output"
 
@@ -141,6 +141,16 @@ take() {
     --work "$work/$name" >"$work/$name.md" 2> >(tee "$work/$name.err" >&2) || status=$?
   stop_indexer
   tail -1 "$work/$name.md"
+  if [ "$name" = one ]; then
+    jq -se '
+      [.[] | select(.step == 4 and .action == "fold-unevaluated")]
+      | length == 1 and .[0].outcome == "ledger-refused"
+    ' "$work/$name/receipts"/*.json >/dev/null || {
+      jq -s '[.[] | select(.step == 4 and .action == "fold-unevaluated") | {step, action, outcome, reason}]' \
+        "$work/$name/receipts"/*.json >&2
+      fail_control "take one step 4 must reach the ledger's refusal after command-produced state"
+    }
+  fi
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
   grep -m3 "uncovered" "$work/$name.md" >&2 || true
   # The key ends Terminal by the ordinary inspect, and no request is left pending.

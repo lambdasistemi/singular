@@ -14,8 +14,8 @@ receipts say which clauses that leaves uncovered or unmet.
 * An unevaluated fold is the registry's own duties for that one request
   ('registryDuties', with the application's context) built by
   'connectedFoldTx' with local evaluation skipped, so the node judges it.
-  Its proofs come from a copy of the registry's saved mirror, checked
-  against the root the chain holds before anything is built.
+  Its trie is rebuilt from authenticated public replay at the selected
+  state output, checked against that root before anything is built.
 * A readback is the registry's state root, the key's holding at the
   application, the pending requests and the wallet, read from the node.
 
@@ -189,10 +189,8 @@ import Singular.Registry.Deployment
     , CageParts (..)
     , Deployment (..)
     , attach
-    , loadMirror
     , parseOutRef
     , renderOutRef
-    , saveMirror
     )
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
@@ -209,8 +207,6 @@ import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signTx, signedTx)
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedFoldArgs (..)
     , ConnectedMint (..)
@@ -236,7 +232,6 @@ import Singular.Registry.TxBuilder.Internal
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
-    , walkEdge
     )
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.TxBuilder.Update
@@ -302,6 +297,7 @@ import Conformance.Cli.Controls
     , statementBindings
     , validateControls
     )
+import Conformance.Cli.FoldHistory (publicFoldTrie)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -1927,9 +1923,8 @@ data FoldTweak
 
 {- | Fold the one request pending for @key@ (or, when none is named, the
 only request pending), with the registry's duties and the application's
-context, building it without local evaluation. Proofs come from a copy of
-a saved mirror whose root is the chain's: the backend's own, once one of
-its folds was accepted, else the command's.
+context, building it without local evaluation. Its mutable trie comes from
+fresh authenticated public replay, including folds made by commands.
 -}
 foldUnevaluated :: Env -> Target -> String -> Receipt -> IO Receipt
 foldUnevaluated env target key = foldWith env target (ForKey key) AsOwed False
@@ -1948,9 +1943,7 @@ foldWith
     -> Receipt
     -> IO Receipt
 foldWith env target selection tweak byStranger r = do
-    let dir = targetDir env target
-        backendManifest = backendDir env target </> "registry.json"
-        opts = envOptions env
+    let opts = envOptions env
     reg <- openRegistry env target
     stranger <-
         loadWallet (fromIntegral (optMagic opts)) (optStranger opts)
@@ -2001,23 +1994,13 @@ foldWith env target selection tweak byStranger r = do
                         <> " requests are pending for the fold; it needs exactly one"
                     )
         let OnChainRoot chain = stateRoot oldState
-            opened manifest = do
-                saved <- loadMirror manifest
-                if Map.member tok saved
-                    then do
-                        (tm, dump) <- mkPureTrieManagerFrom saved
-                        Root local <- withTrie tm tok getRoot
-                        pure [(tm, dump) | local == chain]
-                    else pure []
-        mine <- opened backendManifest
-        theirs <- opened (dir </> "registry.json")
-        (tm, dump) <- case mine <> theirs of
-            (m : _) -> pure m
-            [] ->
-                fail
-                    ( "no saved mirror commits to the chain's root 0x"
-                        <> T.unpack (hex chain)
-                    )
+        tm <- Cage.withLatest prov $ \session -> do
+            answer <-
+                publicFoldTrie session (registrySelection session reg stateIn chain)
+            either
+                (\why -> fail (T.unpack (TS.trieFailureName why) <> ": " <> show why))
+                pure
+                answer
         live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         let envelopes =
                 [ envelopeOfRun
@@ -2142,16 +2125,9 @@ foldWith env target selection tweak byStranger r = do
                         , cfaAdjustRoot = id
                         }
         void (evaluate unsigned)
-        result <- fst <$> submitAndConfirm env caps folder r0 unsigned
-        -- The chain took the edge: the backend's mirror takes it too.
-        when (rcOutcome result == "accepted") $ do
-            withTrie tm tok $ \t ->
-                mapM_ (\(_, q) -> walkEdge t (requestKey q) (requestEdge q)) chosen
-            createDirectoryIfMissing True (backendDir env target)
-            dump >>= saveMirror backendManifest
-        pure result
+        fst <$> submitAndConfirm env caps folder r0 unsigned
 
--- | Where the backend keeps its own copy of a target's mirror.
+-- | Where the backend keeps a target's generated deployment fixtures.
 backendDir :: Env -> Target -> FilePath
 backendDir env (Target t) = optWork (envOptions env) </> "backend" </> t
 
@@ -2586,19 +2562,7 @@ authenticatedLeaf
     -> String
     -> IO (Maybe Text)
 authenticatedLeaf session reg output chain key = do
-    let TokenId name = regToken reg
-        Cage.SessionId label = Cage.sessionId session
-        binding = case Cage.sessionBinding session of
-            Cage.Unbound -> TS.Unbound
-            Cage.Bound slot header -> TS.Bound slot header
-        chosen =
-            TS.TrieSelection
-                ( TS.RegistryIdentity
-                    (TS.StatePolicyId (scriptHashBytes (cfgScriptHash (regCfg reg))))
-                    name
-                )
-                (TS.StatePoint (TS.SessionId label) binding output)
-                (Root chain)
+    let chosen = registrySelection session reg output chain
     answer <- TS.withTrieState (lineageTrieState session) chosen $ \snapshot ->
         TS.leafAt snapshot (keyBytes key)
     pure $ case answer of
@@ -2608,6 +2572,27 @@ authenticatedLeaf session reg output chain key = do
             TS.Active -> "active"
             TS.Terminal -> "terminal"
         _ -> Nothing
+
+-- | Bind public replay to the registry, acquired session and observed state.
+registrySelection
+    :: Cage.Session Cage.NoWitness IO
+    -> Registry
+    -> TxIn
+    -> ByteString
+    -> TS.TrieSelection
+registrySelection session reg output chain =
+    let TokenId name = regToken reg
+        Cage.SessionId label = Cage.sessionId session
+        binding = case Cage.sessionBinding session of
+            Cage.Unbound -> TS.Unbound
+            Cage.Bound slot header -> TS.Bound slot header
+    in  TS.TrieSelection
+            ( TS.RegistryIdentity
+                (TS.StatePolicyId (scriptHashBytes (cfgScriptHash (regCfg reg))))
+                name
+            )
+            (TS.StatePoint (TS.SessionId label) binding output)
+            (Root chain)
 
 -- | The protected deposit of every envelope this story inserts.
 storyDeposit :: Integer
