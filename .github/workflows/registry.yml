@@ -290,12 +290,11 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Prove the parts select the whole suite (dry runs, no node)
+      - name: Prove the lanes select the whole suite (dry runs, no node)
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          PATH="$(nix build --quiet --no-link --print-out-paths nixpkgs#jq)/bin:$PATH" \
-            REGISTRY_BLUEPRINT="$blueprint" bash ../tools/e2e_parts_proof.sh ../.github/ci/e2e-parts.json
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet ..#e2e-lanes-proof -- ../.github/ci/e2e-parts.json
       - id: parts
         name: Publish the parts
         run: |
