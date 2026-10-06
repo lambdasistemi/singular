@@ -12,7 +12,7 @@ set -euo pipefail
 parts="$1"
 count() {
   local out
-  if ! out="$(nix run --quiet .#cage-tests-e2e -- --dry-run "$@" 2>&1)"; then
+  if ! out="$(nix run --quiet .#cage-tests-e2e -- --dry-run --no-color "$@" 2>&1)"; then
     echo "FAIL: the dry run itself failed (args: $*):" >&2
     printf '%s\n' "$out" | tail -20 >&2
     exit 1
