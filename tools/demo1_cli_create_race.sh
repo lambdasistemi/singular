@@ -52,7 +52,7 @@ preview() {
   return "$status"
 }
 digest() {
-  (cd "$target" && sha256sum registry.json registry.pending.json state.json registry.mirror.json journal.jsonl)
+  (cd "$target" && sha256sum registry.json registry.pending.json journal.jsonl)
 }
 
 preview preview-first "$first_key" || setup_fail "the first wallet's preview failed"

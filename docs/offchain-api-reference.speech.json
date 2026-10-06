@@ -183,7 +183,7 @@
       "pause": 300
     },
     {
-      "text": "Singular.Registry.TrieState.Mirror — source",
+      "text": "Singular.Registry.TrieState.Lineage — source",
       "pause": 300
     },
     {
@@ -365,6 +365,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "5bc8908c2697f9dae03092daebd787f8769f1ffdecc4d0ceda3918eab341e4dc"
+    "sha256": "9c4b585aa43dbba40e9bc1ab6471ffc4ec229842b56e12d141aacb62eccc1452"
   }
 }

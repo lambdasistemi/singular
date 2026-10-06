@@ -15,7 +15,8 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List.NonEmpty (NonEmpty (..))
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import Singular.CLI.Live (failTrie)
-import Singular.CLI.Receipt (OutcomeClass (..), exitCodeOf)
+import Singular.CLI.Receipt (OutcomeClass (ClientRefusal), exitCodeOf)
+import Singular.CLI.Receipt qualified as Receipt
 import Singular.CLI.Session (CommandFailure (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (AssetName (..))
@@ -31,58 +32,65 @@ spec :: Spec
 spec = describe "An acquired session supplies the registry trie" $ do
     forM_ failures $ \failure ->
         it
-            ("retains every datum of " <> show failure <> " in HistoryIncomplete") $ do
-            calls <- newIORef []
-            let session =
-                    stubSession
-                        { LP.history = \asset range -> do
-                            modifyIORef' calls (<> [(asset, range)])
-                            pure (Left failure)
-                        }
-                capability = lineageTrieState session
-                selected = selection (LP.sessionId session)
-            withTrieState capability selected (const (pure ()))
-                `shouldReturn` Left
-                    ( HistoryIncomplete
-                        identity
-                        (transactionOf failure)
-                        (ProviderHistoryFailure failure)
-                    )
-            queried <- readIORef calls
-            length queried `shouldBe` 1
-            map snd queried `shouldBe` [LP.HistoryRange Nothing Nothing]
+            ("retains every datum of " <> show failure <> " in HistoryIncomplete")
+            $ do
+                calls <- newIORef []
+                let session =
+                        stubSession
+                            { LP.history = \asset range -> do
+                                modifyIORef' calls (<> [(asset, range)])
+                                pure (Left failure)
+                            }
+                    capability = lineageTrieState session
+                    selected = selection (LP.sessionId session)
+                withTrieState capability selected (const (pure ()))
+                    `shouldReturn` Left
+                        ( HistoryIncomplete
+                            identity
+                            (transactionOf failure)
+                            (ProviderHistoryFailure failure)
+                        )
+                queried <- readIORef calls
+                length queried `shouldBe` 1
+                map snd queried `shouldBe` [LP.HistoryRange Nothing Nothing]
     forM_ failures $ \failure ->
         it
             ( "prints the retained provider failure and its existing outcome: "
                 <> show failure
-            ) $ do
-            let refused =
-                    HistoryIncomplete
-                        identity
-                        (transactionOf failure)
-                        (ProviderHistoryFailure failure)
-                (wanted, status) = case failure of
-                    LP.HistoryReadFailure{} -> (ClientRefusal, ExitFailure 10)
-                    _ -> (StaleState, ExitFailure 14)
-            caught <- try (failTrie refused :: IO ())
-            case caught of
-                Left (CommandFailure cls why fields) -> do
-                    cls `shouldBe` wanted
-                    exitCodeOf cls `shouldBe` status
-                    why `shouldBe` "TrieState HistoryIncomplete"
-                    case lookup "trieRefusal" fields of
-                        Just (Object payload) ->
-                            KM.lookup "providerFailure" payload
-                                `shouldBe` Just (toJSON (show failure))
-                        other -> expectationFailure ("missing provider payload: " <> show other)
-                Right () -> expectationFailure "a provider failure was accepted"
+            )
+            $ do
+                let refused =
+                        HistoryIncomplete
+                            identity
+                            (transactionOf failure)
+                            (ProviderHistoryFailure failure)
+                    (wanted, status) = case failure of
+                        LP.HistoryReadFailure{} -> (ClientRefusal, ExitFailure 10)
+                        _ -> (Receipt.StaleState, ExitFailure 14)
+                caught <- try (failTrie refused :: IO ())
+                case caught of
+                    Left (CommandFailure cls why fields) -> do
+                        cls `shouldBe` wanted
+                        exitCodeOf cls `shouldBe` status
+                        why `shouldBe` "TrieState HistoryIncomplete"
+                        case lookup "trieRefusal" fields of
+                            Just (Object payload) ->
+                                KM.lookup "providerFailure" payload
+                                    `shouldBe` Just (toJSON (show failure))
+                            other -> expectationFailure ("missing provider payload: " <> show other)
+                    Right () -> expectationFailure "a provider failure was accepted"
     it "refuses another session before requesting history" $ do
         calls <- newIORef (0 :: Int)
         let session =
                 stubSession
                     { LP.history = \_ _ -> do
                         modifyIORef' calls (+ 1)
-                        pure (Left (head failures))
+                        pure
+                            ( Left
+                                ( LP.HistoryReadFailure
+                                    (LP.BackendReadFailure "provider withheld block 42")
+                                )
+                            )
                     }
         answer <-
             withTrieState
@@ -107,26 +115,29 @@ spec = describe "An acquired session supplies the registry trie" $ do
         answer
             `shouldBe` Left (HistoryIncomplete identity (Just firstId) MissingTransaction)
     it
-        "acceptObservedFold stores nothing and never substitutes for history" $ do
-        calls <- newIORef (0 :: Int)
-        let failure = head failures
-            session =
-                stubSession
-                    { LP.history = \_ _ -> do
-                        modifyIORef' calls (+ 1)
-                        pure (Left failure)
-                    }
-            capability = lineageTrieState session
-            chosen = selection (LP.sessionId session)
-        acceptObservedFold
-            capability
-            (ObservedFold chosen chosen (("key", 1) :| []))
-            `shouldReturn` Right ()
-        forM_ [1 :: Int, 2] $ \_ ->
-            withTrieState capability chosen (const (pure ()))
-                `shouldReturn` Left
-                    (HistoryIncomplete identity Nothing (ProviderHistoryFailure failure))
-        readIORef calls `shouldReturn` 2
+        "acceptObservedFold stores nothing and never substitutes for history"
+        $ do
+            calls <- newIORef (0 :: Int)
+            let failure =
+                    LP.HistoryReadFailure
+                        (LP.BackendReadFailure "provider withheld block 42")
+                session =
+                    stubSession
+                        { LP.history = \_ _ -> do
+                            modifyIORef' calls (+ 1)
+                            pure (Left failure)
+                        }
+                capability = lineageTrieState session
+                chosen = selection (LP.sessionId session)
+            acceptObservedFold
+                capability
+                (ObservedFold chosen chosen (("key", 1) :| []))
+                `shouldReturn` Right ()
+            forM_ [1 :: Int, 2] $ \_ ->
+                withTrieState capability chosen (const (pure ()))
+                    `shouldReturn` Left
+                        (HistoryIncomplete identity Nothing (ProviderHistoryFailure failure))
+            readIORef calls `shouldReturn` 2
 
 identity :: RegistryIdentity
 identity =

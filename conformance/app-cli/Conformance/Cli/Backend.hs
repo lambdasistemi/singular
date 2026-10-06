@@ -40,7 +40,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, unless, void, when)
+import Control.Monad (filterM, forM_, unless, void, when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
@@ -77,7 +77,6 @@ import System.Directory
     , doesPathExist
     , getPermissions
     , readable
-    , renameFile
     )
 import System.Environment (getEnvironment)
 import System.Exit (ExitCode (..))
@@ -196,6 +195,7 @@ import Singular.Registry.Deployment
     , renderOutRef
     , saveMirror
     )
+import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
@@ -206,6 +206,7 @@ import Singular.Registry.LedgerProvider
     ( SubmitResult (..)
     , TipObservation (..)
     )
+import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signTx, signedTx)
@@ -302,7 +303,6 @@ import Conformance.Cli.Controls
     , statementBindings
     , validateControls
     )
-import Conformance.Cli.Proof (leafText, provenLeaf)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -310,6 +310,8 @@ import Conformance.Story.Specification
     , checkAction
     , clauses
     )
+import Singular.Registry.TrieState qualified as TS
+import Singular.Registry.TrieState.Lineage (lineageTrieState)
 
 -- ---------------------------------------------------------
 -- Options
@@ -1293,9 +1295,15 @@ runCommand env c target key r = do
     ls <- journalLines' journal
     let gained = drop before ls
     (submissions, resolved) <- journalledSubmissions env (pure gained)
+    observation <-
+        if c == Inspect
+            && printedField "outcome" printed == Just (String "success")
+            then rcObservation <$> observe env target key r
+            else pure Nothing
     pure
         (fromPrinted r status printed file)
-            { rcSubmissions = submissions
+            { rcObservation = observation
+            , rcSubmissions = submissions
             , rcResolved = resolved
             , rcJournal =
                 Just
@@ -1526,12 +1534,14 @@ provoke env p target key r = do
                 _ -> fail "the saved configuration is not a JSON object"
             (BL.writeFile config (Aeson.encode changed) >> plain args)
                 `finally` BS.writeFile config saved
-        WithoutProof -> do
-            args <- commandArgs env Inspect target key r
-            let mirror = dir </> "registry.mirror.json"
-                aside = backendDir env target </> "registry.mirror.json.aside"
-            renameFile mirror aside
-            plain args `finally` renameFile aside mirror
+        WithoutProof ->
+            pure
+                r
+                    { rcOutcome = "client-error"
+                    , rcReason =
+                        Just
+                            "inspect never reads saved proof material; it rebuilds a root-checked trie from public history, so this control has no missing-proof witness"
+                    }
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
             plain (providerTo "http://127.0.0.1:1/api/v1" args)
@@ -1539,7 +1549,9 @@ provoke env p target key r = do
             args <- commandArgs env Terminate target key r
             (status, printed, file) <- killedAt env r label hold "fold" args
             awaitKilled
-            finish status printed file id
+            stopped <- finish status printed file id
+            observed <- observe env target key r
+            pure stopped{rcObservation = rcObservation observed}
         UpdateAfterKill -> commandArgs env (Update 3) target key r >>= plain
         CreateKilled -> do
             seed <-
@@ -1676,10 +1688,12 @@ provoke env p target key r = do
                 <> developmentWindows
     snapshot copyDir = do
         createDirectoryIfMissing True copyDir
-        forM_ savedFiles $ \f ->
-            copyFile (targetDir env target </> f) (copyDir </> f)
+        forM_ savedFiles $ \f -> do
+            exists <- doesFileExist (targetDir env target </> f)
+            when exists $ copyFile (targetDir env target </> f) (copyDir </> f)
         digests copyDir
-    digests d =
+    digests d = do
+        existing <- filterM (doesFileExist . (d </>)) savedFiles
         mapM
             ( \f -> do
                 bytes <- BS.readFile (d </> f)
@@ -1688,12 +1702,10 @@ provoke env p target key r = do
                     , hex (sha256 bytes)
                     )
             )
-            savedFiles
+            existing
     savedFiles =
         [ "registry.json"
         , "registry.pending.json"
-        , "state.json"
-        , "registry.mirror.json"
         , "journal.jsonl"
         ]
 
@@ -2179,7 +2191,9 @@ observe env target key r = do
                 prov
                 (`Cage.outputsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
         wallets <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
-        leaf <- authenticatedLeaf env target reg root key
+        leaf <- Cage.withLatest prov $ \session -> do
+            selected <- attach session (regDeployment reg) (partsOf cfg)
+            authenticatedLeaf session reg (fst (attStateUtxo selected)) root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
             r
@@ -2564,28 +2578,37 @@ craftTermination env byStranger target key r = do
 sha256 :: ByteString -> ByteString
 sha256 = hashToBytes . hashWith @SHA256 id
 
-{- | The key's leaf, proven against the chain's root ('provenLeaf') from the
-tree nodes of a saved mirror: the backend's own copy, else the command's.
-A copy that commits to another root, or whose nodes prove no single leaf,
-answers nothing; neither copy is ever written.
--}
+-- | Authenticate the leaf through public replay at this acquired state output.
 authenticatedLeaf
-    :: Env -> Target -> Registry -> ByteString -> String -> IO (Maybe Text)
-authenticatedLeaf env target reg chain key = go manifests
-  where
-    manifests =
-        [ backendDir env target </> "registry.json"
-        , targetDir env target </> "registry.json"
-        ]
-    go [] = pure Nothing
-    go (manifest : rest) = do
-        saved <- loadMirror manifest
-        case Map.lookup (regToken reg) saved of
-            Nothing -> go rest
-            Just db ->
-                provenLeaf db (keyBytes key) chain >>= \case
-                    Right leaf -> pure (Just (leafText leaf))
-                    Left _ -> go rest
+    :: Cage.Session Cage.NoWitness IO
+    -> Registry
+    -> TxIn
+    -> ByteString
+    -> String
+    -> IO (Maybe Text)
+authenticatedLeaf session reg output chain key = do
+    let TokenId name = regToken reg
+        Cage.SessionId label = Cage.sessionId session
+        binding = case Cage.sessionBinding session of
+            Cage.Unbound -> TS.Unbound
+            Cage.Bound slot header -> TS.Bound slot header
+        chosen =
+            TS.TrieSelection
+                ( TS.RegistryIdentity
+                    (TS.StatePolicyId (scriptHashBytes (cfgScriptHash (regCfg reg))))
+                    name
+                )
+                (TS.StatePoint (TS.SessionId label) binding output)
+                (Root chain)
+    answer <- TS.withTrieState (lineageTrieState session) chosen $ \snapshot ->
+        TS.leafAt snapshot (keyBytes key)
+    pure $ case answer of
+        Right (Right leaf) -> Just $ case leaf of
+            TS.Unknown -> "unknown"
+            TS.Absent -> "absent"
+            TS.Active -> "active"
+            TS.Terminal -> "terminal"
+        _ -> Nothing
 
 -- | The protected deposit of every envelope this story inserts.
 storyDeposit :: Integer

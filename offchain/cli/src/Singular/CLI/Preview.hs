@@ -11,12 +11,12 @@ evaluator measured for it, the collateral it states and the outlay it
 asks of the wallet, all under the parameters the selected network reports.
 A preview attaches the saved registry to the chain exactly as the writing
 command does — identity, network, live references, the state output and the
-mirror's root against the ledger's — then builds the same transactions from
+replayed root against the ledger's — then builds the same transactions from
 the same plan ("Singular.CLI.Plan") and prints them.
 
 It holds no signing key. It names the caller by a public enterprise address,
 reads through the read capability alone, one acquired view (`withReads`), and
-writes no journal, mirror or registry file. A preview is not a
+writes no journal, registry file. A preview is not a
 confirmation: its bodies are built for this moment — a booking carries the
 time it was built — and nothing it prints is an observation of a chain
 effect.
@@ -33,7 +33,6 @@ module Singular.CLI.Preview
     , runPreview
     ) where
 
-import Control.Monad (when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
@@ -132,7 +131,7 @@ runPreview kind a settings addrText = do
         KInsert ->
             Just . insertionOf saved a caller <$> readInsertPayload a
         _ -> pure Nothing
-    -- One view for the whole preparation: the state, the mirror's root
+    -- One view for the whole preparation: the state, the replayed root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
     withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
@@ -142,21 +141,10 @@ runPreview kind a settings addrText = do
             (failWith ClientRefusal . renderIdentityError)
             pure
             (checkNetwork (savedConfig saved) magic)
-        mirror <- openMirror saved
+        context <- openTrie saved
         live <- attachLive v saved
         observed <- either (failWith StaleState) pure (observedRoot live)
-        local <- mirrorRoot saved mirror
-        when (local /= observed) $
-            failWith
-                StaleState
-                ( "the saved mirror commits to 0x"
-                    <> T.unpack (hexT local)
-                    <> " but the ledger holds 0x"
-                    <> T.unpack (hexT observed)
-                    <> ": stale, concurrent or altered local state is refused, \
-                       \never repaired"
-                )
-        requireMirrorSelection saved live mirror
+        requireTrieSelection saved live context
         prepared <- case kind of
             KInsert -> do
                 envelope <-

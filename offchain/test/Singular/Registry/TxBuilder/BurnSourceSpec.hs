@@ -51,7 +51,6 @@ import Data.Set qualified as Set
 import Data.Word (Word8)
 import GHC.Clock (getMonotonicTimeNSec)
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
-import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
@@ -120,7 +119,7 @@ import UntypedPlutusCore.DeBruijn ()
 import Cardano.Slotting.Slot (SlotNo (..))
 import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment (parseOutRef, saveMirror)
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
@@ -145,7 +144,7 @@ import Singular.Registry.SyntheticTime
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TrieState qualified as TS
-import Singular.Registry.TrieState.Mirror qualified as Mirror
+import Singular.Registry.TrieState.Fixture qualified as Fixture
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
@@ -1410,29 +1409,28 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                 )
                 foldProvider
     checkView name view = checkWith name who stateIn (const view)
-    checkWith name identity output viewAt = withSystemTempDirectory "fold-builder-refusals" $ \path -> do
-        saveMirror path (Map.singleton foldTokenId emptyMPFInMemoryDB)
-        opened <- Mirror.openStoredMirror path identity
-        store <-
-            either
-                (\why -> expectationFailure (show why) >> fail "mirror setup")
-                pure
-                opened
-        observedRoot <- Mirror.storedRoot store
-        root <-
-            either
-                (\why -> expectationFailure (show why) >> fail "root setup")
-                pure
-                observedRoot
-        let point = TS.StatePoint (TS.SessionId "builder-fixture") TS.Unbound output
+    checkWith name identity output viewAt = do
+        let root = Root (BS.replicate 32 0)
+            point = TS.StatePoint (TS.SessionId "builder-fixture") TS.Unbound output
             chosen = TS.TrieSelection identity point root
-        capability <-
-            Mirror.mirrorTrieState
-                store
-                chosen
-                (TS.CreateRecord identity output)
-                []
-                (const (pure ()))
+            fixture =
+                Fixture.fixtureStore
+                    [
+                        ( chosen
+                        , Just (TS.CreateRecord identity output)
+                        , []
+                        , emptyMPFInMemoryDB
+                        )
+                    ]
+        checkedSnapshot <-
+            either
+                (\why -> expectationFailure (show why) >> fail "fixture setup")
+                pure
+                (Fixture.fixtureSnapshot fixture chosen)
+        let capability =
+                TS.TrieState
+                    (\_ use -> Right <$> use checkedSnapshot)
+                    (const (pure (Right ())))
         result <- TS.withTrieState capability chosen $ \snap ->
             try @ErrorCall
                 ( updateTokenWithTrieState

@@ -397,7 +397,7 @@ data Requirement
       Established
     | {- | Command receipts that all succeeded, then a fresh reading of the
       exact key: an @ that authenticated it Active against the
-      chain's root, or a readback whose mirror copy agrees with that root
+      chain's root, or a readback whose public replay agrees with that root
       -}
       ReachedActive
     | -- | The same, reading the key Terminal
@@ -421,14 +421,14 @@ data Requirement
       -}
       StoppedAfterAcceptance
     | {- | The killed @terminate@ and the @update@ after it: either the
-      update succeeded, having applied the killed fold to the mirror and
+      update succeeded, having replayed the killed fold at its chain root and
       observed it, or it was refused before submitting anything, naming the
       killed fold and its case
       -}
       ReconciledOrRefused
     | {- | The killed @terminate@, the @update@ after it and a later
       @inspect@ of its key: the key reads Terminal, and the killed fold was
-      applied to the mirror exactly once and observed exactly once across
+      replayed at the chain root, never resubmitted and observed exactly once across
       the update's and the inspect's receipts
       -}
       ResolvedFromChain
@@ -1384,7 +1384,7 @@ settlementStory = do
         _ <-
             premiseClause
                 foldInversion
-                "the other key still reads Active, from a readback whose mirror copy agrees with the chain's root"
+                "the other key still reads Active, from a readback whose public replay agrees with the chain's root"
                 ReachedActive
                 (pure <$> action (Observe target otherKey))
         _ <-
@@ -1726,7 +1726,7 @@ processStory = do
                 (pure <$> action (Provoke UpdateAfterKill target second))
         _ <-
             clause
-                "inspect reads the key Terminal, the fold applied to the mirror once and observed once across every receipt: the killed terminate's fold is accepted"
+                "inspect reads the key Terminal, the fold replayed at the chain root, never resubmitted and observed once across every receipt: the killed terminate's fold is accepted"
                 ( bindCheck partialSurvives $ \seen ->
                     action
                         (Require ResolvedFromChain (take 1 killed <> take 1 updated <> [seen]))
@@ -2105,9 +2105,9 @@ data Observation = Observation
     , obPendingLovelace :: Integer
     , obWalletLovelace :: Integer
     , obLeaf :: Maybe Text
-    {- ^ The key's leaf, read from a mirror copy whose root is the root the
-    chain holds: @active@, @terminal@ or @absent@; nothing when no copy
-    agrees with the chain
+    {- ^ The key's leaf, authenticated by public replay at the root the
+    chain holds: @active@, @terminal@ or @absent@; nothing when the
+    acquired history does not prove it
     -}
     }
     deriving stock (Eq, Show)
@@ -3004,10 +3004,12 @@ check req rs = case (req, rs) of
             t : _ -> case rcOutcome r of
                 "success" ->
                     succeeded "the update" r
-                        <> [ "the update did not apply the killed fold "
-                                <> T.unpack t
-                                <> " to the mirror"
-                           | strings (at [field "reconciled", field "applied"] r) /= [t]
+                        <> same
+                            "the replayed root and the included fold's chain root"
+                            (at [field "root"] r)
+                            (Aeson.String . obRoot <$> rcObservation killed)
+                        <> [ "the killed fold was submitted again"
+                           | t `elem` map suTxId (rcSubmissions r)
                            ]
                         <> [ "the update did not observe the killed fold " <> T.unpack t
                            | t `notElem` strings (at [field "reconciled", field "observed"] r)
@@ -3048,15 +3050,25 @@ check req rs = case (req, rs) of
                                 , n /= 1
                                 ]
                         in  times
-                                "applied to the mirror"
-                                ( strings (at [field "reconciled", field "applied"] updated)
-                                    <> strings (at [field "mirrorAdvanced"] seen)
+                                "observed"
+                                ( strings (at [field "reconciled", field "observed"] updated)
+                                    <> strings (at [field "observed"] seen)
                                 )
-                                <> times
-                                    "observed"
-                                    ( strings (at [field "reconciled", field "observed"] updated)
-                                        <> strings (at [field "observed"] seen)
-                                    )
+                                <> [ "the killed fold was submitted again"
+                                   | t
+                                        `elem` ( map suTxId (rcSubmissions updated <> rcSubmissions seen)
+                                                    <> maybe [] peSubmitted (rcProcess updated)
+                                                    <> maybe [] peSubmitted (rcProcess seen)
+                                               )
+                                   ]
+                                <> same
+                                    "the replayed root and the included fold's chain root"
+                                    (at [field "root"] seen)
+                                    (Aeson.String . obRoot <$> rcObservation killed)
+                                <> same
+                                    "the replayed root and inspect's chain root"
+                                    (at [field "root"] seen)
+                                    (Aeson.String . obRoot <$> rcObservation seen)
                 )
             <> admitted killed
     (IncompleteCreateRead, [killed, seen]) ->
@@ -3219,14 +3231,15 @@ replay byStep story =
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, (bodyFailures, _)), Nothing) ->
+                    (Just (obs, (bodyFailures, _, unavailable)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
-                                bodyFailures <> maybe [] (fst . snd) checked
-                            isPremise = maybe False (snd . snd) checked
+                                bodyFailures <> maybe [] (\(_, (fs, _, _)) -> fs) checked
+                            isPremise = maybe False (\(_, (_, p, _)) -> p) checked
                             status
                                 | Just why <- stop' = Uncovered why
+                                | Just why <- unavailable = Uncovered why
                                 | Just failed <- premise =
                                     Uncovered ("its premise does not hold: " <> failed)
                                 | null failures = Held
@@ -3253,19 +3266,41 @@ replay byStep story =
 
     {- Walk a program, collecting the failures of the requirements in it and
     whether any of them is a premise the rest of the telling depends on. -}
-    collect :: Replay -> Story a -> (Maybe (a, ([String], Bool)), Replay)
-    collect st0 = walk st0 ([], False)
+    collect
+        :: Replay
+        -> Story a
+        -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
+    collect st0 = walk st0 ([], False, Nothing)
       where
         walk
             :: Replay
-            -> ([String], Bool)
+            -> ([String], Bool, Maybe String)
             -> Story a
-            -> (Maybe (a, ([String], Bool)), Replay)
+            -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
         walk st@(Replay _ _ (Just _)) _ _ = (Nothing, st)
-        walk st acc@(fs, p) program = case view program of
+        walk st acc@(fs, p, unavailable) program = case view program of
             Return a -> (Just (a, acc), st)
             Action (Require req rs) :>>= next ->
-                walk st (fs <> check req rs, p || req `elem` premises) (next ())
+                walk
+                    st
+                    (fs <> check req rs, p || req `elem` premises, unavailable)
+                    (next ())
+            Action i@(Provoke WithoutProof _ _) :>>= next -> case perform st i of
+                (Just r, st') ->
+                    let missing =
+                            rcOutcome r == "client-error"
+                                && rcCommand r == Nothing
+                                && rcProcess r == Nothing
+                        why =
+                            if missing
+                                then
+                                    Just
+                                        ( T.unpack
+                                            (fromMaybe "the control recorded no command witness" (rcReason r))
+                                        )
+                                else unavailable
+                    in  walk st' (fs, p, why) (next r)
+                (Nothing, st') -> (Nothing, st')
             Action i :>>= next -> case perform st i of
                 (Just r, st') -> walk st' acc (next r)
                 (Nothing, st') -> (Nothing, st')
@@ -3664,7 +3699,7 @@ approvedCases =
                     ,
                         [ "a terminate killed once the node accepted its fold stopped there, its body kept"
                         , "an update of another key then reconciles the fold from the chain and proceeds, or, while the fold is not yet on chain, is refused before submitting, naming the fold and its case"
-                        , "inspect reads the key Terminal, the fold applied to the mirror once and observed once across every receipt: the killed terminate's fold is accepted"
+                        , "inspect reads the key Terminal, the fold replayed at the chain root, never resubmitted and observed once across every receipt: the killed terminate's fold is accepted"
                         ]
                     )
                 ,
@@ -4085,7 +4120,7 @@ reachedLeaf leaf rs = case reverse rs of
                                 <> T.unpack leaf
                             ]
                     Nothing ->
-                        [ "no mirror copy agrees with the chain's root, so the key's leaf is not authenticated"
+                        [ "public replay does not authenticate the key's leaf at the chain's root"
                         ]
         | otherwise =
             [ "the premise ends in "

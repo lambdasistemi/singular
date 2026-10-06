@@ -12,7 +12,6 @@ import Singular.CLI.Registry (hexT)
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.TrieState
-import Singular.Registry.TrieState.Mirror (TrieObservation (..))
 import System.Environment (lookupEnv)
 
 observeTrie :: TrieObservation -> IO ()

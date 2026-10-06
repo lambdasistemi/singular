@@ -10,7 +10,7 @@ Each write attaches first ("Singular.CLI.Attached"): the saved identity
 is re-derived and checked, the network must be the saved one, the journal
 is reconciled ("Singular.CLI.Reconcile") and must then hold no
 unresolved submission, the reference outputs and the state
-output are resolved, and the local mirror must commit to exactly the
+output are resolved, and the public replay must commit to exactly the
 root the ledger holds. The command then calls the production builders —
 it decides no validator or fold rule itself — journals every submission,
 and reads back what each made before journalling it @observed@.
@@ -24,7 +24,7 @@ controller, and only that controller may update or terminate it.
   booking certifies it through the application and leaves its request
   pending; the registry's fold ("Singular.CLI.Fold") later delivers the
   key's active token to an output at the application carrying the
-  envelope inline, and the mirror then binds the key @Active@. The booking
+  envelope inline, and the replay then proves the key @Active@. The booking
   keeps the envelope in the registry directory
   ("Singular.CLI.Preimage") for that fold.
 * __update__: the caller must be the live envelope's controller. The live
@@ -33,11 +33,11 @@ controller, and only that controller may update or terminate it.
 * __terminate__: the caller must be the live envelope's controller. The
   booking reads the live output by reference and leaves its request
   pending; the fold spends the output with @Release@, burns its token, and
-  pays the deposit back with the booking's. The mirror then binds the key
+  pays the deposit back with the booking's. The replay then proves the key
   @Terminal@.
 
-An insert or a terminate submits the booking and nothing else: the mirror,
-the root and @state.json@ do not move, and the receipt names the pending
+An insert or a terminate submits the booking and nothing else: the trie,
+the root do not move, and the receipt names the pending
 request and the deadline by which it must be folded. With @--fold@ the
 same command then runs that fold, by the routine @registry fold@ runs,
 once the booking has confirmed.
@@ -286,7 +286,7 @@ runUpdate a = case entryMode a of
             let s = savedOf at
                 wc = atWrite at
                 addr = walletAddr (wcWallet wc)
-            rootBefore <- selectedMirrorRoot (atMirror at)
+            rootBefore <- selectedTrieRoot (atTrie at)
             -- The live output, its controller, the funding output, the
             -- parameters, the script evaluation and the outlay judged against
             -- the allowance all come from the update's one view.

@@ -48,6 +48,7 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (isInfixOf, sort)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
@@ -72,7 +73,6 @@ import System.Directory
     , withCurrentDirectory
     )
 import System.Environment (lookupEnv, setEnv, unsetEnv)
-import System.Exit (ExitCode (..))
 import System.FilePath (takeDirectory, (</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -88,11 +88,14 @@ import System.Posix.IO
     , stdOutput
     )
 import System.Posix.Types (Fd)
-import Test.Hspec
+import Test.Hspec hiding (context)
 
 import Cardano.Crypto.DSIGN (rawSerialiseSignKeyDSIGN)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Api.Scripts.Data (Data (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
@@ -102,29 +105,33 @@ import Cardano.Ledger.Api.Tx.Body
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL, mkBasicTxOut)
-import Cardano.Ledger.Api.Tx.Wits (addrTxWitsL)
+import Cardano.Ledger.Api.Tx.Wits (addrTxWitsL, rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes
     ( Network (Testnet)
     , SlotNo (..)
     , StrictMaybe (..)
     , TxIx (..)
     )
+import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
+import Singular.Registry.AssetName (deriveAssetName)
 
 import Data.Aeson.KeyMap qualified as KeyMap
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
 import Singular.CLI.Live
     ( Live (..)
-    , Mirror
     , Saved (..)
-    , newStatePoint
-    , openMirror
-    , requireMirrorSelection
-    , savedIdentity
+    , TrieContext
+    , openTrie
+    , requireTrieSelection
+    , selectedTrieRoot
     , txInText
     )
 import Singular.CLI.Plan (planTerminate, planUpdate)
@@ -132,14 +139,12 @@ import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
     , appendJournal
-    , exitCodeOf
     , outcomeName
     , readJournal
     , unresolved
     )
 import Singular.CLI.Registry
-    ( configPath
-    , hexT
+    ( hexT
     , mkRegistryConfig
     , pinsOf
     )
@@ -153,7 +158,6 @@ import Singular.CLI.Session
     , submitBuilt
     , txIdHex
     )
-import Singular.CLI.TrieHistory (readTrieHistory)
 import Singular.Registry.Capabilities
     ( Capabilities (..)
     , sessionReceipt
@@ -161,11 +165,15 @@ import Singular.Registry.Capabilities
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment
     ( Deployment (..)
-    , mirrorPathFor
     , parseOutRef
     )
 import Singular.Registry.Evidence (unverifiedVerifier)
-import Singular.Registry.Ledger (Coin (..), Root (..), TokenId (..))
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , TokenId (..)
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -185,8 +193,6 @@ import Singular.Registry.StubSession
     , stubSession
     , withAddressOutputs
     )
-import Singular.Registry.TrieState qualified as TS
-import Singular.Registry.TrieState.Mirror qualified as TrieMirror
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -196,9 +202,11 @@ import Singular.Registry.TxBuilder.Internal
     , requestAddrFromCfg
     , scriptHashBytes
     , toPlcData
+    , txInToRef
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , MintRedeemer (..)
     , OnChainRoot (..)
     , edgeName
     )
@@ -272,92 +280,19 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
 inputRows :: Spec
 inputRows = describe "TrieState command input refusals on injected capabilities" $ do
     it
-        "invalid included-fold journal records keep their refusal class and name the decoded transaction"
+        "removing or corrupting journal trie records does not change the public trie"
         $ withInputFixture
-        $ \fx saved live mirror _ -> do
-            (foldTx, ()) <- write fx
-            journalObserved
-                (writeContext fx)
-                "fold"
-                foldTx
-                "fixture fold recorded"
+        $ \fx saved live context _ -> do
             entries <- readJournal (fxDir fx)
-            let who = savedIdentity saved
-                sid = TS.SessionId "journal-root-control"
-                emptyHex = hexT (BS.replicate 32 0)
-                corrupt corruptBefore text entry
-                    | journalEvent entry == "prepared"
-                    , journalStep entry == "fold" =
-                        entry
-                            { journalEdge = Just 1
-                            , journalKey = Just (hexT "fixture-key")
-                            , journalRootBefore = Just (if corruptBefore then text else emptyHex)
-                            , journalRootAfter = Just (if corruptBefore then emptyHex else text)
-                            }
-                    | otherwise = entry
-                writeEntries es =
-                    BS.writeFile
-                        (fxDir fx </> "journal.jsonl")
-                        (BL.toStrict (foldMap (\e -> Aeson.encode e <> "\n") es))
-            baseline <- readTrieHistory (fxDir fx) sid who
-            case baseline of
-                Right (_, folds) -> folds `shouldBe` []
-                Left why -> expectationFailure ("baseline history refused: " <> show why)
-            forM_ [True, False] $ \corruptBefore ->
-                forM_ ["not-a-hex-root", "abc", "gg"] $ \text -> do
-                    writeEntries (map (corrupt corruptBefore text) entries)
-                    history <- readTrieHistory (fxDir fx) sid who
-                    case history of
-                        Left why ->
-                            why
-                                `shouldBe` TS.RootDoesNotChain
-                                    who
-                                    (Just (txIdTx foldTx))
-                                    (TS.UnreadableRoot "an accepted fold's journal root is not hex")
-                        Right _ -> expectationFailure "a malformed fold root was accepted"
-                    result <-
-                        try @CommandFailure (requireMirrorSelection saved live mirror)
-                    case result of
-                        Left (CommandFailure cls why _) -> do
-                            outcomeName cls `shouldBe` "stale-state"
-                            exitCodeOf cls `shouldBe` ExitFailure 14
-                            why `shouldBe` "TrieState RootDoesNotChain"
-                        Right _ -> expectationFailure "a malformed fold root served a mirror"
-            txIdHex foldTx `shouldNotBe` emptyHex
-            forM_ [Nothing, Just "not-a-hex-key"] $ \key -> do
-                let badKey entry
-                        | journalEvent entry == "prepared"
-                        , journalStep entry == "fold" =
-                            entry
-                                { journalEdge = Just 1
-                                , journalKey = key
-                                , journalRootBefore = Just emptyHex
-                                , journalRootAfter = Just (txIdHex foldTx)
-                                }
-                        | otherwise = entry
-                    record = case key of
-                        Nothing -> "an accepted fold names no key"
-                        Just _ -> "an accepted fold's key is not hex"
-                writeEntries (map badKey entries)
-                history <- readTrieHistory (fxDir fx) sid who
-                case history of
-                    Left why ->
-                        why
-                            `shouldBe` TS.UndecodableRequest
-                                who
-                                (Just (txIdTx foldTx))
-                                (TS.UnreadableRecord record)
-                    Right _ -> expectationFailure "an invalid fold key was accepted"
-                result <-
-                    try @CommandFailure (requireMirrorSelection saved live mirror)
-                case result of
-                    Left (CommandFailure cls why _) -> do
-                        outcomeName cls `shouldBe` "client-refusal"
-                        exitCodeOf cls `shouldBe` ExitFailure 10
-                        why `shouldBe` "TrieState UndecodableRequest"
-                    Right _ -> expectationFailure "an invalid fold key served a mirror"
-            writeEntries entries
-            requireMirrorSelection saved live mirror
+            BS.writeFile (fxDir fx </> "journal.jsonl") ""
+            requireTrieSelection saved live context
+            selectedTrieRoot context `shouldReturn` BS.replicate 32 0
+            BS.writeFile (fxDir fx </> "journal.jsonl") "corrupt local history"
+            requireTrieSelection saved live context
+            selectedTrieRoot context `shouldReturn` BS.replicate 32 0
+            BS.writeFile
+                (fxDir fx </> "journal.jsonl")
+                (BL.toStrict (foldMap (\e -> Aeson.encode e <> "\n") entries))
     forM_ [0, 2, 4, 5, 6, 7, 42] $ \edge ->
         forM_ [False, True] $ \combined ->
             it
@@ -409,7 +344,6 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                     , fsAllowance = Nothing
                                     }
                     journalBefore <- readJournal (fxDir fx)
-                    nodesBefore <- BS.readFile (mirrorPathFor (configPath (fxDir fx)))
                     sentBefore <- readIORef (fxSent fx)
                     confirmedBefore <- readIORef (fxConfirmed fx)
                     result <- try @CommandFailure action
@@ -422,8 +356,6 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                 `shouldBe` Just (Aeson.toJSON (txInText request))
                         Right _ -> expectationFailure "an unsupported pending edge folded"
                     readJournal (fxDir fx) `shouldReturn` journalBefore
-                    BS.readFile (mirrorPathFor (configPath (fxDir fx)))
-                        `shouldReturn` nodesBefore
                     readIORef (fxSent fx) `shouldReturn` sentBefore
                     readIORef (fxConfirmed fx) `shouldReturn` confirmedBefore
                     let bounds =
@@ -461,10 +393,16 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
             readJournal (fxDir fx) `shouldReturn` entries
 
 withInputFixture
-    :: (Fixture -> Saved -> Live -> Mirror -> ConwayTx -> IO a) -> IO a
+    :: (Fixture -> Saved -> Live -> TrieContext -> ConwayTx -> IO a) -> IO a
 withInputFixture use = withFixture $ \fx -> do
     let cfg = Booking.cfg
-        tid@(TokenId name) = Booking.tokenId
+        seed = either error id (parseOutRef (T.pack (replicate 64 '1' <> "#0")))
+        seedOut =
+            mkBasicTxOut
+                (walletAddr (fxWallet fx))
+                (MaryValue (Coin 10_000_000) mempty)
+        tid@(TokenId name) =
+            TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seed))))
         policy = cagePolicyIdFromCfg cfg
         emptyRoot = BS.replicate 32 0
         stateOut =
@@ -480,10 +418,17 @@ withInputFixture use = withFixture $ \fx -> do
         unsigned =
             mkBasicTx
                 ( mkBasicTxBody
+                    & inputsTxBodyL .~ Set.singleton seed
                     & outputsTxBodyL .~ StrictSeq.fromList [stateOut]
                     & mintTxBodyL
                         .~ MultiAsset (Map.singleton policy (Map.singleton name 1))
                 )
+                & witsTxL . rdmrsTxWitsL
+                    .~ Redeemers
+                        ( Map.singleton
+                            (ConwayMinting (AsIx 0))
+                            (Data (toPlcData (Minting (txInToRef seed))), ExUnits 0 0)
+                        )
         deployment =
             Deployment
                 { depRelease = "injected-command-fixture"
@@ -525,23 +470,38 @@ withInputFixture use = withFixture $ \fx -> do
         boot
         "fixture state output recorded"
     SessionIO.withLatest (capReads (wcCapabilities (writeContext fx))) $ \actualSession -> do
-        let live =
-                Live
-                    { liveSession = actualSession
-                    , liveSaved = saved
-                    , liveRefs = []
-                    , liveState = (TxIn (txIdTx boot) (TxIx 0), stateOut)
+        let record =
+                Cage.HistoricalTransaction
+                    { Cage.historicalId = txIdTx boot
+                    , Cage.historicalCbor =
+                        BL.toStrict (serialize (eraProtVerHigh @ConwayEra) boot)
+                    , Cage.historicalTx = boot
+                    , Cage.spentOutputs = [(seed, seedOut)]
+                    , Cage.referenceOutputs = []
+                    , Cage.createdOutputs = [(TxIn (txIdTx boot) (TxIx 0), stateOut)]
+                    , Cage.scriptValid = True
                     }
-        let point = newStatePoint actualSession (fst (liveState live))
-        let chosen = TS.TrieSelection (savedIdentity saved) point (Root emptyRoot)
-        TrieMirror.createStoredMirror
-            (configPath (fxDir fx))
-            chosen
-            boot
-            (const (pure ()))
-            `shouldReturn` Right ()
-        mirror <- openMirror saved
-        requireMirrorSelection saved live mirror
+            session =
+                actualSession
+                    { Cage.history = \_ _ ->
+                        pure
+                            ( Right
+                                ( Cage.HistoryStream
+                                    ( pure
+                                        ( Right
+                                            ( Just
+                                                ( Cage.HistoryBlock 1 (record :| [])
+                                                , Cage.HistoryStream (pure (Right Nothing))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                    }
+            live = Live session saved [] (TxIn (txIdTx boot) (TxIx 0), stateOut)
+        mirror <- openTrie saved
+        requireTrieSelection saved live mirror
         use fx saved live mirror boot
 
 data Fixture = Fixture

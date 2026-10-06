@@ -40,7 +40,7 @@ import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((%~), (&), (.~), (^.))
-import Test.Hspec
+import Test.Hspec hiding (after, before)
 
 import Cardano.Ledger.Address (getNetwork)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
@@ -157,171 +157,191 @@ spec bp =
 replaySpec :: SpecWith History
 replaySpec = do
     describe
-        "Commands select the trie from their acquired session history" $ do
-        it
-            "serves the chain root, coverage and proofs from create through every fold" $ \h -> do
-            blocks <- newIORef (lineageBlocks h)
-            let session = lineageSession blocks
-                backend = lineageTrieState session
-            forM_ (zip [0 ..] (points h)) $ \(count, p) -> do
-                answer <- TS.withTrieState backend (lineageSelection session h p) $ \snap -> do
-                    TS.trieRoot snap `shouldBe` pointRoot p
-                    TS.coverageTransitions (TS.trieCoverage snap) `shouldBe` count
-                    missing <- TS.nonMembership snap "never-booked-backend-key"
-                    case missing of
-                        Right proof ->
-                            TS.verifyNonMembership proof (pointRoot p) "never-booked-backend-key"
-                                `shouldBe` True
-                        Left why -> expectationFailure (show why)
-                    forM_ (historyKeys h) $ \key -> do
-                        leaf <- TS.leafAt snap key >>= either (fail . show) pure
-                        case leaf of
-                            TS.Unknown -> pure ()
-                            present -> do
-                                proof <- TS.membership snap key present >>= either (fail . show) pure
-                                verifyAikenInclusionProof
-                                    (unRoot (pointRoot p))
-                                    key
-                                    ( case present of
-                                        TS.Absent -> BS.singleton 0
-                                        TS.Active -> BS.singleton 1
-                                        TS.Terminal -> BS.singleton 2
-                                        TS.Unknown -> BS.empty
-                                    )
-                                    (TS.membershipBytes proof)
-                                    `shouldBe` True
-                answer `shouldBe` Right ()
-        it
-            "withholding a fold refuses the selection rather than using a previous snapshot" $ \h -> do
-            blocks <- newIORef (lineageBlocks h)
-            let session = lineageSession blocks
-                backend = lineageTrieState session
-                selected = lineageSelection session h (lastPoint h)
-            TS.withTrieState backend selected (pure . TS.trieRoot)
-                `shouldReturn` Right (pointRoot (lastPoint h))
-            writeIORef blocks (init (lineageBlocks h))
-            answer <- TS.withTrieState backend selected (pure . TS.trieRoot)
-            case answer of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other -> expectationFailure ("withheld fold served a trie: " <> show other)
-        it
-            "a speculative walk changes neither the snapshot root nor its leaves" $ \h -> do
-            blocks <- newIORef (lineageBlocks h)
-            let session = lineageSession blocks
-                selected = lineageSelection session h (lastPoint h)
-            answer <- TS.withTrieState (lineageTrieState session) selected $ \snap -> do
-                before <- TS.leafAt snap "speculative-backend-key"
-                walked <-
-                    TS.speculateEdges snap (("speculative-backend-key", 1) NE.:| [])
-                case walked of
-                    Right walk -> TS.walkRoot walk `shouldNotBe` TS.trieRoot snap
-                    Left why -> expectationFailure (show why)
-                TS.trieRoot snap `shouldBe` pointRoot (lastPoint h)
-                TS.leafAt snap "speculative-backend-key" `shouldReturn` before
-            answer `shouldBe` Right ()
-        it
-            "accepted folds persist nothing: the next selection requests public history again" $ \h -> do
-            blocks <- newIORef (take 1 (lineageBlocks h))
-            let session = lineageSession blocks
-                backend = lineageTrieState session
-                before = lineageSelection session h (historyCreate h)
-                after = lineageSelection session h (foldAt 0 h)
-            pairs <- foldPairs h (pointTx (foldAt 0 h))
-            let moves =
-                    NE.fromList [(requestKey r, requestEdge r) | (r, Update _) <- pairs]
-            TS.withTrieState backend before (pure . TS.trieRoot)
-                `shouldReturn` Right (pointRoot (historyCreate h))
-            TS.acceptObservedFold backend (TS.ObservedFold before after moves)
-                `shouldReturn` Right ()
-            withheld <- TS.withTrieState backend after (pure . TS.trieRoot)
-            case withheld of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other ->
-                    expectationFailure
-                        ("acceptObservedFold cached a trie: " <> show other)
-            writeIORef blocks (lineageBlocks h)
-            TS.withTrieState backend after (pure . TS.trieRoot)
-                `shouldReturn` Right (pointRoot (foldAt 0 h))
-        it
-            "refuses a provider script-valid flag that disagrees with its transaction CBOR" $ \h -> do
-            let altered = case lineageBlocks h of
-                    LP.HistoryBlock height (tx NE.:| rest) : later ->
-                        LP.HistoryBlock
-                            height
-                            (tx{LP.scriptValid = not (LP.scriptValid tx)} NE.:| rest)
-                            : later
-                    [] -> error "the chain history has no create"
-            blocks <- newIORef altered
-            let session = lineageSession blocks
-            answer <-
-                TS.withTrieState
-                    (lineageTrieState session)
-                    (lineageSelection session h (lastPoint h))
-                    (pure . TS.trieRoot)
-            case answer of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other ->
-                    expectationFailure
-                        ("contradictory script validity served a trie: " <> show other)
-        it
-            "refuses descending whole-block history by name and retains both heights" $ \h -> do
-            blocks <- newIORef (reverse (lineageBlocks h))
-            let session = lineageSession blocks
-            answer <-
-                TS.withTrieState
-                    (lineageTrieState session)
-                    (lineageSelection session h (lastPoint h))
-                    (pure . TS.trieRoot)
-            case answer of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other ->
-                    expectationFailure
-                        ("descending history served a trie: " <> show other)
-        it
-            "consumes one complete block with creators before their asset spenders" $ \h -> do
-            let transactions = concatMap (NE.toList . LP.blockTransactions) (lineageBlocks h)
-            blocks <- newIORef [LP.HistoryBlock 1 (NE.fromList transactions)]
-            let session = lineageSession blocks
-            TS.withTrieState
-                (lineageTrieState session)
-                (lineageSelection session h (lastPoint h))
-                (pure . TS.trieRoot)
-                `shouldReturn` Right (pointRoot (lastPoint h))
-            writeIORef
-                blocks
-                [LP.HistoryBlock 1 (NE.fromList (reverse transactions))]
-            answer <-
-                TS.withTrieState
-                    (lineageTrieState session)
-                    (lineageSelection session h (lastPoint h))
-                    (pure . TS.trieRoot)
-            case answer of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other ->
-                    expectationFailure
-                        ("an asset spender preceded its creator: " <> show other)
-        it
-            "uses transaction CBOR as its single source of transaction identity and body" $ \h -> do
-            let original = lineageBlocks h
-                replaced = case original of
-                    LP.HistoryBlock height (tx NE.:| rest) : later ->
-                        LP.HistoryBlock
-                            height
-                            (tx{LP.historicalTx = pointTx (lastPoint h)} NE.:| rest)
-                            : later
-                    [] -> error "the chain history has no create"
-            blocks <- newIORef replaced
-            let session = lineageSession blocks
-            answer <-
-                TS.withTrieState
-                    (lineageTrieState session)
-                    (lineageSelection session h (lastPoint h))
-                    (pure . TS.trieRoot)
-            case answer of
-                Left TS.HistoryIncomplete{} -> pure ()
-                other ->
-                    expectationFailure
-                        ("a body different from its CBOR served a trie: " <> show other)
+        "Commands select the trie from their acquired session history"
+        $ do
+            it
+                "serves the chain root, coverage and proofs from create through every fold"
+                $ \h -> do
+                    blocks <- newIORef (lineageBlocks h)
+                    let session = lineageSession blocks
+                        backend = lineageTrieState session
+                    forM_ (zip [0 ..] (points h)) $ \(count, p) -> do
+                        answer <- TS.withTrieState backend (lineageSelection session h p) $ \snap -> do
+                            TS.trieRoot snap `shouldBe` pointRoot p
+                            TS.coverageTransitions (TS.trieCoverage snap) `shouldBe` count
+                            missing <- TS.nonMembership snap "never-booked-backend-key"
+                            case missing of
+                                Right proof ->
+                                    TS.verifyNonMembership proof (pointRoot p) "never-booked-backend-key"
+                                        `shouldBe` True
+                                Left why -> expectationFailure (show why)
+                            forM_ (historyKeys h) $ \key -> do
+                                leaf <- TS.leafAt snap key >>= either (fail . show) pure
+                                case leaf of
+                                    TS.Unknown -> pure ()
+                                    present -> do
+                                        proof <- TS.membership snap key present >>= either (fail . show) pure
+                                        verifyAikenInclusionProof
+                                            (unRoot (pointRoot p))
+                                            key
+                                            ( case present of
+                                                TS.Absent -> BS.singleton 0
+                                                TS.Active -> BS.singleton 1
+                                                TS.Terminal -> BS.singleton 2
+                                            )
+                                            (TS.membershipBytes proof)
+                                            `shouldBe` True
+                        answer `shouldBe` Right ()
+            it
+                "withholding a fold refuses the selection rather than using a previous snapshot"
+                $ \h -> do
+                    blocks <- newIORef (lineageBlocks h)
+                    let session = lineageSession blocks
+                        backend = lineageTrieState session
+                        selected = lineageSelection session h (lastPoint h)
+                    TS.withTrieState backend selected (pure . TS.trieRoot)
+                        `shouldReturn` Right (pointRoot (lastPoint h))
+                    writeIORef blocks (init (lineageBlocks h))
+                    answer <- TS.withTrieState backend selected (pure . TS.trieRoot)
+                    case answer of
+                        Left TS.HistoryIncomplete{} -> pure ()
+                        other -> expectationFailure ("withheld fold served a trie: " <> show other)
+            it
+                "a speculative walk changes neither the snapshot root nor its leaves"
+                $ \h -> do
+                    blocks <- newIORef (lineageBlocks h)
+                    let session = lineageSession blocks
+                        selected = lineageSelection session h (lastPoint h)
+                    answer <- TS.withTrieState (lineageTrieState session) selected $ \snap -> do
+                        before <- TS.leafAt snap "speculative-backend-key"
+                        walked <-
+                            TS.speculateEdges snap (("speculative-backend-key", 1) NE.:| [])
+                        case walked of
+                            Right walk -> TS.walkRoot walk `shouldNotBe` TS.trieRoot snap
+                            Left why -> expectationFailure (show why)
+                        TS.trieRoot snap `shouldBe` pointRoot (lastPoint h)
+                        TS.leafAt snap "speculative-backend-key" `shouldReturn` before
+                    answer `shouldBe` Right ()
+            it
+                "accepted folds persist nothing: the next selection requests public history again"
+                $ \h -> do
+                    blocks <- newIORef (take 1 (lineageBlocks h))
+                    let session = lineageSession blocks
+                        backend = lineageTrieState session
+                        before = lineageSelection session h (historyCreate h)
+                        after = lineageSelection session h (foldAt 0 h)
+                    pairs <- foldPairs h (pointTx (foldAt 0 h))
+                    let moves =
+                            NE.fromList [(requestKey r, requestEdge r) | (r, Update _) <- pairs]
+                    TS.withTrieState backend before (pure . TS.trieRoot)
+                        `shouldReturn` Right (pointRoot (historyCreate h))
+                    TS.acceptObservedFold backend (TS.ObservedFold before after moves)
+                        `shouldReturn` Right ()
+                    withheld <- TS.withTrieState backend after (pure . TS.trieRoot)
+                    case withheld of
+                        Left TS.HistoryIncomplete{} -> pure ()
+                        other ->
+                            expectationFailure
+                                ("acceptObservedFold cached a trie: " <> show other)
+                    writeIORef blocks (lineageBlocks h)
+                    TS.withTrieState backend after (pure . TS.trieRoot)
+                        `shouldReturn` Right (pointRoot (foldAt 0 h))
+            it
+                "refuses a provider script-valid flag that disagrees with its transaction CBOR"
+                $ \h -> do
+                    let altered = case lineageBlocks h of
+                            LP.HistoryBlock height (tx NE.:| rest) : later ->
+                                LP.HistoryBlock
+                                    height
+                                    (tx{LP.scriptValid = not (LP.scriptValid tx)} NE.:| rest)
+                                    : later
+                            [] -> error "the chain history has no create"
+                    blocks <- newIORef altered
+                    let session = lineageSession blocks
+                    answer <-
+                        TS.withTrieState
+                            (lineageTrieState session)
+                            (lineageSelection session h (lastPoint h))
+                            (pure . TS.trieRoot)
+                    case answer of
+                        Left TS.HistoryIncomplete{} -> pure ()
+                        other ->
+                            expectationFailure
+                                ("contradictory script validity served a trie: " <> show other)
+            it
+                "refuses descending whole-block history by name"
+                $ \h -> do
+                    let descending = reverse (lineageBlocks h)
+                        heights = map LP.blockHeight descending
+                    blocks <- newIORef descending
+                    let session = lineageSession blocks
+                    answer <-
+                        TS.withTrieState
+                            (lineageTrieState session)
+                            (lineageSelection session h (lastPoint h))
+                            (pure . TS.trieRoot)
+                    case answer of
+                        Left
+                            (TS.HistoryIncomplete _ Nothing (TS.ProviderHistoryFailure failure)) ->
+                            case heights of
+                                first : second : _ -> failure `shouldBe` LP.HistoryOrderMismatch first second
+                                _ ->
+                                    expectationFailure "the chain history supplies fewer than two heights"
+                        other ->
+                            expectationFailure
+                                ("descending history lost its provider refusal: " <> show other)
+            it
+                "consumes one complete block with creators before their asset spenders"
+                $ \h -> do
+                    let transactions = concatMap (NE.toList . LP.blockTransactions) (lineageBlocks h)
+                    blocks <- newIORef [LP.HistoryBlock 1 (NE.fromList transactions)]
+                    let session = lineageSession blocks
+                    TS.withTrieState
+                        (lineageTrieState session)
+                        (lineageSelection session h (lastPoint h))
+                        (pure . TS.trieRoot)
+                        `shouldReturn` Right (pointRoot (lastPoint h))
+                    writeIORef
+                        blocks
+                        [LP.HistoryBlock 1 (NE.fromList (reverse transactions))]
+                    answer <-
+                        TS.withTrieState
+                            (lineageTrieState session)
+                            (lineageSelection session h (lastPoint h))
+                            (pure . TS.trieRoot)
+                    case answer of
+                        Left
+                            (TS.HistoryIncomplete _ transaction (TS.ProviderHistoryFailure failure)) -> do
+                            let spender = txIdTx (pointTx (lastPoint h))
+                                creator = txIdTx (pointTx (last (init (points h))))
+                            transaction `shouldBe` Just spender
+                            failure `shouldBe` LP.MissingInBlockParent spender creator
+                        other ->
+                            expectationFailure
+                                ("asset ordering lost its provider refusal: " <> show other)
+            it
+                "uses transaction CBOR as its single source of transaction identity and body"
+                $ \h -> do
+                    let original = lineageBlocks h
+                        replaced = case original of
+                            LP.HistoryBlock height (tx NE.:| rest) : later ->
+                                LP.HistoryBlock
+                                    height
+                                    (tx{LP.historicalTx = pointTx (lastPoint h)} NE.:| rest)
+                                    : later
+                            [] -> error "the chain history has no create"
+                    blocks <- newIORef replaced
+                    let session = lineageSession blocks
+                    answer <-
+                        TS.withTrieState
+                            (lineageTrieState session)
+                            (lineageSelection session h (lastPoint h))
+                            (pure . TS.trieRoot)
+                    case answer of
+                        Left TS.HistoryIncomplete{} -> pure ()
+                        other ->
+                            expectationFailure
+                                ("a body different from its CBOR served a trie: " <> show other)
     describe "the rebuilt root is the chain's root" $ do
         it "has a fold rejecting all its requests and one mixing both" $ \h -> do
             folds <- mapM (foldPairs h . pointTx) (historyFolds h)

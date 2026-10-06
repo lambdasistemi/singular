@@ -122,7 +122,7 @@ library
     Singular.Registry.Trie.PureManager
     Singular.Registry.TrieState
     Singular.Registry.TrieState.Fixture
-    Singular.Registry.TrieState.Mirror
+    Singular.Registry.TrieState.Lineage
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.ConnectedFold
     Singular.Registry.TxBuilder.Edges

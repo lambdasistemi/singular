@@ -358,13 +358,9 @@ write @PATH.waiting@ and wait until @PATH@ exists, so a control can
 inspect or kill the process at exactly that boundary. The points are
 @SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its answer not yet
 journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
-journalled), and, around a fold's local commit,
-@SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@, @SINGULAR_HARNESS_HOLD_AFTER_MIRROR@
-and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@; around a rollback's return of
-the local files, @SINGULAR_HARNESS_HOLD_BEFORE_REWIND@ (the rollback
-journalled, the mirror not yet rebuilt) and
-@SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE@ (the mirror rebuilt,
-@state.json@ not yet following). Unset in ordinary use, where it does
+journalled), @SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@ (the fold confirmed,
+before fresh public replay), and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@
+(the public after-state read back, before journalling its observation). Unset in ordinary use, where it does
 nothing.
 -}
 harnessHoldAt :: String -> Maybe Text -> IO ()

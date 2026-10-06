@@ -230,7 +230,7 @@ trie_bound() {
         any(.[]; .operation == "leafAt" and .key == $r.key
           and .root == $r.root and .leaf == $r.leaf)
       elif $r.fold? != null then
-        any(.[]; .operation == "accept" and .rootAfter == $r.root
+        any(.[]; .operation == "select" and .root == $r.root
           and .output == ($r.fold + "#0"))
         and any(.[]; .operation == "speculateEdges" and .rootAfter == $r.root
           and .proofCount > 0 and (.proofs | type == "string"))
@@ -246,7 +246,7 @@ trie_extent() {
     if jq -e '.outcome == "success" and .preview != true' "$file" >/dev/null; then
       command="$(jq -r .command "$file")"
       case "$command" in
-        create | insert | update | terminate | fold | reject | reclaim | inspect)
+        insert | update | terminate | fold | reject | reclaim | inspect)
           trie_bound "$file" "${file%.json}.trie.jsonl" \
             || fail "$(basename "$file"): actual command lacks trie evidence bound to its receipt"
           jq -c --slurpfile trace "${file%.json}.trie.jsonl" \
@@ -257,13 +257,16 @@ trie_extent() {
     fi
   done <"$work/trie-command-invocations"
   jq -s -e 'length > 1 and all(.executions > 0)
-      and (map(.command) | unique == ["create","fold","insert","inspect","reclaim","reject","terminate","update"])' \
+      and (map(.command) | unique == ["fold","insert","inspect","reclaim","reject","terminate","update"])' \
     "$work/trie-command-extent.jsonl" >/dev/null \
     || fail "the executed trie command extent is empty or omits a stored-registry command"
 }
 # local_files: the bytes of the files a booking must leave alone — the mirror
 # and the state it commits to — as one digest.
-local_files() { (cd "$reg" && sha256sum registry.mirror.json state.json | sha256sum | cut -d' ' -f1); }
+local_files() {
+  [ ! -e "$reg/registry.mirror.json" ] && [ ! -e "$reg/state.json" ] || fail "a command created retired trie files"
+  (cd "$reg" && sha256sum registry.json | cut -d' ' -f1)
+}
 # booked NAME: a booking-only receipt names its pending request (the
 # booking's own output 0), the requester, and the deadline by which it must be
 # folded, as a POSIX time and, when the node converts it, a slot; it states no fold and no root.
@@ -279,7 +282,7 @@ booked() {
 # booking's four phases and the mirror and state it started with.
 booking_only() {
   local name="$1" before="$2" files="$3"
-  [ "$(local_files)" = "$files" ] || fail "$name: a booking moved the mirror or state.json"
+  [ "$(local_files)" = "$files" ] || fail "$name: a booking altered identity or created retired trie files"
   [ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
     || fail "$name: the booking left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
   tail -n +"$((before + 1))" "$reg/journal.jsonl" \
@@ -535,7 +538,7 @@ jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
 [ ! -e "$reg/preimages" ] || fail "a refused booking left an envelope in the registry directory"
 
 # The booking alone: alice's insert leaves its request pending, the mirror,
-# the root and state.json as they were, and names the deadline.
+# the public root as it was, and names the deadline.
 before="$(journal_lines "$reg")"
 files_before="$(local_files)"
 run insert success -- registry insert --key "$key" --payload "$work/payload-insert.json" \
@@ -706,11 +709,16 @@ jq -e --slurpfile p "$work/payload.json" '.applicationOutput.payload == $p[0]' \
 # ------------------------------------------------------------------
 # 4. process boundaries on the actual target
 # ------------------------------------------------------------------
-# Missing proof material: the mirror moved aside, inspect prints no leaf.
-mv "$reg/registry.mirror.json" "$work/mirror.aside"
-run inspect-no-mirror proof-missing -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
-[ "$(field inspect-no-mirror .leaf)" = null ] || fail "a leaf was printed without proof material"
-mv "$work/mirror.aside" "$reg/registry.mirror.json"
+# Retired local trie files cannot influence this acquired public read.
+printf 'corrupt mirror\n' >"$reg/registry.mirror.json"
+printf 'corrupt saved root\n' >"$reg/state.json"
+run inspect-retired-files success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
+jq -e --slurpfile before "$receipts/inspect-2.json" \
+  '.leaf == $before[0].leaf and .root == $before[0].root' "$receipts/inspect-retired-files.json" >/dev/null \
+  || fail "corrupt retired files changed the proven read"
+[ "$(cat "$reg/registry.mirror.json")" = 'corrupt mirror' ] || fail "the retired mirror was rewritten"
+[ "$(cat "$reg/state.json")" = 'corrupt saved root' ] || fail "the retired saved root was rewritten"
+rm "$reg/registry.mirror.json" "$reg/state.json"
 # A changed application selector.
 cp "$reg/registry.json" "$work/registry.json.aside"
 jq '.confApplication = "open.open"' "$work/registry.json.aside" >"$reg/registry.json"
@@ -810,11 +818,8 @@ say "write-after-kill: success, reconciling the killed fold"
 run inspect-3 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-3 .leaf)" = terminal ] || fail "the killed fold did not leave the key terminal"
 jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail "the holding is still live"
-# The fold was applied to the mirror exactly once and observed exactly
-# once, across every receipt, and never sent again.
-jq -s -e --arg t "$fold_tx" '[.[0].reconciled.applied[], .[1].mirrorAdvanced[]] == [$t]' \
-  "$receipts/write-after-kill.json" "$receipts/inspect-3.json" >/dev/null \
-  || fail "the mirror was not advanced exactly once by the journalled fold"
+# Public replay serves the included fold; journal observation is appended
+# exactly once across the reconciling command and subsequent inspect.
 [ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "$reg/journal.jsonl")" = 1 ] \
   || fail "the killed fold was not observed exactly once"
 [ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$reg/journal.jsonl")" = 1 ] \
@@ -1021,7 +1026,7 @@ jq -e '.reason | contains("cannot fund the reject")' "$receipts/reject-bad-fundi
 # What the node holds before the reject: the pending request and what it actually locks.
 run inspect-before-reject success -- registry inspect --key keyD "${common[@]}" "${node[@]}"
 run reject success -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
-[ "$(local_files)" = "$files_before" ] || fail "a reject moved the mirror or state.json"
+[ "$(local_files)" = "$files_before" ] || fail "a reject altered identity or created retired trie files"
 [ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
   || fail "the reject left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
 tail -n +"$((before + 1))" "$reg/journal.jsonl" \
@@ -1182,7 +1187,7 @@ before="$(journal_lines "$reg")"
 # assertion. None can stand in for a reclaim or for a named refusal control.
 run reclaim success -- registry reclaim --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
-[ "$(local_files)" = "$files_before" ] || fail "the reclaim moved the mirror or state.json"
+[ "$(local_files)" = "$files_before" ] || fail "the reclaim altered identity or created retired trie files"
 tail -n +"$((before + 1))" "$reg/journal.jsonl" \
   | jq -s -e --arg t "$(field reclaim .retract)" '
       map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]
@@ -1244,94 +1249,31 @@ run inspect-after-reclaim-fold success -- registry inspect --key keyG "${common[
 [ "$(field inspect-after-reclaim-fold .leaf)" = active ] || fail "a new request did not fold after reclaim"
 say "the owner's reclaim: whole bound return checked independently, root unchanged, and a new request folds"
 
-# Coverage controls keep the real mirror and independently observed live state
-# unchanged. Only copies of already-produced journal records are altered. The
-# signed bodies remain the actual bodies the journey submitted and bound.
-changing_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalEdge != null and .journalRootBefore != .journalRootAfter)] | last | .journalTxId' "$reg/journal.jsonl")"
+# Local journal roots/edges are not trie reconstruction material. Copies of
+# the settled registry with those records omitted or altered prove the same key.
 boot_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$reg/journal.jsonl")"
-[ "$changing_tx" != null ] && [ "$boot_tx" != null ] || setup_fail "coverage controls have no actual create and changing fold"
-coverage_digest() {
-  (cd "$1" && sha256sum registry.json state.json registry.mirror.json journal.jsonl)
-}
-coverage_refused() {
-  local name="$1" expected="$2" copy="$3" before
-  before="$(coverage_digest "$copy")"
-  run "$name" proof-inconsistent -- registry inspect --key keyG --registry "$copy" \
-    --blueprint "$blueprint" "${node[@]}"
-  jq -e --arg why "TrieState $expected" '.refusal == $why' "$receipts/$name.json" >/dev/null \
-    || fail "$name: coverage refused for another reason than $expected"
-  [ "$(coverage_digest "$copy")" = "$before" ] || fail "$name: a coverage refusal changed the saved registry"
-  # A reachable old caller still proves the same live leaf from these nodes;
-  # journal coverage is therefore the content-dependent difference.
-  if [ -n "${SINGULAR_TRIESTATE_BYPASS_BIN:-}" ]; then
-    local status=0
-    "$SINGULAR_TRIESTATE_BYPASS_BIN" registry inspect --key keyG --registry "$copy" \
-      --blueprint "$blueprint" "${node[@]}" \
-      >"$receipts/$name-old.json" 2>"$receipts/$name-old.err" || status=$?
-    [ "$status" -eq 0 ] || fail "$name: the real pre-capability caller did not reach the faulty coverage"
-    jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
-      '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
-      "$receipts/$name-old.json" >/dev/null || fail "$name: the old caller has no matching live witness"
-    say "$name: old caller reached the matching live leaf; missing or altered coverage KILLED"
-  fi
-}
 for fault in missing-create missing-change broken-before wrong-after undecodable-edge; do
   copy="$work/coverage-$fault"
   cp -a "$reg" "$copy"
   case "$fault" in
     missing-create)
-      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=HistoryIncomplete
-      ;;
+      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
     missing-change)
-      jq -c --arg tx "$changing_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=HistoryIncomplete
-      ;;
+      jq -c 'select(.journalEdge == null)' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
     broken-before)
-      jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootBefore = .journalRootAfter else . end' \
-        "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      # Making the last change appear equal-root cannot establish the selected
-      # root; it is ignored as required by the content-coverage ruling.
-      expected=HistoryIncomplete
-      ;;
+      jq -c 'if .journalEvent == "prepared" then .journalRootBefore = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
     wrong-after)
-      jq -c --arg tx "$changing_tx" --arg root "$(field create .root)" \
-        'if .journalEvent == "prepared" and .journalTxId == $tx then .journalRootAfter = $root else . end' \
-        "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=RootDoesNotChain
-      ;;
+      jq -c 'if .journalEvent == "prepared" then .journalRootAfter = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
     undecodable-edge)
-      jq -c --arg tx "$changing_tx" 'if .journalEvent == "prepared" and .journalTxId == $tx then .journalEdge = 99 else . end' \
-        "$reg/journal.jsonl" >"$copy/journal.jsonl"
-      expected=UndecodableRequest
-      ;;
+      jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl" ;;
   esac
-  coverage_refused "trie-$fault" "$expected" "$copy"
+  run "trie-local-$fault" success -- registry inspect --key keyG --registry "$copy" \
+    --blueprint "$blueprint" "${node[@]}"
+  jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
+    '.leaf == $correct[0].leaf and .root == $correct[0].root' "$receipts/trie-local-$fault.json" >/dev/null \
+    || fail "altered local journal trie records changed the public read: $fault"
 done
-# The race created another real registry on this same ledger. Substitute its
-# checked create records, rather than forging a body or a successful submission.
-copy="$work/coverage-wrong-create"
-cp -a "$reg" "$copy"
-jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-other_boot="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$work/race/raced/journal.jsonl")"
-[ "$other_boot" != null ] && [ "$other_boot" != "$boot_tx" ] || setup_fail "wrong-create control has no other actual checked create"
-jq -c --arg tx "$other_boot" 'select(.journalTxId == $tx)' "$work/race/raced/journal.jsonl" >>"$copy/journal.jsonl"
-coverage_refused trie-wrong-create WrongRegistry "$copy"
-
-# Equal-root records neither contribute to coverage nor have to be present.
-copy="$work/coverage-without-equal-root"
-cp -a "$reg" "$copy"
-equal_ids="$(jq -sc '[.[] | select(.journalEvent == "prepared" and (.journalStep == "reject" or .journalStep == "reclaim") and .journalRootBefore == .journalRootAfter) | .journalTxId] | unique' "$reg/journal.jsonl")"
-[ "$(jq length <<<"$equal_ids")" -gt 0 ] || setup_fail "the journey produced no equal-root record to omit"
-jq -c --argjson ids "$equal_ids" '.journalTxId as $tx | select($ids | index($tx) | not)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
-before="$(coverage_digest "$copy")"
-run trie-equal-root-omitted success -- registry inspect --key keyG --registry "$copy" \
-  --blueprint "$blueprint" "${node[@]}"
-jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
-  '.key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
-  "$receipts/trie-equal-root-omitted.json" >/dev/null || fail "omitting equal-root records changed the proven read"
-[ "$(coverage_digest "$copy")" = "$before" ] || fail "the equal-root omission read changed the registry"
-say "TrieState content coverage: named faults refused; equal-root record omission preserves the actual proven leaf"
+say "public history replay serves the same key despite omitted or altered local trie records"
 
 # A real successful read with the harness entirely absent still returns the
 # same key/leaf/root. It is separate from the instrumented extent, and preserves
@@ -1344,27 +1286,9 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
   '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
   "$receipts/trie-plain-inspect.json" >/dev/null || fail "the ordinary untraced inspect changed the actual proven read"
 
-# The pre-migration executable is a real caller that opens/proves the
-# mirror directly. When supplied by the owner, run it against this same
-# settled registry before the final node-loss control. Its successful
-# public key/leaf/root must agree with the candidate's actual inspect;
-# the capability assertion must then reject it. No fixture receipt or
-# trace deletion stands in for execution of the bypassing caller.
-if [ -n "${SINGULAR_TRIESTATE_BYPASS_BIN:-}" ]; then
-  : >"$receipts/trie-bypass.trie.jsonl"
-  bypass_status=0
-  SINGULAR_HARNESS_TRIE_TRACE="$receipts/trie-bypass.trie.jsonl" \
-    "$SINGULAR_TRIESTATE_BYPASS_BIN" registry inspect --key keyG "${common[@]}" "${node[@]}" \
-    >"$receipts/trie-bypass.json" 2>"$receipts/trie-bypass.err" || bypass_status=$?
-  [ "$bypass_status" -eq 0 ] || fail "the real trie bypass caller did not reach a successful inspect"
-  jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
-    '.outcome == "success" and .key == $correct[0].key and .leaf == $correct[0].leaf and .root == $correct[0].root' \
-    "$receipts/trie-bypass.json" >/dev/null || fail "the bypass control has no matching live key/leaf/root witness"
-  if trie_bound "$receipts/trie-bypass.json" "$receipts/trie-bypass.trie.jsonl"; then
-    fail "a real caller bypassing TrieState passed the capability check"
-  fi
-  say "TrieState bypass KILLED: real inspect reached the same live key, leaf and root without the capability"
-fi
+# Pre-migration sidecar callers are retired. A compiled subject mutation,
+# rather than an old mirror binary against a sidecar-free registry, supplies
+# the lineage source refusal control in the owner evidence bundle.
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
