@@ -198546,17 +198546,17 @@
    ]
   },
   "docs-offchain-node-ownership/where-common-changes-land-10": {
-   "audio_sha256": "58c5a0f8cdbff36c9fcccff7733a47159acdc52a5f8bdee5ebcec3b16e6d5777",
-   "characters": 469,
-   "cost": 0.00029078,
-   "duration": 32.375,
+   "audio_sha256": "9bcfec06ccf2776be7e087da3231bbcc80d627e81b2bad94e7dbad922ddaf375",
+   "characters": 467,
+   "cost": 0.00028954,
+   "duration": 32.3,
    "index": 10,
-   "key": "9524b8122afd878af64346cb8b425face2436232177a0aae76ef3932cc42e0f7",
+   "key": "bf19e4af80e0d1af97648597e545e952e564df25899484e1ee3495db5e3b018a",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
    "section": "where-common-changes-land",
-   "sent_text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
-   "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+   "sent_text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+   "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
    "words": [
     {
      "end": 0.287,
@@ -198829,193 +198829,198 @@
      "text": "."
     },
     {
-     "end": 17.8,
-     "start": 17.675,
+     "end": 17.825,
+     "start": 17.7,
      "text": "The"
     },
     {
-     "end": 18.138,
-     "start": 17.8,
+     "end": 18.163,
+     "start": 17.825,
      "text": "event"
     },
     {
-     "end": 18.575,
-     "start": 18.138,
+     "end": 18.55,
+     "start": 18.163,
      "text": "types"
     },
     {
-     "end": 18.688,
-     "start": 18.575,
+     "end": 18.663,
+     "start": 18.55,
      "text": "and"
     },
     {
-     "end": 18.775,
-     "start": 18.688,
+     "end": 18.75,
+     "start": 18.663,
      "text": "the"
     },
     {
      "end": 19.25,
-     "start": 18.775,
+     "start": 18.75,
      "text": "provider"
     },
     {
-     "end": 19.862,
+     "end": 19.837,
      "start": 19.25,
      "text": "boundary's"
     },
     {
-     "end": 20.337,
-     "start": 19.862,
+     "end": 20.312,
+     "start": 19.837,
      "text": "tracing"
     },
     {
-     "end": 20.65,
-     "start": 20.337,
+     "end": 20.675,
+     "start": 20.312,
      "text": "live"
     },
     {
-     "end": 20.775,
-     "start": 20.65,
+     "end": 20.825,
+     "start": 20.675,
      "text": "in"
     },
     {
-     "end": 22.3,
-     "start": 20.775,
+     "end": 21.888,
+     "start": 20.825,
      "text": "local-services"
     },
     {
-     "end": 22.5,
-     "start": 22.3,
-     "text": ","
+     "end": 21.975,
+     "start": 21.888,
+     "text": "("
     },
     {
-     "end": 23.175,
-     "start": 22.725,
+     "end": 22.475,
+     "start": 21.975,
      "text": "Singular"
     },
     {
-     "end": 23.225,
-     "start": 23.175,
+     "end": 22.55,
+     "start": 22.475,
      "text": "."
     },
     {
-     "end": 23.8,
-     "start": 23.225,
+     "end": 23.025,
+     "start": 22.55,
      "text": "Registry"
     },
     {
-     "end": 23.9,
-     "start": 23.8,
+     "end": 23.1,
+     "start": 23.025,
      "text": "."
     },
     {
-     "end": 24.275,
-     "start": 23.9,
+     "end": 24.125,
+     "start": 23.1,
      "text": "Trace"
     },
     {
-     "end": 24.413,
-     "start": 24.275,
-     "text": "and"
-    },
-    {
-     "end": 24.9,
-     "start": 24.413,
-     "text": "Singular"
-    },
-    {
-     "end": 24.95,
-     "start": 24.9,
-     "text": "."
-    },
-    {
-     "end": 25.45,
-     "start": 24.95,
-     "text": "Registry"
-    },
-    {
-     "end": 25.5,
-     "start": 25.45,
-     "text": "."
-    },
-    {
-     "end": 26.8,
-     "start": 25.5,
-     "text": "ProviderTrace"
-    },
-    {
-     "end": 27.0,
-     "start": 26.8,
+     "end": 24.35,
+     "start": 24.125,
      "text": ","
     },
     {
-     "end": 27.288,
-     "start": 27.2,
-     "text": "and"
-    },
-    {
-     "end": 27.388,
-     "start": 27.288,
-     "text": "the"
-    },
-    {
-     "end": 28.163,
-     "start": 27.388,
-     "text": "SINGULAR_LOG"
-    },
-    {
-     "end": 28.55,
-     "start": 28.163,
-     "text": "lines"
-    },
-    {
-     "end": 28.7,
-     "start": 28.55,
-     "text": "they"
-    },
-    {
-     "end": 29.05,
-     "start": 28.7,
-     "text": "stand"
-    },
-    {
-     "end": 29.275,
-     "start": 29.05,
-     "text": "for"
-    },
-    {
-     "end": 29.438,
-     "start": 29.275,
-     "text": "in"
-    },
-    {
-     "end": 30.125,
-     "start": 29.438,
+     "end": 24.975,
+     "start": 24.55,
      "text": "Singular"
     },
     {
-     "end": 30.25,
-     "start": 30.125,
+     "end": 25.025,
+     "start": 24.975,
      "text": "."
     },
     {
-     "end": 30.85,
-     "start": 30.25,
+     "end": 25.475,
+     "start": 25.025,
      "text": "Registry"
     },
     {
-     "end": 30.95,
-     "start": 30.85,
+     "end": 25.525,
+     "start": 25.475,
      "text": "."
     },
     {
-     "end": 32.15,
-     "start": 30.95,
+     "end": 26.675,
+     "start": 25.525,
+     "text": "ProviderTrace"
+    },
+    {
+     "end": 26.875,
+     "start": 26.675,
+     "text": ")"
+    },
+    {
+     "end": 26.925,
+     "start": 26.875,
+     "text": ","
+    },
+    {
+     "end": 27.212,
+     "start": 27.125,
+     "text": "and"
+    },
+    {
+     "end": 27.312,
+     "start": 27.212,
+     "text": "the"
+    },
+    {
+     "end": 28.087,
+     "start": 27.312,
+     "text": "SINGULAR_LOG"
+    },
+    {
+     "end": 28.475,
+     "start": 28.087,
+     "text": "lines"
+    },
+    {
+     "end": 28.625,
+     "start": 28.475,
+     "text": "they"
+    },
+    {
+     "end": 28.975,
+     "start": 28.625,
+     "text": "stand"
+    },
+    {
+     "end": 29.2,
+     "start": 28.975,
+     "text": "for"
+    },
+    {
+     "end": 29.362,
+     "start": 29.2,
+     "text": "in"
+    },
+    {
+     "end": 30.05,
+     "start": 29.362,
+     "text": "Singular"
+    },
+    {
+     "end": 30.175,
+     "start": 30.05,
+     "text": "."
+    },
+    {
+     "end": 30.775,
+     "start": 30.175,
+     "text": "Registry"
+    },
+    {
+     "end": 30.875,
+     "start": 30.775,
+     "text": "."
+    },
+    {
+     "end": 32.075,
+     "start": 30.875,
      "text": "TraceRender"
     },
     {
-     "end": 32.375,
-     "start": 32.15,
+     "end": 32.3,
+     "start": 32.075,
      "text": "."
     }
    ]
@@ -272151,6 +272156,2026 @@
     {
      "end": 15.2,
      "start": 15.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-00": {
+   "audio_sha256": "c1182ea4ee78fd4c6b72530ed5e9bb9460f3714fac3b5a0e4920418b306f513a",
+   "characters": 30,
+   "cost": 1.86e-05,
+   "duration": 2.025,
+   "index": 0,
+   "key": "72996ba212e04b7dd80489f2116087e25983178a63b3dca45493de9dd08b473a",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "following-what-a-command-does",
+   "sent_text": "Following what a command does.",
+   "text": "Following what a command does.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.175,
+     "text": "Following"
+    },
+    {
+     "end": 0.637,
+     "start": 0.512,
+     "text": "what"
+    },
+    {
+     "end": 0.7,
+     "start": 0.637,
+     "text": "a"
+    },
+    {
+     "end": 1.075,
+     "start": 0.7,
+     "text": "command"
+    },
+    {
+     "end": 1.825,
+     "start": 1.075,
+     "text": "does"
+    },
+    {
+     "end": 2.025,
+     "start": 1.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-01": {
+   "audio_sha256": "dda27c220cf806445ef6eceb6e0209d1415f06db549e56d0ab27e81302d81c27",
+   "characters": 473,
+   "cost": 0.00029326,
+   "duration": 30.5,
+   "index": 1,
+   "key": "2050baa9cae1967192c452c34daed6613dfedce57497a367a097cfdc0c5cc9e3",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "following-what-a-command-does",
+   "sent_text": "As a registry operator, you can watch a command take its protocol steps while it runs, and keep the same account as data. Every command narrates one stream of events: at --trace what, the registry it attached, each key and request it read, the edge action it takes on them and its result; at --trace how, also the mechanics under each step, each with its time. Standard output still carries the receipt alone, so a script reading the receipt is unaffected by any narration.",
+   "text": "As a registry operator, you can watch a command take its protocol steps while it runs, and keep the same account as data. Every command narrates one stream of events: at --trace what, the registry it attached, each key and request it read, the edge action it takes on them and its result; at --trace how, also the mechanics under each step, each with its time. Standard output still carries the receipt alone, so a script reading the receipt is unaffected by any narration.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.45,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 0.95,
+     "start": 0.45,
+     "text": "registry"
+    },
+    {
+     "end": 1.525,
+     "start": 0.95,
+     "text": "operator"
+    },
+    {
+     "end": 1.575,
+     "start": 1.525,
+     "text": ","
+    },
+    {
+     "end": 1.725,
+     "start": 1.575,
+     "text": "you"
+    },
+    {
+     "end": 1.925,
+     "start": 1.725,
+     "text": "can"
+    },
+    {
+     "end": 2.188,
+     "start": 1.925,
+     "text": "watch"
+    },
+    {
+     "end": 2.25,
+     "start": 2.188,
+     "text": "a"
+    },
+    {
+     "end": 2.75,
+     "start": 2.25,
+     "text": "command"
+    },
+    {
+     "end": 2.938,
+     "start": 2.75,
+     "text": "take"
+    },
+    {
+     "end": 3.125,
+     "start": 2.938,
+     "text": "its"
+    },
+    {
+     "end": 3.688,
+     "start": 3.125,
+     "text": "protocol"
+    },
+    {
+     "end": 4.1,
+     "start": 3.688,
+     "text": "steps"
+    },
+    {
+     "end": 4.287,
+     "start": 4.1,
+     "text": "while"
+    },
+    {
+     "end": 4.425,
+     "start": 4.287,
+     "text": "it"
+    },
+    {
+     "end": 5.05,
+     "start": 4.425,
+     "text": "runs"
+    },
+    {
+     "end": 5.125,
+     "start": 5.05,
+     "text": ","
+    },
+    {
+     "end": 5.25,
+     "start": 5.125,
+     "text": "and"
+    },
+    {
+     "end": 5.475,
+     "start": 5.25,
+     "text": "keep"
+    },
+    {
+     "end": 5.613,
+     "start": 5.475,
+     "text": "the"
+    },
+    {
+     "end": 5.95,
+     "start": 5.613,
+     "text": "same"
+    },
+    {
+     "end": 6.4,
+     "start": 5.95,
+     "text": "account"
+    },
+    {
+     "end": 6.562,
+     "start": 6.4,
+     "text": "as"
+    },
+    {
+     "end": 7.625,
+     "start": 6.562,
+     "text": "data"
+    },
+    {
+     "end": 7.95,
+     "start": 7.625,
+     "text": "."
+    },
+    {
+     "end": 8.4,
+     "start": 8.125,
+     "text": "Every"
+    },
+    {
+     "end": 8.8,
+     "start": 8.4,
+     "text": "command"
+    },
+    {
+     "end": 9.238,
+     "start": 8.8,
+     "text": "narrates"
+    },
+    {
+     "end": 9.5,
+     "start": 9.238,
+     "text": "one"
+    },
+    {
+     "end": 9.788,
+     "start": 9.5,
+     "text": "stream"
+    },
+    {
+     "end": 9.863,
+     "start": 9.788,
+     "text": "of"
+    },
+    {
+     "end": 10.725,
+     "start": 9.863,
+     "text": "events"
+    },
+    {
+     "end": 10.925,
+     "start": 10.725,
+     "text": ":"
+    },
+    {
+     "end": 11.25,
+     "start": 11.15,
+     "text": "at"
+    },
+    {
+     "end": 11.675,
+     "start": 11.25,
+     "text": "trace"
+    },
+    {
+     "end": 11.85,
+     "start": 11.675,
+     "text": "what"
+    },
+    {
+     "end": 11.887,
+     "start": 11.85,
+     "text": ","
+    },
+    {
+     "end": 12.012,
+     "start": 11.887,
+     "text": "the"
+    },
+    {
+     "end": 12.55,
+     "start": 12.012,
+     "text": "registry"
+    },
+    {
+     "end": 12.65,
+     "start": 12.55,
+     "text": "it"
+    },
+    {
+     "end": 13.25,
+     "start": 12.65,
+     "text": "attached"
+    },
+    {
+     "end": 13.325,
+     "start": 13.25,
+     "text": ","
+    },
+    {
+     "end": 13.675,
+     "start": 13.325,
+     "text": "each"
+    },
+    {
+     "end": 14.137,
+     "start": 13.675,
+     "text": "key"
+    },
+    {
+     "end": 14.262,
+     "start": 14.137,
+     "text": "and"
+    },
+    {
+     "end": 14.675,
+     "start": 14.262,
+     "text": "request"
+    },
+    {
+     "end": 14.825,
+     "start": 14.675,
+     "text": "it"
+    },
+    {
+     "end": 15.275,
+     "start": 14.825,
+     "text": "read"
+    },
+    {
+     "end": 15.375,
+     "start": 15.275,
+     "text": ","
+    },
+    {
+     "end": 15.525,
+     "start": 15.375,
+     "text": "the"
+    },
+    {
+     "end": 15.788,
+     "start": 15.525,
+     "text": "edge"
+    },
+    {
+     "end": 16.175,
+     "start": 15.788,
+     "text": "action"
+    },
+    {
+     "end": 16.275,
+     "start": 16.175,
+     "text": "it"
+    },
+    {
+     "end": 16.562,
+     "start": 16.275,
+     "text": "takes"
+    },
+    {
+     "end": 16.725,
+     "start": 16.562,
+     "text": "on"
+    },
+    {
+     "end": 16.987,
+     "start": 16.725,
+     "text": "them"
+    },
+    {
+     "end": 17.112,
+     "start": 16.987,
+     "text": "and"
+    },
+    {
+     "end": 17.3,
+     "start": 17.112,
+     "text": "its"
+    },
+    {
+     "end": 18.4,
+     "start": 17.3,
+     "text": "result"
+    },
+    {
+     "end": 18.625,
+     "start": 18.4,
+     "text": ";"
+    },
+    {
+     "end": 18.925,
+     "start": 18.825,
+     "text": "at"
+    },
+    {
+     "end": 19.25,
+     "start": 18.925,
+     "text": "--trace"
+    },
+    {
+     "end": 19.475,
+     "start": 19.25,
+     "text": "how"
+    },
+    {
+     "end": 19.525,
+     "start": 19.475,
+     "text": ","
+    },
+    {
+     "end": 19.862,
+     "start": 19.525,
+     "text": "also"
+    },
+    {
+     "end": 19.938,
+     "start": 19.862,
+     "text": "the"
+    },
+    {
+     "end": 20.462,
+     "start": 19.938,
+     "text": "mechanics"
+    },
+    {
+     "end": 20.65,
+     "start": 20.462,
+     "text": "under"
+    },
+    {
+     "end": 20.875,
+     "start": 20.65,
+     "text": "each"
+    },
+    {
+     "end": 21.25,
+     "start": 20.875,
+     "text": "step"
+    },
+    {
+     "end": 21.35,
+     "start": 21.25,
+     "text": ","
+    },
+    {
+     "end": 21.6,
+     "start": 21.35,
+     "text": "each"
+    },
+    {
+     "end": 21.737,
+     "start": 21.6,
+     "text": "with"
+    },
+    {
+     "end": 21.925,
+     "start": 21.737,
+     "text": "its"
+    },
+    {
+     "end": 22.85,
+     "start": 21.925,
+     "text": "time"
+    },
+    {
+     "end": 23.05,
+     "start": 22.85,
+     "text": "."
+    },
+    {
+     "end": 23.75,
+     "start": 23.275,
+     "text": "Standard"
+    },
+    {
+     "end": 24.225,
+     "start": 23.75,
+     "text": "output"
+    },
+    {
+     "end": 24.513,
+     "start": 24.225,
+     "text": "still"
+    },
+    {
+     "end": 25.0,
+     "start": 24.513,
+     "text": "carries"
+    },
+    {
+     "end": 25.1,
+     "start": 25.0,
+     "text": "the"
+    },
+    {
+     "end": 25.475,
+     "start": 25.1,
+     "text": "receipt"
+    },
+    {
+     "end": 26.05,
+     "start": 25.475,
+     "text": "alone"
+    },
+    {
+     "end": 26.15,
+     "start": 26.05,
+     "text": ","
+    },
+    {
+     "end": 26.325,
+     "start": 26.15,
+     "text": "so"
+    },
+    {
+     "end": 26.438,
+     "start": 26.325,
+     "text": "a"
+    },
+    {
+     "end": 26.85,
+     "start": 26.438,
+     "text": "script"
+    },
+    {
+     "end": 27.225,
+     "start": 26.85,
+     "text": "reading"
+    },
+    {
+     "end": 27.325,
+     "start": 27.225,
+     "text": "the"
+    },
+    {
+     "end": 27.775,
+     "start": 27.325,
+     "text": "receipt"
+    },
+    {
+     "end": 27.938,
+     "start": 27.775,
+     "text": "is"
+    },
+    {
+     "end": 28.6,
+     "start": 27.938,
+     "text": "unaffected"
+    },
+    {
+     "end": 28.812,
+     "start": 28.6,
+     "text": "by"
+    },
+    {
+     "end": 29.075,
+     "start": 28.812,
+     "text": "any"
+    },
+    {
+     "end": 30.3,
+     "start": 29.075,
+     "text": "narration"
+    },
+    {
+     "end": 30.5,
+     "start": 30.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-02": {
+   "audio_sha256": "d807671876447b550afe2c92942d1c9386e5e59d532a9f9a1c14fb70b71a08e7",
+   "characters": 103,
+   "cost": 6.386e-05,
+   "duration": 7.25,
+   "index": 2,
+   "key": "53248ff0c3c59d7ce15f251d25c31e71a6220e6a83a5775f1ca01c19a5fee05f",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "following-what-a-command-does",
+   "sent_text": "On a terminal a command narrates what to standard error unless told otherwise. A fold, narrated at how:",
+   "text": "On a terminal a command narrates what to standard error unless told otherwise. A fold, narrated at how:",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "On"
+    },
+    {
+     "end": 0.387,
+     "start": 0.287,
+     "text": "a"
+    },
+    {
+     "end": 0.9,
+     "start": 0.387,
+     "text": "terminal"
+    },
+    {
+     "end": 0.975,
+     "start": 0.9,
+     "text": "a"
+    },
+    {
+     "end": 1.45,
+     "start": 0.975,
+     "text": "command"
+    },
+    {
+     "end": 1.9,
+     "start": 1.45,
+     "text": "narrates"
+    },
+    {
+     "end": 2.037,
+     "start": 1.9,
+     "text": "what"
+    },
+    {
+     "end": 2.15,
+     "start": 2.037,
+     "text": "to"
+    },
+    {
+     "end": 2.638,
+     "start": 2.15,
+     "text": "standard"
+    },
+    {
+     "end": 3.2,
+     "start": 2.638,
+     "text": "error"
+    },
+    {
+     "end": 3.575,
+     "start": 3.2,
+     "text": "unless"
+    },
+    {
+     "end": 3.9,
+     "start": 3.575,
+     "text": "told"
+    },
+    {
+     "end": 5.075,
+     "start": 3.9,
+     "text": "otherwise"
+    },
+    {
+     "end": 5.275,
+     "start": 5.075,
+     "text": "."
+    },
+    {
+     "end": 5.525,
+     "start": 5.45,
+     "text": "A"
+    },
+    {
+     "end": 5.825,
+     "start": 5.525,
+     "text": "fold"
+    },
+    {
+     "end": 5.875,
+     "start": 5.825,
+     "text": ","
+    },
+    {
+     "end": 6.262,
+     "start": 5.875,
+     "text": "narrated"
+    },
+    {
+     "end": 6.35,
+     "start": 6.262,
+     "text": "at"
+    },
+    {
+     "end": 7.0,
+     "start": 6.35,
+     "text": "how"
+    },
+    {
+     "end": 7.25,
+     "start": 7.0,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-03": {
+   "audio_sha256": "5e502538d991fecaf27020566cdde642cc60c73fd75ba092f5bd0a5766e4bec5",
+   "characters": 495,
+   "cost": 0.00030690000000000003,
+   "duration": 32.2,
+   "index": 3,
+   "key": "0f35dda4bb04ef10a08af8e09fd734adedc1040f7e06ebb97652940d611f9ec5",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "following-what-a-command-does",
+   "sent_text": "Each line is indented by where it happened: the registry, then the key or request, then the edge action, with each mechanic under the action it belongs to. Identifiers are shortened in text; amounts are in tee ADA. A failure says where it happened, and the four places are distinct: refused by the client before anything was submitted, refused by local script evaluation before anything was submitted, rejected by the ledger, or refused by the provider, so that no ledger judged the transaction.",
+   "text": "Each line is indented by where it happened: the registry, then the key or request, then the edge action, with each mechanic under the action it belongs to. Identifiers are shortened in text; amounts are in tADA. A failure says where it happened, and the four places are distinct: refused by the client before anything was submitted, refused by local script evaluation before anything was submitted, rejected by the ledger, or refused by the provider, so that no ledger judged the transaction.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Each"
+    },
+    {
+     "end": 0.637,
+     "start": 0.4,
+     "text": "line"
+    },
+    {
+     "end": 0.738,
+     "start": 0.637,
+     "text": "is"
+    },
+    {
+     "end": 1.175,
+     "start": 0.738,
+     "text": "indented"
+    },
+    {
+     "end": 1.35,
+     "start": 1.175,
+     "text": "by"
+    },
+    {
+     "end": 1.538,
+     "start": 1.35,
+     "text": "where"
+    },
+    {
+     "end": 1.625,
+     "start": 1.538,
+     "text": "it"
+    },
+    {
+     "end": 2.5,
+     "start": 1.625,
+     "text": "happened"
+    },
+    {
+     "end": 2.7,
+     "start": 2.5,
+     "text": ":"
+    },
+    {
+     "end": 3.0,
+     "start": 2.9,
+     "text": "the"
+    },
+    {
+     "end": 3.575,
+     "start": 3.0,
+     "text": "registry"
+    },
+    {
+     "end": 3.625,
+     "start": 3.575,
+     "text": ","
+    },
+    {
+     "end": 3.812,
+     "start": 3.625,
+     "text": "then"
+    },
+    {
+     "end": 3.95,
+     "start": 3.812,
+     "text": "the"
+    },
+    {
+     "end": 4.363,
+     "start": 3.95,
+     "text": "key"
+    },
+    {
+     "end": 4.525,
+     "start": 4.363,
+     "text": "or"
+    },
+    {
+     "end": 5.175,
+     "start": 4.525,
+     "text": "request"
+    },
+    {
+     "end": 5.25,
+     "start": 5.175,
+     "text": ","
+    },
+    {
+     "end": 5.438,
+     "start": 5.25,
+     "text": "then"
+    },
+    {
+     "end": 5.588,
+     "start": 5.438,
+     "text": "the"
+    },
+    {
+     "end": 5.863,
+     "start": 5.588,
+     "text": "edge"
+    },
+    {
+     "end": 6.325,
+     "start": 5.863,
+     "text": "action"
+    },
+    {
+     "end": 6.4,
+     "start": 6.325,
+     "text": ","
+    },
+    {
+     "end": 6.6,
+     "start": 6.4,
+     "text": "with"
+    },
+    {
+     "end": 6.875,
+     "start": 6.6,
+     "text": "each"
+    },
+    {
+     "end": 7.4,
+     "start": 6.875,
+     "text": "mechanic"
+    },
+    {
+     "end": 7.613,
+     "start": 7.4,
+     "text": "under"
+    },
+    {
+     "end": 7.75,
+     "start": 7.613,
+     "text": "the"
+    },
+    {
+     "end": 8.15,
+     "start": 7.75,
+     "text": "action"
+    },
+    {
+     "end": 8.25,
+     "start": 8.15,
+     "text": "it"
+    },
+    {
+     "end": 8.762,
+     "start": 8.25,
+     "text": "belongs"
+    },
+    {
+     "end": 9.225,
+     "start": 8.762,
+     "text": "to"
+    },
+    {
+     "end": 9.9,
+     "start": 9.225,
+     "text": "."
+    },
+    {
+     "end": 10.775,
+     "start": 10.125,
+     "text": "Identifiers"
+    },
+    {
+     "end": 10.913,
+     "start": 10.775,
+     "text": "are"
+    },
+    {
+     "end": 11.288,
+     "start": 10.913,
+     "text": "shortened"
+    },
+    {
+     "end": 11.425,
+     "start": 11.288,
+     "text": "in"
+    },
+    {
+     "end": 11.975,
+     "start": 11.425,
+     "text": "text"
+    },
+    {
+     "end": 12.075,
+     "start": 11.975,
+     "text": ";"
+    },
+    {
+     "end": 12.475,
+     "start": 12.075,
+     "text": "amounts"
+    },
+    {
+     "end": 12.6,
+     "start": 12.475,
+     "text": "are"
+    },
+    {
+     "end": 12.762,
+     "start": 12.6,
+     "text": "in"
+    },
+    {
+     "end": 13.0,
+     "start": 12.762,
+     "text": "tee"
+    },
+    {
+     "end": 13.775,
+     "start": 13.0,
+     "text": "ADA"
+    },
+    {
+     "end": 14.025,
+     "start": 13.775,
+     "text": "."
+    },
+    {
+     "end": 14.312,
+     "start": 14.225,
+     "text": "A"
+    },
+    {
+     "end": 14.8,
+     "start": 14.312,
+     "text": "failure"
+    },
+    {
+     "end": 15.05,
+     "start": 14.8,
+     "text": "says"
+    },
+    {
+     "end": 15.212,
+     "start": 15.05,
+     "text": "where"
+    },
+    {
+     "end": 15.3,
+     "start": 15.212,
+     "text": "it"
+    },
+    {
+     "end": 15.825,
+     "start": 15.3,
+     "text": "happened"
+    },
+    {
+     "end": 15.9,
+     "start": 15.825,
+     "text": ","
+    },
+    {
+     "end": 16.013,
+     "start": 15.9,
+     "text": "and"
+    },
+    {
+     "end": 16.112,
+     "start": 16.013,
+     "text": "the"
+    },
+    {
+     "end": 16.375,
+     "start": 16.112,
+     "text": "four"
+    },
+    {
+     "end": 16.825,
+     "start": 16.375,
+     "text": "places"
+    },
+    {
+     "end": 16.925,
+     "start": 16.825,
+     "text": "are"
+    },
+    {
+     "end": 17.975,
+     "start": 16.925,
+     "text": "distinct"
+    },
+    {
+     "end": 18.175,
+     "start": 17.975,
+     "text": ":"
+    },
+    {
+     "end": 18.9,
+     "start": 18.375,
+     "text": "refused"
+    },
+    {
+     "end": 19.038,
+     "start": 18.9,
+     "text": "by"
+    },
+    {
+     "end": 19.125,
+     "start": 19.038,
+     "text": "the"
+    },
+    {
+     "end": 19.5,
+     "start": 19.125,
+     "text": "client"
+    },
+    {
+     "end": 19.875,
+     "start": 19.5,
+     "text": "before"
+    },
+    {
+     "end": 20.263,
+     "start": 19.875,
+     "text": "anything"
+    },
+    {
+     "end": 20.375,
+     "start": 20.263,
+     "text": "was"
+    },
+    {
+     "end": 21.3,
+     "start": 20.375,
+     "text": "submitted"
+    },
+    {
+     "end": 21.525,
+     "start": 21.3,
+     "text": ","
+    },
+    {
+     "end": 22.3,
+     "start": 21.725,
+     "text": "refused"
+    },
+    {
+     "end": 22.475,
+     "start": 22.3,
+     "text": "by"
+    },
+    {
+     "end": 22.8,
+     "start": 22.475,
+     "text": "local"
+    },
+    {
+     "end": 23.163,
+     "start": 22.8,
+     "text": "script"
+    },
+    {
+     "end": 23.925,
+     "start": 23.163,
+     "text": "evaluation"
+    },
+    {
+     "end": 24.3,
+     "start": 23.925,
+     "text": "before"
+    },
+    {
+     "end": 24.75,
+     "start": 24.3,
+     "text": "anything"
+    },
+    {
+     "end": 24.875,
+     "start": 24.75,
+     "text": "was"
+    },
+    {
+     "end": 25.875,
+     "start": 24.875,
+     "text": "submitted"
+    },
+    {
+     "end": 26.1,
+     "start": 25.875,
+     "text": ","
+    },
+    {
+     "end": 26.775,
+     "start": 26.3,
+     "text": "rejected"
+    },
+    {
+     "end": 26.913,
+     "start": 26.775,
+     "text": "by"
+    },
+    {
+     "end": 27.0,
+     "start": 26.913,
+     "text": "the"
+    },
+    {
+     "end": 27.4,
+     "start": 27.0,
+     "text": "ledger"
+    },
+    {
+     "end": 27.475,
+     "start": 27.4,
+     "text": ","
+    },
+    {
+     "end": 27.625,
+     "start": 27.475,
+     "text": "or"
+    },
+    {
+     "end": 28.175,
+     "start": 27.625,
+     "text": "refused"
+    },
+    {
+     "end": 28.312,
+     "start": 28.175,
+     "text": "by"
+    },
+    {
+     "end": 28.4,
+     "start": 28.312,
+     "text": "the"
+    },
+    {
+     "end": 29.35,
+     "start": 28.4,
+     "text": "provider"
+    },
+    {
+     "end": 29.575,
+     "start": 29.35,
+     "text": ","
+    },
+    {
+     "end": 29.837,
+     "start": 29.75,
+     "text": "so"
+    },
+    {
+     "end": 30.0,
+     "start": 29.837,
+     "text": "that"
+    },
+    {
+     "end": 30.175,
+     "start": 30.0,
+     "text": "no"
+    },
+    {
+     "end": 30.5,
+     "start": 30.175,
+     "text": "ledger"
+    },
+    {
+     "end": 30.763,
+     "start": 30.5,
+     "text": "judged"
+    },
+    {
+     "end": 30.85,
+     "start": 30.763,
+     "text": "the"
+    },
+    {
+     "end": 32.025,
+     "start": 30.85,
+     "text": "transaction"
+    },
+    {
+     "end": 32.2,
+     "start": 32.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-04": {
+   "audio_sha256": "37a4f1799b5397d0d0f92bfe091ac2e0a0f7c25610d043879f20626d006180e7",
+   "characters": 533,
+   "cost": 0.00033046,
+   "duration": 36.2,
+   "index": 4,
+   "key": "ebfed518a591e4a428d5ac602ed140dd951536f28cf834055c2cdec83236c5d1",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "following-what-a-command-does",
+   "sent_text": "With --trace-format json, or a file:PATH sink, each event is one JSON object on its own line, written as it happens: its level (what or how), its scope (the registry, key, request, edge action and transaction it happened in, outermost first) and its event with that event's fields, in full. The last line of every stream is command-ended, naming the command, the outcome class of its receipt and its elapsed time. Keys are written in base16, and no event carries a signing key or the text of a failure: a failure names only its type.",
+   "text": "With --trace-format json, or a file:PATH sink, each event is one JSON object on its own line, written as it happens: its level (what or how), its scope (the registry, key, request, edge action and transaction it happened in, outermost first) and its event with that event's fields, in full. The last line of every stream is command-ended, naming the command, the outcome class of its receipt and its elapsed time. Keys are written in base16, and no event carries a signing key or the text of a failure: a failure names only its type.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.2,
+     "text": "With"
+    },
+    {
+     "end": 1.138,
+     "start": 0.375,
+     "text": "--trace-format"
+    },
+    {
+     "end": 1.85,
+     "start": 1.138,
+     "text": "json"
+    },
+    {
+     "end": 1.925,
+     "start": 1.85,
+     "text": ","
+    },
+    {
+     "end": 2.05,
+     "start": 1.925,
+     "text": "or"
+    },
+    {
+     "end": 2.175,
+     "start": 2.05,
+     "text": "a"
+    },
+    {
+     "end": 2.675,
+     "start": 2.175,
+     "text": "file"
+    },
+    {
+     "end": 2.775,
+     "start": 2.675,
+     "text": ":"
+    },
+    {
+     "end": 3.125,
+     "start": 2.775,
+     "text": "PATH"
+    },
+    {
+     "end": 3.5,
+     "start": 3.125,
+     "text": "sink"
+    },
+    {
+     "end": 3.6,
+     "start": 3.5,
+     "text": ","
+    },
+    {
+     "end": 3.825,
+     "start": 3.6,
+     "text": "each"
+    },
+    {
+     "end": 4.225,
+     "start": 3.825,
+     "text": "event"
+    },
+    {
+     "end": 4.387,
+     "start": 4.225,
+     "text": "is"
+    },
+    {
+     "end": 4.713,
+     "start": 4.387,
+     "text": "one"
+    },
+    {
+     "end": 5.537,
+     "start": 4.713,
+     "text": "JSON"
+    },
+    {
+     "end": 5.988,
+     "start": 5.537,
+     "text": "object"
+    },
+    {
+     "end": 6.113,
+     "start": 5.988,
+     "text": "on"
+    },
+    {
+     "end": 6.25,
+     "start": 6.113,
+     "text": "its"
+    },
+    {
+     "end": 6.5,
+     "start": 6.25,
+     "text": "own"
+    },
+    {
+     "end": 6.9,
+     "start": 6.5,
+     "text": "line"
+    },
+    {
+     "end": 7.012,
+     "start": 6.9,
+     "text": ","
+    },
+    {
+     "end": 7.3,
+     "start": 7.012,
+     "text": "written"
+    },
+    {
+     "end": 7.412,
+     "start": 7.3,
+     "text": "as"
+    },
+    {
+     "end": 7.5,
+     "start": 7.412,
+     "text": "it"
+    },
+    {
+     "end": 8.7,
+     "start": 7.5,
+     "text": "happens"
+    },
+    {
+     "end": 8.925,
+     "start": 8.7,
+     "text": ":"
+    },
+    {
+     "end": 9.3,
+     "start": 9.125,
+     "text": "its"
+    },
+    {
+     "end": 9.625,
+     "start": 9.3,
+     "text": "level"
+    },
+    {
+     "end": 9.7,
+     "start": 9.625,
+     "text": "("
+    },
+    {
+     "end": 9.85,
+     "start": 9.7,
+     "text": "what"
+    },
+    {
+     "end": 10.0,
+     "start": 9.85,
+     "text": "or"
+    },
+    {
+     "end": 10.3,
+     "start": 10.0,
+     "text": "how"
+    },
+    {
+     "end": 10.35,
+     "start": 10.3,
+     "text": ")"
+    },
+    {
+     "end": 10.4,
+     "start": 10.35,
+     "text": ","
+    },
+    {
+     "end": 10.55,
+     "start": 10.4,
+     "text": "its"
+    },
+    {
+     "end": 10.837,
+     "start": 10.55,
+     "text": "scope"
+    },
+    {
+     "end": 10.875,
+     "start": 10.837,
+     "text": "("
+    },
+    {
+     "end": 10.95,
+     "start": 10.875,
+     "text": "the"
+    },
+    {
+     "end": 11.425,
+     "start": 10.95,
+     "text": "registry"
+    },
+    {
+     "end": 11.475,
+     "start": 11.425,
+     "text": ","
+    },
+    {
+     "end": 11.675,
+     "start": 11.475,
+     "text": "key"
+    },
+    {
+     "end": 11.712,
+     "start": 11.675,
+     "text": ","
+    },
+    {
+     "end": 12.7,
+     "start": 11.712,
+     "text": "request"
+    },
+    {
+     "end": 12.925,
+     "start": 12.7,
+     "text": ","
+    },
+    {
+     "end": 13.288,
+     "start": 13.1,
+     "text": "edge"
+    },
+    {
+     "end": 13.613,
+     "start": 13.288,
+     "text": "action"
+    },
+    {
+     "end": 13.712,
+     "start": 13.613,
+     "text": "and"
+    },
+    {
+     "end": 14.262,
+     "start": 13.712,
+     "text": "transaction"
+    },
+    {
+     "end": 14.35,
+     "start": 14.262,
+     "text": "it"
+    },
+    {
+     "end": 14.7,
+     "start": 14.35,
+     "text": "happened"
+    },
+    {
+     "end": 15.375,
+     "start": 14.7,
+     "text": "in"
+    },
+    {
+     "end": 15.575,
+     "start": 15.375,
+     "text": ","
+    },
+    {
+     "end": 16.263,
+     "start": 15.775,
+     "text": "outermost"
+    },
+    {
+     "end": 16.7,
+     "start": 16.263,
+     "text": "first"
+    },
+    {
+     "end": 16.775,
+     "start": 16.7,
+     "text": ")"
+    },
+    {
+     "end": 16.888,
+     "start": 16.775,
+     "text": "and"
+    },
+    {
+     "end": 17.0,
+     "start": 16.888,
+     "text": "its"
+    },
+    {
+     "end": 17.263,
+     "start": 17.0,
+     "text": "event"
+    },
+    {
+     "end": 17.4,
+     "start": 17.263,
+     "text": "with"
+    },
+    {
+     "end": 17.65,
+     "start": 17.4,
+     "text": "that"
+    },
+    {
+     "end": 18.05,
+     "start": 17.65,
+     "text": "event's"
+    },
+    {
+     "end": 18.475,
+     "start": 18.05,
+     "text": "fields"
+    },
+    {
+     "end": 18.525,
+     "start": 18.475,
+     "text": ","
+    },
+    {
+     "end": 18.688,
+     "start": 18.525,
+     "text": "in"
+    },
+    {
+     "end": 19.55,
+     "start": 18.688,
+     "text": "full"
+    },
+    {
+     "end": 19.75,
+     "start": 19.55,
+     "text": "."
+    },
+    {
+     "end": 20.05,
+     "start": 19.95,
+     "text": "The"
+    },
+    {
+     "end": 20.4,
+     "start": 20.05,
+     "text": "last"
+    },
+    {
+     "end": 20.688,
+     "start": 20.4,
+     "text": "line"
+    },
+    {
+     "end": 20.812,
+     "start": 20.688,
+     "text": "of"
+    },
+    {
+     "end": 21.163,
+     "start": 20.812,
+     "text": "every"
+    },
+    {
+     "end": 21.6,
+     "start": 21.163,
+     "text": "stream"
+    },
+    {
+     "end": 21.75,
+     "start": 21.6,
+     "text": "is"
+    },
+    {
+     "end": 22.6,
+     "start": 21.75,
+     "text": "command-ended"
+    },
+    {
+     "end": 22.712,
+     "start": 22.6,
+     "text": ","
+    },
+    {
+     "end": 23.062,
+     "start": 22.712,
+     "text": "naming"
+    },
+    {
+     "end": 23.15,
+     "start": 23.062,
+     "text": "the"
+    },
+    {
+     "end": 23.775,
+     "start": 23.15,
+     "text": "command"
+    },
+    {
+     "end": 23.85,
+     "start": 23.775,
+     "text": ","
+    },
+    {
+     "end": 24.013,
+     "start": 23.85,
+     "text": "the"
+    },
+    {
+     "end": 24.513,
+     "start": 24.013,
+     "text": "outcome"
+    },
+    {
+     "end": 24.888,
+     "start": 24.513,
+     "text": "class"
+    },
+    {
+     "end": 24.962,
+     "start": 24.888,
+     "text": "of"
+    },
+    {
+     "end": 25.15,
+     "start": 24.962,
+     "text": "its"
+    },
+    {
+     "end": 25.688,
+     "start": 25.15,
+     "text": "receipt"
+    },
+    {
+     "end": 25.812,
+     "start": 25.688,
+     "text": "and"
+    },
+    {
+     "end": 25.95,
+     "start": 25.812,
+     "text": "its"
+    },
+    {
+     "end": 26.375,
+     "start": 25.95,
+     "text": "elapsed"
+    },
+    {
+     "end": 27.45,
+     "start": 26.375,
+     "text": "time"
+    },
+    {
+     "end": 27.675,
+     "start": 27.45,
+     "text": "."
+    },
+    {
+     "end": 28.175,
+     "start": 27.875,
+     "text": "Keys"
+    },
+    {
+     "end": 28.337,
+     "start": 28.175,
+     "text": "are"
+    },
+    {
+     "end": 28.65,
+     "start": 28.337,
+     "text": "written"
+    },
+    {
+     "end": 28.8,
+     "start": 28.65,
+     "text": "in"
+    },
+    {
+     "end": 29.875,
+     "start": 28.8,
+     "text": "base16"
+    },
+    {
+     "end": 29.95,
+     "start": 29.875,
+     "text": ","
+    },
+    {
+     "end": 30.075,
+     "start": 29.95,
+     "text": "and"
+    },
+    {
+     "end": 30.3,
+     "start": 30.075,
+     "text": "no"
+    },
+    {
+     "end": 30.65,
+     "start": 30.3,
+     "text": "event"
+    },
+    {
+     "end": 31.05,
+     "start": 30.65,
+     "text": "carries"
+    },
+    {
+     "end": 31.163,
+     "start": 31.05,
+     "text": "a"
+    },
+    {
+     "end": 31.562,
+     "start": 31.163,
+     "text": "signing"
+    },
+    {
+     "end": 31.962,
+     "start": 31.562,
+     "text": "key"
+    },
+    {
+     "end": 32.088,
+     "start": 31.962,
+     "text": "or"
+    },
+    {
+     "end": 32.188,
+     "start": 32.088,
+     "text": "the"
+    },
+    {
+     "end": 32.513,
+     "start": 32.188,
+     "text": "text"
+    },
+    {
+     "end": 32.588,
+     "start": 32.513,
+     "text": "of"
+    },
+    {
+     "end": 32.688,
+     "start": 32.588,
+     "text": "a"
+    },
+    {
+     "end": 33.75,
+     "start": 32.688,
+     "text": "failure"
+    },
+    {
+     "end": 33.975,
+     "start": 33.75,
+     "text": ":"
+    },
+    {
+     "end": 34.225,
+     "start": 34.15,
+     "text": "a"
+    },
+    {
+     "end": 34.562,
+     "start": 34.225,
+     "text": "failure"
+    },
+    {
+     "end": 34.8,
+     "start": 34.562,
+     "text": "names"
+    },
+    {
+     "end": 35.088,
+     "start": 34.8,
+     "text": "only"
+    },
+    {
+     "end": 35.25,
+     "start": 35.088,
+     "text": "its"
+    },
+    {
+     "end": 36.0,
+     "start": 35.25,
+     "text": "type"
+    },
+    {
+     "end": 36.2,
+     "start": 36.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/following-what-a-command-does-05": {
+   "audio_sha256": "caf9b5f26add2a21dca47e022d2f084f87fa6790b0e098addc9ac5310932a9d1",
+   "characters": 224,
+   "cost": 0.00013888,
+   "duration": 14.275,
+   "index": 5,
+   "key": "e5893bef69b99dfef2383ee73691db4d41659ed830d34eab34c146d9590c2983",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "following-what-a-command-does",
+   "sent_text": "A sink that cannot be written, a closed standard error or a full disk loses that sink's narration and nothing else: the other sinks, the receipt, the journal and the exit status are as they would be with no narration at all.",
+   "text": "A sink that cannot be written, a closed standard error or a full disk loses that sink's narration and nothing else: the other sinks, the receipt, the journal and the exit status are as they would be with no narration at all.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.6,
+     "start": 0.312,
+     "text": "sink"
+    },
+    {
+     "end": 0.775,
+     "start": 0.6,
+     "text": "that"
+    },
+    {
+     "end": 1.125,
+     "start": 0.775,
+     "text": "cannot"
+    },
+    {
+     "end": 1.312,
+     "start": 1.125,
+     "text": "be"
+    },
+    {
+     "end": 1.75,
+     "start": 1.312,
+     "text": "written"
+    },
+    {
+     "end": 1.862,
+     "start": 1.75,
+     "text": ","
+    },
+    {
+     "end": 1.987,
+     "start": 1.862,
+     "text": "a"
+    },
+    {
+     "end": 2.475,
+     "start": 1.987,
+     "text": "closed"
+    },
+    {
+     "end": 2.963,
+     "start": 2.475,
+     "text": "standard"
+    },
+    {
+     "end": 3.412,
+     "start": 2.963,
+     "text": "error"
+    },
+    {
+     "end": 3.575,
+     "start": 3.412,
+     "text": "or"
+    },
+    {
+     "end": 3.688,
+     "start": 3.575,
+     "text": "a"
+    },
+    {
+     "end": 3.987,
+     "start": 3.688,
+     "text": "full"
+    },
+    {
+     "end": 4.363,
+     "start": 3.987,
+     "text": "disk"
+    },
+    {
+     "end": 4.825,
+     "start": 4.363,
+     "text": "loses"
+    },
+    {
+     "end": 5.037,
+     "start": 4.825,
+     "text": "that"
+    },
+    {
+     "end": 5.375,
+     "start": 5.037,
+     "text": "sink's"
+    },
+    {
+     "end": 5.975,
+     "start": 5.375,
+     "text": "narration"
+    },
+    {
+     "end": 6.1,
+     "start": 5.975,
+     "text": "and"
+    },
+    {
+     "end": 6.45,
+     "start": 6.1,
+     "text": "nothing"
+    },
+    {
+     "end": 7.425,
+     "start": 6.45,
+     "text": "else"
+    },
+    {
+     "end": 7.65,
+     "start": 7.425,
+     "text": ":"
+    },
+    {
+     "end": 7.975,
+     "start": 7.85,
+     "text": "the"
+    },
+    {
+     "end": 8.262,
+     "start": 7.975,
+     "text": "other"
+    },
+    {
+     "end": 8.625,
+     "start": 8.262,
+     "text": "sinks"
+    },
+    {
+     "end": 8.675,
+     "start": 8.625,
+     "text": ","
+    },
+    {
+     "end": 8.8,
+     "start": 8.675,
+     "text": "the"
+    },
+    {
+     "end": 9.275,
+     "start": 8.8,
+     "text": "receipt"
+    },
+    {
+     "end": 9.35,
+     "start": 9.275,
+     "text": ","
+    },
+    {
+     "end": 9.488,
+     "start": 9.35,
+     "text": "the"
+    },
+    {
+     "end": 9.975,
+     "start": 9.488,
+     "text": "journal"
+    },
+    {
+     "end": 10.087,
+     "start": 9.975,
+     "text": "and"
+    },
+    {
+     "end": 10.212,
+     "start": 10.087,
+     "text": "the"
+    },
+    {
+     "end": 10.625,
+     "start": 10.212,
+     "text": "exit"
+    },
+    {
+     "end": 11.188,
+     "start": 10.625,
+     "text": "status"
+    },
+    {
+     "end": 11.387,
+     "start": 11.188,
+     "text": "are"
+    },
+    {
+     "end": 11.55,
+     "start": 11.387,
+     "text": "as"
+    },
+    {
+     "end": 11.725,
+     "start": 11.55,
+     "text": "they"
+    },
+    {
+     "end": 11.875,
+     "start": 11.725,
+     "text": "would"
+    },
+    {
+     "end": 12.05,
+     "start": 11.875,
+     "text": "be"
+    },
+    {
+     "end": 12.238,
+     "start": 12.05,
+     "text": "with"
+    },
+    {
+     "end": 12.475,
+     "start": 12.238,
+     "text": "no"
+    },
+    {
+     "end": 13.025,
+     "start": 12.475,
+     "text": "narration"
+    },
+    {
+     "end": 13.15,
+     "start": 13.025,
+     "text": "at"
+    },
+    {
+     "end": 14.075,
+     "start": 13.15,
+     "text": "all"
+    },
+    {
+     "end": 14.275,
+     "start": 14.075,
      "text": "."
     }
    ]

@@ -125,7 +125,7 @@
       "pause": 300
     },
     {
-      "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services, Singular.Registry.Trace and Singular.Registry.ProviderTrace, and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+      "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
       "pause": 300
     },
     {

@@ -38,6 +38,9 @@ no coherent chain snapshot and carries no verification witness.
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | all eight | Also write the JSON receipt the command prints on standard output to this file. |
+| `--trace LEVEL` | all eight | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
+| `--trace-to SINK` | all eight | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
+| `--trace-format FORMAT` | all eight | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
 The URL, network magic and signing key travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
@@ -269,6 +272,63 @@ for a later horizon before constructing the body. The wait is bounded by ten
 seconds of slots and 20 seconds of wall time; a stalled horizon refuses
 `HorizonWaitTimedOut` with the last observed tip and horizon. The wait is logged
 and neither signs nor submits anything. These observations remain Unbound.
+
+## Following what a command does
+
+As a registry operator, you can watch a command take its protocol steps while
+it runs, and keep the same account as data. Every command narrates one stream
+of events: at `--trace what`, the registry it attached, each key and request it
+read, the edge action it takes on them and its result; at `--trace how`, also
+the mechanics under each step, each with its time. Standard output still
+carries the receipt alone, so a script reading the receipt is unaffected by
+any narration.
+
+On a terminal a command narrates `what` to standard error unless told
+otherwise. A fold, narrated at `how`:
+
+```text
+registry 7c58a200… (root 58397587…, 1 pending)
+  how  read state, requests via Koios ................................... 0.8s
+  request 5e0f19c2…#0 insertActive "alice-3" (deadline 2026-10-06 07:31:26Z, slot 135588686)
+    fold insertActive
+      how  evaluate 3 scripts ✓ (mem 1.24M, steps 439M) ................. 0.4s
+      how  build fold ................................................... 0.6s
+      how  sign 9a51d7e4…, fee 0.889465 tADA ............................ 0.1s
+      how  submit tx 9a51d7e4… at tip slot 135588101 .................... 0.4s
+      how  confirm tx 9a51d7e4… ........................................ 17.4s
+      how  observe tx 9a51d7e4… ......................................... 2.0s
+    result "alice-3" insertActive folded, output 9a51d7e4…#1
+  root 58397587… → 4f2be0a1…
+fold success ........................................................... 53.4s
+```
+
+Each line is indented by where it happened: the registry, then the key or
+request, then the edge action, with each mechanic under the action it belongs
+to. Identifiers are shortened in text; amounts are in tADA. A failure says
+where it happened, and the four places are distinct: refused by the client
+before anything was submitted, refused by local script evaluation before
+anything was submitted, rejected by the ledger, or refused by the provider, so
+that no ledger judged the transaction.
+
+With `--trace-format json`, or a `file:PATH` sink, each event is one JSON
+object on its own line, written as it happens: its `level` (`what` or `how`),
+its `scope` (the registry, key, request, edge action and transaction it
+happened in, outermost first) and its `event` with that event's fields, in
+full. The last line of every stream is `command-ended`, naming the command,
+the outcome class of its receipt and its elapsed time. Keys are written in
+base16, and no event carries a signing key or the text of a failure: a failure
+names only its type.
+
+```sh
+singular registry fold --registry ./reg --blueprint plutus.json \
+  --koios-url "$koios_url" --network-magic 1 \
+  --wallet-skey ~/keys/payment.skey \
+  --trace how --trace-to stderr --trace-to file:fold.trace.jsonl
+```
+
+A sink that cannot be written, a closed standard error or a full disk loses
+that sink's narration and nothing else: the other sinks, the receipt, the
+journal and the exit status are as they would be with no narration at all.
 
 ## When the provider cannot be used
 
