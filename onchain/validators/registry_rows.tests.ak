@@ -1802,3 +1802,139 @@ test request_at_the_request_script_accepts() {
     },
   )
 }
+
+// ============================================================================
+// request-carries-datum, delivered-datum-is-request-datum — the request carries the datum it
+// names, and the receiving output carries exactly it
+// ============================================================================
+
+/// One fold of `edge` whose request names `destination`, under the
+/// approval minted for exactly that destination.
+fn foldEdgeDestined(
+  edge: Int,
+  destination: (ByteArray, Option<Data>),
+  outputs: List<Output>,
+) -> Bool {
+  foldOne(
+    edgeRoot(edge),
+    edgeNextRoot(edge),
+    fx.keyA,
+    edge,
+    edgeOwner(edge),
+    destination,
+    fx.approval(edge, fx.keyA, edgeOwner(edge), destination),
+    fx.requestLovelace,
+    edgeProof(edge),
+    edgeInputs(edge),
+    outputs,
+    edgeMint(edge),
+  )
+}
+
+test active_token_with_the_carried_datum_accepts() {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_with_another_than_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.otherDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_with_a_datum_where_none_is_carried_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, None),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_without_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        NoDatum,
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test terminal_token_with_the_carried_datum_accepts() {
+  foldEdgeDestined(
+    6,
+    (fx.bookerAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.terminalPolicy,
+        fx.keyA,
+        fx.bookerAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test terminal_token_with_another_than_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    6,
+    (fx.bookerAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.terminalPolicy,
+        fx.keyA,
+        fx.bookerAddress,
+        InlineDatum(fx.otherDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+/// The approval binds the carried datum by the same hash it bound before
+/// the request carried it: the hash of the serialised datum, empty for
+/// none, so an approval name is byte-identical for the same tuple.
+test carried_datum_hash_is_the_named_hash() {
+  and {
+    lib.destinationDatumHash(Some(fx.recordDatum())) == fx.datumHashOf(
+      fx.recordDatum(),
+    ),
+    lib.destinationDatumHash(None) == #"",
+  }
+}
