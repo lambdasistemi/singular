@@ -869,7 +869,9 @@
                 LC_ALL = "C.UTF-8";
               }
               ''
-                cd ${src}/conformance
+                # The unit suite reads both packaged fixtures and the bound
+                # repository statements/specification beside conformance/.
+                cd ${../.}/conformance
                 ${pkgs.lib.getExe appendixTests} > "$out" 2>&1 || { cat "$out"; exit 1; }
               '';
           coverage-gate-tests = coverageGateTests;

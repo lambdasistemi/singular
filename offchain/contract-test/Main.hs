@@ -57,9 +57,11 @@ main = do
                     contractSuite (nodeHarness Generated NodeBackend)
                 describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
                     contractSuite (nodeHarness Generated IndexerBackend)
-                describe (tagged "Singular.Registry.ContractNode" [Provider, E2e]) $
+                describe
+                    (tagged "Singular.Registry.ContractNode" [Provider, E2e])
                     guardOnDevnet
-                describe (tagged "Singular.Registry.ContractNode" [Provider, E2e]) $
+                describe
+                    (tagged "Singular.Registry.ContractNode" [Provider, E2e])
                     phaseLogOnDevnet
 
 {- | The external node the command line names: all three settings, none,
