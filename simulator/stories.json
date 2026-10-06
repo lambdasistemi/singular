@@ -15,7 +15,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -45,7 +45,7 @@
        "tip": 0,
        "reference": 0,
        "output": 555,
-       "namesDatum": false,
+       "datum": null,
        "approval": {
         "policy": 7,
         "edge": "insertActive",
@@ -79,7 +79,7 @@
      "tip": 0,
      "reference": 0,
      "output": 0,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertAbsent",
@@ -104,7 +104,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "updateActive",
@@ -134,7 +134,7 @@
        "tip": 0,
        "reference": 0,
        "output": 0,
-       "namesDatum": false,
+       "datum": null,
        "approval": {
         "policy": 7,
         "edge": "deleteAbsent",
@@ -168,7 +168,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -193,7 +193,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -218,7 +218,7 @@
      "tip": 0,
      "reference": 0,
      "output": 700,
-     "namesDatum": false,
+     "datum": null,
      "approval": null,
      "claimed": []
     },
@@ -235,7 +235,7 @@
      "tip": 0,
      "reference": 0,
      "output": 701,
-     "namesDatum": false,
+     "datum": null,
      "approval": null,
      "claimed": []
     },
@@ -257,7 +257,7 @@
        "tip": 0,
        "reference": 0,
        "output": 555,
-       "namesDatum": false,
+       "datum": null,
        "approval": {
         "policy": 7,
         "edge": "deleteActive",
@@ -291,7 +291,7 @@
      "tip": 0,
      "reference": 0,
      "output": 700,
-     "namesDatum": false,
+     "datum": null,
      "approval": null,
      "claimed": []
     },
@@ -308,7 +308,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -333,7 +333,7 @@
      "tip": 0,
      "reference": 0,
      "output": 700,
-     "namesDatum": false,
+     "datum": null,
      "approval": null,
      "claimed": []
     },
@@ -350,7 +350,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "updateTerminal",
@@ -380,7 +380,7 @@
        "tip": 0,
        "reference": 0,
        "output": 555,
-       "namesDatum": false,
+       "datum": null,
        "approval": {
         "policy": 7,
         "edge": "updateTerminal",
@@ -410,7 +410,7 @@
        "tip": 0,
        "reference": 0,
        "output": 555,
-       "namesDatum": false,
+       "datum": null,
        "approval": {
         "policy": 99,
         "edge": "updateTerminal",
@@ -440,7 +440,7 @@
        "tip": 0,
        "reference": 0,
        "output": 555,
-       "namesDatum": false,
+       "datum": null,
        "approval": null,
        "claimed": []
       },
@@ -466,7 +466,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertActive",
@@ -491,7 +491,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "deleteActive",
@@ -516,7 +516,7 @@
      "tip": 0,
      "reference": 0,
      "output": 555,
-     "namesDatum": false,
+     "datum": null,
      "approval": {
       "policy": 7,
       "edge": "insertActive",

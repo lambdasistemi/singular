@@ -39,6 +39,7 @@ module Conformance.Run.Live
     , WalletIdentity (..)
     , PolicyIdentity (..)
     , KeyIdentity (..)
+    , DatumIdentity (..)
     , LiveIdentities (..)
     , newLiveIdentities
     , allocateIdentity
@@ -182,10 +183,14 @@ import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (SJust))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (KeyHash, hashScript)
 import Cardano.Ledger.Credential (Credential (..))
-import Cardano.Ledger.Hashes (KeyHash (..))
+import Cardano.Ledger.Hashes (KeyHash (..), extractHash)
 import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Ledger.Plutus.Data (Data (..), binaryDataToData)
+import Cardano.Ledger.Plutus.Data
+    ( Data (..)
+    , binaryDataToData
+    , hashBinaryData
+    )
 import Cardano.Ledger.TxIn (TxIn (..), txInToText)
 import Cardano.Node.Client.E2E.Setup (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
@@ -509,6 +514,12 @@ bookStoryRequest env state cage request booking = do
             Nothing ->
                 failWith
                     "setup: a booked request names an owner the row gave no key for"
+    -- The datum the request carries is named while booking, by its hash, so a
+    -- delivery carrying it is later looked up rather than invented.
+    let carried = snd (storyDestination request)
+    unless (BS.null carried) $
+        void
+            (allocateIdentity (liveDatums (liveIds state)) (DatumIdentity carried))
     bookEdge
         env
         cfg
@@ -2155,15 +2166,19 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
     approval <- case requestOut of
         Left decided -> pure (canonical decided)
         Right out -> canonical . snd <$> storyApprovalOn cfg out
-    -- Whether the request names a datum for its delivered output: read off the
+    -- The datum the request carries for its delivered output: read off the
     -- booked request's own datum, whose destination names a datum hash or, when
     -- empty, none. A refused booking left no request UTxO; there it is the
-    -- destination the booking decision named.
-    namesDatum <- case requestOut of
-        Left _ -> pure (not (BS.null (snd (storyDestination request))))
+    -- destination the booking decision named. The datum is the identity
+    -- allocated for it while booking.
+    let requestDatum named
+            | BS.null named = pure Null
+            | otherwise =
+                toJSON <$> observeIdentity (liveDatums ids) (DatumIdentity named)
+    datum <- case requestOut of
+        Left _ -> requestDatum (snd (storyDestination request))
         Right out -> case extractCageDatum out of
-            Just (RequestDatum booked) ->
-                pure (not (BS.null (snd (requestDestination booked))))
+            Just (RequestDatum booked) -> requestDatum (snd (requestDestination booked))
             _ -> failWith "booked request output carries no request datum"
     pure $
         object $
@@ -2176,7 +2191,7 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
             , "applicationPolicy" .= application
             , "approval" .= approval
             , "tip" .= tip
-            , "namesDatum" .= namesDatum
+            , "datum" .= datum
             ]
                 <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
                    ]
@@ -2396,9 +2411,8 @@ observeAcceptedStep env state step transaction = do
 
 {- | The holdings one wallet's outputs carry, one entry per token unit of each
 registry key under each witness policy: its key, kind, the wallet's identity,
-and the datum form of the very output carrying it, read off the ledger's own
-datum constructor. The state reports the form; the `held` census drops it
-('heldObservation').
+and the datum the very output carrying it holds ('observedDatumValue'). The
+state reports the datum; the `held` census drops it ('heldObservation').
 -}
 walletHoldingsOf
     :: LiveIdentities
@@ -2416,13 +2430,16 @@ walletHoldingsOf identities keys kinds wallet utxos = do
         <$> mapM
             ( \key -> do
                 keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
-                pure
-                    [ object
-                        [ "key" .= keyId
-                        , "kind" .= String kind
-                        , "output" .= addressId
-                        , "datum" .= datumForm out
-                        ]
+                sequence
+                    [ ( \datum ->
+                            object
+                                [ "key" .= keyId
+                                , "kind" .= String kind
+                                , "output" .= addressId
+                                , "datum" .= datum
+                                ]
+                      )
+                        <$> observedDatumValue identities out
                     | (kind, policyBytes) <- kinds
                     , (_, out) <- utxos
                     , Just names <- [Map.lookup policyBytes (outAssets out)]
@@ -2433,7 +2450,7 @@ walletHoldingsOf identities keys kinds wallet utxos = do
             keys
 
 {- | One holding as the `held` census reports it: key, kind and output. Its datum
-form belongs to the complete state, as the model's own projection has it.
+belongs to the complete state, as the model's own projection has it.
 -}
 heldObservation :: Value -> Value
 heldObservation holding = case holding of
@@ -2501,6 +2518,25 @@ datumForm out = case out ^. datumTxOutL of
     NoDatum -> "none"
     DatumHash _ -> "hashed"
     Datum _ -> "inline"
+
+{- | The datum an output carries, as the model's datum value, read off the ledger's
+own datum constructor: the identity allocated while acting for the datum a booked
+request carries, looked up by its hash, so a datum no booked request carries is
+refused rather than given one. An output carrying no datum, or presenting one by
+hash, carries no value; its form is reported beside it.
+-}
+observedDatumValue :: LiveIdentities -> TxOut ConwayEra -> IO Value
+observedDatumValue ids out = case out ^. datumTxOutL of
+    Datum inline -> do
+        known <- readIORef (liveDatums ids)
+        either
+            (const (failWith "an output carries a datum no booked request carries"))
+            (pure . toJSON)
+            ( Identity.observe
+                (DatumIdentity (hashToBytes (extractHash (hashBinaryData inline))))
+                known
+            )
+    _ -> pure Null
 
 {- | The policy of the token an exit delivers to the request's destination:
 only a fold delivers, and only these edges hand the requester a token. Every
@@ -2935,6 +2971,7 @@ observedStepTx
                         (SBS.fromShort (cfgActivePolicy cfg))
                         requestKeyBytes
                         1
+                value <- observedDatumValue ids spentOutput
                 pure
                     [ object
                         [ "role" .= String "witness"
@@ -2943,6 +2980,7 @@ observedStepTx
                         , "approvalQuantity" .= (0 :: Integer)
                         , "lovelace" .= (0 :: Integer)
                         , "assets" .= [asset]
+                        , "datumValue" .= value
                         ]
                     ]
         -- A fold alone spends a witness or a custody, or locks one: a reject and a
@@ -3022,6 +3060,7 @@ observedStepTx
                                     , "custodyDatum" .= [refundId]
                                     , "lovelace" .= value
                                     , "reference" .= Null
+                                    , "datumValue" .= Null
                                     ]
                                 ]
                         _ -> failWith "insertAbsent did not create one Absent custody output"
@@ -3035,6 +3074,7 @@ observedStepTx
                     , "approvalQuantity" .= requestQuantity
                     , "lovelace" .= lsRequestLovelace step
                     , "assets" .= ([] :: [Value])
+                    , "datumValue" .= Null
                     ]
             stateInput form =
                 object
@@ -3044,6 +3084,7 @@ observedStepTx
                     , "approvalQuantity" .= (0 :: Integer)
                     , "lovelace" .= (0 :: Integer)
                     , "assets" .= ([] :: [Value])
+                    , "datumValue" .= Null
                     ]
             -- The one continued state output a fold or reject has, as required
             -- above; a retraction continues none.
@@ -3059,13 +3100,14 @@ observedStepTx
                     , "custodyDatum" .= Null
                     , "lovelace" .= (0 :: Integer)
                     , "reference" .= Null
+                    , "datumValue" .= Null
                     ]
                 | out <- stateOutputs
                 ]
-            destinationOutput form =
+            destinationOutput carrier carried =
                 object
                     [ "role" .= String "destination"
-                    , "datum" .= String form
+                    , "datum" .= String (datumForm carrier)
                     , "address" .= destination
                     , "stateToken" .= (0 :: Integer)
                     , "inlineConfig" .= Null
@@ -3076,6 +3118,7 @@ observedStepTx
                         .= sum
                             [value | Payments.Payment (Payments.Destination _) value <- payments]
                     , "reference" .= Null
+                    , "datumValue" .= carried
                     ]
         -- Every exit spends the request it booked; its form is the booked output's.
         case lsRequestIn step of
@@ -3103,7 +3146,9 @@ observedStepTx
             case deliveredPolicy cfg (lsExit step) edge of
                 Nothing -> pure []
                 Just policy -> case carriersOf policy requestKeyBytes transaction of
-                    [carrier] -> pure [destinationOutput (datumForm carrier)]
+                    [carrier] ->
+                        (\carried -> [destinationOutput carrier carried])
+                            <$> observedDatumValue ids carrier
                     carriers ->
                         failWith
                             ( "the fold has "
@@ -3152,6 +3197,7 @@ observedStepTx
                     , "approvalQuantity" .= (0 :: Integer)
                     , "lovelace" .= (0 :: Integer)
                     , "assets" .= [asset]
+                    , "datumValue" .= Null
                     ]
                 ]
 
@@ -3707,6 +3753,13 @@ at, or the other one a rebound return names.
 newtype ReferenceIdentity = ReferenceIdentity T.Text
     deriving stock (Show, Eq, Ord)
 
+{- | A datum a booked request carries for its delivered output, by the BLAKE2b-256
+hash of the datum as the chain serialises it: the model's datum value is the
+identity allocated for it.
+-}
+newtype DatumIdentity = DatumIdentity ByteString
+    deriving stock (Show, Eq, Ord)
+
 {- | An output reference's spelling, whether read from a ledger input or from an
 inline datum presenting it: the transaction id in hex, then the index.
 -}
@@ -3722,12 +3775,14 @@ data LiveIdentities = LiveIdentities
     , liveKeys :: IORef (Identity.Identities KeyIdentity)
     , liveApprovals :: IORef (Identity.Identities ApprovalIdentity)
     , liveReferences :: IORef (Identity.Identities ReferenceIdentity)
+    , liveDatums :: IORef (Identity.Identities DatumIdentity)
     }
 
 newLiveIdentities :: IO LiveIdentities
 newLiveIdentities =
     LiveIdentities
         <$> newIORef Identity.empty
+        <*> newIORef Identity.empty
         <*> newIORef Identity.empty
         <*> newIORef Identity.empty
         <*> newIORef Identity.empty

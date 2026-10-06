@@ -15,8 +15,7 @@ const fail = (reason) => {
   throw new Error(reason);
 };
 const N = 'nat',
-  I = 'int',
-  B = 'bool';
+  I = 'int';
 
 // ---- the alphabet (R1) ------------------------------------------------------
 export const STATES = ['absent', 'active', 'terminal'];
@@ -53,12 +52,9 @@ const configSchema = {
   terminalPolicy: N,
 };
 const custody = { key: N, refundAddress: N, value: N };
-const DATUM_FORMS = ['inline', 'hashed', 'none'];
-const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $enum: DATUM_FORMS } };
-// The datum form a fold gives the output it delivers to (#304): inline when the
-// request names a datum, none when it names none. A holding keeps it, so a later
-// fold spends the witness as the chain holds it.
-export const deliveredDatum = (r) => (r.namesDatum ? 'inline' : 'none');
+// A holding keeps the datum its delivery wrote — the request's own, or null for
+// none — so a later fold spends the witness as the chain holds it.
+const holding = { key: N, kind: { $enum: KINDS }, output: N, datum: { $option: N } };
 const stateSchema = {
   config: configSchema,
   trie: [{ key: N, leaf }],
@@ -74,7 +70,7 @@ const requestSchema = {
   tip: N,
   reference: N,
   output: N,
-  namesDatum: B,
+  datum: { $option: N },
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -82,10 +78,6 @@ const requestSchema = {
 function validate(x, s, p) {
   if (s === N || s === I) {
     if (!Number.isSafeInteger(x) || (s === N && x < 0)) fail(`invalid-${s}/${p}`);
-    return;
-  }
-  if (s === B) {
-    if (typeof x !== 'boolean') fail(`invalid-shape/${p}`);
     return;
   }
   if (s.$option) {
@@ -320,10 +312,7 @@ export function applyEdge(s, a) {
         state: {
           ...s,
           ...t,
-          held: [
-            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
-            ...s.held,
-          ],
+          held: [{ key: a.key, kind: 'active', output: a.output, datum: a.datum }, ...s.held],
         },
         mint: delta(a.edge),
         paid: [],
@@ -336,10 +325,7 @@ export function applyEdge(s, a) {
           ...s,
           ...t,
           custody: s.custody.filter((c) => c.key !== a.key),
-          held: [
-            { key: a.key, kind: 'active', output: a.output, datum: deliveredDatum(a) },
-            ...s.held,
-          ],
+          held: [{ key: a.key, kind: 'active', output: a.output, datum: a.datum }, ...s.held],
         },
         mint: delta(a.edge),
         paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
@@ -383,10 +369,7 @@ export function applyEdge(s, a) {
       return {
         state: {
           ...s,
-          held: [
-            { key: a.key, kind: 'terminal', output: a.output, datum: deliveredDatum(a) },
-            ...s.held,
-          ],
+          held: [{ key: a.key, kind: 'terminal', output: a.output, datum: a.datum }, ...s.held],
         },
         mint: delta(a.edge),
         paid: [],

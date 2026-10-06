@@ -41,7 +41,7 @@ function renderRefusals() {
       };
       if (leaf === 'absent') s = { ...s, custody: [{ key, refundAddress: 91, value: 200 }] };
       if (leaf === 'active')
-        s = { ...s, held: [{ key, kind: 'active', output: 555, datum: 'none' }] };
+        s = { ...s, held: [{ key, kind: 'active', output: 555, datum: null }] };
       const r = step(
         s,
         approved(edge, key, { owner: 42, output: 555, refundAddress: 91, deposit: 200 }),

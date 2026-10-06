@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Restore what #304 removed from the destination output, in isolated Lean builds.
+"""Restore what #304 and #419 removed from the destination output, in isolated Lean builds.
 
 Run from the repository's Nix development shell with an evidence directory.
 Only temporary copies are mutated. Each mutant brings back one fabrication: a
-destination row on every fold, an inline datum on every delivered output, or an
-inline datum on every spent witness.
+destination row on every fold, an inline datum on every delivered output, a
+delivered output that drops the request's datum value, an inline datum on every
+spent witness, or a destination paid whatever datum value it carries.
 The driver binary depends on the model alone, so it is built and run first, and
 the fabrication must be visible by value in its output while the baseline shows
-none. Then the statements module is elaborated, and the mutant must fail inside
-the statement that forbids that fabrication.
+none, unless the mutant says no exported row can show it. Then the statements
+module is elaborated, and the mutant must fail inside the statement that forbids
+that fabrication.
 """
 
 import argparse
@@ -23,9 +25,11 @@ import tempfile
 ROOT = Path(__file__).resolve().parent.parent
 MODEL = Path("lean/Singular/Model.lean")
 STATEMENTS = Path("lean/Singular/Statements.lean")
-# Folds that deliver nothing, and the one that delivers, in the driver corpus.
+# Folds that deliver nothing, and the ones that deliver, in the driver corpus:
+# under a request carrying no datum, and under one carrying a datum.
 NON_DELIVERING = ("DR01-register-absent", "DR03-retire-registered")
 DELIVERING = "DR02-register-active"
+DELIVERING_DATUM = "DR15-register-active-carrying-datum"
 MUTANTS = {
     "unconditional-row": {
         "before": "  if assets.isEmpty then []\n  else [{ role := .destination",
@@ -33,14 +37,26 @@ MUTANTS = {
         "statement": "theorem destination_output_iff_delivers",
     },
     "unconditional-inline": {
-        "before": "def deliveredDatum (r : Request) : DatumForm :=\n  if r.namesDatum then .inline else .none",
-        "after": "def deliveredDatum (r : Request) : DatumForm :=\n  .inline",
-        "statement": "theorem delivered_datum_follows_request",
+        "before": "def deliveredDatum (r : Request) : DatumForm := datumFormOf r.datum",
+        "after": "def deliveredDatum (r : Request) : DatumForm := .inline",
+        "statement": "theorem delivered_datum_is_request_datum",
+    },
+    "dropped-datum-value": {
+        "before": ", assets := assets, datumValue := r.datum }]",
+        "after": ", assets := assets, datumValue := none }]",
+        "statement": "theorem delivered_datum_is_request_datum",
     },
     "unconditional-inline-witness": {
         "before": "  | .requestOutput => heldDatum s asset.2 asset.1",
         "after": "  | .requestOutput => registryDatumForm",
         "statement": "theorem witness_input_datum_is_held",
+    },
+    # The driver exports no judged outputs for a delivery, so no row can show it.
+    "any-datum-value-pays": {
+        "before": "  | some v => output.datum == .inline && output.datumValue == some v",
+        "after": "  | some v => output.datum == .inline",
+        "statement": "theorem fold_refuses_foreign_datum",
+        "visible": False,
     },
 }
 DELIVERING_EDGES = ("insertActive", "updateActive", "witnessTerminal")
@@ -52,19 +68,24 @@ def run(command, cwd, log):
     return result.returncode
 
 
+def form_of(datum):
+    """The form an output carrying this datum value presents."""
+    return "none" if datum is None else "inline"
+
+
 def destination_outputs(driver_output):
-    """Each fold scenario's destination outputs, and whether its request names a datum."""
+    """Each fold scenario's destination outputs, and the datum its request carries."""
     scenarios = json.loads(driver_output)["scenarios"]
     return {
         s["id"]: {
-            "namesDatum": bool(s["request"].get("namesDatum")),
+            "datum": s["request"].get("datum"),
             "datums": [
-                o["datum"]
+                [o["datum"], o.get("datumValue")]
                 for o in s["observations"]["tx"]["outputs"]
                 if o["role"] == "destination"
             ],
             "witnesses": [
-                i["datum"]
+                [i["datum"], i.get("datumValue")]
                 for i in s["observations"]["tx"]["inputs"]
                 if i["role"] == "witness"
             ],
@@ -76,9 +97,9 @@ def destination_outputs(driver_output):
 
 
 def delivered_form(scenario):
-    """The datum form the fold that delivered this key's witness gave it, if any."""
+    """The datum the fold that delivered this key's witness gave it, if any."""
     forms = [
-        "inline" if step["request"].get("namesDatum") else "none"
+        [form_of(step["request"].get("datum")), step["request"].get("datum")]
         for step in scenario.get("setup") or []
         if step.get("accepted")
         and step["request"]["key"] == scenario["request"]["key"]
@@ -89,7 +110,8 @@ def delivered_form(scenario):
 
 def lines_of(statements, header):
     start = statements.index(header)
-    end = statements.index("\ntheorem ", start + len(header))
+    following = statements.find("\ntheorem ", start + len(header))
+    end = following if following != -1 else statements.index("\nend Statements")
     return statements[:start].count("\n") + 1, statements[:end].count("\n")
 
 
@@ -100,10 +122,10 @@ def fabrications(rows):
         if rows[i]["datums"]:
             found.append(f"{i}: destination row on a fold delivering nothing")
     for i, row in rows.items():
-        want = "inline" if row["namesDatum"] else "none"
+        want = [form_of(row["datum"]), row["datum"]]
         for datum in row["datums"]:
             if datum != want:
-                found.append(f"{i}: delivered datum {datum}, request names {want}")
+                found.append(f"{i}: delivered datum {datum}, request carries {want}")
         for datum in row["witnesses"]:
             if row["witnessDelivered"] and datum != row["witnessDelivered"]:
                 found.append(
@@ -166,17 +188,20 @@ def main():
                     r"error: lean/Singular/Statements.lean:(\d+):", proof_text
                 )
             ]
-            assert len(rows[DELIVERING]["datums"]) == 1, (
-                name,
-                "the delivering control lost its row",
-            )
+            for control in (DELIVERING, DELIVERING_DATUM):
+                assert len(rows[control]["datums"]) == 1, (
+                    name,
+                    "a delivering control lost its row",
+                )
             if not mutant:
                 assert proof_status == 0, "baseline statements failed"
                 assert not found, ("baseline fabricates", found)
             else:
-                assert found, (
+                assert bool(found) == mutant.get("visible", True), (
                     name,
-                    "mutant fabricated nothing the observation can see",
+                    "mutant fabricated nothing the observation can see"
+                    if not found
+                    else "a mutant said to be invisible fabricated by value",
                 )
                 first, last = lines_of(statements, mutant["statement"])
                 assert proof_status != 0 and any(first <= n <= last for n in errors), (
@@ -190,7 +215,7 @@ def main():
                 "driverBuildExit": binary_status,
                 "driverExit": driver_status,
                 "destinationOutputs": {
-                    i: rows[i] for i in (*NON_DELIVERING, DELIVERING)
+                    i: rows[i] for i in (*NON_DELIVERING, DELIVERING, DELIVERING_DATUM)
                 },
                 "fabrications": found,
                 "proofExit": proof_status,

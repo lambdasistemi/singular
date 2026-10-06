@@ -55,7 +55,8 @@ def txInputJson (c : Config) (i : TxInput) : Json :=
     , ("stateToken", toJson i.stateTokens)
     , ("approvalQuantity", toJson i.approvals)
     , ("lovelace", toJson i.lovelace)
-    , ("assets", assetsJson c i.assets) ]
+    , ("assets", assetsJson c i.assets)
+    , ("datumValue", datumJson i.datumValue) ]
 
 def txOutputJson (c : Config) (o : TxOutput) : Json :=
   Json.mkObj
@@ -68,7 +69,8 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("assets", assetsJson c o.assets)
     , ("custodyDatum", toJson o.custodyDatum)
     , ("lovelace", toJson o.lovelace)
-    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x)
+    , ("datumValue", datumJson o.datumValue) ]
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -160,7 +162,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 5
+  , protocolVersion := 6
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable
@@ -514,14 +516,16 @@ structure BatchScenario where
   outputs : Option (List TxOutput) := none
 
 /-- One judged output in the spelling a caller gives it: its role, the identity of
-its address, its lovelace, the form of its datum and the reference its inline datum
-presents. `settle` reads nothing else of an output. -/
+its address, its lovelace, the form of its datum, the datum value it carries and
+the reference its inline datum presents. `settle` reads nothing else of an
+output. -/
 def judgedOutputJson (o : TxOutput) : Json :=
   Json.mkObj
     [ ("role", toJson (txRoleName o.role))
     , ("address", match o.address with | none => Json.null | some a => toJson a)
     , ("lovelace", toJson o.lovelace)
     , ("datum", toJson (datumFormName o.datum))
+    , ("datumValue", datumJson o.datumValue)
     , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
 
 /-- One executed batch scenario, serialized as the corpus row the checker reads.
