@@ -92,7 +92,7 @@ done
   || setup_fail "the genesis-only source never printed usable provider/time settings"
 printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
 status=0
-"$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
+"$singular" registry create --process-time 90000 --retract-time 30000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
   --koios-url "$bare_provider" --network-time "$bare_time" --network-magic "$bare_magic" \
   --wallet-skey "$work/genesis.skey" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
 [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
@@ -399,10 +399,10 @@ say "help names the eight commands; a signing key on inspect is refused"
 # ------------------------------------------------------------------
 # 1. create
 # ------------------------------------------------------------------
-run preview success -- registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview success -- registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 [ ! -e "$reg" ] || fail "preview created the target $reg"
 seed="$(field preview .seed)"
-run bob-preview success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/bob-preview" \
+run bob-preview success -- registry create --process-time 90000 --retract-time 30000 --preview --registry "$work/bob-preview" \
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -411,22 +411,22 @@ bob_addr="$(field bob-preview .wallet)"
 
 # The same preview for a public address alone: no key, no write, and the
 # identity it names is the one the key-holding preview named.
-run preview-public success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/public-preview" \
+run preview-public success -- registry create --process-time 90000 --retract-time 30000 --preview --registry "$work/public-preview" \
   --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
 [ ! -e "$work/public-preview" ] || fail "a public preview created its target"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
   "$receipts/preview-public.json" >/dev/null || fail "the public preview names another identity than the key preview"
 status=0
-"$singular" registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/public-preview" --blueprint "$blueprint" \
+"$singular" registry create --process-time 90000 --retract-time 30000 --preview --registry "$work/public-preview" --blueprint "$blueprint" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
-run create-seed-not-owned client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed" \
+run create-seed-not-owned client-refusal -- registry create --process-time 90000 --retract-time 30000 --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 [ ! -e "$reg/registry.json" ] || fail "a refused create saved a registry"
 
-process_time=45000
-retract_time=15000
+process_time=90000
+retract_time=30000
 run create success -- registry create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 state="$(field create .pins.pinState)"
 token="$(field create .token)"
@@ -435,7 +435,7 @@ alicekey="$(field create .walletKeyHash)"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
   "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
-refused create-again client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+refused create-again client-refusal -- registry create --process-time 90000 --retract-time 30000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
   || fail "create did not report the chosen processing and retract windows"
@@ -872,12 +872,12 @@ say "create race: the late create was refused RegistryExists; the first registry
 # A create killed after its first accepted submission: a new create is
 # refused, and inspect reads the incomplete create from its journal.
 inter="$work/interrupted"
-run preview-inter success -- registry create --process-time 45000 --retract-time 15000 --preview --registry "$inter" \
+run preview-inter success -- registry create --process-time 90000 --retract-time 30000 --preview --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 seed_i="$(field preview-inter .seed)"
 rm -f "$work/create.go" "$work/create.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
-  "$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_i" --registry "$inter" --blueprint "$blueprint" \
+  "$singular" registry create --process-time 90000 --retract-time 30000 --seed "$seed_i" --registry "$inter" --blueprint "$blueprint" \
   "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
 victim=$!
 for _ in $(seq 1 1200); do
@@ -892,7 +892,7 @@ wait "$victim" 2>/dev/null || true
 first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
 first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
-run create-after-kill client-refusal -- registry create --process-time 45000 --retract-time 15000 --seed "$seed_i" --registry "$inter" \
+run create-after-kill client-refusal -- registry create --process-time 90000 --retract-time 30000 --seed "$seed_i" --registry "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
@@ -1078,7 +1078,14 @@ body_bound "$(flip "$reject_tx")" "$reg/submissions/$reject_tx.cbor.hex" \
 body="$(cat "$reg/submissions/$reject_tx.cbor.hex")"
 if [ "${body: -1}" = 0 ]; then last=1; else last=0; fi
 printf "%s%s" "${body%?}" "$last" >"$work/body-tampered.hex"
-cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" && setup_fail "the tampered body equals the saved one"
+cmp_status=0
+cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" \
+  || cmp_status=$?
+case "$cmp_status" in
+  0) setup_fail "the tampered body equals the saved one" ;;
+  1) ;;
+  *) setup_fail "the tampered body comparison could not run" ;;
+esac
 body_bound "$reject_tx" "$work/body-tampered.hex" \
   && fail "a body with changed bytes passed the journal's saved-body hash"
 booking_outs="$(tx_outputs_of "$booking_tx")" || fail "the booking's saved body could not be read"
@@ -1164,20 +1171,20 @@ say "a reject past both windows: refunded to the owner, root unmoved, and a new 
 run insert-to-reclaim success -- registry insert --key keyF --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert-to-reclaim
+run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}" "${node[@]}"
+root_before="$(field inspect-before-reclaim .root)"
+files_before="$(local_files)"
+before="$(journal_lines "$reg")"
 deadline_ms="$(field insert-to-reclaim .foldDeadline.posixMs)"
-wait_ms=$((deadline_ms + 3000 - $(date +%s%3N)))
+wait_ms=$((deadline_ms + 1 - $(date +%s%3N)))
 if [ "$wait_ms" -gt 0 ]; then
-  say "waiting $((wait_ms / 1000 + 1)) s to attempt the owner's reclaim; the command judges the window from its own view"
-  sleep $((wait_ms / 1000 + 1))
+  say "waiting $wait_ms ms to attempt the owner's reclaim; the command judges the window from its own view"
+  sleep "$((wait_ms / 1000)).$(printf '%03d' "$((wait_ms % 1000))")"
 fi
 refused fold-before-reclaim client-refusal -- registry fold --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 jq -e '.reason | contains("processing deadline") and contains("has passed")' \
   "$receipts/fold-before-reclaim.json" >/dev/null || fail "the fold before reclaim was not refused for its deadline"
-run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}" "${node[@]}"
-root_before="$(field inspect-before-reclaim .root)"
-files_before="$(local_files)"
-before="$(journal_lines "$reg")"
 # A build failure, an unconverted window or a ledger refusal fails this success
 # assertion. None can stand in for a reclaim or for a named refusal control.
 run reclaim success -- registry reclaim --request "$(field insert-to-reclaim .request)" \
