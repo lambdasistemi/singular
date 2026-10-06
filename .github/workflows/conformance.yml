@@ -980,9 +980,11 @@ jobs:
           path: ${{ runner.temp }}/merged
       - name: Point at the merged receipts
         run: |
-          printf 'CONFORMANCE_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/receipts" >> "$GITHUB_ENV"
-          printf 'CONFORMANCE_DEDICATED_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/dedicated" >> "$GITHUB_ENV"
-          printf 'STORY_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/story" >> "$GITHUB_ENV"
+          {
+            printf 'CONFORMANCE_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/receipts"
+            printf 'CONFORMANCE_DEDICATED_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/dedicated"
+            printf 'STORY_RECEIPTS=%s\n' "$RUNNER_TEMP/merged/story"
+          } >> "$GITHUB_ENV"
       - name: Account for every live refusal against the model
         working-directory: conformance
         run: |
