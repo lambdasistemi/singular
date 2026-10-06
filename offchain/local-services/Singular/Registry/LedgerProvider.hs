@@ -51,7 +51,7 @@ import Singular.Registry.Evidence
 import Singular.Registry.Ledger (Addr)
 import Singular.Registry.NetworkTime (NetworkTime, NetworkTimeFailure)
 import Singular.Registry.Signing (SignedTx)
-import Singular.Registry.Trace (ReadEvent)
+import Singular.Registry.Trace (Evaluation, ReadEvent)
 
 -- | Explicit network magic; no process-global network choice.
 newtype Network = Network Word32 deriving stock (Eq, Ord, Show)
@@ -168,6 +168,11 @@ data Session w m = Session
     , sessionTracer :: Tracer m ReadEvent
     {- ^ Where the local services report what they do under this session:
     the tracer of the scope that acquired it
+    -}
+    , sessionEvaluated :: Evaluation -> m ()
+    {- ^ Where the local evaluator records the outcome of each evaluation under
+    this session, typed: the build that owns the session reads it to say
+    whether its scripts failed. Not a tracer: nothing renders it.
     -}
     , outputs :: OutputQuery -> m (Either ReadFailure (Evidenced w Outputs))
     , protocolParameters

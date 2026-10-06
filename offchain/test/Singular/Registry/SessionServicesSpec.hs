@@ -58,6 +58,7 @@ rawSession context resolved =
         , sessionId = SessionId "local-service-fixture"
         , sessionBinding = Unbound
         , sessionTracer = nullTracer
+        , sessionEvaluated = \_ -> pure ()
         , outputs = \query -> observed "outputs" $ case query of
             AnyOf references ->
                 Right

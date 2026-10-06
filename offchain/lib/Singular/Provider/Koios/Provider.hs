@@ -147,6 +147,7 @@ koiosProvider runtime configured loadSource client =
                 , sessionId = identity
                 , sessionBinding = Unbound
                 , sessionTracer = nullTracer
+                , sessionEvaluated = \_ -> pure ()
                 , outputs =
                     guarded
                         identity

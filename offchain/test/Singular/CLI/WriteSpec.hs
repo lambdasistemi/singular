@@ -128,7 +128,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
 import Singular.Registry.AssetName (deriveAssetName)
 
-import Control.Tracer (Tracer (..), nullTracer, traceWith)
+import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
@@ -227,7 +227,6 @@ import Singular.Registry.StubSession
 import Singular.Registry.Trace
     ( ErrorClass (..)
     , Evaluation (..)
-    , ReadEvent (..)
     )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
@@ -1105,9 +1104,9 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     ClientRefused -> \fx ctx -> writeBuilding ctx fx $ \_ ->
                         failWith ClientRefusal "no fold is built"
                     EvaluationRefused -> \fx ctx -> writeBuilding ctx fx $ \v -> do
-                        traceWith
-                            (Cage.sessionTracer v)
-                            (Evaluated (Evaluation 3 2 1 0 0))
+                        -- the build's session records a failed evaluation, as the local
+                        -- evaluator does (the real path: CommandRunSpec)
+                        Cage.sessionEvaluated v (Evaluation 3 2 1 0 0)
                         failWith ClientRefusal "its fold could not be built"
                     LedgerRejected -> \fx ctx ->
                         writeVia
@@ -1128,7 +1127,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     pure
                         ( [k | Trace _ (What (Refused k _)) <- events]
                         , either (\(CommandFailure c _ _) -> Just c) (const Nothing) r
-                        , [e | Trace _ (How (Read e@(Evaluated _))) <- events]
+                        , ()
                         , mapMaybe renderText [t | t@(Trace _ (What (Refused{}))) <- events]
                         )
             results <- mapM run [minBound .. maxBound]
@@ -1140,8 +1139,6 @@ narrationRows = describe "the narration of a write (#416)" $ do
                            , Just LedgerRefusal
                            , Just Partial
                            ]
-            -- the build's own session reported the failed evaluation
-            map (\(_, _, e, _) -> length e) results `shouldBe` [0, 1, 0, 0]
             let lines' = concatMap (\(_, _, _, l) -> l) results
             length lines' `shouldBe` 4
             length (nub lines') `shouldBe` 4

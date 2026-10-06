@@ -108,7 +108,9 @@ evaluateTx session tx = do
             (Just . Map.size)
             (requireService (Services.evaluateTx session tx))
     ms <- elapsed
-    traceWith (sessionTracer session) (Evaluated (evaluationOf ms result))
+    let evaluation = evaluationOf ms result
+    sessionEvaluated session evaluation
+    traceWith (sessionTracer session) (Evaluated evaluation)
     pure result
 
 floorSlot :: Session w IO -> Integer -> IO SlotNo

@@ -61,6 +61,7 @@ viewOf utxos =
         , sessionId = SessionId "held-input-control"
         , sessionBinding = Unbound
         , sessionTracer = mempty
+        , sessionEvaluated = \_ -> pure ()
         , outputs = \case
             AtAddress address ->
                 pure

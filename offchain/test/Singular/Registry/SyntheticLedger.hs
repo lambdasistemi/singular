@@ -5,6 +5,7 @@ module Singular.Registry.SyntheticLedger
     ( withSyntheticCosts
     , withCostCoefficients
     , unitProgram
+    , errorProgram
     ) where
 
 import Cardano.Ledger.Alonzo.Scripts (mkCostModel, mkCostModels)
@@ -72,4 +73,12 @@ unitProgram parameters =
     PLC.serialiseUPLC $
         UPLC.Program () plcVersion110 $
             iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) (mkConstant () ())
+                !! parameters
+
+-- | A synthetic V3 witness that fails after its actual parameters.
+errorProgram :: Int -> SBS.ShortByteString
+errorProgram parameters =
+    PLC.serialiseUPLC $
+        UPLC.Program () plcVersion110 $
+            iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) (UPLC.Error ())
                 !! parameters

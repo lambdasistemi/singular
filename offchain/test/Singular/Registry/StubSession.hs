@@ -43,6 +43,7 @@ stubSession =
         , sessionId = SessionId "raw-builder-fixture"
         , sessionBinding = Unbound
         , sessionTracer = nullTracer
+        , sessionEvaluated = \_ -> pure ()
         , outputs =
             const (pure (Left (BackendReadFailure "fixture supplies no outputs")))
         , protocolParameters = pure (Right (Evidenced emptyPParams Nothing))

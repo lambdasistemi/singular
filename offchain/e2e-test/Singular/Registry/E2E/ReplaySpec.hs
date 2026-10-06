@@ -1135,6 +1135,7 @@ lineageSession blocks =
         , LP.networkTime = pure (Left unused)
         , LP.scriptRegistered = const (pure (Left unused))
         , LP.sessionTracer = nullTracer
+        , LP.sessionEvaluated = \_ -> pure ()
         , LP.history = \_ range -> do
             range `shouldBe` LP.HistoryRange Nothing Nothing
             Right . stream <$> readIORef blocks

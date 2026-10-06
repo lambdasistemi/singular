@@ -189,7 +189,6 @@ import Singular.Registry.Terminal
     )
 import Singular.Registry.Trace
     ( Evaluation (..)
-    , ReadEvent (..)
     , errorClassOf
     , startTimer
     , timedTrace
@@ -640,11 +639,14 @@ submitBuiltIn wc step items expect build = do
                     report (wcTracer wc) scopes event
                 }
     evaluationFailed <- newIORef False
-    let noting = Tracer $ \case
-            Evaluated e | evalFailed e > 0 -> writeIORef evaluationFailed True
-            _ -> pure ()
-        reads' = noting <> readsUnder building
-        provider = tracedReads (wcSource wc) reads' (wcCapabilities wc)
+    let provider = tracedReads (wcSource wc) (readsUnder building) (wcCapabilities wc)
+        -- the build's own session records whether a script failed its local evaluation
+        recording v =
+            v
+                { Cage.sessionEvaluated = \e -> do
+                    when (evalFailed e > 0) (writeIORef evaluationFailed True)
+                    Cage.sessionEvaluated v e
+                }
     built <-
         try $ Cage.withLatest provider $ \v -> do
             since <- startTimer
@@ -652,7 +654,7 @@ submitBuiltIn wc step items expect build = do
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
-                    (build (acting since) v)
+                    (build (acting since) (recording v))
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of

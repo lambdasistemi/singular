@@ -120,11 +120,15 @@ import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.SyntheticLedger
-    ( unitProgram
+    ( errorProgram
+    , unitProgram
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.Trace (ReadEvent (Evaluated))
+import Singular.Registry.Trace
+    ( Evaluation (..)
+    , ReadEvent (Evaluated)
+    )
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
@@ -242,6 +246,31 @@ spec = describe
                   , "how  read " `T.isInfixOf` l
                   ]
                     `shouldSatisfy` (not . null)
+        it
+            "reports a script that fails its local evaluation as refused there, from \
+            \the build's own session"
+            $ withRigOf failingOpenDatum pure
+            $ \rig -> do
+                seed <- fundSeed rig
+                _ <- run rig "create" ["registry", "create", "--seed", seed]
+                refused <-
+                    run
+                        rig
+                        "insert alice-1"
+                        [ "registry"
+                        , "insert"
+                        , "--key"
+                        , "alice-1"
+                        , "--payload"
+                        , rigDir rig </> "payload.json"
+                        ]
+                let events = runEvents refused
+                ( outcomeOf (runReceipt refused)
+                    , [k | Trace _ (What (Refused k _)) <- events]
+                    , or [evalFailed e > 0 | Trace _ (How (Read (Evaluated e))) <- events]
+                    , disagreements (runKey refused) (runReceipt refused) events
+                    )
+                    `shouldBe` (Just "client-refusal", [EvaluationRefused], True, [])
         it "fails a stream that contradicts its receipt in any one fact" $
             withRig $ \rig -> do
                 runs <- lifecycle rig
@@ -333,11 +362,19 @@ withRig = withRigVia pure
 -- | The rig, its commands tracing into a composition built around its collector.
 withRigVia
     :: (Tracer IO Trace -> IO (Tracer IO Trace)) -> (Rig -> IO a) -> IO a
-withRigVia compose use = withSystemTempDirectory "command-run" $ \dir -> do
+withRigVia = withRigOf syntheticBlueprint
+
+-- | The rig over this blueprint.
+withRigOf
+    :: Aeson.Value
+    -> (Tracer IO Trace -> IO (Tracer IO Trace))
+    -> (Rig -> IO a)
+    -> IO a
+withRigOf blueprintJson compose use = withSystemTempDirectory "command-run" $ \dir -> do
     let keyPath = dir </> "payment.skey"
         blueprint = dir </> "plutus.json"
     BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
-    BL.writeFile blueprint (Aeson.encode syntheticBlueprint)
+    BL.writeFile blueprint (Aeson.encode blueprintJson)
     BL.writeFile
         (dir </> "payload.json")
         (Aeson.encode (Aeson.object ["int" .= (7 :: Int)]))
@@ -381,7 +418,20 @@ fundOutput n =
 parameters the builders apply and then the script context.
 -}
 syntheticBlueprint :: Aeson.Value
-syntheticBlueprint =
+syntheticBlueprint = blueprintOf (const unitProgram)
+
+{- | The same validators, the open datum's failing whatever it is given: an
+insertion's booking, which mints under it, fails its local evaluation.
+-}
+failingOpenDatum :: Aeson.Value
+failingOpenDatum = blueprintOf $ \title arity ->
+    if title == "open_datum.open_datum"
+        then errorProgram arity
+        else unitProgram arity
+
+-- | The registry's validators, each program made from its title and arity.
+blueprintOf :: (Text -> Int -> SBS.ShortByteString) -> Aeson.Value
+blueprintOf program =
     Aeson.object
         [ "preamble"
             .= Aeson.object
@@ -397,7 +447,7 @@ syntheticBlueprint =
   where
     validator :: Text -> Int -> Aeson.Value
     validator title arity =
-        let code = unitProgram arity
+        let code = program title arity
         in  Aeson.object
                 [ "title" .= title
                 , "redeemer" .= Aeson.object ["schema" .= Aeson.object []]
