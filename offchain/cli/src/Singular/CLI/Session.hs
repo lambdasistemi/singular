@@ -145,7 +145,8 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Receipt
-    ( JournalEntry (..)
+    ( FoldTransition
+    , JournalEntry (..)
     , OutcomeClass (..)
     , appendJournal
     , bodiesDir
@@ -493,8 +494,9 @@ withTargetLockOr dir action busy = do
 and, for a submission step, @SINGULAR_HARNESS_HOLD_STEP@ names that step —
 write @PATH.waiting@ and wait until @PATH@ exists, so a control can
 inspect or kill the process at exactly that boundary. The points are
-@SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its answer not yet
-journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
+@SINGULAR_HARNESS_HOLD_BEFORE_SEND@ (the body saved and journalled
+@prepared@, not yet sent), @SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its
+answer not yet journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
 journalled), @SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@ (the fold confirmed,
 before fresh public replay), and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@
 (the public after-state read back, before journalling its observation). Unset in ordinary use, where it does
@@ -573,11 +575,13 @@ data Expectation = Expectation
     , exEdge :: Maybe Integer
     , exRootBefore :: Maybe ByteString
     , exRootAfter :: Maybe ByteString
+    , exTransitions :: [FoldTransition]
+    -- ^ For a fold: every request it folds, chained
     }
 
 -- | An expectation with no key or roots.
 expecting :: Text -> Expectation
-expecting after = Expectation Nothing after Nothing Nothing Nothing
+expecting after = Expectation Nothing after Nothing Nothing Nothing []
 
 {- | Build one transaction from one view of the node, then sign it and
 submit it journalled under that view's chain point and the expectation
@@ -794,7 +798,10 @@ journalledSubmit tracer wc step ex scope unsigned = do
             , journalEdge = exEdge ex
             , journalRootBefore = hexT <$> exRootBefore ex
             , journalRootAfter = hexT <$> exRootAfter ex
+            , journalTransitions =
+                if null (exTransitions ex) then Nothing else Just (exTransitions ex)
             }
+    harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_SEND" (Just step)
     dropSend <- harnessDrops "SINGULAR_HARNESS_DROP_SEND" step
     tip <- tipAtSubmission (wcSource wc) tracer caps
     let (lower, upper) = validityOf signed

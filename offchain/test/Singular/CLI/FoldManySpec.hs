@@ -154,7 +154,7 @@ requestOf owner key edge submitted =
         , requestEdge = edge
         , requestDeposit = 2_000_000
         , requestSubmittedAt = submitted
-        , requestDestination = ("", "")
+        , requestDestination = ("", Nothing)
         }
 
 -- | The request pending with its deadline, as the command reads it.

@@ -2,13 +2,14 @@
 
 {- |
 Module      : Singular.CLI.FoldRules
-Description : What decides whether, and which request, a fold may be built
+Description : What decides whether, and which requests, a fold may be built
 License     : Apache-2.0
 
 The decisions of @registry fold@ that need no node and no wallet: which
-pending request a fold takes, which edges it folds, the envelope an
-insertion's request carries, and whether the request's processing window
-still leaves time to build one. The command
+pending requests a fold takes and why it leaves each other one, which edges
+it folds, the envelope an insertion's request carries, whether each
+request's processing window still leaves time to build one, what the model
+says of the batch, and what the built fold must spend and pay. The command
 ("Singular.CLI.Fold") reads the chain and asks these; the booking's
 receipt ("Singular.CLI.Entry") states the same deadline from the same
 function, so a requester and a folder never disagree about it.
@@ -29,17 +30,13 @@ module Singular.CLI.FoldRules
     , postBuildDecision
     , placedEdge
 
-      -- * Which request
-    , FoldTargetRefusal (..)
-    , foldTarget
-    , renderTargetRefusal
-
       -- * Which requests
     , PendingRequest (..)
     , Exclusion (..)
     , SelectedRequest (..)
     , FoldSelection (..)
     , approvalVerdict
+    , requestExclusion
     , selectFold
     , renderExclusion
     , leafLaw
@@ -85,7 +82,7 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
-import Singular.Registry.TxBuilder.Internal (approvalName)
+import Singular.Registry.TxBuilder.Internal (approvalDestination, approvalName)
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
@@ -257,42 +254,6 @@ boundStartMs slotOf lo0 hi0 slot = do
                 Just _ -> go mid hi
                 Nothing -> pure Nothing
 
--- | Why a fold has no request to take.
-data FoldTargetRefusal
-    = NothingPending
-    | -- | The request the caller named is not pending
-      NotPending TxIn
-    | -- | Every pending request: a fold takes them all, and takes one
-      SeveralPending [TxIn]
-    deriving stock (Eq, Show)
-
-{- | The one pending request a fold takes, or why there is none. The
-production fold takes every request pending for the registry, so a fold
-is built only while exactly one is pending, and a request the caller
-named must be that one.
--}
-foldTarget :: Maybe TxIn -> [TxIn] -> Either FoldTargetRefusal TxIn
-foldTarget named pending = case (pending, named) of
-    ([], _) -> Left NothingPending
-    (_, Just r) | r `notElem` pending -> Left (NotPending r)
-    ([one], _) -> Right one
-    _ -> Left (SeveralPending pending)
-
--- | One line naming the refusal.
-renderTargetRefusal :: FoldTargetRefusal -> String
-renderTargetRefusal = \case
-    NothingPending -> "nothing is pending: there is no request to fold"
-    NotPending r ->
-        "the request "
-            <> txt r
-            <> " is not pending: it was folded, retracted or never booked"
-    SeveralPending rs ->
-        "more than one request is pending ("
-            <> intercalate ", " (map txt rs)
-            <> "); the registry's fold takes every pending request, so it is built only while exactly one is pending"
-  where
-    txt = T.unpack . renderOutRef
-
 -- | A request pending at the registry's request address, as a fold reads it.
 data PendingRequest
     = -- | The decoded request and its processing deadline, POSIX milliseconds
@@ -359,7 +320,23 @@ approvalVerdict r = \case
             (requestEdge r)
             (requestKey r)
             (fromBuiltin (requestOwner r))
-            (requestDestination r)
+            (approvalDestination (requestDestination r))
+
+{- | The exclusion a pending request meets from its own output alone, before
+any clock, state or law is read: @undecodable@ or @edge-unsupported@. A
+request it names is left by 'selectFold' for that reason whatever else holds.
+-}
+requestExclusion :: PendingRequest -> Maybe Exclusion
+requestExclusion = \case
+    PendingUndecodable why -> Just (Undecodable why)
+    PendingDecoded r _ -> edgeOf r
+    PendingUnapproved r _ _ -> edgeOf r
+  where
+    edgeOf r =
+        either
+            (const (Just (EdgeUnsupported (requestEdge r))))
+            (const Nothing)
+            (foldKind (requestEdge r))
 
 {- | The requests a fold takes, out of everything pending. In the ledger's
 input order, each one is taken when it decodes, names an edge this command

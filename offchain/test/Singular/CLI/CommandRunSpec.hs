@@ -1117,7 +1117,7 @@ disagreements :: Maybe Text -> Aeson.Value -> [Trace] -> [String]
 disagreements invokedKey receipt events =
     concat
         [ ends
-        , ["key " <> show k | k <- eventKeys, Just k /= expectedKey]
+        , ["key " <> show k | k <- eventKeys, not (keyAgreed k)]
         , [ "request " <> show r <> " not named by the receipt"
           | r <- eventRequests
           , r `notElem` map factRequest facts
@@ -1232,8 +1232,8 @@ disagreements invokedKey receipt events =
           , Just o /= textAt "liveOutput" receipt
           ]
         , [ "folded output " <> show o
-          | Trace _ (What (Folded _ _ o)) <- events
-          , Just o /= (textAt "liveOutput" receipt <|> textAt "released" receipt)
+          | Trace _ (What (Folded _ k o)) <- events
+          , not (foldedOutputAgreed k o)
           ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
@@ -1252,6 +1252,25 @@ disagreements invokedKey receipt events =
     outcome = textAt "outcome" receipt
     command = textAt "command" receipt
     expectedKey = textAt "key" receipt <|> invokedKey
+    -- A batch fold's receipt names each key on its folded entry, not once at
+    -- the top. A receipt that still names one key keeps that single comparison.
+    namedKeys =
+        [k | obj <- objectsIn receipt, Just k <- [fieldOf "key" obj]]
+    keyAgreed k =
+        Just k == expectedKey
+            || (isNothing (textAt "key" receipt) && k `elem` namedKeys)
+    foldedOutputAgreed k o =
+        case textAt "liveOutput" receipt <|> textAt "released" receipt of
+            Just top -> o == top
+            Nothing ->
+                any
+                    ( \obj ->
+                        fieldOf "key" obj == Just (hexText k)
+                            && ( fieldOf "liveOutput" obj == Just o
+                                    || fieldOf "released" obj == Just o
+                               )
+                    )
+                    (objectsIn receipt)
     receiptEdge = textAt "edge" receipt
     facts = requestFacts receipt
     subs = submissionsOf receipt

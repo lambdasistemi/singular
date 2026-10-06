@@ -2360,6 +2360,20 @@ at path r = go path =<< rcCommand r
 field :: Text -> Either Text Int
 field = Left
 
+{- | A field of the fold's entry for the request the command booked: a
+combined command's receipt lists every request its fold settled.
+-}
+atBooked :: Text -> Receipt -> Maybe Aeson.Value
+atBooked name r = do
+    booked <- at [field "request"] r
+    Aeson.Array entries <- at [field "folded"] r
+    i <- V.findIndex (bookedEntry booked) entries
+    at [field "folded", Right i, field name] r
+  where
+    bookedEntry booked entry = case entry of
+        Aeson.Object o -> KeyMap.lookup "request" o == Just booked
+        _ -> False
+
 -- | Fail unless a command receipt says @success@ and its submissions were admitted.
 succeeded :: String -> Receipt -> [String]
 succeeded what r =
@@ -2896,11 +2910,11 @@ check req rs = case (req, rs) of
             <> is "the key's leaf" "active" (at [field "leaf"] s)
             <> same
                 "the holding's output"
-                (at [field "liveOutput"] i)
+                (atBooked "liveOutput" i)
                 (at [field "applicationOutput", field "output"] s)
             <> same
                 "the holding's inline envelope"
-                (at [field "envelope"] i)
+                (atBooked "envelope" i)
                 (at [field "applicationOutput", field "envelope"] s)
             <> case ( at [field "applicationOutput", field "lovelace"] s
                     , at [field "applicationOutput", field "deposit"] s
@@ -2949,8 +2963,8 @@ check req rs = case (req, rs) of
             <> same
                 "the released deposit"
                 (at [field "applicationOutput", field "deposit"] b)
-                (at [field "deposit"] t)
-            <> case at [field "released"] t of
+                (atBooked "deposit" t)
+            <> case atBooked "released" t of
                 Just (Aeson.String _) -> []
                 _ -> ["the terminate names no released output"]
     (CommandSucceeded, [r]) -> succeeded "the command" r

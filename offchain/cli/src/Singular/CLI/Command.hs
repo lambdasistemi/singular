@@ -15,8 +15,8 @@ below happens before anything is read or submitted.
 * @registry terminate@ books one @updateTerminal@ at a key, each leaving
   its request pending for the registry's fold; with @--fold@ either
   also folds it in the same command;
-* @registry fold@ folds the one pending request, signed and funded by
-  the wallet that runs it;
+* @registry fold@ folds every pending request it can fold, naming each one
+  it leaves, signed and funded by the wallet that runs it;
 * @registry reclaim@ takes back the wallet's named pending insertion or
   terminal-witness request inside its retract window;
 * @registry reject@ rejects every pending request, once each is past both
@@ -168,14 +168,14 @@ data EntryArgs = EntryArgs
     }
     deriving stock (Eq, Show)
 
--- | @registry fold@: the registry's pending request, folded by this wallet.
+-- | @registry fold@: every foldable pending request, folded by this wallet.
 data FoldArgs = FoldArgs
     { foldRegistry :: FilePath
     , foldBlueprint :: FilePath
     , foldWrite :: WriteSettings
     , foldRequest :: Maybe TxIn
-    {- ^ @--request@: the pending request the caller expects to fold; the
-    fold is refused when it is not the one pending
+    {- ^ @--request@: a pending request the fold must take; the fold is
+    refused, naming why, when it is not among those it folds
     -}
     , foldFund :: Maybe TxIn
     -- ^ @--fund-input@: the wallet output that funds and collateralises the fold
@@ -336,7 +336,7 @@ parseCommand args = do
             Left
                 ( BadValue
                     "--request"
-                    "names the pending request @registry fold@ folds or @registry reclaim@ takes back; this command takes none"
+                    "names a pending request @registry fold@ must fold or @registry reclaim@ takes back; this command takes none"
                 )
     refuseFold flags =
         when (isJust (lookup "--fold" flags)) $
@@ -447,7 +447,7 @@ parseCommand args = do
                     Left
                         ( BadValue
                             flag
-                            "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
+                            "is not accepted by registry fold: it folds the pending requests, whose keys and edges the requests name"
                         )
         when (isJust (lookup "--wallet-address" flags)) $
             Left addressNeedsPreview

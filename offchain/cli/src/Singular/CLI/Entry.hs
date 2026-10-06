@@ -74,13 +74,13 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Fold
     ( Deadline (..)
-    , Delivery (..)
     , FoldOrigin (..)
     , FoldSpec (..)
-    , Folded (..)
+    , Folded
     , deadlineJson
     , deadlineOf
     , foldPending
+    , foldedFields
     )
 import Singular.CLI.Live
 import Singular.CLI.Outlay
@@ -160,7 +160,7 @@ book at a key plan = do
             wc
             "book"
             ["state", "key outputs"]
-            (const (Expectation (Just key) "request" Nothing Nothing Nothing))
+            (const (Expectation (Just key) "request" Nothing Nothing Nothing []))
             ( \building v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
@@ -223,6 +223,17 @@ pendingFields requester booking deadline =
     , ("foldDeadline", deadlineJson deadline)
     ]
 
+{- | A combined command's receipt: its key, its booking and the request it
+booked, then the fold's own fields, every request it folded among them.
+-}
+combinedFields :: ByteString -> ConwayTx -> Folded -> [(Text, Value)]
+combinedFields key booking folded =
+    keyFields key
+        <> [ ("booking", toJSON (txIdHex booking))
+           , ("request", toJSON (txInText (TxIn (txIdTx booking) (TxIx 0))))
+           ]
+        <> foldedFields folded
+
 -- | The fold a combined command runs after its own booking.
 foldAfter :: Attached -> EntryArgs -> ConwayTx -> IO Folded
 foldAfter at a booking =
@@ -257,20 +268,7 @@ runInsert env a = case entryMode a of
             if entryFold a
                 then do
                     folded <- foldAfter at a booking
-                    pure $ case fdDelivery folded of
-                        Delivered liveIn seen ->
-                            receipt
-                                "insert"
-                                Success
-                                ( keyFields key
-                                    <> [ ("booking", toJSON (txIdHex booking))
-                                       , ("fold", toJSON (txIdHex (fdTx folded)))
-                                       , ("liveOutput", toJSON (txInText liveIn))
-                                       , ("envelope", envelopeToJson seen)
-                                       , ("root", toJSON (hexT (fdRoot folded)))
-                                       ]
-                                )
-                        Released{} -> receipt "insert" Success []
+                    pure (receipt "insert" Success (combinedFields key booking folded))
                 else
                     pure $
                         receipt
@@ -319,6 +317,7 @@ runUpdate env a = case entryMode a of
                             Nothing
                             Nothing
                             Nothing
+                            []
                     )
                     ( \building v -> do
                         live <- attachLive v s
@@ -386,20 +385,7 @@ runTerminate env a = case entryMode a of
             if entryFold a
                 then do
                     folded <- foldAfter at a booking
-                    pure $ case fdDelivery folded of
-                        Released released deposit ->
-                            receipt
-                                "terminate"
-                                Success
-                                ( keyFields key
-                                    <> [ ("booking", toJSON (txIdHex booking))
-                                       , ("fold", toJSON (txIdHex (fdTx folded)))
-                                       , ("released", toJSON (txInText released))
-                                       , ("deposit", toJSON deposit)
-                                       , ("root", toJSON (hexT (fdRoot folded)))
-                                       ]
-                                )
-                        Delivered{} -> receipt "terminate" Success []
+                    pure (receipt "terminate" Success (combinedFields key booking folded))
                 else
                     pure $
                         receipt
