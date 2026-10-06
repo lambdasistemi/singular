@@ -1,0 +1,9 @@
+[
+  {"name": "node, boot, insert and config", "args": "--match Singular.Registry.E2E.Node --match Singular.Registry.E2E.OpenBoot --match Singular.Registry.E2E.InsertActive --match Singular.Registry.E2E.Config", "mayBeEmpty": false},
+  {"name": "fork recovery", "args": "--match Singular.Registry.E2E.Fork81", "mayBeEmpty": false},
+  {"name": "update to terminal", "args": "--match Singular.Registry.E2E.UpdateTerminal", "mayBeEmpty": false},
+  {"name": "criterion 3", "args": "--match Singular.Registry.E2E.Criterion3", "mayBeEmpty": false},
+  {"name": "cage", "args": "--match Singular.Registry.E2E.Cage", "mayBeEmpty": false},
+  {"name": "driver and replay", "args": "--match Singular.Registry.E2E.Driver --match Singular.Registry.E2E.Replay", "mayBeEmpty": false},
+  {"name": "the rest", "args": "--skip Singular.Registry.E2E.Node --skip Singular.Registry.E2E.OpenBoot --skip Singular.Registry.E2E.InsertActive --skip Singular.Registry.E2E.Config --skip Singular.Registry.E2E.Fork81 --skip Singular.Registry.E2E.UpdateTerminal --skip Singular.Registry.E2E.Criterion3 --skip Singular.Registry.E2E.Cage --skip Singular.Registry.E2E.Driver --skip Singular.Registry.E2E.Replay", "mayBeEmpty": true}
+]

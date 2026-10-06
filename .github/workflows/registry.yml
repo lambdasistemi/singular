@@ -266,31 +266,50 @@ jobs:
   # here. The registry-protocol jobs (`e2e`, `journey`) and the generic
   # rows above are unaffected.
   # #449: the devnet E2E modules each start their own development node, so
-  # they run as parallel parts. "the rest" skips every named module, so a
-  # module added later still runs instead of being silently dropped.
+  # they run as parallel parts listed once in .github/ci/e2e-parts.json.
+  # The plan proves the selection before any node starts: every named part
+  # selects at least one example, and the parts add up to exactly the full
+  # suite ("the rest" skips every named module, so a module added later
+  # still runs).
+  e2e-plan:
+    name: Devnet E2E parts select the whole suite
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 30
+    outputs:
+      parts: ${{ steps.parts.outputs.parts }}
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Prove the parts select the whole suite (dry runs, no node)
+        working-directory: offchain
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          PATH="$(nix build --quiet --no-link --print-out-paths nixpkgs#jq)/bin:$PATH" \
+            REGISTRY_BLUEPRINT="$blueprint" bash ../tools/e2e_parts_proof.sh ../.github/ci/e2e-parts.json
+      - id: parts
+        name: Publish the parts
+        run: |
+          printf 'parts=%s\n' "$(nix run --quiet nixpkgs#jq -- -c . .github/ci/e2e-parts.json)" >> "$GITHUB_OUTPUT"
   e2e-part:
     name: "Devnet E2E part: ${{ matrix.part.name }}"
-    needs: blueprint
+    needs: e2e-plan
     runs-on: nixos
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        part:
-          - name: node, boot, insert and config
-            args: --match Singular.Registry.E2E.Node --match Singular.Registry.E2E.OpenBoot --match Singular.Registry.E2E.InsertActive --match Singular.Registry.E2E.Config
-          - name: fork recovery
-            args: --match Singular.Registry.E2E.Fork81
-          - name: update to terminal
-            args: --match Singular.Registry.E2E.UpdateTerminal
-          - name: criterion 3
-            args: --match Singular.Registry.E2E.Criterion3
-          - name: cage
-            args: --match Singular.Registry.E2E.Cage
-          - name: driver and replay
-            args: --match Singular.Registry.E2E.Driver --match Singular.Registry.E2E.Replay
-          - name: the rest
-            args: --skip Singular.Registry.E2E.Node --skip Singular.Registry.E2E.OpenBoot --skip Singular.Registry.E2E.InsertActive --skip Singular.Registry.E2E.Config --skip Singular.Registry.E2E.Fork81 --skip Singular.Registry.E2E.UpdateTerminal --skip Singular.Registry.E2E.Criterion3 --skip Singular.Registry.E2E.Cage --skip Singular.Registry.E2E.Driver --skip Singular.Registry.E2E.Replay
+        part: ${{ fromJSON(needs.e2e-plan.outputs.parts) }}
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -308,25 +327,30 @@ jobs:
         working-directory: offchain
         env:
           PART_ARGS: ${{ matrix.part.args }}
+          MAY_BE_EMPTY: ${{ matrix.part.mayBeEmpty }}
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          # A named part that runs no example fails; only "the rest" may be empty.
+          fail_on=()
+          [ "$MAY_BE_EMPTY" = true ] || fail_on=(--fail-on=empty)
           # shellcheck disable=SC2086 # the part's hspec arguments split on spaces
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- $PART_ARGS
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- $PART_ARGS "${fail_on[@]}"
   # The required check keeps its name and fails unless every part passed: a
   # skipped job would otherwise count as passing.
   e2e:
     name: Devnet E2E on the fresh blueprint
-    needs: e2e-part
+    needs: [e2e-plan, e2e-part]
     if: always()
     runs-on: nixos
     timeout-minutes: 5
     steps:
       - name: Every E2E part passed
         env:
+          PLAN: ${{ needs.e2e-plan.result }}
           PARTS: ${{ needs.e2e-part.result }}
         run: |
-          echo "E2E parts: $PARTS"
-          [ "$PARTS" = success ]
+          echo "E2E plan: $PLAN, parts: $PARTS"
+          [ "$PLAN" = success ] && [ "$PARTS" = success ]
   contract:
     name: Backend contract suite on every adapter
     runs-on: nixos
