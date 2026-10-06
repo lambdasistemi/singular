@@ -112,7 +112,7 @@ import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Config.Application (cageConfigForApplication)
+import Singular.Registry.Deployment.Attach (cageConfigForApplication)
 import Singular.Registry.Deployment
     ( Attached (..)
     , Deployment (..)

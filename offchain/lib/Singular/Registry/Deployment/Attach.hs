@@ -5,9 +5,11 @@ License     : Apache-2.0
 
 One owner for the deployment family's node decisions: the compiled
 release halves a manifest pins only by hash ('CageParts',
-'cageConfigFor'), the registry token a seed determines, the resolution
-of the recorded reference outputs and the registry's state output, and
-the two operations built on them — 'verifyDeployment', which goes on
+'cageConfigFor', 'cageConfigForApplication'), the registry token a seed
+determines, a live carrier of each recorded script found by its hash
+wherever it sits ("Singular.Registry.StateToken"; the recorded output
+reference is not read), the registry's state output, and the two
+operations built on them — 'verifyDeployment', which goes on
 to read the live state datum and refuse a mismatched active policy or
 process\/retract window, and 'attach', which returns the resolved
 outputs without those additional checks. Neither operation loads or
@@ -24,6 +26,7 @@ module Singular.Registry.Deployment.Attach
     ( -- * The release halves the manifest pins only by hash
       CageParts (..)
     , cageConfigFor
+    , cageConfigForApplication
 
       -- * Checking one against a node
     , verifyDeployment
@@ -40,16 +43,26 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 import Data.Text qualified as T
 
-import Lens.Micro ((^.))
 
-import Cardano.Ledger.Address (Addr, decodeAddrEither)
+import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Hashes (ScriptHash (..))
+import Data.Map.Strict qualified as Map
+import Data.Text.Encoding qualified as TE
 
+import Singular.Application.OpenDatum.Script
+    ( Application
+    , applicationTitle
+    )
 import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config.Application
+    ( RegistryEconomics (..)
+    , configForApplication
+    )
 import Singular.Registry.Deployment.Manifest
     ( Deployment (..)
     , ReferenceScript (..)
@@ -67,6 +80,11 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.StateToken
+    ( findReferences
+    , parseRole
+    , renderReferenceRefusal
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -199,7 +217,7 @@ verifyDeployment
 verifyDeployment view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts view dep
+    refs <- referencesByHash view dep
     (stateIn, stateOut) <- resolveStateUtxo view cfg tok
     stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
@@ -238,10 +256,10 @@ verifyDeployment view dep parts = do
             <> [ "reference script "
                     <> T.unpack (refRole r)
                     <> " live at "
-                    <> T.unpack (refOutRef r)
+                    <> T.unpack (renderOutRef carrier)
                     <> " carrying 0x"
                     <> T.unpack (refHash r)
-               | (r, _) <- refs
+               | (r, (carrier, _)) <- refs
                ]
             <> [ "registry state output "
                     <> T.unpack (renderOutRef stateIn)
@@ -249,65 +267,35 @@ verifyDeployment view dep parts = do
                ]
         )
 
-{- | The recorded reference outputs, as the node reports them, checked
-one by one against the hash the manifest pins.
+{- | A live carrier of each script the manifest records, found by its hash
+wherever it sits ("Singular.Registry.StateToken"): the recorded output
+reference is not read. Each is returned beside its manifest entry, in
+manifest order.
 -}
-resolveReferenceScripts
+referencesByHash
     :: Cage.Session Cage.NoWitness IO
     -> Deployment
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
-resolveReferenceScripts view dep =
-    mapM one (depReferenceScripts dep)
+referencesByHash view dep = do
+    recorded <- mapM roleOf (depReferenceScripts dep)
+    let expected = Map.fromList [(role, hash) | (_, role, hash) <- recorded]
+    found <-
+        findReferences view [] [] expected (Map.keysSet expected)
+            >>= either (die . T.unpack . renderReferenceRefusal) (pure . fst)
+    pure [(r, found Map.! role) | (r, role, _) <- recorded]
   where
-    one r = do
-        wanted <- either die pure (parseOutRef (refOutRef r))
-        addr <- addrOf r
-        utxos <- Cage.outputsAt view addr
-        case [u | u@(i, _) <- utxos, i == wanted] of
-            [] ->
-                die
-                    ( "the deployment's "
-                        <> T.unpack (refRole r)
-                        <> " reference output "
-                        <> T.unpack (refOutRef r)
-                        <> " is not live at "
-                        <> T.unpack (refAddress r)
-                        <> ". A reference output that has been spent cannot \
-                           \be attached to; the deployment must be made again."
-                    )
-            ((i, o) : _) -> do
-                onChain <- case o ^. referenceScriptTxOutL of
-                    SJust s -> pure (T.pack (hex (scriptHashBytes (hashScript s))))
-                    SNothing ->
-                        die
-                            ( "the deployment's "
-                                <> T.unpack (refRole r)
-                                <> " output "
-                                <> T.unpack (refOutRef r)
-                                <> " carries no reference script"
-                            )
-                if onChain == refHash r
-                    then pure (r, (i, o))
-                    else
-                        die
-                            ( "the deployment's "
-                                <> T.unpack (refRole r)
-                                <> " output "
-                                <> T.unpack (refOutRef r)
-                                <> " carries 0x"
-                                <> T.unpack onChain
-                                <> " but the manifest pins 0x"
-                                <> T.unpack (refHash r)
-                            )
-    addrOf r = case decodeAddrText (refAddressBytes r) of
-        Just a -> pure a
-        Nothing ->
-            die
-                ( "the deployment's "
-                    <> T.unpack (refRole r)
-                    <> " address is not readable: "
-                    <> T.unpack (refAddress r)
-                )
+    roleOf r = do
+        role <-
+            maybe
+                (die ("the deployment records an unknown reference role " <> T.unpack (refRole r)))
+                pure
+                (parseRole (refRole r))
+        hash <-
+            maybe
+                (die ("the deployment's " <> T.unpack (refRole r) <> " hash is not a script hash"))
+                pure
+                (decodeScriptHash (refHash r))
+        pure (r, role, hash)
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo
@@ -356,7 +344,7 @@ attach
 attach view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts view dep
+    refs <- referencesByHash view dep
     state <- resolveStateUtxo view cfg tok
     pure
         Attached
@@ -370,14 +358,63 @@ attach view dep parts = do
 -- Small helpers
 -- ---------------------------------------------------------
 
-{- | The authoritative address bytes of a recorded reference output.
-
-The bech32 spelling beside it is for the reader; this is what is
-queried, because it round-trips through the manifest exactly.
--}
-decodeAddrText :: Text -> Maybe Addr
-decodeAddrText t = case B16.decode (BC.pack (T.unpack t)) of
-    Right raw -> case decodeAddrEither raw of
-        Right a -> Just a
-        Left _ -> Nothing
+-- | A recorded script hash, from its hex.
+decodeScriptHash :: Text -> Maybe ScriptHash
+decodeScriptHash t = case B16.decode (BC.pack (T.unpack t)) of
+    Right raw -> ScriptHash <$> hashFromBytes raw
     Left _ -> Nothing
+
+{- | Attach to a deployment: derive every pin again from its seed and this
+release's codes, and refuse a record whose application hash differs;
+'cageConfigFor' then refuses a different state hash or active policy.
+The network is the test network, as 'cageConfigFor' fixes it.
+-}
+cageConfigForApplication
+    :: Application
+    -> NamingCodes
+    -> SBS.ShortByteString
+    -> SBS.ShortByteString
+    -> Deployment
+    -> Either String (CageConfig, NamingCodes)
+cageConfigForApplication app codes stateBytes requestBytes dep = do
+    seedIn <- parseOutRef (depSeedOutRef dep)
+    let econ =
+            RegistryEconomics
+                { reProcessTime = depProcessTime dep
+                , reRetractTime = depRetractTime dep
+                , reTip = Coin (depTip dep)
+                }
+        (derived, pinned) =
+            configForApplication
+                app
+                codes
+                stateBytes
+                requestBytes
+                econ
+                Testnet
+                (txInToRef seedIn)
+        appHex = hexS (cfgApplicationPolicy derived)
+    when (appHex /= depApplicationHash dep) $
+        Left
+            ( "this release derives the "
+                <> T.unpack (applicationTitle app)
+                <> " application policy 0x"
+                <> T.unpack appHex
+                <> " for this registry, but the deployment records 0x"
+                <> T.unpack (depApplicationHash dep)
+            )
+    cfg <-
+        cageConfigFor
+            dep
+            CageParts
+                { partsStateBytes = stateBytes
+                , partsRequestBytes = requestBytes
+                , partsApplicationPolicy = cfgApplicationPolicy derived
+                , partsActivePolicy = cfgActivePolicy derived
+                , partsAbsentPolicy = cfgAbsentPolicy derived
+                , partsTerminalPolicy = cfgTerminalPolicy derived
+                , partsConsumerScript = cfgConsumerScript derived
+                }
+    pure (cfg, pinned)
+  where
+    hexS = TE.decodeUtf8 . B16.encode . SBS.fromShort
