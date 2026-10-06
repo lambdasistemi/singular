@@ -190,8 +190,7 @@ jobs:
       # against the committed golden. The recipe writes nothing in either
       # tree; only `just generate-vectors` writes the golden.
       - name: Diff generator output against the committed golden
-        working-directory: offchain
-        run: nix develop --quiet --command just vectors-check
+        run: nix run --quiet .#vectors-check
   naming-wire:
     name: Naming wire vectors match the epic-15 contract
     runs-on: nixos
@@ -218,7 +217,7 @@ jobs:
       # cabal, no package index, no warm state (the same D-011 reasoning
       # as the hermetic e2e, at unit-test cost).
       - name: Run the naming wire vector suite
-        run: nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
+        run: nix run --quiet .#naming-wire-suite
   vector-drift:
     name: Vendored v0.2.0 vectors match the live corpus
     runs-on: nixos
@@ -254,7 +253,7 @@ jobs:
       # paths filter above is what makes this job fire when epic 15
       # revises the corpus.
       - name: Compare the vendored wire vectors with the live corpus
-        run: nix develop ./offchain --quiet --command bash offchain/naming/run-drift-check.sh
+        run: nix run --quiet .#naming-drift-check
   # D6 (issue #157): the Naming Your Assets application journeys are retired from this
   # workflow's required set. Six job blocks stood here and ran seven
   # journey surfaces — `li01`, `li-refusals`, `lmlc` (the `naming-rows`

@@ -52,7 +52,7 @@ jobs:
       # own docs CI (just ci) remains the backstop for doc-only
       # changes outside this workflow's path filter.
       - name: Owned docs page passes the presentation gate
-        run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
+        run: nix run --quiet .#presentation-check -- --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
   format-check:
     name: Conformance Haskell format and lint check
     runs-on: nixos

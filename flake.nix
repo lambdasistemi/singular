@@ -336,6 +336,10 @@
           // (coverage system).apps
           // (inventory system).apps
           // (demo1 system)
+          // (import ./nix/ci-apps.nix {
+            pkgs = import nixpkgs { inherit system; };
+            inherit offchain onchain system;
+          })
         )
       );
       # #278 terminal-attestation-permanent: the root development shell carries the pinned house
