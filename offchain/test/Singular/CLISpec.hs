@@ -766,6 +766,13 @@ savedIdentity = describe "the saved identity" $ do
             createDirectoryIfMissing True used
             BS.writeFile (journalPath used) ""
             refuseExisting used `shouldReturn` Left (RegistryExists used)
+    it "ignores retired trie files when admitting a registry directory" $
+        withTempDir $ \dir -> do
+            let used = dir </> "retired-files"
+            createDirectoryIfMissing True used
+            BS.writeFile (used </> "state.json") "corrupted saved root"
+            BS.writeFile (used </> "registry.mirror.json") "corrupted mirror"
+            refuseExisting used `shouldReturn` Right ()
     it "keeps the proof mirror's root across a save and a load" $
         withTempDir $ \dir -> do
             (db, root) <- walked [(key, edgeInsertActive)]

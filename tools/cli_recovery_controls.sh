@@ -397,6 +397,35 @@ clause "inspect reads the key active at that root" \
   is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
 clause "the journal was only appended to and no body changed" appended_only s0
 
+# The released executable reads the same public lineage in both directories.
+# Retired files are intentionally corrupted, without changing the identity,
+# journal or provider. The original directory remains available to the story.
+control="retired trie files are unreachable"
+clean_source="$work/clean-trie-source"
+corrupt_source="$work/corrupt-trie-source"
+cp -a "$reg" "$clean_source"
+cp -a "$reg" "$corrupt_source"
+rm -f "$clean_source/registry.mirror.json" "$clean_source/state.json"
+printf 'corrupted mirror\n' >"$corrupt_source/registry.mirror.json"
+printf 'corrupted saved root\n' >"$corrupt_source/state.json"
+for source in clean corrupt; do
+  source_dir="$clean_source"
+  [ "$source" != corrupt ] || source_dir="$corrupt_source"
+  run "inspect-$source-source" registry inspect --key-hex 6b0a \
+    --registry "$source_dir" --blueprint "$blueprint" "${node[@]}"
+  clause "$source directory reads the active key from public history" \
+    is_equal "$(field "inspect-$source-source" '.outcome + "/" + .leaf')" success/active
+done
+clause "missing and corrupted retired files give the same root and leaf" \
+  is_equal "$(field inspect-clean-source '[.outcome,.root,.leaf] | tojson')" \
+  "$(field inspect-corrupt-source '[.outcome,.root,.leaf] | tojson')"
+clause "the corrupted mirror is never rewritten" \
+  is_equal "$(cat "$corrupt_source/registry.mirror.json")" 'corrupted mirror'
+clause "the corrupted saved root is never rewritten" \
+  is_equal "$(cat "$corrupt_source/state.json")" 'corrupted saved root'
+clause "the clean directory creates neither retired file" \
+  bash -c '[ ! -e "$1/registry.mirror.json" ] && [ ! -e "$1/state.json" ]' _ "$clean_source"
+
 # Preview deliberately stays untraced in the release journey's ordinary
 # process control. Here its separate actual trace binds the selected root to
 # the measured receipt, and a missing checked create must refuse the same read.

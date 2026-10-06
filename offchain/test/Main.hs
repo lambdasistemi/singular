@@ -26,6 +26,7 @@ import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.IndexerViewSpec qualified
 import Singular.Registry.LifecycleSpec qualified
+import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
 import Singular.Registry.LocalServicesCallerSpec qualified
 import Singular.Registry.NetworkTimeSpec qualified
@@ -77,6 +78,7 @@ main = hspec $ do
     Singular.Registry.Private.ArchiveSpec.spec
     Singular.Registry.IndexerViewSpec.spec
     Singular.Registry.LifecycleSpec.spec
+    Singular.Registry.LineageSpec.spec
     Singular.Registry.TypesSpec.spec
     Singular.Registry.TrieStateSpec.spec
     Singular.Registry.TrieStateContractSpec.spec

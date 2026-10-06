@@ -956,6 +956,7 @@ test-suite cage-tests
     Singular.Registry.IndexerRig
     Singular.Registry.IndexerViewSpec
     Singular.Registry.LifecycleSpec
+    Singular.Registry.LineageSpec
     Singular.Registry.LocalEvaluationSpec
     Singular.Registry.LocalServicesCallerSpec
     Singular.Registry.SessionServicesSpec
