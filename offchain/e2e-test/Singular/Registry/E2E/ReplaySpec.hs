@@ -26,6 +26,7 @@ verifier that never sees the trie.
 module Singular.Registry.E2E.ReplaySpec (spec) where
 
 import Control.Monad (forM, forM_, unless, when)
+import Control.Tracer (nullTracer)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
@@ -1133,6 +1134,7 @@ lineageSession blocks =
         , LP.tipObservation = pure (Left unused)
         , LP.networkTime = pure (Left unused)
         , LP.scriptRegistered = const (pure (Left unused))
+        , LP.sessionTracer = nullTracer
         , LP.history = \_ range -> do
             range `shouldBe` LP.HistoryRange Nothing Nothing
             Right . stream <$> readIORef blocks

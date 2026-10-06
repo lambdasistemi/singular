@@ -17,6 +17,7 @@ import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Credential (Credential (ScriptHashObj))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
+import Control.Tracer (nullTracer)
 import Data.Bifunctor (first)
 import Data.Bifunctor qualified
 import Data.List.NonEmpty qualified as NE
@@ -145,6 +146,7 @@ koiosProvider runtime configured loadSource client =
                 { sessionNetwork = configured
                 , sessionId = identity
                 , sessionBinding = Unbound
+                , sessionTracer = nullTracer
                 , outputs =
                     guarded
                         identity

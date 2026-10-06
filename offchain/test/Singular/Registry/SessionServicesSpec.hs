@@ -7,6 +7,7 @@ import Cardano.Slotting.Time (getRelativeTime, getSlotLength)
 import Codec.Serialise (DeserialiseFailure, deserialiseOrFail)
 import Control.Monad (forM_)
 import Control.Monad.State.Strict (State, modify', runState)
+import Control.Tracer (nullTracer)
 import Data.ByteString.Lazy qualified as LBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
@@ -56,6 +57,7 @@ rawSession context resolved =
         { sessionNetwork = Network 1
         , sessionId = SessionId "local-service-fixture"
         , sessionBinding = Unbound
+        , sessionTracer = nullTracer
         , outputs = \query -> observed "outputs" $ case query of
             AnyOf references ->
                 Right

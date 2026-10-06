@@ -60,6 +60,7 @@ library
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers                        >=0.6  && <0.8
+    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -200,6 +201,7 @@ library local-services
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
     Singular.Registry.ProviderSettings
+    Singular.Registry.Trace
 
   build-depends:
     , aeson
@@ -218,6 +220,7 @@ library local-services
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
+    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -916,6 +919,7 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLI.Attached
     Singular.CLI.Command
+    Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
@@ -937,6 +941,8 @@ test-suite cage-tests
     Singular.CLI.RejectSpec
     Singular.CLI.RequestWindow
     Singular.CLI.Session
+    Singular.CLI.Trace
+    Singular.CLI.TraceSpec
     Singular.CLI.TrieHistory
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.TrieTrace
@@ -1015,6 +1021,7 @@ test-suite cage-tests
     , cardano-tx-tools:tx-build
     , case-insensitive
     , containers
+    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -1282,6 +1289,7 @@ executable singular
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Entry
+    Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.InsertEnvelope
@@ -1302,6 +1310,7 @@ executable singular
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
     Singular.CLI.Session
+    Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
 
@@ -1321,6 +1330,7 @@ executable singular
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
+    , contra-tracer
     , directory
     , filepath
     , microlens

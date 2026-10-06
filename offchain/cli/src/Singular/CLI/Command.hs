@@ -47,6 +47,7 @@ module Singular.CLI.Command
     , CLIError (..)
     , parseCommand
     , parseCommandWithEnvironment
+    , parseInvocation
     , renderCLIError
     , usage
     , maxKeyBytes
@@ -78,6 +79,7 @@ import Singular.Application.OpenDatum.Build
     , readKey
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.Trace (TraceRequest, noTraceRequest)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -645,6 +647,17 @@ parseCommandWithEnvironment environment args = do
     when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
     parseCommand args
+
+{- | A whole command line: the command, and the tracing it asks for with
+@--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
+-}
+parseInvocation
+    :: [(String, String)]
+    -> [String]
+    -> Either CLIError (Command, TraceRequest)
+parseInvocation environment args =
+    (\command -> (command, noTraceRequest))
+        <$> parseCommandWithEnvironment environment args
 
 {- | Split a command line into its words and its flags, the first
 occurrence of a flag winning. A value flag takes the next token or its

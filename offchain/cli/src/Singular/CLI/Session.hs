@@ -68,6 +68,7 @@ import Control.Exception
     , try
     )
 import Control.Monad (void, when)
+import Control.Tracer (Tracer, nullTracer)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.Key (Key)
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -128,6 +129,7 @@ import Singular.CLI.Receipt
     , readJournal
     , submissionCase
     )
+import Singular.CLI.Trace (Trace)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
@@ -168,6 +170,8 @@ data WriteContext = WriteContext
     , wcWallet :: Wallet
     , wcCapabilities :: Capabilities Cage.NoWitness IO
     , wcTimeout :: Maybe Int
+    , wcTracer :: Tracer IO Trace
+    -- ^ Where the write reports its transactions, in the scope that runs it
     }
 
 {- | Take the target directory's write lock, connect to the named node with
@@ -235,6 +239,7 @@ withSession dir command ws body = do
                                 , wcWallet = wallet
                                 , wcCapabilities = caps
                                 , wcTimeout = writeConfirmTimeout ws
+                                , wcTracer = nullTracer
                                 }
                 named <- submissionsOf dir before
                 case ran of

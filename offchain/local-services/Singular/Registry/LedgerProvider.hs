@@ -38,6 +38,7 @@ import Cardano.Ledger.TxIn (TxId, TxIn)
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (Exception)
+import Control.Tracer (Tracer)
 import Data.ByteString (ByteString)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
@@ -50,6 +51,7 @@ import Singular.Registry.Evidence
 import Singular.Registry.Ledger (Addr)
 import Singular.Registry.NetworkTime (NetworkTime, NetworkTimeFailure)
 import Singular.Registry.Signing (SignedTx)
+import Singular.Registry.Trace (ReadEvent)
 
 -- | Explicit network magic; no process-global network choice.
 newtype Network = Network Word32 deriving stock (Eq, Ord, Show)
@@ -163,6 +165,10 @@ data Session w m = Session
     { sessionNetwork :: Network
     , sessionId :: SessionId
     , sessionBinding :: SessionBinding
+    , sessionTracer :: Tracer m ReadEvent
+    {- ^ Where the local services report what they do under this session:
+    the tracer of the scope that acquired it
+    -}
     , outputs :: OutputQuery -> m (Either ReadFailure (Evidenced w Outputs))
     , protocolParameters
         :: m (Either ReadFailure (Evidenced w (PParams ConwayEra)))

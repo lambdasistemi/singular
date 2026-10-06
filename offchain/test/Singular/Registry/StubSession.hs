@@ -17,6 +17,7 @@ import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Exception (finally)
+import Control.Tracer (nullTracer)
 import Data.Bifunctor qualified
 import Data.ByteString qualified as BS
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -41,6 +42,7 @@ stubSession =
         { sessionNetwork = Network 42
         , sessionId = SessionId "raw-builder-fixture"
         , sessionBinding = Unbound
+        , sessionTracer = nullTracer
         , outputs =
             const (pure (Left (BackendReadFailure "fixture supplies no outputs")))
         , protocolParameters = pure (Right (Evidenced emptyPParams Nothing))

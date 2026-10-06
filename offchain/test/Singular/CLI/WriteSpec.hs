@@ -47,7 +47,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf, nub, sort)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
@@ -122,6 +122,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
 import Singular.Registry.AssetName (deriveAssetName)
 
+import Control.Tracer (Tracer (..), nullTracer, traceWith)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
@@ -154,9 +155,30 @@ import Singular.CLI.Session
     ( CommandFailure (..)
     , WriteContext (..)
     , expecting
+    , failWith
     , journalObserved
     , submitBuilt
     , txIdHex
+    )
+import Singular.CLI.Trace
+    ( ConfirmVerdict (..)
+    , EdgeAction (..)
+    , Event (..)
+    , How (..)
+    , Output (..)
+    , RefusalKind (..)
+    , Scope (..)
+    , SubmitVerdict (..)
+    , Trace (..)
+    , TraceFormat (..)
+    , TraceLevel (..)
+    , TraceSink (..)
+    , TxEvent (..)
+    , What (..)
+    , outputSink
+    , renderJsonLine
+    , renderPhaseLog
+    , renderText
     )
 import Singular.Registry.Capabilities
     ( Capabilities (..)
@@ -167,7 +189,7 @@ import Singular.Registry.Deployment
     ( Deployment (..)
     , parseOutRef
     )
-import Singular.Registry.Evidence (unverifiedVerifier)
+import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -193,6 +215,7 @@ import Singular.Registry.StubSession
     , stubSession
     , withAddressOutputs
     )
+import Singular.Registry.Trace (Evaluation (..), ReadEvent (..))
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -213,7 +236,7 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = writeRows >> phaseLogRows >> inputRows
+spec = writeRows >> phaseLogRows >> inputRows >> narrationRows
 
 writeRows :: Spec
 writeRows = describe "a singular write on injected capabilities (#323)" $ do
@@ -580,6 +603,7 @@ writeContext fx =
                 , capTrace = pure []
                 }
         , wcTimeout = Just 5
+        , wcTracer = nullTracer
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the
@@ -1001,3 +1025,309 @@ redirecting target path act =
             closeFd saved
         )
         (const act)
+
+-- ---------------------------------------------------------
+-- The narration of a write (#416)
+-- ---------------------------------------------------------
+
+{- | The typed events a write reports, collected from the tracer its context
+carries. Every compared value is the producer's: the transaction id from the
+signed body, the steps and the journal from the journal on disk.
+-}
+narrationRows :: Spec
+narrationRows = describe "the narration of a write (#416)" $ do
+    it
+        "reports each transaction's build, signing, submission, confirmation and \
+        \readback under its own step, naming the transaction the journal names"
+        $ withFixture
+        $ \fx -> do
+            (seen, collect) <- traceCollector
+            let ctx = (writeContext fx){wcTracer = collect}
+                later =
+                    bodyTxL . vldtTxBodyL
+                        .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
+            (folded, ()) <- writeStepVia "fold" ctx id fx
+            journalObserved ctx "fold" folded "read back"
+            (booked, ()) <- writeStepVia "book" ctx later fx
+            journalObserved ctx "book" booked "read back"
+            events <- readIORef seen
+            prepared <- readJournal (fxDir fx)
+            let journalled =
+                    [ (journalStep e, journalTxId e)
+                    | e <- prepared
+                    , journalEvent e == "prepared"
+                    ]
+                txOf = \case
+                    TxBuilt{} -> Nothing
+                    TxSigned _ t _ _ _ -> Just t
+                    TxSubmitted{submitTx = t} -> Just t
+                    TxConfirmed _ t _ _ -> Just t
+                    TxObserved _ t -> Just t
+                stepOf = \case
+                    TxBuilt s _ _ -> s
+                    TxSigned s _ _ _ _ -> s
+                    TxSubmitted{submitStep = s} -> s
+                    TxConfirmed s _ _ _ -> s
+                    TxObserved s _ -> s
+                txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
+            journalled
+                `shouldBe` [("fold", txIdHex folded), ("book", txIdHex booked)]
+            txIdHex folded `shouldNotBe` txIdHex booked
+            forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
+                let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
+                map (stepOf) mine `shouldSatisfy` all (== step)
+                [() | TxBuilt{} <- mine] `shouldBe` [()]
+                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
+                [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
+                [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
+                [t | TxObserved _ t <- mine] `shouldBe` [txIdHex signed]
+            length txEvents `shouldBe` 10
+    it
+        "names the four places a failure happens as four distinct events, \
+        \leaving every outcome class as it was"
+        $ do
+            let refusing = \case
+                    ClientRefused -> \fx ctx -> writeBuilding ctx fx $ \_ ->
+                        failWith ClientRefusal "no fold is built"
+                    EvaluationRefused -> \fx ctx -> writeBuilding ctx fx $ \v -> do
+                        traceWith
+                            (Cage.sessionTracer v)
+                            (Evaluated (Evaluation 2 1 0 0))
+                        failWith ClientRefusal "its fold could not be built"
+                    LedgerRejected -> \fx ctx ->
+                        writeVia
+                            (submitting (pure (Cage.SubmitRefused "the ledger said no")) ctx)
+                            id
+                            fx
+                    TransportFailed -> \fx ctx ->
+                        writeVia
+                            (submitting (pure (Cage.SubmitFailed "connection refused")) ctx)
+                            id
+                            fx
+                run kind = withFixture $ \fx -> do
+                    (seen, collect) <- traceCollector
+                    r <-
+                        try @CommandFailure
+                            (refusing kind fx (writeContext fx){wcTracer = collect})
+                    events <- readIORef seen
+                    pure
+                        ( [k | Trace _ (What (Refused k _)) <- events]
+                        , either (\(CommandFailure c _ _) -> Just c) (const Nothing) r
+                        , [e | Trace _ (How (Read e@(Evaluated _))) <- events]
+                        , mapMaybe renderText [t | t@(Trace _ (What (Refused{}))) <- events]
+                        )
+            results <- mapM run [minBound .. maxBound]
+            map (\(k, _, _, _) -> k) results
+                `shouldBe` map pure [minBound .. maxBound]
+            map (\(_, c, _, _) -> c) results
+                `shouldBe` [ Just ClientRefusal
+                           , Just ClientRefusal
+                           , Just LedgerRefusal
+                           , Just Partial
+                           ]
+            -- the build's own session reported the failed evaluation
+            map (\(_, _, e, _) -> length e) results `shouldBe` [0, 1, 0, 0]
+            let lines' = concatMap (\(_, _, _, l) -> l) results
+            length lines' `shouldBe` 4
+            length (nub lines') `shouldBe` 4
+    it
+        "never carries the signing key, in any of its renderings, nor a \
+        \credential an operation failed with, in any renderer"
+        $ withFixture
+        $ \fx -> do
+            (seen, collect) <- traceCollector
+            let ctx = (writeContext fx){wcTracer = collect}
+                caps = wcCapabilities ctx
+                key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
+                hex = B16.encode key
+                secrets =
+                    [ key
+                    , hex
+                    , BC.map toUpper hex
+                    , "5820" <> hex
+                    , BC.map toUpper ("5820" <> hex)
+                    , bech32Of "addr_sk" key
+                    , bech32Of "ed25519_sk" key
+                    , "CRED-9e4b7"
+                    , "CRED-5c1d2"
+                    ]
+                throwingSubmit =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capSubmit = \_ -> throwIO (userError "401 for project_id=CRED-9e4b7")
+                                }
+                        }
+                throwingConfirm =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capConfirm = \_ -> throwIO (userError "403 for project_id=CRED-5c1d2")
+                                }
+                        }
+            _ <- writeVia ctx id fx
+            _ <-
+                try @SomeException
+                    ( writeVia
+                        throwingSubmit
+                        (bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust (SlotNo 77)))
+                        fx
+                    )
+            _ <-
+                try @SomeException
+                    ( writeVia
+                        throwingConfirm
+                        (bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust (SlotNo 88)))
+                        fx
+                    )
+            events <- readIORef seen
+            let texts = BS.concat [TE.encodeUtf8 l | Just l <- map renderText events]
+                jsons = BS.concat (map renderJsonLine events)
+                phases =
+                    BS.concat
+                        [ BL.toStrict
+                            (Aeson.encode (Aeson.object (("phase", Aeson.toJSON p) : fs)))
+                        | Just (p, fs) <- map renderPhaseLog events
+                        ]
+            -- the stream holds the steps a leak would come from
+            [() | Trace _ (How (Tx TxSigned{})) <- events] `shouldBe` [(), (), ()]
+            [ c
+              | Trace _ (How (Tx TxSubmitted{submitVerdict = SubmitThrew c})) <-
+                    events
+              ]
+                `shouldSatisfy` ((== 1) . length)
+            [v | Trace _ (How (Tx (TxConfirmed _ _ _ v))) <- events]
+                `shouldBe` [Confirmed, ConfirmFailed]
+            forM_
+                [("text" :: Text, texts), ("json", jsons), ("phase log", phases)]
+                $ \(renderer, bytes) -> do
+                    (renderer, BS.null bytes) `shouldBe` (renderer, False)
+                    (renderer, [s | s <- secrets, s `BS.isInfixOf` bytes])
+                        `shouldBe` (renderer, [])
+    it
+        "narrates on standard error and leaves standard output to the receipt"
+        $ withFixture
+        $ \fx -> do
+            let ctx =
+                    (writeContext fx)
+                        { wcTracer = outputSink TraceHow (Output ToStderr TextFormat)
+                        }
+            ((), out, err) <- captured (void (writeVia ctx id fx))
+            out `shouldBe` ""
+            err `shouldSatisfy` ("how  sign " `BS.isInfixOf`)
+    forM_ [(2, "key-two"), (5, "key-five")] $ \(edge, key) ->
+        it
+            ( "a fold names the request, its key and its edge before it refuses "
+                <> edgeName edge
+                <> ", as its receipt does"
+            )
+            $ withInputFixture
+            $ \fx saved live mirror boot -> do
+                (seen, collect) <- traceCollector
+                let request = TxIn (txIdTx boot) (TxIx 0)
+                    requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
+                    requestOut =
+                        mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    ( mkRequestDatumWith
+                                        (savedToken saved)
+                                        (walletAddr (fxWallet fx))
+                                        key
+                                        edge
+                                        2_000_000
+                                        0
+                                        ("", Nothing)
+                                    )
+                    ctx =
+                        (writeContext fx)
+                            { wcCommand = "fold"
+                            , wcTracer = collect
+                            , wcCapabilities =
+                                (wcCapabilities (writeContext fx))
+                                    { capReads =
+                                        servingSession $
+                                            withAddressOutputs
+                                                ( \addr ->
+                                                    if addr == requestAddr
+                                                        then pure [(request, requestOut)]
+                                                        else fail "an inadmissible request reached a later provider read"
+                                                )
+                                                stubSession
+                                    }
+                            }
+                result <-
+                    try @CommandFailure $
+                        foldPending
+                            (Attached ctx live mirror)
+                            FoldSpec
+                                { fsOrigin = Standalone
+                                , fsRequest = Just request
+                                , fsFund = Nothing
+                                , fsAllowance = Nothing
+                                }
+                events <- readIORef seen
+                fields <- case result of
+                    Left (CommandFailure _ _ fs) -> pure fs
+                    Right _ -> fail "an unsupported pending edge folded"
+                let named = lookup "pendingRequest" fields
+                    seenRequests =
+                        [ (r, e, k)
+                        | Trace _ (What (RequestSeen r e k _ _)) <- events
+                        ]
+                named `shouldBe` Just (Aeson.toJSON (txInText request))
+                seenRequests
+                    `shouldBe` [(txInText request, T.pack (edgeName edge), key)]
+                [k | Trace _ (What (Refused k _)) <- events]
+                    `shouldBe` [ClientRefused]
+                -- every event inside a request is inside this one
+                [ r
+                  | Trace scope _ <- events
+                  , InRequest r <- scope
+                  ]
+                    `shouldSatisfy` all (== txInText request)
+                [() | Trace scope _ <- events, InEdge (Folding _) <- scope]
+                    `shouldBe` []
+
+-- | A tracer collecting every event, in order.
+traceCollector :: IO (IORef [Trace], Tracer IO Trace)
+traceCollector = do
+    ref <- newIORef []
+    pure (ref, Tracer (\t -> modifyIORef' ref (<> [t])))
+
+-- | The fixture's write under another journal step.
+writeStepVia
+    :: Text
+    -> WriteContext
+    -> (ConwayTx -> ConwayTx)
+    -> Fixture
+    -> IO (ConwayTx, ())
+writeStepVia step ctx shape fx =
+    submitBuilt ctx step (const (expecting "state")) $ \v -> do
+        utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
+        let tx =
+                shape $
+                    mkBasicTx
+                        ( mkBasicTxBody
+                            & inputsTxBodyL .~ Set.fromList (map fst utxos)
+                            & outputsTxBodyL .~ StrictSeq.fromList (map snd utxos)
+                        )
+        pure (tx, ())
+
+-- | A write whose build does this instead of building.
+writeBuilding
+    :: WriteContext
+    -> Fixture
+    -> (Cage.Session NoWitness IO -> IO ConwayTx)
+    -> IO (ConwayTx, ())
+writeBuilding ctx _ build =
+    submitBuilt
+        ctx
+        "fold"
+        (const (expecting "state"))
+        (fmap (\tx -> (tx, ())) . build)
+
+-- | The context with the provider answering every submission so.
+submitting :: IO Cage.SubmitResult -> WriteContext -> WriteContext
+submitting answer ctx =
+    ctx{wcCapabilities = (wcCapabilities ctx){capSubmit = const answer}}

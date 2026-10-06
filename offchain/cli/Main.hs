@@ -10,6 +10,7 @@ each command does.
 -}
 module Main (main) where
 
+import Control.Tracer (nullTracer)
 import System.Environment (getArgs, getEnvironment)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn, stderr)
@@ -30,4 +31,4 @@ main = do
             hPutStrLn stderr ("singular: " <> renderCLIError err)
             hPutStrLn stderr usage
             exitWith (ExitFailure 2)
-        Right command -> runCommand command >>= exitWith
+        Right command -> runCommand nullTracer command >>= exitWith

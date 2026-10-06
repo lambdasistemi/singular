@@ -49,6 +49,7 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 reg="$work/registry"
 : >"$work/trie-command-invocations"
+: >"$work/trace-command-invocations"
 
 fail() {
   echo "journey: FAIL: $*" >&2
@@ -158,22 +159,51 @@ exit_of() {
     proof-inconsistent) echo 18 ;; *) fail "no exit status for class $1" ;;
   esac
 }
+# trace_agrees RECEIPT TRACE: the command's typed events, as the JSON lines
+# its file sink wrote, agree with its receipt. Every line is one JSON
+# object; the stream ends with the command's own end, naming the receipt's
+# command and outcome; every submission the receipt names is a transaction
+# event of that step and id. A successful receipt's key, request, edge and
+# leaf are each named by an event, or by the scope one happened in.
+trace_agrees() {
+  local receipt="$1" trace="$2"
+  [ -s "$trace" ] || return 1
+  jq -R -e 'fromjson | type == "object"' "$trace" >/dev/null || return 1
+  jq -s -e --slurpfile r "$receipt" '
+    $r[0] as $r
+    | def named($field; $value):
+        any(.[]; .[$field] == $value or any(.scope[]?; .[$field] == $value));
+      (last | .event == "command-ended" and .command == $r.command and .outcome == $r.outcome)
+      and (map(select(.event == "command-ended")) | length == 1)
+      and (. as $events | [$r.submissions[]? | {step, tx}]
+        | all(. as $s | any($events[]; .step == $s.step and .tx == $s.tx)))
+      and (if $r.outcome != "success" then true else
+        (if $r.key then named("key"; $r.key) else true end)
+        and (if $r.request then named("request"; $r.request) else true end)
+        and (if $r.edge then named("edge"; $r.edge) or any(.[]; any(.scope[]?; .on == $r.edge)) else true end)
+        and (if $r.leaf then any(.[]; .event == "key" and .leaf == $r.leaf) else true end)
+      end)' "$trace" >/dev/null
+}
 # run NAME CLASS -- ARGS: one singular process; its receipt must name CLASS
-# and its exit status must be that class's. Each process uses the Koios path.
+# and its exit status must be that class's. Each process uses the Koios path
+# and narrates how on stderr, its typed events also written as JSON lines to
+# a file; standard output carries the receipt alone.
 run() {
   local name="$1" class="$2"
   shift 3
   local status=0
+  local trace="$receipts/$name.trace.jsonl"
+  local narrated=(--trace how --trace-to stderr --trace-to "file:$trace")
   local SINGULAR_LOG="$receipts/$name.phases.jsonl"
   export SINGULAR_LOG
   : >"$receipts/$name.trie.jsonl"
   if [[ " $* " == *" --preview "* ]]; then
     # Keep the release's existing all-harness-variables-unset preview controls.
-    env -u SINGULAR_HARNESS_TRIE_TRACE "$singular" "$@" \
+    env -u SINGULAR_HARNESS_TRIE_TRACE "$singular" "$@" "${narrated[@]}" \
       >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   else
     SINGULAR_LOG="$receipts/$name.phases.jsonl" SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
-      "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+      "$singular" "$@" "${narrated[@]}" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   fi
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   local got
@@ -183,6 +213,12 @@ run() {
     tail -20 "$receipts/$name.err" >&2 || true
     fail "$name: outcome $got (exit $status), expected $class"
   fi
+  jq -s -e 'length == 1' "$receipts/$name.json" >/dev/null \
+    || fail "$name: standard output holds more than the receipt"
+  [ -s "$receipts/$name.err" ] || fail "$name: --trace how --trace-to stderr narrated nothing"
+  trace_agrees "$receipts/$name.json" "$trace" \
+    || fail "$name: the typed events of its narration disagree with its receipt"
+  printf '%s\n' "$name" >>"$work/trace-command-invocations"
   if [ "$class" = success ] && jq -e 'any(.submissions[]?; .step == "fold")' "$receipts/$name.json" >/dev/null; then
     [ -s "$receipts/$name.phases.jsonl" ] || setup_fail "$name: the fold produced no phase log"
     local build_ms
@@ -489,6 +525,15 @@ stderr_of insert-removed-flag registry insert --key "$key" "$removed" "$work/pay
   "${common[@]}" "${node[@]}" "${alice[@]}"
 grep -q -- "$removed is not a flag singular reads" "$receipts/insert-removed-flag.err" \
   || fail "insert-removed-flag: the removed flag is still read"
+for control in "--trace loud" "--trace-to stdout" "--trace-to file:" "--trace-format xml"; do
+  read -r flag value <<<"$control"
+  stderr_of "insert-trace-${flag#--}-unknown" registry insert --key "$key" --payload "$work/payload-insert.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}" "$flag" "$value"
+  grep -q -- "$flag is " "$receipts/insert-trace-${flag#--}-unknown.err" \
+    || fail "insert $control: the refusal does not name the tracing control"
+  ! grep -q -- "is not a flag singular reads" "$receipts/insert-trace-${flag#--}-unknown.err" \
+    || fail "insert $control: the tracing control is not read"
+done
 refused insert-payload-not-data client-refusal -- registry insert --key "$key" \
   --payload "$work/payload-bad.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.reason | contains("not Plutus data")' "$receipts/insert-payload-not-data.json" >/dev/null \
@@ -1410,4 +1455,27 @@ done
 say "$written prepared submissions in ${#journals[@]} journals each name their actual Unbound acquisition"
 trie_extent
 say "all eight stored-registry commands have nonempty capability evidence from actual executions"
+# Every traced command's events agreed with its receipt (checked as it ran).
+# The extent: all eight commands succeeded under narration, with mechanics.
+while IFS= read -r name; do
+  jq -c --slurpfile trace "$receipts/$name.trace.jsonl" \
+    '{command, outcome, how: ($trace | map(select(.level == "how")) | length)}' "$receipts/$name.json"
+done <"$work/trace-command-invocations" >"$work/trace-command-extent.jsonl"
+jq -s -e '[.[] | select(.outcome == "success" and .how > 0) | .command] | unique
+    == ["create","fold","insert","inspect","reclaim","reject","terminate","update"]' \
+  "$work/trace-command-extent.jsonl" >/dev/null \
+  || fail "the narrated command extent omits a command, or narrates it without mechanics"
+# The agreement can fail: one fold's stream, altered in its outcome, its key
+# or a transaction id, disagrees with that fold's receipt.
+fold_trace="$receipts/fold.trace.jsonl"
+for altered in \
+  'if .event == "command-ended" then .outcome = "partial" else . end' \
+  'del(.key) | .scope |= map(del(.key))' \
+  'if .tx then .tx |= (if startswith("0") then "1" else "0" end) + .[1:] else . end'; do
+  jq -c "$altered" "$fold_trace" >"$work/altered.trace.jsonl"
+  ! trace_agrees "$receipts/fold.json" "$work/altered.trace.jsonl" \
+    || fail "the trace agreement accepts a stream altered by: $altered"
+done
+trace_agrees "$receipts/fold.json" "$fold_trace" || fail "the fold's own stream no longer agrees"
+say "every narrated command's typed events agree with its receipt; altered streams do not"
 say "JOURNEY-OK (Koios path)"
