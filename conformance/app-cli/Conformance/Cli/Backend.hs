@@ -2472,7 +2472,7 @@ craftBooking env c target key r = do
             (address, datumHash) = insertDestination Testnet (applied reg) e
             dest = case c of
                 BookingOtherDestination -> (flipLast address, datumHash)
-                BookingNoDatum -> (address, BS.empty)
+                BookingNoDatum -> (address, Nothing)
                 _ -> (address, datumHash)
             deposit =
                 ctlDeposit (envControl e)
