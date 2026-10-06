@@ -185,7 +185,7 @@ trace_disagreements() {
     | ([$r | .. | objects | select(has("request"))
         | {request, key, edge, deadline: (.foldDeadline.posixMs // .processingEnds)}]
        + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]
-       + [$r | select(.booking != null) | {request: (.booking + "#0"), key}]) as $facts
+       + [$r | select(.booking != null) | {request: (((.booking | if type == "object" then .txId else . end) // "") + "#0"), key}]) as $facts
     | [$r.submissions[]? | {step, tx, case, observed}] as $subs
     | [$r.references[]? | {step: ("publish-" + .role), tx: (.output | split("#")[0])}
        | select(.tx as $t | $subs | map(.tx) | index($t) | not)] as $reused
