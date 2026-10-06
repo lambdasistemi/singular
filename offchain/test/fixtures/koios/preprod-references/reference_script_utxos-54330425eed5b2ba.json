@@ -1,0 +1,81 @@
+{
+    "answer": {
+        "body": "[]",
+        "headers": [
+            [
+                "date",
+                "Tue, 06 Oct 2026 12:36:17 GMT"
+            ],
+            [
+                "content-range",
+                "*/0"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "transfer-encoding",
+                "chunked"
+            ],
+            [
+                "content-encoding",
+                "gzip"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-06T12:36:17.706053486Z",
+    "request": {
+        "body": {
+            "json": {
+                "_script_hashes": [
+                    "00000000000000000000000000000000000000000000000000000000"
+                ]
+            }
+        },
+        "call": "reference_script_utxos",
+        "method": "POST",
+        "path": "/reference_script_utxos",
+        "query": [
+            [
+                "limit",
+                "20"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "tx_hash.asc,tx_index.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

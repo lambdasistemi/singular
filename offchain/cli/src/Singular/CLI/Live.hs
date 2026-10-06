@@ -14,6 +14,7 @@ module Singular.CLI.Live
     ( -- * The saved registry
       Saved (..)
     , loadSaved
+    , resolveSaved
 
       -- * Attached to the chain
     , Live (..)
@@ -54,6 +55,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
+import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
@@ -90,6 +92,7 @@ import Singular.Application.OpenDatum.Script
     ( Application (..)
     , applicationTitle
     )
+import Singular.CLI.Command (RegistryAccess)
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
 import Singular.CLI.Receipt qualified as Receipt
@@ -126,6 +129,7 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.StateToken (ReferenceRole)
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Lineage (lineageTrieStateObserved)
 import Singular.Registry.TxBuilder.Internal
@@ -148,6 +152,8 @@ data Saved = Saved
     , savedCodes :: NamingCodes
     -- ^ As the registry pins them: the application applied
     , savedToken :: TokenId
+    , savedRefs :: [(TxIn, TxOut ConwayEra)]
+    -- ^ The reference outputs found for the roles the command runs
     }
 
 -- | The applied open-datum script of a saved registry.
@@ -201,6 +207,7 @@ loadSaved dir blueprint = do
             , savedCodes = pinned
             , savedToken =
                 TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
+            , savedRefs = []
             }
 
 -- | A saved registry with its live outputs resolved.
@@ -428,3 +435,19 @@ assetsOf o =
 -- | What an output actually holds: its lovelace and its other assets.
 valueJson :: TxOut ConwayEra -> Value
 valueJson o = object ["lovelace" .= coinOf o, "assets" .= assetsOf o]
+
+{- | Resolve the registry a command names by its state token, in this
+session, and find the references its transactions run. The actor's
+directory is where its journal lives; nothing in it is read here.
+-}
+resolveSaved
+    :: FilePath
+    -> Release
+    -> RegistryAccess
+    -> Set ReferenceRole
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ The actor's wallet outputs
+    -> Cage.Session Cage.NoWitness IO
+    -> IO Saved
+resolveSaved _ _ _ _ _ _ =
+    failWith Receipt.ClientRefusal "resolveSaved: not implemented"

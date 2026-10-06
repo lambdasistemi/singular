@@ -88,6 +88,9 @@ requestSpec = describe "read requests" $ do
         CallSubmitTx -> "submittx"
         CallTxStatus -> "tx_status"
         CallAccountInfo -> "account_info"
+        CallReferenceScriptUtxos -> "reference_script_utxos"
+        CallUtxoInfo -> "utxo_info"
+        CallAssetInfo -> "asset_info"
 
 -- | One request text per read call.
 samples :: [(Text, ReadCall)]
