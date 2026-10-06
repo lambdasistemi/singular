@@ -252,7 +252,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix develop --quiet -c just ci
+      - run: nix develop --quiet -c just ci-shell
   release-check:
     if: github.event.action != 'closed'
     needs: build-gate
