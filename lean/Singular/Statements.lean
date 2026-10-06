@@ -1933,5 +1933,53 @@ theorem reject_batch_of_one_is_reject (r : Request) (sc : Driver.Scenario)
   simp [Driver.judgeRejectBatch, Driver.rejectBatchPayments, Driver.judgeSurface, hexit,
     spendRefusal]
 
+/-! ### Public fold inputs (#419)
+
+A fold is built from what the chain shows: the registry's state output, the
+holdings it commits to and the pending requests at the cage. The request carries
+the datum it names, so no booker's file is an input of any fold. -/
+
+/-- **#419, the delivered datum is the request's datum** — for every state,
+request, lovelace and admitted fold, over all seven edges, each output in the
+destination role carries exactly the datum the request carries: inline with that
+value when the request carries one, no datum when it carries none. -/
+theorem delivered_datum_is_request_datum (s : RegistryState) (r : Request)
+    (lovelace : Nat) (t : Result) (tx : Tx) (hok : step s r = .ok t)
+    (htx : txOf s r lovelace = .ok tx) :
+    ∀ o ∈ tx.outputs, o.role = .destination →
+      o.datum = datumFormOf r.datum ∧ o.datumValue = r.datum := by
+  sorry
+
+/-- **#419, fold inputs are public** — for every state, request and lovelace, the
+transaction a fold builds is the one any party builds from the public view: the
+registry state as its outputs show it, with the holdings and their datums, and
+the request pending at the cage, found by its own output reference. -/
+theorem fold_inputs_public (s : RegistryState) (r : Request) (lovelace : Nat) :
+    txOf s r lovelace = buildFold (publicView s [r]) r.reference lovelace := by
+  sorry
+
+/-- **#419, a foreign datum is refused** — for every request delivering a token
+(`insertActive`, `updateActive`, `witnessTerminal`) with a positive deposit, an
+observed fold whose every destination output carries a datum other than the
+request's — another value, a datum where the request carries none, none where it
+carries one — is refused `destination`. -/
+theorem fold_refuses_foreign_datum (r : Request) (outputs : List TxOutput)
+    (hdelivers : r.edge = .insertActive ∨ r.edge = .updateActive ∨ r.edge = .witnessTerminal)
+    (hdeposit : 0 < r.deposit)
+    (hforeign : ∀ o ∈ outputs, o.role = .destination → presentsDatum r.datum o = false) :
+    settle (obligations (.fold r.edge) r) outputs = some "destination" := by
+  sorry
+
+/-- By value: an active insertion whose request carries no datum, observed paying
+its destination through an output carrying an inline datum, is refused
+`destination`. -/
+example :
+    settle (obligations (.fold .insertActive)
+        { edge := .insertActive, key := 5, output := 99, deposit := 2 })
+      [{ role := .destination, datum := .inline, address := some 99, stateTokens := 0
+       , config := none, commitment := none, assets := [], lovelace := 2 }]
+      = some "destination" := by
+  decide
+
 end Statements
 end Singular
