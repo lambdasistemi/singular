@@ -199,6 +199,9 @@
               # its own development node with pgrep and pkill
               procps
               util-linux
+              # the two-actor run traces every file access of the folding
+              # process, so one under the booker's directory fails it
+              strace
             ];
             text = ''
               export VERIFY_RELEASE_JOURNEY=${./tools/demo1_cli_journey.sh}

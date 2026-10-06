@@ -58,8 +58,9 @@ fold's inputs was never stated.
 ## Observable success
 
 - On a development network, Alice books an insertion from her directory and Bob folds
-  it from a directory holding only the registry identity and trie state, with Alice's
-  directory unreadable; the active token sits at Alice's destination under her datum.
+  it from a directory holding only `registry.json`, with Alice's directory unreadable
+  and no file under it opened by Bob's process; the active token sits at Alice's
+  destination under her datum.
 - `Preimage.hs` and the `preimages/` directory are gone.
 - The Lean statements below build in CI: `delivered_datum_is_request_datum`,
   `fold_inputs_public`, `fold_refuses_foreign_datum`.

@@ -82,7 +82,8 @@ records under `conformance/coverage/`, and the constitution's `tx` row.
 2. **Wire.** The cage, naming's mirror, script identities and vectors, the off-chain wire,
    booking and fold, in one change; `Preimage.hs` and `preimages/` removed.
 3. **Two actors.** On a development network Alice books and Bob folds from a directory
-   holding only `registry.json` and `state.json`, with Alice's directory unreadable.
+   holding only `registry.json`, with Alice's directory unreadable; the trie is rebuilt
+   from chain history (#411) and the envelope read from the request.
 
 ## Gate
 

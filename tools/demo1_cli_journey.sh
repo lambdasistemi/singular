@@ -1287,6 +1287,62 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # the lineage source refusal control in the owner evidence bundle.
 
 # ------------------------------------------------------------------
+# 7. two actors (#419): bob folds alice's insertion from the chain alone
+# ------------------------------------------------------------------
+# Alice books an insertion from her own registry directory. Bob folds it
+# from a directory of his own holding only her registry.json: no trie, no
+# journal, nothing of her booking; the trie is rebuilt from chain history
+# and the envelope is read from the request on the chain. Alice's directory
+# is unreadable while bob runs, and every file access of bob's process is
+# traced: one under alice's directory fails the run.
+two="$work/two-actors"
+two_alice="$two/alice"
+two_bob="$two/bob"
+mkdir -p "$two"
+trap 'chmod -R u+rwx "$two_alice" 2>/dev/null || true; kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+run two-preview success -- registry create --process-time 90000 --retract-time 30000 --preview \
+  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+run two-create success -- registry create --process-time 90000 --retract-time 30000 \
+  --seed "$(field two-preview .seed)" --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+two_key=keyT
+run two-insert success -- registry insert --key "$two_key" --payload "$work/payload-insert.json" \
+  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+[ "$(field two-insert .requester)" = "$alicekey" ] || fail "the two-actor booking's requester is not alice's key"
+mkdir -p "$two_bob"
+cp "$two_alice/registry.json" "$two_bob/"
+[ "$(ls -A "$two_bob")" = registry.json ] || fail "bob's directory holds more than alice's registry.json"
+# touches_alice TRACE: the traced process named a path under alice's directory.
+touches_alice() { grep -qF "$two_alice" "$1"; }
+# The detector, shown able to fire: a deliberate open under alice's
+# directory, traced the same way, is reported.
+strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice/registry.json" >/dev/null 2>&1 || true
+touches_alice "$two/control.strace" || fail "control: a deliberate open under alice's directory was not detected"
+say "two actors: the access detector reports a deliberate open under alice's directory"
+traced="$work/traced-singular"
+printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' "$two/bob-fold.strace" "$singular" >"$traced"
+chmod +x "$traced"
+real_singular="$singular"
+chmod 000 "$two_alice"
+! ls "$two_alice" >/dev/null 2>&1 || fail "alice's directory is readable to the run"
+singular="$traced"
+run two-fold success -- registry fold --registry "$two_bob" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+singular="$real_singular"
+chmod u+rwx "$two_alice"
+[ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
+! touches_alice "$two/bob-fold.strace" || fail "bob's fold accessed alice's directory: $(grep -F "$two_alice" "$two/bob-fold.strace" | head -n 3)"
+jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --arg bob "$bobkey" '
+    .request == $b[0].request and .folder == $bob and .edge == "insertActive"
+    and .key == $k and .envelope == $b[0].envelope and (.liveOutput | test("#"))' \
+  "$receipts/two-fold.json" >/dev/null \
+  || fail "bob's fold does not deliver alice's envelope at her key"
+run two-inspect success -- registry inspect --key "$two_key" --registry "$two_bob" --blueprint "$blueprint" "${node[@]}"
+jq -e --slurpfile b "$receipts/two-insert.json" --slurpfile f "$receipts/two-fold.json" '
+    .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
+    and .root == $f[0].root' "$receipts/two-inspect.json" >/dev/null \
+  || fail "the key bob folded is not active under alice's envelope at her destination"
+say "two actors: bob folded alice's insertion from registry.json alone; her envelope sits at her destination"
+
+# ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
 # ------------------------------------------------------------------
 jq -n '{int: 42}' >"$work/payload-2.json"

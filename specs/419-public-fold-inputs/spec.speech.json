@@ -1,4 +1,14 @@
 {
+  "public-fold-inputs-stories-and-requirements": [
+    {
+      "text": "Public fold inputs: stories and requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Issue #419, child of epic #301. Read the ruling for the design decision, the plan for the module rows and slices, and the tasks for the commit boundaries. Base: main 7b255f96.",
+      "pause": 400
+    }
+  ],
   "user-stories": [
     {
       "text": "User stories.",
@@ -9,11 +19,11 @@
       "pause": 400
     },
     {
-      "text": "As Alice, I cannot create a request that names a datum nobody else can read: the request carries the datum it names.",
+      "text": "As Alice, the booker of an insertion, I cannot create a request that names a datum nobody else can read: the request carries the datum it names.",
       "pause": 400
     },
     {
-      "text": "As a maintainer, I see the model fail to build whenever a fold needs an input the chain does not hold.",
+      "text": "As a maintainer, I see the model fail to build whenever a fold needs an input that the chain does not hold.",
       "pause": 400
     }
   ],
@@ -23,7 +33,7 @@
       "pause": 500
     },
     {
-      "text": "A request named its delivered output's datum only by its hash, and the datum itself lived in the booker's registry directory, so only the booker could fold an insertion. Upstream requests carry their content inline; the hash-only destination came with the registry-mode cage. The model reduced the datum to a yes or no, so the availability of the fold's inputs was never stated.",
+      "text": "A request named its delivered output's inline datum only by its BLAKE2b-256 hash (destination, onchain/validators/types.ak:359-373). The datum itself lived in the booker's registry directory (offchain/cli/src/Singular/CLI/Preimage.hs), so only the booker could fold an insertion. Upstream MPFS requests carry their content inline; the hash-only destination came with the registry-mode cage (#157, 240ede16). The model reduced the delivered datum to Request.namesDatum : Bool, so availability of the fold's inputs was never stated.",
       "pause": 400
     }
   ],
@@ -33,8 +43,28 @@
       "pause": 500
     },
     {
-      "text": "Every fold the registry admits can be built by any party from chain data alone. The request carries the datum it names, or none. The receiving output carries exactly that datum, and any other is refused. The approval's asset name is unchanged: the cage derives the datum hash from the carried datum. Absent custody, reject and retract are unchanged.",
-      "pause": 400
+      "text": "Fold inputs are public. Every fold the registry admits can be built by any party from chain data alone: the registry state output, the holdings it commits to, and the pending requests at the cage. No file from the booker is read.",
+      "pause": 300
+    },
+    {
+      "text": "The request carries its datum. A request's destination is its address and the datum itself, or no datum. A request cannot name a datum it does not carry.",
+      "pause": 300
+    },
+    {
+      "text": "Delivered datum is the request's datum. For insertActive, updateActive and witnessTerminal, the receiving output carries exactly the datum the request carries, and no datum when the request carries none. Any other datum is refused destination.",
+      "pause": 300
+    },
+    {
+      "text": "Approval binding unchanged. An approval's asset name is blake2b_256(edge ‖ key ‖ owner ‖ address ‖ datum hash) as before; the cage derives the datum hash from the carried datum (empty when none). The open and naming approval policies do not change their redeemers or rules.",
+      "pause": 300
+    },
+    {
+      "text": "Absent custody stays public. insertAbsent locks its token under AbsentCustody{refund}, built from the request's own fields.",
+      "pause": 300
+    },
+    {
+      "text": "Reject and retract unchanged. A reject refunds the owner with no datum; a retraction returns the request's value bound to its reference.",
+      "pause": 300
     }
   ],
   "rejection-behavior": [
@@ -43,8 +73,16 @@
       "pause": 500
     },
     {
-      "text": "A fold delivering another datum, a datum where none is named, or none where one is named, is refused with the destination reason. A booking too large to fold in one transaction is refused by the command before it is submitted.",
-      "pause": 400
+      "text": "A fold whose receiving output carries a datum other than the request's is refused destination, on chain and in the model.",
+      "pause": 300
+    },
+    {
+      "text": "A fold whose receiving output carries a datum when the request carries none, or none when it carries one, is refused destination.",
+      "pause": 300
+    },
+    {
+      "text": "A booking whose datum makes its single-request fold larger than the ledger's maximum transaction size is refused by the command before submission.",
+      "pause": 300
     }
   ],
   "observable-success": [
@@ -53,8 +91,16 @@
       "pause": 500
     },
     {
-      "text": "On a development network, Alice books and Bob folds from a directory holding only the registry identity and trie state, with Alice's directory unreadable. The preimage store is gone. The three model statements build in CI.",
-      "pause": 400
+      "text": "On a development network, Alice books an insertion from her directory and Bob folds it from a directory holding only registry.json, with Alice's directory unreadable and no file under it opened by Bob's process; the active token sits at Alice's destination under her datum.",
+      "pause": 300
+    },
+    {
+      "text": "Preimage.hs and the preimages/ directory are gone.",
+      "pause": 300
+    },
+    {
+      "text": "The Lean statements below build in CI: delivered_datum_is_request_datum, fold_inputs_public, fold_refuses_foreign_datum.",
+      "pause": 300
     }
   ],
   "non-goals": [
@@ -63,12 +109,16 @@
       "pause": 500
     },
     {
-      "text": "Folding from an empty directory, rebuilding the trie from history, is the registry replay ticket's story. Existing registries stay as they are, and a new preprod registry needs its own authorization.",
-      "pause": 400
+      "text": "Bob starting from an empty directory and rebuilding the trie from chain history is #381's story.",
+      "pause": 300
+    },
+    {
+      "text": "Existing registries (registry-go3 and the GO-2 registry) cannot be upgraded; they stay as they are. Creating a preprod registry from the new release needs its own operator authorization.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "a53c3d00e1a49486dee973a45c498cc66d147e02e0762bfe567dc1670307b165"
+    "sha256": "51ef51815710144d2d4212f2ab3ec4ee0855e6fdfca1c500c448fb9e01db078f"
   }
 }
