@@ -146,8 +146,8 @@ and stacks on the provider ticket's published slices.
 | --- | --- | --- |
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
-| Separate actors | The joining path, separate directories, cross-actor steps and history-based controls in the journey; superseded statements corrected. | The same publication |
-| Published evidence | The two-edge journey evidence published in the public suite's language, and the audited trail bound to the head. | Separate actors |
+| Separate actors | The joining path, separate directories, cross-actor terminate folds, reject and reclaim, and history-based controls in a two-actor journey app; superseded statements corrected. The cross-actor insertion fold is a pending row until [issue 419](https://github.com/lambdasistemi/singular/issues/419) is decided. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
 and its file handling leave with the commands slice; the pure fixture trie stays.
