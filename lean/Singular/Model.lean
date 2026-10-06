@@ -434,13 +434,16 @@ structure Request where
   request's destination is an address and the datum itself, and the receiving
   output must carry exactly it: no datum when the request carries none. -/
   datum : Option Nat := none
+  /-- When the request was submitted, POSIX milliseconds: its datum's
+  `submitted_at`, which a fold's admission reads (`Singular.foldAdmission`). -/
+  submittedAt : Nat := 0
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
 declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -452,6 +455,7 @@ instance : ToJson Request where
     , ("reference", toJson r.reference)
     , ("output", toJson r.output)
     , ("datum", datumJson r.datum)
+    , ("submittedAt", toJson r.submittedAt)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
@@ -1326,16 +1330,18 @@ def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option St
 
 A fold is admitted before the law judges its requests. The fold validator
 updates the registry only while the fold transaction's whole validity interval
-lies before every folded request's deadline, `submittedAt + processTime`: a fold
-including a request past it is refused `not-phase1`, as the chain refuses it,
-whatever its requests' steps. Inside the window the fold is exactly the law. -/
+lies before every folded request's deadline, `submittedAt + processTime`, the
+submission time read from the request's own datum: a fold including a request
+past it is refused `not-phase1`, as the chain refuses it, whatever its requests'
+steps. Inside the window the fold is exactly the law. Every fold path applies
+it: `admittedFold`, `admittedFoldBatch`, and the fold exit through
+`admittedExitStep`. -/
 
-/-- What a fold's admission reads beyond its requests: each folded request's
-submission time (its datum's `submitted_at`), in batch order, and the fold
-transaction's validity upper bound, excluded, as the ledger hands a script a
-transaction's validity. Times are POSIX milliseconds. -/
+/-- What a fold's admission reads beyond its requests: the fold transaction's
+finite validity upper bound, excluded, as the ledger hands a script a
+transaction's validity, in POSIX milliseconds. Each request's submission time is
+the request's own. -/
 structure FoldWitness where
-  submittedAt : List Nat
   validTo : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
@@ -1347,33 +1353,34 @@ interval. -/
 def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
   decide (validTo ≤ submittedAt + c.processTime)
 
-/-- Why a fold is not admitted: `not-phase1` when its validity upper bound
-passes any folded request's deadline. `none` admits. -/
-def foldAdmission (c : Config) (w : FoldWitness) : Option String :=
-  if w.submittedAt.all (fun t => inPhase1 c t w.validTo) then none else some "not-phase1"
+/-- Why a fold of `batch` is not admitted: `not-phase1` unless every request of
+the batch is in phase 1 under the fold's validity upper bound. `none` admits. -/
+def foldAdmission (c : Config) (batch : List Action) (w : FoldWitness) : Option String :=
+  if batch.all (fun a => inPhase1 c a.submittedAt w.validTo) then none else some "not-phase1"
 
 /-- A batch folded admission first: refused with the admission's reason,
 otherwise exactly `foldBatch`. -/
 def admittedFoldBatch (s : RegistryState) (batch : List Action) (w : FoldWitness) :
     Except String Result :=
-  match foldAdmission s.config w with
+  match foldAdmission s.config batch w with
   | some why => .error why
   | none => foldBatch s batch
 
 /-- One request folded admission first: refused with the admission's reason,
 otherwise exactly `step`. -/
 def admittedFold (s : RegistryState) (a : Action) (w : FoldWitness) : Except String Result :=
-  match foldAdmission s.config w with
+  match foldAdmission s.config [a] w with
   | some why => .error why
   | none => step s a
 
-/-- The admission an exit is subject to: a retract's is `retractAdmission`; a
-fold and a reject have none here, and ignore the witness. A fold's own
-admission is `foldAdmission`, under its `FoldWitness`. -/
+/-- The admission an exit is subject to: a retract's is `retractAdmission`, a
+fold's is `foldAdmission` of its one request under the witness's validity upper
+bound, and a reject has none and ignores the witness. -/
 def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
   match exit with
   | .retract => retractAdmission c r w
-  | .fold _ | .reject => none
+  | .fold _ => foldAdmission c [r] { validTo := w.validTo }
+  | .reject => none
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/

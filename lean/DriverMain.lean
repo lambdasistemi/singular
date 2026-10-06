@@ -118,19 +118,24 @@ def foldBatchOfOneDigest : String :=
   "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
 def foldPastDeadline : String := "Singular.Statements.fold_batch_refuses_past_deadline"
 def foldPastDeadlineDigest : String :=
-  "2195f8d24a7aad10b51f42f1e5c6c578b236eb9ad736a07b6507c8ea9479b0ec"
+  "eb4c3784833629e69fe1495565ff3f1a6ade52a920e63615eb11d7a21a8448ce"
 def foldInWindow : String := "Singular.Statements.fold_admitted_in_window_is_fold_batch"
 def foldInWindowDigest : String :=
-  "bdb88cbaa8898e97fc22a0435a90e53388ad0c98395d550e9b620d837fb401b1"
+  "0eeb271471154833ec086d939a0d3d5f49b8ce3ffe19f267f8a4f7956037fcc0"
 def foldAdmissionBoundary : String := "Singular.Statements.fold_admission_boundary"
 def foldAdmissionBoundaryDigest : String :=
-  "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a"
+  "4287f32ecef523de44ebf3412325fbf0a0c56865b815d45320abad2da2d174c1"
 def foldConsumingCreated : String := "Singular.Statements.fold_batch_refuses_consuming_created"
 def foldConsumingCreatedDigest : String :=
   "0707908378fa9d1e58191e8758dbe198f7cd9dfe56974b240aedac2ece0d9b10"
 def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_reject"
 def rejectBatchOfOneDigest : String :=
   "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
+
+/-- A fold witness whose upper bound, 0, is inside the window of every request
+this corpus folds from `s0`: submitted at 0 under a processing time of 0, each
+request's deadline is 0, which the excluded bound may reach. -/
+def inWindow : Option FoldWitness := some { validTo := 0 }
 
 /-- The active registration this corpus retires: key 42, owner 42, routed to
 output 555 with deposit 55, which goes there with the token. One request, reused
@@ -199,7 +204,8 @@ def foreignDatumDelivery : Scenario :=
   , kind := "witness", mutates := none, requiresReachableState := false
   , start := s0, setup := [], exit := .fold .insertActive
   , request := zeroDepositCarryingDatum, lovelace := lovelace
-  , outputs := some [foreignCarrier] }
+  , outputs := some [foreignCarrier]
+  , foldWitness := inWindow }
 
 /-- Its twin with no carrier at all: nothing reaches the destination. -/
 def carrierlessDelivery : Scenario :=
@@ -216,35 +222,41 @@ def scenarios : List Scenario :=
     , theoremName := insertAbsentTheorem, statementSha256 := insertAbsentDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertAbsent
-    , request := request .insertAbsent 5 91 0 91 55, lovelace := lovelace }
+    , request := request .insertAbsent 5 91 0 91 55, lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR02-register-active"
     , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
-    , request := registerActive, lovelace := lovelace }
+    , request := registerActive, lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR03-retire-registered"
     , theoremName := updateTerminalTheorem, statementSha256 := updateTerminalDigest
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive], exit := .fold .updateTerminal
-    , request := retireRegistered, lovelace := lovelace }
+    , request := retireRegistered, lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR04-register-absent-unapproved"
     , theoremName := insertAbsentInversion, statementSha256 := insertAbsentInversionDigest
     , kind := "mutant", mutates := some "DR01-register-absent"
     , requiresReachableState := false, start := s0, setup := []
     , exit := .fold .insertAbsent
     , request := request .insertAbsent 5 91 0 91 55 (approved := false)
-    , lovelace := lovelace }
+    , lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR05-register-active-twice"
     , theoremName := insertActiveInversion, statementSha256 := insertActiveInversionDigest
     , kind := "mutant", mutates := some "DR02-register-active"
     , requiresReachableState := true, start := s0, setup := [registerActive]
-    , exit := .fold .insertActive, request := registerActive, lovelace := lovelace }
+    , exit := .fold .insertActive, request := registerActive, lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR06-retire-unregistered"
     , theoremName := updateTerminalInversion, statementSha256 := updateTerminalInversionDigest
     , kind := "mutant", mutates := some "DR03-retire-registered"
     , requiresReachableState := false, start := s0, setup := []
     , exit := .fold .updateTerminal
-    , request := retireRegistered, lovelace := lovelace }
+    , request := retireRegistered, lovelace := lovelace
+    , foldWitness := inWindow }
   , { id := "DR07-reject-registered-twice"
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "witness", mutates := none, requiresReachableState := true
@@ -299,7 +311,8 @@ def scenarios : List Scenario :=
     , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
-    , request := registerActiveClaimed, lovelace := lovelace }
+    , request := registerActiveClaimed, lovelace := lovelace
+    , foldWitness := inWindow }
     -- An active registration whose request carries a datum: the destination output
     -- carries that very datum, inline.
   , { id := "DR15-register-active-carrying-datum"
@@ -308,10 +321,10 @@ def scenarios : List Scenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
     , request := { request .insertActive 43 42 556 0 55 with datum := some 7 }
-    , lovelace := lovelace }
+    , lovelace := lovelace
+    , foldWitness := inWindow }
   , foreignDatumDelivery
   , carrierlessDelivery
-
     -- The registration of key 42 folded under an upper bound equal to its
     -- deadline under `sTimed`: submitted at 10000, processing 1000, the excluded
     -- upper bound 11000 reaches the deadline and is admitted; at 11001 it passes
@@ -320,14 +333,21 @@ def scenarios : List Scenario :=
     , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := sTimed, setup := [], exit := .fold .insertActive
-    , request := registerActive, lovelace := lovelace
-    , foldWitness := some { submittedAt := [10000], validTo := 11000 } }
+    , request := { registerActive with submittedAt := 10000 }, lovelace := lovelace
+    , foldWitness := some { validTo := 11000 } }
   , { id := "DR19-register-past-deadline"
     , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
     , kind := "mutant", mutates := some "DR18-register-at-deadline"
     , requiresReachableState := false, start := sTimed, setup := [], exit := .fold .insertActive
-    , request := registerActive, lovelace := lovelace
-    , foldWitness := some { submittedAt := [10000], validTo := 11001 } }
+    , request := { registerActive with submittedAt := 10000 }, lovelace := lovelace
+    , foldWitness := some { validTo := 11001 } }
+    -- The registration of key 42 with no fold witness: nothing to admit the fold
+    -- under, so the driver does not reach the case.
+  , { id := "DR20-register-without-witness"
+    , theoremName := foldAdmissionBoundary, statementSha256 := foldAdmissionBoundaryDigest
+    , kind := "mutant", mutates := some "DR18-register-at-deadline"
+    , requiresReachableState := false, start := sTimed, setup := [], exit := .fold .insertActive
+    , request := { registerActive with submittedAt := 10000 }, lovelace := lovelace }
   ]
 
 /-- A batch of two requests at key 60, the first creating what the second
@@ -342,7 +362,8 @@ def consumeCreated (id : String) (setup : List Request) (create consume : Edge) 
   , kind := "witness", mutates := none, requiresReachableState := !setup.isEmpty
   , start := s0, setup := setup
   , question := .foldBatch
-      [ claiming (request create 60 60 600 60 55), claiming (request consume 60 60 600 60 55) ] }
+      [ claiming (request create 60 60 600 60 55), claiming (request consume 60 60 600 60 55) ]
+  , foldWitness := inWindow }
 
 /-- Key 60 booked absent: the starting point of the pairs that update it. -/
 def bookedAbsent : Request := request .insertAbsent 60 60 0 60 55
@@ -370,7 +391,8 @@ def batchScenarios : List BatchScenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := []
     , question := .foldBatch
-        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)] }
+        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
+    , foldWitness := inWindow }
     -- Two registrations whose claims balance per kind and cross per key: key 42
     -- claims both active tokens, key 43 none.
   , { id := "BR02-fold-crossed-claim"
@@ -379,24 +401,28 @@ def batchScenarios : List BatchScenario :=
     , requiresReachableState := false, start := s0, setup := []
     , question := .foldBatch
         [ { registerActive with claimed := [(.active, 2)] }
-        , request .insertActive 43 43 556 0 55 ] }
+        , request .insertActive 43 43 556 0 55 ]
+    , foldWitness := inWindow }
   , { id := "BR03-fold-empty"
     , theoremName := emptyFoldError, statementSha256 := emptyFoldErrorDigest
     , kind := "mutant", mutates := some "BR01-fold-two-registrations"
     , requiresReachableState := false, start := s0, setup := []
-    , question := .foldBatch [] }
+    , question := .foldBatch []
+    , foldWitness := inWindow }
     -- The registration of key 42 twice in one batch: the first folds, the law
     -- refuses the second, and the whole batch is refused for it.
   , { id := "BR04-fold-later-request-refused"
     , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
     , kind := "mutant", mutates := some "BR01-fold-two-registrations"
     , requiresReachableState := false, start := s0, setup := []
-    , question := .foldBatch [registerActiveClaimed, registerActiveClaimed] }
+    , question := .foldBatch [registerActiveClaimed, registerActiveClaimed]
+    , foldWitness := inWindow }
   , { id := "BR05-fold-one-registration"
     , theoremName := foldBatchOfOne, statementSha256 := foldBatchOfOneDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := []
-    , question := .foldBatch [registerActiveClaimed] }
+    , question := .foldBatch [registerActiveClaimed]
+    , foldWitness := inWindow }
   , { id := "BR06-reject-two-paid"
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "witness", mutates := none, requiresReachableState := true
@@ -446,15 +472,24 @@ def batchScenarios : List BatchScenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := sTimed, setup := []
     , question := .foldBatch
-        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
-    , foldWitness := some { submittedAt := [10000, 10500], validTo := 11000 } }
+        [ { registerActiveClaimed with submittedAt := 10000 }
+        , { claiming (request .insertAbsent 5 91 0 91 55) with submittedAt := 10500 } ]
+    , foldWitness := some { validTo := 11000 } }
   , { id := "BR14-fold-two-one-expired"
     , theoremName := foldPastDeadline, statementSha256 := foldPastDeadlineDigest
     , kind := "mutant", mutates := some "BR13-fold-two-in-window"
     , requiresReachableState := false, start := sTimed, setup := []
     , question := .foldBatch
-        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)]
-    , foldWitness := some { submittedAt := [10000, 9000], validTo := 11000 } }
+        [ { registerActiveClaimed with submittedAt := 10000 }
+        , { claiming (request .insertAbsent 5 91 0 91 55) with submittedAt := 9000 } ]
+    , foldWitness := some { validTo := 11000 } }
+  , { id := "BR21-fold-two-without-witness"
+    , theoremName := foldInWindow, statementSha256 := foldInWindowDigest
+    , kind := "mutant", mutates := some "BR13-fold-two-in-window"
+    , requiresReachableState := false, start := sTimed, setup := []
+    , question := .foldBatch
+        [ { registerActiveClaimed with submittedAt := 10000 }
+        , { claiming (request .insertAbsent 5 91 0 91 55) with submittedAt := 10500 } ] }
   ] ++ consumeCreatedRows
 
 /-- The digest the surface carries is over the declared names themselves, so a

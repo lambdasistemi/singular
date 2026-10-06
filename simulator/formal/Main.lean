@@ -1124,16 +1124,25 @@ def admissionFailures : List String :=
 phase 2. -/
 def failingWitness : RetractWitness := retractWitness [] 0 1000
 
-/-- Admission changes no other exit: under a witness every retraction fails, each
-fold and a reject step and build exactly as `exitStep` and `txOfExit` do; and an
-admitted retraction steps and builds exactly as the retract exit. -/
+/-- Admission changes no other exit beyond a fold's window: under a witness every
+retraction fails, a reject, and each fold its window admits, step and build
+exactly as `exitStep` and `txOfExit` do; a fold its window refuses is refused with
+admission's reason and builds nothing; and an admitted retraction steps and builds
+exactly as the retract exit. -/
 def admittedExitFailures : List String :=
   let others := (allExits.filter (· != .retract)).flatMap fun x =>
     exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
       let r := exitStepRequest e k
-      if sameStep (admittedExitStep paidState x r failingWitness) (exitStep paidState x r)
-          && sameTx (admittedTxOfExit paidState x r failingWitness 3) (txOfExit paidState x r 3)
-      then [] else [s!"{repr x} at {repr e}/{k}: admission changed an exit that is not a retract"]
+      let ok := match exitAdmission paidState.config x r failingWitness with
+        | none =>
+          sameStep (admittedExitStep paidState x r failingWitness) (exitStep paidState x r)
+            && sameTx (admittedTxOfExit paidState x r failingWitness 3) (txOfExit paidState x r 3)
+        | some why =>
+          (match admittedExitStep paidState x r failingWitness with
+            | .error w => w == why | .ok _ => false)
+            && (match admittedTxOfExit paidState x r failingWitness 3 with
+              | .error w => w == why | .ok _ => false)
+      if ok then [] else [s!"{repr x} at {repr e}/{k}: admission changed an exit beyond its own refusal"]
   let r := exitStepRequest .insertActive 9
   let w := retractWitness [42, 77] 102 105
   let retracted :=
@@ -1163,8 +1172,10 @@ def judgementRows : List (String × Exit × Request × RetractWitness × List Tx
   , ("RJ06-admitted-as-built", .retract, r, signed, spent, paid, none)
   , ("RJ07-reject-under-a-failing-witness", .reject, r, failingWitness,
       txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), none)
-  , ("RJ08-fold-under-a-failing-witness", .fold .insertActive, r, failingWitness,
-      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), none) ]
+  , ("RJ08-fold-inside-its-window", .fold .insertActive, r, { failingWitness with validTo := 0 },
+      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), none)
+  , ("RJ09-fold-past-its-window", .fold .insertActive, r, failingWitness,
+      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), some "not-phase1") ]
 
 def judgementFailures : List String :=
   judgementRows.flatMap fun (id, x, r, w, inputs, outputs, expected) =>

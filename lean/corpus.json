@@ -34,6 +34,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -143,6 +144,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -233,6 +235,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -334,6 +337,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -429,6 +433,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -518,6 +523,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -600,6 +606,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -695,6 +702,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -762,6 +770,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -829,6 +838,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -889,6 +899,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -949,6 +960,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1015,6 +1027,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1070,6 +1083,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1137,6 +1151,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1197,6 +1212,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1252,6 +1268,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1318,6 +1335,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1378,6 +1396,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1433,6 +1452,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1500,6 +1520,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1560,6 +1581,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1615,6 +1637,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1681,6 +1704,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1741,6 +1765,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1808,6 +1833,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1874,6 +1900,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1921,6 +1948,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1976,6 +2004,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2031,6 +2060,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2078,6 +2108,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2165,6 +2196,7 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2220,6 +2252,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2280,6 +2313,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2340,6 +2374,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2441,6 +2476,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2530,6 +2566,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2590,6 +2627,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2693,7 +2731,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+  "corpusSourceSha256": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2836,20 +2874,20 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-  "payloadSha256": "0bafa4574c8d926f18f017512de3bce8ab9250d0828dba713cb35a68ba6e0e64",
+  "modelSha256": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+  "payloadSha256": "9e69f818a4838eb6bfa684aeae3458805072c4db385d4d165b70d7a69d44a49f",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+    "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
-    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
+    "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+    "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
   },
-  "statementsSha256": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4",
-  "theoremManifestSha256": "6e5b66401eeb8368166329369ab31a780e189950ed805003144c7c95c73e3c67",
+  "statementsSha256": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a",
+  "theoremManifestSha256": "ee3d874312665971070ae7cd34e4353230aa7be51c8d413b1c04e17c0885cf19",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -3018,6 +3056,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "rootMatchesTrie": true,

@@ -294,54 +294,37 @@ instance : FromJson DatumForm where
     | "none" => pure .none
     | other => throw s!"no datum form is named {other}"
 
-/-- The form an output carrying this datum presents: inline when it carries a
-datum value, none when it carries none. A delivered output never presents its
-datum by hash. -/
-def datumFormOf : Option Nat → DatumForm
-  | some _ => .inline
-  | none => .none
-
-/-- A datum value as every consumer spells it: the value, or `null` for none. -/
-def datumJson : Option Nat → Json
-  | some v => toJson v
-  | none => Json.null
-
-/-- Read a datum value spelled by `datumJson`; a field a caller omits is none. -/
-def datumOfJson (j : Json) (field : String) : Except String (Option Nat) :=
-  match j.getObjVal? field with
-  | .error _ => pure none
-  | .ok Json.null => pure none
-  | .ok v => some <$> fromJson? v
-
 /-- One active or terminal token routed to the output the request named. The
-output carries the datum the delivering fold gave it — the request's own datum,
-or none — which is what a later fold spending it as a witness finds there. -/
+output presents the datum form the delivering fold gave it (`deliveredDatum`),
+which is what a later fold spending it as a witness finds there. -/
 structure Holding where
   key : Key
   kind : TokenKind
   output : Nat
-  datum : Option Nat := none
+  datum : DatumForm := .none
   deriving Repr, BEq, DecidableEq
 
-/-- A holding serialises completely, its datum included, so a saved state
-replays with the witness its delivery wrote. -/
+/-- A holding serialises completely, its datum form included, so a saved state
+replays with the witness its delivery wrote (#304). -/
 instance : ToJson Holding where
   toJson h := Json.mkObj
     [ ("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)
-    , ("datum", datumJson h.datum) ]
+    , ("datum", toJson h.datum) ]
 
-/-- A holding a caller spells without a datum carries none, as a delivery under a
-request carrying no datum does. -/
+/-- A holding a caller spells without a datum form presents none, as a delivery
+under a request naming no datum does. -/
 instance : FromJson Holding where
   fromJson? j := do
     let key ← j.getObjValAs? Key "key"
     let kind ← j.getObjValAs? TokenKind "kind"
     let output ← j.getObjValAs? Nat "output"
-    let datum ← datumOfJson j "datum"
+    let datum ← match j.getObjVal? "datum" with
+      | .error _ => pure DatumForm.none
+      | .ok d => fromJson? d
     pure { key, kind, output, datum }
 
 /-- The `held` observation of one holding: the census reads its key, kind and
-output. Its datum is observed on the transaction that spends it. -/
+output. Its datum form is observed on the transaction that spends it. -/
 def heldObservationJson (h : Holding) : Json :=
   Json.mkObj [("key", toJson h.key), ("kind", toJson h.kind), ("output", toJson h.output)]
 
@@ -416,8 +399,7 @@ and terminal tokens are routed; `approval` is the admission evidence; `claimed`
 is the mint the transaction claims for this request, summed by the fold; `tip`
 is what the request holds beyond its deposit (on chain `held − deposit`);
 `reference` names the output reference the request sits at, the one a
-retraction's return is bound to; `datum` is the datum the request carries for its
-delivered output, or none. -/
+retraction's return is bound to. -/
 structure Request where
   make ::
   edge : Edge
@@ -430,17 +412,20 @@ structure Request where
   claimed : List (TokenKind × Int) := []
   tip : Nat := 0
   reference : Nat := 0
-  /-- The datum the request carries for its delivered output, or none. On chain a
-  request's destination is an address and the datum itself, and the receiving
-  output must carry exactly it: no datum when the request carries none. -/
-  datum : Option Nat := none
+  /-- Whether the request names a datum for its delivered output. On chain a request
+  names its destination as an address and a datum hash, and an empty hash names
+  none: the output must then carry no datum. -/
+  namesDatum : Bool := false
+  /-- When the request was submitted, POSIX milliseconds: its datum's
+  `submitted_at`, which a fold's admission reads (`Singular.foldAdmission`). -/
+  submittedAt : Nat := 0
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
 declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0 false 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -451,14 +436,16 @@ instance : ToJson Request where
     , ("tip", toJson r.tip)
     , ("reference", toJson r.reference)
     , ("output", toJson r.output)
-    , ("datum", datumJson r.datum)
+    , ("namesDatum", toJson r.namesDatum)
+    , ("submittedAt", toJson r.submittedAt)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
 
 /-- The datum form a fold gives the output it delivers to: inline when the request
-carries a datum, none when it carries none, as the chain requires. -/
-def deliveredDatum (r : Request) : DatumForm := datumFormOf r.datum
+names a datum, none when it names none, as the chain requires (#304). -/
+def deliveredDatum (r : Request) : DatumForm :=
+  if r.namesDatum then .inline else .none
 
 /-- The destination a request names: the cage-custody sentinel `0` for
 `insertAbsent`, whose token goes to the cage; otherwise the output the request
@@ -621,14 +608,14 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , held := { key := a.key, kind := .active, output := a.output
-                        , datum := a.datum } :: s.held }
+                        , datum := deliveredDatum a } :: s.held }
     | .updateActive =>
       let trie := trieSet s.trie a.key (.known .active)
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , custody := s.custody.filter (·.key != a.key)
              , held := { key := a.key, kind := .active, output := a.output
-                        , datum := a.datum } :: s.held }
+                        , datum := deliveredDatum a } :: s.held }
     | .updateTerminal =>
       let trie := trieSet s.trie a.key (.known .terminal)
       { s with trie := trie
@@ -646,7 +633,7 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
              , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
     | .witnessTerminal =>
       { s with held := { key := a.key, kind := .terminal, output := a.output
-                           , datum := a.datum } :: s.held }
+                           , datum := deliveredDatum a } :: s.held }
   let paid : List (Nat × Nat) :=
     match a.edge, entry with
     | .updateActive, some c => [(c.refundAddress, c.value)]
@@ -885,8 +872,6 @@ structure TxInput where
   approvals : Nat
   lovelace : Nat
   assets : List (Asset × Int) := []
-  /-- The datum value the input's inline datum presents, for a witness. -/
-  datumValue : Option Nat := none
   deriving BEq, DecidableEq
 
 /-- An output the fold produces. `address` is `none` for the state output: the
@@ -908,9 +893,6 @@ structure TxOutput where
   /-- The output reference the output's inline datum presents: a retraction's
   return names the request it retracts by it. -/
   reference : Option Nat := none
-  /-- The datum value the output's inline datum presents, for a destination
-  output: the request's own datum. -/
-  datumValue : Option Nat := none
   deriving BEq, DecidableEq
 
 /-- Recover custody identity from one absent asset of quantity one. Neither
@@ -952,18 +934,13 @@ def burnSourceRole (d : Destination) : TxRole :=
   | .requestOutput => .witness
 
 /-- The datum form of the output holding a token of this kind at this key: the
-form of the datum the fold that delivered it wrote. A fold burning a witness is
-refused `token-missing` unless the state holds one, so the fallback is never read
-for an admitted fold. -/
+form the fold that delivered it gave it (`deliveredDatum`). A fold burning a
+witness is refused `token-missing` unless the state holds one, so the fallback
+is never read for an admitted fold. -/
 def heldDatum (s : RegistryState) (key : Key) (kind : TokenKind) : DatumForm :=
   match s.held.find? (fun h => h.key == key && h.kind == kind) with
-  | some h => datumFormOf h.datum
+  | some h => h.datum
   | none => registryDatumForm
-
-/-- The datum value the output holding a token of this kind at this key carries:
-the datum the fold that delivered it wrote, the request's own. -/
-def heldValue (s : RegistryState) (key : Key) (kind : TokenKind) : Option Nat :=
-  (s.held.find? (fun h => h.key == key && h.kind == kind)).bind (·.datum)
 
 /-- The datum form of the UTxO a burned token is spent from: cage custody carries
 its custody datum inline, and a witness carries whatever its delivering fold gave
@@ -972,13 +949,6 @@ def burnSourceDatum (s : RegistryState) (d : Destination) (asset : Asset) : Datu
   match d with
   | .cageCustody => registryDatumForm
   | .requestOutput => heldDatum s asset.2 asset.1
-
-/-- The datum value of the UTxO a burned token is spent from: a witness carries the
-datum its delivery wrote; cage custody presents its custody datum, no request's. -/
-def burnSourceValue (s : RegistryState) (d : Destination) (asset : Asset) : Option Nat :=
-  match d with
-  | .cageCustody => none
-  | .requestOutput => heldValue s asset.2 asset.1
 
 /-- The inputs that supply the tokens this fold destroys: one UTxO per burned
 asset, carrying exactly that asset in the quantity the mint takes away, at the
@@ -991,8 +961,7 @@ def txBurnInputs (s : RegistryState) (t : Result) (r : Request) : List TxInput :
       some { role := burnSourceRole (route p.1.1 r)
            , datum := burnSourceDatum s (route p.1.1 r) p.1
            , stateTokens := 0, approvals := 0, lovelace := 0
-           , assets := [(p.1, -p.2)]
-           , datumValue := burnSourceValue s (route p.1.1 r) p.1 }
+           , assets := [(p.1, -p.2)] }
     else none
 
 /-- The state output: the registry's single state UTxO, moved, carrying the
@@ -1003,11 +972,11 @@ def txStateOutput (t : Result) : TxOutput :=
   , commitment := none, assets := [] }
 
 /-- The destination output, present only when this edge routes a token to the
-requester: routed to the address the request named, carrying exactly the datum
-the request carries — inline with that value, or none when it carries none, as
-the chain requires — with the scoping tuple's commitment, and holding exactly the
-tokens the edge routed there. A fold that delivers nothing has no such output, so
-the model describes only outputs that exist. -/
+requester: routed to the address the request named, carrying the datum the
+request named — inline when it names one, none when it names none, as the chain
+requires — with the scoping tuple's commitment, and holding exactly the tokens
+the edge routed there. A fold that delivers nothing has no such output, so the
+model describes only outputs that exist (#304). -/
 def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
   let assets := routedPayment t r .requestOutput
   if assets.isEmpty then []
@@ -1015,7 +984,7 @@ def txDestinationOutputs (t : Result) (r : Request) : List TxOutput :=
         , datum := deliveredDatum r
         , address := some (requestDestination r), stateTokens := 0, config := none
         , commitment := some (datumHash (destinationDatum r))
-        , assets := assets, datumValue := r.datum }]
+        , assets := assets }]
 
 /-- The address custody outputs sit at: the cage. -/
 abbrev cageAddress : Nat := 0
@@ -1042,13 +1011,11 @@ inductive Exit where
   | fold (e : Edge) | reject | retract
   deriving Repr, BEq, DecidableEq
 
-/-- Who a payment is owed to: the address a delivering fold names under the datum
-its request carries, the cage's custody, the request's owner, or the owner
-through an output bound to the request it retracts, by that request's
-`reference`. -/
+/-- Who a payment is owed to: the address a delivering fold names, the cage's
+custody, the request's owner, or the owner through an output bound to the
+request it retracts, by that request's `reference`. -/
 inductive Recipient where
-  | destination (address : Nat) (datum : Option Nat) | custody | owner (key : Nat)
-  | bound (key reference : Nat)
+  | destination (address : Nat) | custody | owner (key : Nat) | bound (key reference : Nat)
   deriving Repr, DecidableEq
 
 /-- A payment owed: at least `atLeast` lovelace to `recipient`. -/
@@ -1068,43 +1035,31 @@ def obligations (exit : Exit) (request : Request) : List Payment :=
   match exit with
   | .fold .insertAbsent => [{ recipient := .custody, atLeast := request.deposit }]
   | .fold .insertActive | .fold .updateActive | .fold .witnessTerminal =>
-    [{ recipient := .destination (requestDestination request) request.datum
-     , atLeast := request.deposit }]
+    [{ recipient := .destination (requestDestination request), atLeast := request.deposit }]
   | .fold .updateTerminal | .fold .deleteAbsent | .fold .deleteActive | .reject =>
     [{ recipient := .owner request.owner, atLeast := request.deposit }]
   | .retract =>
     [{ recipient := .bound request.owner request.reference, atLeast := request.deposit + request.tip }]
 
-/-- Whether an output carries exactly this datum: the value inline, or no datum
-for none. Another value, a datum where none is carried, none where one is, or a
-datum presented by hash, is not it. -/
-def presentsDatum (datum : Option Nat) (output : TxOutput) : Bool :=
-  match datum with
-  | some v => output.datum == .inline && output.datumValue == some v
-  | none => output.datum == .none
-
-/-- Whether an output pays a recipient, by its role and address, for a destination
-by the datum it carries, and for a return bound to a request by the reference an
-inline datum presents. An output pays at most one of the recipients one exit
-owes, and the state continuation pays none. -/
+/-- Whether an output pays a recipient, by its role and address, and for a return
+bound to a request by the reference an inline datum presents. An output pays at
+most one of the recipients one exit owes, and the state continuation pays none. -/
 def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
   match recipient with
   | .custody => output.role == .cage && output.address == some cageAddress
-  | .destination address datum =>
-    output.role == .destination && output.address == some address && presentsDatum datum output
+  | .destination address => output.role == .destination && output.address == some address
   | .owner key => output.role == .owner && output.address == some key
   | .bound key reference =>
     output.role == .owner && output.address == some key && output.datum == .inline
       && output.reference == some reference
 
 /-- The chain's reason for a recipient left unpaid: custody or a destination no
-output reaches is `absent-custody` or `destination` — an output at the named
-address carrying another datum does not reach it; custody or a destination
+output reaches is `absent-custody` or `destination`; custody or a destination
 reached short, or an owner short or unreached, is `deposit-returned`. -/
 def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
   match recipient with
   | .custody => if paying.isEmpty then "absent-custody" else "deposit-returned"
-  | .destination _ _ => if paying.isEmpty then "destination" else "deposit-returned"
+  | .destination _ => if paying.isEmpty then "destination" else "deposit-returned"
   | .owner _ | .bound _ _ => "deposit-returned"
 
 /-- What the payments owe one recipient: their floors, summed. -/
@@ -1120,26 +1075,15 @@ def receivedBy (recipient : Recipient) (outputs : List TxOutput) : Nat :=
   | .bound _ _ => paying.foldl (fun most o => max most o.lovelace) 0
   | _ => paying.foldl (· + ·.lovelace) 0
 
-/-- Whether the chain requires an output to reach this recipient whatever its
-floor: a destination is reached only by the carrier of the delivered token at its
-address with its datum, which the cage requires whatever the deposit. -/
-def requiresCarrier : Recipient → Bool
-  | .destination _ _ => true
-  | _ => false
-
 /-- Judge a transaction's outputs against the payments owed: `none` when every
-recipient receives its summed floor and a destination is reached by its carrier,
-else the chain's reason for the first recipient, in the order the payments are
-owed, that is not. A destination no output reaches is refused whatever its floor,
-as the cage refuses a delivery with no matching carrier. One exit's judgement is
-`settle (obligations exit request) outputs`; a batch is the concatenation of its
-exits' payments. -/
+recipient receives its summed floor, else the chain's reason for the first
+recipient, in the order the payments are owed, that does not. One exit's judgement
+is `settle (obligations exit request) outputs`; a batch is the concatenation of
+its exits' payments. -/
 def settle (payments : List Payment) (outputs : List TxOutput) : Option String :=
   (payments.map (·.recipient)).eraseDups.findSome? fun recipient =>
-    let paying := outputs.filter (paysRecipient recipient)
-    if requiresCarrier recipient && paying.isEmpty then some (unpaidReason recipient paying)
-    else if owedTo recipient payments ≤ receivedBy recipient outputs then none
-    else some (unpaidReason recipient paying)
+    if owedTo recipient payments ≤ receivedBy recipient outputs then none
+    else some (unpaidReason recipient (outputs.filter (paysRecipient recipient)))
 
 /-- A payment as the (address, value) pair `Result.paid` carries, at the address
 `paysRecipient` reads for its recipient: the cage's for custody, the named address
@@ -1147,7 +1091,7 @@ for a destination, and the owner's key for the owner. -/
 def paymentPaid (payment : Payment) : Nat × Nat :=
   match payment.recipient with
   | .custody => (cageAddress, payment.atLeast)
-  | .destination address _ => (address, payment.atLeast)
+  | .destination address => (address, payment.atLeast)
   | .owner key | .bound key _ => (key, payment.atLeast)
 
 /-- The refusal an exit's transaction earns by what it spends, before its payments
@@ -1222,7 +1166,7 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
       , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
     match exit with
     | .fold _ =>
-      let destinationFloor := owedTo (.destination (requestDestination request) request.datum) owed
+      let destinationFloor := owedTo (.destination (requestDestination request)) owed
       .ok { inputs := [stateInput, requestInput] ++ txBurnInputs state t request
           , outputs := txStateOutput t
               :: (txDestinationOutputs t request).map
@@ -1245,31 +1189,6 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
 refusal: the transaction of the fold exit the request names. -/
 def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
   txOfExit s (.fold r.edge) r lovelace
-
-/-! ### What a folder reads
-
-A folder builds a fold from what the chain shows and nothing else: the registry
-state its outputs commit to, with every holding and the datum its output carries,
-and the requests pending at the cage, each carrying its datum. No booker's file
-is an input. -/
-
-/-- The public view of a registry: the state as its outputs show it, the holdings
-among it with their datums, and the pending requests as they sit at the cage. It
-has no other field. -/
-structure PublicView where
-  registry : RegistryState
-  pending : List Request
-
-/-- The public view of a state and the requests pending against it. -/
-def publicView (s : RegistryState) (pending : List Request) : PublicView :=
-  { registry := s, pending := pending }
-
-/-- The fold any party builds from a public view: the transaction of the pending
-request sitting at `reference`, or a refusal when no pending request sits there. -/
-def buildFold (view : PublicView) (reference : Nat) (lovelace : Nat) : Except String Tx :=
-  match view.pending.find? (·.reference == reference) with
-  | some r => txOf view.registry r lovelace
-  | none => .error "request-not-pending"
 
 /-! ### Which pending requests their owner can retract, and when
 
@@ -1326,16 +1245,18 @@ def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option St
 
 A fold is admitted before the law judges its requests. The fold validator
 updates the registry only while the fold transaction's whole validity interval
-lies before every folded request's deadline, `submittedAt + processTime`: a fold
-including a request past it is refused `not-phase1`, as the chain refuses it,
-whatever its requests' steps. Inside the window the fold is exactly the law. -/
+lies before every folded request's deadline, `submittedAt + processTime`, the
+submission time read from the request's own datum: a fold including a request
+past it is refused `not-phase1`, as the chain refuses it, whatever its requests'
+steps. Inside the window the fold is exactly the law. Every fold path applies
+it: `admittedFold`, `admittedFoldBatch`, and the fold exit through
+`admittedExitStep`. -/
 
-/-- What a fold's admission reads beyond its requests: each folded request's
-submission time (its datum's `submitted_at`), in batch order, and the fold
-transaction's validity upper bound, excluded, as the ledger hands a script a
-transaction's validity. Times are POSIX milliseconds. -/
+/-- What a fold's admission reads beyond its requests: the fold transaction's
+finite validity upper bound, excluded, as the ledger hands a script a
+transaction's validity, in POSIX milliseconds. Each request's submission time is
+the request's own. -/
 structure FoldWitness where
-  submittedAt : List Nat
   validTo : Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
@@ -1347,33 +1268,34 @@ interval. -/
 def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
   decide (validTo ≤ submittedAt + c.processTime)
 
-/-- Why a fold is not admitted: `not-phase1` when its validity upper bound
-passes any folded request's deadline. `none` admits. -/
-def foldAdmission (c : Config) (w : FoldWitness) : Option String :=
-  if w.submittedAt.all (fun t => inPhase1 c t w.validTo) then none else some "not-phase1"
+/-- Why a fold of `batch` is not admitted: `not-phase1` unless every request of
+the batch is in phase 1 under the fold's validity upper bound. `none` admits. -/
+def foldAdmission (c : Config) (batch : List Action) (w : FoldWitness) : Option String :=
+  if batch.all (fun a => inPhase1 c a.submittedAt w.validTo) then none else some "not-phase1"
 
 /-- A batch folded admission first: refused with the admission's reason,
 otherwise exactly `foldBatch`. -/
 def admittedFoldBatch (s : RegistryState) (batch : List Action) (w : FoldWitness) :
     Except String Result :=
-  match foldAdmission s.config w with
+  match foldAdmission s.config batch w with
   | some why => .error why
   | none => foldBatch s batch
 
 /-- One request folded admission first: refused with the admission's reason,
 otherwise exactly `step`. -/
 def admittedFold (s : RegistryState) (a : Action) (w : FoldWitness) : Except String Result :=
-  match foldAdmission s.config w with
+  match foldAdmission s.config [a] w with
   | some why => .error why
   | none => step s a
 
-/-- The admission an exit is subject to: a retract's is `retractAdmission`; a
-fold and a reject have none here, and ignore the witness. A fold's own
-admission is `foldAdmission`, under its `FoldWitness`. -/
+/-- The admission an exit is subject to: a retract's is `retractAdmission`, a
+fold's is `foldAdmission` of its one request under the witness's validity upper
+bound, and a reject has none and ignores the witness. -/
 def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
   match exit with
   | .retract => retractAdmission c r w
-  | .fold _ | .reject => none
+  | .fold _ => foldAdmission c [r] { validTo := w.validTo }
+  | .reject => none
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/

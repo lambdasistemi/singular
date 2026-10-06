@@ -291,22 +291,17 @@ def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json 
 
 /-- The witness a scenario's exit is admitted under. A retraction is admitted
 under the scenario's own, and a retraction that carries none has nothing to be
-admitted under. A fold and a reject have no admission (`Singular.exitAdmission`
-reads no witness for them), so they are taken under an empty one they ignore. -/
+admitted under. A fold is admitted by `Singular.foldAdmission` under the upper
+bound of the fold witness it carries, and a fold that carries none has nothing to
+be admitted under; a reject has no admission and ignores the witness. -/
 def admissionWitness (sc : Scenario) : Option RetractWitness :=
   match sc.exit with
   | .retract => sc.witness
-  | .fold _ | .reject =>
+  | .fold _ =>
+    sc.foldWitness.map fun w =>
+      { submittedAt := 0, validFrom := 0, validTo := w.validTo, signatories := [] }
+  | .reject =>
     some { submittedAt := 0, validFrom := 0, validTo := 0, signatories := [] }
-
-/-- A fold scenario's admission: a fold carrying a `Singular.FoldWitness` is
-admitted by `Singular.foldAdmission` before its step, as
-`Singular.admittedFold` takes it; one carrying none, and every other exit, has
-no fold admission. -/
-def foldRefusal (s : RegistryState) (sc : Scenario) : Option String :=
-  match sc.exit, sc.foldWitness with
-  | .fold _, some w => foldAdmission s.config w
-  | _, _ => none
 
 /-- F01 `runSurface`: execute one scenario against the model's law.
 
@@ -333,14 +328,12 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
   else
     match admissionWitness sc with
     | none =>
-      (steps, { outcome := .unsupported, reason := some "retraction-without-witness"
+      (steps, { outcome := .unsupported
+              , reason := some (match sc.exit with
+                  | .fold _ => "fold-without-witness"
+                  | _ => "retraction-without-witness")
               , premiseChecked := true, observations := none })
     | some witness =>
-    match foldRefusal s sc with
-    | some why =>
-      (steps, { outcome := .refused, reason := some why
-              , premiseChecked := true, observations := none })
-    | none =>
     match admittedExitStep s sc.exit sc.request witness with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
@@ -471,9 +464,10 @@ def reachBatchStart (start : RegistryState) (setup : List Request) :
   else (steps, .ok s)
 
 /-- F04 `runFoldBatch`: the `foldBatch` question. From the state the setup trace
-reaches, with the premise checked, a batch carrying a `Singular.FoldWitness` is
-admitted first by `Singular.foldAdmission` (`Singular.admittedFoldBatch`), and
-the batch is then `Singular.foldBatch` verbatim:
+reaches, with the premise checked, the batch is admitted first by
+`Singular.foldAdmission` under the `Singular.FoldWitness` it carries
+(`Singular.admittedFoldBatch`), and a batch carrying none is `unsupported`; an
+admitted batch is then `Singular.foldBatch` verbatim:
 refused for its reason, or accepted with the declared batch boundary. Beside the
 answer it returns the batch's step trace, each request through `Singular.step`
 from the state the previous left until the first one the law refuses, so a
@@ -484,7 +478,12 @@ def runFoldBatch (start : RegistryState) (setup batch : List Request)
   match reachBatchStart start setup with
   | (steps, .error result) => (steps, [], result)
   | (steps, .ok s) =>
-    match witness.bind (foldAdmission s.config) with
+    match witness with
+    | none =>
+      (steps, [], { outcome := .unsupported, reason := some "fold-without-witness"
+                  , premiseChecked := true, observations := none })
+    | some w =>
+    match foldAdmission s.config batch w with
     | some why =>
       (steps, [], { outcome := .refused, reason := some why
                   , premiseChecked := true, observations := none })

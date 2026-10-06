@@ -607,6 +607,8 @@ dl dd {
         <label for="owner-input">owner</label><input id="owner-input" type="number" value="42">
         <label for="output-input">output</label><input id="output-input" type="number" value="555">
         <label for="deposit-input">deposit</label><input id="deposit-input" type="number" value="200">
+        <label for="submitted-input">submitted at</label><input id="submitted-input" type="number" value="0">
+        <label for="valid-to-input">fold valid to</label><input id="valid-to-input" type="number" value="0">
       </div>
       <div class="row">
         <label for="approval-picker">approval</label>
@@ -755,6 +757,7 @@ const requestSchema = {
   namesDatum: B,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
+  submittedAt: N,
 };
 
 function validate(x, s, p) {
@@ -1101,6 +1104,34 @@ function foldActions(s, batch) {
   return { accepted: true, value: { state, mint, paid } };
 }
 
+// What a batch creates is not live for a later request of it: consuming a
+// holding it created is `token-missing`, a custody entry it created `not-booked`.
+const consumesCreated = (c, a) =>
+  ['updateTerminal', 'deleteActive'].includes(a.edge)
+    ? c.holdings.includes(a.key)
+      ? 'token-missing'
+      : null
+    : ['updateActive', 'deleteAbsent'].includes(a.edge)
+      ? c.custody.includes(a.key)
+        ? 'not-booked'
+        : null
+      : null;
+const creates = (c, a) =>
+  ['insertActive', 'updateActive'].includes(a.edge)
+    ? { ...c, holdings: [a.key, ...c.holdings] }
+    : a.edge === 'insertAbsent'
+      ? { ...c, custody: [a.key, ...c.custody] }
+      : c;
+function batchConsumesCreated(batch) {
+  let c = { holdings: [], custody: [] };
+  for (const a of batch) {
+    const why = consumesCreated(c, a);
+    if (why !== null) return why;
+    c = creates(c, a);
+  }
+  return null;
+}
+
 function foldBatch(s, batch) {
   try {
     validate(s, stateSchema, 'state');
@@ -1111,10 +1142,28 @@ function foldBatch(s, batch) {
     const claimed = batch.reduce((acc, b) => assetPlus(acc, requestClaim(b)), []);
     const actual = batch.reduce((acc, b) => assetPlus(acc, assetDelta(b)), []);
     if (!assetSame(claimed, actual)) return { accepted: false, reason: 'net-mint-mismatch' };
+    const created = batchConsumesCreated(batch);
+    if (created !== null) return { accepted: false, reason: created };
     return r;
   } catch (e) {
     return { accepted: false, reason: e.message };
   }
+}
+
+// ---- a fold's admission ------------------------------------------------------
+// Every fold is admitted under its validity upper bound, excluded, before the law
+// judges it: refused `not-phase1` unless every request's own deadline,
+// `submittedAt + processTime`, is at or after the bound.
+const inPhase1 = (c, submittedAt, validTo) => validTo <= submittedAt + c.processTime;
+const foldAdmission = (c, batch, w) =>
+  batch.every((a) => inPhase1(c, a.submittedAt, w.validTo)) ? null : 'not-phase1';
+function admittedFold(s, a, w) {
+  const why = foldAdmission(s.config, [a], w);
+  return why === null ? step(s, a) : { accepted: false, reason: why };
+}
+function admittedFoldBatch(s, batch, w) {
+  const why = foldAdmission(s.config, batch, w);
+  return why === null ? foldBatch(s, batch) : { accepted: false, reason: why };
 }
 
 // ---- the consumer's view (interface §7): tokens, never the root -------------
@@ -1185,6 +1234,7 @@ const request = (edge, key, opts = {}) => ({
   namesDatum: opts.namesDatum ?? false,
   approval: null,
   claimed: opts.claimed ?? [],
+  submittedAt: opts.submittedAt ?? 0,
 });
 
 /** An approval scoped to exactly this request. */
@@ -1588,7 +1638,8 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    }
@@ -1618,7 +1669,8 @@ const STORIES=[
         "assetName": 1604014105,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "key-exists"
      }
@@ -1652,7 +1704,8 @@ const STORIES=[
       "assetName": 3021472884,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -1677,7 +1730,8 @@ const STORIES=[
       "assetName": 84686170,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    }
@@ -1707,7 +1761,8 @@ const STORIES=[
         "assetName": 2709712832,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "accept"
      }
@@ -1741,7 +1796,8 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -1766,7 +1822,8 @@ const STORIES=[
       "assetName": 2958227895,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -1783,7 +1840,8 @@ const STORIES=[
      "output": 700,
      "namesDatum": false,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -1800,7 +1858,8 @@ const STORIES=[
      "output": 701,
      "namesDatum": false,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    }
@@ -1830,7 +1889,8 @@ const STORIES=[
         "assetName": 1831697717,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "terminal-immutable"
      }
@@ -1856,7 +1916,8 @@ const STORIES=[
      "output": 700,
      "namesDatum": false,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "read-unknown"
    },
@@ -1881,7 +1942,8 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -1898,7 +1960,8 @@ const STORIES=[
      "output": 700,
      "namesDatum": false,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "read-active"
    },
@@ -1923,7 +1986,8 @@ const STORIES=[
       "assetName": 2502960376,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "key-unknown"
    }
@@ -1953,7 +2017,8 @@ const STORIES=[
         "assetName": 2502960376,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "approval-mismatch"
      }
@@ -1983,7 +2048,8 @@ const STORIES=[
         "assetName": 2958227895,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "no-approval"
      }
@@ -2005,7 +2071,8 @@ const STORIES=[
        "output": 555,
        "namesDatum": false,
        "approval": null,
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0
       },
       "expect": "no-approval"
      }
@@ -2039,7 +2106,8 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -2064,7 +2132,8 @@ const STORIES=[
       "assetName": 1831697717,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    },
@@ -2089,7 +2158,8 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0
     },
     "expect": "accept"
    }
@@ -2133,6 +2203,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2242,6 +2313,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2332,6 +2404,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2433,6 +2506,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2528,6 +2602,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2617,6 +2692,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2699,6 +2775,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2794,6 +2871,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2861,6 +2939,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2928,6 +3007,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2988,6 +3068,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3048,6 +3129,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3114,6 +3196,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3169,6 +3252,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3236,6 +3320,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3296,6 +3381,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3351,6 +3437,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3417,6 +3504,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3477,6 +3565,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3532,6 +3621,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3599,6 +3689,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3659,6 +3750,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3714,6 +3806,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3780,6 +3873,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3840,6 +3934,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3907,6 +4002,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3973,6 +4069,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4020,6 +4117,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4075,6 +4173,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4130,6 +4229,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4177,6 +4277,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4264,6 +4365,7 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4319,6 +4421,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4379,6 +4482,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4439,6 +4543,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4540,6 +4645,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4629,6 +4735,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4689,6 +4796,7 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4792,7 +4900,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+  "corpusSourceSha256": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4935,20 +5043,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-  "payloadSha256": "0bafa4574c8d926f18f017512de3bce8ab9250d0828dba713cb35a68ba6e0e64",
+  "modelSha256": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+  "payloadSha256": "9e69f818a4838eb6bfa684aeae3458805072c4db385d4d165b70d7a69d44a49f",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+    "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
-    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
+    "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+    "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
   },
-  "statementsSha256": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4",
-  "theoremManifestSha256": "6e5b66401eeb8368166329369ab31a780e189950ed805003144c7c95c73e3c67",
+  "statementsSha256": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a",
+  "theoremManifestSha256": "ee3d874312665971070ae7cd34e4353230aa7be51c8d413b1c04e17c0885cf19",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -5117,6 +5225,7 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "rootMatchesTrie": true,
@@ -5603,7 +5712,7 @@ const STORIES=[
     "name": "Singular.Statements.admitted_exit_is_the_exit",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
+    "statementSha256": "d676fedbea60c9da158ec41e9285e3d929d780dce4e0424d214a670ea0735516"
   },
   {
     "name": "Singular.Statements.destination_output_iff_delivers",
@@ -5627,7 +5736,7 @@ const STORIES=[
     "name": "Singular.Statements.admission_refuses_first",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7"
+    "statementSha256": "e0fa0ecb9342d5d641283ccb9aa79dcf301bafff268773e85f1e8508b48bc5b4"
   },
   {
     "name": "Singular.Statements.fold_batch_of_one_is_step",
@@ -5645,19 +5754,19 @@ const STORIES=[
     "name": "Singular.Statements.fold_batch_refuses_past_deadline",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "2195f8d24a7aad10b51f42f1e5c6c578b236eb9ad736a07b6507c8ea9479b0ec"
+    "statementSha256": "eb4c3784833629e69fe1495565ff3f1a6ade52a920e63615eb11d7a21a8448ce"
   },
   {
     "name": "Singular.Statements.fold_admitted_in_window_is_fold_batch",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "bdb88cbaa8898e97fc22a0435a90e53388ad0c98395d550e9b620d837fb401b1"
+    "statementSha256": "0eeb271471154833ec086d939a0d3d5f49b8ce3ffe19f267f8a4f7956037fcc0"
   },
   {
     "name": "Singular.Statements.fold_admission_boundary",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a"
+    "statementSha256": "4287f32ecef523de44ebf3412325fbf0a0c56865b815d45320abad2da2d174c1"
   },
   {
     "name": "Singular.Statements.fold_batch_refuses_consuming_created",
@@ -5683,12 +5792,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
-    "formal/DriverMain.lean": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
+    "formal/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
+    "formal/DriverMain.lean": "8568e24ed12ecb240764a2ba24a645a7382587aa1fd48cd93dd355e54e753acd",
     "formal/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
     "formal/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "formal/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
-    "formal/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
+    "formal/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
+    "formal/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
     "formal/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5701,12 +5810,12 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4",
+    "formal/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "6e5b66401eeb8368166329369ab31a780e189950ed805003144c7c95c73e3c67",
+    "formal/theorem-debt.json": "ee3d874312665971070ae7cd34e4353230aa7be51c8d413b1c04e17c0885cf19",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "3fbaf975aad7446c2fd2c7ca768e737abcd6ddbacd0cf8309a05f61b496471a1"
+    "corpus.json": "699e77c3255b8e8e7d0147f4fb3b26dd973316f888050255d56ffca1b27b4141"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
@@ -5755,9 +5864,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
+  "modelSha256": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
   "namingStatementsSha256": "57fdbf3333522ca971a035f1cba7c0df9f074d1b8dc8b3a95fb570c543253d70",
-  "payloadSha256": "4da4fdb152dba6831ca0bf980edc206859a3e852547b1a230e24713545aa3210",
+  "payloadSha256": "4235b4f8bcde48142635d8ca75006177c022f6b3c9512d8c2373bf74afd58ae3",
   "queues": [
     {
       "actual": true,
@@ -5847,15 +5956,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
+    "lean/DriverMain.lean": "8568e24ed12ecb240764a2ba24a645a7382587aa1fd48cd93dd355e54e753acd",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+    "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/NamingMain.lean": "09945659c24ea4ac7601e509ae66dbf26d7c0bcc8dc3b2716a3ecf015e159ec9",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
-    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
+    "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
     "lean/Singular/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5866,7 +5975,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
+    "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
   },
   "spellings": [
     {
@@ -5984,7 +6093,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "6bb3db376e331d3cbe8f85b0c6c36d2302a3b273679ddd5753d153a19bf30a4e",
+  "payloadSha256": "cb0b42e7b296d604691c6d0f6879ccd33cdd2f2d6969b4de34519d9ceb6af42e",
   "recovery": [
     {
       "detail": true,
@@ -6055,15 +6164,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
+    "lean/DriverMain.lean": "8568e24ed12ecb240764a2ba24a645a7382587aa1fd48cd93dd355e54e753acd",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+    "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/NamingMain.lean": "09945659c24ea4ac7601e509ae66dbf26d7c0bcc8dc3b2716a3ecf015e159ec9",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
-    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
+    "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
     "lean/Singular/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -6074,7 +6183,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
+    "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
   },
   "steps": [
     {
@@ -7127,6 +7236,9 @@ const leafName = (l) => (l === null ? 'Unknown' : `Known ${l}`);
 // model does, or a defect in this transcription.
 
 const PROFILE = { generic: 'generic-profile', naming: 'naming-profile' };
+// Every fold the reader plays is admitted under its validity upper bound first,
+// as the chain admits it: past a request's deadline it is refused `not-phase1`.
+const foldWitness = () => ({ validTo: Number($('valid-to-input').value || 0) });
 let state = initial(),
   story = null,
   cursor = 0,
@@ -7191,7 +7303,7 @@ function replayTo(n) {
   state = initial();
   prefix = [state];
   for (let i = 0; i < n && i < story.steps.length; i++) {
-    const r = step(state, story.steps[i].request);
+    const r = admittedFold(state, story.steps[i].request, foldWitness());
     if (r.accepted) state = r.value.state;
     prefix.push(state);
   }
@@ -7218,7 +7330,7 @@ function renderBranches() {
         const f = forks[i];
         let s = state;
         for (const e of f.steps) {
-          const r = step(s, e.request);
+          const r = admittedFold(s, e.request, foldWitness());
           narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
           if (r.accepted) s = r.value.state;
         }
@@ -7237,7 +7349,8 @@ function buildEdgeButtons() {
       const output = Number($('output-input').value || 555),
         deposit = Number($('deposit-input').value || 0);
       const kind = $('approval-picker').value;
-      const opts = { owner, output, deposit, refundAddress: owner };
+      const submittedAt = Number($('submitted-input').value || 0);
+      const opts = { owner, output, deposit, refundAddress: owner, submittedAt };
       const req =
         edge === 'witnessTerminal'
           ? read(key, output)
@@ -7248,7 +7361,7 @@ function buildEdgeButtons() {
               : kind === 'other'
                 ? otherPolicy(edge, key, opts)
                 : request(edge, key, opts);
-      const r = step(state, req);
+      const r = admittedFold(state, req, foldWitness());
       $('edge-result').textContent =
         `${edge} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`;
       if (r.accepted) state = r.value.state;

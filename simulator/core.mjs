@@ -73,6 +73,7 @@ const requestSchema = {
   datum: { $option: N },
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
+  submittedAt: N,
 };
 
 function validate(x, s, p) {
@@ -406,6 +407,34 @@ export function foldActions(s, batch) {
   return { accepted: true, value: { state, mint, paid } };
 }
 
+// What a batch creates is not live for a later request of it: consuming a
+// holding it created is `token-missing`, a custody entry it created `not-booked`.
+const consumesCreated = (c, a) =>
+  ['updateTerminal', 'deleteActive'].includes(a.edge)
+    ? c.holdings.includes(a.key)
+      ? 'token-missing'
+      : null
+    : ['updateActive', 'deleteAbsent'].includes(a.edge)
+      ? c.custody.includes(a.key)
+        ? 'not-booked'
+        : null
+      : null;
+const creates = (c, a) =>
+  ['insertActive', 'updateActive'].includes(a.edge)
+    ? { ...c, holdings: [a.key, ...c.holdings] }
+    : a.edge === 'insertAbsent'
+      ? { ...c, custody: [a.key, ...c.custody] }
+      : c;
+export function batchConsumesCreated(batch) {
+  let c = { holdings: [], custody: [] };
+  for (const a of batch) {
+    const why = consumesCreated(c, a);
+    if (why !== null) return why;
+    c = creates(c, a);
+  }
+  return null;
+}
+
 export function foldBatch(s, batch) {
   try {
     validate(s, stateSchema, 'state');
@@ -416,10 +445,28 @@ export function foldBatch(s, batch) {
     const claimed = batch.reduce((acc, b) => assetPlus(acc, requestClaim(b)), []);
     const actual = batch.reduce((acc, b) => assetPlus(acc, assetDelta(b)), []);
     if (!assetSame(claimed, actual)) return { accepted: false, reason: 'net-mint-mismatch' };
+    const created = batchConsumesCreated(batch);
+    if (created !== null) return { accepted: false, reason: created };
     return r;
   } catch (e) {
     return { accepted: false, reason: e.message };
   }
+}
+
+// ---- a fold's admission ------------------------------------------------------
+// Every fold is admitted under its validity upper bound, excluded, before the law
+// judges it: refused `not-phase1` unless every request's own deadline,
+// `submittedAt + processTime`, is at or after the bound.
+export const inPhase1 = (c, submittedAt, validTo) => validTo <= submittedAt + c.processTime;
+export const foldAdmission = (c, batch, w) =>
+  batch.every((a) => inPhase1(c, a.submittedAt, w.validTo)) ? null : 'not-phase1';
+export function admittedFold(s, a, w) {
+  const why = foldAdmission(s.config, [a], w);
+  return why === null ? step(s, a) : { accepted: false, reason: why };
+}
+export function admittedFoldBatch(s, batch, w) {
+  const why = foldAdmission(s.config, batch, w);
+  return why === null ? foldBatch(s, batch) : { accepted: false, reason: why };
 }
 
 // ---- the consumer's view (interface §7): tokens, never the root -------------

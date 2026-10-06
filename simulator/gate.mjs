@@ -17,6 +17,8 @@ import vm from 'node:vm';
 import {
   step,
   foldBatch,
+  admittedFold,
+  admittedFoldBatch,
   equal,
   initial,
   decodeState,
@@ -244,6 +246,38 @@ assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
   const bad = approved('updateTerminal', 9, { owner: 42, output: 555 });
   const r = foldBatch(initial(), [a, bad]);
   assert.ok(!r.accepted, 'a refusal refuses the whole batch');
+}
+
+// ---- 4b. a fold's admission and what a batch creates ------------------------
+{
+  const s = initial();
+  const at = (submittedAt) =>
+    approved('insertActive', 1, { owner: 42, output: 555, submittedAt });
+  const deadline = 100 + s.config.processTime;
+  assert.ok(admittedFold(s, at(100), { validTo: deadline }).accepted, 'bound at the deadline admitted');
+  assert.equal(
+    admittedFold(s, at(100), { validTo: deadline + 1 }).reason,
+    'not-phase1',
+    'bound one past the deadline refused',
+  );
+  const claim = (r) => ({ ...r, claimed: delta(r.edge) });
+  const fresh = claim(approved('insertActive', 2, { owner: 42, output: 555, submittedAt: 100 }));
+  const old = claim(approved('insertActive', 3, { owner: 42, output: 555, submittedAt: 50 }));
+  assert.equal(
+    admittedFoldBatch(s, [fresh, old], { validTo: deadline }).reason,
+    'not-phase1',
+    'of two requests, one past its deadline refuses the batch',
+  );
+  assert.ok(admittedFoldBatch(s, [fresh], { validTo: deadline }).accepted, 'the batch inside its window');
+  const pair = (create, consume) =>
+    foldBatch(s, [
+      claim(approved(create, 60, { owner: 60, output: 600, refundAddress: 60 })),
+      claim(approved(consume, 60, { owner: 60, output: 600, refundAddress: 60 })),
+    ]).reason;
+  assert.equal(pair('insertActive', 'updateTerminal'), 'token-missing', 'holding created then consumed');
+  assert.equal(pair('insertActive', 'deleteActive'), 'token-missing', 'holding created then deleted');
+  assert.equal(pair('insertAbsent', 'updateActive'), 'not-booked', 'custody created then consumed');
+  assert.equal(pair('insertAbsent', 'deleteAbsent'), 'not-booked', 'custody created then deleted');
 }
 
 // ---- 5. stories: every step and fork agrees with the engine ----------------

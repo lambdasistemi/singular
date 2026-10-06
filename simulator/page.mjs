@@ -3,6 +3,9 @@
 // model does, or a defect in this transcription.
 
 const PROFILE = { generic: 'generic-profile', naming: 'naming-profile' };
+// Every fold the reader plays is admitted under its validity upper bound first,
+// as the chain admits it: past a request's deadline it is refused `not-phase1`.
+const foldWitness = () => ({ validTo: Number($('valid-to-input').value || 0) });
 let state = initial(),
   story = null,
   cursor = 0,
@@ -67,7 +70,7 @@ function replayTo(n) {
   state = initial();
   prefix = [state];
   for (let i = 0; i < n && i < story.steps.length; i++) {
-    const r = step(state, story.steps[i].request);
+    const r = admittedFold(state, story.steps[i].request, foldWitness());
     if (r.accepted) state = r.value.state;
     prefix.push(state);
   }
@@ -94,7 +97,7 @@ function renderBranches() {
         const f = forks[i];
         let s = state;
         for (const e of f.steps) {
-          const r = step(s, e.request);
+          const r = admittedFold(s, e.request, foldWitness());
           narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
           if (r.accepted) s = r.value.state;
         }
@@ -113,7 +116,8 @@ function buildEdgeButtons() {
       const output = Number($('output-input').value || 555),
         deposit = Number($('deposit-input').value || 0);
       const kind = $('approval-picker').value;
-      const opts = { owner, output, deposit, refundAddress: owner };
+      const submittedAt = Number($('submitted-input').value || 0);
+      const opts = { owner, output, deposit, refundAddress: owner, submittedAt };
       const req =
         edge === 'witnessTerminal'
           ? read(key, output)
@@ -124,7 +128,7 @@ function buildEdgeButtons() {
               : kind === 'other'
                 ? otherPolicy(edge, key, opts)
                 : request(edge, key, opts);
-      const r = step(state, req);
+      const r = admittedFold(state, req, foldWitness());
       $('edge-result').textContent =
         `${edge} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`;
       if (r.accepted) state = r.value.state;

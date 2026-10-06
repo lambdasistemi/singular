@@ -512,16 +512,22 @@ def check_driver_scenarios(
             assert "witness" not in s, (
                 f"{sid}: a {s['operation']} row carries a retraction witness"
             )
-        # A fold carrying a fold witness is admitted before its step: past a
-        # request's deadline it is refused for admission's reason, and inside
-        # the window admission never names the refusal.
+        # Every fold is admitted under its fold witness before its step: past a
+        # request's own deadline it is refused for admission's reason, inside
+        # every window admission never names the refusal, and a fold carrying
+        # no witness is never admitted: the driver does not reach it.
+        if s["operation"] in edges and "foldWitness" not in s:
+            assert (s["outcome"], s["reason"]) == ("unsupported", "fold-without-witness"), (
+                f"{sid}: a fold with no fold witness is reported "
+                f"{(s['outcome'], s['reason'])}, never admitted"
+            )
         if "foldWitness" in s:
             assert s["operation"] in edges, (
                 f"{sid}: a {s['operation']} row carries a fold witness"
             )
             before = s["setup"][-1]["state"] if s["setup"] else s["start"]
             expected = fold_admission_expectation(
-                sid, s["foldWitness"], before, fold_admission
+                sid, s["foldWitness"], [s["request"]], before, fold_admission
             )
             if expected is not None:
                 assert (s["outcome"], s["reason"]) == ("refused", expected), (
@@ -856,18 +862,19 @@ def model_consumes_created(root):
     return {"made": made, "refused": refused}
 
 
-FOLD_WITNESS_FIELDS = {"submittedAt", "validTo"}
+FOLD_WITNESS_FIELDS = {"validTo"}
 
 
-def fold_admission_expectation(rid, witness, before, reason):
-    """The refusal `Singular.foldAdmission` gives a fold under this witness from
-    the state it runs against, or None: refused when the excluded upper bound
-    passes any folded request's deadline, `submittedAt + processTime`."""
+def fold_admission_expectation(rid, witness, requests, before, reason):
+    """The refusal `Singular.foldAdmission` gives a fold of these requests under
+    this witness from the state it runs against, or None: refused when the
+    excluded upper bound passes any request's own deadline, its `submittedAt`
+    plus the processing time."""
     assert isinstance(witness, dict) and set(witness) == FOLD_WITNESS_FIELDS, (
         f"{rid}: a fold witness carries {witness!r}"
     )
     process = before["config"]["processTime"]
-    if any(witness["validTo"] > t + process for t in witness["submittedAt"]):
+    if any(witness["validTo"] > r["submittedAt"] + process for r in requests):
         return reason
     return None
 
@@ -1030,10 +1037,11 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     """What `Singular.foldBatch` must answer for this row, re-derived from the
     model's tables and the step trace the row carries: `(outcome, reason)`."""
     requests = row["requests"]
+    assert "foldWitness" in row, f"{row['id']}: a fold batch with no fold witness is answered"
     if "foldWitness" in row:
         before = row["setup"][-1]["state"] if row["setup"] else row["start"]
         admission = fold_admission_expectation(
-            row["id"], row["foldWitness"], before, refusals["admission"]
+            row["id"], row["foldWitness"], requests, before, refusals["admission"]
         )
         if admission is not None:
             assert row["folded"] == [], f"{row['id']}: a fold refused admission folds nothing"
@@ -1169,7 +1177,12 @@ def check_batch_rows(
             assert all(isinstance(r, dict) and "edge" in r for r in row["requests"]), (
                 f"{rid}: a fold batch names requests, each folded on its own edge"
             )
-            if outcome != "unsupported":
+            if "foldWitness" not in row:
+                assert (outcome, row["reason"]) == ("unsupported", "fold-without-witness"), (
+                    f"{rid}: a fold batch with no fold witness is reported "
+                    f"{(outcome, row['reason'])}, never admitted"
+                )
+            elif outcome != "unsupported":
                 expected = fold_batch_expectation(row, refusals, transitions, deltas)
                 assert (outcome, row["reason"]) == expected, (
                     f"{rid}: Singular.foldBatch answers {expected}, the row reports "

@@ -1467,10 +1467,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1708,24 +1708,20 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
       · exact absurd (hp.mp h) hW
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO, e3]
 
-/-- An admitted retraction is the retract exit, and admission changes no other exit.
+/-- An admitted exit is the exit itself.
 
-For every state, exit, request, witness and lovelace: when the exit is not a
-retract, or it is a retract its admission lets through, the admitted step is
-exactly `exitStep` and the admitted transaction exactly `txOfExit` — what the
-retraction pays, what it leaves of the registry and who must sign its
-transaction are the retract exit's own, whatever the witness says. -/
+For every state, exit, request, witness and lovelace: when the exit's admission
+lets it through — a retraction's `retractAdmission`, a fold's `foldAdmission`
+under the witness's upper bound, a reject always — the admitted step is exactly
+`exitStep` and the admitted transaction exactly `txOfExit`: what the exit pays,
+what it leaves of the registry and who must sign its transaction are the exit's
+own, whatever else the witness says. -/
 theorem admitted_exit_is_the_exit (s : RegistryState) (exit : Exit) (r : Request)
     (w : RetractWitness) (lovelace : Nat)
-    (admitted : exit ≠ .retract ∨ retractAdmission s.config r w = none) :
+    (admitted : exitAdmission s.config exit r w = none) :
     admittedExitStep s exit r w = exitStep s exit r ∧
       admittedTxOfExit s exit r w lovelace = txOfExit s exit r lovelace := by
-  have none : exitAdmission s.config exit r w = none := by
-    cases exit with
-    | retract => simpa using admitted
-    | fold e => rfl
-    | reject => rfl
-  simp [admittedExitStep, admittedTxOfExit, none]
+  simp [admittedExitStep, admittedTxOfExit, admitted]
 
 /-- **#304** — a fold's transaction describes a destination output exactly when
 the fold routes a token to the requester.
@@ -1834,33 +1830,26 @@ example (s : RegistryState) (k : Key) :
       { edge := .insertActive, key := k }).length = 1 := by
   simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
-/-- Admission refuses before what a retraction spends or pays is judged.
-
-For every state, exit, request, witness and lovelace: a retraction its admission
-refuses builds no transaction and is refused with admission's reason whatever the
-transaction spends and pays — a retraction beside a state token, or paying its
-owner nothing, still names the admission check it failed. Any other exit, and a
-retraction admission lets through, is judged exactly as before: what it spends
-(`spendRefusal`), then what it pays (`settle`). -/
+/-- **Admission, before anything is paid** — an exit its admission refuses builds
+no transaction and is refused with admission's reason whatever it spends and
+pays: a retraction beside a state token, or paying its owner nothing, still names
+the admission check it failed, and a fold past a request's deadline is refused
+`not-phase1` whatever its outputs. An exit admission lets through is judged as
+before, by what it spends (`spendRefusal`) and then what it pays (`settle`). -/
 theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
     (w : RetractWitness) (lovelace : Nat) :
-    (∀ why, retractAdmission s.config r w = some why →
-      admittedTxOfExit s .retract r w lovelace = .error why ∧
-      ∀ inputs outputs, exitRefusal s.config .retract r w inputs outputs = some why) ∧
-    ((exit ≠ .retract ∨ retractAdmission s.config r w = none) →
+    (∀ why, exitAdmission s.config exit r w = some why →
+      admittedTxOfExit s exit r w lovelace = .error why ∧
+      ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs = some why) ∧
+    (exitAdmission s.config exit r w = none →
       ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs =
         (spendRefusal exit inputs).orElse fun _ => settle (obligations exit r) outputs) := by
   refine ⟨?_, ?_⟩
   · intro why refused
-    exact ⟨by simp [admittedTxOfExit, exitAdmission, refused],
-      fun _ _ => by simp [exitRefusal, exitAdmission, refused]⟩
+    exact ⟨by simp [admittedTxOfExit, refused],
+      fun _ _ => by simp [exitRefusal, refused]⟩
   · intro admitted inputs outputs
-    have none : exitAdmission s.config exit r w = none := by
-      cases exit with
-      | retract => simpa using admitted
-      | fold e => rfl
-      | reject => rfl
-    simp [exitRefusal, none]
+    simp [exitRefusal, admitted]
 
 /-- **#344, a batch of one folds as its step** — for one request whose claimed
 mint is the delta of its own edge, the batch fold is exactly the single step:
@@ -2005,42 +1994,58 @@ example :
   decide
 
 /-- **#396, a fold past a request's deadline is refused** — a fold whose validity
-upper bound passes the deadline of any request it folds, `submittedAt +
-processTime`, is refused `not-phase1`, as the chain refuses it, whatever the
-batch and whatever its requests' steps. -/
+upper bound passes the deadline of any request of its batch, that request's own
+`submittedAt + processTime`, is refused `not-phase1`, as the chain refuses it,
+whatever the batch's other requests and whatever their steps: of two requests,
+one past its deadline refuses the batch. -/
 theorem fold_batch_refuses_past_deadline (s : RegistryState) (batch : List Request)
-    (w : FoldWitness) (t : Nat) (ht : t ∈ w.submittedAt)
-    (hpast : t + s.config.processTime < w.validTo) :
+    (w : FoldWitness) (a : Request) (ha : a ∈ batch)
+    (hpast : a.submittedAt + s.config.processTime < w.validTo) :
     admittedFoldBatch s batch w = .error "not-phase1" := by
-  have hnot : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = false := by
+  have hnot : batch.all (fun a => inPhase1 s.config a.submittedAt w.validTo) = false := by
     rw [List.all_eq_false]
-    exact ⟨t, ht, by simp [inPhase1]; omega⟩
-  simp [admittedFoldBatch, foldAdmission, hnot]
+    exact ⟨a, ha, by simp [inPhase1]; omega⟩
+  unfold admittedFoldBatch foldAdmission
+  rw [if_neg (fun h => Bool.noConfusion (h.symm.trans hnot))]
 
 /-- **#396, inside the window a fold is the law** — a fold whose validity upper
-bound is at or before the deadline of every request it folds is exactly
-`foldBatch`: admission changes nothing inside the window. -/
+bound is at or before the deadline of every request of its batch, each read from
+the request itself, is exactly `foldBatch`: admission changes nothing inside the
+window. -/
 theorem fold_admitted_in_window_is_fold_batch (s : RegistryState) (batch : List Request)
-    (w : FoldWitness) (hin : ∀ t ∈ w.submittedAt, w.validTo ≤ t + s.config.processTime) :
+    (w : FoldWitness) (hin : ∀ a ∈ batch, w.validTo ≤ a.submittedAt + s.config.processTime) :
     admittedFoldBatch s batch w = foldBatch s batch := by
-  have hall : w.submittedAt.all (fun t => inPhase1 s.config t w.validTo) = true := by
+  have hall : List.all (α := Action) batch (fun a => inPhase1 s.config a.submittedAt w.validTo) = true := by
     rw [List.all_eq_true]
-    intro t ht
-    simp [inPhase1, hin t ht]
-  simp [admittedFoldBatch, foldAdmission, hall]
+    intro a ha
+    simp [inPhase1, hin a ha]
+  unfold admittedFoldBatch foldAdmission
+  rw [if_pos hall]
 
-/-- **#396, the boundary of the window** — one request folded under an upper
-bound equal to its deadline is admitted and is exactly its step; one millisecond
-past it is refused `not-phase1`. The upper bound is excluded, so it may reach
-the deadline and not pass it, as `interval.is_entirely_before` reads it. -/
-theorem fold_admission_boundary (s : RegistryState) (r : Request) (t : Nat) :
-    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime } = step s r ∧
-    admittedFold s r { submittedAt := [t], validTo := t + s.config.processTime + 1 }
-      = .error "not-phase1" := by
-  have hpast : ¬ (t + s.config.processTime + 1 ≤ t + s.config.processTime) := by omega
-  constructor
+/-- **#396, the boundary of the window, on every fold path** — one request folded
+under an upper bound equal to its own deadline is admitted and is exactly its step;
+one millisecond past it is refused `not-phase1`. The fold exit applies the same
+admission under its witness's upper bound: at or before the deadline it is
+exactly the exit, past it refused `not-phase1`. The upper bound is excluded, so it
+may reach the deadline and not pass it, as `interval.is_entirely_before` reads it. -/
+theorem fold_admission_boundary (s : RegistryState) (r : Request) :
+    admittedFold s r { validTo := r.submittedAt + s.config.processTime } = step s r ∧
+    admittedFold s r { validTo := r.submittedAt + s.config.processTime + 1 }
+      = .error "not-phase1" ∧
+    (∀ (e : Edge) (w : RetractWitness), w.validTo ≤ r.submittedAt + s.config.processTime →
+      admittedExitStep s (.fold e) r w = exitStep s (.fold e) r) ∧
+    (∀ (e : Edge) (w : RetractWitness), r.submittedAt + s.config.processTime < w.validTo →
+      admittedExitStep s (.fold e) r w = .error "not-phase1") := by
+  have hpast : ¬ (r.submittedAt + s.config.processTime + 1 ≤ r.submittedAt + s.config.processTime) := by
+    omega
+  refine ⟨?_, ?_, ?_, ?_⟩
   · simp [admittedFold, foldAdmission, inPhase1]
   · simp [admittedFold, foldAdmission, inPhase1, hpast]
+  · intro e w hw
+    simp [admittedExitStep, exitAdmission, foldAdmission, inPhase1, hw]
+  · intro e w hw
+    have hn : ¬ (w.validTo ≤ r.submittedAt + s.config.processTime) := by omega
+    simp [admittedExitStep, exitAdmission, foldAdmission, inPhase1, hn]
 
 /-- **#396, a batch cannot consume what it creates** — when one request of a
 batch creates an active holding (`insertActive`, `updateActive`) or a custody

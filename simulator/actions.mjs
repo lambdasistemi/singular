@@ -17,6 +17,7 @@ export const request = (edge, key, opts = {}) => ({
   datum: opts.datum ?? null,
   approval: null,
   claimed: opts.claimed ?? [],
+  submittedAt: opts.submittedAt ?? 0,
 });
 
 /** An approval scoped to exactly this request. */

@@ -1,6 +1,9 @@
 {
   "batches": [
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -29,6 +32,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -95,6 +99,7 @@
             "owner": 91,
             "reference": 0,
             "refundAddress": 91,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -298,6 +303,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -324,6 +330,7 @@
           "owner": 91,
           "reference": 0,
           "refundAddress": 91,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -357,6 +364,9 @@
       "theorem": "Singular.Statements.booked_at_most_once"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -385,6 +395,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -446,6 +457,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -532,6 +544,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -553,6 +566,7 @@
           "owner": 43,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -586,6 +600,9 @@
       "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [],
       "id": "BR03-fold-empty",
       "kind": "mutant",
@@ -629,6 +646,9 @@
       "theorem": "Singular.Statements.empty_fold_error"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -657,6 +677,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -723,6 +744,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -799,6 +821,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -825,6 +848,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -858,6 +882,9 @@
       "theorem": "Singular.Statements.fold_batch_cons"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -886,6 +913,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -1052,6 +1080,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -1225,6 +1254,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         },
@@ -1249,6 +1279,7 @@
             "owner": 44,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 3
           }
         }
@@ -1278,6 +1309,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -1486,6 +1518,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         },
@@ -1510,6 +1543,7 @@
             "owner": 44,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 3
           }
         }
@@ -1539,6 +1573,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -1740,6 +1775,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         },
@@ -1764,6 +1800,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 3
           }
         }
@@ -1793,6 +1830,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -1990,6 +2028,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         }
@@ -2019,6 +2058,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -2120,6 +2160,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         },
@@ -2144,6 +2185,7 @@
             "owner": 44,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 3
           }
         }
@@ -2172,6 +2214,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -2276,6 +2319,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -2377,6 +2421,7 @@
             "owner": 43,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 7
           }
         }
@@ -2405,6 +2450,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -2474,10 +2520,6 @@
     },
     {
       "foldWitness": {
-        "submittedAt": [
-          10000,
-          10500
-        ],
         "validTo": 11000
       },
       "folded": [
@@ -2508,6 +2550,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 10000,
             "tip": 0
           },
           "state": {
@@ -2574,6 +2617,7 @@
             "owner": 91,
             "reference": 0,
             "refundAddress": 91,
+            "submittedAt": 10500,
             "tip": 0
           },
           "state": {
@@ -2777,6 +2821,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 10000,
           "tip": 0
         },
         {
@@ -2803,6 +2848,7 @@
           "owner": 91,
           "reference": 0,
           "refundAddress": 91,
+          "submittedAt": 10500,
           "tip": 0
         }
       ],
@@ -2832,15 +2878,11 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "bdb88cbaa8898e97fc22a0435a90e53388ad0c98395d550e9b620d837fb401b1",
+      "statementSha256": "0eeb271471154833ec086d939a0d3d5f49b8ce3ffe19f267f8a4f7956037fcc0",
       "theorem": "Singular.Statements.fold_admitted_in_window_is_fold_batch"
     },
     {
       "foldWitness": {
-        "submittedAt": [
-          10000,
-          9000
-        ],
         "validTo": 11000
       },
       "folded": [],
@@ -2880,6 +2922,7 @@
           "owner": 42,
           "reference": 0,
           "refundAddress": 0,
+          "submittedAt": 10000,
           "tip": 0
         },
         {
@@ -2906,6 +2949,7 @@
           "owner": 91,
           "reference": 0,
           "refundAddress": 91,
+          "submittedAt": 9000,
           "tip": 0
         }
       ],
@@ -2935,10 +2979,111 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "2195f8d24a7aad10b51f42f1e5c6c578b236eb9ad736a07b6507c8ea9479b0ec",
+      "statementSha256": "eb4c3784833629e69fe1495565ff3f1a6ade52a920e63615eb11d7a21a8448ce",
       "theorem": "Singular.Statements.fold_batch_refuses_past_deadline"
     },
     {
+      "folded": [],
+      "id": "BR21-fold-two-without-witness",
+      "kind": "mutant",
+      "mutates": "BR13-fold-two-in-window",
+      "observations": null,
+      "outcome": "unsupported",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "question": "foldBatch",
+      "reason": "fold-without-witness",
+      "requests": [
+        {
+          "approval": {
+            "assetName": 1604014105,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 42,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          },
+          "claimed": [
+            {
+              "kind": "active",
+              "quantity": 1
+            }
+          ],
+          "deposit": 55,
+          "edge": "insertActive",
+          "key": 42,
+          "namesDatum": false,
+          "output": 555,
+          "owner": 42,
+          "reference": 0,
+          "refundAddress": 0,
+          "submittedAt": 10000,
+          "tip": 0
+        },
+        {
+          "approval": {
+            "assetName": 372747933,
+            "destination": 0,
+            "edge": "insertAbsent",
+            "key": 5,
+            "owner": 91,
+            "policy": 7,
+            "signatures": []
+          },
+          "claimed": [
+            {
+              "kind": "absent",
+              "quantity": 1
+            }
+          ],
+          "deposit": 55,
+          "edge": "insertAbsent",
+          "key": 5,
+          "namesDatum": false,
+          "output": 0,
+          "owner": 91,
+          "reference": 0,
+          "refundAddress": 91,
+          "submittedAt": 10500,
+          "tip": 0
+        }
+      ],
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 1000,
+          "retractTime": 500,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "0eeb271471154833ec086d939a0d3d5f49b8ce3ffe19f267f8a4f7956037fcc0",
+      "theorem": "Singular.Statements.fold_admitted_in_window_is_fold_batch"
+    },
+    {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -2967,6 +3112,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3033,6 +3179,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3102,6 +3249,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -3128,6 +3276,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -3161,6 +3310,9 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -3189,6 +3341,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3255,6 +3408,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3319,6 +3473,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -3345,6 +3500,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -3378,6 +3534,9 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -3410,6 +3569,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3476,6 +3636,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3549,6 +3710,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -3575,6 +3737,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -3602,6 +3765,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3669,6 +3833,9 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -3701,6 +3868,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3767,6 +3935,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3835,6 +4004,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -3861,6 +4031,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -3888,6 +4059,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -3955,6 +4127,9 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -3983,6 +4158,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -4052,6 +4228,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -4128,6 +4305,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -4158,6 +4336,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -4191,6 +4370,9 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "folded": [
         {
           "accepted": true,
@@ -4219,6 +4401,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -4284,6 +4467,7 @@
             "owner": 60,
             "reference": 0,
             "refundAddress": 60,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -4348,6 +4532,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         },
         {
@@ -4374,6 +4559,7 @@
           "owner": 60,
           "reference": 0,
           "refundAddress": 60,
+          "submittedAt": 0,
           "tip": 0
         }
       ],
@@ -4407,11 +4593,14 @@
       "theorem": "Singular.Statements.fold_batch_refuses_consuming_created"
     }
   ],
-  "corpusSourceSha256": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
-  "modelSha256": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-  "payloadSha256": "a4fd6e13cbea7f9546c791f86043767b36fdfebbee0a96cc05a5d90c86d8c87d",
+  "corpusSourceSha256": "8568e24ed12ecb240764a2ba24a645a7382587aa1fd48cd93dd355e54e753acd",
+  "modelSha256": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+  "payloadSha256": "fc0bbef8bd1006a32d2a9a40ebd8de18c82118eb535cb4e6e8107ecab9886470",
   "scenarios": [
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR01-register-absent",
       "kind": "witness",
       "lovelace": 5,
@@ -4622,6 +4811,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -4654,6 +4844,9 @@
       "theorem": "Singular.Statements.insert_absent_transaction_row"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR02-register-active",
       "kind": "witness",
       "lovelace": 5,
@@ -4863,6 +5056,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -4895,6 +5089,9 @@
       "theorem": "Singular.Statements.insert_active_transaction_row"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR03-retire-registered",
       "kind": "witness",
       "lovelace": 5,
@@ -5099,6 +5296,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": true,
@@ -5125,6 +5323,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -5193,6 +5392,9 @@
       "theorem": "Singular.Statements.update_terminal_transaction_row"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR04-register-absent-unapproved",
       "kind": "mutant",
       "lovelace": 5,
@@ -5216,6 +5418,7 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -5248,6 +5451,9 @@
       "theorem": "Singular.Statements.insert_absent_inversion"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR05-register-active-twice",
       "kind": "mutant",
       "lovelace": 5,
@@ -5279,6 +5485,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": true,
@@ -5305,6 +5512,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -5373,6 +5581,9 @@
       "theorem": "Singular.Statements.insert_active_inversion"
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR06-retire-unregistered",
       "kind": "mutant",
       "lovelace": 5,
@@ -5404,6 +5615,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -5621,6 +5833,7 @@
         "owner": 43,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -5647,6 +5860,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -5846,6 +6060,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": false,
@@ -6035,6 +6250,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -6061,6 +6277,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -6169,6 +6386,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -6195,6 +6413,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -6303,6 +6522,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -6329,6 +6549,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -6436,6 +6657,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -6462,6 +6684,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -6570,6 +6793,7 @@
         "owner": 77,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 7
       },
       "requiresReachableState": true,
@@ -6596,6 +6820,7 @@
             "owner": 42,
             "reference": 0,
             "refundAddress": 0,
+            "submittedAt": 0,
             "tip": 0
           },
           "state": {
@@ -6673,6 +6898,9 @@
       }
     },
     {
+      "foldWitness": {
+        "validTo": 0
+      },
       "id": "DR14-register-active-claimed",
       "kind": "witness",
       "lovelace": 5,
@@ -6887,6 +7115,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -6920,9 +7149,6 @@
     },
     {
       "foldWitness": {
-        "submittedAt": [
-          10000
-        ],
         "validTo": 11000
       },
       "id": "DR15-register-at-deadline",
@@ -7134,6 +7360,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 10000,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -7162,14 +7389,11 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a",
+      "statementSha256": "4287f32ecef523de44ebf3412325fbf0a0c56865b815d45320abad2da2d174c1",
       "theorem": "Singular.Statements.fold_admission_boundary"
     },
     {
       "foldWitness": {
-        "submittedAt": [
-          10000
-        ],
         "validTo": 11001
       },
       "id": "DR16-register-past-deadline",
@@ -7203,6 +7427,7 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "submittedAt": 10000,
         "tip": 0
       },
       "requiresReachableState": false,
@@ -7231,22 +7456,86 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "df18f10616d3a3adc8c356bd89d81076b1e256c13bde0dfaa539871d96833f1a",
+      "statementSha256": "4287f32ecef523de44ebf3412325fbf0a0c56865b815d45320abad2da2d174c1",
+      "theorem": "Singular.Statements.fold_admission_boundary"
+    },
+    {
+      "id": "DR17-register-without-witness",
+      "kind": "mutant",
+      "lovelace": 5,
+      "mutates": "DR15-register-at-deadline",
+      "observations": null,
+      "operation": "insertActive",
+      "outcome": "unsupported",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": "fold-without-witness",
+      "request": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 55,
+        "edge": "insertActive",
+        "key": 42,
+        "namesDatum": false,
+        "output": 555,
+        "owner": 42,
+        "reference": 0,
+        "refundAddress": 0,
+        "submittedAt": 10000,
+        "tip": 0
+      },
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 1000,
+          "retractTime": 500,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "4287f32ecef523de44ebf3412325fbf0a0c56865b815d45320abad2da2d174c1",
       "theorem": "Singular.Statements.fold_admission_boundary"
     }
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "242df2f3c6b6ee0d595ddc3d49a2373454b2f2835532c2f689293dee7cb2aa8f",
-    "lean/Main.lean": "1fad63f235752db8296d83ffa99f8f5077983e3cb0b86d3a57ba6f00cbf8b07b",
+    "lean/DriverMain.lean": "8568e24ed12ecb240764a2ba24a645a7382587aa1fd48cd93dd355e54e753acd",
+    "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "bd305fd3c82c6f707eb56962d27f1910d5c9eef48b8d36d56fd85c7d66189e7f",
+    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
-    "lean/Singular/Model.lean": "7e023f650a9ec416e148be52f035902bc97bfa5fe4449febe2caeb5f114dd8c4",
-    "lean/Singular/Statements.lean": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4"
+    "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
+    "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
   },
-  "statementsSha256": "c8c822cb78e80553e8c574d4ba73f14c04ad5a3ece7a272f805ff32b83639df4",
+  "statementsSha256": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a",
   "surface": {
     "batchQuestions": {
       "foldBatch": [
@@ -7308,5 +7597,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "6e5b66401eeb8368166329369ab31a780e189950ed805003144c7c95c73e3c67"
+  "theoremManifestSha256": "ee3d874312665971070ae7cd34e4353230aa7be51c8d413b1c04e17c0885cf19"
 }
