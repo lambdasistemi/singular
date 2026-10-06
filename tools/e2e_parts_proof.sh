@@ -11,8 +11,13 @@
 set -euo pipefail
 parts="$1"
 count() {
-  nix run --quiet .#cage-tests-e2e -- --dry-run "$@" 2>/dev/null \
-    | awk '/ examples?, /{n=$1} END{print n+0}'
+  local out
+  if ! out="$(nix run --quiet .#cage-tests-e2e -- --dry-run "$@" 2>&1)"; then
+    echo "FAIL: the dry run itself failed (args: $*):" >&2
+    printf '%s\n' "$out" | tail -20 >&2
+    exit 1
+  fi
+  printf '%s\n' "$out" | awk '/ examples?, /{n=$1} END{print n+0}'
 }
 total="$(count)"
 [ "$total" -gt 0 ] || { echo "FAIL: the full suite selects no example"; exit 1; }
