@@ -3,22 +3,21 @@
 As a maintainer, I want one trie-state backend that rebuilds a registry's trie
 from its full public history at every selection, so that commands get the
 chain's trie without any actor's local copy. Read the [stories](spec.md) first,
-then the [decisions awaiting intake acceptance](decisions.md). The frozen base
-is `34804370`, the accepted intake head of
-[the provider interface ticket's PR](https://github.com/lambdasistemi/singular/pull/390),
-itself stacked on [the recovery PR](https://github.com/lambdasistemi/singular/pull/382).
-Only this ticket's planning commits sit above that base.
+then the [decisions](decisions.md). The pure replay, the exclusion of failed
+transactions and the named refusals are on main
+([PR 391](https://github.com/lambdasistemi/singular/pull/391)). The commands slice
+starts from main at `2cafe6b2`, where the provider ticket published
+`Session.history` ([PR 410](https://github.com/lambdasistemi/singular/pull/410)).
 
 ## The contract consumed
 
 As this backend's author, I implement the provider ticket's `TrieState m` and
-`TrieSnapshot m` and call its `Session w m` history. These are the shapes
-proposed in [its plan](../383-provider-interfaces/plan.md#proposed-capability-types).
-They are not yet compiled. Nothing here changes them.
+`TrieSnapshot m` and call its `Session w m` history, as published on main.
+Nothing here changes them.
 
 | Consumed from the provider ticket | Used for |
 | --- | --- |
-| `history :: Asset -> HistoryRange -> m (Either HistoryFailure ReconstructionMaterial)` | The state token's transactions from `create`: transaction CBOR with resolved spent and reference outputs |
+| `history :: Asset -> HistoryRange -> m (Either HistoryFailure (HistoryStream m))` | The state token's transactions from `create`, as whole blocks in ascending height: transaction CBOR with resolved spent, reference and created outputs |
 | `withTrieState :: TrieSelection -> (TrieSnapshot m -> m a) -> m (Either TrieFailure a)` | Replay to the selected state output, then serve one snapshot |
 | `leafAt`, `membership`, `nonMembership`, `speculateEdges` | Read from, and speculate over, the rebuilt in-memory trie |
 | `trieCoverage :: CompleteFromCreate` | Built only after a replay reaches the selection from `create` |
@@ -46,9 +45,12 @@ flowchart TD
   More -->|Stops at| Selected[Selected state output]
 ```
 
-The history call returns the transactions that touched the state token, with
-pagination resolved by the provider ticket's adapter. The replay chains them by
-what they spend:
+The history call streams the transactions that carried the state token as whole
+blocks in ascending height. Within a block, a transaction that spends an
+asset-carrying output created in the same block follows its creator; a cycle, a
+missing in-block parent and a double spend are the provider's named refusals.
+Pages never reach the replay. The replay still chains the transactions by what
+they spend:
 
 - **Create** is the one transaction that mints the token under `Minting(seed)`,
   spends that seed, and names the token `assetName(seed)`. Its first output
@@ -195,8 +197,7 @@ its state computed from receipts. Uncovered rows remain visible.
 As the epic owner, I receive this intake before authorising execution. This
 seat writes planning and PR metadata only; no code, tests or gates change here.
 Each page has its speech extracted by mkdocs-speech and stamped against its
-bytes, within 24 KiB and 300 lines. The next phase begins only after an inbox
-acceptance naming the intake SHA. Then the commit owner is Claude
-claude-opus-5-5 with high effort, and the mute auditor is Codex gpt-6.1-sol with
-high reasoning in its own detached audit worktree, both in this ticket's tmux
-window. No other seats are authorised. The epic owner verifies and merges.
+bytes, within 24 KiB and 300 lines. Each slice runs one commit owner and one mute
+auditor in its own detached audit worktree, with the models the operator names
+(see the [decisions](decisions.md#sequencing-and-staffing)), both in this
+ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.

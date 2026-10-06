@@ -103,7 +103,7 @@
       "pause": 500
     },
     {
-      "text": "As this backend's author, I implement the provider ticket's TrieState m and TrieSnapshot m and call its Session w m history. These are the shapes proposed in its plan. They are not yet compiled. Nothing here changes them.",
+      "text": "As this backend's author, I implement the provider ticket's TrieState m and TrieSnapshot m and call its Session w m history, as published on main. Nothing here changes them.",
       "pause": 400
     },
     {
@@ -161,7 +161,7 @@
       "pause": 400
     },
     {
-      "text": "The history call returns the transactions that touched the state token, with pagination resolved by the provider ticket's adapter. The replay chains them by what they spend:",
+      "text": "The history call streams the transactions that carried the state token as whole blocks in ascending height. Within a block, a transaction that spends an asset-carrying output created in the same block follows its creator; a cycle, a missing in-block parent and a double spend are the provider's named refusals. Pages never reach the replay. The replay still chains the transactions by what they spend:",
       "pause": 400
     },
     {
@@ -183,12 +183,12 @@
       "pause": 500
     },
     {
-      "text": "As the epic owner, I receive this intake before authorising execution. This seat writes planning and PR metadata only; no code, tests or gates change here. Each page has its speech extracted by mkdocs-speech and stamped against its bytes, within 24 KiB and 300 lines. The next phase begins only after an inbox acceptance naming the intake SHA. Then the commit owner is Claude claude-opus-5-5 with high effort, and the mute auditor is Codex gpt-6.1-sol with high reasoning in its own detached audit worktree, both in this ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.",
+      "text": "As the epic owner, I receive this intake before authorising execution. This seat writes planning and PR metadata only; no code, tests or gates change here. Each page has its speech extracted by mkdocs-speech and stamped against its bytes, within 24 KiB and 300 lines. Each slice runs one commit owner and one mute auditor in its own detached audit worktree, with the models the operator names (see the decisions), both in this ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "204e30ae8209fa9b5e4daa12100076bcf2a2f5679ec3b45feb47574c74997b55"
+    "sha256": "b723056f10c0ad8dad7fc3ef2b9ff562ad176d077001f5109d9e2e301e2b9f8c"
   }
 }
