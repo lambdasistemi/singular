@@ -946,6 +946,28 @@ test-suite cage-tests
     Paths_singular_registry
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
+    Singular.CLI.Create
+    Singular.CLI.Entry
+    Singular.CLI.Finish
+    Singular.CLI.Fold
+    Singular.CLI.FoldRules
+    Singular.CLI.FoldSpec
+    Singular.CLI.InsertEnvelope
+    Singular.CLI.InsertEnvelopeSpec
+    Singular.CLI.Inspect
+    Singular.CLI.Live
+    Singular.CLI.ManagedState
+    Singular.CLI.ManagedStateSpec
+    Singular.CLI.Outlay
+    Singular.CLI.OutlaySpec
+    Singular.CLI.Permanent
+    Singular.CLI.Plan
+    Singular.CLI.Preview
+    Singular.CLI.Proof
+    Singular.CLI.Receipt
+    Singular.CLI.ReceiptBody
+    Singular.CLI.Reclaim
+    Singular.CLI.ReclaimRules
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.TrieRefusalSpec

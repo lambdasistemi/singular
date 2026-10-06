@@ -6,6 +6,10 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
+import Singular.CLI.FoldSpec qualified
+import Singular.CLI.InsertEnvelopeSpec qualified
+import Singular.CLI.ManagedStateSpec qualified
+import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -140,6 +144,32 @@ main = hspec $ do
     describe
         (tagged "Naming.RecordValue" [Naming, Application])
         Naming.RecordValueSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.Envelope"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.EnvelopeSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.Builders"
+            [Application, Builders]
+        )
+        Singular.Application.OpenDatum.BuildersSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.Build" [Application, Builders])
+        Singular.Application.OpenDatum.BuildSpec.spec
+    describe
+        (tagged "Singular.CLI.InsertEnvelope" [Cli])
+        Singular.CLI.InsertEnvelopeSpec.spec
+    describe (tagged "Singular.CLI" [Cli]) Singular.CLISpec.spec
+    describe
+        (tagged "Singular.CLI.Outlay" [Cli])
+        Singular.CLI.OutlaySpec.spec
+    describe (tagged "Singular.CLI.Fold" [Cli]) Singular.CLI.FoldSpec.spec
+    describe
+        (tagged "Singular.CLI.ManagedState" [Cli])
+        Singular.CLI.ManagedStateSpec.spec
     describe
         (tagged "Singular.CLI.TrieRefusal" [Cli])
         Singular.CLI.TrieRefusalSpec.spec
