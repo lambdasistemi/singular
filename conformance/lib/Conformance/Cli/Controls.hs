@@ -578,7 +578,7 @@ insertionHoldingInline :: Theorem InsertionHoldingInline
 insertionHoldingInline =
     bound
         "insertion_holding_inline"
-        "00fb84e4307c41b9743c052983771844dace5a15d4a671ec9895e98d88d2b4b0"
+        "844d0d9bdbc5bae7875fcd07950bd37919dac92e588a40da79368cbd3b776a18"
 
 updateKeepsRegistry :: Theorem UpdateKeepsRegistry
 updateKeepsRegistry =
@@ -631,7 +631,7 @@ bookInsertInversion :: Theorem BookInsertInversion
 bookInsertInversion =
     bound
         "bookInsert_inversion"
-        "8fa1e83820c5041b894beed24171b08ae267128785a16a49ef4108230f691acf"
+        "52ba3e1fa9dfe4b2fb19471ab5cac3e1ef6e4aa86b928f9b7aa6aec7399f1140"
 
 insertionRequiresRegistryIdentity
     :: Theorem InsertionRequiresRegistryIdentity
