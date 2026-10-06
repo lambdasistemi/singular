@@ -41,7 +41,10 @@ subset of pending requests, and the model's `Singular.foldBatch` folds a list.
   (`edge-unsupported`), when its datum cannot be read as a request (`undecodable`), or
   when the model refuses its step from the state the requests before it in the batch leave
   (`refused-by-law`, with the model's reason). Two concurrent insertions of one key are
-  the last case: the first is folded, the second is named.
+  the last case: the first is folded, the second is named. So is a request consuming a
+  holding or a custody entry an earlier request of the same batch creates: the model
+  refuses it `token-missing` (a holding) or `not-booked` (a custody entry), and the next
+  fold settles it from the live output.
 - **The bound follows the batch.** The transaction's validity upper bound is the earliest
   deadline among the included requests, never one of an excluded request.
 - **The model governs the batch.** The included list is a batch `Singular.foldBatch`

@@ -498,7 +498,9 @@ foldPending at FoldSpec{..} = do
                             TS.leafAt snap k
                                 >>= either failTrie (pure . (k,))
                     now <- currentPosixMs
-                    let selection = selectFold now foldMarginMs (leafLaw leaves held) reads'
+                    -- No custody census: every edge consuming a custody entry is
+                    -- one this command does not fold, left before the law.
+                    let selection = selectFold now foldMarginMs (leafLaw leaves held Set.empty) reads'
                     deadlines <-
                         Map.fromList
                             <$> sequence

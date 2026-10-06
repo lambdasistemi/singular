@@ -86,9 +86,14 @@ import Singular.Registry.TxBuilder.Internal (approvalDestination, approvalName)
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
+    , edgeDeleteAbsent
+    , edgeDeleteActive
+    , edgeInsertAbsent
     , edgeInsertActive
     , edgeName
+    , edgeUpdateActive
     , edgeUpdateTerminal
+    , edgeWitnessTerminal
     )
 
 {- | The widest validity bound the library gives a fold when it cannot place
@@ -390,40 +395,78 @@ renderExclusion = \case
     Undecodable _ -> "undecodable"
     RefusedByLaw why -> "refused-by-law " <> why
 
-{- | The model's verdict on a batch of the two edges @registry fold@ folds,
-step by step, from the leaves the replayed tree holds before the fold and the
-keys whose one active holding is live: @Singular.refusal@'s reasons for an
-insertion to Active and for a termination. A key the batch inserts has no
-live holding yet, so a termination of it in the same batch is
-@token-missing@, although the model would admit it: the fold could not
-source the burn.
+{- | The model's verdict on a batch, step by step, from the leaves the replayed
+tree holds before the fold and the keys whose active holding and whose
+custody entry are live before it: @Singular.refusal@'s leaf reasons for each
+of the seven edges, over the state the steps before it leave. A holding or a
+custody entry an earlier step of the batch creates is not live: a step
+consuming it is refused, @token-missing@ for a holding and @not-booked@ for a
+custody entry, and a later fold settles it from the live output.
 -}
 leafLaw
     :: Map ByteString Leaf
     -- ^ Each key's leaf before the fold; a key not here is unknown
     -> Set ByteString
     -- ^ The keys whose one active holding is live
+    -> Set ByteString
+    -- ^ The keys whose custody entry is live
     -> [(ByteString, Edge)]
     -> Either Text ()
-leafLaw = go
+leafLaw leaves0 holdings0 custody0 = go leaves0 holdings0 custody0 Set.empty
   where
-    go _ _ [] = Right ()
-    go leaves holdings ((key, edge) : rest)
-        | edge == edgeInsertActive = case before of
-            Unknown -> go (Map.insert key Active leaves) holdings rest
+    go _ _ _ _ [] = Right ()
+    go leaves holdings custody created ((key, edge) : rest)
+        | edge == edgeWitnessTerminal = case before of
+            Terminal -> next leaves holdings custody created
+            Unknown -> Left "read-unknown"
+            Absent -> Left "read-absent"
+            Active -> Left "read-active"
+        | edge == edgeInsertAbsent = case before of
+            Unknown -> next (set Absent) holdings custody (Set.insert key created)
             _ -> Left "key-exists"
+        | edge == edgeInsertActive = case before of
+            Unknown -> next (set Active) holdings custody created
+            _ -> Left "key-exists"
+        | edge == edgeUpdateActive = case before of
+            Absent
+                | Set.member key custody ->
+                    next (set Active) holdings (Set.delete key custody) created
+                | Set.member key created -> Left "not-booked"
+                | otherwise -> Left "custody-missing"
+            Unknown -> Left "key-unknown"
+            Active -> Left "already-booked"
+            Terminal -> Left "terminal-immutable"
         | edge == edgeUpdateTerminal = case before of
             Active
                 | Set.member key holdings ->
-                    go (Map.insert key Terminal leaves) (Set.delete key holdings) rest
+                    next (set Terminal) (Set.delete key holdings) custody created
                 | otherwise -> Left "token-missing"
             Unknown -> Left "key-unknown"
             Absent -> Left "not-booked"
             Terminal -> Left "terminal-immutable"
-        | otherwise = Left ("edge " <> edgeText <> " is not folded here")
+        | edge == edgeDeleteAbsent = case before of
+            Absent
+                | Set.member key custody ->
+                    next (Map.delete key leaves) holdings (Set.delete key custody) created
+                | Set.member key created -> Left "not-booked"
+                | otherwise -> Left "custody-missing"
+            Unknown -> Left "key-unknown"
+            Active -> Left "not-absent"
+            Terminal -> Left "terminal-immutable"
+        | edge == edgeDeleteActive = case before of
+            Active
+                | Set.member key holdings ->
+                    next (Map.delete key leaves) (Set.delete key holdings) custody created
+                | otherwise -> Left "token-missing"
+            Unknown -> Left "key-unknown"
+            Absent -> Left "not-active"
+            Terminal -> Left "terminal-immutable"
+        | otherwise =
+            Left ("edge " <> T.pack (edgeName edge) <> " is not one of the seven")
       where
         before = Map.findWithDefault Unknown key leaves
-        edgeText = T.pack (edgeName edge)
+        set leaf = Map.insert key leaf leaves
+        next l h c k = go l h c k rest
 
 -- | Why a fold is not built over a selection.
 data FoldRefusal

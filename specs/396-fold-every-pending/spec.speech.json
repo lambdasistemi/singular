@@ -51,7 +51,7 @@
       "pause": 300
     },
     {
-      "text": "Exclusions are named. A pending request is left out, and named in the receipt with its reason, when its processing window has closed or closes within the fold's margin (window-closed), when its edge is one registry fold does not fold (edge-unsupported), when its datum cannot be read as a request (undecodable), or when the model refuses its step from the state the requests before it in the batch leave (refused-by-law, with the model's reason). Two concurrent insertions of one key are the last case: the first is folded, the second is named.",
+      "text": "Exclusions are named. A pending request is left out, and named in the receipt with its reason, when its processing window has closed or closes within the fold's margin (window-closed), when its edge is one registry fold does not fold (edge-unsupported), when its datum cannot be read as a request (undecodable), or when the model refuses its step from the state the requests before it in the batch leave (refused-by-law, with the model's reason). Two concurrent insertions of one key are the last case: the first is folded, the second is named. So is a request consuming a holding or a custody entry an earlier request of the same batch creates: the model refuses it token-missing (a holding) or not-booked (a custody entry), and the next fold settles it from the live output.",
       "pause": 300
     },
     {
@@ -133,6 +133,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "f6255660283b169424f2613d96adf53213e08eee6a5e1bd7f0b41fd1201dbc25"
+    "sha256": "d37db2cc4060c50cfef857023febad04cc7fbaf3645f99f3656ee233ba3bedb4"
   }
 }
