@@ -1,5 +1,10 @@
 # Off-chain API reference
 
+The deployment mirror API remains for retained deployment journeys. Ordinary
+`singular registry` commands under #381 reconstruct proof state from public
+state-token history and do not read or write that mirror or a saved-root file.
+Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.
+
 A contributor reading the builder and blueprint guide wants to click a
 module of this library and land on its real interface — signatures,
 documentation, and the highlighted source — for exactly the code this

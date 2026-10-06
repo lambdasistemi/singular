@@ -43,15 +43,15 @@
       "pause": 500
     },
     {
-      "text": "After an inclusion, a write commits locally in a fixed order: the registry's proof mirror, then state.json, then the observed line. Each file is replaced whole or not at all, so an interruption leaves the previous version or the new one, never a torn file. Wherever the interruption fell, the next ordinary command — any write, or inspect — finishes the commit from chain evidence before it does anything else, and submits nothing while doing so.",
+      "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
       "pause": 400
     },
     {
-      "text": "The edge a fold commits is applied to the mirror only from the root it was journalled to fold from, and only when the ledger already holds the root it was journalled to reach — so it is applied at most once. A mirror that commits to any other root is stale local state: it is refused, never repaired. The observation is made for the key the interrupted step concerned, whichever key the current command targets.",
+      "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
       "pause": 400
     },
     {
-      "text": "A write's receipt carries what the reconciliation did under reconciled: the transactions it journalled rolled back, those it found unresolved, those it excluded, the root it returned the mirror to after a rollback, the folds whose edge it applied, whether it brought state.json along, and the transactions it observed. inspect reports the same under rolledBack, recovery, excluded, mirrorRewound, mirrorAdvanced and observed. inspect reconciles only while no other singular process is writing to the registry; otherwise it reads without reconciling and says so.",
+      "text": "A write reports reconciliation under reconciled: rolledBack, recovery, excluded and observed. Inspect reports the same fields at the receipt's top level. Inspect reconciles only while no other process holds this directory's write lock; otherwise it reads without reconciling and says so.",
       "pause": 400
     }
   ],
@@ -65,7 +65,7 @@
       "pause": 400
     },
     {
-      "text": "For a fold, the rolled-back line also names the root the mirror returns to: the root the fold was journalled to fold from. The mirror is rebuilt from the empty trie the registry was created with, by applying in journal order the edges of the folds still on the chain, each from its journalled root before to its journalled root after; state.json follows it. If that rebuild does not reach the fold's root before, the local files are stale and the command stops stale-state, writing nothing. The rolled-back transaction is never sent again. If the chain includes it again — another node still had it — the next command journals it confirmed and reconciles it as above; otherwise every write stops on it, naming the case rolled-back.",
+      "text": "Proof state follows the public history selected by the current command, including rollbacks. The journal does not rebuild a private trie. The rolled-back transaction is never sent again. If the chain includes it again, the next command journals it confirmed and reconciles its observation; otherwise writes stop on it, naming the case rolled-back.",
       "pause": 400
     }
   ],
@@ -75,11 +75,11 @@
       "pause": 500
     },
     {
-      "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root the mirror already holds.",
+      "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root selected by fresh public replay.",
       "pause": 400
     },
     {
-      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
+      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion fold still needs the booker's envelope preimage; folding another actor's insertion remains pending under #419. A termination fold can use another actor's independent directory and public replay.",
       "pause": 400
     },
     {
@@ -105,7 +105,7 @@
       "pause": 300
     },
     {
-      "text": "included: the transaction is on chain, but its journalled edge does not take the mirror to the ledger's root. The outcome is stale-state (status 14): the local files no longer follow the chain and are not repaired.",
+      "text": "included: the transaction is on chain, but public history is incomplete or its reconstructed root does not chain. The named trie refusal preserves its existing outcome and exit status; the journal cannot repair public facts.",
       "pause": 300
     },
     {
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "607a93ad256fae57f37b9d40337a59f34eb603dba9e3ebcb9fe972b7daaaafb2"
+    "sha256": "2dfdb4ba0ecd5ab22022ae84c9a08a6b8bb9d3fc93040c9ca6b63d87882ffc00"
   }
 }

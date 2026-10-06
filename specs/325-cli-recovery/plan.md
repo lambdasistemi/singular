@@ -1,5 +1,13 @@
 # #325 plan
 
+> **Replay supersedes the former local proof state.** This record preserves the
+> #325 recovery design and its original requirement names. Under #381, ordinary
+> commands reconstruct proof state from public state-token history. They neither
+> read nor write a proof mirror or `state.json`, and the journal supplies no replay
+> edge or root. Recovery still appends submission phases and observations; public
+> history selects the trie, including after a rollback. References below to the
+> former local mirror commit are historical and are superseded by this rule.
+
 **Strategy.** Keep the #299 journal as the single record and extend it; do not introduce a second store. Recovery reads only the journal, the saved bodies and one acquired view (#323); it never submits. Rollback and exclusion are decided from chain evidence about the exact journalled transaction.
 
 **Invariants.**

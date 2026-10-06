@@ -12,8 +12,17 @@ It is a proposal. No implementation or behavioral acceptance is claimed.
 
 ## The user stories
 
-As Bob, starting with an empty registry directory and the registry's published
-identity, I prove that a key is absent and insert it. My `singular` rebuilds
+The October 6 ruling assigns the registry page and joining by state token to
+[issue #437](https://github.com/lambdasistemi/singular/issues/437). Importing a
+creator's identity file is superseded. The pre-#437 part ships a private creator
+fixture, two empty independent users and unit controls; joining and every
+subsequent CLI journey step remain pending by name. These integration stories
+remain requirements, not executed acceptance for that part.
+
+
+As Bob, starting with an empty home and registry directory and reading only
+the registry page generated from the chain and Koios, I prove a key absent and
+insert it. Alice starts the same way; neither user is the creator. My `singular` rebuilds
 the registry's trie from the transactions that moved its state token since
 `create`. Alice's mirror, journal and envelopes are never read.
 

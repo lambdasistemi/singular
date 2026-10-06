@@ -52,44 +52,33 @@ prepared once, and the journal shows exactly one `prepared` line for it.
 
 ## The next command reconciles
 
-After an inclusion, a write commits locally in a fixed order: the
-registry's proof mirror, then `state.json`, then the `observed` line.
-Each file is replaced whole or not at all, so an interruption leaves
-the previous version or the new one, never a torn file. Wherever the
-interruption fell, the next ordinary command — any write, or `inspect` —
-finishes the commit from chain evidence before it does anything else,
-and submits nothing while doing so.
+After an inclusion, the command selects its proof state from public state-token
+history and reads back the step's after-state before appending `observed`.
+The next ordinary write or `inspect` reconciles unfinished observations from
+public chain evidence before proceeding, without submitting anything. Proof
+state is reconstructed afresh; no mirror or saved-root file is read or written.
 
 ```mermaid
 flowchart TD
     J[journal: a transaction not yet observed] --> B{saved body matches its prepared line<br/>and its first output is live?}
     B -- no --> U[still unresolved]
     B -- yes --> C[journal confirmed, if not already]
-    C --> M{mirror at the fold's root before,<br/>ledger at its root after?}
-    M -- yes --> A[apply the journalled edge to the mirror, once]
-    M -- mirror already at root after --> S
-    A --> S[state.json follows the mirror]
-    S --> O[read the after-state back and journal observed,<br/>for whichever key the step concerns]
+    C --> T[reconstruct trie from public state-token history]
+    T --> O[read the step's after-state and journal observed]
     O --> P[the command proceeds]
     U --> R[a write stops before building anything,<br/>naming the transaction and its case]
 ```
 
-The edge a fold commits is applied to the mirror only from the root it
-was journalled to fold from, and only when the ledger already holds the
-root it was journalled to reach — so it is applied at most once. A
-mirror that commits to any other root is stale local state: it is
-refused, never repaired. The observation is made for the key the
-interrupted step concerned, whichever key the current command targets.
+The journal tracks this actor's submissions. It never supplies a replay edge,
+proof or root. Missing history and a root that does not chain are named
+refusals; an empty trie cannot substitute for unavailable history. The
+observation concerns the interrupted step's key, even when the current command
+targets another key.
 
-A write's receipt carries what the reconciliation did under
-`reconciled`: the transactions it journalled rolled back, those it found
-unresolved, those it excluded, the root it returned the mirror to after
-a rollback, the folds whose edge it applied, whether it brought
-`state.json` along, and the transactions it observed. `inspect` reports
-the same under `rolledBack`, `recovery`, `excluded`, `mirrorRewound`,
-`mirrorAdvanced` and `observed`. `inspect` reconciles only while no
-other `singular` process is writing to the registry; otherwise it reads
-without reconciling and says so.
+A write reports reconciliation under `reconciled`: `rolledBack`, `recovery`,
+`excluded` and `observed`. Inspect reports the same fields at the receipt's top
+level. Inspect reconciles only while no other process holds this directory's
+write lock; otherwise it reads without reconciling and says so.
 
 ## When the chain rolls back
 
@@ -106,26 +95,17 @@ flowchart TD
     I[journal: a transaction included] --> L{first output not live,<br/>an input it spends live again?}
     L -- no --> K[still included]
     L -- yes --> RB[journal rolled-back:<br/>chain point read, live inputs]
-    RB --> F{a fold?}
-    F -- yes --> W[mirror rebuilt to the fold's root before,<br/>state.json follows]
-    F -- no --> N
-    W --> N[the transaction is unresolved again]
+    RB --> N[the transaction is unresolved again]
     N --> G{included again?}
     G -- yes --> C[journal confirmed and reconcile as above]
     G -- no --> X[a write stops before building anything,<br/>naming rolled-back and the transaction]
 ```
 
-For a fold, the `rolled-back` line also names the root the mirror
-returns to: the root the fold was journalled to fold from. The mirror is
-rebuilt from the empty trie the registry was created with, by applying
-in journal order the edges of the folds still on the chain, each from
-its journalled root before to its journalled root after; `state.json`
-follows it. If that rebuild does not reach the fold's root before, the
-local files are stale and the command stops `stale-state`, writing
-nothing. The rolled-back transaction is never sent again. If the chain
-includes it again — another node still had it — the next command
-journals it `confirmed` and reconciles it as above; otherwise every
-write stops on it, naming the case `rolled-back`.
+Proof state follows the public history selected by the current command,
+including rollbacks. The journal does not rebuild a private trie. The
+rolled-back transaction is never sent again. If the chain includes it again,
+the next command journals it confirmed and reconciles its observation;
+otherwise writes stop on it, naming the case `rolled-back`.
 
 ## When a transaction can never land
 
@@ -135,20 +115,17 @@ still live — so it is not on the chain — it can never be included. The
 next command appends an `excluded` line naming the chain point it read
 and the live inputs. The transaction is settled in the journal: no
 later command stops on it, and its edge was never applied. A write that
-excluded a transaction then proceeds, building from the root the mirror
-already holds.
+excluded a transaction then proceeds, building from the root selected by fresh public replay.
 
 What the excluded transaction leaves on chain depends on the command.
 An excluded `update` leaves nothing: run it again. The fold of an
 `insert` or a `terminate` is the second of two transactions, and the
 first, its booking, is on chain: its request stays pending, holding its
-deposit. The ordinary commands have no way to fold or retract that
-request, and while it is pending every later `insert` or `terminate` on
-the registry is refused `concurrent-writer` before its fold is built — a
-rerun of the same command books a second request, with a second deposit,
-and is refused the same way. `update` and `inspect` still run. That is a
-limit of these commands: releasing the pending request needs a tool
-outside them.
+deposit. Use `registry fold` while its processing window allows it, `registry reclaim`
+with the owner's wallet in its retract window, or `registry reject` after both
+windows expire. An insertion fold still needs the booker's envelope preimage;
+folding another actor's insertion remains pending under #419. A termination
+fold can use another actor's independent directory and public replay.
 
 A fold carries an upper bound on its validity window. A booking, and the
 publications `create` makes, carry none: a booking that never landed,
@@ -174,10 +151,9 @@ last journalled phase and its case; the journal does not move.
   transaction if the chain includes it again, and excludes it once its
   validity window closes without it, with the same pending request when
   it is a fold. A booking has no window and stays rolled back.
-- `included`: the transaction is on chain, but its journalled edge does
-  not take the mirror to the ledger's root. The outcome is
-  `stale-state` (status 14): the local files no longer follow the chain
-  and are not repaired.
+- `included`: the transaction is on chain, but public history is incomplete
+  or its reconstructed root does not chain. The named trie refusal preserves
+  its existing outcome and exit status; the journal cannot repair public facts.
 
 `inspect` names the same unresolved transaction and its case, with the
 outcome `partial`, alongside the root and chain point it read.
@@ -197,14 +173,14 @@ nix run --quiet .#cli-recovery-controls
 
 | control | what happens | what the next command does |
 |---|---|---|
-| accepting | an insert completes | both submissions are named `included` and observed once; `state.json` holds the fold's root |
-| lost answer | the node accepts an insert's fold but its answer is lost | at the moment of the send the fold's prepared line and saved body are already on disk; the insert stops naming the fold `unknown`, and the next insert applies its edge once, observes it once and proceeds |
-| killed before the commit | an insert is killed once its fold is confirmed, before the mirror is saved | the next write, an update of another key, applies the edge once, brings `state.json` along and proceeds |
-| killed after the mirror | a terminate is killed once the mirror is saved, before `state.json` | the next insert applies nothing, brings `state.json` to the mirror, observes the fold and proceeds |
-| killed before the observation | an insert is killed once `state.json` is written, before its fold is observed | the next insert applies nothing, observes the fold and proceeds |
-| never sent, past its upper bound | an insert's fold never reaches the node, and the tip passes the fold's upper bound | the node reports the fold's inputs unspent; the next write, an update, journals the fold `excluded` with the chain point and those inputs, and proceeds from the root before it |
-| never sent, without an upper bound | an insert's booking never reaches the node | the next write stops before building anything, naming the booking and the case `unknown`; the journal does not move |
-| rolled back | on a second registry, an insert is observed, then the node is restarted on a copy of its database taken before the insert | the node's reads show the blocks that carried the booking and the fold gone and their inputs unspent; `inspect` journals both `rolled-back`, returns the mirror to its bytes before the insert and `state.json` to the fold's root before, and stops naming the booking; the next write stops the same way; no block the node makes carries either transaction again |
+| accepting | an insert and fold complete | both submissions are named included and observed once; inspect reconstructs the fold's root from public history |
+| lost answer | the node accepts a fold but its answer is lost | the prepared line and saved body predate the send; the next command reconstructs public state, observes the fold once and proceeds |
+| killed before the commit | a fold confirms, then its process is killed before fresh replay | the next command reconstructs public state, observes the fold once and proceeds |
+| killed before the observation | a fold's replay is checked, then its process is killed before observed | the next command reconstructs public state, observes the fold once and proceeds |
+| never sent, past its upper bound | a fold never reaches the node, and the tip passes its upper bound | the next write journals excluded with the chain point and live inputs, then proceeds from fresh public replay |
+| never sent, without an upper bound | a booking never reaches the node | the next write stops naming the booking and unknown; it neither resubmits nor invents its inclusion |
+| rolled back | the generated node restores a database copy from before an observed booking and fold | public reads show their inputs live again; the journal appends rolled-back, writes stop naming the booking and no transaction is resent |
+
 
 The rolled-back control is a mechanism of the generated development
 node — its database restored to an earlier copy — and not a fork of a

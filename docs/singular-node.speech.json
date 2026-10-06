@@ -23,6 +23,32 @@
       "pause": 400
     }
   ],
+  "two-independent-users": [
+    {
+      "text": "Two independent users.",
+      "pause": 500
+    },
+    {
+      "text": "Demo 1 is Alice and Bob using separate terminals, homes and registry directories, both starting empty. Neither user creates the registry or receives a creator's identity file. Their only registry inputs are its web page generated from the chain and Koios. A third, private creator fixture makes the development registry.",
+      "pause": 400
+    },
+    {
+      "text": "Joining by state token belongs to issue #437. Every command will derive the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Importing a creator's registry.json is superseded; no identity-file joining command is supplied here.",
+      "pause": 400
+    },
+    {
+      "text": "The packaged harness creates the registry privately and checks that both users' directories remain empty and unopened by its creator processes:",
+      "pause": 400
+    },
+    {
+      "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Cross-actor insertion folding separately remains pending under #419.",
+      "pause": 400
+    },
+    {
+      "text": "Unit controls exercise public replay, proof preparation and the existing controller and request-window decisions over component fixtures. They establish those component results; they do not establish an executed two-user CLI journey. Process access traces and directory hashes are harness evidence in an appendix.",
+      "pause": 400
+    }
+  ],
   "choosing-a-registrys-windows": [
     {
       "text": "Choosing a registry's windows.",
@@ -43,7 +69,7 @@
       "pause": 500
     },
     {
-      "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+      "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the live registry root does not change.",
       "pause": 400
     },
     {
@@ -51,7 +77,7 @@
       "pause": 400
     },
     {
-      "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
+      "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet. It records its own submission in its journal and reconstructs the resulting trie from public history:",
       "pause": 400
     },
     {
@@ -81,7 +107,7 @@
       "pause": 400
     },
     {
-      "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
+      "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The next command reconstructs that root from public history. The next request can be booked and folded normally.",
       "pause": 400
     }
   ],
@@ -91,7 +117,7 @@
       "pause": 500
     },
     {
-      "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
+      "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the live registry root does not change.",
       "pause": 400
     },
     {
@@ -195,7 +221,7 @@
       "pause": 500
     },
     {
-      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+      "text": "You never set these. The released singular reads nine environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
       "pause": 400
     },
     {
@@ -209,6 +235,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "717347d3b1d17000d347e6bf4c5c30d695d6602c0ef29be63f06731b7ca14d42"
+    "sha256": "ca1962193250e9d17045d85a83be7f4e2184556d052b31c7ef00e87d8785402a"
   }
 }

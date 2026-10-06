@@ -23,7 +23,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--registry DIR` | all eight | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--registry DIR` | all eight | Your directory for one registry: its public identity, your submission journal and your own insertion preimages. `create` initialises it. Commands reconstruct proof state from public history, without a persisted mirror or saved root. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
@@ -56,6 +56,38 @@ singular registry insert --registry ./reg --blueprint plutus.json \
   --wallet-skey ~/keys/payment.skey
 ```
 
+## Two independent users
+
+Demo 1 is Alice and Bob using separate terminals, homes and registry directories,
+both starting empty. Neither user creates the registry or receives a creator's
+identity file. Their only registry inputs are its web page generated from the
+chain and Koios. A third, private creator fixture makes the development registry.
+
+Joining by state token belongs to
+[issue #437](https://github.com/lambdasistemi/singular/issues/437). Every command
+will derive the seed, pins, windows, tip and reference outputs from the state
+token, state datum and release. Importing a creator's `registry.json` is
+superseded; no identity-file joining command is supplied here.
+
+The packaged harness creates the registry privately and checks that both users'
+directories remain empty and unopened by its creator processes:
+
+```sh
+nix run --quiet .#registry-two-actors
+```
+
+Joining is a named pending integration point under #437. Every dependent step
+is published as pending: both insertions, reciprocal termination folds, reject,
+reclaim, controller refusals, matching roots and history controls. No copied
+identity or fabricated joined directory substitutes for that integration.
+Once #437 is available, the complete journey can be connected to its actual command
+interface. Cross-actor insertion folding separately remains pending under #419.
+
+Unit controls exercise public replay, proof preparation and the existing
+controller and request-window decisions over component fixtures. They establish
+those component results; they do not establish an executed two-user CLI journey.
+Process access traces and directory hashes are harness evidence in an appendix.
+
 ## Choosing a registry's windows
 
 As a registry creator, you choose the processing and retract windows when you
@@ -79,7 +111,7 @@ An `insert` or a `terminate` books a request and stops. The request waits at
 the registry; the command's receipt names it, the booking's transaction, and
 the fold deadline — the request's submission time plus the registry's
 processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the
-registry's root, its mirror and its saved state do not move.
+live registry root does not change.
 
 `registry fold` folds that request. It is an ordinary command: it signs and
 funds with the wallet it is given, journals its own transactions, and may be
@@ -97,8 +129,9 @@ sequenceDiagram
 ```
 
 The requester books with its wallet. The folder reads that pending request,
-then builds, signs and funds the fold with the folder's wallet; the saved
-registry journal, mirror and state follow the observed fold:
+then builds, signs and funds the fold with the folder's wallet. It records
+its own submission in its journal and reconstructs the resulting trie from
+public history:
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -110,7 +143,7 @@ sequenceDiagram
     Note over W: Build and sign fold
     W->>P: Submit fold
     W->>P: Confirm exact output
-    Note over W: Journal and mirror
+    Note over W: Journal observation and public replay
 ```
 
 The registry's fold takes every pending request, so a fold is built only while
@@ -167,8 +200,8 @@ receipt names the request, retract transaction, actual locked value,
 owner, return address and output, returned value and any minimum-output top-up.
 It does not assume a protected holding deposit ever reached the request.
 After confirmation, it reads back the consumed request, exact return output and
-unchanged registry root before journalling `observed`. The mirror and `state.json`
-do not move. The next request can be booked and folded normally.
+unchanged registry root before journalling `observed`. The next command
+reconstructs that root from public history. The next request can be booked and folded normally.
 
 ## Rejecting expired requests
 
@@ -177,8 +210,7 @@ pending, and the registry's fold, which takes every pending request, is
 blocked behind it. `registry reject` clears it. It is an ordinary command: it
 signs and funds with the wallet it is given and journals its own transactions.
 It rejects every pending request in one transaction, using the registry's
-published reference scripts, and the registry's root, its mirror and its saved
-state do not move.
+published reference scripts, and the live registry root does not change.
 
 A request is rejected only once it is past both its windows: the processing
 window, in which the registry's fold may take it, and the retract window after
@@ -365,7 +397,7 @@ refusal and must not become an empty registry.
 
 ## Harness appendix: test hooks
 
-You never set these. The released `singular` reads eleven environment
+You never set these. The released `singular` reads nine environment
 variables whose only purpose is to let the project's own tests stop a
 command at an exact point — to inspect it there, kill it there, or make it
 meet no answer from the provider — and check what it leaves behind. When none
@@ -402,10 +434,8 @@ flowchart TB
 | `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
 | `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the provider's acceptance of a submission journalled |
 | `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
-| `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
-| `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
-| `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold committed locally, its observation not yet journalled |
-| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND` | a rollback journalled, the mirror not yet rebuilt |
-| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE` | the mirror rebuilt by a rollback, the saved state not yet following |
+| `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold confirmed, before reconstructing fresh public proof state |
+| `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold's public replay checked, its observation not yet journalled |
 | `SINGULAR_HARNESS_DROP_SEND` | names a step whose send does not happen |
 | `SINGULAR_HARNESS_DROP_ANSWER` | names a step whose provider answer is discarded after the send |
+| `SINGULAR_HARNESS_TRIE_TRACE` | records the actual public trie capability boundary for harness receipts; it supplies no trie or root |
