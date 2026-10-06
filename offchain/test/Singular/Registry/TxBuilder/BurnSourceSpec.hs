@@ -1818,15 +1818,16 @@ for the two chosen. Folding all three is the control: the bound moves to 975.
 selectedFold :: Spec
 selectedFold = describe "a fold over chosen pending requests" $ do
     it
-        "spends the state and exactly the chosen requests, bounded by their earliest deadline" $ do
-        tx <- buildSelected (fst first NE.:| [fst third])
-        let body = tx ^. bodyTxL
-            ValidityInterval _ upper = body ^. vldtTxBodyL
-            spent = body ^. inputsTxBodyL
-        Set.member stateIn spent `shouldBe` True
-        filter (`elem` map fst waiting) (Set.toList spent)
-            `shouldBe` [fst first, fst third]
-        upper `shouldBe` SJust (SlotNo 985)
+        "spends the state and exactly the chosen requests, bounded by their earliest deadline"
+        $ do
+            tx <- buildSelected (fst first NE.:| [fst third])
+            let body = tx ^. bodyTxL
+                ValidityInterval _ upper = body ^. vldtTxBodyL
+                spent = body ^. inputsTxBodyL
+            Set.member stateIn spent `shouldBe` True
+            filter (`elem` map fst waiting) (Set.toList spent)
+                `shouldBe` [fst first, fst third]
+            upper `shouldBe` SJust (SlotNo 985)
     it "bounds a fold over every pending request by the earliest of all" $ do
         tx <- buildSelected (NE.fromList (map fst waiting))
         let body = tx ^. bodyTxL

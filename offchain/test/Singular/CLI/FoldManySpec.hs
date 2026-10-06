@@ -484,14 +484,15 @@ refusals = describe "the fold it refuses" $ do
                 `shouldBe` Left (NamedNotIncluded b (Just (WindowClosed (-3_000))))
             let d = outRef 'd' 0
             foldRequests (Just d) two `shouldBe` Left (NamedNotIncluded d Nothing)
-    it "refuses nothing-to-fold, naming every request it leaves" $ do
+    it
+        "refuses nothing-to-fold, naming every request it leaves, and a named one by its own reason" $ do
         foldRequests Nothing (FoldSelection [] [])
             `shouldBe` Left (NothingToFold [])
         let left = [(a, WindowClosed (-1)), (b, RefusedByLaw "key-exists")]
         foldRequests Nothing (FoldSelection [] left)
             `shouldBe` Left (NothingToFold left)
         foldRequests (Just a) (FoldSelection [] left)
-            `shouldBe` Left (NothingToFold left)
+            `shouldBe` Left (NamedNotIncluded a (Just (WindowClosed (-1))))
     it "words each refusal with what it names" $ do
         let txt = T.unpack . renderOutRef
         renderFoldRefusal (NothingToFold [])
@@ -830,8 +831,9 @@ reconciliation = describe "reconciliation covers every included request" $ do
                 fmap (T.isInfixOf w) (journalDetail =<< headOrNothing seen)
                     `shouldBe` Just True
     it
-        "does not observe it while one included key has not reached its after-state" $
-        withSystemTempDirectory "fold-observe" $ \dir -> do
+        "does not observe it while one included key has not reached its after-state"
+        $ withSystemTempDirectory "fold-observe"
+        $ \dir -> do
             verdicts <-
                 observe
                     "update"
@@ -851,8 +853,9 @@ reconciliation = describe "reconciliation covers every included request" $ do
             map (map isRight . snd) verdicts `shouldBe` [[False, True, True]]
             observedLines dir >>= (`shouldBe` [])
     it
-        "reads a key the batch moves twice against its last transition only" $
-        withSystemTempDirectory "fold-observe" $ \dir -> do
+        "reads a key the batch moves twice against its last transition only"
+        $ withSystemTempDirectory "fold-observe"
+        $ \dir -> do
             let twice =
                     chainTransitions
                         (root 0)
@@ -879,7 +882,7 @@ reconciliation = describe "reconciliation covers every included request" $ do
                     (Just (reader True))
                     [recovery (stateAt 3) (prepared "t3" twice)]
             map (map isRight . snd) verdicts `shouldBe` [[True, True, True]]
-            map journalTxId <$> observedLines dir >>= (`shouldBe` ["t3"])
+            observedLines dir >>= (`shouldBe` ["t3"]) . map journalTxId
             stale <-
                 observe
                     "update"
@@ -888,8 +891,9 @@ reconciliation = describe "reconciliation covers every included request" $ do
                     [recovery (stateAt 3) (prepared "t4" twice)]
             map (map isRight . snd) stale `shouldBe` [[True, False, True]]
     it
-        "still observes a fold journalled before batches, as a batch of one" $
-        withSystemTempDirectory "fold-observe" $ \dir -> do
+        "still observes a fold journalled before batches, as a batch of one"
+        $ withSystemTempDirectory "fold-observe"
+        $ \dir -> do
             let old =
                     (blank "t0" "prepared")
                         { journalKey = Just (hex keyA)
@@ -901,23 +905,24 @@ reconciliation = describe "reconciliation covers every included request" $ do
             verdicts <-
                 observe "update" dir (Just (reader True)) [recovery (stateAt 1) old]
             map (map isRight . snd) verdicts `shouldBe` [[True, True]]
-            map journalTxId <$> observedLines dir >>= (`shouldBe` ["t0"])
+            observedLines dir >>= (`shouldBe` ["t0"]) . map journalTxId
     it
-        "returns every included request to pending and restores the root before" $ do
-        let p = prepared "t1" ts
-            tip = TipObservation (SlotNo 7) (BS.replicate 32 0) 1 0
-            line =
-                rolledBackLine
-                    "update"
-                    (blank "t1" "observed")
-                    (Just p)
-                    [outRef 'a' 0, outRef 'b' 0, outRef '5' 0]
-                    tip
-        journalEvent line `shouldBe` "rolled-back"
-        journalTransitions line `shouldBe` Just ts
-        map transitionRequest (foldTransitions line)
-            `shouldBe` map Just ["aa#0", "bb#0"]
-        journalRootBefore line `shouldBe` Just (root 0)
+        "returns every included request to pending and restores the root before"
+        $ do
+            let p = prepared "t1" ts
+                tip = TipObservation (SlotNo 7) (BS.replicate 32 0) 1 0
+                line =
+                    rolledBackLine
+                        "update"
+                        (blank "t1" "observed")
+                        (Just p)
+                        [outRef 'a' 0, outRef 'b' 0, outRef '5' 0]
+                        tip
+            journalEvent line `shouldBe` "rolled-back"
+            journalTransitions line `shouldBe` Just ts
+            map transitionRequest (foldTransitions line)
+                `shouldBe` map Just ["aa#0", "bb#0"]
+            journalRootBefore line `shouldBe` Just (root 0)
   where
     headOrNothing (x : _) = Just x
     headOrNothing [] = Nothing

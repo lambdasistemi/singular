@@ -440,13 +440,15 @@ foldRequests
     :: Maybe TxIn
     -> FoldSelection
     -> Either FoldRefusal (NonEmpty SelectedRequest)
-foldRequests named s = case nonEmpty (selIncluded s) of
-    Nothing -> Left (NothingToFold (selExcluded s))
-    Just taken -> case named of
-        Just r
-            | r `notElem` map srInput (selIncluded s) ->
-                Left (NamedNotIncluded r (lookup r (selExcluded s)))
-        _ -> Right taken
+foldRequests named s = case named of
+    Just r
+        | r `notElem` map srInput (selIncluded s) ->
+            Left (NamedNotIncluded r (lookup r (selExcluded s)))
+    _ ->
+        maybe
+            (Left (NothingToFold (selExcluded s)))
+            Right
+            (nonEmpty (selIncluded s))
 
 -- | One line naming the refusal.
 renderFoldRefusal :: FoldRefusal -> String

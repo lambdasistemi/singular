@@ -61,7 +61,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM, forM_, unless, when)
+import Control.Monad (forM, forM_, unless, when, (>=>))
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
@@ -546,9 +546,9 @@ foldPending at FoldSpec{..} = do
                     narrateSelection building steps
                     let moves = fmap (move . stSelected) steps
                     rootsAfter <- withTrie (atTrie at) $ \snap ->
-                        forM (NE.toList (NE.inits1 moves)) $ \prefix ->
-                            TS.speculateEdges snap prefix
-                                >>= either
+                        forM (NE.toList (NE.inits1 moves)) $
+                            TS.speculateEdges snap
+                                >=> either
                                     ( \why ->
                                         stop'
                                             ClientRefusal
