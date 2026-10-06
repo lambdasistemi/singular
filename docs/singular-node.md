@@ -282,6 +282,8 @@ private source control, not a promise that every remote service detects all
 missing history. Missing or inconsistent registry reconstruction remains a
 refusal and must not become an empty registry.
 
+<a id="test-harness-hooks"></a>
+
 ## Harness appendix: test hooks
 
 You never set these. The released `singular` reads eleven environment
