@@ -247,7 +247,7 @@ unknownToken = (PolicyID stateHash, assetOf (T.replicate 64 "0"))
 
 fixtures :: IO FixtureSet
 fixtures =
-    loadFixtureSet "test/fixtures/koios/preprod-references"
+    loadFixtureSet "test/fixtures/koios/preprod"
         >>= either (fail . show) pure
 
 client :: FixtureSet -> Client.Koios IO

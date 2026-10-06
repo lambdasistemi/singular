@@ -13,7 +13,7 @@ module Singular.Registry.SessionEvidence
 
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Core (eraProtVerHigh)
-import Data.Aeson (ToJSON (..), Value, object, (.=))
+import Data.Aeson (ToJSON (..), Value (Null), object, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.List.NonEmpty qualified as NE
@@ -139,6 +139,11 @@ observeSession verifier sink session =
                 ("Script credential registration: " <> Text.pack (show script))
                 toJSON
                 (scriptRegistered session script)
+        , mintRecord = \asset ->
+            observed
+                ("Mint record: " <> Text.pack (show asset))
+                mintJson
+                (mintRecord session asset)
         , history = \asset range -> do
             result <- history session asset range
             case result of
@@ -190,6 +195,14 @@ observeSession verifier sink session =
                         Left failure -> pure (Left failure)
                         Right _ -> pure (Right (Just (block, observedStream query rest)))
     historyQuery asset range = "Asset history: " <> Text.pack (show (asset, range))
+    mintJson = \case
+        Nothing -> object ["mintRecord" .= Null]
+        Just record ->
+            object
+                [ "mintTransaction" .= show (mintTransaction record)
+                , "spentInputs" .= map show (mintSpentInputs record)
+                , "supply" .= mintSupply record
+                ]
     tipJson tip =
         object
             [ "slot" .= observedSlot tip

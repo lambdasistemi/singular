@@ -79,9 +79,10 @@ module Singular.Provider.Koios.Client
 import Data.Aeson (Value)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.Foldable (toList)
 import Data.List (find)
 import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -112,27 +113,33 @@ import Singular.Provider.Koios.Wire
     , UtxoInfo
     , accountInfoRequest
     , addressUtxosRequest
+    , assetInfoRequest
     , assetTxsRequest
     , assetUtxosRequest
     , cliProtocolParamsRequest
     , decodeAccountStatuses
+    , decodeAssetInfos
     , decodeAssetTxs
     , decodeCliProtocolParams
     , decodeEpochParams
+    , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
     , decodeTxCbors
     , decodeTxInfos
     , decodeTxStatuses
+    , decodeUtxoInfos
     , decodeUtxos
     , epochParamsRequest
     , parseBody
+    , referenceScriptUtxosRequest
     , renderRewardAccount
     , submitTxRequest
     , tipRequest
     , txCborRequest
     , txInfoRequest
     , txStatusRequest
+    , utxoInfoRequest
     )
 import Singular.Registry.Signing (SignedTx, signedTx)
 
@@ -687,11 +694,11 @@ referenceScriptUtxos
     => Koios m
     -> NonEmpty ScriptHash
     -> m (Either ClientFailure [(ScriptHash, TxIn)])
-referenceScriptUtxos _ _ =
-    pure
-        ( Left
-            (failing CallReferenceScriptUtxos 0 (NotRecorded "not implemented"))
-        )
+referenceScriptUtxos k hashes =
+    paged
+        k
+        (referenceScriptUtxosRequest (toList hashes))
+        decodeReferenceScriptUtxos
 
 -- | Whether each named output is spent, as Koios reports it.
 utxoInfo
@@ -699,8 +706,9 @@ utxoInfo
     => Koios m
     -> NonEmpty TxIn
     -> m (Either ClientFailure [UtxoInfo])
-utxoInfo _ _ =
-    pure (Left (failing CallUtxoInfo 0 (NotRecorded "not implemented")))
+utxoInfo k references =
+    fmap snd
+        <$> single k (utxoInfoRequest (toList references)) decodeUtxoInfos
 
 -- | The asset's latest minting transaction and supply, or no row.
 assetInfo
@@ -708,5 +716,6 @@ assetInfo
     => Koios m
     -> (PolicyID, AssetName)
     -> m (Either ClientFailure (Maybe AssetInfo))
-assetInfo _ _ =
-    pure (Left (failing CallAssetInfo 0 (NotRecorded "not implemented")))
+assetInfo k asset =
+    fmap (listToMaybe . snd)
+        <$> single k (assetInfoRequest asset) decodeAssetInfos
