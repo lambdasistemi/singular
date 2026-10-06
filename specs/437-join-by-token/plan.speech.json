@@ -1,0 +1,62 @@
+{
+  "a-registry-joined-from-its-state-token-plan": [
+    {
+      "text": "A registry joined from its state token: plan.",
+      "pause": 500
+    },
+    {
+      "text": "Read the spec for the requirements. The design was ruled in two rounds on 2026-10-06: the identity, the page, existing registries and the Lean impact were accepted as proposed; references became a convenience found by hash, with no on-chain lock. The provider query takes the shape decided by the Lockness epic owner (lockness#39).",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The registry's identity moves from a file to a derivation. One library module resolves a state token into everything a command needs and refuses by name when the chain disagrees with the release. References are found by script hash, through a new provider query. The saved identity (registry.json) and its checks are deleted in the same slice that stops reading them.",
+      "pause": 400
+    }
+  ],
+  "vertical-slices": [
+    {
+      "text": "Vertical slices.",
+      "pause": 500
+    },
+    {
+      "text": "The second and third slices are independent of each other. Each slice runs one commit owner and one mute persistent auditor, and is pushed only as an approved candidate. If a slice runs long, its green checkpoint is integrated and the rest is split into a follow-up.",
+      "pause": 400
+    }
+  ],
+  "live-boundaries-and-evidence": [
+    {
+      "text": "Live boundaries and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "There are no preprod writes and no new registry.",
+      "pause": 400
+    }
+  ],
+  "coordination": [
+    {
+      "text": "Coordination.",
+      "pause": 500
+    },
+    {
+      "text": "#381 separate actors (draft PR #433) consumes this path: no identity record and no join command. Its two-actor journey uses --state-token. #419 changes the request format. There is no blueprint conflict, because this ticket changes no script. preimages/ stays #419's scope.",
+      "pause": 400
+    }
+  ],
+  "ceilings": [
+    {
+      "text": "Ceilings.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "c39ede5c787999da7e685c9a751ff52c01af7e3422ebfbcbebc0eaea52d73ebd"
+  }
+}

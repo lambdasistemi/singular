@@ -1,0 +1,79 @@
+# A registry joined from its state token: modules model
+
+Only new or changed modules are listed. Fields are in the [data model](data-model.md) and
+signatures in the [functions model](functions-model.md). Dependencies point downward: the CLI
+depends on the registry library, and the library depends on the provider interface.
+
+## The provider interface
+
+`offchain/local-services/Singular/Registry/LedgerProvider.hs`, used by every slice.
+
+- **Existence query for reference scripts.** It answers "live outputs carrying reference script H"
+  (#439). This is a new kind of output query, so it composes with the existing ones.
+- **Mint record of an asset.** It gives the minting transaction, the inputs that transaction spent,
+  and the current supply.
+- **Witness handling.** Both answers carry the session's witness type. A provider without
+  witnesses answers them unverified.
+
+## The Koios instance
+
+`offchain/lib/Singular/Provider/Koios/` (wire, client, provider, fixtures), used by every slice.
+
+- **Existence query.** Answered from `reference_script_utxos`. Each candidate's exact output comes
+  from `tx_cbor` of its producing transaction, and `utxo_info` reports whether it is spent.
+- **Mint record.** Answered from `asset_info` and `tx_info`.
+- **Recorded fixtures.** They cover a hit, an empty answer, a spent candidate, and a candidate whose
+  output carries a script other than the one its hash field claims.
+
+## The development-network Koios facade
+
+`offchain/private-facade/Singular/Registry/Private/Facade.hs`, used by every slice.
+
+- **New endpoints.** It serves `reference_script_utxos`, `utxo_info` and `asset_info`, answered
+  from the devnet ledger, so devnet runs exercise the same client path as preprod.
+
+## Registry identity and references
+
+A new library module under `offchain/lib/Singular/Registry/`, introduced in slice 1. It owns the
+whole derivation from a state token.
+
+- **The resolver.** It applies the identity checks and named refusals of the [spec](spec.md).
+- **Expected script hashes.** It derives the six expected hashes from the release and the token.
+- **Reference search.** It finds references through the three sources, applies the local hash
+  check, and picks deterministically.
+- **Ownership.** It replaces resolution by saved output reference, which is deleted from
+  `Singular/Registry/Deployment/Attach.hs`. The `Deployment` manifest stays only for the
+  `offchain/deployment` and `offchain/journey` tools.
+- **Placement.** It sits in the library, not in the CLI, so the library tests and `describe` share
+  one implementation.
+
+## The CLI
+
+`offchain/cli/src/Singular/CLI/`.
+
+- **`Registry`.** Loses the saved identity: `RegistryConfig`, `registry.json` reading and writing,
+  `checkWallet`, and `checkPins` against a record. It keeps the release loader, the pending identity
+  used during `create`, and the refusal to create over an existing journal or pending identity.
+- **`Live`, `Attached`, `Inspect`, `Preview`.** Build their view from the resolver instead of the
+  saved identity.
+- **`Command`.** Adds `--state-token` (with `SINGULAR_STATE_TOKEN`) and `--reference-hint`. In
+  slice 2 it also adds `--publish-references` and the two reference commands. In slice 3 it adds
+  `describe`.
+- **`Create`.**
+  - It finds the state reference through the resolver's reference search.
+  - It checks the funding for every publication before the boot (#406).
+  - It writes no `registry.json` and prints the state token.
+- **Slice 2: coin selection and the reference commands.** Coin selection in the wallet funding path
+  skips outputs that carry a reference script. A reference-command module owns
+  `publish-references` and `retire-references`.
+- **Slice 3: the page.** A `describe` module renders the page from the resolver, the replay and
+  the release.
+
+## Demo scripts, CI apps and docs
+
+`tools/demo1_*.sh`, `flake.nix` apps, and `docs/` and `onchain-release/` pages that mention
+`registry.json`.
+
+- **Demo scripts.** They pass the state token instead of sharing a registry directory. Each actor
+  starts from an empty directory.
+- **Pages.** Updated in the slice that changes their subject, with stamped speech files.

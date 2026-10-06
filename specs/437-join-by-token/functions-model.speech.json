@@ -1,0 +1,56 @@
+{
+  "a-registry-joined-from-its-state-token-functions-model": [
+    {
+      "text": "A registry joined from its state token: functions model.",
+      "pause": 500
+    },
+    {
+      "text": "This file lists only new or changed signatures. The names are proposals for the commit owner. A signature change goes back to the ticket owner as a challenge. Types refer to the data model.",
+      "pause": 400
+    }
+  ],
+  "provider-interface": [
+    {
+      "text": "Provider interface.",
+      "pause": 500
+    },
+    {
+      "text": "OutputQuery gains the constructor CarryingReferenceScript ScriptHash. It is answered by the existing outputs session field with the same Evidenced w Outputs shape. Session gains the field mintRecord :: Asset -> m (Either ReadFailure (Evidenced w (Maybe MintRecord))). Argument: asset.",
+      "pause": 400
+    }
+  ],
+  "koios-client": [
+    {
+      "text": "Koios client.",
+      "pause": 500
+    },
+    {
+      "text": "referenceScriptUtxos :: KoiosClient -> NonEmpty ScriptHash -> IO (Either KoiosError [(ScriptHash, TxIn)]) Arguments: client, scriptHashes. utxoInfo :: KoiosClient -> NonEmpty TxIn -> IO (Either KoiosError [UtxoInfo]) Arguments: client, outputReferences. assetInfo :: KoiosClient -> Asset -> IO (Either KoiosError (Maybe AssetInfo)) Arguments: client, asset.",
+      "pause": 400
+    }
+  ],
+  "registry-identity-and-references": [
+    {
+      "text": "Registry identity and references.",
+      "pause": 500
+    },
+    {
+      "text": "parseStateToken :: Text -> Either Text Asset Argument: spelling. expectedReferences :: Release -> Asset -> Map ReferenceRole ScriptHash Arguments: release, stateToken. Total over every role. resolveRegistry :: Monad m => Release -> Asset -> Session w m -> m (Either IdentityRefusal ResolvedRegistry) Arguments: release, stateToken, session. Applies the refusals in the data model's order. No file access. carriesReference :: ScriptHash -> TxOut ConwayEra -> Bool Arguments: expectedHash, output. Computes the hash from the output's script. findReferences :: Monad m => Session w m -> [TxIn] -> Outputs -> Map ReferenceRole ScriptHash -> Set ReferenceRole -> m (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra), [TxIn])) Arguments: session, hints, walletOutputs, expected, needed. The returned [TxIn] lists the hints that were not admitted. renderIdentityRefusal :: IdentityRefusal -> Text and renderReferenceRefusal :: ReferenceRefusal -> Text Argument: refusal.",
+      "pause": 400
+    }
+  ],
+  "cli": [
+    {
+      "text": "CLI.",
+      "pause": 500
+    },
+    {
+      "text": "Global options gain --state-token (with SINGULAR_STATE_TOKEN) and repeatable --reference-hint TX#IX. Every registry subcommand except create refuses to run without a state token. neededRoles: each transaction-building command declares the set of reference roles its builder runs. A test pins the set per command. Slice 2: publish-references [--role ROLE]… and retire-references; --publish-references on transaction-building commands; a coin-selection predicate that rejects outputs carrying a reference script. Slice 3: describe [--json].",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "71fe97c83c60d21984726b6e645972c9a68bdd981a29e2b0326e409360bfd77c"
+  }
+}
