@@ -23,7 +23,10 @@ scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
 for source in "$submit" "$signing"; do
-  [ -f "$source" ] || { echo "SETUP-FAIL: no $source" >&2; exit 2; }
+  [ -f "$source" ] || {
+    echo "SETUP-FAIL: no $source" >&2
+    exit 2
+  }
 done
 
 declare -A module=(
@@ -50,9 +53,9 @@ prepare_tree() {
 prepare_tree real
 prepare_tree broken
 sed 's/^    ( SignedTx$/    ( SignedTx (..)/' "$signing" \
-  > "$scratch/broken/Singular/Registry/Signing.hs"
+  >"$scratch/broken/Singular/Registry/Signing.hs"
 sed 's/^      SignedTx$/      SignedTx (..)/' "$submit" \
-  > "$scratch/broken/Singular/Registry/Node/Submit.hs"
+  >"$scratch/broken/Singular/Registry/Node/Submit.hs"
 for pair in signing submit; do
   if [ "$pair" = signing ]; then
     source=$signing
@@ -78,7 +81,7 @@ for scope in signing submit; do
   for fixture in BySigning ByConstructor ByCoercion ByRecord; do
     if [ "$scope" = signing ]; then
       sed 's/Singular.Registry.Node.Submit/Singular.Registry.Signing/g' \
-        "$fixtures/$fixture.hs" > "$scratch/fixtures-$scope/$fixture.hs"
+        "$fixtures/$fixture.hs" >"$scratch/fixtures-$scope/$fixture.hs"
     else
       cp "$fixtures/$fixture.hs" "$scratch/fixtures-$scope/$fixture.hs"
     fi
@@ -89,7 +92,7 @@ compile() {
   local scope=$1 tree=$2 fixture=$3
   ghc -fno-code -package-env - -outputdir "$scratch/out-$scope-$tree-$fixture" \
     -i"$scratch/$tree" "$scratch/fixtures-$scope/$fixture.hs" "${ghc_flags[@]}" \
-    > "$scratch/$scope-$tree-$fixture.log" 2>&1
+    >"$scratch/$scope-$tree-$fixture.log" 2>&1
 }
 
 exports_of() {
@@ -98,13 +101,13 @@ exports_of() {
     -outputdir "$scratch/out-exports-$scope-$tree" \
     -e ":browse ${module[$scope]}" \
     "$scratch/fixtures-$scope/BySigning.hs" "${ghc_flags[@]}" \
-    > "$scratch/browse-$scope-$tree.txt" 2>&1 || {
+    >"$scratch/browse-$scope-$tree.txt" 2>&1 || {
     cat "$scratch/browse-$scope-$tree.txt" >&2
     echo "SETUP-FAIL: GHCi could not browse $scope from tree $tree" >&2
     return 2
   }
-  grep -vE '^[[:space:]]|^--|^(newtype|data) ' "$scratch/browse-$scope-$tree.txt" \
-    | sed -E 's/^type //; s/[[:space:]].*$//; s/^.*\.//' | sort -u
+  grep -vE '^[[:space:]]|^--|^(newtype|data) ' "$scratch/browse-$scope-$tree.txt" |
+    sed -E 's/^type //; s/[[:space:]].*$//; s/^.*\.//' | sort -u
 }
 
 status=0
@@ -135,9 +138,12 @@ for scope in signing submit; do
     fi
   done
 
-  [ -f "${allow[$scope]}" ] || { echo "SETUP-FAIL: no allowlist for $scope" >&2; exit 2; }
+  [ -f "${allow[$scope]}" ] || {
+    echo "SETUP-FAIL: no allowlist for $scope" >&2
+    exit 2
+  }
   real_exports="$(exports_of "$scope" real)" || exit 2
-  grep -qx signTx <<< "$real_exports" || {
+  grep -qx signTx <<<"$real_exports" || {
     echo "SETUP-FAIL: signTx absent from $scope exports: $real_exports" >&2
     exit 2
   }
@@ -148,7 +154,7 @@ for scope in signing submit; do
     echo "FAIL signed-tx-control: $scope export mismatch: extra=[$extra] stale=[$stale]" >&2
     status=1
   else
-    echo "exports $scope: $(tr '\n' ' ' <<< "$real_exports")— exact allowlist"
+    echo "exports $scope: $(tr '\n' ' ' <<<"$real_exports")— exact allowlist"
   fi
 
   # Each planted forge must compile, then fail the frozen export comparison by
@@ -157,17 +163,20 @@ for scope in signing submit; do
   prepare_tree "$tree"
   if [ "$scope" = signing ]; then
     target="$scratch/$tree/Singular/Registry/Signing.hs"
-    awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" > "$target"
+    awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" >"$target"
   else
     target="$scratch/$tree/Singular/Registry/Node/Submit.hs"
     cp "$scratch/broken/Singular/Registry/Signing.hs" "$scratch/$tree/Singular/Registry/Signing.hs"
-    awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" \
-      | sed 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
-      > "$target"
+    awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" |
+      sed 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
+        >"$target"
     sed -i '/^import Singular.Registry.Signing /a import Cardano.Tx.Ledger (ConwayTx)' "$target"
   fi
-  printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' >> "$target"
-  grep -q '^    , forge$' "$target" || { echo "SETUP-FAIL: $scope planted export did not apply" >&2; exit 2; }
+  printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' >>"$target"
+  grep -q '^    , forge$' "$target" || {
+    echo "SETUP-FAIL: $scope planted export did not apply" >&2
+    exit 2
+  }
   planted_exports="$(exports_of "$scope" "$tree")" || exit 2
   planted="$(comm -23 <(printf '%s\n' "$planted_exports") <(printf '%s\n' "$expected"))"
   if [ "$planted" = forge ]; then
