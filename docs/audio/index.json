@@ -4355,8 +4355,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 63 modules in three kinds: 48 explicitly exposed modules and two re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger and Singular.Registry.Provider are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library re-exports them, so their import paths and their entries in this reference are unchanged. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "5e8bf0481def"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "9bb706141ca8"
    },
    {
     "index": 3,
@@ -4803,8 +4803,92 @@
     "index": 66,
     "name": "docs-offchain-api-reference/what-this-reference-contains-66",
     "pause_ms": 400,
+    "text": "Singular.Provider.Koios.Evidence — source",
+    "v": "185353990ed9"
+   },
+   {
+    "index": 67,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-67",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.History — source",
+    "v": "84be50a5b7f1"
+   },
+   {
+    "index": 68,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-68",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Provider — source",
+    "v": "634472b9d41d"
+   },
+   {
+    "index": 69,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-69",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.Runtime — source",
+    "v": "0afc3c8e801b"
+   },
+   {
+    "index": 70,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-70",
+    "pause_ms": 300,
+    "text": "Singular.Provider.Koios.State — source",
+    "v": "8c8e1d11344a"
+   },
+   {
+    "index": 71,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-71",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Capabilities — source",
+    "v": "d911206918c7"
+   },
+   {
+    "index": 72,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-72",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Confirmation — source",
+    "v": "504a6cfa4d46"
+   },
+   {
+    "index": 73,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-73",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Evidence — source",
+    "v": "63c566331a33"
+   },
+   {
+    "index": 74,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-74",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Funding — source",
+    "v": "ade92adce5e0"
+   },
+   {
+    "index": 75,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-75",
+    "pause_ms": 300,
+    "text": "Singular.Registry.LedgerProvider — source",
+    "v": "c5b4176ec83b"
+   },
+   {
+    "index": 76,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-76",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Signing — source",
+    "v": "a67349b171f5"
+   },
+   {
+    "index": 77,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-77",
+    "pause_ms": 300,
+    "text": "Singular.Registry.Wait — source",
+    "v": "e0da952bc13b"
+   },
+   {
+    "index": 78,
+    "name": "docs-offchain-api-reference/what-this-reference-contains-78",
+    "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
-    "v": "1680408caa68"
+    "v": "525b416a54fb"
    }
   ]
  },
