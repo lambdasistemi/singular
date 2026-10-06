@@ -1,0 +1,74 @@
+{
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, a folder unrelated to Alice, I fold Alice's pending insertion from what the chain shows, so her request is processed without her staying online and without any application running its own datum service.",
+      "pause": 400
+    },
+    {
+      "text": "As Alice, I cannot create a request that names a datum nobody else can read: the request carries the datum it names.",
+      "pause": 400
+    },
+    {
+      "text": "As a maintainer, I see the model fail to build whenever a fold needs an input the chain does not hold.",
+      "pause": 400
+    }
+  ],
+  "the-defect": [
+    {
+      "text": "The defect.",
+      "pause": 500
+    },
+    {
+      "text": "A request named its delivered output's datum only by its hash, and the datum itself lived in the booker's registry directory, so only the booker could fold an insertion. Upstream requests carry their content inline; the hash-only destination came with the registry-mode cage. The model reduced the datum to a yes or no, so the availability of the fold's inputs was never stated.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Every fold the registry admits can be built by any party from chain data alone. The request carries the datum it names, or none. The receiving output carries exactly that datum, and any other is refused. The approval's asset name is unchanged: the cage derives the datum hash from the carried datum. Absent custody, reject and retract are unchanged.",
+      "pause": 400
+    }
+  ],
+  "rejection-behavior": [
+    {
+      "text": "Rejection behavior.",
+      "pause": 500
+    },
+    {
+      "text": "A fold delivering another datum, a datum where none is named, or none where one is named, is refused with the destination reason. A booking too large to fold in one transaction is refused by the command before it is submitted.",
+      "pause": 400
+    }
+  ],
+  "observable-success": [
+    {
+      "text": "Observable success.",
+      "pause": 500
+    },
+    {
+      "text": "On a development network, Alice books and Bob folds from a directory holding only the registry identity and trie state, with Alice's directory unreadable. The preimage store is gone. The three model statements build in CI.",
+      "pause": 400
+    }
+  ],
+  "non-goals": [
+    {
+      "text": "Non-goals.",
+      "pause": 500
+    },
+    {
+      "text": "Folding from an empty directory, rebuilding the trie from history, is the registry replay ticket's story. Existing registries stay as they are, and a new preprod registry needs its own authorization.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "a53c3d00e1a49486dee973a45c498cc66d147e02e0762bfe567dc1670307b165"
+  }
+}

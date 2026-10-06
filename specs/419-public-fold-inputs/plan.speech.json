@@ -1,0 +1,96 @@
+{
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The request carries the datum it names. The model moves first and states the property; the cage and the off-chain wire swap together; a two-actor run on a development network closes the story. Each slice is pushed as soon as its gate is green.",
+      "pause": 400
+    }
+  ],
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    },
+    {
+      "text": "The model carries the datum value in the request, the delivered output and the holding, and states what a folder reads. The cage's request destination carries the datum; the library matches it by equality and derives the approval hash. Naming's request mirror follows. Off chain, booking writes the envelope into the request, the fold reads it from the provider, and the preimage store is removed.",
+      "pause": 400
+    }
+  ],
+  "data-rows": [
+    {
+      "text": "Data rows.",
+      "pause": 500
+    },
+    {
+      "text": "On chain, a destination is address bytes and an optional datum. In the model, the request, the delivered output and the holding carry a datum value. The public view holds the registry state, the holdings with their datums, and the pending requests, and nothing else.",
+      "pause": 400
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    },
+    {
+      "text": "The model gains a public view and a fold builder that takes only that view. The library's destination and datum matches take the optional datum, and a new function derives the datum hash the approval name uses. The approval name keeps its signature.",
+      "pause": 400
+    }
+  ],
+  "lean-statements": [
+    {
+      "text": "Lean statements.",
+      "pause": 500
+    },
+    {
+      "text": "Three statements: the delivered datum is the request's datum; the model's fold transaction equals the one built from the public view; and a fold delivering another datum is refused.",
+      "pause": 400
+    }
+  ],
+  "consumers-of-the-model-change": [
+    {
+      "text": "Consumers of the model change.",
+      "pause": 500
+    },
+    {
+      "text": "The driver corpus, the corpus, the theorem manifest and its page, the model check, the open-datum application model, the simulator mirror, the conformance transport and live translation, the coverage records and the constitution's transaction row. Each is run locally before the first push.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "First the model and its consumers. Then the wire: cage, naming mirror, identities, vectors, booking and fold in one change, with the preimage store removed. Then the two-actor run on a development network.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the existing CI commands that exercise what each slice can break. The failing commit is the control, the full local CI runs once at the end, and hosted CI is the net.",
+      "pause": 400
+    }
+  ],
+  "live-boundary": [
+    {
+      "text": "Live boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No preprod write and no new registry. The two-actor run uses the CI development network.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "a7325f337914a87f66919369f17afb5badf91a8368e7e0736b3e05dfb46690ff"
+  }
+}
