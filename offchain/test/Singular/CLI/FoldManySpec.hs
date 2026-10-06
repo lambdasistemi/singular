@@ -85,7 +85,10 @@ import Singular.CLI.Reconcile
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.LedgerProvider (TipObservation (..))
 import Singular.Registry.TrieState (Leaf (..))
-import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , approvalName
+    )
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
@@ -101,6 +104,7 @@ import Singular.Registry.Types
 spec :: Spec
 spec = describe "a fold of every pending request" $ do
     selection
+    approvals
     law
     refusals
     bound
@@ -114,7 +118,11 @@ spec = describe "a fold of every pending request" $ do
 -- ---------------------------------------------------------
 
 outRef :: Char -> Int -> TxIn
-outRef c i = either error id (parseOutRef (T.pack (replicate 64 c <> "#" <> show i)))
+outRef c i =
+    either
+        error
+        id
+        (parseOutRef (T.pack (replicate 64 c <> "#" <> show i)))
 
 alice, bob :: ByteString
 alice = BS.replicate 28 0xa1
@@ -130,7 +138,8 @@ margin :: Integer
 margin = foldMarginMs
 
 -- | A request of @owner@ moving @key@ by @edge@, submitted at @submitted@.
-requestOf :: ByteString -> ByteString -> Edge -> Integer -> OnChainRequest
+requestOf
+    :: ByteString -> ByteString -> Edge -> Integer -> OnChainRequest
 requestOf owner key edge submitted =
     OnChainRequest
         { requestToken = OnChainTokenId (toBuiltin ("registry" :: ByteString))
@@ -144,7 +153,8 @@ requestOf owner key edge submitted =
 
 -- | The request pending with its deadline, as the command reads it.
 pendingOf :: OnChainRequest -> PendingRequest
-pendingOf r = PendingDecoded r (requestDeadline (requestSubmittedAt r) processTime)
+pendingOf r =
+    PendingDecoded r (requestDeadline (requestSubmittedAt r) processTime)
 
 -- | Submitted so that @left@ milliseconds remain before the deadline, now.
 leaving :: Integer -> Integer
@@ -170,19 +180,31 @@ included = map srInput . selIncluded
 
 selection :: Spec
 selection = describe "which pending requests it takes" $ do
-    it "takes two owners' insertions together, in the ledger's input order" $ do
-        let a = (outRef 'b' 0, pendingOf (requestOf alice "keyA" edgeInsertActive open))
-            b = (outRef 'a' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
+    it
+        "takes two owners' insertions together, in the ledger's input order" $ do
+        let a =
+                ( outRef 'b' 0
+                , pendingOf (requestOf alice "keyA" edgeInsertActive open)
+                )
+            b =
+                (outRef 'a' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
             s = selectFold now margin (lawWith []) [a, b]
         included s `shouldBe` [outRef 'a' 1, outRef 'b' 0]
         selExcluded s `shouldBe` []
         map (requestOwner . srRequest) (selIncluded s)
             `shouldBe` [toBuiltin bob, toBuiltin alice]
-    it "takes three requests of two owners, an insertion and two terminations" $ do
+    it
+        "takes three requests of two owners, an insertion and two terminations" $ do
         let rs =
-                [ (outRef 'c' 0, pendingOf (requestOf alice "keyA" edgeUpdateTerminal open))
+                [
+                    ( outRef 'c' 0
+                    , pendingOf (requestOf alice "keyA" edgeUpdateTerminal open)
+                    )
                 , (outRef 'c' 1, pendingOf (requestOf bob "keyB" edgeInsertActive open))
-                , (outRef 'c' 2, pendingOf (requestOf bob "keyC" edgeUpdateTerminal open))
+                ,
+                    ( outRef 'c' 2
+                    , pendingOf (requestOf bob "keyC" edgeUpdateTerminal open)
+                    )
                 ]
             s = selectFold now margin (lawWith ["keyA", "keyC"]) rs
         included s `shouldBe` map fst rs
@@ -190,10 +212,18 @@ selection = describe "which pending requests it takes" $ do
             `shouldBe` [FoldTermination, FoldInsertion, FoldTermination]
         map srDeadlineMs (selIncluded s)
             `shouldBe` replicate 3 (open + processTime)
-    it "leaves a request whose window has closed, naming how far past it is" $ do
-        let expired = (outRef 'd' 0, pendingOf (requestOf alice "keyA" edgeInsertActive (leaving (-5_000))))
-            near = (outRef 'd' 1, pendingOf (requestOf bob "keyB" edgeInsertActive (leaving margin)))
-            fresh = (outRef 'd' 2, pendingOf (requestOf bob "keyC" edgeInsertActive open))
+    it
+        "leaves a request whose window has closed, naming how far past it is" $ do
+        let expired =
+                ( outRef 'd' 0
+                , pendingOf (requestOf alice "keyA" edgeInsertActive (leaving (-5_000)))
+                )
+            near =
+                ( outRef 'd' 1
+                , pendingOf (requestOf bob "keyB" edgeInsertActive (leaving margin))
+                )
+            fresh =
+                (outRef 'd' 2, pendingOf (requestOf bob "keyC" edgeInsertActive open))
             s = selectFold now margin (lawWith []) [expired, near, fresh]
         included s `shouldBe` [outRef 'd' 2]
         selExcluded s
@@ -201,9 +231,13 @@ selection = describe "which pending requests it takes" $ do
                        , (outRef 'd' 1, WindowClosed margin)
                        ]
     it "leaves an edge it does not fold and a datum it cannot read" $ do
-        let other = (outRef 'e' 0, pendingOf (requestOf alice "keyA" edgeInsertAbsent open))
+        let other =
+                ( outRef 'e' 0
+                , pendingOf (requestOf alice "keyA" edgeInsertAbsent open)
+                )
             broken = (outRef 'e' 1, PendingUndecodable "no request datum")
-            fresh = (outRef 'e' 2, pendingOf (requestOf bob "keyB" edgeInsertActive open))
+            fresh =
+                (outRef 'e' 2, pendingOf (requestOf bob "keyB" edgeInsertActive open))
             s = selectFold now margin (lawWith []) [other, broken, fresh]
         included s `shouldBe` [outRef 'e' 2]
         selExcluded s
@@ -211,18 +245,25 @@ selection = describe "which pending requests it takes" $ do
                        , (outRef 'e' 1, Undecodable "no request datum")
                        ]
     it "folds the first of two insertions of one key and names the second" $ do
-        let first = (outRef 'f' 0, pendingOf (requestOf alice "keyA" edgeInsertActive open))
-            second = (outRef 'f' 1, pendingOf (requestOf bob "keyA" edgeInsertActive open))
-            fresh = (outRef 'f' 2, pendingOf (requestOf bob "keyB" edgeInsertActive open))
+        let first =
+                ( outRef 'f' 0
+                , pendingOf (requestOf alice "keyA" edgeInsertActive open)
+                )
+            second =
+                (outRef 'f' 1, pendingOf (requestOf bob "keyA" edgeInsertActive open))
+            fresh =
+                (outRef 'f' 2, pendingOf (requestOf bob "keyB" edgeInsertActive open))
             s = selectFold now margin (lawWith []) [second, fresh, first]
         included s `shouldBe` [outRef 'f' 0, outRef 'f' 2]
         selExcluded s `shouldBe` [(outRef 'f' 1, RefusedByLaw "key-exists")]
     it "names each exclusion by its reason" $ do
         renderExclusion (WindowClosed (-1)) `shouldBe` "window-closed"
         renderExclusion (WindowClosed 10) `shouldBe` "window-closed"
-        renderExclusion (EdgeUnsupported edgeDeleteAbsent) `shouldBe` "edge-unsupported"
+        renderExclusion (EdgeUnsupported edgeDeleteAbsent)
+            `shouldBe` "edge-unsupported"
         renderExclusion (Undecodable "x") `shouldBe` "undecodable"
-        renderExclusion (RefusedByLaw "key-exists") `shouldBe` "refused-by-law key-exists"
+        renderExclusion (RefusedByLaw "key-exists")
+            `shouldBe` "refused-by-law key-exists"
     it
         "puts every pending request in exactly one list, taking each one the rules admit after those before it"
         $ property
@@ -256,10 +297,17 @@ expectSelection lawF = go [] [] []
     go taken _ left [] = (reverse taken, reverse left)
     go taken moves left ((i, p) : rest) = case p of
         PendingUndecodable why -> go taken moves ((i, Undecodable why) : left) rest
+        PendingUnapproved r d why
+            | requestEdge r `notElem` [edgeInsertActive, edgeUpdateTerminal] ->
+                go taken moves ((i, EdgeUnsupported (requestEdge r)) : left) rest
+            | d - now <= margin ->
+                go taken moves ((i, WindowClosed (d - now)) : left) rest
+            | otherwise -> go taken moves ((i, RefusedByLaw why) : left) rest
         PendingDecoded r d
             | requestEdge r `notElem` [edgeInsertActive, edgeUpdateTerminal] ->
                 go taken moves ((i, EdgeUnsupported (requestEdge r)) : left) rest
-            | d - now <= margin -> go taken moves ((i, WindowClosed (d - now)) : left) rest
+            | d - now <= margin ->
+                go taken moves ((i, WindowClosed (d - now)) : left) rest
             | otherwise ->
                 let move = (requestKey r, requestEdge r)
                 in  case lawF (moves <> [move]) of
@@ -289,12 +337,53 @@ genPending = do
                 , edgeUpdateActive
                 , edgeWitnessTerminal
                 ]
-        left <- elements [processTime, processTime, margin, margin + 1, 0, -60_000]
-        decodes <- elements [True, True, True, True, False]
-        pure $
-            if decodes
-                then pendingOf (requestOf owner key edge (leaving left))
-                else PendingUndecodable "not a request"
+        left <-
+            elements [processTime, processTime, margin, margin + 1, 0, -60_000]
+        decoding <-
+            elements [Right True, Right True, Right True, Right False, Left ()]
+        let r = requestOf owner key edge (leaving left)
+        pure $ case decoding of
+            Right True -> pendingOf r
+            Right False -> PendingUnapproved r (leaving left + processTime) "no-approval"
+            Left () -> PendingUndecodable "not a request"
+
+-- ---------------------------------------------------------
+-- The approval a request carries
+-- ---------------------------------------------------------
+
+approvals :: Spec
+approvals = describe "the approval each request carries" $ do
+    let r = requestOf alice "keyA" edgeInsertActive open
+        owned = approvalName edgeInsertActive "keyA" alice ("", "")
+        other = approvalName edgeInsertActive "keyA" bob ("", "")
+    it
+        "admits exactly one approval, at quantity one, named for this request" $
+        approvalVerdict r [(owned, 1)] `shouldBe` Nothing
+    it
+        "refuses no approval, more than one, or one at another quantity: no-approval" $ do
+        approvalVerdict r [] `shouldBe` Just "no-approval"
+        approvalVerdict r [(owned, 2)] `shouldBe` Just "no-approval"
+        approvalVerdict r [(owned, 1), (other, 1)]
+            `shouldBe` Just "no-approval"
+    it "refuses an approval named for another owner: approval-mismatch" $
+        approvalVerdict r [(other, 1)] `shouldBe` Just "approval-mismatch"
+    it
+        "leaves an unapproved request out by the model's reason and folds the other owner's" $ do
+        let bad =
+                (outRef 'a' 0, PendingUnapproved r (open + processTime) "no-approval")
+            good =
+                (outRef 'b' 0, pendingOf (requestOf bob "keyA" edgeInsertActive open))
+            s = selectFold now margin (lawWith []) [bad, good]
+        included s `shouldBe` [outRef 'b' 0]
+        selExcluded s `shouldBe` [(outRef 'a' 0, RefusedByLaw "no-approval")]
+    it
+        "names a closed window before a missing approval, as admission comes first" $ do
+        let late =
+                ( outRef 'a' 0
+                , PendingUnapproved r (leaving (-1) + processTime) "no-approval"
+                )
+            s = selectFold now margin (lawWith []) [late]
+        selExcluded s `shouldBe` [(outRef 'a' 0, WindowClosed (-1))]
 
 -- ---------------------------------------------------------
 -- The law over the batch
@@ -304,12 +393,17 @@ law :: Spec
 law = describe "the model's verdict on each step of the batch" $ do
     let leaves l = Map.fromList [("k", l)]
     it "inserts a key the tree does not hold, and refuses one it holds" $ do
-        leafLaw Map.empty Set.empty [("k", edgeInsertActive)] `shouldBe` Right ()
+        leafLaw Map.empty Set.empty [("k", edgeInsertActive)]
+            `shouldBe` Right ()
         forM_ [Absent, Active, Terminal] $ \l ->
             leafLaw (leaves l) (Set.fromList ["k"]) [("k", edgeInsertActive)]
                 `shouldBe` Left "key-exists"
-    it "terminates an active key whose holding is live, naming every other case" $ do
-        leafLaw (leaves Active) (Set.fromList ["k"]) [("k", edgeUpdateTerminal)]
+    it
+        "terminates an active key whose holding is live, naming every other case" $ do
+        leafLaw
+            (leaves Active)
+            (Set.fromList ["k"])
+            [("k", edgeUpdateTerminal)]
             `shouldBe` Right ()
         leafLaw (leaves Active) Set.empty [("k", edgeUpdateTerminal)]
             `shouldBe` Left "token-missing"
@@ -320,7 +414,10 @@ law = describe "the model's verdict on each step of the batch" $ do
         leafLaw (leaves Terminal) Set.empty [("k", edgeUpdateTerminal)]
             `shouldBe` Left "terminal-immutable"
     it "judges each step from the state the steps before it leave" $ do
-        leafLaw Map.empty Set.empty [("k", edgeInsertActive), ("k", edgeInsertActive)]
+        leafLaw
+            Map.empty
+            Set.empty
+            [("k", edgeInsertActive), ("k", edgeInsertActive)]
             `shouldBe` Left "key-exists"
         leafLaw
             (leaves Active)
@@ -330,10 +427,17 @@ law = describe "the model's verdict on each step of the batch" $ do
         leafLaw
             (Map.fromList [("k", Active)])
             (Set.fromList ["k"])
-            [("j", edgeInsertActive), ("k", edgeUpdateTerminal), ("i", edgeInsertActive)]
+            [ ("j", edgeInsertActive)
+            , ("k", edgeUpdateTerminal)
+            , ("i", edgeInsertActive)
+            ]
             `shouldBe` Right ()
-    it "cannot terminate in the batch a key the batch inserts: its holding is not yet live" $
-        leafLaw Map.empty Set.empty [("k", edgeInsertActive), ("k", edgeUpdateTerminal)]
+    it
+        "cannot terminate in the batch a key the batch inserts: its holding is not yet live" $
+        leafLaw
+            Map.empty
+            Set.empty
+            [("k", edgeInsertActive), ("k", edgeUpdateTerminal)]
             `shouldBe` Left "token-missing"
 
 -- ---------------------------------------------------------
@@ -345,29 +449,49 @@ refusals = describe "the fold it refuses" $ do
     let a = outRef 'a' 0
         b = outRef 'b' 0
         c = outRef 'c' 0
-        taken i owner key = SelectedRequest i (requestOf owner key edgeInsertActive open) FoldInsertion (open + processTime)
-        two = FoldSelection [taken a alice "keyA", taken c bob "keyC"] [(b, WindowClosed (-3_000))]
+        taken i owner key =
+            SelectedRequest
+                i
+                (requestOf owner key edgeInsertActive open)
+                FoldInsertion
+                (open + processTime)
+        two =
+            FoldSelection
+                [taken a alice "keyA", taken c bob "keyC"]
+                [(b, WindowClosed (-3_000))]
     it "builds over every included request, in order" $ do
-        foldRequests Nothing two `shouldBe` Right (taken a alice "keyA" :| [taken c bob "keyC"])
-        foldRequests (Just c) two `shouldBe` Right (taken a alice "keyA" :| [taken c bob "keyC"])
-    it "refuses a named request it leaves, naming why, and one not pending" $ do
-        foldRequests (Just b) two `shouldBe` Left (NamedNotIncluded b (Just (WindowClosed (-3_000))))
+        foldRequests Nothing two
+            `shouldBe` Right (taken a alice "keyA" :| [taken c bob "keyC"])
+        foldRequests (Just c) two
+            `shouldBe` Right (taken a alice "keyA" :| [taken c bob "keyC"])
+    it
+        "refuses a named request it leaves, naming why, and one not pending" $ do
+        foldRequests (Just b) two
+            `shouldBe` Left (NamedNotIncluded b (Just (WindowClosed (-3_000))))
         let d = outRef 'd' 0
         foldRequests (Just d) two `shouldBe` Left (NamedNotIncluded d Nothing)
     it "refuses nothing-to-fold, naming every request it leaves" $ do
-        foldRequests Nothing (FoldSelection [] []) `shouldBe` Left (NothingToFold [])
+        foldRequests Nothing (FoldSelection [] [])
+            `shouldBe` Left (NothingToFold [])
         let left = [(a, WindowClosed (-1)), (b, RefusedByLaw "key-exists")]
-        foldRequests Nothing (FoldSelection [] left) `shouldBe` Left (NothingToFold left)
-        foldRequests (Just a) (FoldSelection [] left) `shouldBe` Left (NothingToFold left)
+        foldRequests Nothing (FoldSelection [] left)
+            `shouldBe` Left (NothingToFold left)
+        foldRequests (Just a) (FoldSelection [] left)
+            `shouldBe` Left (NothingToFold left)
     it "words each refusal with what it names" $ do
         let txt = T.unpack . renderOutRef
-        renderFoldRefusal (NothingToFold []) `shouldSatisfy` isInfixOf "nothing-to-fold"
-        renderFoldRefusal (NothingToFold []) `shouldSatisfy` isInfixOf "nothing is pending"
-        let named = renderFoldRefusal (NothingToFold [(a, WindowClosed (-1)), (b, RefusedByLaw "key-exists")])
+        renderFoldRefusal (NothingToFold [])
+            `shouldSatisfy` isInfixOf "nothing-to-fold"
+        renderFoldRefusal (NothingToFold [])
+            `shouldSatisfy` isInfixOf "nothing is pending"
+        let named =
+                renderFoldRefusal
+                    (NothingToFold [(a, WindowClosed (-1)), (b, RefusedByLaw "key-exists")])
         named `shouldSatisfy` isInfixOf "nothing-to-fold"
         forM_ [txt a, txt b, "window-closed", "refused-by-law key-exists"] $ \w ->
             named `shouldSatisfy` isInfixOf w
-        let passed = renderFoldRefusal (NamedNotIncluded b (Just (WindowClosed (-3_000))))
+        let passed =
+                renderFoldRefusal (NamedNotIncluded b (Just (WindowClosed (-3_000))))
         forM_ [txt b, "processing deadline", "has passed", "no fold is built"] $ \w ->
             passed `shouldSatisfy` isInfixOf w
         let nearly = renderFoldRefusal (NamedNotIncluded b (Just (WindowClosed 20_000)))
@@ -382,12 +506,14 @@ refusals = describe "the fold it refuses" $ do
 
 bound :: Spec
 bound = describe "the deadline that bounds the fold" $ do
-    it "is the earliest deadline among the included requests, whatever their order" $
+    it
+        "is the earliest deadline among the included requests, whatever their order" $
         property $
             forAll (vectorOf 3 (chooseInteger (margin + 1, 10 * processTime))) $ \lefts ->
                 let rs =
                         [ (outRef 'a' i, pendingOf (requestOf o k edgeInsertActive (leaving l)))
-                        | (i, o, k, l) <- zip4 [0 ..] [alice, bob, alice] ["keyA", "keyB", "keyC"] lefts
+                        | (i, o, k, l) <-
+                            zip4 [0 ..] [alice, bob, alice] ["keyA", "keyB", "keyC"] lefts
                         ]
                     s = selectFold now margin (lawWith []) rs
                 in  case NE.nonEmpty (selIncluded s) of
@@ -395,12 +521,23 @@ bound = describe "the deadline that bounds the fold" $ do
                         Just taken ->
                             selectionDeadline taken === now + minimum lefts
     it "is never set by a request the fold leaves" $ do
-        let earliest = (outRef 'b' 0, pendingOf (requestOf bob "keyA" edgeInsertActive (leaving (margin + 1_000))))
-            first = (outRef 'a' 0, pendingOf (requestOf alice "keyA" edgeInsertActive (leaving 80_000)))
-            other = (outRef 'c' 0, pendingOf (requestOf bob "keyB" edgeInsertActive (leaving 60_000)))
+        let earliest =
+                ( outRef 'b' 0
+                , pendingOf
+                    (requestOf bob "keyA" edgeInsertActive (leaving (margin + 1_000)))
+                )
+            first =
+                ( outRef 'a' 0
+                , pendingOf (requestOf alice "keyA" edgeInsertActive (leaving 80_000))
+                )
+            other =
+                ( outRef 'c' 0
+                , pendingOf (requestOf bob "keyB" edgeInsertActive (leaving 60_000))
+                )
             s = selectFold now margin (lawWith []) [earliest, first, other]
         selExcluded s `shouldBe` [(outRef 'b' 0, RefusedByLaw "key-exists")]
-        fmap selectionDeadline (NE.nonEmpty (selIncluded s)) `shouldBe` Just (now + 60_000)
+        fmap selectionDeadline (NE.nonEmpty (selIncluded s))
+            `shouldBe` Just (now + 60_000)
   where
     zip4 (a : as) (b : bs) (c : cs) (d : ds) = (a, b, c, d) : zip4 as bs cs ds
     zip4 _ _ _ _ = []
@@ -414,17 +551,36 @@ spending = describe "what the built fold spends" $ do
     let state = outRef '5' 0
         fee = outRef '7' 0
         booked = [outRef 'a' 0, outRef 'b' 0, outRef 'c' 0]
-    it "admits the state and exactly the included requests, beside the wallet's own inputs" $
-        spendsSelection state [outRef 'a' 0, outRef 'c' 0] booked [fee, outRef 'c' 0, state, outRef 'a' 0]
+    it
+        "admits the state and exactly the included requests, beside the wallet's own inputs" $
+        spendsSelection
+            state
+            [outRef 'a' 0, outRef 'c' 0]
+            booked
+            [fee, outRef 'c' 0, state, outRef 'a' 0]
             `shouldBe` Right ()
-    it "refuses a fold that leaves out the state, an included request, or spends one it left" $ do
-        spendsSelection state [outRef 'a' 0, outRef 'c' 0] booked [fee, outRef 'a' 0, outRef 'c' 0]
+    it
+        "refuses a fold that leaves out the state, an included request, or spends one it left" $ do
+        spendsSelection
+            state
+            [outRef 'a' 0, outRef 'c' 0]
+            booked
+            [fee, outRef 'a' 0, outRef 'c' 0]
             `shouldSatisfy` isLeft
-        spendsSelection state [outRef 'a' 0, outRef 'c' 0] booked [fee, state, outRef 'a' 0]
+        spendsSelection
+            state
+            [outRef 'a' 0, outRef 'c' 0]
+            booked
+            [fee, state, outRef 'a' 0]
             `shouldSatisfy` isLeft
-        spendsSelection state [outRef 'a' 0, outRef 'c' 0] booked (state : booked)
+        spendsSelection
+            state
+            [outRef 'a' 0, outRef 'c' 0]
+            booked
+            (state : booked)
             `shouldSatisfy` isLeft
-    it "admits a spent set exactly when it is the state, the selection and no other pending request" $
+    it
+        "admits a spent set exactly when it is the state, the selection and no other pending request" $
         property $
             forAll (sublistOf booked) $ \chosen ->
                 forAll (sublistOf (state : fee : booked)) $ \spent ->
@@ -440,18 +596,28 @@ spending = describe "what the built fold spends" $ do
 payouts :: Spec
 payouts = describe "each payout reaches its own owner" $ do
     it "finds nothing short when each owner is paid what is owed to them" $
-        unpaidOwners [(alice, 2_000_000), (bob, 3_000_000)] [(bob, 3_000_000), (alice, 2_500_000)]
+        unpaidOwners
+            [(alice, 2_000_000), (bob, 3_000_000)]
+            [(bob, 3_000_000), (alice, 2_500_000)]
             `shouldBe` []
     it "names an owner paid another owner's amount" $
-        unpaidOwners [(alice, 2_000_000), (bob, 3_000_000)] [(alice, 3_000_000), (bob, 2_000_000)]
+        unpaidOwners
+            [(alice, 2_000_000), (bob, 3_000_000)]
+            [(alice, 3_000_000), (bob, 2_000_000)]
             `shouldBe` [(bob, 3_000_000, 2_000_000)]
-    it "sums what two requests owe one owner, and names a payment short of the sum" $ do
-        unpaidOwners [(alice, 2_000_000), (alice, 2_000_000), (bob, 1)] [(alice, 2_000_000), (bob, 1)]
+    it
+        "sums what two requests owe one owner, and names a payment short of the sum" $ do
+        unpaidOwners
+            [(alice, 2_000_000), (alice, 2_000_000), (bob, 1)]
+            [(alice, 2_000_000), (bob, 1)]
             `shouldBe` [(alice, 4_000_000, 2_000_000)]
-        unpaidOwners [(alice, 2_000_000), (alice, 2_000_000)] [(alice, 1_000_000), (alice, 3_000_000)]
+        unpaidOwners
+            [(alice, 2_000_000), (alice, 2_000_000)]
+            [(alice, 1_000_000), (alice, 3_000_000)]
             `shouldBe` []
     it "names an owner nothing is paid to" $
-        unpaidOwners [(alice, 1), (bob, 1)] [(alice, 1)] `shouldBe` [(bob, 1, 0)]
+        unpaidOwners [(alice, 1), (bob, 1)] [(alice, 1)]
+            `shouldBe` [(bob, 1, 0)]
 
 -- ---------------------------------------------------------
 -- The journal line
@@ -459,7 +625,8 @@ payouts = describe "each payout reaches its own owner" $ do
 
 journalLines :: Spec
 journalLines = describe "the journal binds every transition to the fold" $ do
-    it "chains the transitions from the state's root before to its root after" $ do
+    it
+        "chains the transitions from the state's root before to its root after" $ do
         let ts =
                 chainTransitions
                     "r0"
@@ -471,8 +638,10 @@ journalLines = describe "the journal binds every transition to the fold" $ do
         map transitionRootAfter ts `shouldBe` ["r1", "r2", "r3"]
         map transitionRequest ts `shouldBe` map Just ["aa#0", "bb#1", "cc#2"]
         map transitionKey ts `shouldBe` ["6b31", "6b32", "6b33"]
-        map transitionEdge ts `shouldBe` [edgeInsertActive, edgeUpdateTerminal, edgeInsertActive]
-        map transitionExpect ts `shouldBe` ["active:01", "terminal", "active:03"]
+        map transitionEdge ts
+            `shouldBe` [edgeInsertActive, edgeUpdateTerminal, edgeInsertActive]
+        map transitionExpect ts
+            `shouldBe` ["active:01", "terminal", "active:03"]
     it "reads back the transitions a prepared line was written with" $
         withSystemTempDirectory "fold-journal" $ \dir -> do
             let ts =
@@ -498,7 +667,11 @@ journalLines = describe "the journal binds every transition to the fold" $ do
                 foldTransitions line
                     `shouldBe` [FoldTransition Nothing "6b31" 1 "active:01" "r0" "r1"]
     it "binds no transition to a line that folds nothing" $
-        foldTransitions (blank "t2" "prepared"){journalKey = Just "6b31", journalExpect = Just "request"}
+        foldTransitions
+            (blank "t2" "prepared")
+                { journalKey = Just "6b31"
+                , journalExpect = Just "request"
+                }
             `shouldBe` []
 
 blank :: Text -> Text -> JournalEntry
@@ -566,11 +739,22 @@ reconciliation = describe "reconciliation covers every included request" $ do
     let keyA = "keyA"
         keyB = "keyB"
         envA = envelopeOf alice keyA
-        holding = (outRef '9' 0, mkBasicTxOut (addrFromKeyHashBytes Testnet alice) (MaryValue (Coin 1) mempty))
+        holding =
+            ( outRef '9' 0
+            , mkBasicTxOut
+                (addrFromKeyHashBytes Testnet alice)
+                (MaryValue (Coin 1) mempty)
+            )
         ts =
             chainTransitions
                 "r0"
-                [ ("aa#0", hex keyA, edgeInsertActive, "active:" <> hex (envelopeHash envA), "r1")
+                [
+                    ( "aa#0"
+                    , hex keyA
+                    , edgeInsertActive
+                    , "active:" <> hex (envelopeHash envA)
+                    , "r1"
+                    )
                 , ("bb#0", hex keyB, edgeUpdateTerminal, "terminal", "r2")
                 ]
         recovery p =
@@ -588,7 +772,8 @@ reconciliation = describe "reconciliation covers every included request" $ do
         reader settled key
             | key == keyA = pure (Right Active, Right (holding, envA))
             | key == keyB && settled = pure (Right Terminal, Left "no holding")
-            | otherwise = pure (Right Active, Right (holding, envelopeOf bob keyB))
+            | otherwise =
+                pure (Right Active, Right (holding, envelopeOf bob keyB))
         observedLines dir = filter ((== "observed") . journalEvent) <$> readJournal dir
     it "observes a two-request fold once every included key reads back" $
         withSystemTempDirectory "fold-observe" $ \dir -> do
@@ -600,13 +785,21 @@ reconciliation = describe "reconciliation covers every included request" $ do
             seen <- observedLines dir
             map journalTxId seen `shouldBe` ["t1"]
             forM_ [hex keyA, hex keyB] $ \k ->
-                fmap (T.isInfixOf k) (journalDetail =<< headOrNothing seen) `shouldBe` Just True
-    it "does not observe it while one included key has not reached its after-state" $
+                fmap (T.isInfixOf k) (journalDetail =<< headOrNothing seen)
+                    `shouldBe` Just True
+    it
+        "does not observe it while one included key has not reached its after-state" $
         withSystemTempDirectory "fold-observe" $ \dir -> do
-            verdicts <- observe "update" dir (Just (reader False)) [recovery (prepared "t1" ts)]
+            verdicts <-
+                observe
+                    "update"
+                    dir
+                    (Just (reader False))
+                    [recovery (prepared "t1" ts)]
             map (map isRight . snd) verdicts `shouldBe` [[True, False]]
             observedLines dir >>= (`shouldBe` [])
-    it "still observes a fold journalled before batches, as a batch of one" $
+    it
+        "still observes a fold journalled before batches, as a batch of one" $
         withSystemTempDirectory "fold-observe" $ \dir -> do
             let old =
                     (blank "t0" "prepared")
@@ -619,13 +812,21 @@ reconciliation = describe "reconciliation covers every included request" $ do
             verdicts <- observe "update" dir (Just (reader True)) [recovery old]
             map (map isRight . snd) verdicts `shouldBe` [[True]]
             map journalTxId <$> observedLines dir >>= (`shouldBe` ["t0"])
-    it "returns every included request to pending and restores the root before" $ do
+    it
+        "returns every included request to pending and restores the root before" $ do
         let p = prepared "t1" ts
             tip = TipObservation (SlotNo 7) (BS.replicate 32 0) 1 0
-            line = rolledBackLine "update" (blank "t1" "observed") (Just p) [outRef 'a' 0, outRef 'b' 0, outRef '5' 0] tip
+            line =
+                rolledBackLine
+                    "update"
+                    (blank "t1" "observed")
+                    (Just p)
+                    [outRef 'a' 0, outRef 'b' 0, outRef '5' 0]
+                    tip
         journalEvent line `shouldBe` "rolled-back"
         journalTransitions line `shouldBe` Just ts
-        map transitionRequest (foldTransitions line) `shouldBe` map Just ["aa#0", "bb#0"]
+        map transitionRequest (foldTransitions line)
+            `shouldBe` map Just ["aa#0", "bb#0"]
         journalRootBefore line `shouldBe` Just "r0"
   where
     headOrNothing (x : _) = Just x

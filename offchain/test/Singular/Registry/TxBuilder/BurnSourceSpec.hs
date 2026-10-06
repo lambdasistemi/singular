@@ -1817,7 +1817,8 @@ for the two chosen. Folding all three is the control: the bound moves to 975.
 -}
 selectedFold :: Spec
 selectedFold = describe "a fold over chosen pending requests" $ do
-    it "spends the state and exactly the chosen requests, bounded by their earliest deadline" $ do
+    it
+        "spends the state and exactly the chosen requests, bounded by their earliest deadline" $ do
         tx <- buildSelected (fst first NE.:| [fst third])
         let body = tx ^. bodyTxL
             ValidityInterval _ upper = body ^. vldtTxBodyL
@@ -1872,12 +1873,20 @@ selectedFold = describe "a fold over chosen pending requests" $ do
             selection = TS.TrieSelection who point root
             fixture =
                 Fixture.fixtureStore
-                    [(selection, Just (TS.CreateRecord who stateIn), [], emptyMPFInMemoryDB)]
+                    [
+                        ( selection
+                        , Just (TS.CreateRecord who stateIn)
+                        , []
+                        , emptyMPFInMemoryDB
+                        )
+                    ]
             state =
                 snd stateUtxoFor
                     & datumTxOutL
                         .~ mkInlineDatum
-                            (toPlcData (StateDatum tokenState{stateRoot = OnChainRoot (unRoot root)}))
+                            ( toPlcData
+                                (StateDatum tokenState{stateRoot = OnChainRoot (unRoot root)})
+                            )
             raw =
                 withAddressOutputs
                     ( \a ->
@@ -1903,5 +1912,15 @@ selectedFold = describe "a fold over chosen pending requests" $ do
                     (\_ use -> Right <$> use snapshot)
                     (const (pure (Right ())))
         result <- TS.withTrieState capability selection $ \snap ->
-            updateTokenSelected builtCfg view snap foldTokenId payer witnessScripts chosen
-        either (\why -> expectationFailure (show why) >> fail "no snapshot") pure result
+            updateTokenSelected
+                builtCfg
+                view
+                snap
+                foldTokenId
+                payer
+                witnessScripts
+                chosen
+        either
+            (\why -> expectationFailure (show why) >> fail "no snapshot")
+            pure
+            result

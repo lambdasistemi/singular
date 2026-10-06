@@ -39,6 +39,7 @@ module Singular.CLI.FoldRules
     , Exclusion (..)
     , SelectedRequest (..)
     , FoldSelection (..)
+    , approvalVerdict
     , selectFold
     , renderExclusion
     , leafLaw
@@ -59,12 +60,15 @@ module Singular.CLI.FoldRules
     ) where
 
 import Data.ByteString (ByteString)
-import Data.List (intercalate)
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List (intercalate, sortOn)
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
+import PlutusTx.Builtins (fromBuiltin)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.TxIn (TxIn)
@@ -81,6 +85,7 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
+import Singular.Registry.TxBuilder.Internal (approvalName)
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
@@ -292,6 +297,10 @@ renderTargetRefusal = \case
 data PendingRequest
     = -- | The decoded request and its processing deadline, POSIX milliseconds
       PendingDecoded OnChainRequest Integer
+    | {- | The decoded request, its deadline, and the model's refusal of the
+      approval its output carries ('approvalVerdict')
+      -}
+      PendingUnapproved OnChainRequest Integer Text
     | -- | Why its datum does not read as a request
       PendingUndecodable Text
     deriving stock (Eq, Show)
@@ -306,8 +315,8 @@ data Exclusion
       EdgeUnsupported Edge
     | -- | Its datum does not read as a request
       Undecodable Text
-    | {- | The model refuses its step from the state the requests before it
-      in the batch leave, for the model's reason
+    | {- | The model refuses its step, for the model's reason: its approval, or
+      the state the requests before it in the batch leave
       -}
       RefusedByLaw Text
     deriving stock (Eq, Show)
@@ -330,26 +339,114 @@ data FoldSelection = FoldSelection
     }
     deriving stock (Eq, Show)
 
--- | The requests a fold takes, out of everything pending.
+{- | The model's refusal of the approval a request's output carries, from the
+assets it holds under the registry's application policy: exactly one, at
+quantity one, named 'approvalName' for this request's edge, key, owner and
+destination. Anything else is @no-approval@; one named for another request is
+@approval-mismatch@. The chain refuses the same outputs (@fold.ak@,
+@admitted@), naming the second @approval-binding@.
+-}
+approvalVerdict
+    :: OnChainRequest -> [(ByteString, Integer)] -> Maybe Text
+approvalVerdict r = \case
+    [(name, 1)]
+        | name == bound -> Nothing
+        | otherwise -> Just "approval-mismatch"
+    _ -> Just "no-approval"
+  where
+    bound =
+        approvalName
+            (requestEdge r)
+            (requestKey r)
+            (fromBuiltin (requestOwner r))
+            (requestDestination r)
+
+{- | The requests a fold takes, out of everything pending. In the ledger's
+input order, each one is taken when it decodes, names an edge this command
+folds, has more than the margin left before its deadline at @now@ (the
+model's admission comes first), carries its approval, and the law accepts it
+after the requests taken before it; otherwise it is left, for the first of
+those it fails. Every pending request is in exactly one list.
+-}
 selectFold
     :: Integer
+    -- ^ Now, the host's clock, POSIX milliseconds
     -> Integer
+    -- ^ The margin a fold keeps clear of a deadline, milliseconds
     -> ([(ByteString, Edge)] -> Either Text ())
+    -- ^ Whether the model accepts a batch, in order
     -> [(TxIn, PendingRequest)]
     -> FoldSelection
-selectFold _ _ _ _ = FoldSelection [] []
+selectFold nowMs marginMs lawAdmits pending =
+    go [] [] (sortOn fst pending)
+  where
+    go taken left [] = FoldSelection (reverse taken) (reverse left)
+    go taken left ((i, p) : rest) = case judge (reverse taken) i p of
+        Left why -> go taken ((i, why) : left) rest
+        Right r -> go (r : taken) left rest
+    judge taken i = \case
+        PendingUndecodable why -> Left (Undecodable why)
+        PendingDecoded r deadline -> admitted taken i r deadline Nothing
+        PendingUnapproved r deadline why -> admitted taken i r deadline (Just why)
+    admitted taken i r deadline unapproved = do
+        kind <-
+            either
+                (const (Left (EdgeUnsupported (requestEdge r))))
+                Right
+                (foldKind (requestEdge r))
+        case foldWindow marginMs nowMs deadline of
+            FoldClosed left -> Left (WindowClosed left)
+            FoldOpen _ -> Right ()
+        maybe (Right ()) (Left . RefusedByLaw) unapproved
+        either (Left . RefusedByLaw) Right $
+            lawAdmits (map move taken <> [(requestKey r, requestEdge r)])
+        Right (SelectedRequest i r kind deadline)
+    move s = (requestKey (srRequest s), requestEdge (srRequest s))
 
--- | The exclusion's name, as a receipt states it.
+{- | The exclusion's name, as a receipt states it: @window-closed@,
+@edge-unsupported@, @undecodable@, or @refused-by-law@ and the model's reason.
+-}
 renderExclusion :: Exclusion -> Text
-renderExclusion _ = ""
+renderExclusion = \case
+    WindowClosed _ -> "window-closed"
+    EdgeUnsupported _ -> "edge-unsupported"
+    Undecodable _ -> "undecodable"
+    RefusedByLaw why -> "refused-by-law " <> why
 
--- | Whether the model accepts a batch, over the leaves before the fold.
+{- | The model's verdict on a batch of the two edges @registry fold@ folds,
+step by step, from the leaves the replayed tree holds before the fold and the
+keys whose one active holding is live: @Singular.refusal@'s reasons for an
+insertion to Active and for a termination. A key the batch inserts has no
+live holding yet, so a termination of it in the same batch is
+@token-missing@, although the model would admit it: the fold could not
+source the burn.
+-}
 leafLaw
     :: Map ByteString Leaf
+    -- ^ Each key's leaf before the fold; a key not here is unknown
     -> Set ByteString
+    -- ^ The keys whose one active holding is live
     -> [(ByteString, Edge)]
     -> Either Text ()
-leafLaw _ _ _ = Right ()
+leafLaw = go
+  where
+    go _ _ [] = Right ()
+    go leaves holdings ((key, edge) : rest)
+        | edge == edgeInsertActive = case before of
+            Unknown -> go (Map.insert key Active leaves) holdings rest
+            _ -> Left "key-exists"
+        | edge == edgeUpdateTerminal = case before of
+            Active
+                | Set.member key holdings ->
+                    go (Map.insert key Terminal leaves) (Set.delete key holdings) rest
+                | otherwise -> Left "token-missing"
+            Unknown -> Left "key-unknown"
+            Absent -> Left "not-booked"
+            Terminal -> Left "terminal-immutable"
+        | otherwise = Left ("edge " <> edgeText <> " is not folded here")
+      where
+        before = Map.findWithDefault Unknown key leaves
+        edgeText = T.pack (edgeName edge)
 
 -- | Why a fold is not built over a selection.
 data FoldRefusal
@@ -359,36 +456,116 @@ data FoldRefusal
       NamedNotIncluded TxIn (Maybe Exclusion)
     deriving stock (Eq, Show)
 
--- | The requests a fold builds over, or why it builds none.
+{- | The requests a fold builds over, in order, or why it builds none: nothing
+foldable is pending, or a request the caller named is not among them.
+-}
 foldRequests
     :: Maybe TxIn
     -> FoldSelection
     -> Either FoldRefusal (NonEmpty SelectedRequest)
-foldRequests _ _ = Left (NothingToFold [])
+foldRequests named s = case nonEmpty (selIncluded s) of
+    Nothing -> Left (NothingToFold (selExcluded s))
+    Just taken -> case named of
+        Just r
+            | r `notElem` map srInput (selIncluded s) ->
+                Left (NamedNotIncluded r (lookup r (selExcluded s)))
+        _ -> Right taken
 
 -- | One line naming the refusal.
 renderFoldRefusal :: FoldRefusal -> String
-renderFoldRefusal _ = ""
+renderFoldRefusal = \case
+    NothingToFold [] -> "nothing-to-fold: nothing is pending, there is no request to fold"
+    NothingToFold left ->
+        "nothing-to-fold: every pending request is left out ("
+            <> intercalate
+                "; "
+                [txt r <> " " <> T.unpack (renderExclusion why) | (r, why) <- left]
+            <> "): no fold is built"
+    NamedNotIncluded r Nothing ->
+        "the request "
+            <> txt r
+            <> " is not pending: it was folded, retracted or never booked"
+    NamedNotIncluded r (Just why) ->
+        "the request "
+            <> txt r
+            <> " is not folded, "
+            <> T.unpack (renderExclusion why)
+            <> ": "
+            <> detail why
+            <> ": no fold is built"
+  where
+    txt = T.unpack . renderOutRef
+    detail = \case
+        WindowClosed left
+            | left <= 0 ->
+                "its processing deadline has passed, "
+                    <> show (negate left `div` 1000)
+                    <> " s ago"
+            | otherwise ->
+                "its processing deadline is only "
+                    <> show (left `div` 1000)
+                    <> " s ahead, within the "
+                    <> show (foldMarginMs `div` 1000)
+                    <> " s a fold needs to be included"
+        EdgeUnsupported e ->
+            "it names edge "
+                <> edgeName e
+                <> ", which registry fold does not fold"
+        Undecodable why -> T.unpack why
+        RefusedByLaw why -> "the model refuses its step, " <> T.unpack why
 
--- | The deadline that bounds a fold over the selected requests.
+-- | The deadline that bounds a fold over the selected requests: the earliest.
 selectionDeadline :: NonEmpty SelectedRequest -> Integer
-selectionDeadline (r :| _) = srDeadlineMs r
+selectionDeadline = minimum . fmap srDeadlineMs
 
--- | Whether a built fold spends the state and exactly the selected requests.
+{- | Whether a built fold spends the registry's state and exactly the selected
+requests among those pending, beside whatever else funds it; otherwise why not.
+-}
 spendsSelection
     :: TxIn
+    -- ^ The registry's state output
     -> [TxIn]
+    -- ^ The selected requests
     -> [TxIn]
+    -- ^ Every pending request
     -> [TxIn]
+    -- ^ What the built fold spends
     -> Either String ()
-spendsSelection _ _ _ _ = Right ()
+spendsSelection state selected pending spent
+    | state `notElem` spent =
+        Left
+            ( "the built fold does not spend the registry's state output "
+                <> txt state
+            )
+    | spentRequests /= Set.fromList selected =
+        Left
+            ( "the built fold spends the requests ["
+                <> intercalate ", " (map txt (Set.toList spentRequests))
+                <> "], not exactly the selected ["
+                <> intercalate ", " (map txt selected)
+                <> "]"
+            )
+    | otherwise = Right ()
+  where
+    spentRequests = Set.fromList [i | i <- spent, i `elem` pending]
+    txt = T.unpack . renderOutRef
 
--- | The owners a fold pays less than it owes them.
+{- | The owners a fold pays less than it owes them, with what it owes and pays:
+what several requests owe one owner is summed, and so is what the fold's
+outputs pay that owner.
+-}
 unpaidOwners
     :: [(ByteString, Integer)]
+    -- ^ What is owed, per owner
     -> [(ByteString, Integer)]
+    -- ^ What is paid, per owner
     -> [(ByteString, Integer, Integer)]
-unpaidOwners _ _ = []
+unpaidOwners owed paid =
+    [ (owner, due, got)
+    | (owner, due) <- Map.toList (Map.fromListWith (+) owed)
+    , let got = Map.findWithDefault 0 owner (Map.fromListWith (+) paid)
+    , got < due
+    ]
 
 -- | The edges @registry fold@ folds.
 data FoldKind = FoldInsertion | FoldTermination
