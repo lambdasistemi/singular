@@ -1377,8 +1377,14 @@ commandReceipt c k updates terminal = case c of
     Insert ->
         object
             [ "outcome" .= ("success" :: String)
-            , "liveOutput" .= ("i#1" :: String)
-            , "envelope" .= envelope "p0"
+            , "request" .= ("b#0" :: String)
+            , "folded"
+                .= [ object
+                        [ "request" .= ("b#0" :: String)
+                        , "liveOutput" .= ("i#1" :: String)
+                        , "envelope" .= envelope "p0"
+                        ]
+                   ]
             ]
     Update _ ->
         object
@@ -1390,8 +1396,14 @@ commandReceipt c k updates terminal = case c of
     Terminate ->
         object
             [ "outcome" .= ("success" :: String)
-            , "deposit" .= (2_000_000 :: Int)
-            , "released" .= ("t#1" :: String)
+            , "request" .= ("tb#0" :: String)
+            , "folded"
+                .= [ object
+                        [ "request" .= ("tb#0" :: String)
+                        , "deposit" .= (2_000_000 :: Int)
+                        , "released" .= ("t#1" :: String)
+                        ]
+                   ]
             ]
     Inspect
         | terminal ->
