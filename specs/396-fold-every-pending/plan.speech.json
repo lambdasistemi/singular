@@ -85,7 +85,11 @@
       "pause": 500
     },
     {
-      "text": "FoldWitness: each included request's submittedAt and the transaction's finite validity upper bound, excluded.",
+      "text": "Request.submittedAt: the submission time of the request itself, as its chain datum records.",
+      "pause": 300
+    },
+    {
+      "text": "FoldWitness: only the transaction's finite validity upper bound, excluded. Admission reads every included request's own submission time; no separate time list can omit one.",
       "pause": 300
     },
     {
@@ -113,6 +117,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b7e72b5755035c7e5070a3159f4fec2617e31ba7d2613fcb2249ab07c3c35ec8"
+    "sha256": "28c8db85cd47de4bd87e67f153712dce08cc6bdcc8c7b6150c81539b17bbf6c4"
   }
 }

@@ -71,8 +71,9 @@ the trie walk of the replayed tree.
 
 ## Model slice rows (after the ruling)
 
-- `FoldWitness`: each included request's `submittedAt` and the transaction's finite
-  validity upper bound, excluded.
+- `Request.submittedAt`: the submission time of the request itself, as its chain datum records.
+- `FoldWitness`: only the transaction's finite validity upper bound, excluded. Admission
+  reads every included request's own submission time; no separate time list can omit one.
 - `foldAdmission`: `not-phase1` when the upper bound passes any request's
   `submittedAt + processTime`; admission precedes `foldBatch`'s refusals.
 - Statements: `fold_batch_refuses_past_deadline`, `fold_admitted_in_window_is_fold_batch`,
