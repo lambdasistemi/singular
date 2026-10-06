@@ -114,7 +114,7 @@ expectedHashes = describe "the hashes a registry's references must carry" $ do
                     Map.fromList
                         [ (role, hashScript script)
                         | (name, script) <- bootScripts
-                        , Just role <- [parseRole name]
+                        , Just role <- [testParseRole name]
                         ]
             Map.size published `shouldBe` length bootScripts
             expectedReferences release token `shouldBe` published
@@ -156,7 +156,7 @@ resolution = describe "resolving the state token" $ do
                     fst (resolvedState r) `shouldBe` stateIn
                     snd (resolvedState r) `shouldBe` stateOutput bootState
                     resolvedDatum r `shouldBe` bootState
-                    resolvedExpected r `shouldBe` expectedReferences release token
+                    resolvedExpected r `shouldBe` bootExpected
                     resolvedNetwork r `shouldBe` LP.Network 42
                     pins (resolvedConfig r) `shouldBe` pins bootCfg
                     cageSeed (resolvedConfig r) `shouldBe` cageSeed bootCfg
@@ -425,7 +425,7 @@ search = describe "finding the references a command needs" $ do
                 (chainSession logRef chain)
                 []
                 []
-                (expectedReferences release token)
+                bootExpected
                 wanted
         fmap (Map.keysSet . fst) found `shouldBe` Right wanted
         reads' <- readIORef logRef
@@ -436,7 +436,7 @@ search = describe "finding the references a command needs" $ do
         $ do
             let wanted = Set.fromList [RoleWitnessAbsent, RoleWitnessTerminal]
             found <- searchOn honestChain [] [] wanted
-            let expected = expectedReferences release token
+            let expected = bootExpected
             found
                 `shouldBe` Left
                     ( ReferenceMissing
@@ -489,13 +489,38 @@ searchOn chain hints wallet wanted = do
         (chainSession logRef chain)
         hints
         wallet
-        (expectedReferences release token)
+        bootExpected
         wanted
+
+{- | A receipt name to its role, written by hand from the six names the
+boot publishes, never by the code under test.
+-}
+testParseRole :: Text -> Maybe ReferenceRole
+testParseRole = \case
+    "state" -> Just RoleState
+    "request" -> Just RoleRequest
+    "witness-absent" -> Just RoleWitnessAbsent
+    "witness-active" -> Just RoleWitnessActive
+    "witness-terminal" -> Just RoleWitnessTerminal
+    "application" -> Just RoleApplication
+    _ -> Nothing
+
+-- | The hashes the boot published, by role, from the fixture scripts alone.
+bootExpected :: Map.Map ReferenceRole ScriptHash
+bootExpected =
+    Map.fromList
+        [ (role, hashScript script)
+        | (name, script) <- bootScripts
+        , Just role <- [testParseRole name]
+        ]
 
 -- | The role and the script the boot published for it.
 needed :: ReferenceRole -> (ReferenceRole, Script ConwayEra)
 needed role =
-    case [script | (name, script) <- bootScripts, parseRole name == Just role] of
+    case [ script
+         | (name, script) <- bootScripts
+         , testParseRole name == Just role
+         ] of
         [script] -> (role, script)
         _ -> error ("no boot script for " <> show role)
 
