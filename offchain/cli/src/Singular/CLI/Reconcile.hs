@@ -27,6 +27,11 @@ module Singular.CLI.Reconcile
     , reconcileIncomplete
     , refuseUnreconciled
 
+      -- * Observation and rollback, per transaction
+    , KeyRead
+    , observe
+    , rolledBackLine
+
       -- * Receipts
     , reconciledJson
     , recoveryJson
@@ -173,7 +178,7 @@ reconcile command dir saved view = do
     let readKey key = do
             leaf <- trieLeaf context key root
             pure (leaf, liveOutputFor saved key outs)
-    observedNow <- observe command dir (Just readKey) recovered
+    observedNow <- observedOf <$> observe command dir (Just readKey) recovered
     remaining <- remainingOf <$> readJournal dir
     pure
         Reconciliation
@@ -197,7 +202,7 @@ reconcileIncomplete command dir view = do
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
     recovered <- recoverInclusion command dir view liveAt
-    observedNow <- observe command dir Nothing recovered
+    observedNow <- observedOf <$> observe command dir Nothing recovered
     remaining <- remainingOf <$> readJournal dir
     pure
         Reconciliation
@@ -207,6 +212,12 @@ reconcileIncomplete command dir view = do
             , rcObserved = observedNow
             , rcRemaining = remaining
             }
+
+-- | The transactions whose every verdict held, which were journalled observed.
+observedOf :: [(Text, [Either Text Text])] -> [Text]
+observedOf verdicts = [t | (t, vs) <- verdicts, not (null vs), all isRight vs]
+  where
+    isRight = either (const False) (const True)
 
 excludedOf :: [Recovery] -> [Text]
 excludedOf recovered = [recTx r | r <- recovered, recExcluded r]
@@ -349,26 +360,46 @@ rollBack command dir view liveAt = do
                 case rollbackEvidence (Just CaseIncluded) inclusion of
                     Nothing -> pure Nothing
                     Just found -> do
-                        let returnsTo = prepared >>= journalRootBefore
-                            isFold = isJust (prepared >>= journalEdge)
                         appendJournal
                             dir
-                            ( recoveryLine
+                            ( rolledBackLine
                                 command
                                 (lastOf entries t)
-                                "rolled-back"
-                                ( "its first output is not live and "
-                                    <> T.pack (show (length found))
-                                    <> " input(s) it spends are live again: it is no longer on the chain"
-                                    <> (if isFold then "; the public state returns to its root before" else "")
-                                )
+                                prepared
+                                found
+                                observed
                             )
-                                { journalChainPoint = Nothing
-                                , journalObservedTip = Just (renderPoint observed)
-                                , journalInputs = Just (map txInText found)
-                                , journalRootBefore = if isFold then returnsTo else Nothing
-                                }
                         pure (Just t)
+
+{- | The @rolled-back@ line for a transaction whose spent inputs are live
+again, from its last line and its @prepared@ line.
+-}
+rolledBackLine
+    :: Text
+    -> JournalEntry
+    -> Maybe JournalEntry
+    -> [TxIn]
+    -> Cage.TipObservation
+    -> JournalEntry
+rolledBackLine command lastLine prepared found observed =
+    ( recoveryLine
+        command
+        lastLine
+        "rolled-back"
+        ( "its first output is not live and "
+            <> T.pack (show (length found))
+            <> " input(s) it spends are live again: it is no longer on the chain"
+            <> (if isFold then "; the public state returns to its root before" else "")
+        )
+    )
+        { journalChainPoint = Nothing
+        , journalObservedTip = Just (renderPoint observed)
+        , journalInputs = Just (map txInText found)
+        , journalRootBefore = if isFold then returnsTo else Nothing
+        }
+  where
+    returnsTo = prepared >>= journalRootBefore
+    isFold = isJust (prepared >>= journalEdge)
 
 {- | Inclusion evidence for each unresolved transaction, from its saved
 body bound to its @prepared@ line: journals @confirmed@ for an included
@@ -490,7 +521,11 @@ after-state is read back now. A key-bound after-state is read for the
 key its own @prepared@ line names; without a key reader none is.
 -}
 observe
-    :: Text -> FilePath -> Maybe KeyRead -> [Recovery] -> IO [Text]
+    :: Text
+    -> FilePath
+    -> Maybe KeyRead
+    -> [Recovery]
+    -> IO [(Text, [Either Text Text])]
 observe command dir readKey recovered = do
     found <-
         fmap catMaybes . forM recovered $ \r ->
@@ -499,7 +534,7 @@ observe command dir readKey recovered = do
                 _ -> pure Nothing
     forM_ found $ \(r, what) ->
         appendJournal dir (recoveryLine command (recLast r) "observed" what)
-    pure (map (recTx . fst) found)
+    pure [(recTx r, [Right what]) | (r, what) <- found]
   where
     keyOf p =
         journalKey p
@@ -576,4 +611,5 @@ recoveryLine command e event detail =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTransitions = Nothing
         }

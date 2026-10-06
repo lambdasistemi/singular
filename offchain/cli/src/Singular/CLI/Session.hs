@@ -560,6 +560,7 @@ blankEntry wc step txid event =
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
         , journalTime = Nothing
+        , journalTransitions = Nothing
         }
 
 {- | What a submission's readback must find, journalled at @prepared@ so a

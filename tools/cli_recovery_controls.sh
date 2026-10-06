@@ -55,7 +55,7 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
-known_parts="accepting lost-answer killed cross-wallet never-sent whole-journal rollback trie-capability"
+known_parts="accepting lost-answer killed cross-wallet fold-many-killed fold-lost-race never-sent whole-journal rollback trie-capability"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   # cross-wallet:<hold>[:lost-answer] tokens are validated against the
   # source census below, before any node starts.
@@ -744,9 +744,11 @@ if [ "$cross_any" -eq 1 ]; then
     snap "$cross-booked"
     reached=0
     export SINGULAR_HARNESS_HOLD_STEP=fold
-    if [[ "$cross_case" == *:lost-answer ]]; then
+    if [[ "$cross_case" == *:lost-answer ]] || [ "$point" = SINGULAR_HARNESS_HOLD_BEFORE_SEND ]; then
       # Hold at the send, witness the saved prepared body, release the process
       # with its answer dropped, then let the next ordinary command reconcile.
+      # A fold held before its send is released the same way: killed there it
+      # would never be sent, which the never-sent controls below cover.
       export SINGULAR_HARNESS_DROP_ANSWER=fold
       at_cross_send() { snap "$cross-sent"; }
       paused "$cross-fold" "$point" at_cross_send registry fold \
@@ -809,12 +811,17 @@ if [ "$cross_any" -eq 1 ]; then
     cross_clause "the fold spent the booked request on its insertion edge" \
       '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")]
       | length == 1 and (.[0] | .journalInputs | index($e.booking.request)) != null
-      and .[0].journalKey == $e.key and .[0].journalEdge == 1 and .[0].journalRootBefore == $e.roots.before
+      and (.[0].journalTransitions | length) == 1
+      and (.[0].journalTransitions[0] | .transitionRequest == $e.booking.request
+        and .transitionKey == $e.key and .transitionEdge == 1 and .transitionRootBefore == $e.roots.before)
+      and .[0].journalRootBefore == $e.roots.before
+      and .[0].journalRootAfter == .[0].journalTransitions[0].transitionRootAfter
       and .[0].journalRootAfter != .[0].journalRootBefore' \
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalInputs = [] else . end)' \
-      '. as $e | .held |= map(if .journalTxId == $e.fold then .journalKey += "tampered" else . end)' \
-      '. as $e | .held |= map(if .journalTxId == $e.fold then .journalEdge = 3 else . end)' \
-      '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootBefore += "tampered" else . end)' \
+      '. as $e | .held |= map(if .journalTxId == $e.fold and .journalTransitions != null then .journalTransitions[0].transitionKey += "tampered" else . end)' \
+      '. as $e | .held |= map(if .journalTxId == $e.fold and .journalTransitions != null then .journalTransitions[0].transitionEdge = 3 else . end)' \
+      '. as $e | .held |= map(if .journalTxId == $e.fold and .journalTransitions != null then .journalTransitions[0].transitionRootBefore += "tampered" else . end)' \
+      '. as $e | .held |= map(if .journalTxId == $e.fold and .journalTransitions != null then .journalTransitions += .journalTransitions else . end)' \
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootAfter = .journalRootBefore else . end)'
     cross_clause "the next ordinary write proceeds, and any pending refusals name the fold and move nothing" \
       '.exit == 0 and .next.outcome == "success" and .clean == 0' \
@@ -877,6 +884,104 @@ if [ "$cross_any" -eq 1 ]; then
   cross=fold-holds cross_check=1 cross_evidence="$receipts/fold-hold-coverage.json"
   cross_clause "every selected fold hold point was reached" \
     '(.declared | length) > 0 and .declared == .executed' '.executed = .executed[1:]' '.declared = [] | .executed = []'
+
+# ------------------------------------------------------------------
+fi
+if part fold-many-killed; then
+  # a two-request fold killed after confirmation
+  # ------------------------------------------------------------------
+  # Alice and bob each book; bob's one fold of both is killed once confirmed,
+  # before it is observed. The next ordinary write proves both keys.
+  control="a two-request fold killed before observation"
+  run many-book-a registry insert --key-hex 6e01 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  run many-book-b registry insert --key-hex 6e02 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}"
+  clause "both requests were booked" is_equal \
+    "$(jq -s -r 'map(.outcome) | join(",")' "$receipts/many-book-a.json" "$receipts/many-book-b.json")" success,success
+  snap s7
+  reached=0
+  held many-fold SINGULAR_HARNESS_HOLD_BEFORE_COMMIT registry fold "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
+  clause "the fold of both was killed after its confirmation, before observation" is_equal "$reached" 0
+  many_fold="$(fold_since s7)"
+  clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$many_fold")" confirmed
+  # The prepared line lists both requests, in input order, chained from the
+  # state's root before to its root after.
+  clause "the fold's prepared line chains a transition for each booked request" \
+    jq -e --arg a "$(field many-book-a .request)" --arg b "$(field many-book-b .request)" \
+    --arg root "$(cat "$snaps/s7.root")" '
+    .journalTransitions as $t
+    | ($t | length) == 2
+    and ([$t[].transitionRequest] | sort) == ([$a, $b] | sort)
+    and ([$t[].transitionRequest] == ([$t[].transitionRequest] | sort))
+    and ([$t[].transitionKey] | sort) == ["6e01", "6e02"]
+    and $t[0].transitionRootBefore == $root and .journalRootBefore == $root
+    and $t[0].transitionRootAfter == $t[1].transitionRootBefore
+    and $t[1].transitionRootAfter == .journalRootAfter
+    and (.journalInputs | index($a)) != null and (.journalInputs | index($b)) != null' \
+    <(prepared_of "$many_fold")
+  snap s7-killed
+  run many-next registry update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "the next write reconciles and succeeds" outcome_is many-next success
+  clause "the killed fold is observed exactly once, by the update" \
+    is_equal "$(since s7-killed | jq -r --arg t "$many_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" update
+  clause "its observation names both keys" \
+    jq -e -s --arg t "$many_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")][0].journalDetail
+    | contains("6e01") and contains("6e02")' "$journal"
+  clause "the killed fold was prepared once, never sent again" prepared_once "$many_fold"
+  for k in 6e01 6e02; do
+    run "many-inspect-$k" registry inspect --key-hex "$k" "${common[@]}" "${node[@]}"
+    clause "inspect reads key $k active at the fold's root after" is_equal \
+      "$(field "many-inspect-$k" '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$many_fold")"
+  done
+  clause "the journal was only appended to and no body changed" appended_only s7
+
+# ------------------------------------------------------------------
+fi
+if part fold-lost-race; then
+  # a fold that loses the race for the state output
+  # ------------------------------------------------------------------
+  # Two directories of one registry. Alice's fold of two requests is built and
+  # held before it is sent; meanwhile bob's fold, from the second directory,
+  # takes the same two and is confirmed. Alice's fold is then refused
+  # stale-state, its journal closed, and her rerun folds what is still pending.
+  control="a fold that loses the race"
+  run race-book-a registry insert --key-hex 6e03 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  run race-book-b registry insert --key-hex 6e04 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}"
+  race_reg="$work/registry-race"
+  cp -a "$reg" "$race_reg"
+  snap s8
+  race_won() {
+    run race-winner registry fold --registry "$race_reg" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+  }
+  reached=0
+  export SINGULAR_HARNESS_HOLD_STEP=fold
+  paused race-loser SINGULAR_HARNESS_HOLD_BEFORE_SEND race_won registry fold \
+    "${common[@]}" "${node[@]}" "${alice[@]}" || reached=1
+  unset SINGULAR_HARNESS_HOLD_STEP
+  race_lost="$(fold_since s8)"
+  clause "the losing fold was held built and prepared, before it was sent" is_equal "$reached" 0
+  clause "the winning fold took both requests" \
+    jq -e --arg a "$(field race-book-a .request)" --arg b "$(field race-book-b .request)" \
+    '.outcome == "success" and ([.folded[].request] | sort) == ([$a, $b] | sort)' "$receipts/race-winner.json"
+  clause "the losing fold is refused stale-state (exit 14)" is_equal \
+    "$(field race-loser .outcome)/$(cat "$receipts/race-loser.exit")" stale-state/14
+  clause "its refusal names the registry's state output another fold spent" \
+    jq -e '.reason | contains("state output") and contains("another fold")' "$receipts/race-loser.json"
+  clause "its journal is closed: prepared, then rejected" is_equal "$(events_of "$race_lost")" '["prepared","rejected"]'
+  clause "the losing fold had listed the same two requests" \
+    jq -e --arg a "$(field race-book-a .request)" --arg b "$(field race-book-b .request)" \
+    '([.journalTransitions[].transitionRequest] | sort) == ([$a, $b] | sort)' <(prepared_of "$race_lost")
+  run race-book-c registry insert --key-hex 6e05 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  run race-rerun registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "the rerun folds what is still pending, and only that" \
+    jq -e --arg c "$(field race-book-c .request)" \
+    '.outcome == "success" and [.folded[].request] == [$c] and .excluded == []' "$receipts/race-rerun.json"
+  clause "the losing fold was prepared once and never sent again" prepared_once "$race_lost"
+  clause "the journal was only appended to and no body changed" appended_only s8
 
 # ------------------------------------------------------------------
 fi

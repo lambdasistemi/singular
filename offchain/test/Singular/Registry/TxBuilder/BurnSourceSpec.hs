@@ -47,6 +47,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.List (isPrefixOf)
+import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Data.Word (Word8)
 import GHC.Clock (getMonotonicTimeNSec)
@@ -171,6 +172,7 @@ import Singular.Registry.TxBuilder.Update
     , RegistryDuties (..)
     , emptyRegistryContext
     , registryDuties
+    , updateTokenSelected
     , updateTokenWithDuties
     , updateTokenWithTrieState
     )
@@ -340,6 +342,7 @@ spec = do
     applicationRelease
     openDatumFold
     releaseResolution
+    selectedFold
 
 -- ---------------------------------------------------------
 -- #178: absent custody identity comes from its sole asset
@@ -1800,3 +1803,105 @@ releaseResolution =
                                         )
                     witnessedScripts tx `shouldSatisfy` notElem (hashScript appScript)
                     spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
+
+-- ---------------------------------------------------------
+-- A fold over chosen pending requests
+-- ---------------------------------------------------------
+
+{- | Three insertions are pending, at three keys; a fold over two of them
+spends the state and exactly those two, and its validity upper bound is the
+earliest deadline of the two — never the third's, which is earlier still.
+Under the synthetic tenth-of-a-second slot each request is submitted so its
+deadline falls at a chosen slot: 975 for the request left out, 995 and 985
+for the two chosen. Folding all three is the control: the bound moves to 975.
+-}
+selectedFold :: Spec
+selectedFold = describe "a fold over chosen pending requests" $ do
+    it "spends the state and exactly the chosen requests, bounded by their earliest deadline" $ do
+        tx <- buildSelected (fst first NE.:| [fst third])
+        let body = tx ^. bodyTxL
+            ValidityInterval _ upper = body ^. vldtTxBodyL
+            spent = body ^. inputsTxBodyL
+        Set.member stateIn spent `shouldBe` True
+        filter (`elem` map fst waiting) (Set.toList spent)
+            `shouldBe` [fst first, fst third]
+        upper `shouldBe` SJust (SlotNo 985)
+    it "bounds a fold over every pending request by the earliest of all" $ do
+        tx <- buildSelected (NE.fromList (map fst waiting))
+        let body = tx ^. bodyTxL
+            ValidityInterval _ upper = body ^. vldtTxBodyL
+        filter (`elem` map fst waiting) (Set.toList (body ^. inputsTxBodyL))
+            `shouldBe` map fst waiting
+        upper `shouldBe` SJust (SlotNo 975)
+  where
+    first = pendingAt 0 "t396-key-a" 995
+    left = pendingAt 1 "t396-key-b" 975
+    third = pendingAt 2 "t396-key-c" 985
+    waiting = [first, left, third]
+    pendingAt :: Int -> ByteString -> Integer -> (TxIn, TxOut ConwayEra)
+    pendingAt i key slot =
+        let (_, output) = requestFor edgeInsertAbsent
+            reference = case parseOutRef (T.pack (replicate 64 '2' <> "#" <> show i)) of
+                Right r -> r
+                Left e -> error ("selected fold fixture: " <> e)
+        in  case extractCageDatum output of
+                Just (RequestDatum request) ->
+                    builtRequest
+                        ( reference
+                        , output
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    ( toPlcData
+                                        ( RequestDatum
+                                            request
+                                                { requestKey = key
+                                                , requestSubmittedAt =
+                                                    slot * 100 - stateProcessTime tokenState
+                                                }
+                                        )
+                                    )
+                        )
+                _ -> error "selected fold fixture: request datum absent"
+    who =
+        TS.RegistryIdentity
+            (TS.StatePolicyId (scriptHashBytes (cfgScriptHash builtCfg)))
+            (AssetName "t177-registry")
+    buildSelected chosen = do
+        let root = Root (BS.replicate 32 0)
+            point = TS.StatePoint (TS.SessionId "builder-fixture") TS.Unbound stateIn
+            selection = TS.TrieSelection who point root
+            fixture =
+                Fixture.fixtureStore
+                    [(selection, Just (TS.CreateRecord who stateIn), [], emptyMPFInMemoryDB)]
+            state =
+                snd stateUtxoFor
+                    & datumTxOutL
+                        .~ mkInlineDatum
+                            (toPlcData (StateDatum tokenState{stateRoot = OnChainRoot (unRoot root)}))
+            raw =
+                withAddressOutputs
+                    ( \a ->
+                        pure $
+                            if a == cageAddrFromCfg builtCfg Testnet
+                                then [(stateIn, state)]
+                                else
+                                    if a == requestAddrFromCfg builtCfg foldTokenId Testnet
+                                        then waiting
+                                        else utxosAt a
+                    )
+                    $ withResolvedOutputs (resolveBuilt waiting [])
+                    $ withTime (pure (syntheticTimeWith 0 (1 / 10) 500)) foldProvider
+            view =
+                withTip (TipObservation (SlotNo 868) (BS.replicate 32 0) 1 0) raw
+        snapshot <-
+            either
+                (\why -> expectationFailure (show why) >> fail "fixture setup")
+                pure
+                (Fixture.fixtureSnapshot fixture selection)
+        let capability =
+                TS.TrieState
+                    (\_ use -> Right <$> use snapshot)
+                    (const (pure (Right ())))
+        result <- TS.withTrieState capability selection $ \snap ->
+            updateTokenSelected builtCfg view snap foldTokenId payer witnessScripts chosen
+        either (\why -> expectationFailure (show why) >> fail "no snapshot") pure result

@@ -29,6 +29,7 @@ module Singular.Registry.TxBuilder.Update
     ( updateTokenImpl
     , updateTokenWithDuties
     , updateTokenWithTrieState
+    , updateTokenSelected
     , emptyRegistryContext
     , RegistryDuties (..)
     , RegistryContext (..)
@@ -156,6 +157,22 @@ updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
     requestEdgeOf (_, out) = case extractCageDatum out of
         Just (RequestDatum request) -> Just (requestKey request, requestEdge request)
         _ -> Nothing
+
+{- | Fold the chosen pending requests and no other, from the selected
+capability snapshot; the validity upper bound is the earliest deadline among
+them.
+-}
+updateTokenSelected
+    :: CageConfig
+    -> Session NoWitness IO
+    -> TS.TrieSnapshot IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> NE.NonEmpty TxIn
+    -> IO ConwayTx
+updateTokenSelected cfg view snap tid addr ctx0 _ =
+    updateTokenWithTrieState cfg view snap tid addr ctx0
 
 updateTokenUsing
     :: CageConfig

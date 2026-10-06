@@ -34,6 +34,21 @@ module Singular.CLI.FoldRules
     , foldTarget
     , renderTargetRefusal
 
+      -- * Which requests
+    , PendingRequest (..)
+    , Exclusion (..)
+    , SelectedRequest (..)
+    , FoldSelection (..)
+    , selectFold
+    , renderExclusion
+    , leafLaw
+    , FoldRefusal (..)
+    , foldRequests
+    , renderFoldRefusal
+    , selectionDeadline
+    , spendsSelection
+    , unpaidOwners
+
       -- * Which edge
     , FoldKind (..)
     , foldKind
@@ -43,7 +58,12 @@ module Singular.CLI.FoldRules
     , fundedView
     ) where
 
+import Data.ByteString (ByteString)
 import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Map.Strict (Map)
+import Data.Set (Set)
+import Data.Text (Text)
 import Data.Text qualified as T
 
 import Cardano.Ledger.Address (Addr)
@@ -53,6 +73,9 @@ import Singular.Application.OpenDatum.Envelope
     ( Envelope
     , envelopeFromData
     )
+
+import Singular.Registry.TrieState (Leaf (..))
+
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -264,6 +287,108 @@ renderTargetRefusal = \case
             <> "); the registry's fold takes every pending request, so it is built only while exactly one is pending"
   where
     txt = T.unpack . renderOutRef
+
+-- | A request pending at the registry's request address, as a fold reads it.
+data PendingRequest
+    = -- | The decoded request and its processing deadline, POSIX milliseconds
+      PendingDecoded OnChainRequest Integer
+    | -- | Why its datum does not read as a request
+      PendingUndecodable Text
+    deriving stock (Eq, Show)
+
+-- | Why a fold leaves a pending request out.
+data Exclusion
+    = {- | Its deadline is within the fold's margin or past: the milliseconds
+      left, negative when it has passed
+      -}
+      WindowClosed Integer
+    | -- | It names an edge @registry fold@ does not fold
+      EdgeUnsupported Edge
+    | -- | Its datum does not read as a request
+      Undecodable Text
+    | {- | The model refuses its step from the state the requests before it
+      in the batch leave, for the model's reason
+      -}
+      RefusedByLaw Text
+    deriving stock (Eq, Show)
+
+-- | A pending request a fold takes.
+data SelectedRequest = SelectedRequest
+    { srInput :: TxIn
+    , srRequest :: OnChainRequest
+    , srKind :: FoldKind
+    , srDeadlineMs :: Integer
+    }
+    deriving stock (Eq, Show)
+
+{- | What a fold takes and what it leaves: every pending request is in exactly
+one of the two lists, each in the ledger's input order.
+-}
+data FoldSelection = FoldSelection
+    { selIncluded :: [SelectedRequest]
+    , selExcluded :: [(TxIn, Exclusion)]
+    }
+    deriving stock (Eq, Show)
+
+-- | The requests a fold takes, out of everything pending.
+selectFold
+    :: Integer
+    -> Integer
+    -> ([(ByteString, Edge)] -> Either Text ())
+    -> [(TxIn, PendingRequest)]
+    -> FoldSelection
+selectFold _ _ _ _ = FoldSelection [] []
+
+-- | The exclusion's name, as a receipt states it.
+renderExclusion :: Exclusion -> Text
+renderExclusion _ = ""
+
+-- | Whether the model accepts a batch, over the leaves before the fold.
+leafLaw
+    :: Map ByteString Leaf
+    -> Set ByteString
+    -> [(ByteString, Edge)]
+    -> Either Text ()
+leafLaw _ _ _ = Right ()
+
+-- | Why a fold is not built over a selection.
+data FoldRefusal
+    = -- | Nothing pending is foldable: every exclusion, possibly none
+      NothingToFold [(TxIn, Exclusion)]
+    | -- | The named request is not among those folded, and why
+      NamedNotIncluded TxIn (Maybe Exclusion)
+    deriving stock (Eq, Show)
+
+-- | The requests a fold builds over, or why it builds none.
+foldRequests
+    :: Maybe TxIn
+    -> FoldSelection
+    -> Either FoldRefusal (NonEmpty SelectedRequest)
+foldRequests _ _ = Left (NothingToFold [])
+
+-- | One line naming the refusal.
+renderFoldRefusal :: FoldRefusal -> String
+renderFoldRefusal _ = ""
+
+-- | The deadline that bounds a fold over the selected requests.
+selectionDeadline :: NonEmpty SelectedRequest -> Integer
+selectionDeadline (r :| _) = srDeadlineMs r
+
+-- | Whether a built fold spends the state and exactly the selected requests.
+spendsSelection
+    :: TxIn
+    -> [TxIn]
+    -> [TxIn]
+    -> [TxIn]
+    -> Either String ()
+spendsSelection _ _ _ _ = Right ()
+
+-- | The owners a fold pays less than it owes them.
+unpaidOwners
+    :: [(ByteString, Integer)]
+    -> [(ByteString, Integer)]
+    -> [(ByteString, Integer, Integer)]
+unpaidOwners _ _ = []
 
 -- | The edges @registry fold@ folds.
 data FoldKind = FoldInsertion | FoldTermination

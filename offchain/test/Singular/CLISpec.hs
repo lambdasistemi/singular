@@ -895,6 +895,7 @@ journal = describe "the journal of a write" $ do
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
             , journalTime = Nothing
+            , journalTransitions = Nothing
             }
 
 -- ---------------------------------------------------------
@@ -1039,6 +1040,7 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
             , journalTime = Nothing
+            , journalTransitions = Nothing
             }
 
 -- ---------------------------------------------------------
@@ -1191,6 +1193,7 @@ jline t e =
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
         , journalTime = Nothing
+        , journalTransitions = Nothing
         }
 
 withTempDir :: (FilePath -> IO a) -> IO a

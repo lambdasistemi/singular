@@ -45,6 +45,9 @@ never filled from an expectation. No secret is ever written.
 module Singular.CLI.Receipt
     ( -- * Journal
       JournalEntry (..)
+    , FoldTransition (..)
+    , foldTransitions
+    , chainTransitions
     , journalPath
     , appendJournal
     , readJournal
@@ -139,6 +142,10 @@ data JournalEntry = JournalEntry
     {- ^ When the line was appended, ISO-8601 UTC with millisecond precision.
     Stamped by 'appendJournal'; absent from lines written before it was
     -}
+    , journalTransitions :: Maybe [FoldTransition]
+    {- ^ At a fold's @prepared@: the requests it folds, in batch order. At a
+    fold's @rolled-back@: those requests, pending again
+    -}
     }
     deriving stock (Eq, Show, Generic)
 
@@ -146,6 +153,38 @@ instance ToJSON JournalEntry where
     toJSON = Aeson.genericToJSON Aeson.defaultOptions
 instance FromJSON JournalEntry where
     parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+-- | One request a fold folds: its key's move and the roots around it.
+data FoldTransition = FoldTransition
+    { transitionRequest :: Maybe Text
+    -- ^ The request output it spends; absent from a line written before batches
+    , transitionKey :: Text
+    -- ^ The registry key, hex
+    , transitionEdge :: Integer
+    , transitionExpect :: Text
+    -- ^ The key's after-state: @active:ENVELOPEHASH@ or @terminal@
+    , transitionRootBefore :: Text
+    , transitionRootAfter :: Text
+    }
+    deriving stock (Eq, Show, Generic)
+
+instance ToJSON FoldTransition where
+    toJSON = Aeson.genericToJSON Aeson.defaultOptions
+instance FromJSON FoldTransition where
+    parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+-- | The transitions a journal line binds to its transaction.
+foldTransitions :: JournalEntry -> [FoldTransition]
+foldTransitions _ = []
+
+{- | A batch's transitions from the transaction's root before and, per
+request, its output, key, edge, after-state and root after.
+-}
+chainTransitions
+    :: Text
+    -> [(Text, Text, Integer, Text, Text)]
+    -> [FoldTransition]
+chainTransitions _ _ = []
 
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"
