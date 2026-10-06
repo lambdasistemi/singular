@@ -1,0 +1,118 @@
+{
+  "fold-every-pending-request-plan": [
+    {
+      "text": "Fold every pending request: plan.",
+      "pause": 500
+    },
+    {
+      "text": "Read the spec for the stories and requirements. Base: main 9011ca17.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The library's fold already speculates every pending request; it gains an explicit selection, and the bound follows the selection. The command chooses that selection purely, from the pending requests, the clock and the law, and carries a list through the receipt, the journal and reconciliation. The model gains the fold's phase-1 admission so the selection's deadline rule has a counterpart. The two-actor journey of #381 closes the story once its harness, the join (#437) and public insertion inputs (#419) are on main.",
+      "pause": 400
+    },
+    {
+      "text": "Main is integrated by merge commit. #419 rewrites the envelope read in Fold.hs; this ticket keeps that read behind one per-request function so the merge touches one call site.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "The first two ship in one PR; the third closes #396.",
+      "pause": 400
+    }
+  ],
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    }
+  ],
+  "data-rows": [
+    {
+      "text": "Data rows.",
+      "pause": 500
+    },
+    {
+      "text": "Pending request. Output reference, then either the decoded request with its deadline (submittedAt + processTime) or the decoding failure.",
+      "pause": 300
+    },
+    {
+      "text": "Exclusion. window-closed (deadline at or before now plus the fold margin), edge-unsupported, undecodable, refused-by-law with the model's reason.",
+      "pause": 300
+    },
+    {
+      "text": "Selection. Included requests in input order, non-empty for a fold; excluded requests with their exclusion. Every pending request is in exactly one of the two.",
+      "pause": 300
+    },
+    {
+      "text": "Fold transition. Request output reference, key, edge, expected leaf, root before, root after. A batch's transitions chain: the first root before is the state's root, each root after is the next root before, the last root after is the new state's root.",
+      "pause": 300
+    },
+    {
+      "text": "Journal line. The existing transaction fields plus the batch's transitions. A line with the earlier scalar key, edge and root fields is the batch of that one transition.",
+      "pause": 300
+    },
+    {
+      "text": "Fold receipt. folded: per request, output reference, key, edge, owner, settlement (live output and envelope, or released holding and deposit), deadline. excluded: per request, output reference and exclusion. Then the transaction's root pair, validity bound and post-build decision.",
+      "pause": 300
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    },
+    {
+      "text": "lawAdmits answers whether the model accepts the batch prefix; the command backs it with the trie walk of the replayed tree.",
+      "pause": 400
+    }
+  ],
+  "model-slice-rows-after-the-ruling": [
+    {
+      "text": "Model slice rows (after the ruling).",
+      "pause": 500
+    },
+    {
+      "text": "FoldWitness: each included request's submittedAt and the transaction's finite validity upper bound, excluded.",
+      "pause": 300
+    },
+    {
+      "text": "foldAdmission: not-phase1 when the upper bound passes any request's submittedAt + processTime; admission precedes foldBatch's refusals.",
+      "pause": 300
+    },
+    {
+      "text": "Statements: fold_batch_refuses_past_deadline, fold_admitted_in_window_is_fold_batch, fold_admission_boundary (upper bound equal to the deadline admitted, one past refused).",
+      "pause": 300
+    }
+  ],
+  "limits-carried": [
+    {
+      "text": "Limits carried.",
+      "pause": 500
+    },
+    {
+      "text": "No live conformance row compares a batch with Singular.foldBatch; the constitution's named limit stands and moves to a follow-up ticket.",
+      "pause": 300
+    },
+    {
+      "text": "One directory carries the devnet evidence of slice one; separate directories are slice two.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b7e72b5755035c7e5070a3159f4fec2617e31ba7d2613fcb2249ab07c3c35ec8"
+  }
+}

@@ -1,0 +1,83 @@
+# Fold every pending request: stories and requirements
+
+Issue [#396](https://github.com/lambdasistemi/singular/issues/396), child of epic
+[#371](https://github.com/lambdasistemi/singular/issues/371), on the Demo 1 path of
+[#301](https://github.com/lambdasistemi/singular/issues/301). Read the [plan](plan.md) for
+the module rows and slices, and the [tasks](tasks.md) for the commit boundaries. Base:
+main `9011ca17`.
+
+## User stories
+
+As Alice and as Bob, each booking from my own terminal and directory, I am not blocked by
+the other's booking: one `registry fold`, run by either of us or by anyone, settles both
+requests in one transaction, and each payout reaches its own owner.
+
+As a folder, I learn from the receipt which requests the fold settled, with key, edge,
+owner and settlement, and which pending requests it left, each with the reason, so I know
+what `registry reject` will have to take.
+
+As a folder whose machine stops in the middle of a fold, I recover with the existing
+commands, and every request the fold included is reconciled.
+
+As a folder who loses the race for the registry's state output, I get a refusal that names
+it, and a rerun folds whatever is still pending.
+
+## The restriction
+
+`registry fold` built a fold only while exactly one request was pending and refused
+`concurrent-writer` otherwise (#362, plan decision D3), because its journal, reconciliation
+and rollback bound one key, one edge and one root pair per fold. The protocol already
+batches: the fold redeemer is `Modify(List<RequestAction>)`, the validator folds any
+subset of pending requests, and the model's `Singular.foldBatch` folds a list.
+
+## Requirements
+
+- **Every foldable request is folded.** A fold takes every pending request it can fold, in
+  the ledger's input order, whoever booked it. A request is left out only for one of the
+  reasons below, and the fold is refused `nothing-to-fold` only when it would take none.
+- **Exclusions are named.** A pending request is left out, and named in the receipt with
+  its reason, when its processing window has closed or closes within the fold's margin
+  (`window-closed`), when its edge is one `registry fold` does not fold
+  (`edge-unsupported`), when its datum cannot be read as a request (`undecodable`), or
+  when the model refuses its step from the state the requests before it in the batch leave
+  (`refused-by-law`, with the model's reason). Two concurrent insertions of one key are
+  the last case: the first is folded, the second is named.
+- **The bound follows the batch.** The transaction's validity upper bound is the earliest
+  deadline among the included requests, never one of an excluded request.
+- **The model governs the batch.** The included list is a batch `Singular.foldBatch`
+  accepts, and a batch containing a request past its deadline is refused `not-phase1` by
+  the model as by the chain (amendment pending, see the plan).
+- **The built transaction spends exactly the selection.** It spends the state output and
+  exactly the included request outputs; any other set is refused before submission.
+- **A named request.** `--request R` still folds every foldable request, and is refused
+  unless R is among them, naming why R is not.
+- **The receipt lists the batch.** One shape for one request or many: every folded request
+  with its key, edge, owner and settlement, every excluded request with its reason, and the
+  transaction's root pair and validity bound.
+- **The journal binds N transitions to one transaction.** A fold's journal line lists, in
+  batch order, each request's key, edge, expected leaf and root pair; the pairs chain from
+  the transaction's root before to its root after. A line written before this change reads
+  as a batch of one.
+- **Reconciliation covers every included request.** Observation proves every included key
+  against its expected leaf; rollback returns every included request to pending and
+  restores the transaction's root before.
+- **Losing the race is normal.** A fold whose state output was spent by another fold is
+  refused `stale-state`, its journal is closed, and a rerun folds what is still pending.
+- **Public inputs only.** The tree comes from the chain replay; nothing is read from
+  another actor's directory. The insertion envelope is read through one per-request
+  function, which #419 replaces with the request's own datum.
+
+## Acceptance
+
+- One devnet fold settles two requests booked by two owners, each payout bound to its
+  owner (`fold_settles_additively`).
+- A fold leaves an expired request out and names it.
+- Interrupting a two-request fold and recovering reconciles both requests.
+- The two-actor journey of #381, with separate `HOME`s and directories, books
+  concurrently and settles both with one fold (slice two, after #433, #437 and #419).
+
+## Out of scope
+
+- Rejecting in the same transaction as folding (a mixed fold).
+- Batch size limits (fold-batch-size-boundary stays uncovered).
+- The fold replay cache.
