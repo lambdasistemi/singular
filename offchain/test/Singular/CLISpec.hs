@@ -194,7 +194,7 @@ commandLine = describe "the command line" $ do
                         ( ["registry", "create", "--seed", seedText]
                             <> ["--process-time", processing, "--retract-time", retracting]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                         )
                         `shouldSatisfy` either (const False) (const True)
@@ -208,7 +208,7 @@ commandLine = describe "the command line" $ do
                         ( parseCommand
                             ( ["registry", "create", "--seed", seedText]
                                 <> reg
-                                <> node
+                                <> provider
                                 <> wallet
                                 <> extra
                             )
@@ -234,7 +234,7 @@ commandLine = describe "the command line" $ do
             $ \command ->
                 forM_ ["--process-time", "--retract-time"] $ \flag ->
                     parseCommand
-                        (["registry", command, flag, "1"] <> reg <> node <> wallet)
+                        (["registry", command, flag, "1"] <> reg <> provider <> wallet)
                         `shouldBe` Left
                             ( BadValue
                                 flag
@@ -248,7 +248,7 @@ commandLine = describe "the command line" $ do
                     parseCommand
                         ( ["registry", "create", "--seed", seedText, flag, argument]
                             <> reg
-                            <> node
+                            <> provider
                             <> wallet
                         )
                         `shouldBe` Left
@@ -257,7 +257,7 @@ commandLine = describe "the command line" $ do
                 parseCommand
                     ( ["registry", "create", "--seed", seedText]
                         <> reg
-                        <> node
+                        <> provider
                         <> wallet
                         <> [flag]
                     )
