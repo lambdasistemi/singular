@@ -2002,14 +2002,6 @@ foldWith env target selection tweak byStranger r = do
                 pure
                 answer
         live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
-        let envelopes =
-                [ envelopeOfRun
-                    env
-                    reg
-                    (addrKeyHashBytes home)
-                    (BC.unpack (requestKey q))
-                | (_, q) <- chosen
-                ]
         ctx0 <-
             Cage.withLatest
                 prov
@@ -2018,7 +2010,7 @@ foldWith env target selection tweak byStranger r = do
             either
                 fail
                 pure
-                (withApplication (applied reg) Nothing envelopes live ctx0)
+                (withApplication (applied reg) Nothing live ctx0)
         pp <- Cage.withLatest prov Cage.parameters
         owedDuties <-
             either

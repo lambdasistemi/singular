@@ -37,6 +37,8 @@ module Singular.Registry.TxBuilder.Internal
     , deltaOf
     , policyOfKind
     , approvalName
+    , approvalDestination
+    , destinationDatumHash
 
       -- * Derived identity
     , cagePolicyIdFromCfg
@@ -105,9 +107,11 @@ module Singular.Registry.TxBuilder.Internal
 
 import Singular.Registry.TxBuilder.Internal.Edges
     ( ConsumerBinding (..)
+    , approvalDestination
     , approvalName
     , deltaOf
     , deriveConsumerBinding
+    , destinationDatumHash
     , evalScriptHash
     , failedWitnessHash
     , hookAccountAddress

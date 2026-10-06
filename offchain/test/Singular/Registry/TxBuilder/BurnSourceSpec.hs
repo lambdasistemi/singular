@@ -106,7 +106,6 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset (..)
-    , envelopeHash
     , envelopeToData
     , envelopeVersion
     )
@@ -279,7 +278,7 @@ requestFor edge =
             , requestEdge = edge
             , requestDeposit = 2000000
             , requestSubmittedAt = 0
-            , requestDestination = ("", "")
+            , requestDestination = ("", Nothing)
             }
 
 {- | The three witness policies the fold mints under. Their BYTES do
@@ -948,7 +947,7 @@ destinedRequest i edge =
     let (_, out) = requestFor edge
         req = case extractCageDatum out of
             Just (RequestDatum r) ->
-                r{requestKey = edgeKey edge, requestDestination = (refund, "")}
+                r{requestKey = edgeKey edge, requestDestination = (refund, Nothing)}
             _ -> error "BurnSourceSpec fixture: requestFor carries no request"
     in  ( case parseOutRef (T.pack (replicate 64 '5' <> "#" <> show i)) of
             Right r -> r
@@ -1657,7 +1656,7 @@ openDatumFold =
                         either
                             fail
                             pure
-                            (withApplication program Nothing [] [liveOutput] witnessScripts)
+                            (withApplication program Nothing [liveOutput] witnessScripts)
                     tx <-
                         updateTokenWithDuties
                             builtCfg
@@ -1675,7 +1674,7 @@ openDatumFold =
                 $ do
                     tm <- trieWith Nothing
                     let destination =
-                            (serialiseAddr applicationAddr, envelopeHash openEnvelope)
+                            (serialiseAddr applicationAddr, Just (envelopeToData openEnvelope))
                         request =
                             let (i, out) = requestFor edgeInsertActive
                                 req = case extractCageDatum out of
@@ -1690,7 +1689,7 @@ openDatumFold =
                         either
                             fail
                             pure
-                            (withApplication program Nothing [openEnvelope] [] witnessScripts)
+                            (withApplication program Nothing [] witnessScripts)
                     tx <-
                         updateTokenWithDuties
                             builtCfg
@@ -1760,7 +1759,6 @@ retireWithReferences app = do
             ( withApplication
                 appProgram
                 app
-                []
                 [appLive]
                 witnessScripts{rcRefUtxos = [registryReference, requestReference]}
             )

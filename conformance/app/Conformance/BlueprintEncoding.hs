@@ -231,7 +231,7 @@ sampleRequest =
         , requestEdge = edgeInsertActive
         , requestDeposit = 1000000
         , requestSubmittedAt = 1234567890
-        , requestDestination = ("cs01-address", "cs01-datum-hash")
+        , requestDestination = ("cs01-address", Just (B "cs01-datum"))
         }
 
 sampleState :: OnChainTokenState
@@ -596,8 +596,12 @@ instance RealFromData OnChainRoot where
 
 instance RealFromData OnChainRequest where
     realFromData
-        (Constr 0 [tok, B own, B k, I edge, I dep, I sub, List [B da, B dh]]) = do
+        (Constr 0 [tok, B own, B k, I edge, I dep, I sub, List [B da, carried]]) = do
             tk <- realFromData tok :: Maybe OnChainTokenId
+            datum <- case carried of
+                Constr 0 [d] -> Just (Just d)
+                Constr 1 [] -> Just Nothing
+                _ -> Nothing
             Just
                 OnChainRequest
                     { requestToken = tk
@@ -607,8 +611,9 @@ instance RealFromData OnChainRequest where
                     , requestDeposit = dep
                     , requestSubmittedAt = sub
                     , -- #157 request-destination-binding: appended last, and a two-element list
-                      -- exactly as Aiken encodes a tuple.
-                      requestDestination = (da, dh)
+                      -- exactly as Aiken encodes a tuple; the datum the request
+                      -- carries as Aiken's Option (#419).
+                      requestDestination = (da, datum)
                     }
     realFromData _ = Nothing
 

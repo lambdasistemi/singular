@@ -129,6 +129,7 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
+    , approvalDestination
     )
 import Singular.Registry.Types (Edge)
 
@@ -306,7 +307,7 @@ key0 = first "key" keys
 approvalFor :: Scenario -> BookingApproval
 approvalFor sc =
     let owner = addrKeyHashBytes payer
-        dest = edgeDestinationOf cfg codes payer edge0
+        dest = approvalDestination (edgeDestinationOf cfg codes payer edge0)
         base = fromJust (bookingApproval codes edge0 key0 owner dest)
     in  if scByReference sc
             then base{baScriptReference = Just refIn}

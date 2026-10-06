@@ -17,8 +17,8 @@ just booked, so no second fold path exists to drift from it.
 Everything the fold decides it decides from one view of the chain, before
 anything is signed: which request it takes ("Singular.CLI.FoldRules"), its
 edge, whether the request's processing window still leaves time, the
-envelope an insertion delivers (kept by the booking,
-"Singular.CLI.Preimage") or the live output a termination releases, the
+envelope an insertion delivers (carried by its request on the chain, so
+any wallet can fold it) or the live output a termination releases, the
 replayed root after the edge, the built transaction, and its outlay. The
 production fold takes every request pending for the registry, so a fold is
 built only while exactly one is pending, and a built fold that spends any
@@ -99,10 +99,6 @@ import Singular.CLI.Outlay
     , outlayTotal
     )
 import Singular.CLI.Plan (outlayReport, refuseOver)
-import Singular.CLI.Preimage
-    ( loadPreimage
-    , renderPreimageRefusal
-    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
@@ -297,7 +293,7 @@ foldedFields f =
 {- | Fold the one pending request with the application's context, commit its
 edge speculatively, replay the new public root, and journal the fold observed.
 
-The request, its edge, the window, the preimage or the holding, the root
+The request, its edge, the window, the envelope it carries or the holding, the root
 after and the built fold all come from the fold's own view; any refusal
 there happens before anything is signed. The speculative walk and the
 journalled after-root are that one edge.
@@ -396,13 +392,11 @@ foldPending at FoldSpec{..} = do
                 let key = requestKey req
                 (envelope, holding) <- case kind of
                     FoldInsertion -> do
-                        let want = snd (requestDestination req)
-                        loaded <- loadPreimage (savedDir s) want
                         e <-
                             either
-                                (\refusal -> stop' ClientRefusal (renderPreimageRefusal refusal) [])
+                                (\why -> stop' ClientRefusal why [])
                                 pure
-                                loaded
+                                (carriedEnvelope req)
                         pure (Just e, Nothing)
                     FoldTermination -> do
                         outs <- liveOutputs v s
@@ -442,7 +436,6 @@ foldPending at FoldSpec{..} = do
                         ( withApplication
                             (applied s)
                             Nothing
-                            (maybe [] pure envelope)
                             (maybe [] (pure . fst) holding)
                             ctx0
                         )

@@ -84,15 +84,14 @@ import Singular.Registry.Types
 
 {- | What a fold needs in hand to discharge the obligations: the three
 token policies' scripts by kind, the cage script (custody spends run it),
-the UTxOs sitting at the cage address (custody lives among them), and the
-preimages of any destination datum the bookings named — the request
-carries only the hash, and the output has to carry the datum itself.
+and the UTxOs sitting at the cage address (custody lives among them). A
+delivered output's datum is the one its request carries (#419), so nothing
+beyond the chain is in hand.
 -}
 data RegistryContext = RegistryContext
     { rcWitnessScripts :: Map.Map Integer (Script ConwayEra)
     , rcCageScript :: Maybe (Script ConwayEra)
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
-    , rcDatums :: [(ByteString, PLC.Data)]
     , rcAllowInadmissible :: Bool
     {- ^ Build a fold even when a request takes no admissible edge, so a
     row that exists to watch the chain REFUSE one can produce the
@@ -140,9 +139,9 @@ data HolderRelease = HolderRelease
     deriving stock (Eq, Show)
 
 {- | The context a fold of tree edges needs beyond the registry's own
-configuration: the three token policies' scripts, the cage script that
-custody spends run, and the preimages of the destination datums the
-bookings named.
+configuration: the three token policies' scripts and the cage script that
+custody spends run. A delivered output's datum is the one its request
+carries.
 
 `emptyRegistryContext` carries none of it, which is right for a caller
 that folds only rejections — and refuses loudly, naming the missing
@@ -154,7 +153,6 @@ emptyRegistryContext =
         { rcWitnessScripts = Map.empty
         , rcCageScript = Nothing
         , rcCageUtxos = []
-        , rcDatums = []
         , rcAllowInadmissible = False
         , rcHolderUtxos = []
         , rcHolderReleases = Map.empty

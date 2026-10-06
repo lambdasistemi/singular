@@ -254,13 +254,14 @@ mkRequestDatum tid addr key edge deposit submittedAt =
         edge
         deposit
         submittedAt
-        (BS.empty, BS.empty)
+        (BS.empty, Nothing)
 
 {- | A request datum naming where the edge it books delivers (#157
-request-destination-binding). The cage reads the destination for every edge that mints an
-active or terminal token, and the approval that certifies the edge binds
-these same bytes, so the booking and the fold cannot disagree about where
-the token goes.
+request-destination-binding) and carrying the datum the delivered output
+must hold (#419). The cage reads the destination for every edge that mints
+an active or terminal token, and the approval that certifies the edge
+binds the address and the hash of that datum, so the booking and the fold
+cannot disagree about where the token goes or what it carries.
 -}
 mkRequestDatumWith
     :: TokenId
@@ -271,7 +272,7 @@ mkRequestDatumWith
     -> Integer
     -- ^ The deposit the request rides with, over and above the tip
     -> Integer
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> PLC.Data
 mkRequestDatumWith tid addr key edge deposit submittedAt destination =
     let datum =

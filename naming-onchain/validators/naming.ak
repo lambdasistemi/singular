@@ -201,7 +201,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c"
+  #"270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd93"
 
 /// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
@@ -287,7 +287,7 @@ pub type MRequest {
     requestValue: MOperation,
     tip: Int,
     submitted_at: Int,
-    destination: (ByteArray, ByteArray),
+    destination: (ByteArray, Option<Data>),
   }
 }
 

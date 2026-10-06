@@ -8,7 +8,6 @@ module Conformance.Run.Cage
     , cageTid
     , cageStateUtxo
     , recordDatum
-    , recordDatumHash
     , cageUtxos
     , cageRefUtxos
     , ensureStateRef
@@ -29,7 +28,6 @@ import Control.Exception
     ( displayException
     , throwIO
     )
-import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (sortOn)
@@ -39,9 +37,6 @@ import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
-
-import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 
 import Cardano.Ledger.Api.Tx
     ( mkBasicTx
@@ -65,7 +60,6 @@ import Cardano.Ledger.BaseTypes
     )
 import Cardano.Ledger.Core
     ( Script
-    , extractHash
     , hashScript
     )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
@@ -222,18 +216,13 @@ cageStateUtxo env cage = do
         Just u -> pure u
         Nothing -> failWith "row cage: no state UTxO"
 
-{- | The record datum a booking's destination binds, and its hash. The
-cage checks only that the receiving output carries a datum hashing to what
-the approval bound — naming's own validators do not run at fold time — so
-the harness needs one datum it can produce on both sides and nothing more.
+{- | The record datum a booking's destination carries. The cage checks only
+that the receiving output carries the datum the request carries — naming's
+own validators do not run at fold time — so the harness needs one datum and
+nothing more.
 -}
 recordDatum :: PLC.Data
 recordDatum = PLC.B "cg-record"
-
-recordDatumHash :: ByteString
-recordDatumHash =
-    hashToBytes
-        (extractHash (hashData (Data recordDatum :: Data ConwayEra)))
 
 -- | The UTxOs sitting at the cage's own address; custody lives among them.
 cageUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
@@ -440,7 +429,6 @@ rowRegistryContext env0 v cage tid = do
             { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
-            , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
             , rcHolderUtxos = []
             , rcHolderReleases = Map.empty

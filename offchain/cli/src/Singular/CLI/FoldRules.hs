@@ -6,8 +6,9 @@ Description : What decides whether, and which request, a fold may be built
 License     : Apache-2.0
 
 The decisions of @registry fold@ that need no node and no wallet: which
-pending request a fold takes, which edges it folds, and whether the
-request's processing window still leaves time to build one. The command
+pending request a fold takes, which edges it folds, the envelope an
+insertion's request carries, and whether the request's processing window
+still leaves time to build one. The command
 ("Singular.CLI.Fold") reads the chain and asks these; the booking's
 receipt ("Singular.CLI.Entry") states the same deadline from the same
 function, so a requester and a folder never disagree about it.
@@ -36,6 +37,7 @@ module Singular.CLI.FoldRules
       -- * Which edge
     , FoldKind (..)
     , foldKind
+    , carriedEnvelope
 
       -- * Which funding
     , fundedView
@@ -47,6 +49,10 @@ import Data.Text qualified as T
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.TxIn (TxIn)
 
+import Singular.Application.OpenDatum.Envelope
+    ( Envelope
+    , envelopeFromData
+    )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -54,6 +60,7 @@ import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.Types
     ( Edge
+    , OnChainRequest (..)
     , edgeInsertActive
     , edgeName
     , edgeUpdateTerminal
@@ -393,3 +400,21 @@ postBuildDecision slotOf now deadline deadlineSlot upper = do
         _ -> pure Nothing
     pure
         (postBuildCheck now deadline deadlineSlot upper boundTime, boundTime)
+
+{- | The envelope an insertion's request carries for its delivered output
+(#419), read off the request on the chain and never off a file, so any
+wallet can fold the insertion.
+-}
+carriedEnvelope :: OnChainRequest -> Either String Envelope
+carriedEnvelope req = case snd (requestDestination req) of
+    Nothing ->
+        Left
+            "the insertion's request carries no envelope: its delivered output would hold none"
+    Just datum ->
+        either
+            ( \why ->
+                Left
+                    ("the envelope the insertion's request carries cannot be read: " <> why)
+            )
+            Right
+            (envelopeFromData datum)

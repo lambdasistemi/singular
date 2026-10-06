@@ -121,11 +121,10 @@ appReferenceOf live =
 -- | One booking through the application: what it books and how it is certified.
 data Booked = Booked
     { bookedEdge :: Edge
-    , bookedDestination :: (ByteString, ByteString)
+    , bookedDestination :: (ByteString, Maybe PLC.Data)
+    -- ^ Where the fold delivers, and the datum the request carries for it
     , bookedDeposit :: Integer
     , bookedApproval :: BookingApproval
-    , bookedPreimage :: Maybe Envelope
-    -- ^ The envelope the fold will deliver, kept for it before the booking is submitted
     }
 
 -- | An insertion under @envelope@, built by the command from its own sources.
@@ -140,7 +139,6 @@ planInsert live envelope = do
             { bookedEdge = edgeInsertActive
             , bookedDestination = insertDestination Testnet (applied s) envelope
             , bookedDeposit = ctlDeposit c
-            , bookedPreimage = Just envelope
             , bookedApproval =
                 (insertApproval Testnet (applied s) stateIn envelope)
                     { baScriptReference = Just appRef
@@ -197,7 +195,6 @@ planTerminate live caller key outs = do
             { bookedEdge = edgeUpdateTerminal
             , bookedDestination = terminateDestination
             , bookedDeposit = edgeDeposit
-            , bookedPreimage = Nothing
             , bookedApproval =
                 (terminateApproval (applied s) stateIn liveIn key (ctlController c))
                     { baScriptReference = Just appRef

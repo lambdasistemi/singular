@@ -224,11 +224,13 @@ import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , addrWitnessKeyHash
+    , approvalDestination
     , approvalName
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeRefund
     , currentPosixMs
+    , destinationDatumHash
     , emptyRoot
     , extractCageDatum
     , leafAbsent
@@ -255,6 +257,7 @@ import Singular.Registry.Types
     , OnChainTxOutRef (..)
     , ProofStep (..)
     , RequestAction (Update)
+    , RequestDestination
     , UpdateRedeemer (Modify, Retract)
     , edgeDeleteAbsent
     , edgeInsertAbsent
@@ -516,10 +519,12 @@ bookStoryRequest env state cage request booking = do
                     "setup: a booked request names an owner the row gave no key for"
     -- The datum the request carries is named while booking, by its hash, so a
     -- delivery carrying it is later looked up rather than invented.
-    let carried = snd (storyDestination request)
-    unless (BS.null carried) $
+    forM_ (snd (storyDestination request)) $ \carried ->
         void
-            (allocateIdentity (liveDatums (liveIds state)) (DatumIdentity carried))
+            ( allocateIdentity
+                (liveDatums (liveIds state))
+                (DatumIdentity (destinationDatumHash (Just carried)))
+            )
     bookEdge
         env
         cfg
@@ -555,12 +560,14 @@ noteOwner state registry owner = do
             registry
         )
 
--- | The destination the edge books and the approval decision reads.
-storyDestination :: Live.EdgeRequest Addr -> (ByteString, ByteString)
+{- | The destination the edge books, carrying no datum: the live stories book
+no request carrying one.
+-}
+storyDestination :: Live.EdgeRequest Addr -> RequestDestination
 storyDestination request = case Live.requestEdge request of
-    Live.UpdateTerminal -> (BS.empty, BS.empty)
-    Live.DeleteActive -> (BS.empty, BS.empty)
-    _ -> (serialiseAddr (Live.requestWallet request), BS.empty)
+    Live.UpdateTerminal -> (BS.empty, Nothing)
+    Live.DeleteActive -> (BS.empty, Nothing)
+    _ -> (serialiseAddr (Live.requestWallet request), Nothing)
 
 {- | One story instruction books a request, or takes the request retained for
 it: one booked with its cohort, or one left pending by a refused exit, so the
@@ -616,7 +623,7 @@ submitEdge env state cage exit alteration placement request = do
                             edge
                             key
                             (addrKeyHashBytes genesisAddr)
-                            (storyDestination request)
+                            (approvalDestination (storyDestination request))
                 modelRequest <-
                     storyModelRequest
                         ids
@@ -2167,14 +2174,16 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
         Left decided -> pure (canonical decided)
         Right out -> canonical . snd <$> storyApprovalOn cfg out
     -- The datum the request carries for its delivered output: read off the
-    -- booked request's own datum, whose destination names a datum hash or, when
-    -- empty, none. A refused booking left no request UTxO; there it is the
-    -- destination the booking decision named. The datum is the identity
-    -- allocated for it while booking.
-    let requestDatum named
-            | BS.null named = pure Null
-            | otherwise =
-                toJSON <$> observeIdentity (liveDatums ids) (DatumIdentity named)
+    -- booked request's own datum, or, for a refused booking that left no
+    -- request UTxO, the destination the booking decision named. The datum is
+    -- the identity allocated for it, by its hash, while booking.
+    let requestDatum carried = case carried of
+            Nothing -> pure Null
+            Just _ ->
+                toJSON
+                    <$> observeIdentity
+                        (liveDatums ids)
+                        (DatumIdentity (destinationDatumHash carried))
     datum <- case requestOut of
         Left _ -> requestDatum (snd (storyDestination request))
         Right out -> case extractCageDatum out of
@@ -4087,5 +4096,10 @@ cg21RequestFacts out = do
     pure
         ( lovelace
         , hexT
-            (approvalName edgeIx (requestKey rq) owner (requestDestination rq))
+            ( approvalName
+                edgeIx
+                (requestKey rq)
+                owner
+                (approvalDestination (requestDestination rq))
+            )
         )

@@ -351,9 +351,9 @@ datumEncodingVectors =
                 , requestSubmittedAt = 1700000000000
                 , -- #157 request-destination-binding: the appended destination — where the minted
                   -- token goes, and the inline datum the receiving output
-                  -- must carry.
+                  -- must carry, which the request carries itself (#419).
                   requestDestination =
-                    (BS.replicate 29 0x60, BS.empty)
+                    (BS.replicate 29 0x60, Just (B "singular-record"))
                 }
       in  Aeson.object
             [ "description" .= txt "RequestDatum at edge 1 (insertActive)"
@@ -454,7 +454,7 @@ edgeVector description edge =
                         , requestDeposit = 1000000
                         , requestSubmittedAt = 1700000000000
                         , requestDestination =
-                            (BS.replicate 29 0x60, BS.empty)
+                            (BS.replicate 29 0x60, Nothing)
                         }
                 )
         ]

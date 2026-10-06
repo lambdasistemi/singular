@@ -60,7 +60,6 @@ import Test.Hspec
     , it
     )
 
-import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Api.Scripts.Data
     ( Data (..)
@@ -84,14 +83,13 @@ import Cardano.Ledger.Api.Tx.Out
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
     , PolicyID
     )
-import Cardano.Ledger.Plutus.Data (getPlutusData, hashData)
+import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins (fromBuiltin)
@@ -145,10 +143,7 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     , walkEdge
     )
-import Singular.Registry.TxBuilder.Update
-    ( RegistryContext (..)
-    , updateTokenWithDuties
-    )
+import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -157,6 +152,7 @@ import Singular.Registry.Types
     , OnChainTokenState (stateRoot)
     , ProofStep
     , RequestAction (..)
+    , RequestDestination
     , UpdateRedeemer (..)
     , edgeDeleteAbsent
     , edgeDeleteActive
@@ -213,12 +209,12 @@ keyAssetName :: ByteString -> AssetName
 keyAssetName = AssetName . SBS.toShort
 
 -- ---------------------------------------------------------
--- The destination preimages this scenario books
+-- The destination datums this scenario books
 -- ---------------------------------------------------------
 
-{- | The distinct nonempty destination-datum preimages the scenario
-books, named by stage. Distinct preimages make an absent or swapped
-inline datum detectable.
+{- | The distinct nonempty destination datums the scenario's requests carry,
+named by stage. Distinct datums make an absent or swapped inline datum
+detectable.
 -}
 orderDatumA
     , deliverDatumB
@@ -232,40 +228,17 @@ deliverDatumA = ledgerData 3
 deliverDatumD = ledgerData 4
 witnessDatumD = ledgerData 5
 
-{- | The ledger datum wrapper over an integer preimage, so nothing here
+{- | The ledger datum wrapper over an integer, so nothing here
 names the Plutus core data type.
 -}
 ledgerData :: Integer -> Data ConwayEra
 ledgerData n = Data (toPlcData n)
 
-scenarioDatumPreimages :: [Data ConwayEra]
-scenarioDatumPreimages =
-    [ orderDatumA
-    , deliverDatumB
-    , deliverDatumA
-    , deliverDatumD
-    , witnessDatumD
-    ]
-
-{- | The hash a request's destination field carries for a preimage: the
-same ledger encoding the cage itself compares (@destinationMatches@
-hashes the inline datum with BLAKE2b-256; @Edges.edgeRecordDatumHash@
-uses this exact expression), so a literal label could never match.
+{- | A delivering destination at the funding wallet, carrying the datum
+its delivered output holds.
 -}
-datumHashOf :: Data ConwayEra -> ByteString
-datumHashOf d = hashToBytes (extractHash (hashData d))
-
-{- | The preimage for a hash the request carries, when this scenario
-booked it.
--}
-preimageOf :: ByteString -> Maybe (Data ConwayEra)
-preimageOf h = lookup h [(datumHashOf d, d) | d <- scenarioDatumPreimages]
-
-{- | A delivering destination at the funding wallet carrying a booked
-preimage's real hash.
--}
-deliverDest :: Data ConwayEra -> (ByteString, ByteString)
-deliverDest d = (serialiseAddr genesisAddr, datumHashOf d)
+deliverDest :: Data ConwayEra -> RequestDestination
+deliverDest d = (serialiseAddr genesisAddr, Just (getPlutusData d))
 
 {- | The refund address the absent-insert stages book: a distinct key
 address that is not the fold wallet, so the only ada-only outputs
@@ -355,7 +328,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             tokenId
             keyB
             edgeInsertAbsent
-            (serialiseAddr genesisAddr, BS.empty)
+            (serialiseAddr genesisAddr, Nothing)
     refA <-
         Edges.bookEdgeTo
             cfg
@@ -430,7 +403,7 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
             fail
                 "ORDER-WITNESS-NONDISCRIMINATING: the two requests do not produce distinguishable proofs"
     unsigned <- Cage.withLatest prov $ \v -> do
-        ctx <- contextFor cfg codes v refs
+        ctx <- Edges.registryContextFor cfg codes v refs
         updateTokenWithDuties cfg (wrapped v) tm tokenId genesisAddr ctx
     decoded <- modifyActionsOf unsigned
     let orderObs = OrderObservation{ooActions = decoded, ooExpected = expectedActions}
@@ -516,8 +489,8 @@ connectedStages cfg codes prov submit tm tokenId requestAddr refs = do
     -- wallet, so refund crediting is unambiguous. The no-token-delivery
     -- edges book a plain destination: nothing is delivered to it and
     -- the booking's approval only binds the pair.
-    let refundDest = (serialiseAddr (stageRefundAddr cfg), BS.empty)
-        plainDest = (serialiseAddr genesisAddr, BS.empty)
+    let refundDest = (serialiseAddr (stageRefundAddr cfg), Nothing)
+        plainDest = (serialiseAddr genesisAddr, Nothing)
     stageTo keyA edgeInsertAbsent refundDest
     stage keyA edgeUpdateActive deliverDatumA
     stageTo keyA edgeUpdateTerminal plainDest
@@ -565,7 +538,7 @@ bookFoldObserve
     -> [(TxIn, TxOut ConwayEra)]
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> RequestDestination
     -> IO ()
 bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest = do
     requestTxIn <-
@@ -588,7 +561,7 @@ bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest 
     walletUtxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
     rootBefore <- withTrie tm tokenId getRoot
     unsigned <- Cage.withLatest prov $ \v -> do
-        ctx <- contextFor cfg codes v refs
+        ctx <- Edges.registryContextFor cfg codes v refs
         updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
     let body = unsigned ^. bodyTxL
         requests = [req]
@@ -1154,7 +1127,7 @@ destinationShapeOf cfg edge key req
   where
     delivering pin = do
         addr <- addrFromBytes (fst (requestDestination req))
-        datum <- preimageOf (snd (requestDestination req))
+        datum <- Data <$> snd (requestDestination req)
         pure
             DestinationShape
                 { dsAddress = addr
@@ -1210,24 +1183,6 @@ decodeRefund :: ByteString -> IO Addr
 decodeRefund bytes = case addrFromBytes bytes of
     Just addr -> pure addr
     Nothing -> fail "custody datum records an undecodable refund address"
-
-{- | The fold's context: the registry's own, plus this scenario's
-distinct destination-datum preimages.
--}
-contextFor
-    :: CageConfig
-    -> NamingCodes
-    -> Cage.Session Cage.NoWitness IO
-    -> [(TxIn, TxOut ConwayEra)]
-    -> IO RegistryContext
-contextFor cfg codes v refs = do
-    base <- Edges.registryContextFor cfg codes v refs
-    pure
-        base
-            { rcDatums =
-                [(datumHashOf d, getPlutusData d) | d <- scenarioDatumPreimages]
-                    ++ rcDatums base
-            }
 
 -- | Decode the body's state redeemer into its per-request actions.
 modifyActionsOf :: ConwayTx -> IO [[ProofStep]]

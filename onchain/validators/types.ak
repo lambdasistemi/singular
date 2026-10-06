@@ -359,8 +359,9 @@ pub type Request {
   /// Where this request's minted token goes, and the inline datum the
   /// receiving output must carry (#157 request-destination-binding; appended last, so the
   /// published field order never moves): the binary address bytes and
-  /// the BLAKE2b-256 hash of the receiving output's inline datum (empty
-  /// for a datum-less output).
+  /// the datum itself, or none for a datum-less output (#419: the request
+  /// carries what it names, so any party can build the fold from the
+  /// chain alone).
   ///
   /// The folder is permissionless. Without a bound destination a folder
   /// could route Alice's active token to itself; without a bound datum
@@ -370,7 +371,7 @@ pub type Request {
   /// tip (token-destinations-and-refunds, request-deposit-returned). For edge 0 the token goes to the cage's own
   /// custody instead and the first component is the refund address
   /// (absent-custody-datum); for edge 6 it is where the terminal token goes.
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
 }
 
 // #183 slice b: `RequestDatum` at index 0 now carries the edge-only

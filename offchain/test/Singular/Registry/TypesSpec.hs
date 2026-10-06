@@ -408,7 +408,8 @@ spec = do
             toBuiltinData fixedRequest
                 `shouldBe` BuiltinData fixedRequestWire
         it "carries the datum it names as Some, and none as None (#419)" $
-            toBuiltinData fixedRequest{requestDestination = ("dest-addr", Nothing)}
+            toBuiltinData
+                fixedRequest{requestDestination = ("dest-addr", Nothing)}
                 `shouldBe` BuiltinData
                     ( case fixedRequestWire of
                         Constr 0 fields ->

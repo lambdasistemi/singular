@@ -69,7 +69,7 @@ import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
-import Singular.Registry.Types (edgeInsertActive)
+import Singular.Registry.Types (RequestDestination, edgeInsertActive)
 import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.Driver
@@ -232,8 +232,8 @@ to the APPLICATION's script address instead — right for naming, wrong
 here, because `open.ak` has no spending arm and the token would be
 locked forever.
 -}
-walletDestination :: (ByteString, ByteString)
-walletDestination = (serialiseAddr genesisAddr, "")
+walletDestination :: RequestDestination
+walletDestination = (serialiseAddr genesisAddr, Nothing)
 
 {- | A destination that is NOT the funding wallet: a bare enterprise
 address (header kind 6 plus a 28-byte payment hash), which
@@ -246,5 +246,5 @@ no consumed request entails — correctly, and for a reason that has
 nothing to do with occupancy. Keeping the refusal cage's tokens out of
 the fee wallet is what makes its refusal attributable.
 -}
-elsewhereDestination :: (ByteString, ByteString)
-elsewhereDestination = (BS.pack (0x60 : replicate 28 0xab), "")
+elsewhereDestination :: RequestDestination
+elsewhereDestination = (BS.pack (0x60 : replicate 28 0xab), Nothing)

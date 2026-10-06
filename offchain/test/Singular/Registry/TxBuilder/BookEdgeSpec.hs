@@ -87,6 +87,7 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
+    , approvalDestination
     , approvalName
     , requestAddrFromCfg
     )
@@ -243,7 +244,7 @@ and the request output carries the same approval.
 carriesItsApproval :: Edge -> ByteString -> ConwayTx -> IO ()
 carriesItsApproval edge key tx = do
     let owner = addrKeyHashBytes payer
-        destination = edgeDestinationOf cfg codes payer edge
+        destination = approvalDestination (edgeDestinationOf cfg codes payer edge)
         name = AssetName (SBS.toShort (approvalName edge key owner destination))
         approval = Map.singleton name 1
     Map.keys (mintOf tx) `shouldBe` [applicationPolicy]

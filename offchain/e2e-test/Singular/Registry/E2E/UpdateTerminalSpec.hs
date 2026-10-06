@@ -97,6 +97,7 @@ import Singular.Registry.Types
     , Edge
     , OnChainRoot (..)
     , OnChainTokenState (..)
+    , RequestDestination
     , edgeInsertAbsent
     , edgeInsertActive
     , edgeUpdateTerminal
@@ -313,7 +314,7 @@ book
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> RequestDestination
     -> IO TxIn
 book cfg codes prov submit =
     Edges.bookEdgeTo
@@ -459,12 +460,12 @@ address, which is right for naming and wrong here — `open.ak` is a
 minting policy with no spending arm, so a token routed there is locked
 forever and could never be retired.
 -}
-walletDestination :: (ByteString, ByteString)
-walletDestination = (serialiseAddr genesisAddr, "")
+walletDestination :: RequestDestination
+walletDestination = (serialiseAddr genesisAddr, Nothing)
 
 {- | A retirement delivers nothing, so it names nothing. The approval
 still binds this pair, and the cage recomputes it from the request, so it
 has to be the same on both sides — it is simply empty.
 -}
-retireDestination :: (ByteString, ByteString)
-retireDestination = (BS.empty, BS.empty)
+retireDestination :: RequestDestination
+retireDestination = (BS.empty, Nothing)

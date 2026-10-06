@@ -10,9 +10,10 @@ certifies it: the approval asset, the redeemer the mint arm reads, the
 applied script that witnesses the mint, and the outputs the mint reads
 by reference.
 
-- An insertion names this script's address and the BLAKE2b-256 of the
-  envelope's CBOR as its destination, so the fold delivers the key's
-  active token to an output carrying the envelope inline. The redeemer
+- An insertion names this script's address and carries the envelope
+  itself as its destination datum (#419), so any wallet folds the key's
+  active token to an output carrying the envelope inline. The approval
+  binds the BLAKE2b-256 of the envelope's CBOR, as before. The redeemer
   carries the envelope, which the policy checks against the actual
   registry state.
 - A termination names no destination. The redeemer points at the key's
@@ -57,28 +58,31 @@ import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
-    , envelopeHash
     , envelopeToData
     )
 import Singular.Application.OpenDatum.Script (openDatumAddressBytes)
 import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
-    ( approvalName
+    ( approvalDestination
+    , approvalName
     , scriptFromBytes
     )
 import Singular.Registry.Types (edgeInsertActive, edgeUpdateTerminal)
 
 {- | An insertion's destination: this script's enterprise address and the
-envelope's hash.
+envelope itself, the datum the delivered output carries.
 -}
 insertDestination
-    :: Network -> SBS.ShortByteString -> Envelope -> (ByteString, ByteString)
+    :: Network
+    -> SBS.ShortByteString
+    -> Envelope
+    -> (ByteString, Maybe PLC.Data)
 insertDestination net applied e =
-    (openDatumAddressBytes net applied, envelopeHash e)
+    (openDatumAddressBytes net applied, Just (envelopeToData e))
 
 -- | A termination delivers nothing: the model's @r.output = 0@.
-terminateDestination :: (ByteString, ByteString)
-terminateDestination = (BS.empty, BS.empty)
+terminateDestination :: (ByteString, Maybe PLC.Data)
+terminateDestination = (BS.empty, Nothing)
 
 {- | The redeemer @BookInsert { key, owner, address, envelope }@, the
 first constructor of @OpenDatumMint@.
@@ -138,7 +142,12 @@ insertApproval
 insertApproval net applied state e =
     approvalOf
         applied
-        (approvalName edgeInsertActive key owner destination)
+        ( approvalName
+            edgeInsertActive
+            key
+            owner
+            (approvalDestination destination)
+        )
         (bookInsertRedeemer key owner (fst destination) e)
         (Set.singleton state)
   where
@@ -163,6 +172,11 @@ terminateApproval
 terminateApproval applied state holding key owner =
     approvalOf
         applied
-        (approvalName edgeUpdateTerminal key owner terminateDestination)
+        ( approvalName
+            edgeUpdateTerminal
+            key
+            owner
+            (approvalDestination terminateDestination)
+        )
         (bookTerminateRedeemer key owner holding)
         (Set.fromList [state, holding])

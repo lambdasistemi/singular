@@ -162,7 +162,7 @@ fn deliveryFault(
   outputs: List<Output>,
   policy: PolicyId,
   key: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   floor: Int,
   count: Int,
   agreed: Bool,

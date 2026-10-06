@@ -12,7 +12,7 @@ use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
   Datum, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
-use lib.{approvalName}
+use lib.{approvalDestination, approvalName}
 use types.{
   AbsentCustody, CageDatum, Request, RequestDatum, State, StateDatum, TokenId,
 }
@@ -131,25 +131,25 @@ pub fn datumHashOf(datum: Data) -> ByteArray {
   blake2b_256(cbor.serialise(datum))
 }
 
-/// A booking's destination: the record address plus the hash of the
-/// datum the receiving output must carry.
-pub fn bookingDestination() -> (ByteArray, ByteArray) {
-  (recordAddress, datumHashOf(recordDatum()))
+/// A booking's destination: the record address plus the datum the
+/// receiving output must carry.
+pub fn bookingDestination() -> (ByteArray, Option<Data>) {
+  (recordAddress, Some(recordDatum()))
 }
 
 /// A read's destination: a plain wallet output with no datum.
-pub fn readDestination() -> (ByteArray, ByteArray) {
-  (bookerAddress, #"")
+pub fn readDestination() -> (ByteArray, Option<Data>) {
+  (bookerAddress, None)
 }
 
 /// An absence witness's destination: its first component is the refund
 /// address, and it names no datum (the token goes to custody).
-pub fn refundDestination() -> (ByteArray, ByteArray) {
-  (inserterAddress, #"")
+pub fn refundDestination() -> (ByteArray, Option<Data>) {
+  (inserterAddress, None)
 }
 
-pub fn noDestination() -> (ByteArray, ByteArray) {
-  (#"", #"")
+pub fn noDestination() -> (ByteArray, Option<Data>) {
+  (#"", None)
 }
 
 // ----------------------------------------------------------------------------
@@ -367,9 +367,13 @@ pub fn approval(
   edge: Int,
   key: ByteArray,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
 ) -> Value {
-  from_asset(appPolicy, approvalName(edge, key, owner, destination), 1)
+  from_asset(
+    appPolicy,
+    approvalName(edge, key, owner, approvalDestination(destination)),
+    1,
+  )
 }
 
 pub fn requestRef(index: Int) -> OutputReference {
@@ -383,7 +387,7 @@ pub fn requestDatum(
   key: ByteArray,
   edge: Int,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
 ) -> CageDatum {
   RequestDatum(
     Request {
@@ -407,7 +411,7 @@ pub fn requestInput(
   key: ByteArray,
   edge: Int,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   carried: Value,
   lovelace: Int,
 ) -> Input {
@@ -686,7 +690,7 @@ pub fn deployedRequestInput(
   key: ByteArray,
   edge: Int,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   carried: Value,
   lovelace: Int,
 ) -> Input {

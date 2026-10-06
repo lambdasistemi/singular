@@ -81,7 +81,7 @@ pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
 /// `Retire` may place the active token at. Regenerated from the custody
 /// validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"4eab2d4e7dcf7e4e282d204e4d5f74d0fa3a08a4f4a1ebd64dfa889d"
+  #"bf59677c147919ba5388db3af4b7a64e7e9485359bd69a16526e5d25"
 
 /// The naming application validator (issue #52), in registry mode (#157).
 ///

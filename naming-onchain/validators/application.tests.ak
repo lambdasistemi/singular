@@ -686,7 +686,7 @@ fn retirement_completion_output() -> Output {
           requestValue: naming.MUpdate(#"01", #"02"),
           tip: 1_000_000,
           submitted_at: 0,
-          destination: (#"", #""),
+          destination: (#"", None),
         },
       ),
     ),

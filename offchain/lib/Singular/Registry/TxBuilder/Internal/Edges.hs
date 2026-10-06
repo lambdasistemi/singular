@@ -27,6 +27,8 @@ module Singular.Registry.TxBuilder.Internal.Edges
     , deltaOf
     , policyOfKind
     , approvalName
+    , approvalDestination
+    , destinationDatumHash
 
       -- * Pinned-hook invocation (NOTE-021)
     , pinScriptHash
@@ -52,11 +54,12 @@ import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Credential (Credential (..))
-import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Hashes (ScriptHash (..), extractHash)
 import Cardano.Ledger.Keys
     ( KeyHash (..)
     , KeyRole (..)
     )
+import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -64,6 +67,7 @@ import Data.Char (isHexDigit)
 import Data.Coerce (coerce)
 import Data.List (isInfixOf, isPrefixOf, tails)
 import Data.Maybe (fromMaybe)
+import PlutusCore.Data qualified as PLC
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Trie (Trie (..))
@@ -182,6 +186,24 @@ approvalName edge key owner (destAddr, datumHash) =
             <> destAddr
             <> datumHash
         )
+
+{- | The hash an approval binds for the datum a request carries (#419): the
+BLAKE2b-256 of the datum's serialisation, empty for none — the bytes the
+request named before it carried the datum, so an approval's name is
+unchanged for the same tuple.
+-}
+destinationDatumHash :: Maybe PLC.Data -> ByteString
+destinationDatumHash =
+    maybe
+        BS.empty
+        ( \datum ->
+            hashToBytes (extractHash (hashData (Data datum :: Data ConwayEra)))
+        )
+
+-- | A request's destination as 'approvalName' binds it.
+approvalDestination
+    :: (ByteString, Maybe PLC.Data) -> (ByteString, ByteString)
+approvalDestination (address, datum) = (address, destinationDatumHash datum)
 
 blake2b256 :: ByteString -> ByteString
 blake2b256 = hashToBytes . hashWith @Blake2b_256 id

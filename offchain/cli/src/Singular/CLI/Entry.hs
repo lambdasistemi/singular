@@ -24,9 +24,8 @@ controller, and only that controller may update or terminate it.
   booking certifies it through the application and leaves its request
   pending; the registry's fold ("Singular.CLI.Fold") later delivers the
   key's active token to an output at the application carrying the
-  envelope inline, and the replay then proves the key @Active@. The booking
-  keeps the envelope in the registry directory
-  ("Singular.CLI.Preimage") for that fold.
+  envelope inline, and the replay then proves the key @Active@. The request
+  carries the envelope itself, so any wallet can fold it from the chain.
 * __update__: the caller must be the live envelope's controller. The live
   output is spent with @Update@ and recreated with the new payload. The
   registry does not move.
@@ -48,7 +47,7 @@ module Singular.CLI.Entry
     , runTerminate
     ) where
 
-import Control.Monad (forM_, unless, when)
+import Control.Monad (unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.ByteString (ByteString)
 import Data.Text (Text)
@@ -88,7 +87,6 @@ import Singular.CLI.Outlay
     , updateOutlay
     )
 import Singular.CLI.Plan
-import Singular.CLI.Preimage (storePreimage)
 import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
@@ -134,8 +132,8 @@ The booking is built from one view: what it books is decided there, from
 the registry's state and outputs as that view holds them; its units are
 measured, its fee and collateral balanced and its outlay judged against the
 approved allowance under that view's parameters, before anything is signed.
-An insertion's envelope is kept in the registry directory once the booking
-is built and its outlay accepted, before it is signed.
+An insertion's envelope travels in its request, so nothing of it is kept in
+the registry directory.
 -}
 book
     :: Attached
@@ -173,7 +171,6 @@ book at a key plan = do
                 refuseOver
                     (entryMaxOutlay a)
                     (bookingOutlay pp (liveRefs live) tx)
-                forM_ (bookedPreimage b) (storePreimage (savedDir s))
                 pure (tx, decided)
             )
     let request = TxIn (txIdTx booking) (TxIx 0)

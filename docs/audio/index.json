@@ -2179,8 +2179,8 @@
     "index": 1,
     "name": "docs-consumer-conformance/the-request-a-destination-then-an-edge-index-01",
     "pause_ms": 400,
-    "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the hash of the inline datum that output must carry. An empty datum hash means a datum-less output. A request that mints nothing names no destination.",
-    "v": "73f5b1db9153"
+    "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
+    "v": "c11678c2fa20"
    },
    {
     "index": 2,
@@ -8136,8 +8136,8 @@
     "index": 2,
     "name": "docs-singular-node/booking-and-folding-02",
     "pause_ms": 400,
-    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. The registry directory is the shared state: the booking leaves there the envelope an insertion delivers, and the fold reads it back and checks it against the hash the request names before it builds anything.",
-    "v": "274459466bc0"
+    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
+    "v": "11a63c9659ca"
    },
    {
     "index": 3,
@@ -8150,8 +8150,8 @@
     "index": 4,
     "name": "docs-singular-node/booking-and-folding-04",
     "pause_ms": 400,
-    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose envelope is not in the registry directory or is not the one the request names; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
-    "v": "fb4c3cdd8fd4"
+    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+    "v": "13a88f64b9d4"
    },
    {
     "index": 5,

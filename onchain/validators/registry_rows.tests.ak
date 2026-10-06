@@ -48,7 +48,7 @@ fn foldOne(
   key: ByteArray,
   edge: Int,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   carried: Value,
   lovelace: Int,
   proof: Proof,
@@ -805,7 +805,7 @@ fn edgeOwner(edge: Int) -> ByteArray {
   }
 }
 
-fn edgeDestination(edge: Int) -> (ByteArray, ByteArray) {
+fn edgeDestination(edge: Int) -> (ByteArray, Option<Data>) {
   if edge == 0 {
     fx.refundDestination()
   } else if edge == 1 || edge == 2 {
@@ -1073,7 +1073,14 @@ test prop_approval_name_binds_the_key(
 ) {
   let (left, right) = pair
   let nameOf =
-    fn(key) { lib.approvalName(1, key, fx.bookerKey, fx.bookingDestination()) }
+    fn(key) {
+      lib.approvalName(
+        1,
+        key,
+        fx.bookerKey,
+        lib.approvalDestination(fx.bookingDestination()),
+      )
+    }
   if left == right {
     nameOf(left) == nameOf(right)
   } else {
@@ -1094,7 +1101,12 @@ test foreign_policy_approval_refuses() fail {
     1,
     from_asset(
       fx.foreignPolicy,
-      lib.approvalName(1, fx.keyA, fx.bookerKey, fx.bookingDestination()),
+      lib.approvalName(
+        1,
+        fx.keyA,
+        fx.bookerKey,
+        lib.approvalDestination(fx.bookingDestination()),
+      ),
       1,
     ),
   )

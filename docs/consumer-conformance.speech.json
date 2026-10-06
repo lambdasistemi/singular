@@ -81,7 +81,7 @@
       "pause": 500
     },
     {
-      "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the hash of the inline datum that output must carry. An empty datum hash means a datum-less output. A request that mints nothing names no destination.",
+      "text": "Request gained one field, appended last: destination, a pair of the binary address bytes the minted token must land at and the inline datum that output must carry, as an Option: Some carries the datum itself, None means a datum-less output. The request carries the datum rather than its hash (#419), so anyone can build the fold from the chain alone; an approval still binds the datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing names no destination.",
       "pause": 400
     },
     {
@@ -411,6 +411,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "edd649c5c9817e9b1f3a63dc36b813c4f00c34b2415bbb312fdb7af43368899f"
+    "sha256": "9ee4cb73b07341363c8af355adf4dee700ee07ce0fcc83650fbc578594002d44"
   }
 }

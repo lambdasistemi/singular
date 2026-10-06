@@ -546,11 +546,9 @@ run insert success -- registry insert --key "$key" --payload "$work/payload-inse
 booked insert
 booking_only insert "$before" "$files_before"
 [ "$(field insert .requester)" = "$alicekey" ] || fail "the booking's requester is not alice's key"
-# The envelope the fold will deliver is kept under the hash the request names.
-stored="$reg/preimages/$(field insert .envelopeHash).json"
-[ -f "$stored" ] || fail "the booking kept no envelope under its hash"
-jq -e --slurpfile i "$receipts/insert.json" '. == $i[0].envelope' "$stored" >/dev/null \
-  || fail "the kept envelope is not the one inserted"
+# The request carries the envelope the fold will deliver: the booking keeps
+# nothing of it in the registry directory.
+[ ! -e "$reg/preimages" ] || fail "the booking kept an envelope in the registry directory"
 run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" --slurpfile b "$receipts/insert.json" '
@@ -657,21 +655,7 @@ holds_envelope bob-insert .envelope "$bobkey" "$bkey" "$work/payload-insert.json
 booked bob-insert
 booking_only bob-insert "$before" "$files_before"
 [ "$(field bob-insert .requester)" = "$bobkey" ] || fail "the booking's requester is not bob's key"
-# The fold refuses, before it builds anything, an insertion whose envelope it
-# cannot deliver: none kept under the request's hash, or another envelope
-# under that name. Each leaves the journal as it was; the kept envelope is
-# then put back.
-bstored="$reg/preimages/$(field bob-insert .envelopeHash).json"
-[ -f "$bstored" ] || fail "bob's booking kept no envelope under its hash"
-mv "$bstored" "$work/bob-envelope.aside"
-refused fold-no-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("no envelope is stored")' "$receipts/fold-no-envelope.json" >/dev/null \
-  || fail "the fold without an envelope does not say so: $(field fold-no-envelope .reason)"
-cp "$stored" "$bstored"
-refused fold-other-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("another envelope")' "$receipts/fold-other-envelope.json" >/dev/null \
-  || fail "the fold with another envelope does not say so: $(field fold-other-envelope .reason)"
-mv "$work/bob-envelope.aside" "$bstored"
+[ ! -e "$reg/preimages" ] || fail "bob's booking kept an envelope in the registry directory"
 # A funding output the folder's wallet does not hold is refused by name too.
 refused fold-bad-funding client-refusal -- registry fold --fund-input "$(printf '%064d' 0)#0" \
   "${common[@]}" "${node[@]}" "${alice[@]}"

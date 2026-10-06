@@ -17,7 +17,6 @@ never typed.
 module Singular.CLI.FoldSpec (spec) where
 
 import Control.Monad (forM_)
-import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Functor.Identity (Identity (..))
@@ -26,9 +25,6 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Text qualified as T
 import Data.Word (Word64)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeDirectory)
-import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 import Test.QuickCheck
     ( Gen
@@ -51,16 +47,15 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Data qualified as PLC
 
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset (..)
-    , envelopeHash
-    , envelopeToJson
+    , envelopeToData
     , envelopeVersion
     )
 import Singular.CLI.FoldRules
-import Singular.CLI.Preimage
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.StubSession
@@ -69,7 +64,9 @@ import Singular.Registry.TxBuilder.Internal
     , policyIdFromPin
     )
 import Singular.Registry.Types
-    ( edgeDeleteAbsent
+    ( OnChainRequest (..)
+    , OnChainTokenId (..)
+    , edgeDeleteAbsent
     , edgeDeleteActive
     , edgeInsertAbsent
     , edgeInsertActive
@@ -88,7 +85,7 @@ spec = describe "registry fold" $ do
     target
     kinds
     funding
-    preimages
+    carried
 
 -- ---------------------------------------------------------
 -- The processing window
@@ -357,75 +354,34 @@ envelopeWith payload =
 genPayload :: Gen PLC.Data
 genPayload = PLC.I <$> chooseInteger (-1_000_000, 1_000_000)
 
-preimages :: Spec
-preimages = describe "the envelope a booking leaves for its fold" $ do
-    it "accepts the envelope the request's hash names" $
-        property $
-            forAll genPayload $ \p ->
-                let e = envelopeWith (PLC.I 0) `withPayload` p
-                in  verifyPreimage (envelopeHash e) e === Right e
-    it "refuses any other envelope, naming both hashes" $
-        property $
-            forAll genPayload $ \p ->
-                forAll genPayload $ \q ->
-                    let want = envelopeWith p
-                        got = envelopeWith q
-                    in  (p /= q) ==>
-                            ( verifyPreimage (envelopeHash want) got
-                                === Left (PreimageMismatch (envelopeHash want) (envelopeHash got))
-                            )
+carried :: Spec
+carried = describe "the envelope an insertion's request carries" $ do
     it
-        "keeps each envelope under its own hash, inside the registry directory"
-        $ withSystemTempDirectory "preimage"
-        $ \dir -> do
-            let e1 = envelopeWith (PLC.I 1)
-                e2 = envelopeWith (PLC.I 2)
-            storePreimage dir e1
-            storePreimage dir e2
-            loadPreimage dir (envelopeHash e1) `shouldReturn` Right e1
-            loadPreimage dir (envelopeHash e2) `shouldReturn` Right e2
-            preimagePath dir (envelopeHash e1)
-                `shouldNotBe` preimagePath dir (envelopeHash e2)
-            takeDirectory (preimagePath dir (envelopeHash e1))
-                `shouldSatisfy` isInfixOf dir
-    it "refuses an envelope nothing was stored for" $
-        withSystemTempDirectory "preimage" $ \dir -> do
-            let e = envelopeWith (PLC.I 1)
-            loadPreimage dir (envelopeHash e)
-                `shouldReturn` Left (PreimageMissing (envelopeHash e))
-    it "refuses a stored file that is not the envelope its name says" $
-        withSystemTempDirectory "preimage" $ \dir -> do
-            let e1 = envelopeWith (PLC.I 1)
-                e2 = envelopeWith (PLC.I 2)
-            storePreimage dir e1
-            -- another envelope's document under e1's name
-            writeEnvelope (preimagePath dir (envelopeHash e1)) e2
-            loadPreimage dir (envelopeHash e1)
-                `shouldReturn` Left (PreimageMismatch (envelopeHash e1) (envelopeHash e2))
-    it "refuses a stored file that is not an envelope at all" $
-        withSystemTempDirectory "preimage" $ \dir -> do
-            let e = envelopeWith (PLC.I 1)
-                path = preimagePath dir (envelopeHash e)
-            createDirectoryIfMissing True (takeDirectory path)
-            BS.writeFile path "not json"
-            loadPreimage dir (envelopeHash e) >>= \case
-                Left (PreimageUnreadable h _) -> h `shouldBe` envelopeHash e
-                other ->
-                    expectationFailure
-                        ("expected an unreadable preimage, got " <> show other)
-    it "words each refusal with what it names" $ do
-        let e = envelopeWith (PLC.I 1)
-            h = envelopeHash e
-        renderPreimageRefusal (PreimageMissing h)
-            `shouldSatisfy` isInfixOf "no envelope"
-        renderPreimageRefusal
-            (PreimageMismatch h (envelopeHash (envelopeWith (PLC.I 2))))
-            `shouldSatisfy` isInfixOf "another envelope"
+        "is the envelope the booking wrote into the request, for any payload"
+        $ property
+        $ forAll genPayload
+        $ \p ->
+            let e = envelopeWith p
+            in  carriedEnvelope (requestCarrying (Just (envelopeToData e)))
+                    === Right e
+    it "is refused, by name, when the request carries no envelope" $
+        carriedEnvelope (requestCarrying Nothing)
+            `shouldSatisfy` either (isInfixOf "carries no envelope") (const False)
+    it
+        "is refused, by name, when what the request carries is not an envelope"
+        $ carriedEnvelope (requestCarrying (Just (PLC.B "not an envelope")))
+            `shouldSatisfy` either (isInfixOf "cannot be read") (const False)
   where
-    withPayload e p = e{envPayload = p}
-    writeEnvelope path e = do
-        createDirectoryIfMissing True (takeDirectory path)
-        Aeson.encodeFile path (envelopeToJson e)
+    requestCarrying datum =
+        OnChainRequest
+            { requestToken = OnChainTokenId (BuiltinByteString "registry")
+            , requestOwner = BuiltinByteString (BS.replicate 28 0x33)
+            , requestKey = "key"
+            , requestEdge = edgeInsertActive
+            , requestDeposit = 2_000_000
+            , requestSubmittedAt = 0
+            , requestDestination = ("address", datum)
+            }
 
 -- ---------------------------------------------------------
 -- Which funding

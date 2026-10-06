@@ -316,7 +316,7 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                             edge
                                             2_000_000
                                             0
-                                            ("", "")
+                                            ("", Nothing)
                                         )
                         ctx =
                             (writeContext fx)
