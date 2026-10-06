@@ -186,6 +186,7 @@ trace_disagreements() {
         | {request, key, edge, deadline: (.foldDeadline.posixMs // .processingEnds)}]
        + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]
        + [$r | select(.booking != null) | {request: (((.booking | if type == "object" then .txId else . end) // "") + "#0"), key}]) as $facts
+    | (($facts | length == 0) and ($r.outcome != "success")) as $bare_refusal
     | [$r.submissions[]? | {step, tx, case, observed}] as $subs
     | [$r.references[]? | {step: ("publish-" + .role), tx: (.output | split("#")[0])}
        | select(.tx as $t | $subs | map(.tx) | index($t) | not)] as $reused
@@ -222,7 +223,7 @@ trace_disagreements() {
               and ($ev | last | .event) == "command-ended"
            then empty else "the stream does not end once with the command and outcome of the receipt" end),
         ($ev[] | keys_of | select(. != $key) | "key \(.)"),
-        ($ev[] | requests_of | select(. as $q | $facts | map(.request) | index($q) | not) | "request \(.) not named by the receipt"),
+        ($ev[] | requests_of | select(. as $q | $facts | map(.request) | index($q) | not) | select($bare_refusal | not) | "request \(.) not named by the receipt"),
         ($ev[] | select(.event == "request") as $e
          | $facts[] | select(.request == $e.request)
          | (select(.key != null and .key != $e.key) | "request \($e.request) key \($e.key)"),

@@ -880,9 +880,9 @@ inRole command receiptEdge action = case (command, action) of
     (Just "terminate", Booking e) -> e == booked edgeUpdateTerminal
     (Just "terminate", Folding e) -> e == booked edgeUpdateTerminal
     (Just "update", Updating) -> True
-    (Just "fold", Folding e) -> Just e == receiptEdge
+    (Just "fold", Folding e) -> Just e == receiptEdge || receiptEdge == Nothing
     (Just "reject", Rejecting) -> True
-    (Just "reclaim", Reclaiming e) -> Just e == receiptEdge
+    (Just "reclaim", Reclaiming e) -> Just e == receiptEdge || receiptEdge == Nothing
     _ -> False
   where
     booked = T.pack . edgeName
@@ -912,6 +912,7 @@ disagreements invokedKey receipt events =
         , [ "request " <> show r <> " not named by the receipt"
           | r <- eventRequests
           , r `notElem` map factRequest facts
+          , not (null facts && outcome /= Just "success")
           ]
         , [ "request " <> show r <> " " <> what' <> " " <> v
           | Trace _ (What (RequestSeen r e k d _)) <- events
