@@ -1,0 +1,88 @@
+# A registry joined from its state token: data model
+
+These are the new or changed records. Module placement is in the
+[modules model](modules-model.md).
+
+## State token
+
+A state token is an `Asset` (state policy, token name). On the command line it is written
+`POLICY.NAME`, each part in hex; the policy is 28 bytes and the name 32 bytes.
+
+- Parsing refuses any other shape before any provider call.
+
+## Mint record
+
+| field | meaning |
+|---|---|
+| minting transaction | the transaction that minted the asset |
+| spent inputs | every input that transaction spent |
+| supply | the asset's current total supply |
+
+- The provider returns no record for an asset it does not know.
+
+## Reference role and expected hashes
+
+- **Roles:** the state, the request, absent witness, active witness and terminal witness scripts,
+  and the application. They are spelled as the existing reference roles in receipts:
+  `state`, `request`, `witness-absent`, `witness-active`, `witness-terminal`, `application`.
+- **Expected hashes:** a total map from role to script hash, derived from the release and the
+  token alone.
+  - The state hash equals the token's policy for an admitted token.
+  - Every other role's hash is the release's script for that role applied to the registry
+    identity, `statePolicy ‖ tokenName`.
+
+## Reference carrier
+
+| field | meaning |
+|---|---|
+| output reference | where the carrier sits |
+| output | the exact output as the provider returned it |
+| source | the provider query, a hint, or the actor's wallet |
+
+- A carrier is admitted for a role only if the output carries a reference script and the hash
+  computed from that script equals the role's expected hash.
+- A provider-supplied hash field is never read.
+- Among the admitted carriers for a role, the lowest output reference is chosen.
+
+## Resolved registry
+
+| field | meaning |
+|---|---|
+| token | the state token |
+| seed | the input of the minting transaction whose derived name equals the token name |
+| creation transaction | the minting transaction |
+| state output | the output holding the token, with its decoded state datum |
+| rules | the windows and the tip, read from the datum |
+| configuration | the pinned registry configuration derived from the release and the token, equal to the datum's four policies |
+| expected hashes | as above |
+| network | the provider session's network |
+
+- A resolved registry exists only after every identity check passes.
+- It is never written to disk.
+
+## Refusals
+
+**Identity refusals.** Seven, rendered in this order of checking:
+1. `state-token-foreign-release`
+2. `state-token-not-found`
+3. `state-token-burned`
+4. `state-token-seed-mismatch`
+5. `state-output-missing`
+6. `registry-pin-mismatch <field>`
+7. `network-mismatch`
+
+**Reference refusal.** `reference-missing <role> <hash>: not found by this provider, hints or
+wallet`. Its message names `singular registry publish-references` as the remedy.
+
+**Hint warning.** `reference-hint-invalid <tx#ix>` is printed once per hint that is not admitted.
+The search continues after it.
+
+## Actor directory
+
+Allowed contents:
+- `journal.jsonl`, `submissions/`, `.lock`;
+- `preimages/`, while #419 owns its removal;
+- `registry.pending.json`, during `create` only.
+
+Anything else is ignored. Nothing in the directory is an input to identity or reference
+resolution.
