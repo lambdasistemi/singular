@@ -10,7 +10,7 @@ and decoders. Read the [stories](spec.md) first. Delivery base: main
 As a user, I need public preview receipts to expose the session and facts they
 actually consumed. The transport, decoders and provider composition below are
 already on main. The remaining [tasks](tasks.md) run serially: repair the missing
-create-preview evidence, retain its regression check, and record a current public
+create-preview evidence in both public-address and local-key modes, retain its regression check, and record a current public
 read-only smoke with successful inspect, create, insert, update and terminate
 previews. Existing fake-server controls and final CI remain required.
 

@@ -19,11 +19,11 @@
       "pause": 500
     },
     {
-      "text": "[x] T001 [US1] Include the acquired session's evidence in public-address create-preview receipts in offchain/cli/src/Singular/CLI/Create.hs.",
+      "text": "[x] T001 [US1] Include the acquired session's evidence in create-preview receipts in both public-address and local-key modes in offchain/cli/src/Singular/CLI/Create.hs.",
       "pause": 300
     },
     {
-      "text": "[ ] T002 [US1] Extend the existing public preview check in tools/demo1_cli_journey.sh to require Unbound sessions and nonempty Unverified facts.",
+      "text": "[ ] T002 [US1] Extend the existing public and local-key preview checks in tools/demo1_cli_journey.sh to require Unbound sessions and nonempty Unverified facts.",
       "pause": 300
     },
     {
@@ -69,6 +69,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ba3d89409c1362c47b1490384f873f27af1ae00d734553cebed90ae78bc8d386"
+    "sha256": "0586e6c398b06b08b80203aeb783b6af071e5e66dd48e2b21ce01edbbb6d4464"
   }
 }

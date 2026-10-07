@@ -12,8 +12,8 @@ previews do not substitute for the required public smoke.
 
 ## Public commands and their evidence (US1)
 
-- [x] T001 [US1] Include the acquired session's evidence in public-address create-preview receipts in `offchain/cli/src/Singular/CLI/Create.hs`.
-- [ ] T002 [US1] Extend the existing public preview check in `tools/demo1_cli_journey.sh` to require Unbound sessions and nonempty Unverified facts.
+- [x] T001 [US1] Include the acquired session's evidence in create-preview receipts in both public-address and local-key modes in `offchain/cli/src/Singular/CLI/Create.hs`.
+- [ ] T002 [US1] Extend the existing public and local-key preview checks in `tools/demo1_cli_journey.sh` to require Unbound sessions and nonempty Unverified facts.
 - [ ] T003 [US1] Run current-main public inspect and all four previews; record commands, URL, schema revision, per-call timings, receipts and insert phases in `specs/389-koios-client/live-smoke.md`. Preserve refusals as refusals; update/terminate require a real existing holding.
 
 ## Bounded failures and shared decoding (US2)

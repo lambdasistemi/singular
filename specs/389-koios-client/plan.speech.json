@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As a user, I need public preview receipts to expose the session and facts they actually consumed. The transport, decoders and provider composition below are already on main. The remaining tasks run serially: repair the missing create-preview evidence, retain its regression check, and record a current public read-only smoke with successful inspect, create, insert, update and terminate previews. Existing fake-server controls and final CI remain required.",
+      "text": "As a user, I need public preview receipts to expose the session and facts they actually consumed. The transport, decoders and provider composition below are already on main. The remaining tasks run serially: repair the missing create-preview evidence in both public-address and local-key modes, retain its regression check, and record a current public read-only smoke with successful inspect, create, insert, update and terminate previews. Existing fake-server controls and final CI remain required.",
       "pause": 400
     },
     {
@@ -121,6 +121,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "095b48e8704cf70c4111ef392804497973b26dede493dee865a44b7e7c449b83"
+    "sha256": "8f402acf54f1296c5b4d06dcb1c29ba6b8ca838cec0024abe54c7be4897584c2"
   }
 }
