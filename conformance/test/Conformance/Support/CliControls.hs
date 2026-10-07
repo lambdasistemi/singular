@@ -422,6 +422,31 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     )
                 )
                 `shouldSatisfy` notHeld
+            -- the composition control the runner swaps in: the same inspect,
+            -- its forwarder withholding another asset's history, succeeded and
+            -- printed the leaf; the render names the reason the runner reads
+            let elsewhere =
+                    altered
+                        ( \r ->
+                            r
+                                { rcOutcome = "success"
+                                , rcReason = Nothing
+                                , rcWithheldReads = Just 0
+                                , rcCommand =
+                                    Just
+                                        ( object
+                                            [ "outcome" .= ("success" :: String)
+                                            , "leaf" .= ("active" :: String)
+                                            ]
+                                        )
+                                }
+                        )
+            renderControls (judge elsewhere controlsStory) controlsStory
+                `shouldSatisfy` isInfixOf
+                    "| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: "
+            renderControls (judge elsewhere controlsStory) controlsStory
+                `shouldSatisfy` isInfixOf
+                    "the withholding never reached the command's history read"
             -- the registry's journal moved while inspect ran
             withheldClause
                 ( altered

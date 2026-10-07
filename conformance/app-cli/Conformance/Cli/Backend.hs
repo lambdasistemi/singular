@@ -1533,14 +1533,27 @@ provoke env p target key r = do
         WithoutHistory -> do
             args <- commandArgs env Inspect target key r
             reg <- openRegistry env target
-            let asset =
-                    ( hex (scriptHashBytes (cfgScriptHash (regCfg reg)))
-                    , hex (tokenBytes reg)
-                    )
-            withWithholding (optProviderUrl o) asset $ \w -> do
-                done <- plain (providerTo (withholdingUrl w) args)
-                withheld <- withheldReads w
-                pure done{rcWithheldReads = Just withheld}
+            let policy = hex (scriptHashBytes (cfgScriptHash (regCfg reg)))
+                -- inspect run through a forwarder withholding the history
+                -- of the asset named, its receipt carrying the count
+                through name tag =
+                    withWithholding (optProviderUrl o) (policy, hex name) $ \w -> do
+                        from <- journalLines journal
+                        (status, printed, file) <-
+                            singular env r (label <> tag) (providerTo (withholdingUrl w) args)
+                        done <- finishFrom from status printed file id
+                        withheld <- withheldReads w
+                        pure done{rcWithheldReads = Just withheld}
+            -- The composition control, kept beside the receipts for the
+            -- runner: the same inspect, its forwarder withholding another
+            -- asset's history, never reaches the registry's history read.
+            control <- through (flipLast (tokenBytes reg)) "-another-asset"
+            BL.writeFile
+                ( envEvidence env
+                    </> printf "step-%03d-%s-another-asset.receipt.json" (rcStep r) label
+                )
+                (encodePretty control <> "\n")
+            through (tokenBytes reg) ""
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
             plain (providerTo "http://127.0.0.1:1/api/v1" args)
