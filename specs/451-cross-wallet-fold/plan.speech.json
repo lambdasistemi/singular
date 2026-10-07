@@ -41,10 +41,14 @@
     {
       "text": "The PR records the exact model binding, implementation entry points, observed receipts and the unresolved historical refusal. It remains draft until evidence and finalization permit readiness. Merge uses a merge commit after the merge guard confirms the head and required checks.",
       "pause": 400
+    },
+    {
+      "text": "The hosted job uploads a named evidence artifact on success and failure. Candidate SHA and workflow run ID bind the retained receipts, journal and bodies to their producer, so offline checks can consume genuine recorded evidence. Missing records remain visible as missing evidence.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "f90b943f474288128d68dbd7a4f5ae211aa90356bc2472cc331a2f3fef308894"
+    "sha256": "33a61785e256583ec21a8a58975c28c33d400a0952e8d6727c1b869b0b5633ff"
   }
 }

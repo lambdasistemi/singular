@@ -29,6 +29,7 @@ The sequence shows one connected journey on a private development ledger. The se
 | cross-wallet-recovery | Every discovered fold hold and the lost-answer case retain the existing receipt, journal, root, signer-witness and no-resubmission expectations. | BLOCKING |
 | failed-command-visible | A failed command prints its actual receipt and refusal reason without replacing the command's outcome or the job's failure. | ADVISORY |
 | hosted-selected-part | A distinct cross-wallet app and Registry job select that part and reject absent or empty execution through the existing ran-proof. | BLOCKING |
+| retained-hosted-evidence | The hosted job retains its genuine receipts, journal and saved transaction bodies on success and failure, bound to the candidate SHA and run ID for offline consumers. | BLOCKING |
 
 ## Model and limits
 

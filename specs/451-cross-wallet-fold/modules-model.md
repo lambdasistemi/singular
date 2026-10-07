@@ -18,7 +18,7 @@ The job selects the existing part mechanism through a distinct root app. The har
 |---|---|
 | tools/cli_recovery_controls.sh | Establish the cross-wallet part's prerequisite independently; expose failed command evidence; preserve the existing assertions and ran-proof. |
 | flake.nix | Expose a distinct cli-recovery-cross-wallet app selecting cross-wallet through recoveryApp. |
-| .github/workflows/registry.yml | Run the selected app as its own hosted Registry job. |
+| .github/workflows/registry.yml | Run the selected app as its own hosted Registry job; retain its genuine receipts, journal and bodies on success and failure, bound to candidate SHA and run ID. |
 
 ## Boundaries
 

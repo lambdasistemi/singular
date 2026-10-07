@@ -31,3 +31,5 @@ The flow keeps diagnosis, local checks, hosted behavioral evidence and merge as 
 The existing main run is the defect's executable RED witness. The selected hosted command is nix run --quiet .#cli-recovery-cross-wallet, added by this change. Whole-repository lint, touched-file formatting and specification presentation run locally; required hosted checks must pass on the exact pushed head. The owner and persistent auditor review the diagnosis/RED bundle, each changed acceptance line and the pre-push decision. There is no additional local development-ledger run.
 
 The PR records the exact model binding, implementation entry points, observed receipts and the unresolved historical refusal. It remains draft until evidence and finalization permit readiness. Merge uses a merge commit after the merge guard confirms the head and required checks.
+
+The hosted job uploads a named evidence artifact on success and failure. Candidate SHA and workflow run ID bind the retained receipts, journal and bodies to their producer, so offline checks can consume genuine recorded evidence. Missing records remain visible as missing evidence.

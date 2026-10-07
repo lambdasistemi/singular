@@ -17,6 +17,10 @@
     {
       "text": "Existing records remain authoritative: a command receipt and stderr, the command's observed exit, prepared transaction bodies, journal events, root snapshots, selected-part clause counts and the discovered hold list. The setup produces the prerequisite holding through ordinary commands on the same registry and node. It is not a typed final-state fixture.",
       "pause": 400
+    },
+    {
+      "text": "The hosted artifact retains the producing part's genuine evidence directories. Its identity includes the exact candidate SHA and workflow run ID; retained file hashes make the bundle bindable by offline consumers. If failure precedes a record, the bundle records that absence and supplies no fabricated substitute.",
+      "pause": 400
     }
   ],
   "relationships": [
@@ -41,6 +45,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "893652efded7b93b618ea90aa0578d19f8d9e605a07ac33ef411d0a82a03f506"
+    "sha256": "3f635526cf6ac171003c745a85b94167a2e48df3ab716c6797ca8053e75b1b62"
   }
 }

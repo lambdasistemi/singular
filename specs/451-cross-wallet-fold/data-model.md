@@ -6,6 +6,8 @@ As a reviewer, I want verdicts traceable to the commands that produced them, so 
 
 Existing records remain authoritative: a command receipt and stderr, the command's observed exit, prepared transaction bodies, journal events, root snapshots, selected-part clause counts and the discovered hold list. The setup produces the prerequisite holding through ordinary commands on the same registry and node. It is not a typed final-state fixture.
 
+The hosted artifact retains the producing part's genuine evidence directories. Its identity includes the exact candidate SHA and workflow run ID; retained file hashes make the bundle bindable by offline consumers. If failure precedes a record, the bundle records that absence and supplies no fabricated substitute.
+
 ## Relationships
 
 ```mermaid

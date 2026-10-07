@@ -31,6 +31,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] retain-hosted-evidence: upload the genuine hosted receipts, journal and body bundle on success and failure, bound to candidate SHA and run ID.",
+      "pause": 300
+    },
+    {
       "text": "[ ] verify-and-deliver: obtain all checkpoint approvals, local lint and presentation receipts, exact-head hosted CI, finalization and an authorized merge commit.",
       "pause": 300
     }
@@ -47,6 +51,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "3ea5b8be46b95d619c1dc4466a76ac8dca4ba3be378b6e8b2e15492924c028c8"
+    "sha256": "54496b3dd7c4f39802fe0e17e8cfbf322e67f0e8d9cc92b3bdfaf950080741a4"
   }
 }
