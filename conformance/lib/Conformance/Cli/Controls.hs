@@ -133,7 +133,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Char (isDigit, isHexDigit, ord)
 import Data.Either (fromRight, lefts, rights)
 import Data.Int (Int64)
-import Data.List (intercalate, isInfixOf, nub)
+import Data.List (intercalate, isInfixOf, isPrefixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import Data.Scientific qualified as Sci
@@ -3246,18 +3246,21 @@ isRetired s = case s of
 
 {- | Interpret the story over receipts. A receipt answers the action at its
 step exactly when it names that action, target and key; the first missing
-or misplaced receipt leaves every later clause uncovered, naming why.
+or misplaced receipt leaves every later clause uncovered, naming why, but
+a clause whose promise is retired, which reads retired from its description.
 Requirements inside a clause's body fail the clause; its check decides it.
 -}
 judge :: [Receipt] -> Story () -> [ClauseResult]
 judge receipts story =
     let byStep = Map.fromListWith (<>) [(rcStep r, [r]) | r <- receipts]
         (reached, stop) = replay byStep story
-        names = outline story
+        names = described story
         missing = drop (length reached) names
         why = fromMaybe "no receipt" stop
     in  reached
-            <> [ClauseResult s t (Uncovered why) | (s, t) <- missing]
+            <> [ ClauseResult s t (maybe (Uncovered why) Retired retired)
+               | ((s, t), retired) <- missing
+               ]
 
 type Receipts = Map.Map Int [Receipt]
 
@@ -3414,9 +3417,16 @@ rows a verdict must account for, whether or not a receipt reached them.
 The story is walked with placeholder receipts; it never branches on one.
 -}
 outline :: Story () -> [(String, String)]
-outline story = snd (walk 0 story)
+outline = map fst . described
+
+{- | Every clause the story states, as 'outline' gives it, with the reason
+its promise is retired, read from the description itself: a clause whose
+body retires its promise is retired whether or not a receipt reaches it.
+-}
+described :: Story () -> [((String, String), Maybe String)]
+described story = snd (walk 0 story)
   where
-    walk :: Int -> Story a -> (Int, [(String, String)])
+    walk :: Int -> Story a -> (Int, [((String, String), Maybe String)])
     walk n program = case view program of
         Return _ -> (n, [])
         Action i :>>= next -> let (n', r) = placeholder n i in walk n' (next r)
@@ -3430,19 +3440,25 @@ outline story = snd (walk 0 story)
         :: String
         -> Int
         -> Program (Clause thm CliI) a
-        -> (Int, [(String, String)], a)
+        -> (Int, [((String, String), Maybe String)], a)
     walkClauses name n program = case view program of
         Return a -> (n, [], a)
         Clause title leanCheck body :>>= next ->
-            let (n1, obs) = run n body
+            let (n1, obs, retired) = retiring n body
                 (n2, _) = run n1 (checkAction leanCheck obs)
                 (n3, rows, a) = walkClauses name n2 (next obs)
-            in  (n3, (name, title) : rows, a)
+            in  (n3, ((name, title), retired) : rows, a)
 
     run :: Int -> Story a -> (Int, a)
-    run n program = case view program of
-        Return a -> (n, a)
-        Action i :>>= next -> let (n', r) = placeholder n i in run n' (next r)
+    run n program = let (n', a, _) = retiring n program in (n', a)
+
+    -- A clause body, with the reason it retires its promise, if it does.
+    retiring :: Int -> Story a -> (Int, a, Maybe String)
+    retiring n program = case view program of
+        Return a -> (n, a, Nothing)
+        Action (Retire why) :>>= next ->
+            let (n', a, _) = retiring n (next ()) in (n', a, Just why)
+        Action i :>>= next -> let (n', r) = placeholder n i in retiring n' (next r)
         Theorem _ _ :>>= _ -> error "outline: a statement nested inside a clause"
 
     placeholder :: Int -> CliI a -> (Int, a)
@@ -3614,17 +3630,33 @@ renderControls results story =
                     ss
                         | length ss /= length wanted ->
                             "uncovered: a clause of it did not run"
-                        | all (== Held) ss -> "covered: the clause holds"
-                        | (Retired why : _) <- filter (/= Held) ss -> why
-                        | (Uncovered why : _) <- filter (/= Held) ss -> "uncovered: " <> why
-                        | (NotHeld why : _) <- filter (/= Held) ss ->
-                            "not covered: a clause does not hold: " <> intercalate "; " why
-                        | otherwise -> "uncovered: a clause of it did not run"
+                        | otherwise ->
+                            -- The live obligations decide the case; a retired
+                            -- promise among them is named beside, never
+                            -- standing for them.
+                            let live = filter (not . isRetired) ss
+                                retirement = [why | Retired why <- ss]
+                                beside = case retirement of
+                                    why : _ -> "; " <> why
+                                    [] -> ""
+                            in  case live of
+                                    [] -> concat (take 1 retirement)
+                                    _
+                                        | all (== Held) live ->
+                                            "covered: the clause holds" <> beside
+                                        | (Uncovered why : _) <- filter (/= Held) live ->
+                                            "uncovered: " <> why <> beside
+                                        | (NotHeld why : _) <- filter (/= Held) live ->
+                                            "not covered: a clause does not hold: "
+                                                <> intercalate "; " why
+                                                <> beside
+                                        | otherwise ->
+                                            "uncovered: a clause of it did not run" <> beside
     covered =
         length
             [ ()
             | (_, _, cov) <- approvedCases
-            , coverage cov == "covered: the clause holds"
+            , "covered: the clause holds" `isPrefixOf` coverage cov
             ]
     caseSummary =
         show covered
