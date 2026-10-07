@@ -368,11 +368,13 @@ expiryRows =
     describe "an expired submission reconciles offline" $ do
         it
             "excludes one whose spent inputs are live and whose finite \
-            \upper bound the recorded tip has reached"
+            \upper bound the recorded tip has exactly reached"
             $ withRecordedStory
             $ \r ->
                 withRecordedWrite r PastBound LostAnswer $ \dir txid saved -> do
                     upperBoundOf saved `shouldSatisfy` isJust
+                    -- the boundary itself: the bound equals the recorded tip
+                    upperBoundOf saved `shouldBe` Just (recordedTip r)
                     journalBefore <- journalBytes dir
                     result <- reconcileIncomplete "inspect" dir (recordedView r)
                     recExcluded (recoveryOf txid result) `shouldBe` True
@@ -385,10 +387,11 @@ expiryRows =
                     jsonField (reconciledJson result) "excluded"
                         `shouldBe` Just (Aeson.toJSON [txid])
                     refuseUnreconciled result -- settled: writing proceeds
-        it "keeps an unreached bound unresolved though its inputs are live" $
+        it "keeps a bound one slot ahead of the recorded tip unresolved" $
             withRecordedStory $ \r ->
                 withRecordedWrite r FutureBound LostAnswer $ \dir txid saved -> do
                     upperBoundOf saved `shouldSatisfy` isJust
+                    upperBoundOf saved `shouldBe` Just (beyondBy 1 (recordedTip r))
                     result <- reconcileIncomplete "inspect" dir (recordedView r)
                     recExcluded (recoveryOf txid result) `shouldBe` False
                     recIncluded (recoveryOf txid result) `shouldBe` False
@@ -476,33 +479,66 @@ rollbackRows =
 
 repeatedRows :: Spec
 repeatedRows =
-    describe "a repeated reconciliation is idempotent"
-        $ it
+    describe "a repeated reconciliation is idempotent" $ do
+        it
             "appends nothing the second time, over the same journal and \
             \the same bytes"
-        $ withRecordedStory
-        $ \r -> do
-            let candidates = recordedCandidates r
-            length candidates `shouldSatisfy` (>= 2)
-            forM_ (take 2 candidates) $ \tx ->
-                withSystemTempDirectory "singular-recovery" $ \dir -> do
-                    _ <- prepareRecorded dir tx
-                    first <- reconcileIncomplete "inspect" dir (recordedView r)
-                    afterFirst <- journalBytes dir
-                    second <- reconcileIncomplete "inspect" dir (recordedView r)
-                    map recTx (rcRecovered second) `shouldBe` []
-                    rcObserved second `shouldBe` []
-                    rcRolledBack second `shouldBe` []
-                    rcExcluded second `shouldBe` []
-                    journalBytes dir `shouldReturn` afterFirst
-                    preparedLines dir `shouldReturn` 1
-                    -- a settled reconciliation refuses nothing, again
-                    again <- try (refuseUnreconciled first)
-                    case again of
-                        Left failure ->
-                            expectationFailure
-                                ("a settled recovery refused: " <> show (outcomeClass failure))
-                        Right () -> pure ()
+            $ withRecordedStory
+            $ \r -> do
+                let candidates = recordedCandidates r
+                length candidates `shouldSatisfy` (>= 2)
+                forM_ (take 2 candidates) $ \tx ->
+                    withSystemTempDirectory "singular-recovery" $ \dir -> do
+                        _ <- prepareRecorded dir tx
+                        first <- reconcileIncomplete "inspect" dir (recordedView r)
+                        afterFirst <- journalBytes dir
+                        second <- reconcileIncomplete "inspect" dir (recordedView r)
+                        map recTx (rcRecovered second) `shouldBe` []
+                        rcObserved second `shouldBe` []
+                        rcRolledBack second `shouldBe` []
+                        rcExcluded second `shouldBe` []
+                        journalBytes dir `shouldReturn` afterFirst
+                        preparedLines dir `shouldReturn` 1
+                        -- a settled reconciliation refuses nothing, again
+                        again <- try (refuseUnreconciled first)
+                        case again of
+                            Left failure ->
+                                expectationFailure
+                                    ("a settled recovery refused: " <> show (outcomeClass failure))
+                            Right () -> pure ()
+        it
+            "repeats a rolled-back, an excluded and an unresolved outcome \
+            \without new effects, over the same bytes"
+            $ withRecordedStory
+            $ \r ->
+                forM_
+                    [ (LiveInputsNoBound, AnsweredAndConfirmed)
+                    , (PastBound, LostAnswer)
+                    , (SpentInputsNoBound, LostAnswer)
+                    ]
+                    $ \(evidence, answer) ->
+                        withRecordedWrite r evidence answer $ \dir txid _ -> do
+                            bodyPath <- preparedBody dir txid
+                            bodyBefore <- BS.readFile bodyPath
+                            first <- reconcileIncomplete "inspect" dir (recordedView r)
+                            afterFirst <- journalBytes dir
+                            second <- reconcileIncomplete "inspect" dir (recordedView r)
+                            -- an excluded outcome settles; a rolled-back or
+                            -- unresolved one stays open and is re-reported
+                            -- without journalling anything new
+                            let staysOpen = case evidence of PastBound -> False; _ -> True
+                            map recTx (rcRecovered second) `shouldBe` [txid | staysOpen]
+                            rcObserved second `shouldBe` []
+                            rcRolledBack second `shouldBe` []
+                            rcExcluded second `shouldBe` []
+                            journalBytes dir `shouldReturn` afterFirst
+                            preparedLines dir `shouldReturn` 1
+                            BS.readFile bodyPath `shouldReturn` bodyBefore
+                            -- the repeated refusal keeps the first's class
+                            let classOf = either (Left . outcomeClass) Right
+                            firstClass <- classOf <$> try (refuseUnreconciled first)
+                            secondClass <- classOf <$> try (refuseUnreconciled second)
+                            firstClass `shouldBe` secondClass
 
 -- ---------------------------------------------------------
 -- The recorded view
@@ -513,6 +549,7 @@ data Recorded = Recorded
     { recordedView :: Cage.Session NoWitness IO
     , recordedProvider :: (Cage.Network, Cage.LedgerProvider NoWitness IO)
     , recordedCandidates :: [ConwayTx]
+    , recordedTip :: SlotNo
     }
 
 fixtureSet :: IO FixtureSet
@@ -534,12 +571,14 @@ withRecordedStory story = do
         provider = koiosProvider runtime (Cage.Network 1) noTimeSource client
     Cage.withLatest (Cage.Network 1, provider) $ \view -> do
         candidates <- inclusionCandidates view
+        tip <- Cage.tip view
         result <-
             story
                 Recorded
                     { recordedView = view
                     , recordedProvider = (Cage.Network 1, provider)
                     , recordedCandidates = candidates
+                    , recordedTip = Cage.observedSlot tip
                     }
         seen <- calls
         seen `shouldSatisfy` all (`elem` ["tip", "address_utxos"])
@@ -606,6 +645,10 @@ tryRecordedTx fixture = do
     pure $ case outcome of
         Left (_ :: IOError) -> Nothing
         Right tx -> Just tx
+
+-- | A slot the given number beyond another.
+beyondBy :: Word64 -> SlotNo -> SlotNo
+beyondBy n (SlotNo slot) = SlotNo (slot + n)
 
 -- | The outputs live at an address, as the recorded answers show them.
 liveAt :: Cage.Session NoWitness IO -> Addr -> IO (Set.Set TxIn)
@@ -794,6 +837,19 @@ preparedLines :: FilePath -> IO Int
 preparedLines dir =
     length . filter ((== "prepared") . journalEvent) <$> readJournal dir
 
+-- | The saved-body path the one prepared line of a transaction names.
+preparedBody :: FilePath -> Text -> IO FilePath
+preparedBody dir txid = do
+    entries <- readJournal dir
+    case [ p
+         | e <- entries
+         , journalTxId e == txid
+         , journalEvent e == "prepared"
+         , Just p <- [journalBody e]
+         ] of
+        [path] -> pure path
+        _ -> fail "the journal does not hold exactly one prepared body"
+
 -- ---------------------------------------------------------
 -- Writes over recorded inputs
 -- ---------------------------------------------------------
@@ -877,8 +933,8 @@ inputsFor = \case
 
 -- | The validity upper bound a body carries for its evidence.
 upperFor :: BodyEvidence -> Word64 -> StrictMaybe SlotNo
-upperFor PastBound tip = SJust (SlotNo (tip - 1))
-upperFor FutureBound tip = SJust (SlotNo (tip + 100))
+upperFor PastBound tip = SJust (SlotNo tip)
+upperFor FutureBound tip = SJust (SlotNo (tip + 1))
 upperFor _ _ = SNothing
 
 storyWallet :: FilePath -> IO Wallet
