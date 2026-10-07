@@ -12,6 +12,7 @@ import Singular.CLI.FoldSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
+import Singular.CLI.RecoverySpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TraceSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -199,6 +200,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
         Singular.CLI.ReclaimSpec.spec
+    describe
+        (tagged "Singular.CLI.Recovery" [Cli, Recovery])
+        Singular.CLI.RecoverySpec.spec
     describe
         (tagged "Singular.CLI.Write" [Cli, Recovery])
         Singular.CLI.WriteSpec.spec

@@ -942,6 +942,7 @@ test-suite cage-tests
     Singular.CLI.ReclaimSpec
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
+    Singular.CLI.RecoverySpec
     Singular.CLI.Registry
     Singular.CLI.Reject
     Singular.CLI.RejectRules

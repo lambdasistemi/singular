@@ -1,0 +1,46 @@
+# CI stays bounded as the registry grows
+
+As a maintainer, I want each shared recovery failure checked offline and each new edge checked in parallel, so adding registry behavior does not add serial block waits. As a CLI user, I want an uncertain submission reconciled without resending it or inventing state.
+
+## Stories and acceptance
+
+The first slice checks four modes through production `reconcileIncomplete`: lost acknowledgement, interruption after confirmation, expiry and rollback, on recorded provider answers. A separate, explicitly synthetic saved-registry test exercises `reconcile`, public-history acquisition and keyed observation; removing its history must turn it red. Results come from actual journals and receipts, with fault controls. Positive inclusion, live-input exclusion and undetermined evidence stay distinct; repeated recovery never resends or duplicates effects. Saved-registry recovery on recorded answers remains uncovered.
+
+The second slice checks evidence mutations offline. Original recorded evidence passes; altered evidence is rejected for the relevant clause; missing or empty extent fails closed. It establishes evidence judgement, not chain execution.
+
+The final slice gives each chain-bound edge its own parallel hosted part and retains one sequential journey. Each node part has six minutes of test execution after cached setup, with setup/build measured separately and a whole-job timeout. It waits for the sibling recovery/control changes and an accepted job mapping.
+
+```mermaid
+flowchart TD
+    O["Offline recovery<br/>Parallel edge smoke<br/>Sequential journey"] -->|Receipts| C[Candidate evidence]
+```
+
+Shared client failures, independent chain smokes and the connected journey contribute different evidence. None substitutes for the others.
+
+## Invariants
+
+| Name | Required observable truth | Severity |
+| --- | --- | --- |
+| recovery-never-resends | Reconciliation and a refused next write never rebuild or resend an unresolved transaction | BLOCKING |
+| inclusion-requires-positive-chain-evidence | Saved transaction identity and positive acquired reads support inclusion and observation | BLOCKING |
+| recovery-is-idempotent | Repeated recovery records each effect once and reads state through public history | BLOCKING |
+| each-recovery-part-runs-alone | Every selected hosted recovery part passes alone; a control detects cross-part state dependence in slice three | BLOCKING |
+| expiry-needs-live-input-and-upper-bound | Only a live spent input and reached finite bound permit exclusion | BLOCKING |
+| original-evidence-is-preserved | Journal prefix and signed body bytes stay unchanged | BLOCKING |
+| every-failure-mode-has-a-real-red | Each failure mode has an executed, discriminating controlled fault | ADVISORY |
+| offline-means-no-node-or-block-wait | Recorded answers require neither a node nor block waits | ADVISORY |
+| successor-ran-before-removal | A named successor demonstrably runs before its serial predecessor is removed | ADVISORY |
+| edge-growth-does-not-extend-other-jobs | New edge jobs add independent parallel execution | ADVISORY |
+| bounded-node-run-budget | Exact-head hosted measurements meet the stated execution bound | ADVISORY |
+
+## Behavioral authority and refusal
+
+Constitution 1.13.0 governs. Base `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed` binds Lean tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and open-datum Lean tree `14f523d8cc6ca464add4bb846e8a51427ea8af7c`. `Singular.step`, `refusal`, `rootOf` and `admittedExitStep` are read at that revision, including the datum-carrying public-fold ruling. Recovery remains the client obligation in [the CLI recovery specification](../325-cli-recovery/spec.md), outside Lean's acknowledgement and provider-rollback vocabulary. This test change creates no model guarantee.
+
+Unknown, timed out and rolled-back submissions remain unresolved until evidence resolves them. The next write keeps its public `partial` class and transaction identity; an included after-state that cannot be observed retains `stale-state`. No refusal or exit code is renamed. Ambiguous or conflicting model behavior holds affected acceptance and returns a concrete story to the user.
+
+## Evidence limits and delivery
+
+Recorded-provider tests establish client recovery over those recorded answers. They do not establish node rollback, signatures accepted by a ledger, chain finality, or a connected registry lifecycle seeded only as a fixture. Product conformance rows remain receipt-computed with uncovered rows visible; any harness evidence belongs in its appendix. The replacement diff must carry each named successor and its selection/ran-proof.
+
+Cross-wallet execution remains [the sibling fold ticket](https://github.com/lambdasistemi/singular/issues/451). The ordinary CLI refusal-controls hosted carrier is restored on main. No node scenario is removed here; further hosted coverage needs exact-head receipts. Slices one and two may ship separately; the ticket remains open until final acceptance.

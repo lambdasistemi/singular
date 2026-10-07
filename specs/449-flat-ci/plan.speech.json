@@ -1,0 +1,76 @@
+{
+  "deliver-fast-recovery-evidence-before-reshaping-ci": [
+    {
+      "text": "Deliver fast recovery evidence before reshaping CI.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want new offline checks to land while sibling work finishes, so shared workflow edits do not block independent test coverage.",
+      "pause": 400
+    }
+  ],
+  "ordered-delivery": [
+    {
+      "text": "Ordered delivery.",
+      "pause": 500
+    },
+    {
+      "text": "First add the recorded-provider recovery tests. Then add offline evidence-mutation checks. Finally, after the public fold, pending-request and token-join changes merge, accept the exact job mapping and reshape the hosted carriers. The first two slices may have their own PR; no unfinished final-slice claim closes the ticket.",
+      "pause": 400
+    }
+  ],
+  "first-slice-source-and-ownership-fence": [
+    {
+      "text": "First-slice source and ownership fence.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner owns offchain/test/Singular/CLI/RecoverySpec.hs, test-only support under that directory, recorded recovery fixtures under offchain/test/fixtures/recovery/, registration in offchain/test/Main.hs, and the test module list in offchain/singular-registry.cabal. Existing test helpers may be reused; promoted shared test support needs a contract update. No dependencies, production modules, root flake.nix, registry.yml, Lean, validators, serial controls, conformance claims or private mirror are modified. If the existing composition cannot be exercised with the permitted test seam, return the exact missing seam before widening the fence.",
+      "pause": 400
+    },
+    {
+      "text": "Epic A-003 requires both paths: recorded incomplete-create recovery core and an explicitly synthetic saved-registry supplement through existing fixture facilities. The supplement reaches public-history acquisition and turns red when history is removed or emptied. Names, descriptions and the PR distinguish synthetic provenance. Saved-registry reconciliation on recorded chain answers stays uncovered; no successor is claimed. Bind the changed mandate and rows before use.",
+      "pause": 400
+    },
+    {
+      "text": "The second and final slices receive their own signature-level planning and gate before dispatch. Their implementation details are not supplied by this first-slice mandate.",
+      "pause": 400
+    }
+  ],
+  "verification-and-cost": [
+    {
+      "text": "Verification and cost.",
+      "pause": 500
+    },
+    {
+      "text": "The existing hosted unit carrier is the journey job's offchain command nix run --quiet .#cage-tests. Narrow the inner loop to the new Singular.CLI.Recovery tagged module and fail on empty selection. Existing CLI tests guard public outcome vocabulary. Run no local node campaign. A focused packaged candidate gate has a fifteen-minute build-and-test forecast; warm test execution is measured separately and must take seconds without sleeps for chain progress. A forecast overrun is reported and the scope is reassessed; it never licenses weaker assertions.",
+      "pause": 400
+    },
+    {
+      "text": "The first test checkpoint freezes a complete four-mode fault-control bundle and its actual RED receipts before GREEN is claimed. Compilation/setup failure is not behavioral RED. Permanent assertions detect the relevant defect class; fixture changes verify they differ from their original. The persistent mute auditor reads commits and receipts without running gates. Every checkpoint requires approval before push; a parent-authorized rebase preserves backup history and requires fresh delta approval.",
+      "pause": 400
+    },
+    {
+      "text": "The ticket owner runs the final required checks on the exact candidate and the repository aggregate once. Hosted CI supplies all node evidence. PR #465 has merged; plain whole-repository lint must now be green. No AI attribution enters commit messages. Merge uses a merge commit and merge-guard only after exact-head hosted CI and the approval trail are green.",
+      "pause": 400
+    }
+  ],
+  "binding-and-outstanding-work": [
+    {
+      "text": "Binding and outstanding work.",
+      "pause": 500
+    },
+    {
+      "text": "The protocol model binding and client-recovery boundary are in the specification. The epic accepted this intake on 7 October 2026, including the compact Codex/GLM/Opus team and ticket-owner CI-derived gate. Six minutes means node execution after cached setup, with setup/build reported separately. Public-fold #419 is merged; the final slice still waits for #396, #437 and epic job mapping.",
+      "pause": 400
+    },
+    {
+      "text": "Each planning artifact is capped at eighty lines and five KiB; each compiled worker packet at two hundred lines and twelve KiB. Campaign accounting captures actual commands, duration, cache state and available native usage. Static inspection is distinct from a test run; the auditor has zero execution allocation. No draft or extra gate author is authorized.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "520f114423298d1ee3ed401aa73adb5deda197c6249a680362dc14e8ac403bb7"
+  }
+}

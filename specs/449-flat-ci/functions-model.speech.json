@@ -1,0 +1,36 @@
+{
+  "test-existing-recovery-exports-without-changing-their-contract": [
+    {
+      "text": "Test existing recovery exports without changing their contract.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the recovery tests to call the production composition, so they observe real persistence and refusals.",
+      "pause": 400
+    }
+  ],
+  "new-test-export": [
+    {
+      "text": "New test export.",
+      "pause": 500
+    },
+    {
+      "text": "Singular.CLI.RecoverySpec.spec :: Spec adds the four offline stories to the existing Hspec suite. Test-local helper bodies and fault instrumentation belong to the commit owner, within the source fence; this model prescribes no algorithm or test implementation.",
+      "pause": 400
+    }
+  ],
+  "existing-production-signature-bindings": [
+    {
+      "text": "Existing production signature bindings.",
+      "pause": 500
+    },
+    {
+      "text": "The recorded four-mode core calls reconcileIncomplete; a separately labelled synthetic saved-registry supplement calls reconcile and demonstrates public-history acquisition with a discriminating missing-history control. No new or changed production signature is authorized. A needed injection/placement change returns a concrete contract challenge. The second slice receives its own selected signatures before its worker dispatch.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f70b0b70979e50f3a843abc181acfa3c77c80330f3e7cc8c5747e5822ba5d0c2"
+  }
+}

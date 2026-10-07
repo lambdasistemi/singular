@@ -1,0 +1,40 @@
+{
+  "recovery-tests-exercise-existing-command-responsibilities": [
+    {
+      "text": "Recovery tests exercise existing command responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want one test component to exercise the CLI recovery composition, so a helper-only green cannot stand in for journal and receipt behavior.",
+      "pause": 400
+    }
+  ],
+  "responsibilities-and-direction": [
+    {
+      "text": "Responsibilities and direction.",
+      "pause": 500
+    },
+    {
+      "text": "The tests supply provider answers and inspect what production reconciliation writes and returns. The four-mode core uses recorded answers with reconcileIncomplete; a labelled synthetic supplement uses existing fixture facilities to exercise saved-registry reconcile and public history. They own no competing recovery implementation or expected registry law.",
+      "pause": 400
+    }
+  ],
+  "placement-decision": [
+    {
+      "text": "Placement decision.",
+      "pause": 500
+    },
+    {
+      "text": "Use Singular.CLI.RecoverySpec under the existing test tree; keep recovery-specific support there. Reuse existing recorded-provider facilities rather than adding a live-node abstraction. A new shared responsibility or production seam requires a revised mandate before implementation.",
+      "pause": 400
+    },
+    {
+      "text": "The data model owns evidence relationships. The function model owns signature-level bindings. Neither adds production behavior in this slice.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "4e44711260a63256217e97914e08fa7a372b689e3a23ff1fadb8ecad6f9c1f92"
+  }
+}

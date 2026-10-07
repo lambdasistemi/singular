@@ -1,0 +1,40 @@
+{
+  "recorded-answers-remain-distinguishable-from-recovery-results": [
+    {
+      "text": "Recorded answers remain distinguishable from recovery results.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want test inputs tied to their producer and results read from the implementation, so a shared constant cannot make broken recovery appear correct.",
+      "pause": 400
+    }
+  ],
+  "evidence-relationships": [
+    {
+      "text": "Evidence relationships.",
+      "pause": 500
+    },
+    {
+      "text": "The original signed body and journal prefix are immutable inputs. The provider view supplies the chain answer. The observed phases and receipt fields are outputs of recovery, never supplied as expected output by the provider.",
+      "pause": 400
+    }
+  ],
+  "state-constraints": [
+    {
+      "text": "State constraints.",
+      "pause": 500
+    },
+    {
+      "text": "Reuse existing types without new production fields. Exclusion requires a live spent input and reached finite upper validity bound. Missing output alone stays undetermined; an unbounded transaction stays unresolved. Repeated observation preserves previous receipts and body bytes. Distinct transactions and chain answers must stay distinguishable, with more than one identity where the assertion depends on identity or extent.",
+      "pause": 400
+    },
+    {
+      "text": "A fixture seeded at an interrupted state demonstrates recovery from that state only. It never establishes the missing prior chain journey. State/root behavior remains bound to the unchanged Lean revision in the specification.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "f9da99d27fceebcd1da19114909ddb7879b768cbc5686a36a58b90e9ad0990ef"
+  }
+}
