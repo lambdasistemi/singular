@@ -105,6 +105,7 @@ import Test.Hspec
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
+import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
@@ -157,6 +158,7 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     , envelopeVersion
     )
+import Singular.Application.OpenDatum.Release (liveEnvelope)
 import Singular.CLI.Live
     ( Saved (..)
     , applicationAddr
@@ -241,6 +243,7 @@ import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
+    , extractCageDatum
     , mkInlineDatum
     , mkRequestDatumWith
     , policyIdFromPin
@@ -253,6 +256,7 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
     , MintRedeemer (..)
+    , OnChainRequest (..)
     , OnChainRoot (..)
     , RequestAction (..)
     , UpdateRedeemer (..)
@@ -1140,6 +1144,11 @@ withSyntheticSavedRegistry publishHistory story =
                             (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot root))))
             bootStateOut = stateOutAt bootRoot
             foldStateOut = stateOutAt (unRoot activeRoot)
+            -- The delivered envelope is the datum the request itself
+            -- carries (#419): the fold's receiving output presents
+            -- exactly what the request names, inline.
+            envelopeData = envelopeToData envelope
+            destination = (serialiseAddr (applicationAddr saved), Just envelopeData)
             requestOut =
                 mkBasicTxOut
                     (requestAddrFromCfg cfg tid Testnet)
@@ -1153,7 +1162,7 @@ withSyntheticSavedRegistry publishHistory story =
                                 edgeInsertActive
                                 2_000_000
                                 0
-                                ("", "")
+                                destination
                             )
             boot :: ConwayTx
             boot =
@@ -1276,6 +1285,24 @@ withSyntheticSavedRegistry publishHistory story =
                             }
                     , wcTimeout = Just 5
                     }
+        -- Permanent computed guard over the actual constructed request
+        -- and holding: absent or foreign carried datum cannot regress
+        -- silently while the replay still succeeds.
+        case extractCageDatum requestOut of
+            Just (RequestDatum request) -> do
+                let carried = snd (requestDestination request)
+                    delivered =
+                        either
+                            (const Nothing)
+                            (Just . envelopeToData)
+                            (liveEnvelope holding)
+                when (carried /= delivered) $
+                    fail
+                        "the synthetic request does not carry the datum \
+                        \its delivered holding presents"
+            _ ->
+                fail
+                    "the synthetic request output carries no request datum"
         (signed, _) <-
             submitBuilt
                 ctx
