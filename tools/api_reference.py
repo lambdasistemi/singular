@@ -517,7 +517,6 @@ def transform_tree(
                 page_name, href, frag, plain, original, page_text, match.start()
             )
         target_rel = (Path(page_name).parent / path).as_posix()
-        named = re.sub(r"\.html$", "", path.rsplit("/", 1)[-1]).replace("-", ".")
         target = api_root / target_rel
         if target.exists():
             if frag and frag not in page_ids.get(target_rel, ()):
