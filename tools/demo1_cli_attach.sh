@@ -46,7 +46,7 @@ setup_fail() {
 declare -A part_checks=()
 current_part=""
 say() {
-  [ -z "$current_part" ] || part_checks[$current_part]=$(( ${part_checks[$current_part]:-0} + 1 ))
+  [ -z "$current_part" ] || part_checks[$current_part]=$((${part_checks[$current_part]:-0} + 1))
   echo "attach: $*"
 }
 fail_control() {
@@ -189,77 +189,77 @@ part() {
 }
 tamper="$here/demo1_readback_tamper.sh"
 if part takes; then
-take one demo1-take-one
-before="$(wc -l <"$registry/journal.jsonl")"
-take two demo1-take-two
-[ "$(wc -l <"$registry/journal.jsonl")" -gt "$before" ] || fail_control "the second take wrote nothing to the registry"
-say "the registry created once served two takes with two fresh keys"
+  take one demo1-take-one
+  before="$(wc -l <"$registry/journal.jsonl")"
+  take two demo1-take-two
+  [ "$(wc -l <"$registry/journal.jsonl")" -gt "$before" ] || fail_control "the second take wrote nothing to the registry"
+  say "the registry created once served two takes with two fresh keys"
 
-# The verdict rests on the retained bytes: on copies of the first take's
-# receipts, the honest copy holds; the retraction's body removed, or the bound
-# lowered below the collateral a refusal states, each fails for its reason.
-copies="$work/artifact-controls"
-mkdir -p "$copies"
-copy() {
-  rm -rf "${copies:?}/$1"
-  mkdir -p "$copies/$1"
-  cp -r "$work/one/receipts" "$work/one/evidence" "$copies/$1/"
-  jq -r '.submissions[]?.bodyFile' "$work"/one/receipts/*.json | while read -r kept; do
-    (cd "$work/one" && cp --parents "$kept" "$copies/$1/")
+  # The verdict rests on the retained bytes: on copies of the first take's
+  # receipts, the honest copy holds; the retraction's body removed, or the bound
+  # lowered below the collateral a refusal states, each fails for its reason.
+  copies="$work/artifact-controls"
+  mkdir -p "$copies"
+  copy() {
+    rm -rf "${copies:?}/$1"
+    mkdir -p "$copies/$1"
+    cp -r "$work/one/receipts" "$work/one/evidence" "$copies/$1/"
+    jq -r '.submissions[]?.bodyFile' "$work"/one/receipts/*.json | while read -r kept; do
+      (cd "$work/one" && cp --parents "$kept" "$copies/$1/")
+    done
+    jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/one/receipts/*.json \
+      | sort -u | while read -r kept; do
+      (cd "$work/one" && cp --parents "$kept" "$copies/$1/")
+    done
+  }
+  expect() {
+    local s=0
+    "$controls" render --attach-key demo1-take-one "$copies/$1/receipts" >"$copies/$1.md" 2>"$copies/$1.err" || s=$?
+    if [ -z "$2" ]; then
+      [ "$s" -eq 0 ] || fail_control "$1: the unchanged copy does not hold (exit $s)"
+    else
+      [ "$s" -ne 0 ] || fail_control "$1: the changed copy still holds"
+      grep -qF "$2" "$copies/$1.md" || fail_control "$1: no clause fails for: $2"
+    fi
+    say "artifact control $1: as expected"
+  }
+  copy honest
+  expect honest ""
+  reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json || true)"
+  reclaim="${reclaim%%$'\n'*}"
+  [ -n "$reclaim" ] || fail_control "the first take left no retraction receipt"
+  body="$(jq -r .bodyFile "$reclaim")"
+  copy retraction-body-missing
+  rm "$copies/retraction-body-missing/$body"
+  expect retraction-body-missing "the retained body $body is missing"
+  refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json || true)"
+  refusal="${refusal%%$'\n'*}"
+  copy bound-lowered
+  jq '.allowance = 1' "$refusal" >"$copies/bound-lowered/receipts/$(basename "$refusal")"
+  expect bound-lowered "over the bound of 1"
+  say "artifact controls: the honest copy holds; each changed copy fails for its reason"
+  # The indexer verdict rests on the record's facts, not on what it says of them:
+  # on copies of the first take's receipts, the Koios record changed in one raw
+  # fact at a time, every stated comparison left true and its digest renewed in the
+  # receipt, each fails for that fact.
+  read_receipt="$(grep -l '"action": "read-indexer koios"' "$work"/one/receipts/*.json || true)"
+  read_receipt="${read_receipt%%$'\n'*}"
+  [ -n "$read_receipt" ] || fail_control "the first take left no koios read receipt"
+  record="$(jq -r .readbackFile "$read_receipt")"
+  for fact in datum lag census quantity index entry; do
+    copy "record-$fact"
+    TAMPER="$fact" bash "$tamper" --record "$copies/record-$fact/$record"
+    digest="$(sha256sum "$copies/record-$fact/$record" | cut -d' ' -f1)"
+    jq --arg d "$digest" '.readbackSha256 = $d' "$read_receipt" \
+      >"$copies/record-$fact/receipts/$(basename "$read_receipt")"
   done
-  jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/one/receipts/*.json \
-    | sort -u | while read -r kept; do
-    (cd "$work/one" && cp --parents "$kept" "$copies/$1/")
-  done
-}
-expect() {
-  local s=0
-  "$controls" render --attach-key demo1-take-one "$copies/$1/receipts" >"$copies/$1.md" 2>"$copies/$1.err" || s=$?
-  if [ -z "$2" ]; then
-    [ "$s" -eq 0 ] || fail_control "$1: the unchanged copy does not hold (exit $s)"
-  else
-    [ "$s" -ne 0 ] || fail_control "$1: the changed copy still holds"
-    grep -qF "$2" "$copies/$1.md" || fail_control "$1: no clause fails for: $2"
-  fi
-  say "artifact control $1: as expected"
-}
-copy honest
-expect honest ""
-reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json || true)"
-reclaim="${reclaim%%$'\n'*}"
-[ -n "$reclaim" ] || fail_control "the first take left no retraction receipt"
-body="$(jq -r .bodyFile "$reclaim")"
-copy retraction-body-missing
-rm "$copies/retraction-body-missing/$body"
-expect retraction-body-missing "the retained body $body is missing"
-refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json || true)"
-refusal="${refusal%%$'\n'*}"
-copy bound-lowered
-jq '.allowance = 1' "$refusal" >"$copies/bound-lowered/receipts/$(basename "$refusal")"
-expect bound-lowered "over the bound of 1"
-say "artifact controls: the honest copy holds; each changed copy fails for its reason"
-# The indexer verdict rests on the record's facts, not on what it says of them:
-# on copies of the first take's receipts, the Koios record changed in one raw
-# fact at a time, every stated comparison left true and its digest renewed in the
-# receipt, each fails for that fact.
-read_receipt="$(grep -l '"action": "read-indexer koios"' "$work"/one/receipts/*.json || true)"
-read_receipt="${read_receipt%%$'\n'*}"
-[ -n "$read_receipt" ] || fail_control "the first take left no koios read receipt"
-record="$(jq -r .readbackFile "$read_receipt")"
-for fact in datum lag census quantity index entry; do
-  copy "record-$fact"
-  TAMPER="$fact" bash "$tamper" --record "$copies/record-$fact/$record"
-  digest="$(sha256sum "$copies/record-$fact/$record" | cut -d' ' -f1)"
-  jq --arg d "$digest" '.readbackSha256 = $d' "$read_receipt" \
-    >"$copies/record-$fact/receipts/$(basename "$read_receipt")"
-done
-expect record-datum "the indexer's datum bytes are not the node's"
-expect record-lag "slots behind the node, beyond the 600 allowed"
-expect record-census "counts 2 outputs holding the token"
-expect record-quantity "is 1.4, not an exact whole number"
-expect record-index ", not an exact output index"
-expect record-entry "is \"0.5\", not an exact whole number"
-say "artifact controls: a record whose raw datum, tip or token census contradicts its stated verdict, or whose quantity or output index of the token is not an exact whole number, fails for that fact"
+  expect record-datum "the indexer's datum bytes are not the node's"
+  expect record-lag "slots behind the node, beyond the 600 allowed"
+  expect record-census "counts 2 outputs holding the token"
+  expect record-quantity "is 1.4, not an exact whole number"
+  expect record-index ", not an exact output index"
+  expect record-entry "is \"0.5\", not an exact whole number"
+  say "artifact controls: a record whose raw datum, tip or token census contradicts its stated verdict, or whose quantity or output index of the token is not an exact whole number, fails for that fact"
 fi
 # Continuation controls. They run last because the stopped takes leave their key
 # Active (and the over-allowance take leaves a request pending, by design: a take
@@ -292,16 +292,16 @@ last_receipt() { find "$work/$1/receipts" -name "*.json" | sort | tail -n1; }
 
 before="$(journal_lines)"
 if part indexer-reads; then
-start_indexer controls honest
-status=0
-# shellcheck disable=SC2046
-attach_with no-allowance demo1-take-none --max-outlay 40000000 \
-  --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) || status=$?
-expect_refused_before_writing no-allowance "--collateral-allowance is required"
-status=0
-attach_with no-readback demo1-take-none --collateral-allowance 10000000 --max-outlay 40000000 || status=$?
-expect_refused_before_writing no-readback "--readback is required"
-stop_indexer
+  start_indexer controls honest
+  status=0
+  # shellcheck disable=SC2046
+  attach_with no-allowance demo1-take-none --max-outlay 40000000 \
+    --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) || status=$?
+  expect_refused_before_writing no-allowance "--collateral-allowance is required"
+  status=0
+  attach_with no-readback demo1-take-none --collateral-allowance 10000000 --max-outlay 40000000 || status=$?
+  expect_refused_before_writing no-readback "--readback is required"
+  stop_indexer
 fi
 
 # An indexer that cannot honestly confirm the key stops the take before its termination.
@@ -329,8 +329,8 @@ indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
   say "continuation control $name: stopped at the koios read ($outcome), the key still Active, no later action ran"
 }
 if part indexer-reads; then
-indexer_stop mismatch demo1-take-mismatch provider-mismatch datum-changed ""
-indexer_stop unreachable demo1-take-unreachable provider-unavailable honest "http://127.0.0.1:1"
+  indexer_stop mismatch demo1-take-mismatch provider-mismatch datum-changed ""
+  indexer_stop unreachable demo1-take-unreachable provider-unavailable honest "http://127.0.0.1:1"
 fi
 
 # A record that holds by its stated verdict but not by its facts stops the take at
@@ -362,38 +362,38 @@ tampered_stop() { # NAME KEY FACT NEEDLE
   say "continuation control $name: a koios record whose $fact contradicts its stated verdict stopped the take before its next write"
 }
 if part tampered-a; then
-tampered_stop tampered-datum demo1-take-datum datum "the indexer's datum bytes are not the node's"
-tampered_stop tampered-lag demo1-take-lag lag "slots behind the node, beyond the 600 allowed"
-tampered_stop tampered-census demo1-take-census census "counts 2 outputs holding the token"
+  tampered_stop tampered-datum demo1-take-datum datum "the indexer's datum bytes are not the node's"
+  tampered_stop tampered-lag demo1-take-lag lag "slots behind the node, beyond the 600 allowed"
+  tampered_stop tampered-census demo1-take-census census "counts 2 outputs holding the token"
 fi
 if part tampered-b; then
-tampered_stop tampered-quantity demo1-take-quantity quantity "is 1.4, not an exact whole number"
-tampered_stop tampered-index demo1-take-index index ", not an exact output index"
-tampered_stop tampered-entry demo1-take-entry entry "is \"0.5\", not an exact whole number"
+  tampered_stop tampered-quantity demo1-take-quantity quantity "is 1.4, not an exact whole number"
+  tampered_stop tampered-index demo1-take-index index ", not an exact output index"
+  tampered_stop tampered-entry demo1-take-entry entry "is \"0.5\", not an exact whole number"
 fi
 
 # Last, because it leaves a request pending by design: a take that stops does not
 # retract, and the next take's fold would take it.
 if part over-allowance; then
-start_indexer controls honest
-status=0
-# shellcheck disable=SC2046
-attach_with stopped demo1-take-three --collateral-allowance 1 --max-outlay 40000000 \
-  --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) || status=$?
-stop_indexer
-[ "$status" -ne 0 ] || fail_control "a take over its collateral allowance did not stop"
-[ -s "$work/stopped/stopped.txt" ] || fail_control "the stopped take recorded no reason"
-grep -qF "fold-unevaluated ended client-error" "$work/stopped/stopped.txt" \
-  || fail_control "the take stopped, but not at the refusal over its allowance: $(cat "$work/stopped/stopped.txt")"
-grep -qF "over the bound of 1" "$work/stopped/stopped.txt" \
-  || fail_control "the stop does not say the collateral was over the bound"
-last="$(last_receipt stopped)"
-[ "$(jq -r .action "$last")" = fold-unevaluated ] \
-  || fail_control "the take went on past its stop: its last receipt is $(jq -r .action "$last")"
-[ "$(jq -r .txId "$last")" = null ] || fail_control "something was signed for the refusal over the allowance"
-[ "$(actions_of stopped | grep -cE '^(reclaim|craft |run terminate|read-indexer)' || true)" -eq 0 ] \
-  || fail_control "an action ran after the take had to stop"
-say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
+  start_indexer controls honest
+  status=0
+  # shellcheck disable=SC2046
+  attach_with stopped demo1-take-three --collateral-allowance 1 --max-outlay 40000000 \
+    --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) || status=$?
+  stop_indexer
+  [ "$status" -ne 0 ] || fail_control "a take over its collateral allowance did not stop"
+  [ -s "$work/stopped/stopped.txt" ] || fail_control "the stopped take recorded no reason"
+  grep -qF "fold-unevaluated ended client-error" "$work/stopped/stopped.txt" \
+    || fail_control "the take stopped, but not at the refusal over its allowance: $(cat "$work/stopped/stopped.txt")"
+  grep -qF "over the bound of 1" "$work/stopped/stopped.txt" \
+    || fail_control "the stop does not say the collateral was over the bound"
+  last="$(last_receipt stopped)"
+  [ "$(jq -r .action "$last")" = fold-unevaluated ] \
+    || fail_control "the take went on past its stop: its last receipt is $(jq -r .action "$last")"
+  [ "$(jq -r .txId "$last")" = null ] || fail_control "something was signed for the refusal over the allowance"
+  [ "$(actions_of stopped | grep -cE '^(reclaim|craft |run terminate|read-indexer)' || true)" -eq 0 ] \
+    || fail_control "an action ran after the take had to stop"
+  say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
 
 fi
 for requested in ${CLI_ATTACH_PARTS:-$known_parts}; do

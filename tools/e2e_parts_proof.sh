@@ -27,17 +27,29 @@ count() {
   echo "$n"
 }
 total="$(count)"
-[ "$total" -gt 0 ] || { echo "FAIL: the full suite selects no example"; exit 1; }
+[ "$total" -gt 0 ] || {
+  echo "FAIL: the full suite selects no example"
+  exit 1
+}
 untagged="$(count --skip "{lane:")"
 echo "untagged examples (outside every lane): $untagged"
-[ "$untagged" -eq 0 ] || { echo "FAIL: $untagged example(s) carry no lane, so no part would run them"; exit 1; }
+[ "$untagged" -eq 0 ] || {
+  echo "FAIL: $untagged example(s) carry no lane, so no part would run them"
+  exit 1
+}
 sum=0
 while IFS=$'\t' read -r name lane; do
   n="$(count --match "{lane:$lane}")"
   echo "lane $lane ($name): $n example(s)"
-  [ "$n" -gt 0 ] || { echo "FAIL: lane $lane selects no example"; exit 1; }
+  [ "$n" -gt 0 ] || {
+    echo "FAIL: lane $lane selects no example"
+    exit 1
+  }
   sum=$((sum + n))
 done < <(jq -r '.[] | [.name, .lane] | @tsv' "$parts")
 echo "lanes select $sum of $total examples"
-[ "$sum" -eq "$total" ] || { echo "FAIL: the lanes overlap or leave examples out ($sum selected, $total in the suite)"; exit 1; }
+[ "$sum" -eq "$total" ] || {
+  echo "FAIL: the lanes overlap or leave examples out ($sum selected, $total in the suite)"
+  exit 1
+}
 echo "E2E-LANES-PROOF: every example is in exactly one listed lane"

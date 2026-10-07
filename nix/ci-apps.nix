@@ -10,7 +10,9 @@ let
   # The pinned Aiken the onchain flake's shell carries, so formatting
   # matches `aiken fmt` in that shell byte for byte.
   aiken = builtins.head (
-    builtins.filter (p: (p.pname or "") == "aiken") onchain.devShells.${system}.default.nativeBuildInputs
+    builtins.filter (
+      p: (p.pname or "") == "aiken"
+    ) onchain.devShells.${system}.default.nativeBuildInputs
   );
   namingGhc = pkgs.haskellPackages.ghcWithPackages (p: [
     p.bytestring
