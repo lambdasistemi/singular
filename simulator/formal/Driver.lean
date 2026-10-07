@@ -312,11 +312,13 @@ model does not admit.
 
 The exit is taken through admission: `Singular.admittedExitStep` and
 `Singular.admittedTxOfExit`, so a retraction is accepted only when
-`Singular.retractAdmission` admits it under its witness, and is otherwise refused
-with the admission's reason; a fold and a reject are exactly `Singular.exitStep`
-and `Singular.txOfExit`. A retraction with no witness is `unsupported`: the case
-was not described, and reading it as the owner's absent signature would dress a
-missing input up as the model's refusal. -/
+`Singular.retractAdmission` admits it under its witness, and a fold only when
+`Singular.foldAdmission` admits its request, from the request's own submission
+time, under the fold witness's validity upper bound; each is otherwise refused
+with the admission's reason. A reject is exactly `Singular.exitStep` and
+`Singular.txOfExit`. A retraction or a fold with no witness is `unsupported`: the
+case was not described, and reading it as the model's refusal would dress a
+missing input up as one. -/
 def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
   let (steps, s, reached) := runSetup sc.start sc.setup
   if !reached then

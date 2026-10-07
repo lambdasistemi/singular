@@ -143,9 +143,9 @@ def toWitness (j : Json) (exit : Exit) : Except String (Option RetractWitness) :
   | .ok _, _ => throw "only a retraction question carries a witness"
 
 /-- What a fold's admission reads beyond its requests, as the caller established
-it: each folded request's submission time and the fold's validity upper bound
-(`Singular.FoldWitness`). Only a fold question may carry it; one carrying none
-has no fold admission. -/
+it: the fold's validity upper bound (`Singular.FoldWitness`); each request's
+submission time is the request's own. Only a fold question may carry it; the
+driver answers a fold question carrying none `unsupported`. -/
 def toFoldWitness (j : Json) (isFold : Bool) : Except String (Option FoldWitness) :=
   match j.getObjVal? "foldWitness" with
   | .error _ => pure none
