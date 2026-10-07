@@ -33,15 +33,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] Migrate retained callers in offchain/ and conformance/ from obsolete Provider/View/node APIs to the existing generic capabilities; preserve main's tracing, datum delivery and recovery behavior. Owner: Sol. Check: relevant Cabal targets compile.",
+      "text": "[x] Migrate retained callers in offchain/ and conformance/ from obsolete Provider/View/node APIs to the existing generic capabilities; preserve main's tracing, datum delivery and recovery behavior. Owner: Sol. Check: relevant Cabal targets compile. Done at source commit 64d8f9f0: final required-component cabal build exit 0 across library, services, commands and test targets.",
       "pause": 300
     },
     {
-      "text": "[ ] Remove offchain/node-internal/ production read/indexer modules and obsolete Provider/Services wrappers; update offchain/singular-registry.cabal, offchain/nix/component-inventory.nix, offchain/nix/checks.nix and affected component declarations. Owner: Sol. Check: no retained production node adapter or unresolved retired import.",
+      "text": "[x] Remove offchain/node-internal/ production read/indexer modules and obsolete Provider/Services wrappers; update offchain/singular-registry.cabal, offchain/nix/component-inventory.nix, offchain/nix/checks.nix and affected component declarations. Owner: Sol. Check: no retained production node adapter or unresolved retired import. Done at source commit 64d8f9f0: tools/node_confinement_check.sh exit 0 over 213 retained source files, with the nine retired directories excluded by the existing inventory classification; no unresolved retired import.",
       "pause": 300
     },
     {
-      "text": "[ ] Preserve required behavior in offchain/test/ and offchain/e2e-test/ while migrating fixtures; run pure provider composed reads/history/submission, pure trie proofs, local evaluation and pinned time comparisons, command receipts and bounded confirmation checks. Owner: Sol. Check: actual selected tests pass with command and counts recorded.",
+      "text": "[x] Preserve required behavior in offchain/test/ and offchain/e2e-test/ while migrating fixtures; run pure provider composed reads/history/submission, pure trie proofs, local evaluation and pinned time comparisons, command receipts and bounded confirmation checks. Owner: Sol. Check: actual selected tests pass with command and counts recorded. Full cage suite exit 0 at 64d8f9f0: 1028 examples, 0 failures, 11 pending — the pending rows publish the retired node/view/indexer requirements as unsupported, not passed; conformance appendix suite 590 examples, 0 failures against the current model transport. No live ledger is claimed.",
       "pause": 300
     },
     {
@@ -55,7 +55,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] Reconcile tools/demo1_cli_journey.sh and relevant .github/workflows/registry.yml jobs with current main and migrated callers; preserve all-fact Unverified assertions, independent provider data and required Koios call coverage. Owner: Muse. Check: unchanged obligations have executable assertions; no weakened or skipped journey.",
+      "text": "[x] Reconcile tools/demo1_cli_journey.sh and relevant .github/workflows/registry.yml jobs with current main and migrated callers; preserve all-fact Unverified assertions, independent provider data and required Koios call coverage. Owner: Muse. Check: unchanged obligations have executable assertions; no weakened or skipped journey. Muse confirmed main already carries every journey assertion unchanged; only a workflow comment changed, integrated at 8e47cd88. No weakened or skipped journey.",
       "pause": 300
     },
     {
@@ -69,11 +69,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] Reconcile specs/383-provider-interfaces/spec.md and decisions.md with ticket scope and current model binding; preserve historical rulings without claiming obsolete status is current. Owner: GLM.",
+      "text": "[x] Reconcile specs/383-provider-interfaces/spec.md and decisions.md with ticket scope and current model binding; preserve historical rulings without claiming obsolete status is current. Owner: GLM. Done at 9c124690, integrated at 8e47cd88: reset baseline and constitution 1.13.0 model blobs bound, stale anchors and intake-era status repaired, rulings preserved as history.",
       "pause": 300
     },
     {
-      "text": "[ ] Update existing node/provider ownership and API documentation under docs/, plus only required reference-generation/packaging paths (tools/api_reference.py, nix/docs.nix, mkdocs.yml). Owner: GLM. Depends on Sol's module layout; no new documentation project.",
+      "text": "[x] Update existing node/provider ownership and API documentation under docs/, plus only required reference-generation/packaging paths (tools/api_reference.py, nix/docs.nix, mkdocs.yml). Owner: GLM. Depends on Sol's module layout; no new documentation project. Done at ab5fac29–86ea396a, integrated at 8e47cd88: ownership page rewritten to the provider-era inventory, API reference extent 75→73 from the candidate Cabal, generator's dead private-owner machinery removed; strict build, presentation and narration checks green in the GLM worktree. The packaged exact-head docs check is still running and stays open below.",
       "pause": 300
     },
     {
@@ -87,7 +87,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] Inspect and integrate each worker's scoped diff into feat/383-provider-closure; reject unrelated work and preserve the reset baseline's behavior. Owner: orchestrator. No worker pushes or merges.",
+      "text": "[x] Inspect and integrate each worker's scoped diff into feat/383-provider-closure; reject unrelated work and preserve the reset baseline's behavior. Owner: orchestrator. No worker pushes or merges. Source integrated at 64d8f9f0, tools and documentation at 8e47cd88; unrelated companion drift was rejected at integration.",
       "pause": 300
     },
     {
@@ -115,6 +115,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "85e25d96e8cf1e92ae675cf2285bf97ad18f3bdfbff1819e6d1568b48c666b29"
+    "sha256": "8260ad582bc5245e198c962ab038f9facee927873806e8bb973897ee31e4a763"
   }
 }
