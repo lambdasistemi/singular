@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -9,13 +10,14 @@ Before anything is written to a public network a reviewer needs the real
 numbers: the fee each transaction pays, the execution units the node's own
 evaluator measured for it, the collateral it states and the outlay it
 asks of the wallet, all under the parameters the selected network reports.
-A preview attaches the saved registry to the chain exactly as the writing
-command does — identity, network, live references, the state output and the
-replayed root against the ledger's — then builds the same transactions from
+A preview attaches the registry to the chain exactly as the writing command
+does — its identity resolved from the state token, the references its
+transactions run, the state output and the replayed root against the
+ledger's — then builds the same transactions from
 the same plan ("Singular.CLI.Plan") and prints them.
 
 It holds no signing key. It names the caller by a public enterprise address,
-reads through the read capability alone, one acquired view (`withReads`), and
+reads through the read capability alone, one acquired traced view, and
 writes no journal, registry file. A preview is not a
 confirmation: its bodies are built for this moment — a booking carries the
 time it was built — and nothing it prints is an observation of a chain
@@ -70,9 +72,11 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToJson
     )
 import Singular.CLI.Command
-    ( EntryArgs (..)
+    ( Command (..)
+    , EntryArgs (..)
     , Key (..)
     , ProviderSettings (..)
+    , neededRoles
     )
 import Singular.CLI.Live
 import Singular.CLI.Outlay
@@ -85,11 +89,10 @@ import Singular.CLI.Outlay
 import Singular.CLI.Plan
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
-    ( checkNetwork
-    , hexT
+    ( hexT
     , keyFields
+    , loadRelease
     , parseEnterpriseAddress
-    , renderIdentityError
     )
 import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
 import Singular.Registry.Capabilities (sessionReceipt)
@@ -109,7 +112,14 @@ kindName KInsert = "insert"
 kindName KUpdate = "update"
 kindName KTerminate = "terminate"
 
-{- | Prepare one entry command against the saved registry, for the public
+-- | The command a kind prepares.
+commandOf :: Kind -> EntryArgs -> Command
+commandOf = \case
+    KInsert -> Insert
+    KUpdate -> Update
+    KTerminate -> Terminate
+
+{- | Prepare one entry command against the registry its state token names, for the public
 address the caller named, and report what it would submit.
 -}
 runPreview
@@ -126,14 +136,15 @@ runPreview env kind a settings addrText = do
             (failWith ClientRefusal)
             pure
             (parseEnterpriseAddress magic addrText)
-    saved <- loadSaved (entryRegistry a) (entryBlueprint a)
+    release <-
+        loadRelease (entryBlueprint a)
+            >>= either (failWith ClientRefusal) pure
     let Key key = entryKey a
         caller = addrKeyHashBytes addr
-    -- An insert's envelope is built, and its payload refused if it is not
-    -- Plutus data, before the node is read.
-    inserted <- case kind of
-        KInsert ->
-            Just . insertionOf saved a caller <$> readInsertPayload a
+    -- An insert's payload is refused if it is not Plutus data before the
+    -- node is read.
+    insertPayload <- case kind of
+        KInsert -> Just <$> readInsertPayload a
         _ -> pure Nothing
     -- One view for the whole preparation: the state, the replayed root
     -- against it, the wallet, the parameters, the evaluation and the chain
@@ -142,10 +153,16 @@ runPreview env kind a settings addrText = do
         Cage.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
             pp <- Cage.parameters v
             point <- Cage.tip v
-            either
-                (failWith ClientRefusal . renderIdentityError)
-                pure
-                (checkNetwork (savedConfig saved) magic)
+            wallet <- Cage.outputsAt v addr
+            saved <-
+                resolveSaved
+                    (entryRegistry a)
+                    release
+                    (entryAccess a)
+                    (neededRoles (commandOf kind a))
+                    wallet
+                    v
+            let inserted = insertionOf saved a caller <$> insertPayload
             context <- openTrie saved
             live <- attachLive v saved
             observed <- either (failWith StaleState) pure (observedRoot live)

@@ -36,6 +36,7 @@ module Singular.Registry.StateToken
     , PinField (..)
     , IdentityRefusal (..)
     , resolveRegistry
+    , findStateOutput
     , renderIdentityRefusal
 
       -- * References found by hash
@@ -312,17 +313,7 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
             case filter derivesName (mintSpentInputs record) of
                 found : _ -> pure found
                 [] -> throwError (StateTokenSeedMismatch (mintTransaction record))
-        held <- readFact (outputs session (HoldingAsset token))
-        let stateAddress = Addr Ledger.Testnet (ScriptHashObj stateHash) StakeRefNull
-        (stateRef, stateOut, datum) <-
-            case [ (i, o, st)
-                 | (i, o) <- held
-                 , holdsToken o
-                 , o ^. addrTxOutL == stateAddress
-                 , Just (StateDatum st) <- [extractCageDatum o]
-                 ] of
-                found : _ -> pure found
-                [] -> throwError StateOutputMissing
+        (stateRef, stateOut, datum) <- ExceptT (findStateOutput token session)
         let (cfg, codes) =
                 configForApplication
                     OpenDatumApplication
@@ -355,16 +346,43 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
                 , resolvedNetwork = network
                 }
   where
+    derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
+    readFact action =
+        ExceptT
+            (fmap (either (Left . IdentityUnreadable) (Right . value)) action)
+
+{- | The output that holds the token at the state address of the token's
+policy, with its state datum. The provider's answer to who holds the token
+is unverified: each listed output is admitted only if its own value holds
+the token. A command reads the state again through this after it has
+resolved the registry, since every transition moves the state output.
+-}
+findStateOutput
+    :: (Monad m)
+    => Asset
+    -> Session w m
+    -> m (Either IdentityRefusal (TxIn, TxOut ConwayEra, OnChainTokenState))
+findStateOutput token@(PolicyID policy, AssetName name) session = do
+    answer <- outputs session (HoldingAsset token)
+    pure $ case answer of
+        Left failure -> Left (IdentityUnreadable failure)
+        Right held ->
+            case [ (i, o, st)
+                 | (i, o) <- value held
+                 , holdsToken o
+                 , o ^. addrTxOutL == stateAddress
+                 , Just (StateDatum st) <- [extractCageDatum o]
+                 ] of
+                found : _ -> Right found
+                [] -> Left StateOutputMissing
+  where
+    stateAddress = Addr Ledger.Testnet (ScriptHashObj policy) StakeRefNull
     holdsToken o =
         let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
         in  maybe
                 False
                 ((> 0) . Map.findWithDefault 0 (AssetName name))
                 (Map.lookup (PolicyID policy) assets)
-    derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
-    readFact action =
-        ExceptT
-            (fmap (either (Left . IdentityUnreadable) (Right . value)) action)
 
 -- | The refusal's name, then what it found.
 renderIdentityRefusal :: IdentityRefusal -> Text

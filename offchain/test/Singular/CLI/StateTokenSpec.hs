@@ -144,7 +144,7 @@ accessOf = \case
     Fold a -> Just (foldAccess a)
     Reject a -> Just (rejectAccess a)
     Reclaim a -> Just (reclaimAccess a)
-    Inspect a -> inspectAccess a
+    Inspect a -> Just (inspectAccess a)
     _ -> Nothing
 
 ours :: RegistryAccess

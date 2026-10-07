@@ -150,11 +150,6 @@ import Singular.CLI.Receipt
     , readJournal
     , unresolved
     )
-import Singular.CLI.Registry
-    ( hexT
-    , mkRegistryConfig
-    , pinsOf
-    )
 import Singular.CLI.RejectRules (rejectGate, renderRejectRefusal)
 import Singular.CLI.RequestWindow (retractEnds, windowOf)
 import Singular.CLI.Session
@@ -194,10 +189,7 @@ import Singular.Registry.Capabilities
     , sessionReceipt
     )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
-import Singular.Registry.Deployment
-    ( Deployment (..)
-    , parseOutRef
-    )
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -235,7 +227,6 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     , mkRequestDatumWith
     , requestAddrFromCfg
-    , scriptHashBytes
     , toPlcData
     , txInToRef
     )
@@ -464,32 +455,9 @@ withInputFixture use = withFixture $ \fx -> do
                             (ConwayMinting (AsIx 0))
                             (Data (toPlcData (Minting (txInToRef seed))), ExUnits 0 0)
                         )
-        deployment =
-            Deployment
-                { depRelease = "injected-command-fixture"
-                , depLeanRevision = "no-ledger-admission-claim"
-                , depNetworkMagic = magic
-                , depSeedOutRef = T.pack (replicate 64 '1' <> "#0")
-                , depCageToken = "743234302d7265676973747279"
-                , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
-                , depRequestHash = ""
-                , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                , depProcessTime = defaultProcessTime cfg
-                , depRetractTime = defaultRetractTime cfg
-                , depTip = 1_000_000
-                , depReferenceScripts = []
-                , depBootstrapTxs = []
-                }
         saved =
             Saved
                 (fxDir fx)
-                ( mkRegistryConfig
-                    magic
-                    (walletAddr (fxWallet fx))
-                    (pinsOf cfg)
-                    deployment
-                )
                 cfg
                 Booking.codes
                 tid
