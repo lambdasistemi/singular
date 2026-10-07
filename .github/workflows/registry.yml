@@ -858,7 +858,7 @@ jobs:
             else
               note "absent: registry/submissions"
             fi
-            for item in verdicts.md fold-holds.list fold-hold-coverage.json \
+            for item in verdicts.md fold-holds.list \
               direct-processes.trie.jsonl trie-command-invocations; do
               if [ -e "$run_dir/$item" ]; then
                 cp -a "$run_dir/$item" "$out/"
@@ -866,6 +866,24 @@ jobs:
                 note "absent: $item"
               fi
             done
+            # The hold-coverage record is written under receipts/, where the
+            # originals copy already retains it: expected and checked at the
+            # path the harness writes, so an absent line means the run
+            # genuinely produced none.
+            if [ -e "$run_dir/receipts/fold-hold-coverage.json" ]; then
+              note "present: receipts/fold-hold-coverage.json"
+            else
+              note "absent: receipts/fold-hold-coverage.json"
+            fi
+            # The part's own starting-state receipts, one per discovered case
+            # under this harness: a run of the defective selection genuinely
+            # produces none, and that absence is reported, never skipped.
+            starting=$(find "$run_dir/receipts" -maxdepth 1 -type f -name 'insert-cross-state-*.json' | wc -l)
+            if [ "$starting" -gt 0 ]; then
+              note "present: receipts/insert-cross-state-*.json ($starting records)"
+            else
+              note "absent: receipts/insert-cross-state-*.json (no starting-state records were produced)"
+            fi
             derived=$(find "$run_dir/receipts" -maxdepth 1 -type f \
               \( -name '*-tampered.json' -o -name '*-red.out' -o -name '*-red.err' -o -name '*-red.exit' \) \
               -printf '%s\n' | awk '{n++; s+=$1} END {printf "%d files %d bytes", n, s}')
