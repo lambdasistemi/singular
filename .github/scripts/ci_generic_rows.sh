@@ -261,6 +261,7 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
   def complete: (.compared | length) == 9 and (.unobserved | type) == "array"
     and (.perturbation.refused > 0);
+  def booking: del(.submittedAt);
   ([.steps[] | select(.tamper == "other-address") | .request][0]) as $tampered |
   .row == "register-active-key" and .outcome == "accepted"
   and .verdict == "agrees-with-model" and .venue == "node-submit"
@@ -290,11 +291,13 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == "short-by-one" and .model.outcome == "refused"
-          and .model.reason == "deposit-returned" and .request == $tampered
+          and .model.reason == "deposit-returned" and (.request | booking) == ($tampered | booking)
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == null and .model.outcome == "accepted"
-          and .chain.outcome == "accepted" and .request == $tampered)
+          and .chain.outcome == "accepted" and (.request | booking) == ($tampered | booking))
+  and ([.steps[3,4,5].request.submittedAt] as $t
+    | all($t[]; type == "number" and . > 0) and $t == ($t | sort) and ($t | unique | length) == 3)
 ' "$e" >/dev/null || {
   echo 'FAIL: register-active-key step evidence missing or incomplete'
   exit 1
