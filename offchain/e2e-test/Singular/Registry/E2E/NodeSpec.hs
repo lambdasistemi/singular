@@ -57,8 +57,8 @@ import Cardano.Node.Client.N2C.LocalStateQuery
 import Cardano.Node.Client.N2C.Types (LSQChannel)
 import Control.Concurrent.Async (link, withAsync)
 import Control.Exception (ErrorCall (..), finally, throwIO, try)
-import Control.Monad (unless)
-import Data.Aeson (Value (..), object, (.=))
+import Control.Monad (forM_, unless)
+import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -68,6 +68,7 @@ import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Data.Text.Encoding (decodeUtf8)
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.Cardano.Block
@@ -88,6 +89,7 @@ import Ouroboros.Network.Protocol.Handshake.Type
     ( HandshakeProtocolError (HandshakeError)
     , RefuseReason (Refused)
     )
+import Singular.Provider.Koios.Wire (txIdHex)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.E2E.Fixture
     ( keepPrivateValue
@@ -96,7 +98,8 @@ import Singular.Registry.E2E.Fixture
     )
 import Singular.Registry.Evidence (NoWitness, SessionBinding (..))
 import Singular.Registry.LedgerProvider
-    ( Outputs
+    ( OutputQuery (..)
+    , Outputs
     , ReadFailure (..)
     , Session (..)
     , SubmitResult (..)
@@ -107,6 +110,7 @@ import Singular.Registry.Private.RawFacts
     , withRawFacts
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.SessionEvidence (FactRecord (..))
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (SignedTx, signTx, signedTx)
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
@@ -207,7 +211,7 @@ spec = aroundAll withSource $ do
                         shouldSatisfy message (isInfixOf "faucet")
                         shouldSatisfy message (isInfixOf "100000000 lovelace")
         it
-            "confirms an exact transaction output without an address query, then compares full readback to the independent ledger"
+            "confirmation requests the exact transaction output through the generic capability, then compares full readback to the independent ledger"
             $ \(_, socket, wallet, caps) -> do
                 held <- Services.withLatest (capReads caps) $ \session ->
                     Services.outputsAt session (walletAddr wallet)
@@ -215,18 +219,60 @@ spec = aroundAll withSource $ do
                     body = signedTx transaction
                     created = TxIn (txIdTx body) (TxIx 0)
                 submitOnly caps transaction
+                factsBefore <- capFacts caps
                 traceBefore <- capTrace caps
-                shouldSatisfy (addressReads traceBefore) (> 0)
                 capConfirm caps body
+                factsAfter <- capFacts caps
                 traceAfter <- capTrace caps
-                shouldBe (addressReads traceAfter) (addressReads traceBefore)
-                shouldSatisfy (length traceAfter) (> length traceBefore)
+                shouldBe (take (length factsBefore) factsAfter) factsBefore
+                let confirmationFacts = drop (length factsBefore) factsAfter
+                    outputFacts = filter (isOutputQuery . factQuery) confirmationFacts
+                    exactFacts = filter ((== "Unverified") . factVerdict) outputFacts
+                    transactionReads =
+                        [ fields
+                        | Object fields <- drop (length traceBefore) traceAfter
+                        , KeyMap.lookup "call" fields == Just (String "tx_info")
+                        ]
+                shouldSatisfy outputFacts (not . null)
+                shouldBe
+                    (map factQuery outputFacts)
+                    (replicate (length outputFacts) (Text.pack (show (AtTxIn created))))
+                shouldSatisfy exactFacts (not . null)
+                forM_ exactFacts $ \fact -> do
+                    shouldBe (factBinding fact) Unbound
+                    shouldBe (factReason fact) (Just "NoVerifierConfigured")
+                    shouldBe (factWitnessPresent fact) False
+                -- The adapter may query the resolved address to establish
+                -- unspentness. Its transaction lookup still names this body.
+                shouldSatisfy transactionReads (not . null)
+                forM_ transactionReads $ \fields ->
+                    case KeyMap.lookup "body" fields of
+                        Just (Object request) -> case KeyMap.lookup "value" request of
+                            Just (Object document) ->
+                                shouldBe
+                                    (KeyMap.lookup "_tx_hashes" document)
+                                    (Just (toJSON [txIdHex (txIdTx body)]))
+                            _ -> fail "confirmation tx_info request lacks its JSON document"
+                        _ -> fail "confirmation tx_info request lacks its body"
                 withPrivateConnection socket $ \oracle ->
                     Services.withLatest (capReads caps) $ \session -> do
                         actual <- Services.outputsAt session (walletAddr wallet)
                         expected <- privateOutputs oracle (walletAddr wallet)
                         shouldBe actual expected
                         shouldSatisfy (map fst actual) (elem created)
+                        let exactResult =
+                                toJSON
+                                    [ object
+                                        [ "reference" .= show reference
+                                        , "outputCbor"
+                                            .= decodeUtf8
+                                                (B16.encode (serialize' (eraProtVerHigh @ConwayEra) output))
+                                        ]
+                                    | (reference, output) <- expected
+                                    , reference == created
+                                    ]
+                        forM_ exactFacts $ \fact ->
+                            shouldBe (factValue fact) exactResult
         it
             "an Unbound session observes a confirmed change without inheriting an atomic-view promise"
             $ \(_, socket, wallet, caps) -> withPrivateConnection socket $ \oracle ->
@@ -327,14 +373,13 @@ privateOutputs oracle address = withAcquiredLSQ oracle $ \handle -> do
         )
     pure (Map.toAscList outputs)
 
-addressReads :: [Value] -> Int
-addressReads =
-    length
-        . filter
-            ( \case
-                Object fields -> KeyMap.lookup "call" fields == Just (String "address_utxos")
-                _ -> False
-            )
+-- SessionEvidence records OutputQuery's actual constructor at the consumer
+-- boundary, independently of the HTTP calls an adapter uses to resolve it.
+isOutputQuery :: Text.Text -> Bool
+isOutputQuery query =
+    any
+        (`Text.isPrefixOf` query)
+        ["AtAddress ", "HoldingAsset ", "AtTxIn ", "AnyOf ", "AllOf "]
 
 submitOnly :: Capabilities NoWitness IO -> SignedTx -> IO ()
 submitOnly caps transaction =
