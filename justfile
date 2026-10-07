@@ -85,8 +85,7 @@ ci:
     just lint
     just lint-controls
 
-# The checks no dedicated CI job runs: the Development shell build job runs
-# only these. Model, simulator, browser, docs and lint have their own jobs.
+# Local bundle: no hosted job runs this recipe; whole-repo `just lint` runs hosted in the Development shell build job.
 ci-shell:
     just application-model
     just check-presentation
