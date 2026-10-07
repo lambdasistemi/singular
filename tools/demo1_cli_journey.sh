@@ -622,6 +622,15 @@ for name in create-defaults inspect-defaults; do
     || fail "$name: the default registry did not read back ten-minute processing and five-minute retract windows"
 done
 say "default registry windows read back from create and inspect, without waiting them out"
+# The state script is the same for every registry of a release: Bob's create
+# found Alice's live carrier of it by hash and booted from it, publishing none.
+jq -e --slurpfile a "$receipts/create.json" '
+    [.references[] | select(.role == "state") | .output]
+      == [$a[0].references[] | select(.role == "state") | .output]
+    and (.transactions | index($a[0].references[] | select(.role == "state") | .output | split("#")[0]) | not)' \
+  "$receipts/create-defaults.json" >/dev/null \
+  || fail "a second create published the state script again instead of booting from the live carrier"
+say "a second create booted from the state reference found by hash, publishing none"
 
 # Bob writes from an empty directory of his own, on the token alone: he books
 # and folds an insertion, and a third empty directory reads it back.
@@ -634,6 +643,9 @@ run empty-actor-insert success -- registry insert --fold --key keyEmpty --payloa
 [ ! -e "$bob_actor/registry.json" ] || fail "a command wrote a registry.json in bob's directory"
 reader="$work/empty-reader"
 mkdir -p "$reader"
+# Files in an actor's directory are never an input: another registry's
+# identity file there changes nothing.
+printf '{"confDeployment":{"depCageToken":"00"}}\n' >"$reader/registry.json"
 run empty-reader-inspect success -- registry inspect --key keyEmpty --state-token "$state_token" \
   --registry "$reader" --blueprint "$blueprint" "${node[@]}"
 [ "$(field empty-reader-inspect .leaf)" = active ] \
@@ -682,6 +694,10 @@ for control in "--trace loud" "--trace-to stdout" "--trace-to file:" "--trace-fo
   ! grep -q -- "is not a flag singular reads" "$receipts/insert-trace-${flag#--}-unknown.err" \
     || fail "insert $control: the tracing control is not read"
 done
+stderr_of insert-without-token registry insert --key "$key" --payload "$work/payload-insert.json" \
+  --registry "$reg" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+grep -q -- '--state-token' "$receipts/insert-without-token.err" \
+  || fail "insert-without-token: the refusal does not name the state token"
 refused insert-payload-not-data client-refusal -- registry insert --key "$key" \
   --payload "$work/payload-bad.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.reason | contains("not Plutus data")' "$receipts/insert-payload-not-data.json" >/dev/null \
@@ -1105,6 +1121,10 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
 [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
   "$inter/journal.jsonl" >/dev/null || fail "the killed create's accepted submission was never observed"
+run inspect-interrupted-other-token client-refusal -- registry inspect --key-hex 00 --registry "$inter" \
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+jq -e '.reason | startswith("state-token mismatch")' "$receipts/inspect-interrupted-other-token.json" >/dev/null \
+  || fail "an interrupted create was read under another registry's token"
 say "an interrupted create is refused a second boot and read back from its journal"
 
 # A request nobody folds: alice books one more insertion and leaves it. The
