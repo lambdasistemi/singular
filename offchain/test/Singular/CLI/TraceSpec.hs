@@ -102,6 +102,7 @@ spec = describe "protocol narration (#416)" $ do
     fanOutRows
     phaseLogKeys
     entryPoint
+    setupRecut
 
 -- ---------------------------------------------------------
 -- The controls, on every command
@@ -930,6 +931,50 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                         (failWith ClientRefusal "no request is pending for this registry")
         saved <- BS.readFile receiptPath
         pure (name, code, out, err, saved)
+
+-- ---------------------------------------------------------
+-- Tracing setup re-cut: an enabled file sink at the packaged command
+-- ---------------------------------------------------------
+
+setupRecut :: Spec
+setupRecut = describe "(#416) tracing setup re-cut" $ do
+    it
+        "opens no trace file for help, though a command at the same setting \
+        \creates it"
+        $ withSystemTempDirectory "trace-help-file"
+        $ \dir -> do
+            let target = dir </> "trace.jsonl"
+                asked = ["--trace", "what", "--trace-to", "file:" <> target]
+                help = ["registry", "--help"]
+                refused =
+                    [ "registry"
+                    , "inspect"
+                    , "--key"
+                    , "alice-1"
+                    , "--registry"
+                    , dir </> "none"
+                    , "--blueprint"
+                    , dir </> "none.json"
+                    , "--koios-url"
+                    , "http://127.0.0.1:1/api/v1"
+                    , "--network-magic"
+                    , "1"
+                    ]
+            (_, open) <- openTempFile dir "stderr"
+            (plainCode, plainOut, _) <-
+                captured (runPackagedWith (pure (Just open)) help [])
+            (code, out, _) <-
+                captured (runPackagedWith (pure (Just open)) (help <> asked) [])
+            (code, out) `shouldBe` (plainCode, plainOut)
+            code `shouldBe` ExitSuccess
+            BS.null out `shouldBe` False
+            doesFileExist target `shouldReturn` False
+            -- the same target is created by a command that reports anything
+            (refusedCode, _, _) <-
+                captured (runPackagedWith (pure (Just open)) (refused <> asked) [])
+            hClose open
+            refusedCode `shouldBe` ExitFailure 10
+            doesFileExist target `shouldReturn` True
 
 {- | Run an action with standard output and standard error redirected to
 files, returning what it wrote to each.
