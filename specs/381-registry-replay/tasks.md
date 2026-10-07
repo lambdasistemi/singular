@@ -26,9 +26,9 @@ each user starts only with public registry information and their own wallet.
 Independent check: provider history reaches the selected state root; proof
 verification and deliberate history faults establish the boundary independently.
 
-- [ ] T008 [US2] Run and reconcile existing `offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs` and `offchain/test/Singular/Registry/TrieStateContractSpec.hs` coverage for every-fold roots, mixed applied/rejected folds, input order and membership/non-membership proofs. Preserve the validator oracle for mixed folds; add only missing acceptance cases.
+- [x] T008 [US2] Run and reconcile existing `offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs` and `offchain/test/Singular/Registry/TrieStateContractSpec.hs` coverage for every-fold roots, mixed applied/rejected folds, input order and membership/non-membership proofs. Preserve the validator oracle for mixed folds; add only missing acceptance cases. Executed October 7: 48 replay and 36 capability examples passed; source binding and limits in [verification](verification.md).
 - [ ] T009 [US2] Exercise withheld-fold and altered-request-edge provider responses through the actual actor CLI in `tools/registry_two_actors.py`; require `HistoryIncomplete` and `RootDoesNotChain` respectively, with no trie returned.
-- [ ] T010 [US2] Verify replay controls in `offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs` detect wrong edges, corrupted proofs and missing history; retain exact commands and outcomes in `specs/381-registry-replay/verification.md`.
+- [x] T010 [US2] Verify replay controls in `offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs` detect wrong edges, corrupted proofs and missing history; retain exact commands and outcomes in `specs/381-registry-replay/verification.md`. Executed October 7: altered-edge and missing-history refusals and corrupted-proof rejection passed within the 48-example replay scope.
 
 ## Publication and completion
 
