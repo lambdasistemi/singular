@@ -3,8 +3,8 @@
 # different, independently funded wallet with its own live seed, and is
 # held after its pre-lock checks while the first create completes. Once
 # it takes the target's lock it must re-check the target and refuse:
-# RegistryExists, with the first registry's saved and pending identity,
-# state, mirror and journal byte-identical and its own seed still unspent.
+# RegistryExists, with the first create's journal byte-identical, no
+# identity file written, and its own seed still unspent.
 #
 # usage: demo1_cli_create_race.sh SINGULAR BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR
 #
@@ -52,7 +52,7 @@ preview() {
   return "$status"
 }
 digest() {
-  (cd "$target" && sha256sum registry.json registry.pending.json journal.jsonl)
+  (cd "$target" && sha256sum journal.jsonl && ls -A)
 }
 
 preview preview-first "$first_key" || setup_fail "the first wallet's preview failed"
@@ -82,7 +82,9 @@ status=0
 jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create-first.json" >/dev/null \
   || fail "the first registry did not read back the short CI windows"
 before="$(digest)"
-[ -e "$target/registry.json" ] || setup_fail "the first create saved no registry"
+[ -s "$target/journal.jsonl" ] || setup_fail "the first create left no journal"
+[ ! -e "$target/registry.json" ] && [ ! -e "$target/registry.pending.json" ] \
+  || fail "the first create left an identity file"
 
 # The late create's seed is still live while it waits: the race is real.
 preview seed-late-held "$late_key" "$seed_late" \
@@ -99,7 +101,7 @@ expected="$target already holds a registry or its journal; create never overwrit
 [ "$reason" = "$expected" ] \
   || fail "the late create was refused for another reason than RegistryExists: $reason"
 [ "$(digest)" = "$before" ] \
-  || fail "the first registry's identity, state, mirror or journal changed"
+  || fail "the first create's journal or directory changed"
 preview seed-late-after "$late_key" "$seed_late" \
   || fail "the late seed is spent: the late create submitted something"
 say "the late create, on a live seed of another wallet, was refused RegistryExists under the lock; the first registry is byte-identical"
