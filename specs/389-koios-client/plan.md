@@ -1,8 +1,24 @@
 # Live Koios client: plan
 
 As a maintainer, I want the Koios transport and decoding written once, so that
-#383's recorded instance and the live instance run the same requests, pages
-and decoders. Read the [stories](spec.md) first. Base: main `4bba895c`.
+the recorded instance from #383 and the live instance run the same requests, pages
+and decoders. Read the [stories](spec.md) first. Delivery base: main
+`32bba1adc232fb3da5e84ea52e51ab95f670e8f1` (2026-10-07).
+
+## Remaining delivery
+
+As a user, I need public preview receipts to expose the session and facts they
+actually consumed. The transport, decoders and provider composition below are
+already on main. The remaining [tasks](tasks.md) run serially: repair the missing
+create-preview evidence in both public-address and local-key modes, retain its regression check, and record a current public
+read-only smoke with successful inspect, create, insert, update and terminate
+previews. Existing fake-server controls and final CI remain required.
+
+The old GO-2 registry currently refuses history decoding, and its previous
+update/terminate runs found no holding. Neither is successful preview evidence.
+Use an existing compatible public registry with an active holding; do not create
+one through public submissions under this read-only ticket. This is an evidence
+dependency, not authorization to widen the work into demo recovery.
 
 ## Module boundary
 
@@ -118,5 +134,6 @@ The gate is the hosted CI command set at the pushed head, including
 `(cd offchain && nix run --quiet .#lint)`, `nix build --quiet .#build-gate`,
 `nix build --quiet .#component-build` in `offchain/`,
 `nix run --quiet .#inventory-check`, `nix run --quiet .#docs-check` and
-`nix develop --quiet -c just ci`. One commit owner executes each slice
-directly; one auditor gives a single verdict before each push.
+`nix develop --quiet -c just ci`. The epic owner completes the remaining tasks
+serially, with no audit seat, as explicitly requested by the operator on
+2026-10-07. Required hosted checks must pass before merge.

@@ -1,0 +1,12 @@
+[
+  {
+    "form": "create",
+    "command": "/nix/store/y8jpr11lfrpzlzayshvbbaz0rkmmayga-singular-registry-exe-singular-0.1.0.0/bin/singular registry create --preview --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204414Z/create-preview-target --wallet-address addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204414Z/create.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405854.7233846,
+    "ended": 1791405856.063458,
+    "wall_seconds": 1.3407839438878,
+    "exit": 0
+  }
+]

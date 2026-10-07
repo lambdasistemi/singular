@@ -1,0 +1,9 @@
+{"binding":"Unbound","phase":"view","session":"koios-2026-10-07T20:44:14.785Z-0","ts":"2026-10-07T20:44:14.789Z"}
+{"duration_ms":0.198,"outcome":"ok","phase":"query","query":"network-time","session":"koios-2026-10-07T20:44:14.785Z-0","ts":"2026-10-07T20:44:14.789Z"}
+{"duration_ms":344.482,"outcome":"ok","phase":"query","query":"cli_protocol_params","session":"koios-2026-10-07T20:44:14.785Z-0","ts":"2026-10-07T20:44:15.134Z"}
+{"answer_size":1,"duration_ms":582.923,"outcome":"ok","phase":"query","query":"protocolMajorGuard","ts":"2026-10-07T20:44:15.372Z"}
+{"phase":"view-release","session":"koios-2026-10-07T20:44:14.785Z-0","ts":"2026-10-07T20:44:15.372Z"}
+{"binding":"Unbound","phase":"view","session":"koios-2026-10-07T20:44:14.785Z-1","ts":"2026-10-07T20:44:15.372Z"}
+{"duration_ms":0.183,"outcome":"ok","phase":"query","query":"network-time","session":"koios-2026-10-07T20:44:14.785Z-1","ts":"2026-10-07T20:44:15.372Z"}
+{"duration_ms":642.936,"outcome":"ok","phase":"query","query":"address_utxos","session":"koios-2026-10-07T20:44:14.785Z-1","ts":"2026-10-07T20:44:16.015Z"}
+{"phase":"view-release","session":"koios-2026-10-07T20:44:14.785Z-1","ts":"2026-10-07T20:44:16.018Z"}

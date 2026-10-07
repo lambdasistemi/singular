@@ -111,6 +111,7 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment
@@ -157,16 +158,23 @@ runCreate env a = do
     case createMode a of
         Preview settings addrText -> do
             let magic = providerMagic settings
-            -- A preview for a public address reads the node and holds no key.
+            -- A preview for a public address reads the provider and holds no key.
             addr <-
                 either
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            readOnce env settings ["wallet outputs"] $ \_ v -> do
+            readOnce env settings ["wallet outputs"] $ \caps v -> do
                 utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
-                pure (receipt "create" Success (("preview", toJSON True) : identity))
+                scope <- sessionReceipt caps v
+                pure $
+                    receipt
+                        "create"
+                        Success
+                        ( [("preview", toJSON True), ("sessionEvidence", scope)]
+                            <> identity
+                        )
         Submit ws -> createWith env a rel ws
 
 createWith
@@ -177,18 +185,28 @@ createWith env a rel ws = do
     let session = if createPreview a then withSession else withWrite
     session env dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
-        utxos <-
+        (utxos, scope) <-
             readStep
                 (wcTracer wc)
                 (wcSource wc)
                 ["wallet outputs"]
                 (wcCapabilities wc)
-                (`Cage.outputsAt` addr)
+                ( \v -> do
+                    outputs <- Cage.outputsAt v addr
+                    evidence <- sessionReceipt (wcCapabilities wc) v
+                    pure (outputs, evidence)
+                )
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
             then
-                pure (receipt "create" Success (("preview", toJSON True) : identity))
+                pure $
+                    receipt
+                        "create"
+                        Success
+                        ( [("preview", toJSON True), ("sessionEvidence", scope)]
+                            <> identity
+                        )
             else do
                 -- The existence check again, now under the target's lock: a
                 -- create that passed it before another create finished

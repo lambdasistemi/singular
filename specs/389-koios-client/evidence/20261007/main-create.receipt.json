@@ -1,0 +1,17 @@
+{
+    "application": "open_datum.open_datum",
+    "command": "create",
+    "createRefusal": null,
+    "outcome": "success",
+    "pins": {
+        "pinAbsent": "30b7340f0da7248953ac2e0a31cc7e747cac1580c2ac4d5b76e7c39d",
+        "pinActive": "f5e4cacbc4ab2858113179207c4d5412cba879529d719ae4b8d3f248",
+        "pinApplication": "243fb5c003bc4c340b88af9ab9078639fd5f382cdd371bbe3013a470",
+        "pinState": "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c",
+        "pinTerminal": "3802c46b627b935de1a60aec08561a9778c1c009f08e0ee1ab203df2"
+    },
+    "preview": true,
+    "seed": "f5d76a9bdf9edad6277909657a20c2897c8df5d15bd0025d9f30146298f7f854#1",
+    "wallet": "addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q",
+    "walletKeyHash": "6313a3e0817302323a5b0d232f8c100a394a989f2d56af381b57fc29"
+}
