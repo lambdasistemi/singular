@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "These are the new or changed records. Module placement is in the modules model.",
+      "text": "These are the new or changed records. Module placement is in the modules model. PR1 base 5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed carries Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0. The #419 request datum value, held/witness datum and public fold representation are inherited without a model change.",
       "pause": 400
     }
   ],
@@ -111,16 +111,26 @@
       "pause": 500
     },
     {
-      "text": "Allowed contents: - journal.jsonl, submissions/, .lock; - preimages/, while #419 owns its removal; - registry.pending.json, during create only.",
+      "text": "Allowed contents: - journal.jsonl, submissions/, .lock; - registry.pending.json, during create only.",
       "pause": 400
     },
     {
-      "text": "Anything else is ignored. Nothing in the directory is an input to identity or reference resolution.",
+      "text": "Anything else is ignored. Nothing in the directory is an input to identity or reference resolution. Bob receives no Alice directory/files. His fold uses the registry's public history and requests whose datums carry the value they name, preserving #419's removal of private preimage inputs.",
+      "pause": 400
+    }
+  ],
+  "deferred-pr2-records": [
+    {
+      "text": "Deferred PR2 records.",
+      "pause": 500
+    },
+    {
+      "text": "The closed wallet-output funding view, required-token selection, narrowed fund inputs, registry page/release-archive records and independently derived report action identity are not delivered by PR1. Their accepted A-009/A-011/A-012/A-013 bindings and preserved plans remain requirements for the same open issue. Retirement records retain their reason/history without carrying an old receipt or product state into another row.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "f0a694b9c7614c6fc4ae7fb0abc7e4a013fb49125a2e2120c45c535cdc1f122c"
+    "sha256": "747b2eb0590912d90723c99804bcd9ccbd1a8b1abcd34a7a42a5ea356f671063"
   }
 }

@@ -3,6 +3,9 @@
 This file lists only new or changed signatures. The names are proposals for the commit owner. A
 signature change goes back to the ticket owner as a challenge. Types refer to the
 [data model](data-model.md).
+PR1 binds main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed`, Lean tree
+`16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. Signatures below concern
+token-only existing commands; PR2 retains its separately versioned unfinished interfaces.
 
 ## Provider interface
 
@@ -54,10 +57,16 @@ signature change goes back to the ticket owner as a challenge. Types refer to th
 - **`neededRoles`:** each transaction-building command declares the set of reference roles its
   builder runs.
   - A test pins the set per command.
-- **Slice 2:**
-  - `publish-references [--role ROLE]…` and `retire-references`;
-  - `--publish-references` on transaction-building commands;
-  - a coin-selection predicate that rejects outputs carrying a reference script.
-- **Slice 3:** `describe [--json]`.
 
-These two slices are versioned here when they start.
+## Inherited public fold and deferred interfaces
+
+`Singular.buildFold` derives the fold from public registry holdings and pending requests. Each
+request carries its datum value; witness inputs present the held datum, and settlement rejects
+foreign or missing destination carriers at any floor. Existing CLI inspection/preview/fold
+callers must preserve this #419 behavior and never add an Alice-file argument.
+
+PR2 owes publication/retirement/automatic publication, the closed wallet-output funding boundary,
+narrowed fund inputs, deterministic page renderers with tagged release-archive evidence and
+independently derived report action identity. Their previous interface versions are preserved
+outside the PR1 cut and remain authoritative for that follow-up. A planning signature, helper
+check or generated URL is not evidence of those outcomes.

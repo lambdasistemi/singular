@@ -19,6 +19,10 @@
       "pause": 500
     },
     {
+      "text": "The operator's 2026-10-07 cut makes PR1 the token-only command and connected Bob journey. PR2 follows on the same open issue for the wallet, page, report action identity and new reference features. The archived earlier plans and working/index snapshot preserve that unfinished work.",
+      "pause": 400
+    },
+    {
       "text": "The registry's identity moves from a file to a derivation. One library module resolves a state token into everything a command needs and refuses by name when the chain disagrees with the release. References are found by script hash, through a new provider query. The saved identity (registry.json) and its checks are deleted in the same slice that stops reading them.",
       "pause": 400
     },
@@ -33,7 +37,7 @@
       "pause": 500
     },
     {
-      "text": "The second and third slices are independent of each other. Each slice runs one commit owner and one mute persistent auditor, and is pushed only as an approved candidate. If a slice runs long, its green checkpoint is integrated and the rest is split into a follow-up.",
+      "text": "The existing GLM commit owner and persistent mute auditor continue; no extra seat is needed. The owner may push a coherent draft after final static preflight while the fresh exact-range audit and exact-head hosted CI run in parallel. Merge requires both plus the actual Bob story and its deliberate-open discrimination. Historical source approvals are not approvals of the new range.",
       "pause": 400
     }
   ],
@@ -41,6 +45,10 @@
     {
       "text": "Live boundaries and evidence.",
       "pause": 500
+    },
+    {
+      "text": "Local final-head static preflight runs root lint, conformance HLint, conformance format checking and offchain lint, each with its exact hosted command and actual exit recorded. Focused checks retain the frozen carriers. Full devnet, Demo1, conformance and recovery campaigns run hosted. Public conformance state is computed from receipts; no planning checkbox or local green closes an uncovered product requirement.",
+      "pause": 400
     },
     {
       "text": "There are no preprod writes and no new registry.",
@@ -57,7 +65,7 @@
       "pause": 300
     },
     {
-      "text": "#419 changes the request format. There is no blueprint conflict, because this ticket changes no script. preimages/ stays #419's scope.",
+      "text": "#419 is inherited at the exact base. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0 bind carried request datum values, public fold construction and carrier settlement. Preserve its public-history controls and removed private preimage dependency. PR1 changes no Lean, validator, blueprint or script identity relative to that base.",
       "pause": 300
     }
   ],
@@ -69,6 +77,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "98707bc982a877e6092ea54475d45482a6fff7cc6677a253089d5742fdad782b"
+    "sha256": "b1e41f78841002803b8262b96e9ec93a1392ebcbef7d4ac1d383d8b6f5aafa7d"
   }
 }
