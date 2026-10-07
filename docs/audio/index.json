@@ -1041,8 +1041,8 @@
     "index": 2,
     "name": "docs-cli-recovery/when-a-transaction-can-never-land-02",
     "pause_ms": 400,
-    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion fold still needs the booker's envelope preimage; folding another actor's insertion remains pending under #419. A termination fold can use another actor's independent directory and public replay.",
-    "v": "2784e7b87774"
+    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+    "v": "c3269b6059d6"
    },
    {
     "index": 3,
@@ -7453,8 +7453,8 @@
     "index": 1,
     "name": "docs-singular-node/booking-and-folding-01",
     "pause_ms": 400,
-    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
-    "v": "28facd1ba9dc"
+    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the live registry root does not change.",
+    "v": "9efc5df17600"
    },
    {
     "index": 2,
@@ -7467,8 +7467,8 @@
     "index": 3,
     "name": "docs-singular-node/booking-and-folding-03",
     "pause_ms": 400,
-    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
-    "v": "990c1fabf54c"
+    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet. It records its own submission in its journal and reconstructs the resulting trie from public history:",
+    "v": "ab28cdcf7229"
    },
    {
     "index": 4,
@@ -7781,8 +7781,8 @@
     "index": 4,
     "name": "docs-singular-node/two-independent-users-04",
     "pause_ms": 400,
-    "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Cross-actor insertion folding separately remains pending under #419.",
-    "v": "682e189a32e6"
+    "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
+    "v": "82a169872a6c"
    },
    {
     "index": 5,
