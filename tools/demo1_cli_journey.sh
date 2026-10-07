@@ -1320,6 +1320,14 @@ touches_alice "$two/control.strace" || fail "control: a deliberate open under al
 say "two actors: the access detector reports a deliberate open under alice's directory"
 traced="$work/traced-singular"
 printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' "$two/bob-fold.strace" "$singular" >"$traced"
+# DEMO1_TWO_ACTOR_DELIBERATE_OPEN=1 is the run's own failing control: bob's
+# traced process opens alice's registry.json before it folds, so the whole
+# journey must fail at the access check below.
+if [ "${DEMO1_TWO_ACTOR_DELIBERATE_OPEN:-}" = 1 ]; then
+  printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c '"'"'cat "%s" >/dev/null 2>&1; exec "%s" "$@"'"'"' singular "$@"\n' \
+    "$two/bob-fold.strace" "$two_alice/registry.json" "$singular" >"$traced"
+  say "two actors: the deliberate open control is on; bob's process opens alice's registry.json"
+fi
 chmod +x "$traced"
 real_singular="$singular"
 chmod 000 "$two_alice"
