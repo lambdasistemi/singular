@@ -35321,17 +35321,17 @@
    ]
   },
   "docs-cli-recovery/when-a-transaction-can-never-land-02": {
-   "audio_sha256": "2784e7b8777407cb92e27133fdf9959b2ceb4b944b76274fc423fdcf2ca9cb50",
-   "characters": 654,
-   "cost": 0.00040548,
-   "duration": 45.375,
+   "audio_sha256": "c3269b6059d6a31555a1b043936de66c3156557e53a6d0e2108150e4c4a0b621",
+   "characters": 640,
+   "cost": 0.0003968,
+   "duration": 42.725,
    "index": 2,
-   "key": "9b438d0078a16619d201fb58bd6b4e1998e7782e0d0a2188e76534ec64bd2663",
+   "key": "505e9ff7e251ef042b96d04938ed58bf674bd310c564de5daa451d74db3e6966",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "when-a-transaction-can-never-land",
-   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion fold still needs the booker's envelope preimage; folding another actor's insertion remains pending under #419. A termination fold can use another actor's independent directory and public replay.",
-   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion fold still needs the booker's envelope preimage; folding another actor's insertion remains pending under #419. A termination fold can use another actor's independent directory and public replay.",
+   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
    "words": [
     {
      "end": 0.287,
@@ -35764,163 +35764,168 @@
      "text": "."
     },
     {
-     "end": 29.975,
-     "start": 29.875,
+     "end": 29.925,
+     "start": 29.85,
      "text": "An"
     },
     {
-     "end": 30.562,
-     "start": 29.975,
-     "text": "insertion"
+     "end": 30.487,
+     "start": 29.925,
+     "text": "insertion's"
     },
     {
-     "end": 30.938,
-     "start": 30.562,
-     "text": "fold"
+     "end": 30.962,
+     "start": 30.487,
+     "text": "request"
     },
     {
-     "end": 31.25,
-     "start": 30.938,
-     "text": "still"
+     "end": 31.288,
+     "start": 30.962,
+     "text": "carries"
     },
     {
-     "end": 31.6,
-     "start": 31.25,
-     "text": "needs"
+     "end": 31.425,
+     "start": 31.288,
+     "text": "its"
     },
     {
-     "end": 31.7,
-     "start": 31.6,
-     "text": "the"
-    },
-    {
-     "end": 32.075,
-     "start": 31.7,
-     "text": "booker's"
-    },
-    {
-     "end": 32.575,
-     "start": 32.075,
+     "end": 31.9,
+     "start": 31.425,
      "text": "envelope"
     },
     {
-     "end": 33.6,
-     "start": 32.575,
-     "text": "preimage"
+     "end": 32.112,
+     "start": 31.9,
+     "text": "on"
     },
     {
-     "end": 33.8,
-     "start": 33.6,
-     "text": ";"
+     "end": 32.975,
+     "start": 32.112,
+     "text": "chain"
     },
     {
-     "end": 34.4,
-     "start": 34.0,
-     "text": "folding"
-    },
-    {
-     "end": 34.838,
-     "start": 34.4,
-     "text": "another"
-    },
-    {
-     "end": 35.3,
-     "start": 34.838,
-     "text": "actor's"
-    },
-    {
-     "end": 36.088,
-     "start": 35.3,
-     "text": "insertion"
-    },
-    {
-     "end": 36.612,
-     "start": 36.088,
-     "text": "remains"
-    },
-    {
-     "end": 37.05,
-     "start": 36.612,
-     "text": "pending"
-    },
-    {
-     "end": 37.287,
-     "start": 37.05,
-     "text": "under"
-    },
-    {
-     "end": 39.1,
-     "start": 37.287,
-     "text": "419"
-    },
-    {
-     "end": 39.3,
-     "start": 39.1,
+     "end": 33.175,
+     "start": 32.975,
      "text": "."
     },
     {
-     "end": 39.588,
-     "start": 39.5,
+     "end": 33.463,
+     "start": 33.375,
      "text": "A"
     },
     {
-     "end": 40.312,
-     "start": 39.588,
-     "text": "termination"
+     "end": 33.9,
+     "start": 33.463,
+     "text": "folder"
     },
     {
-     "end": 40.725,
-     "start": 40.312,
-     "text": "fold"
+     "end": 34.175,
+     "start": 33.9,
+     "text": "reads"
     },
     {
-     "end": 40.9,
-     "start": 40.725,
-     "text": "can"
+     "end": 34.3,
+     "start": 34.175,
+     "text": "it"
     },
     {
-     "end": 41.15,
-     "start": 40.9,
-     "text": "use"
+     "end": 34.963,
+     "start": 34.3,
+     "text": "publicly"
     },
     {
-     "end": 41.588,
-     "start": 41.15,
-     "text": "another"
-    },
-    {
-     "end": 42.138,
-     "start": 41.588,
-     "text": "actor's"
-    },
-    {
-     "end": 42.775,
-     "start": 42.138,
-     "text": "independent"
-    },
-    {
-     "end": 43.55,
-     "start": 42.775,
-     "text": "directory"
-    },
-    {
-     "end": 43.7,
-     "start": 43.55,
+     "end": 35.1,
+     "start": 34.963,
      "text": "and"
     },
     {
-     "end": 44.1,
-     "start": 43.7,
-     "text": "public"
+     "end": 35.812,
+     "start": 35.1,
+     "text": "reconstructs"
     },
     {
-     "end": 45.125,
-     "start": 44.1,
-     "text": "replay"
+     "end": 36.2,
+     "start": 35.812,
+     "text": "proofs"
     },
     {
-     "end": 45.375,
-     "start": 45.125,
+     "end": 36.35,
+     "start": 36.2,
+     "text": "from"
+    },
+    {
+     "end": 37.375,
+     "start": 36.35,
+     "text": "history"
+    },
+    {
+     "end": 37.575,
+     "start": 37.375,
+     "text": ";"
+    },
+    {
+     "end": 38.062,
+     "start": 37.775,
+     "text": "neither"
+    },
+    {
+     "end": 38.15,
+     "start": 38.062,
+     "text": "an"
+    },
+    {
+     "end": 38.763,
+     "start": 38.15,
+     "text": "insertion"
+    },
+    {
+     "end": 39.3,
+     "start": 38.763,
+     "text": "fold"
+    },
+    {
+     "end": 39.513,
+     "start": 39.3,
+     "text": "nor"
+    },
+    {
+     "end": 39.575,
+     "start": 39.513,
+     "text": "a"
+    },
+    {
+     "end": 40.287,
+     "start": 39.575,
+     "text": "termination"
+    },
+    {
+     "end": 40.737,
+     "start": 40.287,
+     "text": "fold"
+    },
+    {
+     "end": 41.037,
+     "start": 40.737,
+     "text": "needs"
+    },
+    {
+     "end": 41.125,
+     "start": 41.037,
+     "text": "the"
+    },
+    {
+     "end": 41.5,
+     "start": 41.125,
+     "text": "booker's"
+    },
+    {
+     "end": 42.525,
+     "start": 41.5,
+     "text": "files"
+    },
+    {
+     "end": 42.725,
+     "start": 42.525,
      "text": "."
     }
    ]
@@ -271601,17 +271606,17 @@
    ]
   },
   "docs-singular-node/two-independent-users-04": {
-   "audio_sha256": "682e189a32e6c62c85c3c2ebe082be12f1088b51593580d098fe333f1c585bc9",
-   "characters": 472,
-   "cost": 0.00029264000000000004,
-   "duration": 36.45,
+   "audio_sha256": "82a169872a6c88f5442e447605fce255031df49d079bfc7e9ad62ffcd03fa24d",
+   "characters": 563,
+   "cost": 0.00034906,
+   "duration": 42.575,
    "index": 4,
-   "key": "c2efb0cf224da172a118a8601f872068dcc54f072598e4d1d880f2813a33e582",
+   "key": "834b67c499efffbe1574e60a52cb64b1a37ec176fc4a744445e0a00565eda931",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "two-independent-users",
-   "sent_text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Cross-actor insertion folding separately remains pending under #419.",
-   "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Cross-actor insertion folding separately remains pending under #419.",
+   "sent_text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
+   "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
    "words": [
     {
      "end": 0.688,
@@ -271949,48 +271954,118 @@
      "text": "."
     },
     {
-     "end": 31.475,
+     "end": 31.325,
      "start": 30.8,
-     "text": "Cross-actor"
+     "text": "Requests"
     },
     {
-     "end": 32.112,
-     "start": 31.475,
+     "end": 31.7,
+     "start": 31.325,
+     "text": "already"
+    },
+    {
+     "end": 32.025,
+     "start": 31.7,
+     "text": "carry"
+    },
+    {
+     "end": 32.225,
+     "start": 32.025,
+     "text": "their"
+    },
+    {
+     "end": 32.912,
+     "start": 32.225,
      "text": "insertion"
     },
     {
-     "end": 32.638,
-     "start": 32.112,
-     "text": "folding"
+     "end": 33.487,
+     "start": 32.912,
+     "text": "envelopes"
     },
     {
-     "end": 33.175,
-     "start": 32.638,
-     "text": "separately"
+     "end": 34.1,
+     "start": 33.487,
+     "text": "publicly"
     },
     {
-     "end": 33.688,
-     "start": 33.175,
-     "text": "remains"
-    },
-    {
-     "end": 34.175,
-     "start": 33.688,
-     "text": "pending"
-    },
-    {
-     "end": 34.412,
-     "start": 34.175,
+     "end": 34.35,
+     "start": 34.1,
      "text": "under"
     },
     {
-     "end": 36.25,
-     "start": 34.412,
+     "end": 34.725,
+     "start": 34.35,
+     "text": "merged"
+    },
+    {
+     "end": 36.65,
+     "start": 34.725,
      "text": "419"
     },
     {
-     "end": 36.45,
-     "start": 36.25,
+     "end": 36.85,
+     "start": 36.65,
+     "text": ";"
+    },
+    {
+     "end": 37.725,
+     "start": 37.05,
+     "text": "cross-actor"
+    },
+    {
+     "end": 38.338,
+     "start": 37.725,
+     "text": "insertion"
+    },
+    {
+     "end": 38.963,
+     "start": 38.338,
+     "text": "folding"
+    },
+    {
+     "end": 39.475,
+     "start": 38.963,
+     "text": "remains"
+    },
+    {
+     "end": 39.562,
+     "start": 39.475,
+     "text": "to"
+    },
+    {
+     "end": 39.713,
+     "start": 39.562,
+     "text": "be"
+    },
+    {
+     "end": 40.5,
+     "start": 39.713,
+     "text": "exercised"
+    },
+    {
+     "end": 40.612,
+     "start": 40.5,
+     "text": "in"
+    },
+    {
+     "end": 40.812,
+     "start": 40.612,
+     "text": "this"
+    },
+    {
+     "end": 41.388,
+     "start": 40.812,
+     "text": "joined-user"
+    },
+    {
+     "end": 42.35,
+     "start": 41.388,
+     "text": "journey"
+    },
+    {
+     "end": 42.575,
+     "start": 42.35,
      "text": "."
     }
    ]
