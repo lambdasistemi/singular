@@ -36,6 +36,7 @@ import Cardano.Ledger.Api.Tx.Out
     , addrTxOutL
     , datumTxOutL
     , mkBasicTxOut
+    , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
@@ -44,6 +45,7 @@ import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
+    , MultiAsset (..)
     , PolicyID (..)
     )
 import Cardano.Ledger.Plutus.Data (Datum (NoDatum))
@@ -273,6 +275,43 @@ refusals = describe "the identity refusals" $ do
                         `shouldSatisfy` refusedAs "state-output-missing"
                 )
                 [moved, undated]
+    it
+        "refuse a state output that does not hold the token, whatever the provider says holds it"
+        $ do
+            found <-
+                traverse
+                    ( \(what, impostor) -> do
+                        let chain = claimedHolders [(stateIn, impostor)] honestChain
+                        (result, _) <- resolveOn chain token
+                        pure (what, void result)
+                    )
+                    impostors
+            found
+                `shouldBe` [(what, Left StateOutputMissing) | (what, _) <- impostors]
+    it
+        "pass over impostors listed before the output that holds the token"
+        $ do
+            found <-
+                traverse
+                    ( \(what, impostor) -> do
+                        let chain =
+                                claimedHolders
+                                    [(decoyIn, impostor), (stateIn, stateOutput bootState)]
+                                    honestChain
+                        (result, _) <- resolveOn chain token
+                        pure (what, fmap (fst . resolvedState) result)
+                    )
+                    impostors
+            found `shouldBe` [(what, Right stateIn) | (what, _) <- impostors]
+    it
+        "keep the declared order when an impostor competes with a later cause" $ do
+        let mismatched = stateOutput bootState{stateAppPolicy = otherPin}
+            chain =
+                claimedHolders
+                    [(stateIn, holdingOnly Nothing mismatched)]
+                    honestChain
+        (result, _) <- resolveOn chain token
+        void result `shouldBe` Left StateOutputMissing
     it "render each refusal starting with its name" $
         mapM_
             ( \(refusal, name) ->
@@ -544,6 +583,50 @@ carrying published listing chain =
     order = case listing of
         Forward -> id
         Reverse -> map snd . sortOn (Down . fst) . map (\u -> (fst u, u))
+
+{- | The chain whose provider names these outputs, live, as the holders of
+any asset, the way an unverified answer may.
+-}
+claimedHolders :: [(TxIn, TxOut ConwayEra)] -> Chain -> Chain
+claimedHolders listed chain =
+    chain
+        { chainOutputs = Map.fromList listed <> chainOutputs chain
+        , chainHolders = Just listed
+        }
+
+{- | Outputs at the state address with a valid state datum that do not hold
+the token: no asset at all, the token's name under another policy, another
+name under the token's policy.
+-}
+impostors :: [(String, TxOut ConwayEra)]
+impostors =
+    [ ("tokenless", holdingOnly Nothing genuine)
+    ,
+        ( "wrong policy"
+        , holdingOnly (Just (PolicyID (hashScript otherScript), name)) genuine
+        )
+    ,
+        ( "wrong name"
+        , holdingOnly
+            (Just (policy, AssetName (SBS.toShort (BS.replicate 32 0xab))))
+            genuine
+        )
+    ]
+  where
+    (policy, name) = token
+    genuine = stateOutput bootState
+
+-- | The output with its assets replaced by one unit of this one, or none.
+holdingOnly :: Maybe LP.Asset -> TxOut ConwayEra -> TxOut ConwayEra
+holdingOnly held o = o & valueTxOutL .~ MaryValue (Coin 2_000_000) assets
+  where
+    assets = case held of
+        Nothing -> mempty
+        Just (p, n) -> MultiAsset (Map.singleton p (Map.singleton n 1))
+
+-- | An output reference lower than the state output's.
+decoyIn :: TxIn
+decoyIn = refOf (T.replicate 64 "0" <> "#0")
 
 withState :: OnChainTokenState -> Chain -> Chain
 withState st chain =
