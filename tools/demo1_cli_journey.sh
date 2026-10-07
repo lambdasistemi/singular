@@ -65,7 +65,7 @@ hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
 hexkey >"$work/carol.skey" # never funded
-hexkey >"$work/dave.skey" # funded small, for the underfunded create
+hexkey >"$work/dave.skey"  # funded small, for the underfunded create
 
 export TMPDIR="$work"
 

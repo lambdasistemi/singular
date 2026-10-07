@@ -1307,7 +1307,7 @@ submitBounded env caps wallet r unsigned = do
 
 runCommand
     :: Env -> Command -> Target -> String -> Receipt -> IO Receipt
-runCommand env c target key r = runCommandIn env c target target key r
+runCommand env c target = runCommandIn env c target target
 
 {- | One command of this actor's directory against the registry another
 target created: the directory is the actor's own, and the registry is
@@ -1362,8 +1362,8 @@ developmentWindows = ["--process-time", "45000", "--retract-time", "15000"]
 -- | The arguments of one ordinary command, writing the files it reads.
 commandArgs
     :: Env -> Command -> Target -> String -> Receipt -> IO [String]
-commandArgs env c target key r =
-    commandArgsFor env c target target key r
+commandArgs env c target =
+    commandArgsFor env c target target
 
 {- | The arguments of one command the actor runs: the actor's own directory
  for its in-flight files, and the registry named by the registry target's
