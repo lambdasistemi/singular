@@ -94,8 +94,8 @@ part_needs="killed:accepting fold-many-killed:accepting"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   for need in $part_needs; do
     [ "${need%%:*}" = "$requested" ] || continue
-    [[ " $CLI_RECOVERY_PARTS " == *" ${need#*:} "* ]] ||
-      setup_fail "CLI_RECOVERY_PARTS selects $requested without ${need#*:}, whose key its next ordinary write updates"
+    [[ " $CLI_RECOVERY_PARTS " == *" ${need#*:} "* ]] \
+      || setup_fail "CLI_RECOVERY_PARTS selects $requested without ${need#*:}, whose key its next ordinary write updates"
   done
 done
 

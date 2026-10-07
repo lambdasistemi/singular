@@ -398,7 +398,13 @@ def driver_surface(corpus):
 
 
 def check_driver_scenarios(
-    corpus, generic_names, statement_digests, vocabulary, exits, retraction, fold_admission
+    corpus,
+    generic_names,
+    statement_digests,
+    vocabulary,
+    exits,
+    retraction,
+    fold_admission,
 ):
     """R01-R03 over every scenario the driver executed.
 
@@ -517,7 +523,10 @@ def check_driver_scenarios(
         # every window admission never names the refusal, and a fold carrying
         # no witness is never admitted: the driver does not reach it.
         if s["operation"] in edges and "foldWitness" not in s:
-            assert (s["outcome"], s["reason"]) == ("unsupported", "fold-without-witness"), (
+            assert (s["outcome"], s["reason"]) == (
+                "unsupported",
+                "fold-without-witness",
+            ), (
                 f"{sid}: a fold with no fold witness is reported "
                 f"{(s['outcome'], s['reason'])}, never admitted"
             )
@@ -1037,14 +1046,18 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     """What `Singular.foldBatch` must answer for this row, re-derived from the
     model's tables and the step trace the row carries: `(outcome, reason)`."""
     requests = row["requests"]
-    assert "foldWitness" in row, f"{row['id']}: a fold batch with no fold witness is answered"
+    assert "foldWitness" in row, (
+        f"{row['id']}: a fold batch with no fold witness is answered"
+    )
     if "foldWitness" in row:
         before = row["setup"][-1]["state"] if row["setup"] else row["start"]
         admission = fold_admission_expectation(
             row["id"], row["foldWitness"], requests, before, refusals["admission"]
         )
         if admission is not None:
-            assert row["folded"] == [], f"{row['id']}: a fold refused admission folds nothing"
+            assert row["folded"] == [], (
+                f"{row['id']}: a fold refused admission folds nothing"
+            )
             return "refused", admission
     if not requests:
         assert row["folded"] == [], f"{row['id']}: an empty batch folds nothing"
@@ -1178,7 +1191,10 @@ def check_batch_rows(
                 f"{rid}: a fold batch names requests, each folded on its own edge"
             )
             if "foldWitness" not in row:
-                assert (outcome, row["reason"]) == ("unsupported", "fold-without-witness"), (
+                assert (outcome, row["reason"]) == (
+                    "unsupported",
+                    "fold-without-witness",
+                ), (
                     f"{rid}: a fold batch with no fold witness is reported "
                     f"{(outcome, row['reason'])}, never admitted"
                 )
