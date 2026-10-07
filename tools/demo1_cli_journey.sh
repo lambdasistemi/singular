@@ -401,11 +401,12 @@ trie_extent() {
     "$work/trie-command-extent.jsonl" >/dev/null \
     || fail "the executed trie command extent is empty or omits a stored-registry command"
 }
-# local_files: the bytes of the files a booking must leave alone — the mirror
-# and the state it commits to — as one digest.
+# local_files: what a booking must leave alone in the actor's directory —
+# no identity file and no retired trie files are ever written there.
 local_files() {
   [ ! -e "$reg/registry.mirror.json" ] && [ ! -e "$reg/state.json" ] || fail "a command created retired trie files"
-  (cd "$reg" && sha256sum registry.json | cut -d' ' -f1)
+  [ ! -e "$reg/registry.json" ] || fail "a command wrote a registry.json"
+  echo "no identity file"
 }
 # booked NAME: a booking-only receipt names its pending request (the
 # booking's own output 0), the requester, and the deadline by which it must be
@@ -597,18 +598,39 @@ run empty-actor-inspect success -- registry inspect --key keyEmpty --state-token
 [ "$(field empty-actor-inspect .leaf)" = unknown ] \
   || fail "an actor starting from an empty directory did not read the registry from its state token"
 say "an actor with an empty directory read the registry from its state token alone"
+# Every later command names the registry by its token; the directory is only
+# the actor's journal.
+common+=(--state-token "$state_token")
 
 # This registry exercises absent flags and never books a timed request.
 # The rest of the journey keeps its explicit development-network windows.
 run create-defaults success -- registry create --seed "$(field bob-preview .seed)" \
   --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 run inspect-defaults success -- registry inspect --key default-window-key \
-  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}"
+  --registry "$work/default-registry" --blueprint "$blueprint" \
+  --state-token "$(field create-defaults .stateToken)" "${node[@]}"
 for name in create-defaults inspect-defaults; do
   jq -e '.processTime == 600000 and .retractTime == 300000' "$receipts/$name.json" >/dev/null \
     || fail "$name: the default registry did not read back ten-minute processing and five-minute retract windows"
 done
 say "default registry windows read back from create and inspect, without waiting them out"
+
+# Bob writes from an empty directory of his own, on the token alone: he books
+# and folds an insertion, and a third empty directory reads it back.
+bob_actor="$work/bob-actor"
+mkdir -p "$bob_actor"
+[ -z "$(ls -A "$bob_actor")" ] || setup_fail "bob's directory is not empty at start"
+payload "$work/payload-empty.json"
+run empty-actor-insert success -- registry insert --fold --key keyEmpty --payload "$work/payload-empty.json" \
+  --registry "$bob_actor" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" "${bob[@]}"
+[ ! -e "$bob_actor/registry.json" ] || fail "a command wrote a registry.json in bob's directory"
+reader="$work/empty-reader"
+mkdir -p "$reader"
+run empty-reader-inspect success -- registry inspect --key keyEmpty --state-token "$state_token" \
+  --registry "$reader" --blueprint "$blueprint" "${node[@]}"
+[ "$(field empty-reader-inspect .leaf)" = active ] \
+  || fail "an insertion booked and folded from an empty directory is not active for another empty reader"
+say "bob booked and folded from an empty directory on the state token; another empty directory reads it"
 
 # ------------------------------------------------------------------
 # 2. insert (alice), with its refusals
@@ -668,11 +690,13 @@ timeout 120 "$singular" registry insert --key "$key" --payload "$work/payload-ba
 cmp -s <(jq -S . "$receipts/insert-payload-not-data.json") \
   <(jq -S . "$receipts/insert-closed-stderr.json") \
   || fail "insert with standard error closed: another receipt than with it open"
+unminted="$state.$(printf '%064d' 0)"
 refused insert-unknown-registry client-refusal -- registry insert --key "$key" \
   --payload "$work/payload-insert.json" --registry "$work/no-such-registry" --blueprint "$blueprint" \
-  "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("no-such-registry")' "$receipts/insert-unknown-registry.json" >/dev/null \
-  || fail "insert-unknown-registry: the refusal does not name the registry directory"
+  --state-token "$unminted" "${node[@]}" "${alice[@]}"
+jq -e '.reason | startswith("state-token-not-found")' "$receipts/insert-unknown-registry.json" >/dev/null \
+  || fail "insert-unknown-registry: the refusal is not state-token-not-found"
+[ ! -e "$work/no-such-registry/journal.jsonl" ] || fail "insert-unknown-registry: a refused insert journalled"
 [ "$(journal_lines "$reg")" = "$before_inserts" ] || fail "an insert refusal moved the target's journal"
 
 # A preview builds and measures what the insert would submit, for the public
@@ -878,12 +902,14 @@ jq -e --slurpfile before "$receipts/inspect-2.json" \
 [ "$(cat "$reg/registry.mirror.json")" = 'corrupt mirror' ] || fail "the retired mirror was rewritten"
 [ "$(cat "$reg/state.json")" = 'corrupt saved root' ] || fail "the retired saved root was rewritten"
 rm "$reg/registry.mirror.json" "$reg/state.json"
-# A changed application selector.
-cp "$reg/registry.json" "$work/registry.json.aside"
-jq '.confApplication = "open.open"' "$work/registry.json.aside" >"$reg/registry.json"
-refused insert-selector-changed client-refusal -- registry insert --key keyC \
-  --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
-cp "$work/registry.json.aside" "$reg/registry.json"
+# A state token of another release: its policy is not this release's state
+# script, refused by name before the provider is asked anything.
+foreign="$(printf '%s' "$state" | tr 0123456789abcdef 123456789abcdef0).$token"
+refused insert-foreign-release client-refusal -- registry insert --key keyC \
+  --payload "$work/payload-insert.json" --registry "$reg" --blueprint "$blueprint" \
+  --state-token "$foreign" "${node[@]}" "${alice[@]}"
+jq -e '.reason | startswith("state-token-foreign-release")' "$receipts/insert-foreign-release.json" >/dev/null \
+  || fail "insert-foreign-release: the refusal is not state-token-foreign-release"
 # No node at all.
 run inspect-no-node node-unavailable -- registry inspect --key "$key" "${common[@]}" \
   --koios-url http://127.0.0.1:1 --network-time "$time_directory" --network-magic "$network_magic"
@@ -1052,7 +1078,8 @@ done
 [ -e "$work/create.go.waiting" ] || setup_fail "the create never reached an accepted submission"
 kill -9 "$victim" 2>/dev/null || true
 wait "$victim" 2>/dev/null || true
-[ ! -e "$inter/registry.json" ] || setup_fail "the create finished before it was killed"
+[ -e "$inter/registry.pending.json" ] || setup_fail "the create finished before it was killed"
+inter_token="$(field preview-inter .stateToken)"
 first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
 first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
@@ -1061,7 +1088,7 @@ run create-after-kill client-refusal -- registry create --process-time 90000 --r
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
   run inspect-interrupted partial -- registry inspect --key-hex 00 --registry "$inter" \
-    --blueprint "$blueprint" "${node[@]}"
+    --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}"
   jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
   sleep 2
 done
@@ -1439,7 +1466,7 @@ for fault in missing-create missing-change broken-before wrong-after undecodable
       ;;
   esac
   run "trie-local-$fault" success -- registry inspect --key keyG --registry "$copy" \
-    --blueprint "$blueprint" "${node[@]}"
+    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
   jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
     '.leaf == $correct[0].leaf and .root == $correct[0].root' "$receipts/trie-local-$fault.json" >/dev/null \
     || fail "altered local journal trie records changed the public read: $fault"
