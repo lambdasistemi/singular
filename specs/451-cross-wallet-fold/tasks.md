@@ -1,16 +1,19 @@
-# Deliver and verify the recovery part
+# Deliver and verify the recovery cases
 
-As a registry operator, I want an independently runnable hosted recovery check and honest limits, so that its result tells me what has actually been shown.
+As a registry operator, I want complete hosted case results and portable retained evidence, so that the final delivery states exactly what was shown.
 
 ## Work
 
-- [ ] diagnose-selected-part: retain the two authorized revision-bound runs and record the diagnosis before any fix.
-- [ ] establish-independent-starting-state: establish the cross-wallet part's prerequisite through real ordinary CLI commands without selecting a sibling part.
-- [ ] expose-failed-command-evidence: retain and print failed commands' actual receipts and refusal reasons while preserving their outcomes.
-- [ ] host-cross-wallet-part: add the distinct root app and Registry job using the existing selection and ran-proof.
-- [ ] retain-hosted-evidence: upload the genuine hosted receipts, journal and body bundle on success and failure, bound to candidate SHA and run ID.
-- [ ] verify-and-deliver: obtain all checkpoint approvals, local lint and presentation receipts, exact-head hosted CI, finalization and an authorized merge commit.
+- [x] diagnose-selected-part: retain the two authorized runs, immutable RED and the 6013 hosted cancellation/collector failure.
+- [ ] establish-independent-case-state: each selected case creates its own prerequisite through ordinary CLI.
+- [ ] preserve-recovery-expectations: retain every existing predicate, mutant, failed-command reason and ran-proof.
+- [ ] package-evidence-collector: provide The collector's Nix app with explicit tools, true paths, file hashes and measured exclusions.
+- [ ] prove-empty-path-collection: record the packaged app's collection over genuine data with empty ambient PATH, present/absent evidence and separate producer binding.
+- [ ] host-complete-case-matrix: cover every source-discovered hold and the lost answer, own artifact per part, measured time, unchanged 30-minute limit.
+- [ ] verify-merge-preparation: obtain fresh checkpoint approvals, four local lint receipts, presentation, complete exact-head hosted evidence and mechanical finalization.
 
-## Limits
+## Delivery and limits
 
-The historical fold refusal remains unreproduced and unidentified unless further evidence establishes it. This shared-directory scenario establishes no public-only fold from another directory, and no consumer conformance row changes state through this repair.
+Preparation completion does not assert a merge. Delivery remains incomplete until the authorized merge guard succeeds and its merge commit is recorded. No task or row may count missing required evidence as passed.
+
+Historical fold exit 10 remains unidentified. Shared-directory controls establish no public-only fold from a separate directory. Consumer conformance states remain receipt-derived; the 6013 partial artifact is salvage only.

@@ -1,12 +1,12 @@
 # Recovery evidence
 
-As a reviewer, I want verdicts traceable to the commands that produced them, so that a refusal is never inferred from an exit code alone.
+As a reviewer, I want every observation bound to its real producer, so that a partial run cannot masquerade as complete recovery.
 
 ## Records
 
-Existing records remain authoritative: a command receipt and stderr, the command's observed exit, prepared transaction bodies, journal events, root snapshots, selected-part clause counts and the discovered hold list. The setup produces the prerequisite holding through ordinary commands on the same registry and node. It is not a typed final-state fixture.
+Receipts, stderr, exits, saved bodies, journal events, roots and verdicts remain authoritative. Each case adds its source-declared identity, selected/executed extent and actual timing of the node-backed harness invocation. Timing covers setup and clause work, excludes collection/upload, and declares its boundary; it is not a typed duration or a CPU measurement.
 
-The hosted artifact retains the producing part's genuine evidence directories. Its identity includes the exact candidate SHA and workflow run ID; retained file hashes make the bundle bindable by offline consumers. If failure precedes a record, the bundle records that absence and supplies no fabricated substitute.
+The artifact identity includes candidate SHA, run ID and part. Its manifest carries each retained file's hash, truthful expected-record absence and measured excluded extent. Derived mutations, snapshot copies, wallet keys and node database stay out. Collector controls bind the collector candidate separately from the captured records' original revision/run; they establish collection only.
 
 ## Relationships
 
@@ -20,8 +20,8 @@ flowchart TD
     Body -->|Judges| Verdict
 ```
 
-The diagram shows evidence sources feeding a computed verdict. Failure output presents those actual sources and does not manufacture a refusal name. Selection and nonempty clause counts continue to establish that the requested part ran.
+Real evidence feeds computed verdicts. The source census and union of selected-case records determine whether the complete matrix was covered; a missing artifact or case remains uncovered.
 
 ## Validation
 
-A successful cross-wallet part must retain all existing positive and altered-evidence checks. Empty, missing or malformed evidence cannot count as recovery, and a setup error stays distinct from a product refusal. The expected root, transaction identity and payments are obtained from the producing commands and ledger evidence rather than typed into the fixture.
+All existing positive predicates and altered-evidence controls remain. Each part must exit0 and preserve its real records; every expected part and the aggregate extent must be present before acceptance. Empty, malformed, missing or incomplete evidence cannot pass. Cancellation is UNKNOWN, and an environment/setup error is not a product refusal. The6013 partial artifact and post-download hashes remain labelled salvage, not a repaired hosted manifest.

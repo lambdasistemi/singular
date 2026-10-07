@@ -1,35 +1,38 @@
-# Deliver the independent recovery part
+# Deliver independent recovery cases
 
-As a contributor, I want a bounded repair with retained failure evidence, so that reviewers can distinguish the selected-part defect from an unidentified historical refusal.
+As a contributor, I want a bounded re-cut of the execution and evidence boundaries, so that complete hosted results can support acceptance.
 
-## Evidence and sequence
+## Bound evidence
 
-The authorized main diagnostic at 25c79a018c5526f0f08cce8074cc5d86013811d8 reached every fold hold, but each next update refused because no live output held its key. That prerequisite belonged to the skipped killed part. The comparison uses exactly one cross-wallet run at that revision and one at the frozen public-fold-inputs revision 7ea7f609f760449e305628fdebe06ad68892eb01. Its final diagnosis must be recorded before implementation.
+The two authorized diagnostics at 25c79a01 and 7ea7f609 reached all holds but refused every next update because key 0x6b0d belonged to a skipped part. Their immutable receipts are the initial RED. Candidate 6013 then established five holdings and completed four following updates on hosted CI, but cancellation left an incomplete scenario. Its collector exited 127 because the runner lacked awk.
 
 ```mermaid
 flowchart TD
-    Comparison[Bound diagnostic comparison] -->|Record evidence| Diagnosis[Diagnosis with explicit limits]
-    Diagnosis -->|Confirm the part dependency| Repair[Independent starting state and failure output]
-    Repair -->|Review decisions and local checks| Candidate[Reviewed candidate]
-    Candidate -->|Push once| Hosted[Exact-head hosted recovery]
-    Hosted -->|All required checks pass| Delivery[Merge the bounded repair]
+    Evidence[Bound failure evidence] --> Mandate[Re-cut mandate]
+    Mandate --> Collector[Portable collection]
+    Mandate --> Cases[Independent cases]
+    Collector --> Review[Persistent review]
+    Cases --> Review
+    Review --> Hosted[Complete hosted matrix]
+    Hosted --> Delivery[Guarded merge]
 ```
 
-The flow keeps diagnosis, local checks, hosted behavioral evidence and merge as distinct decisions. Implementation starts at main after the formatting repair, 0676e5354353b823b40b9cad5cac31a170a8fd08.
+The flow separates the new mandate, source decisions, pure collection checks, complete hosted behavior and delivery. The existing owner and persistent auditor continue with fresh checkpoints.
 
 ## Decisions
 
-| Chosen | Alternative | Reason |
-|---|---|---|
-| Establish this part's own reachable prerequisite | Select another recovery part as a dependency | A selected recovery part must run alone. |
-| Show the failed command's actual evidence | Infer a refusal from exit 10 | Several client refusals share that exit. |
-| Hosted CI carries repaired development-ledger evidence | Repeat local recovery campaigns | The diagnosis allowance is one pinned run per revision. |
-| Preserve the existing recovery assertions | Weaken them to make a missing fixture pass | A missing starting state does not establish recovery. |
+| Chosen | Reason |
+|---|---|
+| Collection through a Nix app with explicit runtime tools | A local host's PATH did not establish the runner environment. |
+| One matrix part per discovered hold plus the lost answer | The aggregate exceeded 30 minutes while mutation work grew with the shared journal. |
+| Every part owns its prerequisite and artifact | Neither setup nor evidence may depend on a sibling case. |
+| Complete discovered extent checked across the matrix | A passing subset cannot hide an uncovered case. |
+| Keep predicates, mutants and 30-minute limit | Cancellation and budget pressure do not authorize weaker expectations. |
 
 ## Verification and delivery
 
-The existing main run is the defect's executable RED witness. The selected hosted command is nix run --quiet .#cli-recovery-cross-wallet, added by this change. Whole-repository lint, touched-file formatting and specification presentation run locally; required hosted checks must pass on the exact pushed head. The owner and persistent auditor review the diagnosis/RED bundle, each changed acceptance line and the pre-push decision. There is no additional local development-ledger run.
+No additional local node run is authorized. The collection control consumes the retained genuine diagnostics under empty ambient PATH; proof binds collector revision separately from the records' producer. The matrix's behavior is hosted-only on the next exact head. Each case reports actual wall duration of its node-backed harness invocation, including setup and clause work and excluding collection/upload; the recorded timing boundary must be explicit.
 
-The PR records the exact model binding, implementation entry points, observed receipts and the unresolved historical refusal. It remains draft until evidence and finalization permit readiness. Merge uses a merge commit after the merge guard confirms the head and required checks.
+Before every further push run root just lint, conformance hlint-check and format-check, and offchain lint, each with its own exit 0 receipt. Specification presentation and exact-head required hosted checks must pass. Each new checkpoint gets one initial review; a second collection or case-split review block returns to the epic. No new seats or fresh inspector are authorized.
 
-The hosted job uploads a named evidence artifact on success and failure. Candidate SHA and workflow run ID bind the retained receipts, journal and bodies to their producer, so offline checks can consume genuine recorded evidence. Missing records remain visible as missing evidence.
+The PR remains draft until complete evidence and mechanical finalization permit readiness. Actual delivery still requires the authorized guarded merge commit and its recorded SHA. Historical and shared-directory limits remain explicit.

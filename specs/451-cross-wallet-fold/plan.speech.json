@@ -1,25 +1,25 @@
 {
-  "deliver-the-independent-recovery-part": [
+  "deliver-independent-recovery-cases": [
     {
-      "text": "Deliver the independent recovery part.",
+      "text": "Deliver independent recovery cases.",
       "pause": 500
     },
     {
-      "text": "As a contributor, I want a bounded repair with retained failure evidence, so that reviewers can distinguish the selected-part defect from an unidentified historical refusal.",
+      "text": "As a contributor, I want a bounded re-cut of the execution and evidence boundaries, so that complete hosted results can support acceptance.",
       "pause": 400
     }
   ],
-  "evidence-and-sequence": [
+  "bound-evidence": [
     {
-      "text": "Evidence and sequence.",
+      "text": "Bound evidence.",
       "pause": 500
     },
     {
-      "text": "The authorized main diagnostic at 25c79a018c5526f0f08cce8074cc5d86013811d8 reached every fold hold, but each next update refused because no live output held its key. That prerequisite belonged to the skipped killed part. The comparison uses exactly one cross-wallet run at that revision and one at the frozen public-fold-inputs revision 7ea7f609f760449e305628fdebe06ad68892eb01. Its final diagnosis must be recorded before implementation.",
+      "text": "The two authorized diagnostics at 25c79a01 and 7ea7f609 reached all holds but refused every next update because key 0x6b0d belonged to a skipped part. Their immutable receipts are the initial RED. Candidate 6013 then established five holdings and completed four following updates on hosted CI, but cancellation left an incomplete scenario. Its collector exited 127 because the runner lacked awk.",
       "pause": 400
     },
     {
-      "text": "The flow keeps diagnosis, local checks, hosted behavioral evidence and merge as distinct decisions. Implementation starts at main after the formatting repair, 0676e5354353b823b40b9cad5cac31a170a8fd08.",
+      "text": "The flow separates the new mandate, source decisions, pure collection checks, complete hosted behavior and delivery. The existing owner and persistent auditor continue with fresh checkpoints.",
       "pause": 400
     }
   ],
@@ -35,20 +35,20 @@
       "pause": 500
     },
     {
-      "text": "The existing main run is the defect's executable RED witness. The selected hosted command is nix run --quiet .#cli-recovery-cross-wallet, added by this change. Whole-repository lint, touched-file formatting and specification presentation run locally; required hosted checks must pass on the exact pushed head. The owner and persistent auditor review the diagnosis/RED bundle, each changed acceptance line and the pre-push decision. There is no additional local development-ledger run.",
+      "text": "No additional local node run is authorized. The collection control consumes the retained genuine diagnostics under empty ambient PATH; proof binds collector revision separately from the records' producer. The matrix's behavior is hosted-only on the next exact head. Each case reports actual wall duration of its node-backed harness invocation, including setup and clause work and excluding collection/upload; the recorded timing boundary must be explicit.",
       "pause": 400
     },
     {
-      "text": "The PR records the exact model binding, implementation entry points, observed receipts and the unresolved historical refusal. It remains draft until evidence and finalization permit readiness. Merge uses a merge commit after the merge guard confirms the head and required checks.",
+      "text": "Before every further push run root just lint, conformance hlint-check and format-check, and offchain lint, each with its own exit 0 receipt. Specification presentation and exact-head required hosted checks must pass. Each new checkpoint gets one initial review; a second collection or case-split review block returns to the epic. No new seats or fresh inspector are authorized.",
       "pause": 400
     },
     {
-      "text": "The hosted job uploads a named evidence artifact on success and failure. Candidate SHA and workflow run ID bind the retained receipts, journal and bodies to their producer, so offline checks can consume genuine recorded evidence. Missing records remain visible as missing evidence.",
+      "text": "The PR remains draft until complete evidence and mechanical finalization permit readiness. Actual delivery still requires the authorized guarded merge commit and its recorded SHA. Historical and shared-directory limits remain explicit.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "33a61785e256583ec21a8a58975c28c33d400a0952e8d6727c1b869b0b5633ff"
+    "sha256": "964fca4960e674fc5476d625141b15658354ea6ebfe5e9056492b18794e92641"
   }
 }
