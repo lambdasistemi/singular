@@ -75,6 +75,7 @@ module Singular.CLI.RecoverySpec (spec) where
 import Control.Exception (throwIO, try)
 import Control.Monad (forM, forM_, when)
 import Control.Monad.State.Strict (evalState)
+import Control.Tracer (nullTracer)
 import Data.Aeson ((.:))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -226,7 +227,6 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.StubSession
@@ -586,7 +586,7 @@ require at the end that only recorded reads reached the transport.
 withRecordedStory :: (Recorded -> IO a) -> IO a
 withRecordedStory story = do
     (transport, calls) <- countedRecordedTransport
-    runtime <- newIORuntime noPhaseLog (\_ -> pure ())
+    runtime <- newIORuntime nullTracer (\_ -> pure ())
     let client = koiosWith 20 10 transport
         provider = koiosProvider runtime (Cage.Network 1) noTimeSource client
     Cage.withLatest (Cage.Network 1, provider) $ \view -> do
