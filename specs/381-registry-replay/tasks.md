@@ -33,13 +33,13 @@ verification and deliberate history faults establish the boundary independently.
 ## Publication and completion
 
 - [ ] T011 Compute all product row states from executed receipts in `tools/registry_two_actors.py`; remove the obsolete #419 pending dependency and keep harness controls in a marked appendix. Missing evidence remains visible.
-- [ ] T012 Reconcile user instructions and historical mirror statements in `docs/consumer-onboarding.md`, `docs/singular-node.md`, `specs/324-indexer-view/plan.md` and `specs/362-separate-fold/spec.md`; regenerate affected speech companions.
+- [x] T012 Reconcile user instructions and historical mirror statements in `docs/consumer-onboarding.md`, `docs/singular-node.md`, `specs/324-indexer-view/plan.md` and `specs/362-separate-fold/spec.md`; regenerate affected speech companions.
 - [ ] T013 Run the packaged two-actor journey and `nix develop --quiet -c just ci` on the final candidate; record candidate, Lean revision, commands, receipts and limits in `specs/381-registry-replay/verification.md`.
 - [ ] T014 Update PR #433 using `.github/pull_request_template.md`, verify hosted required checks on that exact head, merge the completed ticket work and close #381 only when all required journey rows have executed successfully.
 
 ## Order and model binding
 
-T001–T002 are complete. T003 precedes T004–T007 and T009. T008 and T010
+T001–T002, T008, T010 and T012 are complete. T003 precedes T004–T007 and T009. T008 and T010
 can run while the dependency is stopped, still one worker at a time. Then finish
 T011–T014. No partial harness is presented as the completed user story.
 

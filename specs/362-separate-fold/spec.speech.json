@@ -63,7 +63,7 @@
       "pause": 300
     },
     {
-      "text": "the envelope for an insertion is missing, or does not hash to what the request names;",
+      "text": "an insertion's request carries no envelope, or the carried datum is not a valid envelope;",
       "pause": 300
     },
     {
@@ -129,7 +129,7 @@
       "pause": 300
     },
     {
-      "text": "An insertion's fold delivers exactly the envelope whose hash the request names. A missing or altered envelope is refused before any build.",
+      "text": "An insertion's fold delivers exactly the envelope carried by its public request. A missing or invalid carried envelope is refused before any build.",
       "pause": 300
     },
     {
@@ -191,7 +191,7 @@
       "pause": 300
     },
     {
-      "text": "Independent folders. A folder uses its own public replay to fold another actor's termination, without that actor's directory or journal. Folding an insertion still needs the booker's private envelope preimage today. The cross-actor insertion fold remains pending under issue #419; a refusal for that missing preimage is not evidence of a passing insertion fold.",
+      "text": "Independent folders. A folder uses its own public replay to fold another actor's termination, without that actor's directory or journal. Under merged #419, an insertion's request carries its envelope publicly, so an insertion folder also needs no booker's file. The full token-only joined-user journey remains to be executed under #381 after #437 supplies joining.",
       "pause": 300
     },
     {
@@ -225,6 +225,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "3d6410b26f4fab3dfc9c50afd93253c6bc25a30d8ed7e96a0be37fff20b183c4"
+    "sha256": "b7106b8e6c7811003631d96b99d605ce027cf50efd7d0e8684bfd52dad947801"
   }
 }

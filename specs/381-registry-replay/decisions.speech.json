@@ -67,7 +67,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry owner, I keep the identity, my own journal and my own envelopes. The mirror file and the saved root commitment are retired with the mirror adapter in the commands slice, and the slice receipt names every caller removed. No cache survives. A directory written by an earlier release still holds those files; they are not read. The lineage backend's accepted-fold call persists nothing, because the next selection replays from history.",
+      "text": "As a registry owner, I keep the identity and my own journal. Insertion envelopes are carried publicly by their requests under #419. The mirror file and the saved root commitment are retired with the mirror adapter in the commands slice, and the slice receipt names every caller removed. No cache survives. A directory written by an earlier release still holds those files; they are not read. The lineage backend's accepted-fold call persists nothing, because the next selection replays from history.",
       "pause": 400
     },
     {
@@ -139,6 +139,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "e1a47604c948e7e7f1e123669539dbb0d571c1cfb75bdc33ff750bb238039894"
+    "sha256": "27ec5077c2da287813ccf8594a893f297c73d834e10f46ca38c89f173475f4f1"
   }
 }

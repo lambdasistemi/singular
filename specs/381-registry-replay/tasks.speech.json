@@ -85,7 +85,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] T012 Reconcile user instructions and historical mirror statements in docs/consumer-onboarding.md, docs/singular-node.md, specs/324-indexer-view/plan.md and specs/362-separate-fold/spec.md; regenerate affected speech companions.",
+      "text": "[x] T012 Reconcile user instructions and historical mirror statements in docs/consumer-onboarding.md, docs/singular-node.md, specs/324-indexer-view/plan.md and specs/362-separate-fold/spec.md; regenerate affected speech companions.",
       "pause": 300
     },
     {
@@ -103,7 +103,7 @@
       "pause": 500
     },
     {
-      "text": "T001–T002 are complete. T003 precedes T004–T007 and T009. T008 and T010 can run while the dependency is stopped, still one worker at a time. Then finish T011–T014. No partial harness is presented as the completed user story.",
+      "text": "T001–T002, T008, T010 and T012 are complete. T003 precedes T004–T007 and T009. T008 and T010 can run while the dependency is stopped, still one worker at a time. Then finish T011–T014. No partial harness is presented as the completed user story.",
       "pause": 400
     },
     {
@@ -113,6 +113,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "f50aa4df3eb42e03e70195d4e42f0000714282e3cb4f7585129e11528eb1d1b9"
+    "sha256": "107c2dc0ae94b8f510867b72dcb4a302c887993373eb2367588c5705ad7816fa"
   }
 }

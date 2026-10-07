@@ -3,7 +3,7 @@
 
 The creator's real CLI receipts establish fixture creation only. No actor is
 configured from a creator file. Token joining and every later CLI step await
-#437; cross-actor insertion folding additionally awaits #419. Access traces and
+#437. Requests already carry insertion datums publicly under merged #419. Access traces and
 directory hashes are harness evidence, recorded separately from product rows.
 """
 
@@ -19,7 +19,6 @@ import time
 
 
 JOIN_ISSUE = "https://github.com/lambdasistemi/singular/issues/437"
-INSERTION_ISSUE = "https://github.com/lambdasistemi/singular/issues/419"
 REQUIREMENTS = (
     "Alice reads the registry page and joins by state token",
     "Bob reads the registry page and joins by state token",
@@ -281,8 +280,7 @@ class Journey:
             {
                 "requirement": name,
                 "receipts": [],
-                "dependencies": [JOIN_ISSUE]
-                + ([INSERTION_ISSUE] if name == REQUIREMENTS[-1] else []),
+                "dependencies": [JOIN_ISSUE],
             }
             for name in REQUIREMENTS
         ]

@@ -77,7 +77,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry owner, my directory keeps only what I alone hold: the registry's identity, the journal of my own submissions and the envelopes my own insertions will deliver. The trie mirror and the saved root commitment are no longer written or read; the replay replaces both. No local trie copy survives as a cache in this ticket. A later cache is a further trie-state backend and never overrides a replay.",
+      "text": "As a registry owner, my directory keeps only what I alone hold: the registry's identity and the journal of my own submissions. Insertion requests carry their envelopes publicly; commands do not keep private preimage files. The trie mirror and the saved root commitment are no longer written or read; the replay replaces both. No local trie copy survives as a cache in this ticket. A later cache is a further trie-state backend and never overrides a replay.",
       "pause": 400
     },
     {
@@ -139,6 +139,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6938c2b169f00ceea41f421ba9d1e073df6ac82eba5c1f7db04d1777198c6b08"
+    "sha256": "2e472d557ecae12a7ad986f8d75d86b41a61e1f29d6d231865847e32d02a4eaa"
   }
 }

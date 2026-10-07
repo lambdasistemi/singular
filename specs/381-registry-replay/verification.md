@@ -132,8 +132,12 @@ Logs, exit files, `components.sh`, `tested-source.tree` and the SHA256 manifest
 
 The executed scope establishes the replay and proof verification tasks only.
 Token-only joining, both users' real CLI lifecycles and cross-actor insertion
-folding, actual actor-provider fault controls, public row receipts, remaining
-documentation reconciliation, the complete packaged journey, repository-wide
+folding, actual actor-provider fault controls, public row receipts, the complete packaged journey, repository-wide
 checks and exact-head hosted CI remain outstanding. This is a worker handback
 for owner verification, with no independent auditor commissioned and no
 ticket-wide acceptance, push or merge claimed.
+
+The owner subsequently reconciled the obsolete preimage-file statements with
+merged #419 and marked the #324 adapter plan historical after #383 removal.
+The journey report no longer lists merged #419 as a dependency; all unexecuted
+product rows remain pending on #437. This changes no executed product claim.

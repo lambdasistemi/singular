@@ -123,9 +123,9 @@ An excluded `update` leaves nothing: run it again. The fold of an
 first, its booking, is on chain: its request stays pending, holding its
 deposit. Use `registry fold` while its processing window allows it, `registry reclaim`
 with the owner's wallet in its retract window, or `registry reject` after both
-windows expire. An insertion fold still needs the booker's envelope preimage;
-folding another actor's insertion remains pending under #419. A termination
-fold can use another actor's independent directory and public replay.
+windows expire. An insertion's request carries its envelope on chain. A folder
+reads it publicly and reconstructs proofs from history; neither an insertion
+fold nor a termination fold needs the booker's files.
 
 A fold carries an upper bound on its validity window. A booking, and the
 publications `create` makes, carry none: a booking that never landed,
