@@ -56,7 +56,7 @@ import Conformance.Story.Specification
     , clauses
     , theorem
     )
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
@@ -74,7 +74,7 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
-import Data.Char (ord)
+import Data.Char (isDigit, ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
@@ -89,6 +89,7 @@ import Test.Hspec
     , it
     , pendingWith
     , shouldBe
+    , shouldNotBe
     , shouldSatisfy
     )
 import Text.Printf (printf)
@@ -384,7 +385,6 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         $ do
             rs <- honestReceipts controlsStory
             let results = judge rs controlsStory
-                retiredTitle t = "selector" `isInfixOf` t
             length results `shouldBe` 98
             [crStatus r | r <- results, not (retiredTitle (crTitle r))]
                 `shouldBe` replicate 96 Held
@@ -430,8 +430,36 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 results = judge dropped controlsStory
             length results `shouldBe` 98
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
-            drop 3 (statuses results) `shouldSatisfy` all isUncovered
+            [crStatus r | r <- drop 3 results, not (retiredTitle (crTitle r))]
+                `shouldSatisfy` all isUncovered
+            [crStatus r | r <- drop 3 results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` False
+    it
+        "keeps a retired promise retired when the receipt its clause still runs is missing"
+        $ do
+            rs <- honestReceipts controlsStory
+            let withoutInsert =
+                    filter
+                        ( \r ->
+                            not
+                                ( rcAction r == "run insert"
+                                    && rcTarget r == "process"
+                                    && rcKey r == "second"
+                                )
+                        )
+                        rs
+                results = judge withoutInsert controlsStory
+                (beforeStop, fromStop) =
+                    break
+                        (\r -> isUncovered (crStatus r) || retiredTitle (crTitle r))
+                        results
+            length rs - length withoutInsert `shouldBe` 1
+            [crStatus r | r <- results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
+            [crStatus r | r <- fromStop, not (retiredTitle (crTitle r))]
+                `shouldSatisfy` (\ss -> not (null ss) && all isUncovered ss)
+            map crStatus beforeStop `shouldSatisfy` all (== Held)
     it
         "holds the withheld-history clause only when the withholding reached the history read and the journal stayed still"
         $ do
@@ -599,7 +627,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 98 clauses hold; 0 do not; 98 are uncovered."
+            `shouldSatisfy` isInfixOf
+                "0 of 98 clauses hold; 0 do not; 96 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -812,7 +841,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "29 of 32 approved cases are covered live; 3 are not."
+            `shouldSatisfy` isInfixOf "30 of 32 approved cases are covered live; 2 are not."
         -- a replaced clause stays visible beside the clause replacing it
         full
             `shouldSatisfy` isInfixOf
@@ -821,10 +850,11 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         full
             `shouldSatisfy` isInfixOf
                 "Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover."
-        -- the retired promise stays visible, with the operator's reason
+        -- the live obligations decide the mixed case; the retired promise is
+        -- named beside them, with the operator's reason
         full
             `shouldSatisfy` isInfixOf
-                ( "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement | "
+                ( "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement | covered: the clause holds; "
                     <> selectorRetirement
                 )
         -- the indexer read belongs to a take on an existing registry: the
@@ -841,6 +871,56 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"
+    it
+        "never lets a retired promise stand for a live obligation beside it"
+        $ do
+            rs <- honestReceipts controlsStory
+            let readOnlyBroken =
+                    alter
+                        "provoke inspect-without-node"
+                        "process"
+                        (\r -> r{rcOutcome = "success"})
+                        rs
+                rendered = renderControls (judge readOnlyBroken controlsStory) controlsStory
+                mixed =
+                    [ l
+                    | l <- lines rendered
+                    , "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement |"
+                        `isInfixOf` l
+                    ]
+            mixed
+                `shouldSatisfy` ( \ls ->
+                                    length ls == 1
+                                        && all (isInfixOf "| not covered: a clause does not hold: ") ls
+                                        && all (isInfixOf selectorRetirement) ls
+                                )
+    it
+        "renders, for every instruction of every story, the step it executes and the promise it retires"
+        $ forM_ [controlsStory, permanentStory "take-key"]
+        $ \story -> do
+            rs <- honestReceipts story
+            let report = lines (renderControls (judge rs story) story)
+                numbered =
+                    [ n
+                    | l <- report
+                    , (digits@(_ : _), '.' : ' ' : _) <- [span isDigit l]
+                    , n <- [read digits :: Int]
+                    ]
+                reasons = length [() | l <- report, l == selectorRetirement]
+            numbered `shouldBe` map ((+ 1) . rcStep) rs
+            reasons `shouldBe` retiresIn story
+    it
+        "fails the correspondence when a rendered step has no executed receipt"
+        $ do
+            rs <- honestReceipts controlsStory
+            let report = lines (renderControls (judge rs controlsStory) controlsStory)
+                numbered =
+                    [ n
+                    | l <- report
+                    , (digits@(_ : _), '.' : ' ' : _) <- [span isDigit l]
+                    , n <- [read digits :: Int]
+                    ]
+            numbered `shouldNotBe` map ((+ 1) . rcStep) (drop 1 rs)
     it "uncovers every claim of a telling whose termination prefix failed" $ do
         rs <- honestReceipts controlsStory
         let failedTermination =
@@ -1619,3 +1699,43 @@ provoked p r =
 selectorRetirement :: String
 selectorRetirement =
     "Retired: a registry is joined from its state token alone; there is no saved selector file to change."
+
+-- | Whether a clause title is one of the retired saved-selector promise's.
+retiredTitle :: String -> Bool
+retiredTitle = isInfixOf "selector"
+
+{- | How many times a story retires a promise, read from its description by
+walking every instruction, inside clauses and their checks too.
+-}
+retiresIn :: Story a -> Int
+retiresIn program = case view program of
+    Return _ -> 0
+    Action (Retire _) :>>= next -> 1 + retiresIn (next ())
+    Action i :>>= next -> retiresIn (next (placeholderOf i))
+    Theorem _ body :>>= next -> inClauses (clauses body) next
+  where
+    inClauses :: Program (Clause thm CliI) b -> (b -> Story a) -> Int
+    inClauses p k = case view p of
+        Return b -> retiresIn (k b)
+        Clause _ c body :>>= next ->
+            let obs = resultOf body
+            in  retiresIn body
+                    + retiresIn (checkAction c obs)
+                    + inClauses (next obs) k
+    resultOf :: Story b -> b
+    resultOf story = case view story of
+        Return b -> b
+        Action i :>>= next -> resultOf (next (placeholderOf i))
+        Theorem _ _ :>>= _ -> error "retiresIn: a statement nested inside a clause"
+    placeholderOf :: CliI b -> b
+    placeholderOf i = case i of
+        Require _ _ -> ()
+        Retire _ -> ()
+        Run{} -> emptyReceipt 0 "" "" ""
+        Book{} -> emptyReceipt 0 "" "" ""
+        FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
+        Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""
