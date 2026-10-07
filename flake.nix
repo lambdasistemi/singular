@@ -253,6 +253,31 @@
               }
             );
           };
+          # #419: the two-actor access check shown failing a complete Demo 1
+          # run — Bob's fold process opens Alice's registry.json and the run
+          # must fail exactly there: `nix run --quiet .#demo1-two-actor-control`.
+          demo1-two-actor-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-two-actor-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                ];
+                text = ''
+                  bash ${./tools/demo1_two_actor_control.test.sh} ${./tools/demo1_two_actor_control.sh}
+                  DEMO1_CLI_CHECK=${./tools/demo1_cli_check.sh} \
+                    DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} \
+                    bash ${./tools/demo1_two_actor_control.sh} "$PWD"
+                '';
+              }
+            );
+          };
           # #299: the ordinary CLI's refusal controls, judged from their
           # receipts: `nix run --quiet .#demo1-cli-controls`.
           demo1-cli-controls = {

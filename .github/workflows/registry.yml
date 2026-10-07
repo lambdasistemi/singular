@@ -601,6 +601,33 @@ jobs:
       # this step fails at the page check or at the first invocation.
       - name: Run the Demo 1 singular journey from the extracted release archive
         run: nix run --quiet .#demo1-cli-check
+  demo1-two-actor-control:
+    name: Demo 1 two actors — Bob opening Alice's file fails the journey
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #419: the same Demo 1 run as the journey job, with Bob's fold
+      # process opening Alice's registry.json before it folds. The run must
+      # fail at the two-actor access check and nowhere else: this step
+      # passes only on exit 1 with that one failure, after the control was
+      # on and Bob's fold succeeded, and names a pass, a setup failure or
+      # any other failure as its own failure. The raw run is in the log.
+      # Its classification is first checked against stand-in runs.
+      - name: Run the Demo 1 journey with Bob's process opening Alice's file
+        run: nix run --quiet .#demo1-two-actor-control
   demo1-readback:
     name: Demo 1 public-indexer readback
     needs: blueprint
