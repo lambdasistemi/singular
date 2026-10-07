@@ -1,0 +1,27 @@
+# Recovery evidence
+
+As a reviewer, I want every observation bound to its real producer, so that a partial run cannot masquerade as complete recovery.
+
+## Records
+
+Receipts, stderr, exits, saved bodies, journal events, roots and verdicts remain authoritative. Each case adds its source-declared identity, selected/executed extent and actual timing of the node-backed harness invocation. Timing covers setup and clause work, excludes collection/upload, and declares its boundary; it is not a typed duration or a CPU measurement.
+
+The artifact identity includes candidate SHA, run ID and part. Its manifest carries each retained file's hash, truthful expected-record absence and measured excluded extent. Derived mutations, snapshot copies, wallet keys and node database stay out. Collector controls bind the collector candidate separately from the captured records' original revision/run; they establish collection only.
+
+## Relationships
+
+```mermaid
+flowchart TD
+    Command[CLI] -->|Emits| Receipt[Receipt]
+    Command -->|Records| Journal[Journal]
+    Journal -->|Binds| Body[Body]
+    Receipt -->|Judges| Verdict[Verdict]
+    Journal -->|Judges| Verdict
+    Body -->|Judges| Verdict
+```
+
+Real evidence feeds computed verdicts. The source census and union of selected-case records determine whether the complete matrix was covered; a missing artifact or case remains uncovered.
+
+## Validation
+
+All existing positive predicates and altered-evidence controls remain. Each part must exit0 and preserve its real records; every expected part and the aggregate extent must be present before acceptance. Empty, malformed, missing or incomplete evidence cannot pass. Cancellation is UNKNOWN, and an environment/setup error is not a product refusal. The6013 partial artifact and post-download hashes remain labelled salvage, not a repaired hosted manifest.

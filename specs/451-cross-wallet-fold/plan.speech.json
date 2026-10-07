@@ -1,0 +1,54 @@
+{
+  "deliver-independent-recovery-cases": [
+    {
+      "text": "Deliver independent recovery cases.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want a bounded re-cut of the execution and evidence boundaries, so that complete hosted results can support acceptance.",
+      "pause": 400
+    }
+  ],
+  "bound-evidence": [
+    {
+      "text": "Bound evidence.",
+      "pause": 500
+    },
+    {
+      "text": "The two authorized diagnostics at 25c79a01 and 7ea7f609 reached all holds but refused every next update because key 0x6b0d belonged to a skipped part. Their immutable receipts are the initial RED. Candidate 6013 then established five holdings and completed four following updates on hosted CI, but cancellation left an incomplete scenario. Its collector exited 127 because the runner lacked awk.",
+      "pause": 400
+    },
+    {
+      "text": "The flow separates the new mandate, source decisions, pure collection checks, complete hosted behavior and delivery. The existing owner and persistent auditor continue with fresh checkpoints.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    }
+  ],
+  "verification-and-delivery": [
+    {
+      "text": "Verification and delivery.",
+      "pause": 500
+    },
+    {
+      "text": "No additional local node run is authorized. The collection control consumes the retained genuine diagnostics under empty ambient PATH; proof binds collector revision separately from the records' producer. The matrix's behavior is hosted-only on the next exact head. Each case reports actual wall duration of its node-backed harness invocation, including setup and clause work and excluding collection/upload; the recorded timing boundary must be explicit.",
+      "pause": 400
+    },
+    {
+      "text": "Before every further push run root just lint, conformance hlint-check and format-check, and offchain lint, each with its own exit 0 receipt. Specification presentation and exact-head required hosted checks must pass. Each new checkpoint gets one initial review; a second collection or case-split review block returns to the epic. No new seats or fresh inspector are authorized.",
+      "pause": 400
+    },
+    {
+      "text": "The PR remains draft until complete evidence and mechanical finalization permit readiness. Actual delivery still requires the authorized guarded merge commit and its recorded SHA. Historical and shared-directory limits remain explicit.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "964fca4960e674fc5476d625141b15658354ea6ebfe5e9056492b18794e92641"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "deliver-and-verify-the-recovery-cases": [
+    {
+      "text": "Deliver and verify the recovery cases.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry operator, I want complete hosted case results and portable retained evidence, so that the final delivery states exactly what was shown.",
+      "pause": 400
+    }
+  ],
+  "work": [
+    {
+      "text": "Work.",
+      "pause": 500
+    },
+    {
+      "text": "[x] diagnose-selected-part: retain the two authorized runs, immutable RED and the 6013 hosted cancellation/collector failure.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] establish-independent-case-state: each selected case creates its own prerequisite through ordinary CLI.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] preserve-recovery-expectations: retain every existing predicate, mutant, failed-command reason and ran-proof.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] package-evidence-collector: provide The collector's Nix app with explicit tools, true paths, file hashes and measured exclusions.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] prove-empty-path-collection: record the packaged app's collection over genuine data with empty ambient PATH, present/absent evidence and separate producer binding.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] host-complete-case-matrix: cover every source-discovered hold and the lost answer, own artifact per part, measured time, unchanged 30-minute limit.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] verify-merge-preparation: obtain fresh checkpoint approvals, four local lint receipts, presentation, complete exact-head hosted evidence and mechanical finalization.",
+      "pause": 300
+    }
+  ],
+  "delivery-and-limits": [
+    {
+      "text": "Delivery and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Preparation completion does not assert a merge. Delivery remains incomplete until the authorized merge guard succeeds and its merge commit is recorded. No task or row may count missing required evidence as passed.",
+      "pause": 400
+    },
+    {
+      "text": "Historical fold exit 10 remains unidentified. Shared-directory controls establish no public-only fold from a separate directory. Consumer conformance states remain receipt-derived; the 6013 partial artifact is salvage only.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "4b03abdd3800aee6d479ffcc158ee54ea07d3b8de98508eb291ad3a3e58236a1"
+  }
+}

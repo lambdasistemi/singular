@@ -84,11 +84,111 @@
           browserPkgs = import dev-assets-playwright.inputs.nixpkgs { inherit system; };
           src = self;
         };
+      # #451 re-cut R1/R2: the recovery evidence collector and the pure case
+      # census, as shared derivations exposed both as buildable packages and
+      # as apps — one writeShellApplication each, every executable named in
+      # runtimeInputs, so nothing depends on a runner's ambient PATH.
+      recoveryTools =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          evidence = pkgs.writeShellApplication {
+            name = "cli-recovery-cross-wallet-evidence";
+            runtimeInputs = with pkgs; [
+              bash
+              coreutils
+              findutils
+              gawk
+            ];
+            text = ''
+              # usage: cli-recovery-cross-wallet-evidence SOURCE OUTPUT SHA RUN PART
+              # SOURCE is the exact captured run root; SHA/RUN/PART identify
+              # that captured producer, never this collector's own candidate.
+              [ "$#" -eq 5 ] || { echo "usage: cli-recovery-cross-wallet-evidence SOURCE OUTPUT SHA RUN PART" >&2; exit 2; }
+              source="$1" out="$2" sha="$3" run="$4" part="$5"
+              mkdir -p "$out/receipts" "$out/registry"
+              manifest="$out/manifest.txt"
+              note() { printf '%s\n' "$*" >>"$manifest"; }
+              printf 'producer_sha=%s\nproducer_run=%s\nproducer_part=%s\n' "$sha" "$run" "$part" >"$manifest"
+              if [ -d "$source/receipts" ]; then
+                # Original records only: every receipt a real command printed;
+                # the derived tampered copies the mutation predicates judge
+                # stay out and are named by measured extent below.
+                find "$source/receipts" -maxdepth 1 -type f \
+                  ! -name '*-tampered.json' ! -name '*-red.out' ! -name '*-red.err' ! -name '*-red.exit' \
+                  -exec cp -a {} "$out/receipts/" \;
+                if [ -e "$source/registry/journal.jsonl" ]; then
+                  cp -a "$source/registry/journal.jsonl" "$out/registry/"
+                else
+                  note "absent: registry/journal.jsonl"
+                fi
+                if [ -d "$source/registry/submissions" ]; then
+                  cp -a "$source/registry/submissions" "$out/registry/"
+                else
+                  note "absent: registry/submissions"
+                fi
+                for item in verdicts.md fold-holds.list node-execution-time.json \
+                  direct-processes.trie.jsonl trie-command-invocations; do
+                  if [ -e "$source/$item" ]; then
+                    cp -a "$source/$item" "$out/"
+                  else
+                    note "absent: $item"
+                  fi
+                done
+                # The hold-coverage record is written under receipts/, where
+                # the originals copy already retains it: expected and checked
+                # at the path the harness writes, so an absent line means the
+                # captured run genuinely produced none.
+                if [ -e "$source/receipts/fold-hold-coverage.json" ]; then
+                  note "present: receipts/fold-hold-coverage.json"
+                else
+                  note "absent: receipts/fold-hold-coverage.json"
+                fi
+                derived=$(find "$source/receipts" -maxdepth 1 -type f \
+                  \( -name '*-tampered.json' -o -name '*-red.out' -o -name '*-red.err' -o -name '*-red.exit' \) \
+                  -printf '%s\n' | awk '{n++; s+=$1} END {printf "%d files %d bytes", n, s}')
+                snaps=""
+                if [ -d "$source/snapshots" ]; then snaps=$(du -sb "$source/snapshots" | cut -f1); fi
+                note "records: receipts=$(find "$out/receipts" -type f | wc -l)"
+                note "excluded-by-measured-extent: derived mutation copies ($derived); snapshot copies (''${snaps:-absent} bytes); funding keys; node database"
+                (
+                  cd "$out"
+                  find . -type f ! -name manifest.txt -print0 | sort -z | xargs -0r sha256sum
+                ) >>"$manifest"
+              else
+                note "no receipts directory at the supplied source; nothing was collected"
+              fi
+            '';
+          };
+          parts = pkgs.writeShellApplication {
+            name = "cli-recovery-cross-wallet-parts";
+            runtimeInputs = with pkgs; [
+              bash
+              coreutils
+              gnugrep
+              gnused
+              jq
+            ];
+            text = ''
+              holds=$(grep -hoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
+                ${./offchain/cli/src/Singular/CLI/Session.hs} ${./offchain/cli/src/Singular/CLI/Fold.hs} \
+                | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
+              [ -n "$holds" ] || { echo "the fold path declares no hold points" >&2; exit 3; }
+              printf '%s\n' "$holds" | jq -Rsc --arg lost "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer" \
+                '{part: ((split("\n") | map(select(. != "") | "cross-wallet:" + .)) + [$lost])}'
+            '';
+          };
+        };
       packages = system: {
         default = (project system).docs;
         inherit (project system) docs;
         docs-release = (project system).releaseArchive;
         model = (model system).package;
+        # #451 re-cut R1: the collector as a buildable package; the app below
+        # refers to this same writeShellApplication derivation.
+        cli-recovery-cross-wallet-evidence = (recoveryTools system).evidence;
       };
       buildGate =
         system:
@@ -160,6 +260,35 @@
                   python3
                 ];
                 text = ''CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"'';
+              }
+            );
+          };
+          # #451 re-cut: the shared collector and census derivations, exposed
+          # as apps; their buildable package forms live in packages.
+          cliRecoveryEvidence = (recoveryTools system).evidence;
+          cliRecoveryParts = (recoveryTools system).parts;
+          # #451 re-cut R2: one source-discovered case per invocation, through
+          # the same controls and checkwrapper; the controls refuse an unknown
+          # token against the shared census before any node starts.
+          cliRecoveryCrossPartApp = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-recovery-cross-wallet-part";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  jq
+                  nix
+                  procps
+                  python3
+                ];
+                text = ''
+                  [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
+                  CLI_RECOVERY_PARTS="$1" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                '';
               }
             );
           };
@@ -371,6 +500,20 @@
           cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";
           cli-recovery-lost-answer = recoveryApp "cli-recovery-lost-answer" "lost-answer";
           cli-recovery-killed = recoveryApp "cli-recovery-killed" "accepting killed";
+          # #451: the cross-wallet part alone, on its own starting state.
+          cli-recovery-cross-wallet = recoveryApp "cli-recovery-cross-wallet" "cross-wallet";
+          # #451 re-cut: the pure case census, one case per invocation, and
+          # the portable collector — the hosted gate runs the census app, the
+          # per-case matrix and the collector app per matrix job.
+          cli-recovery-cross-wallet-parts = {
+            type = "app";
+            program = pkgs.lib.getExe cliRecoveryParts;
+          };
+          cli-recovery-cross-wallet-part = cliRecoveryCrossPartApp;
+          cli-recovery-cross-wallet-evidence = {
+            type = "app";
+            program = pkgs.lib.getExe cliRecoveryEvidence;
+          };
         };
     in
     {

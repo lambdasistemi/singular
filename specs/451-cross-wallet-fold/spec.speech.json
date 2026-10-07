@@ -1,0 +1,50 @@
+{
+  "recover-another-wallets-fold": [
+    {
+      "text": "Recover another wallet's fold.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry operator, I want every recovery case to run independently with trustworthy evidence, so that a passing matrix demonstrates recovery without another case's setup.",
+      "pause": 400
+    }
+  ],
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "A requester books an insertion. Another funded wallet folds it in the same registry directory. When that process stops at a declared hold or loses its submission answer, the requester's next ordinary write reconciles the fold once and proceeds. Every case uses its own private development ledger and ordinary prerequisite insertion.",
+      "pause": 400
+    },
+    {
+      "text": "The sequence shows one connected case. The matrix covers every source-declared fold hold and the separate lost-answer case; a subset does not establish the complete scenario.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "model-and-limits": [
+    {
+      "text": "Model and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Lean authority for the rebased re-cut is accepted main 5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed (constitution 1.13.0): Singular.Request, refusal, step and txOf in lean/Singular/Model.lean; Singular.Statements.fold_requires_no_signer in Statements.lean. A payment-key witness is distinct from required signers. This binding includes the request-carried datum and public fold inputs accepted in #419; this ticket changes neither. Historical diagnostics and the 6013 reviews retain their original model bindings. Product code, signer requirements, refusal names, deadlines and expected recovery behavior are unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "A-003 re-cuts the collector and case scheduling after candidate6013's hosted cancellation and missing-awk failure. Its partial artifact11486780028 is labelled salvage, never gate evidence. Historical fold exit 10 remains unreproduced/unidentified; shared-directory controls establish no public-only fold from a separate directory. Consumer conformance and uncovered rows remain receipt-derived and unchanged.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "18094a9d6a964d39f2d750a3d25ff3520421d1f8e83198bc7f1e0d102da73d2e"
+  }
+}

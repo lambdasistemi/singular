@@ -57,7 +57,36 @@ setup_fail() {
 }
 known_parts="accepting lost-answer killed cross-wallet never-sent whole-journal rollback trie-capability"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
+  # cross-wallet:<hold>[:lost-answer] tokens are validated against the
+  # source census below, before any node starts.
+  [[ "$requested" == cross-wallet:* ]] && continue
   [[ " $known_parts " == *" $requested "* ]] || setup_fail "CLI_RECOVERY_PARTS names an unknown part: $requested (known: $known_parts)"
+done
+# The fold-path hold census (#451 re-cut): one shared source-derived list for
+# discovery and execution, read before any node starts so an unknown
+# cross-wallet:<hold> token is refused before a node exists.
+cross_census() {
+  local source line
+  for source in Session Fold; do
+    while IFS= read -r line; do
+      if [[ "$line" =~ harnessHoldAt[[:space:]]+\"(SINGULAR_HARNESS_HOLD_[A-Z_]+)\" ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+      fi
+    done <"$root/offchain/cli/src/Singular/CLI/$source.hs"
+  done | sort -u
+}
+mapfile -t fold_census < <(cross_census)
+[ "${#fold_census[@]}" -gt 0 ] || setup_fail "the fold path declares no hold points"
+cross_all=()
+for point in "${fold_census[@]}"; do cross_all+=("cross-wallet:$point"); done
+cross_all+=("cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer")
+for requested in ${CLI_RECOVERY_PARTS:-}; do
+  [[ "$requested" == cross-wallet:* ]] || continue
+  case_ok=1
+  for token in "${cross_all[@]}"; do
+    if [ "$requested" = "$token" ]; then case_ok=0; fi
+  done
+  [ "$case_ok" -eq 0 ] || setup_fail "CLI_RECOVERY_PARTS names an unknown cross-wallet case: $requested (census: ${cross_all[*]})"
 done
 
 printf '| control | clause | verdict |\n|---|---|---|\n' >"$verdicts"
@@ -88,10 +117,24 @@ hexkey >"$work/bob.skey"
 # One development node
 # ------------------------------------------------------------------
 export TMPDIR="$work"
+harness_started=$(date +%s)
+# The node-backed invocation's own measured wall time (#451 re-cut): setup
+# and clause checks included, collection/upload excluded. Written at every
+# exit, including refusals, so a missing record is honestly absent.
+finish() {
+  local code=$?
+  {
+    kill "${devnet_pid:-}" 2>/dev/null || true
+    pkill -f "cardano-node run --config $work/" 2>/dev/null || true
+  } >/dev/null 2>&1
+  printf '{"part":"%s","elapsed_seconds":%d,"exit_code":%d}\n' \
+    "${CLI_RECOVERY_PARTS:-all}" "$(($(date +%s) - harness_started))" "$code" \
+    >"$work/node-execution-time.json" 2>/dev/null || true
+}
+trap finish EXIT
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
-trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
 sock=""
 provider_url=""
 time_directory=""
@@ -124,6 +167,17 @@ common=(--registry "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 bob=(--wallet-skey "$work/bob.skey")
 
+# say_run NAME STATUS: a command's actual answer — its receipt's outcome and
+# refusal reason when the receipt parses, an explicitly named absence
+# otherwise, never replacing the command's own exit or the verdict signal.
+say_run() {
+  local name="$1" status="$2"
+  if jq -e 'type == "object" and has("outcome")' "$receipts/$name.json" >/dev/null 2>&1; then
+    say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json") (exit $status)"
+  else
+    say "$name: no parsable receipt (exit $status); stderr: $(head -n 1 "$receipts/$name.err" 2>/dev/null || echo none)"
+  fi
+}
 # run NAME ARGS...: one singular process; its receipt and exit status kept.
 run() {
   local name="$1"
@@ -134,7 +188,7 @@ run() {
     "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
-  say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  say_run "$name" "$status"
 }
 # held NAME VAR ARGS...: one singular process with the harness hold VAR set
 # to a path, killed once it waits there. Returns 0 only when it was killed
@@ -163,6 +217,9 @@ held() {
   local status=0
   wait "$victim" || status=$?
   say "$name: never reached its hold point (exit $status)"
+  # A command that failed before its hold names its actual refusal, so the
+  # historical before-hold failure shape is visible, not just its exit.
+  say_run "$name" "$status"
   return 1
 }
 # paused NAME VAR CHECK ARGS...: one singular process with the harness hold
@@ -192,7 +249,7 @@ paused() {
   local status=0
   wait "$victim" || status=$?
   echo "$status" >"$receipts/$name.exit"
-  say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  say_run "$name" "$status"
   return "$reached"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
@@ -589,28 +646,51 @@ if part killed; then
 
 # ------------------------------------------------------------------
 fi
-if part cross-wallet; then
+cross_any=1
+if [ -n "${CLI_RECOVERY_PARTS:-}" ]; then
+  cross_any=0
+  for token in cross-wallet "${cross_all[@]}"; do
+    if [[ " $CLI_RECOVERY_PARTS " == *" $token "* ]]; then cross_any=1; fi
+  done
+fi
+if [ "$cross_any" -eq 1 ]; then
   # another wallet's fold at every hold supported by the fold path
   # ------------------------------------------------------------------
-  # Discovery supplies executions, not a source-text verdict. Every discovered
-  # call is reached on the node and has receipt/journal predicates below.
-  fold_holds() {
-    local source line
-    for source in Session Fold; do
-      while IFS= read -r line; do
-        if [[ "$line" =~ harnessHoldAt[[:space:]]+\"(SINGULAR_HARNESS_HOLD_[A-Z_]+)\" ]]; then
-          printf '%s\n' "${BASH_REMATCH[1]}"
-        fi
-      done <"$root/offchain/cli/src/Singular/CLI/$source.hs"
-    done | sort -u
+  # The source census above supplies the cases, not a source-text verdict:
+  # every selected case is reached on the node and has receipt/journal
+  # predicates below. Selecting one token narrows this invocation's extent;
+  # the aggregate selector (or no selection) runs every case.
+  cross_wants() {
+    [ -z "${CLI_RECOVERY_PARTS:-}" ] && return 0
+    [[ " $CLI_RECOVERY_PARTS " == *" cross-wallet "* ]] && return 0
+    [[ " $CLI_RECOVERY_PARTS " == *" $1 "* ]]
   }
-  mapfile -t fold_points < <(fold_holds)
-  [ "${#fold_points[@]}" -gt 0 ] || setup_fail "the fold path declares no hold points"
-  printf '%s\n' "${fold_points[@]}" >"$work/fold-holds.list"
-  cross_cases=("${fold_points[@]}")
-  for point in "${fold_points[@]}"; do
-    if [ "$point" = SINGULAR_HARNESS_HOLD_AFTER_SEND ]; then cross_cases+=("$point:lost-answer"); fi
+  cross_index_of() {
+    local i=1 token
+    for token in "${cross_all[@]}"; do
+      [ "$token" = "$1" ] && {
+        printf '%s\n' "$i"
+        return 0
+      }
+      i=$((i + 1))
+    done
+    return 1
+  }
+  # The ran-proof key a case's clauses count under: its own token when that
+  # token was requested, else the aggregate selector every case serves.
+  cross_key_for() {
+    if [ -n "${CLI_RECOVERY_PARTS:-}" ] && [[ " $CLI_RECOVERY_PARTS " == *" $1 "* ]]; then
+      printf '%s\n' "$1"
+    else
+      printf 'cross-wallet\n'
+    fi
+  }
+  cross_cases=()
+  for token in "${cross_all[@]}"; do
+    if cross_wants "$token"; then cross_cases+=("$token"); fi
   done
+  [ "${#cross_cases[@]}" -gt 0 ] || setup_fail "no cross-wallet case is selected"
+  printf '%s\n' "${fold_census[@]}" >"$work/fold-holds.list"
   # Mutations change copies of real evidence, never the registry being reconciled.
   # Multiple mutations per clause discriminate its distinct conjuncts.
   cross_clause() {
@@ -632,13 +712,32 @@ if part cross-wallet; then
     done
     cross_check=$((cross_check + 1))
   }
-  cross_index=0
+  # The case's own starting state (#451 re-cut): each selected case's next
+  # ordinary write updates a key this invocation inserted itself through the
+  # real ordinary CLI — one key per case, because an update retires the key
+  # it writes — so a cross-wallet-only selection judges recovery, never
+  # another part's setup (the killed part owns 6b0d; these keys are its own,
+  # indexed by the case's census position for stability under selection).
+  cross_prereq=0
   for cross_case in "${cross_cases[@]}"; do
-    point="${cross_case%%:*}"
-    cross_index=$((cross_index + 1))
+    point="${cross_case#cross-wallet:}"
+    point="${point%%:*}"
+    cross_index="$(cross_index_of "$cross_case")"
     cross="cross-$cross_index"
-    control="another wallet's fold at $cross_case"
+    credit="$(cross_key_for "$cross_case")"
+    current_part="$credit"
+    part_clauses[$credit]="${part_clauses[$credit]:-0}"
     printf -v key '6d%02x' "$cross_index"
+    printf -v next_key '6e%02x' "$((cross_index - 1))"
+    control="the part's own starting state"
+    insert_of "$next_key"
+    run "insert-cross-state-$((cross_index - 1))" "${args[@]}"
+    clause "the case's prerequisite insert of $next_key succeeds" \
+      outcome_is "insert-cross-state-$((cross_index - 1))" success
+    if outcome_is "insert-cross-state-$((cross_index - 1))" success; then
+      cross_prereq=$((cross_prereq + 1))
+    fi
+    control="another wallet's fold at ${cross_case#cross-wallet:}"
     snap "$cross-before"
     run "$cross-book" registry insert --key-hex "$key" --payload "$work/insert-payload.json" \
       "${common[@]}" "${node[@]}" "${alice[@]}"
@@ -663,7 +762,7 @@ if part cross-wallet; then
     refusals_clean=0
     for i in $(seq 1 40); do
       snap "$cross-try-$i"
-      run "$cross-next" registry update --key-hex 6b0d --payload "$work/payload.json" \
+      run "$cross-next" registry update --key-hex "$next_key" --payload "$work/payload.json" \
         "${common[@]}" "${node[@]}" "${alice[@]}"
       outcome_is "$cross-next" partial || break
       if ! journal_same "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" \
@@ -757,12 +856,26 @@ if part cross-wallet; then
     clause "the saved signed body is bound to its prepared line" body_bound "$cross_fold"
     clause "the journal was only appended to and no saved body changed" appended_only "$cross-before"
   done
+  # The two runtime extents must agree for this invocation: a selected case
+  # without its own prerequisite, or a prerequisite no selected case owns,
+  # fails here by name. The full source census remains the acceptance
+  # extent; the hosted matrix must cover every case between its parts.
   control="fold hold-point coverage"
-  jq -s --rawfile declared "$work/fold-holds.list" \
-    '{declared:($declared | split("\n") | map(select(. != "")) | sort),
+  current_part="$(cross_key_for "${cross_cases[0]}")"
+  clause "every selected case has its own prerequisite insert: extents agree" \
+    is_equal "$cross_prereq" "${#cross_cases[@]}"
+  clause "the prerequisite inserts left no retired trie files" trie_files_absent
+  mapfile -t cross_selected_points < <(
+    for token in "${cross_cases[@]}"; do
+      point="${token#cross-wallet:}"
+      printf '%s\n' "${point%%:*}"
+    done | sort -u
+  )
+  jq -s --argjson declared "$(printf '%s\n' "${cross_selected_points[@]}" | jq -Rsc 'split("\n") | map(select(. != "")) | sort')" \
+    '{declared:$declared,
     executed:[.[] | select(.reached == 0) | .point] | unique | sort}' "$receipts"/cross-*-evidence.json >"$receipts/fold-hold-coverage.json"
   cross=fold-holds cross_check=1 cross_evidence="$receipts/fold-hold-coverage.json"
-  cross_clause "every discovered fold hold point was reached" \
+  cross_clause "every selected fold hold point was reached" \
     '(.declared | length) > 0 and .declared == .executed' '.executed = .executed[1:]' '.declared = [] | .executed = []'
 
 # ------------------------------------------------------------------

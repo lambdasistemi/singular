@@ -1,0 +1,36 @@
+{
+  "recovery-components": [
+    {
+      "text": "Recovery components.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want execution, case discovery and collection to have clear boundaries, so that the matrix cannot omit a required case or depend on ambient tools.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "Each job selects one case through the existing part mechanism. The harness owns ordinary setup, unchanged predicates, actual execution and timing. The packaged collector retains original evidence with declared tools; the CLI and ledger continue to own product behavior.",
+      "pause": 400
+    }
+  ],
+  "boundaries": [
+    {
+      "text": "Boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "The three-file production fence is unchanged. Product CLI, validators, Lean, conformance and checkwrapper stay untouched. One discovery authority binds matrix cases to harness execution; duplicated or manually enumerated case counts must not hide uncovered source holds. The union of case artifacts establishes complete coverage, not a single case's receipt.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "8b719e6d8ef184cd52bcf50eac666f4642019e0e12c315c2edfc16f31492134b"
+  }
+}
