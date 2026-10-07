@@ -800,12 +800,14 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , ["--trace", "how", "--trace-to", "stderr", "--trace-format", "json"]
                     ]
             (_, open) <- openTempFile dir "stderr"
-            (plainCode, plainOut, _) <- captured (runSingular (Just open) [] command)
+            (plainCode, plainOut, _) <-
+                captured (runSingular (Just open) [] command)
             hClose open
             plainCode `shouldBe` ExitFailure 10
             closed <- closedHandle
             forM_ asked $ \flags -> do
-                (code, out, _) <- captured (runSingular (Just closed) [] (command <> flags))
+                (code, out, _) <-
+                    captured (runSingular (Just closed) [] (command <> flags))
                 (flags, code, out) `shouldBe` (flags, plainCode, plainOut)
     it
         "keeps the packaged command's receipt and exit when every setup step fails in turn"
