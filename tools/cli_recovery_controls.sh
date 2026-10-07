@@ -134,7 +134,9 @@ run() {
     "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
-  say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  # A failed command names its actual refusal reason; its full receipt and
+  # exit stay in the files, and the verdict table keeps the failure signal.
+  say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
 }
 # held NAME VAR ARGS...: one singular process with the harness hold VAR set
 # to a path, killed once it waits there. Returns 0 only when it was killed
@@ -192,7 +194,8 @@ paused() {
   local status=0
   wait "$victim" || status=$?
   echo "$status" >"$receipts/$name.exit"
-  say "$name: $(jq -r .outcome "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  # Same naming of the actual refusal as run(), for a released held process.
+  say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
   return "$reached"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
@@ -632,6 +635,23 @@ if part cross-wallet; then
     done
     cross_check=$((cross_check + 1))
   }
+  # The part's own starting state (#451): each case's next ordinary write
+  # updates a key this part inserted itself through the real ordinary CLI,
+  # so a cross-wallet-only selection judges recovery, never another part's
+  # setup (the killed part owns 6b0d; these keys are this part's own, one
+  # per case, because an update retires the key it writes).
+  control="the part's own starting state"
+  for i in 0 1 2 3 4; do
+    printf -v own_key '6e%02x' "$i"
+    insert_of "$own_key"
+    run "insert-cross-state-$i" "${args[@]}"
+    clause "the part's prerequisite insert of $own_key succeeds" \
+      outcome_is "insert-cross-state-$i" success
+  done
+  run inspect-cross-state registry inspect --key-hex 6e00 "${common[@]}" "${node[@]}"
+  clause "the first prerequisite key is live at the ledger's root, ready for the part's writes" \
+    is_equal "$(field inspect-cross-state '.outcome + "/" + .leaf')" success/active
+  clause "the prerequisite inserts left no retired trie files" trie_files_absent
   cross_index=0
   for cross_case in "${cross_cases[@]}"; do
     point="${cross_case%%:*}"
@@ -660,10 +680,11 @@ if part cross-wallet; then
     unset SINGULAR_HARNESS_HOLD_STEP
     cross_fold="$(fold_since "$cross-booked")"
     snap "$cross-held"
+    printf -v next_key '6e%02x' "$((cross_index - 1))"
     refusals_clean=0
     for i in $(seq 1 40); do
       snap "$cross-try-$i"
-      run "$cross-next" registry update --key-hex 6b0d --payload "$work/payload.json" \
+      run "$cross-next" registry update --key-hex "$next_key" --payload "$work/payload.json" \
         "${common[@]}" "${node[@]}" "${alice[@]}"
       outcome_is "$cross-next" partial || break
       if ! journal_same "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" \

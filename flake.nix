@@ -371,6 +371,8 @@
           cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";
           cli-recovery-lost-answer = recoveryApp "cli-recovery-lost-answer" "lost-answer";
           cli-recovery-killed = recoveryApp "cli-recovery-killed" "accepting killed";
+          # #451: the cross-wallet part alone, on its own starting state.
+          cli-recovery-cross-wallet = recoveryApp "cli-recovery-cross-wallet" "cross-wallet";
         };
     in
     {

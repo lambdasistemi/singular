@@ -785,6 +785,78 @@ jobs:
       # refuses partial, and the verdict table fails.
       - name: Run the recovery controls for a process killed at its hold points
         run: nix run --quiet .#cli-recovery-killed
+  cli-recovery-cross-wallet:
+    name: CLI recovery — another wallet's fold on its own starting state
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #451: another funded wallet folds a request the requester booked,
+      # at every hold the fold path declares, and the requester's next
+      # ordinary write reconciles the fold — judged from receipts, the
+      # journal and saved bodies. The part establishes its own prerequisite
+      # through real ordinary commands, so this job alone proves it without
+      # any other part's setup; the existing ran-proof rejects an absent or
+      # empty selection.
+      #
+      # Falsification: without the part's own prerequisite the next write
+      # refuses with its receipt naming the missing live key, and the
+      # verdict table fails (the recorded defective run, 15 unmet clauses).
+      - name: Run the recovery controls for another wallet's fold
+        run: nix run --quiet .#cli-recovery-cross-wallet
+      # #451: the specification this part delivers stays presentable —
+      # stories, diagrams, no index labels, speech stamps.
+      - name: Check the cross-wallet specification's presentation
+        run: nix develop --quiet --no-write-lock-file -c python3 tools/check_presentation.py --front specs/451-cross-wallet-fold/spec.md specs/451-cross-wallet-fold
+      # #451: retain the part's genuine recorded evidence on success and
+      # failure — receipts, journal, saved bodies, verdicts and snapshots —
+      # bound to this candidate and run for offline consumers. The private
+      # funding keys and the node database stay out of the bundle, and a
+      # record an early failure never produced is named, never fabricated.
+      - name: Collect the cross-wallet part's recorded evidence
+        if: always()
+        run: |
+          out="$RUNNER_TEMP/cross-wallet-evidence"
+          rm -rf "${out:?}"
+          mkdir -p "$out"
+          printf 'candidate=%s\nrun_id=%s\n' \
+            "${{ github.event.pull_request.head.sha || github.sha }}" \
+            "${{ github.run_id }}" >"$out/manifest.txt"
+          run_dir=""
+          for candidate_dir in "$RUNNER_TEMP"/cli-recovery.*/run; do
+            if [ -d "$candidate_dir" ]; then run_dir="$candidate_dir"; fi
+          done
+          if [ -n "$run_dir" ] && [ -d "$run_dir/receipts" ]; then
+            for item in receipts registry snapshots verdicts.md fold-holds.list \
+              direct-processes.trie.jsonl trie-command-invocations; do
+              if [ -e "$run_dir/$item" ]; then cp -a "$run_dir/$item" "$out/"; fi
+            done
+            (
+              cd "$out"
+              find . -type f ! -name manifest.txt -print0 | sort -z | xargs -0 sha256sum
+            ) >>"$out/manifest.txt"
+          else
+            printf 'no recovery run directory was produced before the failure\n' >>"$out/manifest.txt"
+          fi
+      - name: Retain the cross-wallet part's recorded evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cli-recovery-cross-wallet-${{ github.event.pull_request.head.sha || github.sha }}-run${{ github.run_id }}
+          path: ${{ runner.temp }}/cross-wallet-evidence
+          if-no-files-found: error
   # #449: the demonstration's refusals on one existing registry, as parallel
   # parts; each part creates its own registry on its own node.
   demo1-attach-part:
