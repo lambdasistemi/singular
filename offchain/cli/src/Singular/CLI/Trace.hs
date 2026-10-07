@@ -286,7 +286,7 @@ data TxEvent
       TxSigned Text Text (Maybe Integer) Double Ended
     | TxSubmitted
         { submitStep :: Text
-        , submitTx :: Text
+        , submitTxId :: Text
         , submitLower :: Maybe Word64
         , submitUpper :: Maybe Word64
         , submitTip :: TipAt
@@ -580,7 +580,7 @@ howLine = \case
         TxSubmitted{..} ->
             timed
                 ( "submit tx "
-                    <> short submitTx
+                    <> short submitTxId
                     <> " at "
                     <> ( case submitTip of
                             TipSlot s -> "tip slot " <> tshow s
@@ -847,7 +847,7 @@ howJson = \case
         TxSubmitted{..} ->
             named "tx-submitted" $
                 [ "step" .= submitStep
-                , "tx" .= submitTx
+                , "tx" .= submitTxId
                 , "validityLower" .= submitLower
                 , "validityUpper" .= submitUpper
                 , "tipSlot" .= tipSlot submitTip
@@ -1156,7 +1156,7 @@ txPhase = \case
         Just
             ( "submit"
             , [ "step" .= submitStep
-              , "tx" .= submitTx
+              , "tx" .= submitTxId
               , "validity_lower" .= submitLower
               , "validity_upper" .= submitUpper
               , "duration_ms" .= submitElapsed

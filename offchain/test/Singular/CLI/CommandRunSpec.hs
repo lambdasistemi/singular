@@ -1314,21 +1314,21 @@ disagreements invokedKey receipt events =
     txOf = \case
         TxBuilt{} -> Nothing
         TxSigned s t _ _ _ -> Just (s, t)
-        TxSubmitted{submitStep = s, submitTx = t} -> Just (s, t)
+        TxSubmitted{submitStep = s, submitTxId = t} -> Just (s, t)
         TxConfirmed s t _ _ -> Just (s, t)
         TxObserved s t _ -> Just (s, t)
     signed s t = \case
         Trace _ (How (Tx (TxSigned s' t' _ _ _))) -> (s', t') == (s, t)
         _ -> False
     submitted s t = \case
-        Trace _ (How (Tx TxSubmitted{submitStep = s', submitTx = t'})) -> (s', t') == (s, t)
+        Trace _ (How (Tx TxSubmitted{submitStep = s', submitTxId = t'})) -> (s', t') == (s, t)
         _ -> False
     observedEvent s t = \case
         Trace _ (How (Tx (TxObserved s' t' _))) -> (s', t') == (s, t)
         _ -> False
     verdictsOf t =
         [ Left v
-        | Trace _ (How (Tx TxSubmitted{submitTx = t', submitVerdict = v})) <-
+        | Trace _ (How (Tx TxSubmitted{submitTxId = t', submitVerdict = v})) <-
             events
         , t' == t
         ]

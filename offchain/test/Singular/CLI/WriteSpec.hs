@@ -1074,7 +1074,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
                 txOf = \case
                     TxBuilt{} -> Nothing
                     TxSigned _ t _ _ _ -> Just t
-                    TxSubmitted{submitTx = t} -> Just t
+                    TxSubmitted{submitTxId = t} -> Just t
                     TxConfirmed _ t _ _ -> Just t
                     TxObserved _ t _ -> Just t
                 stepOf = \case

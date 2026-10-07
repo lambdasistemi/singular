@@ -807,7 +807,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
                         ( \ms end ->
                             TxSubmitted
                                 { submitStep = step
-                                , submitTx = txid
+                                , submitTxId = txid
                                 , submitLower = lower
                                 , submitUpper = upper
                                 , submitTip = tip
