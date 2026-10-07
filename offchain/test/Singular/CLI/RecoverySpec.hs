@@ -303,6 +303,17 @@ expiryRows =
                     jsonField (reconciledJson result) "excluded"
                         `shouldBe` Just (Aeson.toJSON [txid])
                     refuseUnreconciled result -- settled: writing proceeds
+        it "keeps an unreached bound unresolved though its inputs are live" $
+            withRecordedStory $ \r ->
+                withRecordedWrite r FutureBound LostAnswer $ \dir txid saved -> do
+                    upperBoundOf saved `shouldSatisfy` isJust
+                    result <- reconcileIncomplete "inspect" dir (recordedView r)
+                    recExcluded (recoveryOf txid result) `shouldBe` False
+                    recIncluded (recoveryOf txid result) `shouldBe` False
+                    eventsOf txid dir
+                        `shouldReturn` ["prepared", "submit-unknown"]
+                    failure <- refusalOf result
+                    outcomeClass failure `shouldBe` Partial
         it "keeps an unbounded one unresolved though its inputs are live" $
             withRecordedStory $ \r ->
                 withRecordedWrite r LiveInputsNoBound LostAnswer $ \dir txid saved -> do
@@ -711,6 +722,10 @@ data BodyEvidence
       upper bound the recorded tip has passed: exclusion evidence.
       -}
       PastBound
+    | {- | Its inputs are live and its finite upper bound lies beyond
+      the recorded tip: the bound is not reached, so no exclusion.
+      -}
+      FutureBound
     | {- | Its inputs are live and it names no upper bound: it may
       still be included.
       -}
@@ -781,6 +796,7 @@ inputsFor = \case
 -- | The validity upper bound a body carries for its evidence.
 upperFor :: BodyEvidence -> Word64 -> StrictMaybe SlotNo
 upperFor PastBound tip = SJust (SlotNo (tip - 1))
+upperFor FutureBound tip = SJust (SlotNo (tip + 100))
 upperFor _ _ = SNothing
 
 storyWallet :: FilePath -> IO Wallet
