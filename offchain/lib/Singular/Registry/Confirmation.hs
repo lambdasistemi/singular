@@ -8,6 +8,7 @@ module Singular.Registry.Confirmation
     ( ConfirmationRuntime (..)
     , ConfirmationFailure (..)
     , confirmTransaction
+    , confirmationWindow
     , newIOConfirmationRuntime
     , awaitTransaction
     ) where
@@ -82,11 +83,10 @@ confirmTransaction
 confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . outputsTxBodyL) of
     [] -> pure (Left (ConfirmationNoOutput tid))
     _ : _ -> do
-        windowResult <- boundedConfirmation runtime tid 30 (Right <$> window)
+        windowResult <- confirmationWindow runtime provider network tx
         case windowResult of
-            Left failure -> pure (Left (ConfirmationWaitFailure failure))
-            Right (Left failure) -> pure (Left failure)
-            Right (Right (deadline, bound)) -> do
+            Left failure -> pure (Left failure)
+            Right (deadline, bound) -> do
                 result <- boundedConfirmation runtime tid bound (poll deadline)
                 pure $ case result of
                     Left failure -> Left (ConfirmationWaitFailure failure)
@@ -94,14 +94,52 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
   where
     tid = txIdTx tx
     wanted = TxIn tid (TxIx 0)
-    readScope
-        :: (Session w m -> m (Either ConfirmationFailure a))
-        -> m (Either ConfirmationFailure a)
-    readScope action = do
-        acquired <- acquire provider (Latest network) action
-        pure (either (Left . ConfirmationAcquireFailure) id acquired)
+    poll deadline = do
+        observed <- readScope provider network $ \session -> do
+            exact <- outputs session (AtTxIn wanted)
+            case exact of
+                Right fact | any ((== wanted) . fst) (value fact) -> pure (Right OutputVisible)
+                Left (MissingOutput missing)
+                    | missing /= wanted ->
+                        pure (Left (ConfirmationReadFailure (MissingOutput missing)))
+                Left failure@(ConflictingOutput _) -> pure (Left (ConfirmationReadFailure failure))
+                Left failure@(ReleasedSession _) -> pure (Left (ConfirmationReadFailure failure))
+                Left failure@(BackendReadFailure _) -> pure (Left (ConfirmationReadFailure failure))
+                Left failure@(NetworkTimeRefusal _) -> pure (Left (ConfirmationReadFailure failure))
+                _ -> do
+                    tip <- tipObservation session
+                    pure $ case tip of
+                        Left failure -> Left (ConfirmationReadFailure failure)
+                        Right fact ->
+                            Right
+                                ( if toInteger (observedBlockTime (value fact)) * 1000 < deadline
+                                    then WindowOpen
+                                    else WindowClosed
+                                )
+        case observed of
+            Left failure -> pure (Right (Left failure))
+            Right WindowClosed -> pure (Left deadline)
+            Right WindowOpen -> pausePolling runtime 5 >> poll deadline
+            Right OutputVisible -> pure (Right (Right ()))
+
+{- | Derive the same bounded window used by 'confirmTransaction'. A private
+read-only recorder may inspect it without inventing a transaction output or
+starting a visibility poll. This performs no submission or confirmation.
+-}
+confirmationWindow
+    :: (Monad m)
+    => ConfirmationRuntime m
+    -> LedgerProvider w m
+    -> Network
+    -> ConwayTx
+    -> m (Either ConfirmationFailure (Integer, Int))
+confirmationWindow runtime provider network tx = do
+    result <-
+        boundedConfirmation runtime (txIdTx tx) 30 (Right <$> window)
+    pure (either (Left . ConfirmationWaitFailure) id result)
+  where
     window = do
-        attempted <- attemptWindowRead runtime $ readScope $ \session -> case invalidHereafter (tx ^. bodyTxL . vldtTxBodyL) of
+        attempted <- attemptWindowRead runtime $ readScope provider network $ \session -> case invalidHereafter (tx ^. bodyTxL . vldtTxBodyL) of
             SJust upper -> do
                 start <- Services.slotStart session upper
                 pure $ case start of
@@ -129,7 +167,7 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
             -- Preserve the historical synchronous context-read fallback. Its
             -- independent block-time read is still within the window-read bound.
             Left (ConfirmationReadFailure _) -> do
-                fallback <- readScope $ \session ->
+                fallback <- readScope provider network $ \session ->
                     fmap
                         (either (Left . ConfirmationReadFailure) (const (Right ())))
                         (tipObservation session)
@@ -142,33 +180,16 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
                 let deadline = Data.Maybe.fromMaybe (now + 300000) supplied
                     seconds = max 0 ((deadline - now + 999) `div` 1000)
                 pure (Right (deadline, fromInteger seconds + 10))
-    poll deadline = do
-        observed <- readScope $ \session -> do
-            exact <- outputs session (AtTxIn wanted)
-            case exact of
-                Right fact | any ((== wanted) . fst) (value fact) -> pure (Right OutputVisible)
-                Left (MissingOutput missing)
-                    | missing /= wanted ->
-                        pure (Left (ConfirmationReadFailure (MissingOutput missing)))
-                Left failure@(ConflictingOutput _) -> pure (Left (ConfirmationReadFailure failure))
-                Left failure@(ReleasedSession _) -> pure (Left (ConfirmationReadFailure failure))
-                Left failure@(BackendReadFailure _) -> pure (Left (ConfirmationReadFailure failure))
-                Left failure@(NetworkTimeRefusal _) -> pure (Left (ConfirmationReadFailure failure))
-                _ -> do
-                    tip <- tipObservation session
-                    pure $ case tip of
-                        Left failure -> Left (ConfirmationReadFailure failure)
-                        Right fact ->
-                            Right
-                                ( if toInteger (observedBlockTime (value fact)) * 1000 < deadline
-                                    then WindowOpen
-                                    else WindowClosed
-                                )
-        case observed of
-            Left failure -> pure (Right (Left failure))
-            Right WindowClosed -> pure (Left deadline)
-            Right WindowOpen -> pausePolling runtime 5 >> poll deadline
-            Right OutputVisible -> pure (Right (Right ()))
+
+readScope
+    :: (Monad m)
+    => LedgerProvider w m
+    -> Network
+    -> (Session w m -> m (Either ConfirmationFailure a))
+    -> m (Either ConfirmationFailure a)
+readScope provider network action = do
+    acquired <- acquire provider (Latest network) action
+    pure (either (Left . ConfirmationAcquireFailure) id acquired)
 
 -- | IO cancellation preserves the original wait failure and other exceptions.
 newIOConfirmationRuntime :: IO (ConfirmationRuntime IO)

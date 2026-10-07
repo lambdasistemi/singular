@@ -18,6 +18,12 @@ module Conformance.Run.Cage
     , rowRegistryContext
     ) where
 
+import Conformance.Run.Actor
+    ( Actor (..)
+    , actorAddress
+    , actorSigningKey
+    )
+
 import Conformance.Run.Environment
 import Conformance.Run.Submit
 import Conformance.Run.Wallet
@@ -71,7 +77,7 @@ import Singular.Registry.Blueprint
     , applyBytesParam
     , applyDataParam
     )
-import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Capabilities (capConfirm, capSubmit)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -176,8 +182,8 @@ ensureRowCage env name processMs retractMs = do
                     processMs
                     retractMs
         unsignedBoot <-
-            Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
-        signedBoot <- submitWithGenesis (envCaps env) unsignedBoot
+            Cage.withLatest prov (\v -> bootTokenImpl cfg v (genesisAddr env))
+        signedBoot <- submitWithGenesis (envActor env) unsignedBoot
         tid <- extractTokenId cfg signedBoot
         createTrie (envTm env) tid
         tidRef <- newIORef (Just tid)
@@ -291,7 +297,7 @@ ensureStateRef :: Env -> IO ()
 ensureStateRef env =
     ensureStateRefWith
         (envProv env)
-        (envCaps env)
+        (envActor env)
         (cageScriptBytes (envCfg env))
 
 {- | 'ensureStateRef' before the session's environment exists: the
@@ -300,13 +306,13 @@ depends on the blueprint alone, not on the seed.
 -}
 ensureStateRefWith
     :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-    -> Capabilities Cage.NoWitness IO
+    -> Actor
     -> SBS.ShortByteString
     -> IO ()
 ensureStateRefWith prov submit stateBytes = do
     let script = scriptFromBytes "state" stateBytes
         wanted = hashScript script
-    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` actorAddress submit)
     let published =
             [ ()
             | (_, out) <- utxos
@@ -342,28 +348,28 @@ the references are carried in the environment.
 -}
 publishRefScript
     :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
-publishRefScript env = publishRefScriptWith (envProv env) (envCaps env)
+publishRefScript env = publishRefScriptWith (envProv env) (envActor env)
 
 -- | 'publishRefScript' from the provider and submitter alone.
 publishRefScriptWith
     :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-    -> Capabilities Cage.NoWitness IO
+    -> Actor
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
 publishRefScriptWith prov submit script = do
     -- One transaction, one view: parameters and the funding outputs.
     (pp, utxos) <- Cage.withLatest prov $ \v ->
-        (,) <$> Cage.parameters v <*> Cage.outputsAt v genesisAddr
+        (,) <$> Cage.parameters v <*> Cage.outputsAt v (actorAddress submit)
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "publishRefScript: the funding wallet has no output"
         (u : _) -> pure u
     let probe =
-            mkBasicTxOut genesisAddr (MaryValue (Coin 0) mempty)
+            mkBasicTxOut (actorAddress submit) (MaryValue (Coin 0) mempty)
                 & referenceScriptTxOutL .~ SJust script
         Coin minCoin = getMinCoinTxOut @ConwayEra pp probe
         refCoin = minCoin + 1_000_000
         refOut =
-            mkBasicTxOut genesisAddr (MaryValue (Coin refCoin) mempty)
+            mkBasicTxOut (actorAddress submit) (MaryValue (Coin refCoin) mempty)
                 & referenceScriptTxOutL .~ SJust script
         fee = 1_000_000
         Coin inCoin = snd fund ^. coinTxOutL
@@ -382,14 +388,17 @@ publishRefScriptWith prov submit script = do
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
                         [ refOut
-                        , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+                        , mkBasicTxOut
+                            (actorAddress submit)
+                            (MaryValue (Coin changeCoin) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-        signedWitnessed = signTx genesisSignKey (mkBasicTx body)
+        signedWitnessed = signTx (actorSigningKey submit) (mkBasicTx body)
         signed = signedTx signedWitnessed
-    result <- submitTxResilient (capSubmit submit) signedWitnessed
+    result <-
+        submitTxResilient (capSubmit (actorCaps submit)) signedWitnessed
     case result of
-        SubmitAccepted _ -> capConfirm submit signed
+        SubmitAccepted _ -> capConfirm (actorCaps submit) signed
         SubmitRefused reason ->
             failWith
                 ( "publishRefScript refused: "

@@ -494,7 +494,6 @@
           # The root reference takes only Ledger/Provider page pairs from
           # their public local-services owner; private Node pages stay out.
           local-services-haddock = components.sublibs.local-services.haddock;
-          node-internal-haddock = components.sublibs.node-internal.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`

@@ -1,86 +1,32 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {- |
 Module      : Singular.Registry.ContractNode
-Description : #326 — the contract's harnesses over a development node
+Description : Private generated and external sources for the shipping HTTP contract
 License     : Apache-2.0
 
-The node adapter and the indexer adapter on a real development node,
-each opened exactly as a @singular@ write opens them: a socket path, a
-network magic and a funded signing-key file handed to the session
-constructor the CLI composes ('withNodeModeOn'), under the backend the
-CLI's @--backend@ names. Two legs differ only in who started the node:
+The generated leg owns a private node-backed HTTP facade. The external leg
+receives a URL, pinned time source and funded wallet, and starts no source.
+Only an independent private oracle receives a probe socket. Its second LSQ
+connection obtains full outputs independently of the facade's server and the
+shipping provider. Payments retain a fresh funded key, another thread, the
+original amount and fee, and the original two-minute observation bound.
 
-* generated — the suite starts a node for each case, and funds a fresh
-  key from the genesis key so that the key's outputs are in blocks;
-* external — the node, its magic and a funded key are given on the
-  command line; the suite starts nothing.
-
-A chain change is a payment from the funded key to a fresh address,
-built and observed through a second connection of its own and submitted
-from another thread, so nothing the view under test holds is used to
-make or to see it.
-
-The generated leg also holds the session's connection guard to account
-on a real node: a one-shot query and a submission issued from inside a
-view fail by name, and the same calls outside the view answer.
+Original atomic-view, connection-guard and index-log requirements are
+published unsupported. Generic session evidence is separately worded.
 -}
 module Singular.Registry.ContractNode
-    ( -- * Legs
-      Leg (..)
-    , nodeHarness
+    ( Leg (..)
+    , providerHarness
     , phaseLogOnDevnet
-
-      -- * The session's connection guard on a real node
     , guardOnDevnet
     ) where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel, wait, withAsync)
-import Control.Exception (bracket, onException, throwIO, try)
-import Control.Monad (unless, void, when)
-import Control.Tracer (nullTracer)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
-import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Short qualified as SBS
-import Data.List (sortOn)
-import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Ord (Down (..))
-import Data.Sequence.Strict qualified as StrictSeq
-import Data.Set qualified as Set
-import Data.Time.Clock (addUTCTime, getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.Time.Format (defaultTimeLocale, formatTime)
-import Data.Word (Word32)
-import Lens.Micro ((&), (.~), (^.))
-import System.Directory
-    ( copyFile
-    , createDirectoryIfMissing
-    , doesFileExist
-    , getTemporaryDirectory
-    )
-import System.FilePath (takeDirectory, (</>))
-import System.IO (IOMode (..), hClose, openFile)
-import System.IO.Temp (createTempDirectory, withSystemTempDirectory)
-import System.Posix.Files (ownerReadMode, setFileMode)
-import System.Process
-    ( CreateProcess (..)
-    , StdStream (..)
-    , createProcess
-    , proc
-    , terminateProcess
-    , waitForProcess
-    )
-import System.Random.Stateful (globalStdGen, uniformByteStringM)
-import System.Timeout (timeout)
-import Test.Hspec
-
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
@@ -89,195 +35,242 @@ import Cardano.Ledger.Api.Tx.Body
     )
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.State (UTxO (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup
-    ( genesisDir
+    ( genesisAddr
+    , genesisDir
     , genesisSignKey
-    , rawSerialiseSignKeyDSIGN
     )
 import Cardano.Node.Client.N2C.Connection
     ( newLSQChannel
     , newLTxSChannel
     , runNodeClient
     )
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
+import Cardano.Node.Client.N2C.LocalStateQuery
+    ( queryAcquiredLSQ
+    , withAcquiredLSQ
     )
-import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Node.Client.N2C.Types (LSQChannel)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (link, wait, withAsync)
+import Control.Exception
+    ( SomeException
+    , displayException
+    , finally
+    , throwIO
+    , try
+    )
+import Control.Monad (forM_, unless, void)
+import Data.Aeson
+    ( Value (..)
+    , eitherDecodeStrict'
+    , encode
+    , object
+    , (.=)
+    )
+import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Lazy qualified as LBS
+import Data.ByteString.Short qualified as SBS
+import Data.List (isInfixOf, sortOn)
+import Data.Map.Strict qualified as Map
+import Data.Ord (Down (..))
+import Data.Sequence.Strict qualified as StrictSeq
+import Data.Set qualified as Set
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Unique (hashUnique, newUnique)
+import Lens.Micro ((&), (.~), (^.))
+import Ouroboros.Consensus.Cardano.Block
+    ( pattern QueryIfCurrentConway
+    )
+import Ouroboros.Consensus.Cardano.Node ()
+import Ouroboros.Consensus.Ledger.Query
+    ( Query (BlockQuery, GetChainPoint)
+    )
+import Ouroboros.Consensus.Protocol.Praos.Header ()
+import Ouroboros.Consensus.Shelley.Ledger.NetworkProtocolVersion ()
+import Ouroboros.Consensus.Shelley.Ledger.Query
+    ( pattern GetUTxOByAddress
+    )
+import Ouroboros.Consensus.Shelley.Ledger.SupportsProtocol ()
 import Ouroboros.Network.Magic (NetworkMagic (..))
-
 import Singular.PhaseLogFixture
     ( logObjects
+    , numberField
     , phaseLines
-    , queryNames
+    , textField
     , withLogFile
     )
+import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.ContractSuite
     ( AdapterHarness (..)
-    , Case (..)
     , Chain (..)
     , EvidenceClass (..)
-    , unsupportedControl
     )
-import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.Node
-    ( ExternalNode (..)
-    , NodeMode (..)
-    , NodeReads (..)
-    , NodeSession (..)
-    , Wallet (..)
-    , loadWallet
-    , withNodeReads
+import Singular.Registry.Evidence
+    ( NoWitness
+    , SessionBinding (..)
+    , SessionId (..)
     )
-import Singular.Registry.Node.Options (Backend (..))
-import Singular.Registry.Node.RawView (rawNodeProvider)
-import Singular.Registry.Node.Session
-    ( NodeCallInView (..)
-    , withNodeModeOn
-    , withNodeModeTraced
-    , withNodeReadsOn
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.LedgerProvider (Outputs, SubmitResult (..))
+import Singular.Registry.Private.Facade
+    ( Facade (..)
+    , GenesisFunding (..)
+    , withGeneratedFacade
     )
-import Singular.Registry.Node.Submit (signTx, signedTx)
-import Singular.Registry.Node.View (nodeProvider)
-import Singular.Registry.Provider (Provider (..), View (..))
-import Singular.Registry.Services qualified as Services
-import Singular.Registry.TimeMaterial (loadTimeMaterial)
-import Singular.Registry.TraceRender (readPhaseLog)
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.SessionEvidence (FactRecord (..))
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (SignedTx, signTx, signedTx)
+import Singular.Registry.Terminal (withReads, withWrites)
+import Singular.Registry.TraceRender (backendPhaseLog)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
     )
+import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (lookupEnv)
+import System.FilePath ((</>))
+import System.IO.Temp (withSystemTempDirectory)
+import System.Random.Stateful (globalStdGen, uniformByteStringM)
+import System.Timeout (timeout)
+import Test.Hspec
 
--- | Who started the node the harness reaches.
-data Leg
-    = -- | The suite starts a node for each case.
-      Generated
-    | -- | A node started outside the suite: socket, magic, funded key file.
-      Outside FilePath Word32 FilePath
+-- | The private oracle socket is separate from all shipping settings.
+data Leg = Generated | Outside ProviderSettings FilePath FilePath
 
--- | The node or the indexer adapter over a development node.
-nodeHarness :: Leg -> Backend -> AdapterHarness
-nodeHarness leg backend =
+providerHarness :: Leg -> AdapterHarness
+providerHarness leg =
     AdapterHarness
-        { ahAdapter = adapterName <> " (" <> legName <> " devnet)"
+        { ahAdapter = "shared HTTP (" <> legName <> " devnet)"
         , ahEvidence = DevNet
-        , ahNotSupported = Map.fromList (indexRows <> legRows <> originRow)
-        , ahChain = \k -> case leg of
-            Generated -> withGeneratedNode $ \sock kill ->
-                withFundedKey sock $ \skey ->
-                    sessionChain sock devnetMagicWord skey (Just kill) k
-            Outside sock magic skey -> sessionChain sock magic skey Nothing k
+        , ahNotSupported = Map.empty
+        , ahChain = \action -> case leg of
+            Generated -> withGenerated $ \settings socket wallet ->
+                sessionChain settings socket wallet action
+            Outside settings socket key -> do
+                wallet <- loadWallet (providerMagic settings) key
+                sessionChain settings socket wallet action
         }
   where
-    adapterName = case backend of
-        NodeBackend -> "node"
-        IndexerBackend -> "indexer"
     legName = case leg of
         Generated -> "generated"
         Outside{} -> "external"
-    indexRows = case backend of
-        NodeBackend ->
-            [ (c, "the node adapter reads the node's own state; it has no index")
-            | c <- [IndexLag, IndexFork, IndexRestoring, IndexDisconnected]
-            ]
-        IndexerBackend ->
-            [ ( c
-              , "a live follower cannot be held behind, forked, restoring or \
-                \disconnected from outside its session; provoked on the \
-                \indexer adapter over the in-memory node"
-              )
-            | c <- [IndexLag, IndexFork, IndexRestoring, IndexDisconnected]
-            ]
-    legRows = case leg of
-        Generated -> []
-        Outside{} ->
-            [
-                ( ConnectionLost
-                , "the node was started outside the suite, which does not stop it"
-                )
-            ]
-    originRow = case (leg, backend) of
-        (Generated, NodeBackend) -> []
-        (Outside{}, _) ->
-            [(AtOrigin, "the node was handed over past its origin")]
-        (Generated, IndexerBackend) ->
-            [
-                ( AtOrigin
-                , "the indexer session waits a chain out of its origin before \
-                  \its first view; the node adapter's origin refusal is the \
-                  \one the index rests on"
-                )
-            ]
 
-    sessionChain sock magic skey kill k = do
-        wallet <- loadWallet magic skey
+sessionChain
+    :: ProviderSettings -> FilePath -> Wallet -> (Chain -> IO a) -> IO a
+sessionChain settings socket wallet action =
+    withIndependentConnection settings socket $ \oracle -> do
         watched <- freshAddress
         unregistered <- freshScriptHash
-        withNodeModeOn backend (External (ExternalNode sock magic skey)) $ \sess ->
-            k
-                Chain
-                    { chProvider = nsProvider sess
-                    , chNetwork = magic
-                    , chWatched = watched
-                    , chUnregistered = unregistered
-                    , chChange =
-                        payAside sock magic wallet watched (nsSubmitter sess)
-                    , chLoseConnection =
-                        fromMaybe (unsupportedControl "losing the connection") kill
-                    , chAtOrigin = \use -> case (leg, backend) of
-                        (Generated, NodeBackend) -> atOrigin use
-                        _ -> unsupportedControl "a chain at its origin"
-                    , chProvoke = unsupportedControl . show
-                    }
+        withWrites mempty mempty settings wallet $ \caps ->
+            keepEvidence caps $
+                let (network, provider) = capReads caps
+                in  action
+                        Chain
+                            { chProvider = provider
+                            , chNetwork = network
+                            , chWatched = watched
+                            , chUnregistered = unregistered
+                            , chChange = payAside oracle wallet watched caps
+                            , chIndependentOutputs = independentOutputs oracle watched
+                            }
 
--- ---------------------------------------------------------
--- Chain changes
--- ---------------------------------------------------------
+-- | A second private connection, never handed to the shipping capabilities.
+withIndependentConnection
+    :: ProviderSettings -> FilePath -> (LSQChannel -> IO a) -> IO a
+withIndependentConnection settings socket action = do
+    oracle <- newLSQChannel 16
+    unusedSubmit <- newLTxSChannel 16
+    withAsync
+        ( runNodeClient
+            (NetworkMagic (providerMagic settings))
+            socket
+            oracle
+            unusedSubmit
+            >>= either
+                throwIO
+                (const (fail "contract: independent source connection closed"))
+        )
+        $ \connection -> do
+            link connection
+            action oracle
 
-{- | Pay two ada from the wallet to an address, from another thread, and
-return once a second connection of its own sees the output there.
+{- | Read full address outputs directly, without the facade's source helper.
+The recorded private point describes the oracle, not a provider binding.
 -}
-payAside
-    :: FilePath -> Word32 -> Wallet -> Addr -> Submitter IO -> IO ()
-payAside sock magic wallet to submitter =
-    withAsync go wait
-  where
-    go = withNodeReads magic sock $ \reads' -> do
-        let side = nrProvider reads'
-        held <- withView side (`viewUTxOsAt` to)
-        tx <- payment side wallet to 2_000_000
-        submitTx submitter tx >>= \case
-            Submitted _ -> pure ()
-            Rejected reason -> fail ("contract: payment rejected: " <> show reason)
-        landed <-
-            timeout 120_000_000 $
-                let poll = do
-                        now <- withView side (`viewUTxOsAt` to)
-                        unless (length now > length held) $
-                            threadDelay 200_000 >> poll
-                in  poll
-        maybe
-            (fail "contract: the payment did not land within two minutes")
+independentOutputs :: LSQChannel -> Addr -> IO Outputs
+independentOutputs oracle address = withAcquiredLSQ oracle $ \handle -> do
+    point <- queryAcquiredLSQ handle GetChainPoint
+    found <-
+        queryAcquiredLSQ
+            handle
+            ( BlockQuery
+                (QueryIfCurrentConway (GetUTxOByAddress (Set.singleton address)))
+            )
+    UTxO outputs <-
+        either
+            (const (fail "contract: independent output oracle is not in Conway"))
             pure
-            landed
+            found
+    keepValue
+        "contract-independent-outputs"
+        ( object
+            [ "privateSource" .= ("separate LSQ connection" :: String)
+            , "point" .= show point
+            , "address" .= show address
+            , "outputs"
+                .= [ object
+                        [ "reference" .= show reference
+                        , "bytes"
+                            .= decodeUtf8
+                                (B16.encode (serialize' (eraProtVerHigh @ConwayEra) output))
+                        ]
+                   | (reference, output) <- Map.toAscList outputs
+                   ]
+            ]
+        )
+    pure (Map.toAscList outputs)
 
-{- | A payment of @lovelace@ from the wallet's largest output to an address,
-change back to the wallet, signed by the wallet's key.
--}
-payment :: Provider IO -> Wallet -> Addr -> Integer -> IO ConwayTx
-payment side wallet to lovelace = do
-    utxos <- withView side (`viewUTxOsAt` walletAddr wallet)
-    (txIn, out) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        (u : _) -> pure u
+-- | Pay from another thread; observe the actual identity and complete outputs.
+payAside
+    :: LSQChannel -> Wallet -> Addr -> Capabilities NoWitness IO -> IO ()
+payAside oracle wallet to caps = withAsync go wait
+  where
+    go = do
+        previous <- independentOutputs oracle to
+        transaction <- payment oracle wallet to 2_000_000
+        submitPayment caps transaction
+        observeWithin "payment" $ do
+            current <- independentOutputs oracle to
+            let identity = txIdTx (signedTx transaction)
+                isPayment (TxIn actual _, _) = actual == identity
+            -- Full output comparison in ContractSuite is the independent oracle;
+            -- this wait merely establishes that the change has landed.
+            pure (length current > length previous && any isPayment current)
+
+payment :: LSQChannel -> Wallet -> Addr -> Integer -> IO SignedTx
+payment oracle wallet to lovelace = do
+    heldOutputs <- independentOutputs oracle (walletAddr wallet)
+    (reference, output) <- case sortOn (Down . (^. coinTxOutL) . snd) heldOutputs of
+        pair : _ -> pure pair
         [] -> fail "contract: the funded key holds nothing"
     let fee = 1_000_000
-        Coin held = out ^. coinTxOutL
+        Coin held = output ^. coinTxOutL
         change = held - lovelace - fee
         body =
             mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton txIn
+                & inputsTxBodyL .~ Set.singleton reference
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
                         [ mkBasicTxOut to (MaryValue (Coin lovelace) mempty)
@@ -286,292 +279,262 @@ payment side wallet to lovelace = do
                 & feeTxBodyL .~ Coin fee
     unless (change > 1_000_000) $
         fail "contract: the funded key's largest output cannot pay"
-    pure (signedTx (signTx (walletSignKey wallet) (mkBasicTx body)))
+    pure (signTx (walletSignKey wallet) (mkBasicTx body))
+
+submitPayment :: Capabilities NoWitness IO -> SignedTx -> IO ()
+submitPayment caps transaction =
+    capSubmit caps transaction >>= \case
+        SubmitAccepted identity ->
+            unless
+                (identity == txIdTx (signedTx transaction))
+                (fail "contract: accepted payment identity differs from signed body")
+        SubmitRefused reason -> fail ("contract: payment rejected: " <> show reason)
+        SubmitFailed reason -> fail ("contract: payment transport failed: " <> show reason)
+        SubmitWrongNetwork configured wanted ->
+            fail
+                ( "contract: payment network differs: configured="
+                    <> show configured
+                    <> "; requested="
+                    <> show wanted
+                )
+
+observeWithin :: String -> IO Bool -> IO ()
+observeWithin what observed = do
+    let poll = observed >>= \found -> unless found (threadDelay 200_000 >> poll)
+    timeout 120_000_000 poll
+        >>= maybe
+            (fail ("contract: " <> what <> " did not land within two minutes"))
+            pure
+
+withGenerated
+    :: (ProviderSettings -> FilePath -> Wallet -> IO a) -> IO a
+withGenerated action = do
+    directory <- genesisDir
+    withGeneratedFacade
+        FundGenesis
+        directory
+        (keepValue "contract-independent-facade-source")
+        $ \_ facade ->
+            withSystemTempDirectory "contract-key" $ \keyDirectory -> do
+                let key = keyDirectory </> "funded.skey"
+                    genesisWallet = Wallet genesisAddr genesisSignKey Testnet
+                    settings = facadeSettings facade
+                    socket = facadeSocket facade
+                BS.writeFile key . B16.encode =<< uniformByteStringM 32 globalStdGen
+                funded <- loadWallet (providerMagic settings) key
+                withIndependentConnection settings socket $ \oracle ->
+                    withWrites mempty mempty settings genesisWallet $ \caps -> keepEvidence caps $ do
+                        transaction <-
+                            payment oracle genesisWallet (walletAddr funded) 1_000_000_000
+                        submitPayment caps transaction
+                        observeWithin
+                            "funding"
+                            (not . null <$> independentOutputs oracle (walletAddr funded))
+                action settings socket funded
 
 freshAddress :: IO Addr
-freshAddress =
-    addrFromKeyHashBytes Testnet <$> uniformByteStringM 28 globalStdGen
+freshAddress = addrFromKeyHashBytes Testnet <$> uniformByteStringM 28 globalStdGen
 
 freshScriptHash :: IO ScriptHash
 freshScriptHash =
     computeScriptHash . SBS.toShort <$> uniformByteStringM 16 globalStdGen
 
--- ---------------------------------------------------------
--- A generated node
--- ---------------------------------------------------------
+-- | Preserve actual constructor evidence on success and assertion failure.
+keepEvidence :: Capabilities NoWitness IO -> IO a -> IO a
+keepEvidence caps action = finally action $ do
+    facts <- capFacts caps
+    trace <- capTrace caps
+    keepValue
+        "contract-actual-provider-evidence"
+        (object ["facts" .= facts, "rawSources" .= trace])
 
-devnetMagicWord :: Word32
-devnetMagicWord = 42
+-- | The existing opt-in private fixture evidence root; never writes keys.
+keepValue :: String -> Value -> IO ()
+keepValue label value =
+    lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE" >>= \case
+        Nothing -> pure ()
+        Just root -> do
+            identity <- hashUnique <$> newUnique
+            createDirectoryIfMissing True root
+            LBS.writeFile
+                (root </> (label <> "-" <> show identity <> ".json"))
+                (encode value <> "\n")
 
-{- | Start a development node whose chain begins a few seconds from now,
-hand over its socket and an action that stops it, and stop it after.
--}
-withGeneratedNode :: (FilePath -> IO () -> IO a) -> IO a
-withGeneratedNode k = withDevnetNode True 5 $ \sock stop -> do
-    waitForSocket sock
-    k sock stop
-
-{- | Fund a fresh payment key from the genesis key with outputs in blocks,
-through the session constructor, and hand over the key file.
--}
-withFundedKey :: FilePath -> (FilePath -> IO a) -> IO a
-withFundedKey sock k = withSystemTempDirectory "contract-key" $ \dir -> do
-    let genesisKey = dir </> "genesis.skey"
-        fundedKey = dir </> "funded.skey"
-    BS.writeFile
-        genesisKey
-        (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey))
-    BS.writeFile fundedKey . B16.encode
-        =<< uniformByteStringM 32 globalStdGen
-    funded <- loadWallet devnetMagicWord fundedKey
-    genesisWallet <- loadWallet devnetMagicWord genesisKey
-    let genesisNode = External (ExternalNode sock devnetMagicWord genesisKey)
-    withNodeModeOn NodeBackend genesisNode $ \sess -> do
-        tx <-
-            payment
-                (nsProvider sess)
-                genesisWallet
-                (walletAddr funded)
-                1_000_000_000
-        let side = nsProvider sess
-        submitTx (nsSubmitter sess) tx >>= \case
-            Submitted _ -> pure ()
-            Rejected reason -> fail ("contract: funding rejected: " <> show reason)
-        landed <-
-            timeout 120_000_000 $
-                let poll = do
-                        held <- withView side (`viewUTxOsAt` walletAddr funded)
-                        when (null held) $ threadDelay 200_000 >> poll
-                in  poll
-        maybe
-            (fail "contract: funding did not land within two minutes")
-            pure
-            landed
-    k fundedKey
-
-{- | The node adapter over a node whose chain has not begun: it runs
-without the block producer's keys, so no block is ever made and its
-chain stays at the origin.
--}
-atOrigin :: (Provider IO -> IO a) -> IO a
-atOrigin use = withDevnetNode False 1 $ \sock _ -> do
-    waitForSocket sock
-    let magic = NetworkMagic devnetMagicWord
-    lsqCh <- newLSQChannel 16
-    ltxsCh <- newLTxSChannel 16
-    bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $ \_ ->
-        do
-            material <- loadTimeMaterial devnetMagicWord (takeDirectory sock)
-            use (nodeProvider nullTracer magic material (rawNodeProvider lsqCh))
-
-{- | A development node from the pinned genesis, its start @offset@ seconds
-ahead, in a directory of its own, producing blocks or not; the action that stops it is handed
-over and run again, harmlessly, at the end.
--}
-withDevnetNode
-    :: Bool -> Integer -> (FilePath -> IO () -> IO a) -> IO a
-withDevnetNode producing offset k = do
-    src <- genesisDir
-    tmp <- getTemporaryDirectory
-    dir <- createTempDirectory tmp "contract-devnet"
-    start <- addUTCTime (fromInteger offset) <$> getCurrentTime
-    mapM_
-        (\f -> copyFile (src </> f) (dir </> f))
-        [ "alonzo-genesis.json"
-        , "conway-genesis.json"
-        , "dijkstra-genesis.json"
-        , "node-config.json"
-        , "topology.json"
-        ]
-    shelley <- BS.readFile (src </> "shelley-genesis.json")
-    BS.writeFile (dir </> "shelley-genesis.json") $
-        replace
-            "PLACEHOLDER"
-            (BC.pack (formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" start))
-            shelley
-    byron <- BS.readFile (src </> "byron-genesis.json")
-    BS.writeFile (dir </> "byron-genesis.json") $
-        replace
-            "\"startTime\": 0"
-            ( "\"startTime\": "
-                <> BC.pack (show (floor (utcTimeToPOSIXSeconds start) :: Integer))
-            )
-            byron
-    createDirectoryIfMissing True (dir </> "delegate-keys")
-    createDirectoryIfMissing True (dir </> "db")
-    mapM_
-        ( \f -> do
-            copyFile
-                (src </> "delegate-keys" </> f)
-                (dir </> "delegate-keys" </> f)
-            setFileMode (dir </> "delegate-keys" </> f) ownerReadMode
-        )
-        ["delegate1.kes.skey", "delegate1.vrf.skey", "delegate1.opcert"]
-    logH <- openFile (dir </> "node.log") AppendMode
-    let sock = dir </> "node.sock"
-        args =
-            [ "run"
-            , "--config"
-            , dir </> "node-config.json"
-            , "--topology"
-            , dir </> "topology.json"
-            , "--database-path"
-            , dir </> "db"
-            , "--socket-path"
-            , sock
-            ]
-                <> if producing then producer else []
-        producer =
-            [ "--shelley-kes-key"
-            , dir </> "delegate-keys" </> "delegate1.kes.skey"
-            , "--shelley-vrf-key"
-            , dir </> "delegate-keys" </> "delegate1.vrf.skey"
-            , "--shelley-operational-certificate"
-            , dir </> "delegate-keys" </> "delegate1.opcert"
-            ]
-    bracket
-        ( do
-            (_, _, _, ph) <-
-                createProcess
-                    (proc "cardano-node" args)
-                        { std_out = UseHandle logH
-                        , std_err = UseHandle logH
-                        }
-            pure ph
-        )
-        (\ph -> terminateProcess ph >> waitForProcess ph >> hClose logH)
-        ( \ph ->
-            k sock (terminateProcess ph >> void (waitForProcess ph))
-                `onException` (BS.readFile (dir </> "node.log") >>= BC.putStrLn . lastLines)
-        )
-  where
-    lastLines = BC.unlines . reverse . take 40 . reverse . BC.lines
-    replace needle new hay =
-        let (front, back) = BS.breakSubstring needle hay
-        in  if BS.null back
-                then hay
-                else front <> new <> BS.drop (BS.length needle) back
-
-waitForSocket :: FilePath -> IO ()
-waitForSocket sock = do
-    found <- timeout 60_000_000 poll
-    maybe
-        (throwIO (userError ("contract: no node socket at " <> sock)))
-        pure
-        found
-  where
-    poll = do
-        exists <- doesFileExist sock
-        unless exists (threadDelay 100_000 >> poll)
-
--- ---------------------------------------------------------
--- The connection guard on a real node
--- ---------------------------------------------------------
-
-{- | A session on a generated node: a one-shot query and a submission
-issued from inside a view fail as 'NodeCallInView' within ten seconds —
-an unguarded call waits forever for the view to end — and the same calls
-outside the view answer.
--}
+-- | The original named guard is retired, not asserted as a generic success.
 guardOnDevnet :: Spec
 guardOnDevnet =
     describe
         "no node call inside a view by another route, on a generated devnet node (#326)"
         $ it
-            "a one-shot query and a submission inside a view fail as \
-            \NodeCallInView; outside the view the query answers and the \
-            \node accepts the submission"
-        $ withGeneratedNode
-        $ \sock _ -> withFundedKey sock $ \skey -> do
-            wallet <- loadWallet devnetMagicWord skey
-            to <- freshAddress
-            let node = External (ExternalNode sock devnetMagicWord skey)
-            withNodeModeOn NodeBackend node $ \sess -> do
-                tx <- payment (nsProvider sess) wallet to 2_000_000
-                (tip, sent) <- withView (nsProvider sess) $ \_ -> do
-                    tip <- timeout 10_000_000 (try (nsTipSlot sess))
-                    sent <- timeout 10_000_000 (try (submitTx (nsSubmitter sess) tx))
-                    pure (tip, sent)
-                fmap (either Left (const (Right ()))) tip
-                    `shouldBe` Just (Left (NodeCallInView "queryLedgerSnapshot"))
-                fmap (either Left (const (Right ()))) sent
-                    `shouldBe` Just (Left (NodeCallInView "submitTx"))
-                _ <- nsTipSlot sess
-                submitTx (nsSubmitter sess) tx >>= \case
-                    Submitted _ -> pure ()
-                    Rejected reason ->
-                        expectationFailure ("rejected outside the view: " <> show reason)
+            "a one-shot query and a submission inside a view fail as NodeCallInView; outside the view the query answers and the node accepts the submission"
+        $ pendingWith
+            "NodeCallInView and the installed node session are retired. The separately worded generic contract checks ReleasedSession."
 
-{- | The phase log, through the sessions a @singular@ command opens (#363):
-the write session, the key-free reader and the indexer backend, each on a
-generated development node. What is logged is what a command's provider and
-tip reads go through, so a constructor that stopped installing the logged
-provider fails here.
--}
 phaseLogOnDevnet :: Spec
 phaseLogOnDevnet =
     describe
         "the phase log of the sessions a command opens, on a generated devnet node (#363)"
         $ do
             it
-                "a write session logs how long it took to open, each view it \
-                \acquires and each read and tip read through it"
-                $ withGeneratedNode
-                $ \sock _ -> withFundedKey sock $ \skey -> do
-                    wallet <- loadWallet devnetMagicWord skey
-                    let node = External (ExternalNode sock devnetMagicWord skey)
-                    withLogFile $ \path -> do
-                        answer <- withNodeModeTraced (readPhaseLog path) NodeBackend node $ \sess -> do
-                            utxos <-
-                                withView (nsProvider sess) $ \v ->
-                                    viewUTxOsAt v (walletAddr wallet)
-                            _ <- nsTipSlot sess
-                            pure utxos
-                        objects <- logObjects path
-                        length (phaseLines "session-open" objects) `shouldBe` 1
-                        length (filter (== "tipSlot") (queryNames objects)) `shouldBe` 1
-                        -- the funding check's read and ours, each its own line
-                        length (filter (== "utxosAt") (queryNames objects))
-                            `shouldSatisfy` (>= 2)
-                        length answer `shouldSatisfy` (> 0)
-                        queryNames objects `shouldSatisfy` elem "protocolParams"
-                        queryNames objects `shouldSatisfy` elem "ledgerSnapshot"
-                        -- every acquisition reads its snapshot and parameters once; the
-                        -- one snapshot beyond them is the follower's start point
-                        length (filter (== "ledgerSnapshot") (queryNames objects))
-                            `shouldBe` 1 + length (filter (== "protocolParams") (queryNames objects))
-                        length (phaseLines "view" objects)
-                            `shouldSatisfy` (>= length (phaseLines "view-release" objects))
-                    -- untraced: the same session runs with nothing to write to
-                    withNodeModeOn NodeBackend node $ \sess ->
-                        void (nsTipSlot sess)
+                "a write session logs how long it took to open, each view it acquires and each read and tip read through it"
+                $ pendingWith
+                    "The installed node write session and atomic-view query schema are retired. Generic shipping HTTP logging is exercised separately."
             it "a key-free reader, as preview opens one, logs its views and reads" $
-                withGeneratedNode $ \sock _ -> withFundedKey sock $ \_ ->
-                    withLogFile $ \path -> do
-                        _ <-
-                            withNodeReadsOn (readPhaseLog path) NodeBackend devnetMagicWord sock $ \r ->
-                                withView (nrProvider r) $ \v -> do
-                                    start <- Services.slotStart v 0
-                                    Services.floorSlot v start
-                        objects <- logObjects path
-                        length (phaseLines "session-open" objects) `shouldBe` 1
-                        length (filter (== "posixMsToSlot") (queryNames objects))
-                            `shouldBe` 1
-                        length (phaseLines "view" objects) `shouldSatisfy` (>= 1)
+                pendingWith
+                    "The node reader's view and derived-query schema are retired. Generic shipping HTTP logging is exercised separately."
             it "the indexer backend logs the index's admission and its reads" $
-                withGeneratedNode $ \sock _ -> withFundedKey sock $ \skey -> do
-                    wallet <- loadWallet devnetMagicWord skey
-                    let node = External (ExternalNode sock devnetMagicWord skey)
+                pendingWith
+                    "The indexer backend and indexAdmit schema are retired without a replacement index."
+            it
+                "the shipping write capability reconciles every acquired Unbound scope, raw query and release with its trace, including startup parameter and time reads"
+                $ withGenerated
+                $ \settings socket wallet ->
+                    withIndependentConnection settings socket $ \oracle ->
+                        withLogFile $ \path -> do
+                            (answer, trace, facts) <- withWrites (backendPhaseLog path) mempty settings wallet $ \caps ->
+                                keepEvidence caps $ do
+                                    answer <- Services.withLatest (capReads caps) $ \session -> do
+                                        actual <- Services.outputsAt session (walletAddr wallet)
+                                        expected <- independentOutputs oracle (walletAddr wallet)
+                                        shouldBe actual expected
+                                        void (Services.tip session)
+                                        pure actual
+                                    trace <- capTrace caps
+                                    facts <- capFacts caps
+                                    pure (answer, trace, facts)
+                            shouldSatisfy answer (not . null)
+                            checkExtent path trace facts "cli_protocol_params"
+            it
+                "the shipping key-free reader reconciles every raw time and parameter query and released Unbound scope with its trace"
+                $ withGenerated
+                $ \settings _ _ ->
                     withLogFile $ \path -> do
-                        _ <- withNodeModeTraced (readPhaseLog path) IndexerBackend node $ \sess ->
-                            withView (nsProvider sess) $ \v ->
-                                viewUTxOsAt v (walletAddr wallet)
-                        objects <- logObjects path
-                        length (filter (== "indexAdmit") (queryNames objects))
-                            `shouldSatisfy` (>= 1)
-                        length (filter (== "utxosAt") (queryNames objects))
-                            `shouldSatisfy` (>= 1)
+                        (trace, facts) <- withReads (backendPhaseLog path) mempty settings $ \caps -> keepEvidence caps $ do
+                            Services.withLatest (capReads caps) $ \session -> do
+                                start <- Services.slotStart session 0
+                                converted <- Services.floorSlot session start
+                                shouldBe converted 0
+                            (,) <$> capTrace caps <*> capFacts caps
+                        checkExtent path trace facts "network-time"
+  where
+    -- These assertions belong to the two existing cases, not another gate.
+    -- Expected rows and counts come only from the actual constructor trace.
+    checkExtent path trace facts omittedQuery = do
+        let traced kind =
+                [ row
+                | Object row <- trace
+                , KeyMap.lookup "kind" row == Just (String kind)
+                ]
+        openingIds <- mapM (requiredText "session") (traced "acquire")
+        closingIds <- mapM (requiredText "session") (traced "release")
+        shouldSatisfy openingIds (not . null)
+        shouldBe closingIds openingIds
+        shouldBe (Set.size (Set.fromList openingIds)) (length openingIds)
+        expected <-
+            mapM
+                rawRead
+                [ row
+                | Object row <- trace
+                , KeyMap.lookup "kind" row == Just (String "raw-exchange")
+                    || KeyMap.lookup "kind" row == Just (String "raw-time")
+                ]
+        shouldSatisfy expected (not . null)
+        shouldSatisfy facts (not . null)
+        forM_ facts $ \fact -> do
+            let SessionId identity = factSession fact
+            shouldSatisfy identity (`elem` openingIds)
+            shouldBe (factBinding fact) Unbound
+            shouldBe (factVerdict fact) "Unverified"
+            shouldBe (factReason fact) (Just "NoVerifierConfigured")
+            shouldBe (factWitnessPresent fact) False
+        let assertRecords records = do
+                shouldBe
+                    (map (textField "session") (phaseLines "view" records))
+                    (map Just openingIds)
+                shouldBe
+                    (map (textField "session") (phaseLines "view-release" records))
+                    (map Just closingIds)
+                forM_ (phaseLines "view" records) $ \row -> do
+                    shouldBe (textField "binding" row) (Just "Unbound")
+                    case KeyMap.lookup "duration_ms" row of
+                        Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
+                        _ -> expectationFailure "scope acquisition lacks numeric duration_ms"
+                forM_ (phaseLines "view-release" records) $ \row ->
+                    case KeyMap.lookup "held_ms" row of
+                        Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
+                        _ -> expectationFailure "scope release lacks numeric held_ms"
+                let queries = phaseLines "query" records
+                    actual =
+                        [ ( textField "session" row
+                          , textField "query" row
+                          , numberField "answer_size" row
+                          , numberField "answer_bytes" row
+                          )
+                        | row <- queries
+                        , KeyMap.member "session" row
+                        ]
+                unless (actual == expected) $
+                    expectationFailure omissionMessage
+                forM_ queries $ \row ->
+                    case KeyMap.lookup "duration_ms" row of
+                        Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
+                        _ -> expectationFailure "raw query lacks numeric duration_ms"
+        positive <- logObjects path
+        assertRecords positive
+        -- Reach the real, completed phase-log boundary. Remove one actual
+        -- parameter/time query line, re-read it with the same log reader,
+        -- and require this same extent assertion to reject that omission.
+        original <- BS.readFile path
+        decoded <-
+            mapM (either fail pure . eitherDecodeStrict') (BC.lines original)
+        let isOmitted (Object fields) =
+                KeyMap.lookup "phase" fields == Just (String "query")
+                    && KeyMap.lookup "query" fields == Just (String omittedQuery)
+            isOmitted _ = False
+            (prefix, remainder) = break (isOmitted . snd) (zip (BC.lines original) decoded)
+        case remainder of
+            [] ->
+                expectationFailure
+                    "the omission control did not reach an actual query record"
+            _removed : suffix ->
+                finally
+                    ( do
+                        BS.writeFile path (BC.unlines (map fst (prefix <> suffix)))
+                        mutated <- logObjects path
+                        shouldBe (length mutated) (length positive - 1)
+                        result <- try @SomeException (assertRecords mutated)
+                        case result of
+                            Left failure ->
+                                shouldSatisfy (displayException failure) (isInfixOf omissionMessage)
+                            Right () ->
+                                expectationFailure
+                                    "the extent assertion accepted an omitted actual query record"
+                    )
+                    (BS.writeFile path original)
 
-                        -- the index starts from the origin: no start-point read
-                        length (filter (== "ledgerSnapshot") (queryNames objects))
-                            `shouldBe` length (filter (== "protocolParams") (queryNames objects))
+    omissionMessage =
+        "actual phase query records differ from the constructor's complete raw-read trace"
+
+    requiredText field row = case KeyMap.lookup field row of
+        Just (String value) -> pure value
+        _ -> fail ("actual trace lacks text field " <> show field)
+
+    rawRead row = do
+        identity <- requiredText "session" row
+        (query, body, bytes) <- case KeyMap.lookup "kind" row of
+            Just (String "raw-time") -> pure ("network-time", Object row, Nothing)
+            Just (String "raw-exchange") -> do
+                query <- requiredText "call" row
+                result <- case KeyMap.lookup "result" row of
+                    Just (Object fields) -> pure fields
+                    _ -> fail "actual HTTP trace lacks a result object"
+                encoded <- requiredText "bodyHex" result
+                bytes <- either fail pure (B16.decode (encodeUtf8 encoded))
+                parsed <- either (fail . show) pure (Wire.parseBody bytes)
+                pure (query, parsed, Just (toInteger (BS.length bytes)))
+            _ -> fail "the trace row is not an actual successful raw read"
+        let cardinality = case body of
+                Array rows -> toInteger (length rows)
+                Object _ -> 1
+                _ -> 0
+        pure (Just identity, Just query, Just cardinality, bytes)

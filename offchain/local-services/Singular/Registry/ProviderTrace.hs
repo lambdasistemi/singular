@@ -16,47 +16,30 @@ its own tracer, with its context already added by @contramap@, so the reads
 land under the action they serve. Wrapping again in an inner scope is how a
 read is placed there; the provider underneath is the same.
 
-The sessions and views a decorated provider hands out carry the same tracer
-('sessionTracer', 'viewTracer'), so the local services computed over them
+The sessions a decorated provider hands out carry the same tracer
+('sessionTracer'), so the local services computed over them
 report into the scope too.
 -}
 module Singular.Registry.ProviderTrace
     ( tracedLedgerProvider
-    , tracedProvider
     , localSource
     , nodeSource
     ) where
 
-import Control.Exception (SomeException, finally, throwIO, try)
-import Control.Monad (unless)
-import Control.Tracer (Tracer, traceWith)
-import Data.ByteString (ByteString)
-import Data.ByteString.Base16 qualified as B16
-import Data.IORef (newIORef, readIORef, writeIORef)
+import Control.Tracer (Tracer)
 import Data.Text (Text)
-import Data.Text.Encoding qualified as TE
 
-import Cardano.Slotting.Slot (SlotNo (..))
 import Singular.Registry.Evidence (Evidenced (..), SessionId (..))
 import Singular.Registry.LedgerProvider
     ( LedgerProvider (..)
     , Session (..)
-    )
-import Singular.Registry.Provider
-    ( ChainPoint (..)
-    , Provider (..)
-    , View (..)
     )
 import Singular.Registry.Trace
     ( ErrorClass
     , Query (..)
     , QueryEnd (..)
     , ReadEvent (..)
-    , ViewOpening (..)
-    , ViewRelease (..)
-    , errorClassOf
     , failureTag
-    , startTimer
     , timedTrace
     )
 
@@ -123,60 +106,3 @@ ended size = \case
     Right (Right a) -> Answered (size a)
     Right (Left failure) -> QueryFailed (failureTag failure)
     Left thrown -> QueryFailed thrown
-
-{- | The node's view provider, traced: each acquisition with its chain point
-and duration, each read through the view, and each release with how long the
-view was held.
--}
-tracedProvider :: Tracer IO ReadEvent -> Provider IO -> Provider IO
-tracedProvider tracer inner = Provider $ \act -> do
-    elapsed <- startTimer
-    acquired <- newIORef False
-    let acquiring v = do
-            writeIORef acquired True
-            ms <- elapsed
-            let point = viewPoint v
-            traceWith tracer . ViewOpened $
-                NodeViewOpened
-                    { openedElapsed = ms
-                    , openedSlot = unSlotNo (cpSlot point)
-                    , openedHash = hexText (cpBlockHash point)
-                    , openedEra = cpEra point
-                    }
-            held <- startTimer
-            act (traced v)
-                `finally` (held >>= traceWith tracer . ViewReleased . NodeViewHeld)
-    try @SomeException (withView inner acquiring) >>= \case
-        Right a -> pure a
-        Left e -> do
-            got <- readIORef acquired
-            unless got $ do
-                ms <- elapsed
-                traceWith tracer (ViewOpened (NodeViewFailed ms (errorClassOf e)))
-            throwIO e
-  where
-    traced v =
-        v
-            { viewUTxOsAt = read' "utxosAt" (Just . length) . viewUTxOsAt v
-            , viewTimeContext = read' "networkTime" one (viewTimeContext v)
-            , viewResolvedOutputs =
-                read' "resolvedOutputs" (Just . length) . viewResolvedOutputs v
-            , viewTracer = tracer
-            , viewScriptRegistered =
-                read' "scriptRegistered" one . viewScriptRegistered v
-            }
-    one = const (Just 1)
-    read' :: Text -> (a -> Maybe Int) -> IO a -> IO a
-    read' name size =
-        timedTrace tracer $ \ms end ->
-            Queried
-                Query
-                    { queryName = name
-                    , querySource = nodeSource
-                    , querySession = Nothing
-                    , queryElapsed = ms
-                    , queryEnd = either QueryFailed (Answered . size) end
-                    }
-
-hexText :: ByteString -> Text
-hexText = TE.decodeUtf8 . B16.encode

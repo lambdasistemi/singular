@@ -6,6 +6,7 @@ License     : Apache-2.0
 module Conformance.Run.Environment
     ( Env (..)
     , envCaps
+    , envActor
     , pinnedTo
     , withHeldView
     , pinnedProvider
@@ -79,6 +80,7 @@ import Cardano.Node.Client.E2E.Setup
     ( Ed25519DSIGN
     , SignKeyDSIGN
     )
+import Conformance.Run.Actor (Actor (..))
 import PlutusCore.Data qualified as PLC
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
@@ -99,7 +101,6 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider (SubmitResult)
 import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.Node (funderAddr, funderSignKey)
 import Singular.Registry.SessionEvidence (FactRecord)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (SignedTx)
@@ -110,6 +111,7 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     )
 import Singular.Registry.Types (OnChainTxOutRef (..))
+import Singular.Registry.Wallet (Wallet (..))
 
 import Conformance.Mirror
     ( Mirror
@@ -124,7 +126,8 @@ import Conformance.Mirror
 -- ---------------------------------------------------------
 
 data Env = Env
-    { envCfg :: CageConfig
+    { envWallet :: Wallet
+    , envCfg :: CageConfig
     , envProv :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     , envSubmit :: SignedTx -> IO SubmitResult
     -- ^ The session's signed-only write
@@ -299,18 +302,17 @@ checkNamingPins appCode witnessCode = do
         "naming"
         ("application 0x" <> appHex <> " witness 0x" <> witnessHex)
 
-{- | The wallet every actor of this run is funded from. On the factory
-devnet it is the genesis UTxO key, as it always was; in external-node
-mode it is the joiner's own signing key
-(`Singular.Registry.Node`). The name is kept so the funding sites
-below read unchanged.
--}
-genesisAddr :: Addr
-genesisAddr = funderAddr
+-- | The actual funding address selected for this run.
+genesisAddr :: Env -> Addr
+genesisAddr = walletAddr . envWallet
 
--- | The signing key matching 'genesisAddr'.
-genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
-genesisSignKey = funderSignKey
+-- | The signing key matching this run's funding address.
+genesisSignKey :: Env -> SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = walletSignKey . envWallet
+
+-- | Carry the same wallet into helpers used before a registry exists.
+envActor :: Env -> Actor
+envActor env = Actor (envWallet env) (envCaps env)
 
 {- | The genesis dir must carry the devnet files before the node
 spawns; otherwise @prepareTmpDir@ fails mid-copy. Points at

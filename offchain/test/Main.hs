@@ -27,15 +27,11 @@ import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
-import Singular.Registry.IndexerViewSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
 import Singular.Registry.LocalServicesCallerSpec qualified
 import Singular.Registry.NetworkTimeSpec qualified
-import Singular.Registry.NodeCleanupSpec qualified
-import Singular.Registry.NodeSpec qualified
-import Singular.Registry.NodeWaitSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
@@ -103,9 +99,6 @@ main = hspec $ do
         (tagged "Singular.Registry.FailureMatch" [Provider])
         Singular.Registry.FailureMatchSpec.spec
     describe
-        (tagged "Singular.Registry.NodeCleanup" [Provider, Recovery])
-        Singular.Registry.NodeCleanupSpec.spec
-    describe
         (tagged "Singular.Registry.NetworkTime" [Time, Provider])
         Singular.Registry.NetworkTimeSpec.spec
     describe
@@ -121,16 +114,10 @@ main = hspec $ do
         (tagged "Singular.Registry.LocalServicesCaller" [Provider])
         Singular.Registry.LocalServicesCallerSpec.spec
     describe
-        (tagged "Singular.Registry.Node" [Provider, Wallet])
-        Singular.Registry.NodeSpec.spec
-    describe
-        (tagged "Singular.Registry.NodeWait" [Time, Provider])
-        Singular.Registry.NodeWaitSpec.spec
-    describe
         (tagged "Singular.Registry.OneView" [Provider])
         Singular.Registry.OneViewSpec.spec
     describe
-        (tagged "Singular.Registry.PhaseLog" [History, Recovery])
+        (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
         (tagged "Singular.Registry.Provider" [Provider])
@@ -138,9 +125,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.Private.Archive" [History, Recovery])
         Singular.Registry.Private.ArchiveSpec.spec
-    describe
-        (tagged "Singular.Registry.IndexerView" [Provider])
-        Singular.Registry.IndexerViewSpec.spec
     describe
         (tagged "Singular.Registry.Lifecycle" [Provider])
         Singular.Registry.LifecycleSpec.spec

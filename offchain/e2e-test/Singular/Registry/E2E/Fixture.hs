@@ -7,6 +7,9 @@ including when an accepting or refusing assertion fails.
 -}
 module Singular.Registry.E2E.Fixture
     ( withDevnetCapabilities
+    , withDevnetSource
+    , withRecordedWrites
+    , keepPrivateValue
     ) where
 
 import Cardano.Ledger.BaseTypes (Network (Testnet))
@@ -17,9 +20,9 @@ import Cardano.Node.Client.E2E.Setup
     )
 import Control.Concurrent.MVar (newMVar, withMVar)
 import Control.Exception (finally)
-import Control.Tracer (nullTracer)
-import Data.Aeson (encode, object, (.=))
+import Data.Aeson (Value, encode, object, (.=))
 import Data.ByteString.Lazy qualified as LBS
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Unique (hashUnique, newUnique)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Evidence (NoWitness)
@@ -28,7 +31,8 @@ import Singular.Registry.Private.Facade
     , GenesisFunding (..)
     , withGeneratedFacade
     )
-import Singular.Registry.Terminal (withWrites)
+import Singular.Registry.ProviderSettings (ProviderSettings)
+import Singular.Registry.Terminal (withWritesObserved)
 import Singular.Registry.Wallet (Wallet (..))
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
@@ -37,16 +41,25 @@ import System.IO (IOMode (AppendMode), hFlush, withBinaryFile)
 
 withDevnetCapabilities
     :: (Integer -> Capabilities NoWitness IO -> IO a) -> IO a
-withDevnetCapabilities action = do
+withDevnetCapabilities action =
+    withDevnetSource (\start _ _ caps -> action start caps)
+
+{- | Private source inspection is confined to the E2E fixture callback.
+Ordinary consumers still receive only withDevnetCapabilities.
+-}
+withDevnetSource
+    :: (Integer -> Facade -> Wallet -> Capabilities NoWitness IO -> IO a)
+    -> IO a
+withDevnetSource action = do
     directory <- genesisDir
     let wallet = Wallet genesisAddr genesisSignKey Testnet
-        run observer keep =
+        run observer =
             withGeneratedFacade FundGenesis directory observer $ \start facade ->
-                withWrites nullTracer nullTracer (facadeSettings facade) wallet $ \caps ->
-                    action start caps `finally` keep caps
+                withRecordedWrites (facadeSettings facade) wallet $ \caps ->
+                    action start facade wallet caps
     evidence <- lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE"
     case evidence of
-        Nothing -> run (const (pure ())) (const (pure ()))
+        Nothing -> run (const (pure ()))
         Just root -> do
             identity <- hashUnique <$> newUnique
             let destination = root </> ("e2e-source-" <> show identity)
@@ -61,10 +74,45 @@ withDevnetCapabilities action = do
                             LBS.hPut handle (encode event <> "\n")
                             hFlush handle
                         )
-                        ( \caps -> do
-                            facts <- capFacts caps
-                            trace <- capTrace caps
-                            LBS.writeFile
-                                (destination </> "actual-provider-evidence.json")
-                                (encode (object ["facts" .= facts, "rawSources" .= trace]) <> "\n")
-                        )
+
+-- | Retain each actual constructor even when funding refuses before its body.
+withRecordedWrites
+    :: ProviderSettings
+    -> Wallet
+    -> (Capabilities NoWitness IO -> IO a)
+    -> IO a
+withRecordedWrites settings wallet action = do
+    observed <- newIORef Nothing
+    finally
+        ( withWritesObserved
+            mempty
+            mempty
+            (writeIORef observed . Just)
+            settings
+            wallet
+            action
+        )
+        ( readIORef observed
+            >>= maybe
+                (pure ())
+                ( \caps -> do
+                    facts <- capFacts caps
+                    trace <- capTrace caps
+                    keepPrivateValue
+                        "e2e-actual-provider-evidence"
+                        (object ["facts" .= facts, "rawSources" .= trace])
+                )
+        )
+
+-- | The existing opt-in private fixture directory. No key material is saved.
+keepPrivateValue :: String -> Value -> IO ()
+keepPrivateValue label value = do
+    evidence <- lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE"
+    case evidence of
+        Nothing -> pure ()
+        Just root -> do
+            identity <- hashUnique <$> newUnique
+            createDirectoryIfMissing True root
+            LBS.writeFile
+                (root </> (label <> "-" <> show identity <> ".json"))
+                (encode value <> "\n")

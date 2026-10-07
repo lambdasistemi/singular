@@ -16,8 +16,9 @@ module Conformance.Run.Submit
     , millis
     ) where
 
+import Conformance.Run.Actor (Actor (..), actorSigningKey)
+
 import Conformance.Run.Environment
-import Singular.Registry.Evidence qualified as Cage
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -30,7 +31,7 @@ import GHC.Clock (getMonotonicTime)
 
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Capabilities (capConfirm, capSubmit)
 import Singular.Registry.LedgerProvider (SubmitResult (..))
 import Singular.Registry.Signing (SignedTx, signTx, signedTx)
 import Singular.Registry.Wait (tryOutcome)
@@ -109,7 +110,7 @@ does not attribute fails the run naming the mismatch.
 submitExpectRefusedControl
     :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
 submitExpectRefusedControl env row verdict marker tx = do
-    let signed = signTx genesisSignKey tx
+    let signed = signTx (genesisSignKey env) tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
         SubmitRefused reason ->
@@ -249,7 +250,7 @@ reported, never relabelled.
 submitExpectRefused
     :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
 submitExpectRefused env row verdict marker tx = do
-    let signed = signTx genesisSignKey tx
+    let signed = signTx (genesisSignKey env) tx
     result <- submitTxResilient (envSubmit env) signed
     case result of
         SubmitRefused reason ->
@@ -271,13 +272,13 @@ submitExpectRefused env row verdict marker tx = do
         unavailable -> failWith ("submission unavailable: " <> show unavailable)
 
 submitWithGenesis
-    :: Capabilities Cage.NoWitness IO -> ConwayTx -> IO ConwayTx
+    :: Actor -> ConwayTx -> IO ConwayTx
 submitWithGenesis caps unsignedTx = do
-    let signed = signTx genesisSignKey unsignedTx
+    let signed = signTx (actorSigningKey caps) unsignedTx
         tx = signedTx signed
-    result <- submitTxResilient (capSubmit caps) signed
+    result <- submitTxResilient (capSubmit (actorCaps caps)) signed
     case result of
-        SubmitAccepted _ -> capConfirm caps tx >> pure tx
+        SubmitAccepted _ -> capConfirm (actorCaps caps) tx >> pure tx
         SubmitRefused reason ->
             failWith
                 ( "transaction rejected: "

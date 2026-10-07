@@ -1,10 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
-{- | Actual confirmations and named missing-transaction timeouts on the
-existing generated private devnet. Only its fixture wallet can submit.
--}
+-- | Actual HTTP confirmations and missing-output waits on a private devnet.
 module ConfirmationSmoke (confirmationSmoke) where
 
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
@@ -17,24 +15,26 @@ import Cardano.Ledger.Api.Tx.Body
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , SlotNo (..)
+    , StrictMaybe (..)
+    )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Val (inject, (<->))
+import Cardano.Node.Client.E2E.Setup qualified as Setup
 import Cardano.Node.Client.N2C.Connection
     ( newLSQChannel
     , newLTxSChannel
     , runNodeClient
     )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as Node
 import Cardano.Slotting.Time (SystemStart (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Serialise (deserialiseOrFail)
-import Control.Concurrent.Async (concurrently, withAsync)
+import Control.Concurrent.Async (concurrently, link, withAsync)
 import Control.Exception (try)
 import Control.Monad (unless)
-import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
@@ -49,194 +49,190 @@ import Ouroboros.Consensus.HardFork.History.Summary
     , EraSummary (..)
     )
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import Singular.Registry.NetworkTime (NetworkTimeFailure)
-import Singular.Registry.Node
-    ( NodeMode (..)
-    , NodeSession (..)
-    , SubmitResult (..)
-    , WaitFailure (..)
-    , WaitStage (..)
-    , Wallet (..)
-    , adaptProvider
-    , awaitConnection
-    , awaitTx
-    , boundedSubmitter
-    , confirmDeadline
-    , signTx
-    , signedSubmitter
-    , signedTx
-    , submissionBound
-    , submitSigned
-    , walletForMode
-    , withDevnetIndexer
+import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Confirmation
+    ( ConfirmationFailure (..)
+    , confirmationWindow
+    , newIOConfirmationRuntime
     )
-import Singular.Registry.Node.Confirmation (windowReadBound)
-import Singular.Registry.Node.Options (Backend (NodeBackend))
-import Singular.Registry.Node.RawView
-    ( RawProvider (..)
-    , RawView (..)
-    , rawNodeProvider
+import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.Private.Facade
+    ( Facade (..)
+    , GenesisFunding (..)
+    , withGeneratedFacade
     )
-import Singular.Registry.Node.Session
-    ( guardRawConnection
-    , serveSession
+import Singular.Registry.Private.RawFacts
+    ( RawFacts (..)
+    , withRawFacts
     )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TimeMaterial (loadTimeMaterial)
-import Singular.Registry.Trace (startTimer)
+import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.Terminal (withWrites)
+import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
+import Singular.Registry.Wallet (Wallet (..))
+import System.Directory (copyFile)
 import System.FilePath (takeDirectory, (</>))
 
 confirmationSmoke :: FilePath -> FilePath -> IO ()
-confirmationSmoke output sock = withDevnetIndexer sock $ do
-    opened <- startTimer
-    lsq <- newLSQChannel 16
-    ltxs <- newLTxSChannel 16
-    let magic = NetworkMagic 42
-    withAsync (runNodeClient magic sock lsq ltxs) $ \client -> do
-        (node, submit, raw) <-
-            guardRawConnection
-                client
-                (mkN2CProvider lsq)
-                (boundedSubmitter submissionBound (mkN2CSubmitter ltxs))
-                (rawNodeProvider lsq)
-        material <- loadTimeMaterial 42 (takeDirectory sock)
-        let provider = adaptProvider nullTracer magic material raw
-        awaitConnection magic sock client provider
-        -- Retain only the missing confirmation context, not the completed
-        -- independent evaluation/conversion recording campaign.
-        (startMs, horizon) <- withRawView raw $ \view -> do
-            SystemStart start <- rawSystemStart view
-            bytes <- rawEraHistory view
-            snapshot <- rawSnapshot view
-            BS.writeFile (output </> "confirmation-era-history.cbor") bytes
-            LBS.writeFile (output </> "confirmation-point.json") $
-                encode
-                    ( object
-                        [ "point" .= show (Node.ledgerChainPoint snapshot)
-                        , "era" .= Node.ledgerCurrentEra snapshot
-                        , "tipSlot" .= Cage.unSlotNo (Node.ledgerTipSlot snapshot)
-                        ]
-                    )
-            summaries <-
-                either (fail . show) pure (deserialiseOrFail (LBS.fromStrict bytes))
-            end <- case reverse summaries of
-                EraSummary{eraEnd = EraEnd bound} : _ -> pure (boundSlot bound)
-                _ -> fail "ConfirmationSmokeMissingFiniteHorizon"
-            pure (floor (utcTimeToPOSIXSeconds start * 1000), end)
-        serveSession
-            nullTracer
-            opened
-            Nothing
-            NodeBackend
-            Devnet
-            magic
-            sock
-            provider
-            (node, submit)
-            $ \session -> do
-                wallet <- walletForMode Devnet
-                point <- Cage.withView (nsProvider session) (pure . Cage.viewPoint)
-                let upper = SlotNo (Cage.unSlotNo (Cage.cpSlot point) + 50)
-                    -- Independent arithmetic for this exact generated fixture:
-                    -- 100ms slots and an unchanged finite raw history.
-                    initialEnd = startMs + 100 * toInteger (Cage.unSlotNo horizon)
-                    finiteDeadline = startMs + 100 * toInteger (Cage.unSlotNo upper) + 120_000
-                unless (upper < horizon && finiteDeadline > initialEnd) $
-                    fail "ConfirmationSmokeNotShortHorizon"
-                finite <- payment session wallet (SJust upper)
-                confirmDeadline (nsProvider session) finite >>= \actual ->
-                    unless
-                        (actual == finiteDeadline)
-                        (fail "ConfirmationSmokeFiniteDeadlineMismatch")
-                landedFinite <- sendAndConfirm session wallet finite
-                unbounded <- payment session wallet SNothing
-                landedUnbounded <- sendAndConfirm session wallet unbounded
-                -- Refusal at the actual finite ledger bound must never fall
-                -- back to the local wait margin.
-                refusal <-
-                    try @NetworkTimeFailure $
-                        confirmDeadline
-                            (nsProvider session)
+confirmationSmoke output genesisDirectory =
+    withGeneratedFacade FundGenesis genesisDirectory (const (pure ())) $ \_ facade -> do
+        let socket = facadeSocket facade
+            wallet = Wallet Setup.genesisAddr Setup.genesisSignKey Testnet
+        mapM_
+            (\name -> copyFile (takeDirectory socket </> name) (output </> name))
+            [ "byron-genesis.json"
+            , "shelley-genesis.json"
+            , "alonzo-genesis.json"
+            , "conway-genesis.json"
+            , "dijkstra-genesis.json"
+            , "node-config.json"
+            ]
+        lsq <- newLSQChannel 16
+        unusedSubmission <- newLTxSChannel 16
+        withAsync
+            (runNodeClient (NetworkMagic 42) socket lsq unusedSubmission)
+            $ \client -> do
+                link client
+                (startMs, horizon, point) <- withRawFacts lsq $ \facts -> do
+                    SystemStart start <- factSystemStart facts
+                    bytes <- factEraHistory facts
+                    snapshot <- factSnapshot facts
+                    BS.writeFile (output </> "confirmation-era-history.cbor") bytes
+                    LBS.writeFile (output </> "confirmation-point.json") $
+                        encode $
+                            object
+                                [ "point" .= show (Node.ledgerChainPoint snapshot)
+                                , "era" .= Node.ledgerCurrentEra snapshot
+                                , "tipSlot" .= Node.ledgerTipSlot snapshot
+                                ]
+                    summaries <-
+                        either (fail . show) pure (deserialiseOrFail (LBS.fromStrict bytes))
+                    end <- case reverse summaries of
+                        EraSummary{eraEnd = EraEnd bound} : _ -> pure (boundSlot bound)
+                        _ -> fail "ConfirmationSmokeMissingFiniteHorizon"
+                    pure (floor (utcTimeToPOSIXSeconds start * 1000), end, snapshot)
+                withWrites mempty mempty (facadeSettings facade) wallet $ \caps -> do
+                    let SlotNo tip = Node.ledgerTipSlot point
+                        upper = SlotNo (tip + 50)
+                        SlotNo horizonSlot = horizon
+                        SlotNo upperSlot = upper
+                        -- Independent arithmetic for the retained generated fixture.
+                        initialEnd = startMs + 100 * toInteger horizonSlot
+                        finiteDeadline = startMs + 100 * toInteger upperSlot + 120_000
+                        (network, provider) = capReads caps
+                        window tx = do
+                            runtime <- newIOConfirmationRuntime
+                            confirmationWindow runtime provider network tx
+                    unless (upper < horizon && finiteDeadline > initialEnd) $
+                        fail "ConfirmationSmokeNotShortHorizon"
+                    finite <- payment caps wallet (SJust upper)
+                    selected <- window finite >>= either (fail . show) pure
+                    unless (fst selected == finiteDeadline) $
+                        fail "ConfirmationSmokeFiniteDeadlineMismatch"
+                    landedFinite <- sendAndConfirm caps wallet finite
+                    unbounded <- payment caps wallet SNothing
+                    landedUnbounded <- sendAndConfirm caps wallet unbounded
+                    -- Parent NOTE-030 opens the pinned final era. The former
+                    -- raw-history-end refusal is retired, not counted as passed.
+                    beyondRecorded <-
+                        window
                             ( finite
                                 & bodyTxL . vldtTxBodyL
-                                    .~ ValidityInterval SNothing (SJust (SlotNo (Cage.unSlotNo horizon + 1)))
+                                    .~ ValidityInterval SNothing (SJust (SlotNo (horizonSlot + 1)))
                             )
-                case refusal of
-                    Left _ -> pure ()
-                    Right _ -> fail "ConfirmationSmokeAcceptedPastHorizonLedgerBound"
-                let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
-                    missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
-                (finiteFailure, unboundedFailure) <-
-                    concurrently
-                        (expectTimeout session missingFinite (Just finiteDeadline) initialEnd)
-                        (expectTimeout session missingUnbounded Nothing initialEnd)
-                LBS.writeFile (output </> "confirmation-smoke.json") $
-                    encode $
-                        object
-                            [ "networkMagic" .= (42 :: Int)
-                            , "initialPoint" .= show point
-                            , "initialHorizonSlot" .= Cage.unSlotNo horizon
-                            , "initialHorizonEndMs" .= initialEnd
-                            , "finiteUpperSlot" .= Cage.unSlotNo upper
-                            , "finiteDeadlineMs" .= finiteDeadline
-                            , "confirmedFiniteTx" .= show (txIdTx landedFinite)
-                            , "confirmedNoUpperTx" .= show (txIdTx landedUnbounded)
-                            , "finiteMissingTx" .= show (txIdTx missingFinite)
-                            , "noUpperMissingTx" .= show (txIdTx missingUnbounded)
-                            , "finiteTimeout" .= show finiteFailure
-                            , "noUpperTimeout" .= show unboundedFailure
-                            , "ledgerPastHorizonRefusal"
-                                .= either show (const "unexpected acceptance") refusal
-                            , "limit"
-                                .= ( "Private key payments and confirmation waits only; registry journey remains separately required"
-                                        :: String
-                                   )
-                            ]
+                            >>= either (fail . show) pure
+                    let beyondDeadline = startMs + 100 * toInteger (horizonSlot + 1) + 120_000
+                    unless (fst beyondRecorded == beyondDeadline) $
+                        fail "ConfirmationSmokeOpenedFinalEraMismatch"
+                    runtime <- newIOConfirmationRuntime
+                    refusal <-
+                        confirmationWindow runtime provider (Cage.Network 999) finite
+                    case refusal of
+                        Left (ConfirmationAcquireFailure (Cage.WrongNetwork actual requested))
+                            | actual == network && requested == Cage.Network 999 -> pure ()
+                        _ -> fail "ConfirmationSmokeWrongNetworkWindowDidNotRefuse"
+                    let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
+                        missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
+                    (finiteFailure, unboundedFailure) <-
+                        concurrently
+                            (expectTimeout caps missingFinite (Just finiteDeadline) initialEnd)
+                            (expectTimeout caps missingUnbounded Nothing initialEnd)
+                    LBS.writeFile (output </> "confirmation-smoke.json") $
+                        encode $
+                            object
+                                [ "networkMagic" .= (42 :: Int)
+                                , "initialPoint" .= show (Node.ledgerChainPoint point)
+                                , "initialHorizonSlot" .= horizonSlot
+                                , "initialHorizonEndMs" .= initialEnd
+                                , "finiteUpperSlot" .= upperSlot
+                                , "finiteDeadlineMs" .= finiteDeadline
+                                , "confirmedFiniteTx" .= show (txIdTx landedFinite)
+                                , "confirmedNoUpperTx" .= show (txIdTx landedUnbounded)
+                                , "finiteMissingTx" .= show (txIdTx missingFinite)
+                                , "noUpperMissingTx" .= show (txIdTx missingUnbounded)
+                                , "finiteTimeout" .= show finiteFailure
+                                , "noUpperTimeout" .= show unboundedFailure
+                                , "wrongNetworkWindowRefusal"
+                                    .= either show (const "unexpected acceptance") refusal
+                                , "pastRecordedHorizonDeadlineMs" .= fst beyondRecorded
+                                , "retiredLedgerPastHorizonRefusal"
+                                    .= ( "Parent NOTE-030 opens the final era; a raw recording end is not a conversion refusal. Ledger body upper bounds remain capped under NOTE-031."
+                                            :: String
+                                       )
+                                , "limit"
+                                    .= ( "Private HTTP key payments and confirmation waits only; registry journey remains separately required"
+                                            :: String
+                                       )
+                                ]
 
-payment :: NodeSession -> Wallet -> StrictMaybe SlotNo -> IO ConwayTx
-payment session wallet upper = Cage.withView (nsProvider session) $ \view -> do
-    held <- Cage.viewUTxOsAt view (walletAddr wallet)
+payment
+    :: Capabilities NoWitness IO
+    -> Wallet
+    -> StrictMaybe SlotNo
+    -> IO ConwayTx
+payment caps wallet upper = Cage.withLatest (capReads caps) $ \session -> do
+    held <- Cage.outputsAt session (walletAddr wallet)
     case held of
         [] -> fail "ConfirmationSmokeEmptyFixtureWallet"
         _ -> do
             let value = foldMap ((^. valueTxOutL) . snd) held
             pure $
-                mkBasicTx
-                    ( mkBasicTxBody
+                mkBasicTx $
+                    mkBasicTxBody
                         & inputsTxBodyL .~ Set.fromList (map fst held)
                         & outputsTxBodyL
                             .~ StrictSeq.singleton
                                 (mkBasicTxOut (walletAddr wallet) (value <-> inject (Coin 1_000_000)))
                         & feeTxBodyL .~ Coin 1_000_000
                         & vldtTxBodyL .~ ValidityInterval SNothing upper
-                    )
 
-sendAndConfirm :: NodeSession -> Wallet -> ConwayTx -> IO ConwayTx
-sendAndConfirm session wallet tx = do
+sendAndConfirm
+    :: Capabilities NoWitness IO -> Wallet -> ConwayTx -> IO ConwayTx
+sendAndConfirm caps wallet tx = do
     let signed = signTx (walletSignKey wallet) tx
-    submitSigned (signedSubmitter (nsSubmitter session)) signed >>= \case
-        Submitted _ -> awaitTx (signedTx signed) >> pure (signedTx signed)
-        Rejected reason -> fail ("ConfirmationSmokePrivatePaymentRejected " <> show reason)
+    capSubmit caps signed >>= \case
+        Cage.SubmitAccepted _ -> capConfirm caps (signedTx signed) >> pure (signedTx signed)
+        other -> fail ("ConfirmationSmokePrivatePaymentRejected " <> show other)
 
 expectTimeout
-    :: NodeSession -> ConwayTx -> Maybe Integer -> Integer -> IO WaitFailure
-expectTimeout session tx exact initialEnd = do
+    :: Capabilities NoWitness IO
+    -> ConwayTx
+    -> Maybe Integer
+    -> Integer
+    -> IO WaitFailure
+expectTimeout caps tx exact initialEnd = do
     before <- nowMs
-    result <- try @WaitFailure (awaitTx tx)
+    result <- try @WaitFailure (capConfirm caps tx)
     after <- nowMs
     failure <-
         either
             pure
             (const (fail "ConfirmationSmokeMissingTransactionAppeared"))
             result
-    tip <- nsTipTime session
+    tip <- Cage.withLatest (capReads caps) Cage.tip
     let expected = fromMaybe (before + 300_000) exact
-        -- The no-upper clock is read after the bounded acquired-context
-        -- read. Bracket it by that public bound, including acquisition time.
-        upperExpected =
-            fromMaybe
-                (before + fromIntegral windowReadBound * 1000 + 300_000)
-                exact
+        upperExpected = fromMaybe (before + 30_000 + 300_000) exact
     unless
         ( waitStage failure == SessionConfirmationWait
             && waitTxId failure == txIdTx tx
@@ -246,12 +242,12 @@ expectTimeout session tx exact initialEnd = do
                     deadline >= expected
                         && deadline <= upperExpected
                         && deadline > initialEnd
-                        && tip >= deadline
+                        && toInteger (Cage.observedBlockTime tip) * 1000 >= deadline
                 )
                 (waitClosedAt failure)
             && after >= expected
             && maybe
-                (waitBound failure == 304 && waitElapsed failure >= 300)
+                (waitBound failure == 310 && waitElapsed failure >= 300)
                 (const True)
                 exact
         )

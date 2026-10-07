@@ -87,7 +87,7 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     , TokenId (..)
     )
-import Singular.Registry.Node.IndexerView (IndexerViewFailure (..))
+import Singular.Registry.LedgerProvider (ReadFailure (..))
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -811,7 +811,7 @@ journal = describe "the journal of a write" $ do
             let refusal =
                     ErrorCall
                         ( displayException
-                            (IndexerRestoring (Just (SlotNo 5113)) (Just (SlotNo 7019)))
+                            (BackendReadFailure "the provider read was unavailable")
                         )
                 held = ("pendingRequest", Aeson.toJSON ("ab#0" :: T.Text))
                 failures =

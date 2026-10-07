@@ -6,6 +6,7 @@ License     : Apache-2.0
 module Conformance.Support.Programs (spec) where
 
 import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL)
+import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Conformance.Book (renderBook)
 import Conformance.Edge.Programs
     ( Classification (..)
@@ -22,7 +23,6 @@ import Conformance.Edge.Programs
     , recordsOf
     )
 import Conformance.Rows (Row (..), loadRows)
-import Conformance.Run.Environment (genesisAddr)
 import Conformance.Run.Live (tamperedRefunds)
 import Conformance.Story.Live (validateLive)
 import Conformance.Story.Live qualified as Live
