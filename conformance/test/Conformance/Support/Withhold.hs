@@ -108,7 +108,7 @@ withForwarder asset check = do
         withWithholding
             ("http://127.0.0.1:" <> show port <> "/api/v1")
             asset
-            (\w -> check w seen)
+            (`check` seen)
 
 historyOf :: (Text, Text) -> [(Text, Text)]
 historyOf (policy, name) =

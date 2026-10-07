@@ -407,7 +407,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         "public history it needs withheld"
                         (judge receipts controlsStory)
                 altered f = alter "provoke inspect-without-history" "process" f rs
-                notHeld = \ss -> not (null ss) && all isNotHeld ss
+                notHeld ss = not (null ss) && all isNotHeld ss
             withheldClause rs `shouldBe` [Held]
             -- a forwarder that withheld nothing: the withholding never
             -- reached the history read
