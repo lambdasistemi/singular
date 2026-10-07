@@ -28,7 +28,7 @@ law, like `checkPins` today.
 
 | slice | runnable outcome | starts after |
 |---|---|---|
-| PR1: the token is the registry | provider query and mint record; resolver and named refusals; provider-first lazy-wallet reference search; token-only existing commands; no registry.json; complete create publication funding before boot; Bob's connected hosted journey without Alice files; explicit saved-selector promise retirement | main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed` |
+| PR1: the token is the registry | provider query and mint record; resolver and named refusals; provider-first lazy-wallet reference search; token-only existing commands; no registry.json; complete create publication funding before boot; Bob's connected hosted journey without Alice files; explicit saved-selector promise retirement | main `21f1d8560be008a8b2045e583fc384f10809260e` |
 | PR2: protected funding and references | closed wallet-output boundary, narrowed fund inputs, reference publication and retirement, automatic publication and their connected evidence | PR1 merged |
 | PR2: the page and report | deterministic chain-derived page, tagged release archive, independently derived report action identity and their controls | PR1 merged |
 

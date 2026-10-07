@@ -44,7 +44,7 @@ name.
   - Bob's connected hosted booking/inspection/fold path receives the token and his own context
     only; no Alice directory or file. Preserve #419 public-history/datum behavior and the
     deliberate-open control that fails on an Alice-file open.
-- [ ] **Exact cut accepted.** Bind main5c4c3dd0, Lean tree16ee2d4a and constitution1.13; source
+- [ ] **Exact cut accepted.** Bind main21f1d856, Lean tree16ee2d4a and constitution1.13; source
   cut/rebase map and conflict receipts; all four exact static commands with actual exit0; fresh
   PR1-range review, exact-head hosted CI and Bob story/control evidence. Draft push may precede
   review completion; merge waits. Issue437 stays open.

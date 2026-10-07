@@ -7,7 +7,7 @@ reference-script hash) and [#406](https://github.com/lambdasistemi/singular/issu
 checks publication funding one script at a time). Read the [plan](plan.md) for the slices, the
 [modules model](modules-model.md), [data model](data-model.md) and
 [functions model](functions-model.md) for the changed rows, and the [tasks](tasks.md) for the
-commit boundaries. PR1 base: main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed`.
+commit boundaries. PR1 base: main `21f1d8560be008a8b2045e583fc384f10809260e`.
 The operator's 2026-10-07 cut ships token-only commands and Bob's connected journey first.
 Issue #437 remains open for PR2; the preserved plans and unfinished work are follow-up scope.
 
