@@ -65,6 +65,7 @@ hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
 hexkey >"$work/carol.skey" # never funded
+hexkey >"$work/dave.skey" # funded small, for the underfunded create
 
 export TMPDIR="$work"
 
@@ -121,8 +122,18 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 # ------------------------------------------------------------------
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 6 --fund-lovelace 2000000000 \
+  --fund "$work/dave.skey:2:4000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
+# The per-wallet funding group is parsed before any node starts: a
+# malformed one is refused by name, so no second node appears for it.
+bad_fund="$work/bad-fund.out"
+bad_status=0
+"$devnet" --fund "$work/dave.skey:two:4000000" >"$bad_fund" 2>&1 || bad_status=$?
+[ "$bad_status" -ne 0 ] || fail "the devnet accepted a malformed funding group"
+grep -q '^devnet: --fund expects FILE:N:LOVELACE' "$bad_fund" \
+  || fail "the malformed funding group was not refused by name: $(head -n 1 "$bad_fund")"
+say "the devnet refuses a malformed per-wallet funding group by name"
 # The node is the devnet runner's child: reap both, so no node of this
 # run outlives it holding the development network's ports.
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
@@ -1509,14 +1520,15 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # the lineage source refusal control in the owner evidence bundle.
 
 # ------------------------------------------------------------------
-# 7. two actors (#419): bob folds alice's insertion from the chain alone
+# 7. two actors (#419, #437): bob folds alice's insertion on the state token
 # ------------------------------------------------------------------
 # Alice books an insertion from her own registry directory. Bob folds it
-# from a directory of his own holding only her registry.json: no trie, no
-# journal, nothing of her booking; the trie is rebuilt from chain history
-# and the envelope is read from the request on the chain. Alice's directory
-# is unreadable while bob runs, and every file access of bob's process is
-# traced: one under alice's directory fails the run.
+# from an empty directory of his own: no trie, no journal, nothing of her
+# booking and no file of hers; he names the registry by the state token
+# alone, the trie is rebuilt from chain history and the envelope is read
+# from the request on the chain. Alice's directory is unreadable while bob
+# runs, and every file access of bob's process is traced: one under
+# alice's directory fails the run.
 two="$work/two-actors"
 two_alice="$two/alice"
 two_bob="$two/bob"
@@ -1526,36 +1538,37 @@ run two-preview success -- registry create --process-time 90000 --retract-time 3
   --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 run two-create success -- registry create --process-time 90000 --retract-time 30000 \
   --seed "$(field two-preview .seed)" --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+two_token="$(field two-create .stateToken)"
 two_key=keyT
 run two-insert success -- registry insert --key "$two_key" --payload "$work/payload-insert.json" \
-  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  --registry "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
 [ "$(field two-insert .requester)" = "$alicekey" ] || fail "the two-actor booking's requester is not alice's key"
 mkdir -p "$two_bob"
-cp "$two_alice/registry.json" "$two_bob/"
-[ "$(ls -A "$two_bob")" = registry.json ] || fail "bob's directory holds more than alice's registry.json"
+[ -z "$(ls -A "$two_bob")" ] || setup_fail "bob's two-actor directory is not empty at start"
 # touches_alice TRACE: the traced process named a path under alice's directory.
 touches_alice() { grep -qF "$two_alice" "$1"; }
 # The detector, shown able to fire: a deliberate open under alice's
-# directory, traced the same way, is reported.
-strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice/registry.json" >/dev/null 2>&1 || true
+# directory, traced the same way, is reported. Alice's journal is her own
+# in-flight file in the token-only world; it exists because she booked.
+strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice/journal.jsonl" >/dev/null 2>&1 || true
 touches_alice "$two/control.strace" || fail "control: a deliberate open under alice's directory was not detected"
 say "two actors: the access detector reports a deliberate open under alice's directory"
 traced="$work/traced-singular"
 printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' "$two/bob-fold.strace" "$singular" >"$traced"
 # DEMO1_TWO_ACTOR_DELIBERATE_OPEN=1 is the run's own failing control: bob's
-# traced process opens alice's registry.json before it folds, so the whole
+# traced process opens alice's journal before it folds, so the whole
 # journey must fail at the access check below.
 if [ "${DEMO1_TWO_ACTOR_DELIBERATE_OPEN:-}" = 1 ]; then
   printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c '"'"'cat "%s" >/dev/null 2>&1; exec "%s" "$@"'"'"' singular "$@"\n' \
-    "$two/bob-fold.strace" "$two_alice/registry.json" "$singular" >"$traced"
-  say "two actors: the deliberate open control is on; bob's process opens alice's registry.json"
+    "$two/bob-fold.strace" "$two_alice/journal.jsonl" "$singular" >"$traced"
+  say "two actors: the deliberate open control is on; bob's process opens alice's journal"
 fi
 chmod +x "$traced"
 real_singular="$singular"
 chmod 000 "$two_alice"
 ! ls "$two_alice" >/dev/null 2>&1 || fail "alice's directory is readable to the run"
 singular="$traced"
-run two-fold success -- registry fold --registry "$two_bob" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+run two-fold success -- registry fold --registry "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
 singular="$real_singular"
 chmod u+rwx "$two_alice"
 [ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
@@ -1565,12 +1578,38 @@ jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --
     and .key == $k and .envelope == $b[0].envelope and (.liveOutput | test("#"))' \
   "$receipts/two-fold.json" >/dev/null \
   || fail "bob's fold does not deliver alice's envelope at her key"
-run two-inspect success -- registry inspect --key "$two_key" --registry "$two_bob" --blueprint "$blueprint" "${node[@]}"
+run two-inspect success -- registry inspect --key "$two_key" --registry "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
 jq -e --slurpfile b "$receipts/two-insert.json" --slurpfile f "$receipts/two-fold.json" '
     .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
     and .root == $f[0].root' "$receipts/two-inspect.json" >/dev/null \
   || fail "the key bob folded is not active under alice's envelope at her destination"
-say "two actors: bob folded alice's insertion from registry.json alone; her envelope sits at her destination"
+say "two actors: bob folded alice's insertion from the state token alone; her envelope sits at her destination"
+
+# ------------------------------------------------------------------
+# 7b. an underfunded create refuses before boot (J)
+# ------------------------------------------------------------------
+# Dave's wallet holds exactly two 4 ada outputs, funded as its own group.
+# A state carrier of this release is already live and reused, so his
+# create would publish no state script; his wallet cannot fund every
+# publication, and the refusal comes before anything is submitted: no
+# journal, no pending identity, and his seed stays an unspent output.
+two_dave="$work/underfunded-actor"
+dave=(--wallet-skey "$work/dave.skey")
+run dave-preview success -- registry create --process-time 90000 --retract-time 30000 --preview \
+  --registry "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
+dave_seed="$(field dave-preview .seed)"
+run dave-create client-refusal -- registry create --process-time 90000 --retract-time 30000 \
+  --seed "$dave_seed" --registry "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
+jq -e '.reason | startswith("publication-unfunded")' "$receipts/dave-create.json" >/dev/null \
+  || fail "dave's underfunded create was refused for another reason: $(jq -r .reason "$receipts/dave-create.json")"
+say "an underfunded create refuses before boot: $(jq -r .reason "$receipts/dave-create.json")"
+[ ! -e "$two_dave/journal.jsonl" ] || fail "the refused create wrote a journal"
+[ ! -e "$two_dave/registry.pending.json" ] || fail "the refused create wrote a pending identity"
+probe_out="$work/dave-seed-probe.json"
+"$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$dave_seed" >"$probe_out"
+jq -e --arg s "$dave_seed" 'any(.live[]; . == $s)' "$probe_out" >/dev/null \
+  || fail "dave's seed was spent by the refused create"
+say "the refused create left dave's seed unspent"
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)

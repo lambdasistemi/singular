@@ -620,7 +620,7 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #419: the same Demo 1 run as the journey job, with Bob's fold
-      # process opening Alice's registry.json before it folds. The run must
+      # process opening Alice's journal before it folds. The run must
       # fail at the two-actor access check and nowhere else: this step
       # passes only on exit 1 with that one failure, after the control was
       # on and Bob's fold succeeded, and names a pass, a setup failure or

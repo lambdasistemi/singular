@@ -182,6 +182,18 @@ honestReceipts story = do
                 modifyIORef' inserted ("process:killed" :)
             emit ("provoke " <> T.pack (provocationName p)) t k $ \r ->
                 provoked p r
+        RunByToken (Target actor) (Target owner) c k -> do
+            before <- readIORef inserted
+            let terminal = (owner <> ":terminate") `elem` before
+            emit
+                ("run " <> T.pack (commandName c) <> " by token")
+                actor
+                k
+                $ \r ->
+                    r
+                        { rcOutcome = "success"
+                        , rcCommand = Just (commandReceipt c k 0 terminal)
+                        }
         Run c (Target t) k -> do
             before <- readIORef inserted
             let again = c == Insert && (t <> "/" <> k) `elem` before
@@ -369,7 +381,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 98
+            length (outline controlsStory) `shouldBe` 100
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -385,9 +397,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         $ do
             rs <- honestReceipts controlsStory
             let results = judge rs controlsStory
-            length results `shouldBe` 98
+            length results `shouldBe` 100
             [crStatus r | r <- results, not (retiredTitle (crTitle r))]
-                `shouldBe` replicate 96 Held
+                `shouldBe` replicate 98 Held
             [crStatus r | r <- results, retiredTitle (crTitle r)]
                 `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` True
@@ -428,7 +440,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 98
+            length results `shouldBe` 100
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
             [crStatus r | r <- drop 3 results, not (retiredTitle (crTitle r))]
                 `shouldSatisfy` all isUncovered
@@ -628,7 +640,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
             `shouldSatisfy` isInfixOf
-                "0 of 98 clauses hold; 0 do not; 96 are uncovered; 2 are retired."
+                "0 of 100 clauses hold; 0 do not; 98 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -1681,6 +1693,20 @@ provoked p r =
                                 , peSeedProbe = Just "evidence/probe.json"
                                 }
                     }
+            UnderfundedCreate ->
+                r
+                    { rcOutcome = "client-refusal"
+                    , rcReason =
+                        Just
+                            "publication-unfunded request: publishing this reference script needs an ada-only output of more than 4000000 lovelace and the largest the wallet has for it holds 4000000 lovelace; nothing was submitted"
+                    , rcProcess =
+                        Just
+                            still
+                                { peFilesBefore = []
+                                , peFilesAfter = []
+                                , peSeedProbe = Just "evidence/probe-poor.json"
+                                }
+                    }
             NodeLost ->
                 r
                     { rcOutcome = "partial"
@@ -1732,6 +1758,7 @@ retiresIn program = case view program of
         Require _ _ -> ()
         Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""

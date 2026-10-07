@@ -5,8 +5,8 @@
 #
 # usage: demo1_cli_controls.sh SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
 #
-# This script only arranges processes: one node, one funded wallet, and
-# one `cli-controls run`, which runs the story, leaves one receipt per
+# This script only arranges processes: one node, the wallets the story
+# funds, and one `cli-controls run`, which runs the story, leaves one receipt per
 # action under WORKDIR/receipts and judges every clause from them. The
 # verdict section is WORKDIR/controls.md. Setup failures (no node, no
 # socket) exit 3 and are never a verdict.
@@ -63,9 +63,13 @@ first_receipt() {
 }
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
+# Two 4 ada outputs: enough to hold a seed beside another output, not enough
+# to fund every publication. The story's underfunded create uses this wallet.
+od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/underfunded.skey"
 
 export TMPDIR="$work"
 "$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 40 --fund-lovelace 2000000000 \
+  --fund "$work/underfunded.skey:2:4000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
@@ -92,7 +96,7 @@ say "one private development source at $provider_url"
 status=0
 "$controls" run \
   --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
-  --koios-url "$provider_url" --network-time "$time_directory" --node-socket "$sock" --network-magic "$network_magic" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
+  --koios-url "$provider_url" --network-time "$time_directory" --node-socket "$sock" --network-magic "$network_magic" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" --underfunded-skey "$work/underfunded.skey" \
   --work "$work" >"$work/controls.md" 2> >(tee "$work/controls.err" >&2) || status=$?
 tail -1 "$work/controls.md"
 say "verdict section at $work/controls.md (exit $status)"

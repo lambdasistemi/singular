@@ -254,7 +254,7 @@
             );
           };
           # #419: the two-actor access check shown failing a complete Demo 1
-          # run — Bob's fold process opens Alice's registry.json and the run
+          # run — Bob's fold process opens Alice's journal and the run
           # must fail exactly there: `nix run --quiet .#demo1-two-actor-control`.
           demo1-two-actor-control = {
             type = "app";
