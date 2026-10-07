@@ -290,6 +290,8 @@ data Provocation
       completes
       -}
       LateCreate
+    | -- | @create@, from a wallet that cannot fund every publication
+      UnderfundedCreate
     | {- | @update@, held once the node accepted it while the node is stopped,
       then released; the last action of a story, since the node is gone
       -}
@@ -306,6 +308,7 @@ provocationName p = case p of
     CreateKilled -> "create-killed"
     CreateAgain -> "create-again"
     LateCreate -> "create-late"
+    UnderfundedCreate -> "create-underfunded"
     NodeLost -> "update-node-lost"
 
 -- | A provoked command, in the description language.
@@ -326,6 +329,8 @@ provocationPhrase p = case p of
     CreateAgain -> "Run `singular registry create` again on that registry"
     LateCreate ->
         "Run `singular registry create` from another wallet with its own live seed, held before the registry's lock while a first create of the same registry completes"
+    UnderfundedCreate ->
+        "Run `singular registry create` from a wallet that cannot fund every publication"
     NodeLost ->
         "Run `singular registry update`, hold it once the node accepted it, stop the node, then release it"
 
@@ -406,6 +411,17 @@ data Requirement
       class its condition names, and the registry's journal did not move
       -}
       RefusedBeforeSubmitting
+    | {- | The create receipt of a wallet that cannot fund every
+      publication: refused before anything was submitted, with the
+      publication funding named, its directory untouched and its seed
+      still unspent
+      -}
+      CreateUnderfunded
+    | {- | An inspect by the registry's own actor and one by a second actor
+      starting from an empty directory with only the state token: both
+      succeeded and read the same registry
+      -}
+      TokenOnlyReading
     | {- | A provoked @inspect@: its outcome is the class its condition
       names, and it printed no leaf
       -}
@@ -469,6 +485,12 @@ receipt; 'Require' is computed from receipts and leaves none.
 data CliI res where
     -- | Run one ordinary command against a registry, for a key
     Run :: Command -> Target -> String -> CliI Receipt
+    {- | Run one ordinary command from this actor's directory against the
+    registry another target created, naming it only by its state token:
+    the actor's directory starts empty and receives the token, nothing
+    else of the registry
+    -}
+    RunByToken :: Target -> Target -> Command -> String -> CliI Receipt
     {- | Book an insertion of the key through the application, as the
     ordinary insert does, and stop before its fold
     -}
@@ -1642,6 +1664,7 @@ actionsOf = go
         Require _ _ -> ()
         Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
@@ -1679,6 +1702,7 @@ processStory = do
         raced = Target "raced"
         second = "second"
         third = "third"
+        reader = Target "reader"
         reading key title thm =
             premiseClause
                 thm
@@ -1692,6 +1716,15 @@ processStory = do
                 "the key reached Active through the ordinary commands, and inspect reads it Active"
                 ReachedActive
                 (reach False target)
+        _ <-
+            clause
+                "a second actor, starting from an empty directory with only the state token, reads the same registry"
+                (requirement identityBinds TokenOnlyReading)
+                ( do
+                    mine <- action (Run Inspect target heldKey)
+                    theirs <- action (RunByToken reader target Inspect heldKey)
+                    pure [mine, theirs]
+                )
         -- Retired by operator ruling: no command reads a saved selector. The
         -- second key is still inserted, for the clauses below that use it.
         _ <-
@@ -1777,6 +1810,11 @@ processStory = do
                 "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
                 (requirement haltsAttributably LateCreateRefused)
                 (pure <$> action (Provoke LateCreate raced ""))
+        _ <-
+            clause
+                "a create from a wallet that cannot fund every publication is refused before it submits anything, leaving its directory untouched and its seed unspent"
+                (requirement haltsAttributably CreateUnderfunded)
+                (pure <$> action (Provoke UnderfundedCreate raced ""))
         void $
             clause
                 "an update held once the node accepted it, with the node stopped, ends within its bound naming its transaction"
@@ -2342,6 +2380,12 @@ instance FromJSON Receipt where
 identify :: CliI res -> Maybe (Text, Text, Text)
 identify i = case i of
     Run c (Target t) k -> Just ("run " <> T.pack (commandName c), T.pack t, T.pack k)
+    RunByToken (Target actor) _ c k ->
+        Just
+            ( "run " <> T.pack (commandName c) <> " by token"
+            , T.pack actor
+            , T.pack k
+            )
     Book (Target t) k -> Just ("book", T.pack t, T.pack k)
     FoldUnevaluated (Target t) k -> Just ("fold-unevaluated", T.pack t, T.pack k)
     Observe (Target t) k -> Just ("observe", T.pack t, T.pack k)
@@ -2879,6 +2923,17 @@ check req rs = case (req, rs) of
                    | (rcTarget a, rcKey a) /= (rcTarget b, rcKey b)
                    ]
         _ -> ["a readback carries no observation"]
+    (TokenOnlyReading, [mine, theirs]) ->
+        succeeded "the actor's own inspect" mine
+            <> succeeded "the second actor's inspect" theirs
+            <> same
+                "the registry's root"
+                (at [field "root"] mine)
+                (at [field "root"] theirs)
+            <> same
+                "the key's leaf"
+                (at [field "leaf"] mine)
+                (at [field "leaf"] theirs)
     (SameRegistry, [c, i]) ->
         succeeded "the create" c
             <> succeeded "the insert" i
@@ -3164,6 +3219,28 @@ check req rs = case (req, rs) of
                            ]
                 )
             <> admitted r
+    (CreateUnderfunded, [r]) ->
+        outcomeIs r "client-refusal"
+            <> [ "the refusal is not publication funding: "
+                    <> maybe "no reason" T.unpack (rcReason r)
+               | not
+                    ( maybe
+                        False
+                        ("publication-unfunded" `T.isPrefixOf`)
+                        (rcReason r)
+                    )
+               ]
+            <> withProcess
+                r
+                ( \p ->
+                    [ "the refused create wrote to its directory"
+                    | byName (peFilesBefore p) /= byName (peFilesAfter p)
+                    ]
+                        <> [ "the underfunded wallet's seed was not probed afterwards"
+                           | isNothing (peSeedProbe p)
+                           ]
+                )
+            <> admitted r
     (BoundedAfterNodeLoss, [r]) ->
         [ "the outcome is " <> show (rcOutcome r) <> ", not partial or timeout"
         | rcOutcome r `notElem` ["partial", "timeout"]
@@ -3296,12 +3373,12 @@ replay byStep story =
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, (bodyFailures, retired)), Nothing) ->
+                    (Just (obs, (bodyFailures, _, retired)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
-                                bodyFailures <> maybe [] (\(_, (fs, _)) -> fs) checked
-                            isPremise = maybe False (\(_, (_, p)) -> p) checked
+                                bodyFailures <> maybe [] (\(_, (fs, _, _)) -> fs) checked
+                            isPremise = maybe False (\(_, (_, p, _)) -> p) checked
                             status
                                 | Just why <- retired = Retired why
                                 | Just why <- stop' = Uncovered why
@@ -3363,6 +3440,7 @@ replay byStep story =
         Require _ _ -> (Just (), st)
         Retire _ -> (Just (), st)
         Run{} -> answer st i
+        RunByToken{} -> answer st i
         Book{} -> answer st i
         FoldUnevaluated{} -> answer st i
         Observe{} -> answer st i
@@ -3466,6 +3544,7 @@ described story = snd (walk 0 story)
         Require _ _ -> (n, ())
         Retire _ -> (n, ())
         Run{} -> (n + 1, emptyReceipt n "" "" "")
+        RunByToken{} -> (n + 1, emptyReceipt n "" "" "")
         Book{} -> (n + 1, emptyReceipt n "" "" "")
         FoldUnevaluated{} -> (n + 1, emptyReceipt n "" "" "")
         Observe{} -> (n + 1, emptyReceipt n "" "" "")
@@ -3919,6 +3998,24 @@ steps story = snd (walk 0 story)
                     )
                 )
             )
+        RunByToken (Target actor) (Target registry) c k ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    ( "Run `singular registry "
+                        <> commandName c
+                        <> "` from **"
+                        <> actor
+                        <> "**, an empty directory, naming **"
+                        <> registry
+                        <> "** only by its state token"
+                        <> forKey k
+                        <> "."
+                    )
+                )
+            )
         Book (Target t) k ->
             ( n + 1
             , emptyReceipt n "" "" ""
@@ -4046,6 +4143,7 @@ tellings = go
         Require _ _ -> ()
         Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
@@ -4303,6 +4401,7 @@ shape = go
         Require _ _ -> ()
         Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
