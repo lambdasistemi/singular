@@ -37,12 +37,14 @@ A state token is an `Asset` (state policy, token name). On the command line it i
 |---|---|
 | output reference | where the carrier sits |
 | output | the exact output as the provider returned it |
-| source | the provider query, a hint, or the actor's wallet |
+| source | the provider query or the actor's wallet |
 
 - A carrier is admitted for a role only if the output carries a reference script and the hash
   computed from that script equals the role's expected hash.
 - A provider-supplied hash field is never read.
-- Among the admitted carriers for a role, the lowest output reference is chosen.
+- The provider is tried first; the wallet is read only for roles the provider did not supply.
+  Within the first source supplying a role, the lowest admitted output reference is chosen.
+- Only needed roles are searched; no needed roles means no discovery reads.
 
 ## Resolved registry
 
@@ -71,11 +73,8 @@ A state token is an `Asset` (state policy, token name). On the command line it i
 6. `registry-pin-mismatch <field>`
 7. `network-mismatch`
 
-**Reference refusal.** `reference-missing <role> <hash>: not found by this provider, hints or
-wallet`. Its message names `singular registry publish-references` as the remedy.
-
-**Hint warning.** `reference-hint-invalid <tx#ix>` is printed once per hint that is not admitted.
-The search continues after it.
+**Reference refusal.** `reference-missing <role> <hash>: not found by this provider or wallet`.
+Its message names `singular registry publish-references` as the remedy.
 
 ## Actor directory
 

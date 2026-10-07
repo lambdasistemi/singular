@@ -6,6 +6,10 @@ Read the [spec](spec.md) for the requirements. The design was ruled in two round
   the shape decided by the Lockness epic owner
   ([lockness#39](https://github.com/lambdasistemi/lockness/issues/39)).
 
+The operator's 2026-10-07 rulings remove caller-supplied reference hints and retire the public
+saved-selector promise. Code, tests, help and these documents change in the same implementation
+slice. Historical receipts keep their original scope; revised discovery needs its own controls.
+
 ## Strategy
 
 The registry's identity moves from a file to a derivation. One library module resolves a state
@@ -20,7 +24,7 @@ law, like `checkPins` today.
 
 | slice | runnable outcome | starts after |
 |---|---|---|
-| The token is the registry | the provider query and mint record (Koios, facade, fixtures); the resolver and its refusals; references found by hash from three sources; `--state-token` on every command; `registry.json` neither written nor read; publication funding checked before the boot; demo scripts run each actor from an empty directory | base `9011ca17` |
+| The token is the registry | the provider query and mint record (Koios, facade, fixtures); the resolver and its refusals; references found by hash from the provider then the actor's wallet; `--state-token` on every command; `registry.json` neither written nor read; publication funding checked before the boot; demo scripts run each actor from an empty directory | base `9011ca17` |
 | Anyone publishes | `publish-references`, `--publish-references`, `retire-references`; coin selection skips reference outputs | the first slice |
 | The page | `registry describe`, as Markdown and as `--json` | the first slice |
 

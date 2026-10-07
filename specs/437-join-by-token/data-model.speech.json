@@ -17,6 +17,10 @@
     {
       "text": "A state token is an Asset (state policy, token name). On the command line it is written POLICY.NAME, each part in hex; the policy is 28 bytes and the name 32 bytes.",
       "pause": 400
+    },
+    {
+      "text": "Parsing refuses any other shape before any provider call.",
+      "pause": 300
     }
   ],
   "mint-record": [
@@ -26,7 +30,7 @@
     },
     {
       "text": "The provider returns no record for an asset it does not know.",
-      "pause": 400
+      "pause": 300
     }
   ],
   "reference-role-and-expected-hashes": [
@@ -35,8 +39,20 @@
       "pause": 500
     },
     {
-      "text": "Roles: the state, the request, absent witness, active witness and terminal witness scripts, and the application. They are spelled as the existing reference roles in receipts: state, request, witness-absent, witness-active, witness-terminal, application. Expected hashes: a total map from role to script hash, derived from the release and the token alone. The state hash equals the token's policy for an admitted token. Every other role's hash is the release's script for that role applied to the registry identity, statePolicy ‖ tokenName.",
-      "pause": 400
+      "text": "Roles: the state, the request, absent witness, active witness and terminal witness scripts, and the application. They are spelled as the existing reference roles in receipts: state, request, witness-absent, witness-active, witness-terminal, application.",
+      "pause": 300
+    },
+    {
+      "text": "Expected hashes: a total map from role to script hash, derived from the release and the token alone.",
+      "pause": 300
+    },
+    {
+      "text": "The state hash equals the token's policy for an admitted token.",
+      "pause": 300
+    },
+    {
+      "text": "Every other role's hash is the release's script for that role applied to the registry identity, statePolicy ‖ tokenName.",
+      "pause": 300
     }
   ],
   "reference-carrier": [
@@ -45,8 +61,20 @@
       "pause": 500
     },
     {
-      "text": "A carrier is admitted for a role only if the output carries a reference script and the hash computed from that script equals the role's expected hash. A provider-supplied hash field is never read. Among the admitted carriers for a role, the lowest output reference is chosen.",
-      "pause": 400
+      "text": "A carrier is admitted for a role only if the output carries a reference script and the hash computed from that script equals the role's expected hash.",
+      "pause": 300
+    },
+    {
+      "text": "A provider-supplied hash field is never read.",
+      "pause": 300
+    },
+    {
+      "text": "The provider is tried first; the wallet is read only for roles the provider did not supply. Within the first source supplying a role, the lowest admitted output reference is chosen.",
+      "pause": 300
+    },
+    {
+      "text": "Only needed roles are searched; no needed roles means no discovery reads.",
+      "pause": 300
     }
   ],
   "resolved-registry": [
@@ -55,8 +83,12 @@
       "pause": 500
     },
     {
-      "text": "A resolved registry exists only after every identity check passes. It is never written to disk.",
-      "pause": 400
+      "text": "A resolved registry exists only after every identity check passes.",
+      "pause": 300
+    },
+    {
+      "text": "It is never written to disk.",
+      "pause": 300
     }
   ],
   "refusals": [
@@ -67,6 +99,10 @@
     {
       "text": "Identity refusals. Seven, rendered in this order of checking: 1. state-token-foreign-release 2. state-token-not-found 3. state-token-burned 4. state-token-seed-mismatch 5. state-output-missing 6. registry-pin-mismatch <field> 7. network-mismatch",
       "pause": 400
+    },
+    {
+      "text": "Reference refusal. reference-missing <role> <hash>: not found by this provider or wallet. Its message names singular registry publish-references as the remedy.",
+      "pause": 400
     }
   ],
   "actor-directory": [
@@ -75,12 +111,16 @@
       "pause": 500
     },
     {
-      "text": "Allowed contents: journal.jsonl, submissions/, .lock; preimages/, while #419 owns its removal; registry.pending.json, during create only.",
+      "text": "Allowed contents: - journal.jsonl, submissions/, .lock; - preimages/, while #419 owns its removal; - registry.pending.json, during create only.",
+      "pause": 400
+    },
+    {
+      "text": "Anything else is ignored. Nothing in the directory is an input to identity or reference resolution.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "711a261b007497cf284aca3940b8185b0c9dd52cee2df72d7b816cf360363a00"
+    "sha256": "f0a694b9c7614c6fc4ae7fb0abc7e4a013fb49125a2e2120c45c535cdc1f122c"
   }
 }

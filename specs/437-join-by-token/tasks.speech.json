@@ -17,6 +17,102 @@
     {
       "text": "As Bob, I start from an empty directory and the state token, and every command works or refuses by name.",
       "pause": 400
+    },
+    {
+      "text": "[ ] Failing tests for the slice. Committed failing. They cover:",
+      "pause": 300
+    },
+    {
+      "text": "the existence query and mint record against recorded Koios fixtures;",
+      "pause": 300
+    },
+    {
+      "text": "every identity refusal;",
+      "pause": 300
+    },
+    {
+      "text": "reference search order, the local hash check and the deterministic choice;",
+      "pause": 300
+    },
+    {
+      "text": "a command run from an empty directory on the state token.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The provider finds outputs by reference-script hash.",
+      "pause": 300
+    },
+    {
+      "text": "The existence query and the mint record are added to the provider interface.",
+      "pause": 300
+    },
+    {
+      "text": "The Koios instance answers them through reference_script_utxos, tx_cbor, utxo_info, asset_info and tx_info, with recorded fixtures.",
+      "pause": 300
+    },
+    {
+      "text": "The devnet facade serves the same endpoints.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] One resolver turns a state token into a registry.",
+      "pause": 300
+    },
+    {
+      "text": "Expected hashes are derived from the release and the token.",
+      "pause": 300
+    },
+    {
+      "text": "The seven identity refusals.",
+      "pause": 300
+    },
+    {
+      "text": "Reference search through the provider, then the wallet, with the local hash check and lowest admitted output reference in the first source supplying each needed role.",
+      "pause": 300
+    },
+    {
+      "text": "Focused controls: provider supplies all needed roles and the wallet is not read; provider empty and the wallet supplies a carrier; both empty and the exact reference refusal; no needed roles and no discovery reads.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Commands run on the state token.",
+      "pause": 300
+    },
+    {
+      "text": "--state-token on every command except create.",
+      "pause": 300
+    },
+    {
+      "text": "Caller-supplied reference flags, parsing, source, warning, helpers and tests removed in the same diff as the two-source search, documentation and help.",
+      "pause": 300
+    },
+    {
+      "text": "registry.json and its checks deleted.",
+      "pause": 300
+    },
+    {
+      "text": "create checks the funding for every publication before the boot, finds the state reference by hash, and prints the token.",
+      "pause": 300
+    },
+    {
+      "text": "inspect and preview resolve from the token.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Demo scripts and pages follow.",
+      "pause": 300
+    },
+    {
+      "text": "Each actor in the demo scripts and CI apps starts from an empty directory with the state token.",
+      "pause": 300
+    },
+    {
+      "text": "Pages that describe registry.json are updated, with speech.",
+      "pause": 300
+    },
+    {
+      "text": "The public saved-selector promise is retired with the operator's reason in the description language; history remains visible, no receipt or state is reused, and no replacement row is invented. The spec and PR identify the changed public promise.",
+      "pause": 300
     }
   ],
   "slice-anyone-publishes": [
@@ -27,6 +123,22 @@
     {
       "text": "As anyone, I restore a registry's references from the release when no output carries them, and I get my own back.",
       "pause": 400
+    },
+    {
+      "text": "[ ] Failing tests for publishing, retiring and coin selection. Committed failing.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] publish-references, --publish-references and retire-references.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Coin selection skips outputs carrying a reference script.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The devnet journey: references retired, a fold refused reference-missing, the references published again, then the fold succeeds.",
+      "pause": 300
     }
   ],
   "slice-the-page": [
@@ -37,10 +149,22 @@
     {
       "text": "As anyone, I generate the registry's page from the chain and compare it with a published copy.",
       "pause": 400
+    },
+    {
+      "text": "[ ] Failing tests for the page's sections and its determinism. Committed failing.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] registry describe as Markdown and as --json.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The devnet page matches a replay, and regeneration is byte-identical.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0b129d256da588d194d795cac7347ef45011e05108fe3c1d9815a2fb032879d7"
+    "sha256": "a9a25f0cceb44659954aaa32aede18d8c4a491078e6574b3862662830f6d3f9f"
   }
 }
