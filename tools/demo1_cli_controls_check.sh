@@ -10,7 +10,11 @@
 # controls runner from the conformance flake, the blueprint from the
 # onchain flake, and the bound statements from the application's own
 # statement ledger. The verdict section is printed; the receipts stay in
-# the run's directory, which is named on the last line.
+# the run's directory, which is named on the last line. Before its exit is
+# trusted, the run must have judged at least one clause
+# (demo1_cli_controls_ran.sh), which also names every clause that does not
+# hold or is uncovered and keeps the receipts in DEMO1_CONTROLS_RESULTS when
+# that is set.
 set -euo pipefail
 
 [ "$#" -eq 1 ] || {
@@ -20,6 +24,7 @@ set -euo pipefail
 root="$(cd "$1" && pwd)"
 here="$(cd "$(dirname "$0")" && pwd)"
 controls_sh="${DEMO1_CONTROLS:-$here/demo1_cli_controls.sh}"
+ran_sh="${DEMO1_CONTROLS_RAN:-$here/demo1_cli_controls_ran.sh}"
 
 scratch="$(mktemp -d "${RUNNER_TEMP:-/tmp}/demo1-controls.XXXXXX")"
 build() { nix build --quiet --no-link --print-out-paths "$@"; }
@@ -34,5 +39,6 @@ status=0
 bash "$controls_sh" "$singular" "$devnet" "$controls" "$blueprint" \
   "$root/applications/open-datum/ledgers.json" "$scratch/run" || status=$?
 cat "$scratch/run/controls.md" 2>/dev/null || true
+bash "$ran_sh" "$scratch/run" "$status" || status=$?
 echo "demo1-cli-controls: receipts in $scratch/run/receipts (exit $status)"
 exit "$status"

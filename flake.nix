@@ -289,12 +289,18 @@
                   bash
                   coreutils
                   findutils
+                  gawk
                   gnugrep
                   jq
                   procps
                   nix
                 ];
-                text = ''DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} bash ${./tools/demo1_cli_controls_check.sh} "$PWD"'';
+                text = ''
+                  bash ${./tools/demo1_cli_controls_ran.test.sh} ${./tools/demo1_cli_controls_ran.sh}
+                  DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} \
+                    DEMO1_CONTROLS_RAN=${./tools/demo1_cli_controls_ran.sh} \
+                    bash ${./tools/demo1_cli_controls_check.sh} "$PWD"
+                '';
               }
             );
           };
