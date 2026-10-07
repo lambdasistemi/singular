@@ -45,7 +45,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Update node-confinement, component-inventory and signed-submission checks under tools/ to the removed component layout, retaining their negative controls. Owner: Muse. Depends on Sol's final module layout. Check: each existing check and its controls pass.",
+      "text": "[x] Update node-confinement, component-inventory and signed-submission checks under tools/ to the removed component layout, retaining their negative controls. Owner: Muse. Depends on Sol's final module layout. Check: each existing check and its controls pass. All pass at 12bdae8c: confinement exit 0 over 213 retained files with 6 allowlisted entries and 48 negative controls; component inventory 626 mapped files with 9/9 controls; the signed-tx-control Nix check exit 0 — normal signing accepted, three forgeries refused, exported-constructor positives, exact exports, planted forge rejected (log /tmp/muse-signed-tx-control.log).",
       "pause": 300
     }
   ],
@@ -59,7 +59,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Run the packaged Demo 1 journey against the actual private devnet facade, and the bounded registry journey; repair migration failures in the owning files. Owner: Muse with Sol for Haskell repairs. Depends on compiled candidate. Check: successful receipts and exit status on the integrated candidate.",
+      "text": "[x] Run the packaged Demo 1 journey against the actual private devnet facade, and the bounded registry journey; repair migration failures in the owning files. Owner: Muse with Sol for Haskell repairs. Depends on compiled candidate. Check: successful receipts and exit status on the integrated candidate. Local bounded journey 11/11, exit 0 at 12bdae8c. Hosted, on the exact head 12bdae8c: the release-archive Demo 1 journey — the CLI journey, page controls and retained insert-active/update-terminal controls over the archive exactly as published — plus the separate-actor negative control and the hosted bounded journey, all success. No local archive execution is claimed; the hosted archive receipts are the actual required development-network execution.",
       "pause": 300
     }
   ],
@@ -73,11 +73,11 @@
       "pause": 300
     },
     {
-      "text": "[x] Update existing node/provider ownership and API documentation under docs/, plus only required reference-generation/packaging paths (tools/api_reference.py, nix/docs.nix, mkdocs.yml). Owner: GLM. Depends on Sol's module layout; no new documentation project. Done at ab5fac29–86ea396a, integrated at 8e47cd88: ownership page rewritten to the provider-era inventory, API reference extent 75→73 from the candidate Cabal, generator's dead private-owner machinery removed; strict build, presentation and narration checks green in the GLM worktree. The packaged exact-head docs check is still running and stays open below.",
+      "text": "[x] Update existing node/provider ownership and API documentation under docs/, plus only required reference-generation/packaging paths (tools/api_reference.py, nix/docs.nix, mkdocs.yml). Owner: GLM. Depends on Sol's module layout; no new documentation project. Done at ab5fac29–86ea396a, integrated at 8e47cd88: ownership page rewritten to the provider-era inventory, API reference extent 75→73 from the candidate Cabal, generator's dead private-owner machinery removed; strict build, presentation and narration checks green in the GLM worktree. The packaged docs, speech, narration and presentation checks passed within just ci at 12bdae8c.",
       "pause": 300
     },
     {
-      "text": "[ ] Regenerate changed pages' speech companions and required narration using repository tools; verify docs/presentation against the actual candidate. Owner: GLM. Includes plan.md and tasks.md; never stamp stale speech as current.",
+      "text": "[x] Regenerate changed pages' speech companions and required narration using repository tools; verify docs/presentation against the actual candidate. Owner: GLM. Includes plan.md and tasks.md; never stamp stale speech as current. Every changed page's companion was re-extracted and its changed segments re-voiced through the series (9c124690…8dc3b495); the full packaged docs, speech, narration and presentation checks passed within just ci exit 0 at 12bdae8c.",
       "pause": 300
     }
   ],
@@ -91,15 +91,15 @@
       "pause": 300
     },
     {
-      "text": "[ ] Run nix develop --quiet -c just ci and required offchain tests on the integrated candidate; fix failures and record exact commands, exits and commit. Owner: orchestrator with assigned workers.",
+      "text": "[x] Run nix develop --quiet -c just ci and required offchain tests on the integrated candidate; fix failures and record exact commands, exits and commit. Owner: orchestrator with assigned workers. nix develop --quiet -c just ci exit 0 in a clean checkout at 12bdae8c — a clean checkout excludes the ignored Cabal build cache that a format-control scratch copy still carries — with the full local cage suite 1028/0 with 11 retired pending and the conformance appendix 590/0 at source 64d8f9f0 as recorded above. Hosted at the same head: CI and Conformance, both success. Not the final repaired head: after this result, source-only test corrections a0456196 (generic phase-log schema; packaged contract suite 40/0 with 26 retired pending) and ef93d4f4 (E2E checks the exact generic AtTxIn fact instead of forbidding the adapter's necessary address lookup; local execution pending) changed no production behavior, and exact-head verification remains the open tasks below.",
       "pause": 300
     },
     {
-      "text": "[ ] Update PR #460 using .github/pull_request_template.md, push the scoped candidate with the appropriate lease, and require the ticket's devnet journey jobs green on that PR head. Owner: orchestrator.",
+      "text": "[ ] Update PR #460 using .github/pull_request_template.md, push the scoped candidate with the appropriate lease, and require the ticket's devnet journey jobs green on that PR head. Owner: orchestrator. The draft PR already carries 12bdae8c; the two test repairs are not pushed yet — final candidate publication, its checks and the merge remain pending.",
       "pause": 300
     },
     {
-      "text": "[ ] Merge the verified PR, close #383, and stop its three worker panes. Owner: orchestrator. Check remote merge/issue state before reporting completion.",
+      "text": "[ ] Merge the verified PR, close #383, and stop its three worker panes. Owner: orchestrator. Check remote merge/issue state before reporting completion. Final candidate publication, exact-head checks and merge still pending.",
       "pause": 300
     }
   ],
@@ -115,6 +115,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8260ad582bc5245e198c962ab038f9facee927873806e8bb973897ee31e4a763"
+    "sha256": "fe856664f2054a61bee531576b3ca5c09229f404d175630c1a1c66ec0fbfeeed"
   }
 }
