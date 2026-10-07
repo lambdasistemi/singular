@@ -147,7 +147,7 @@ verdictOf = \case
 walletOf
     :: Env -> WalletRole -> IO (SignKeyDSIGN Ed25519DSIGN, Addr)
 walletOf env = \case
-    RunnerWallet -> pure (genesisSignKey, genesisAddr)
+    RunnerWallet -> pure (genesisSignKey env, genesisAddr env)
     SecondWallet -> secondWallet env
     OwnerWallet funding -> ownerWallet env funding
 
@@ -288,7 +288,7 @@ runFoldAgainstSupersededRoot env = do
                 v
                 (envTm env)
                 tid
-                genesisAddr
+                (genesisAddr env)
                 ctxLive
     (freshSteps, freshRoot) <-
         speculativeInsert env cage tid "cg10-key-c" leafAbsent
@@ -311,7 +311,7 @@ runFoldAgainstSupersededRoot env = do
         "fold-against-superseded-root control: hand model matches the library fold"
     (mem, cpu) <- measureUnits env handFresh
     signed <-
-        submitExpectAccepted env (signTx genesisSignKey handFresh)
+        submitExpectAccepted env (signTx (genesisSignKey env) handFresh)
     let size = txSizeBytes signed
     emitMeasure env "fold-against-superseded-root-control" mem cpu size
     rowCommit env cage "cg10-key-c" edgeInsertAbsent
@@ -466,7 +466,7 @@ runSurplusFoldActions env = do
     exactTx <- assembleFoldWithFee env exactSpec
     (memD, cpuD) <- measureUnits env exactTx
     signedD <-
-        submitExpectAccepted env (signTx genesisSignKey exactTx)
+        submitExpectAccepted env (signTx (genesisSignKey env) exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "surplus-fold-actions-exact" memD cpuD sizeD
     rowCommit env cage "cg12-key-d" edgeInsertAbsent
@@ -493,7 +493,8 @@ runBatchHarness env = do
         (Live.validateLive (batchStory (Live.Context "batch" "holder wallet")))
     writeIORef (envLiveRecords env) []
     registry <- ensureRowCage env "batch-harness" 30_000 30_000
-    _ <- runLive env (batchStory (Live.Context registry genesisAddr))
+    _ <-
+        runLive env (batchStory (Live.Context registry (genesisAddr env)))
     records <- readIORef (envLiveRecords env)
     require
         "batch harness did not run both batch instructions"

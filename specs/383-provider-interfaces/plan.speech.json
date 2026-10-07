@@ -1,146 +1,76 @@
 {
-  "preserve-the-journey-while-replacing-its-interfaces": [
+  "finish-registry-commands-without-a-node-connection": [
     {
-      "text": "Preserve the journey while replacing its interfaces.",
+      "text": "Finish registry commands without a node connection.",
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want runnable checkpoints that preserve the registry journey while its trie and local computation move behind common capabilities, before the node read path is replaced. Read the stories first, then the accepted decisions. The deletion inventory stays bound to recovery head 872c0ecf3c7cf1a10293793523c8521d5ef9aae9 of PR #382. That recovery has merged; this implementation now targets main.",
+      "text": "As a registry user, I want every command to use the same hosted-provider capabilities, without a node, socket or local chain follower. This plan delivers #383; tasks name the remaining work and its completion evidence.",
       "pause": 400
     }
   ],
-  "proposed-capability-types": [
+  "status-and-baseline": [
     {
-      "text": "Proposed capability types.",
+      "text": "Status and baseline.",
       "pause": 500
     },
     {
-      "text": "As a provider author, I need one effect-polymorphic contract rather than transport-specific commands. These are proposed public shapes, not compiled declarations. Ledger types reuse the current Conway representation. All refusals are named algebraic values; adapter transport failures are handled inside m. No interface mentions IO, sockets or nodes.",
+      "text": "The operator reset this ticket to main on October 7, 2026, at 6efe1f119a2332484e690b4c128c4bc5fd4d689b. The prior candidate is preserved as backup/e371-383-before-reset-20261007, with uncommitted work preserved in Git stash f85a848e0dc7902538795893033154127fb090bf. It is reference material, not an accepted implementation or a patch to apply wholesale.",
       "pause": 400
     },
     {
-      "text": "The network is separate from ChainPoint, as Lockness specifies. Bound records an exact slot and header hash or the named genesis state; an acquisition request cannot silently switch to another point. Demo 1 supplies only Unbound sessions and refuses AtPoint requests by name. Session ids identify acquisition scope, not trust or snapshot atomicity. AtPoint carries the future selection request; a bound adapter's retention and rollback policies require a later contract before implementation. This ticket supplies no bound adapter.",
+      "text": "Main already contains the generic provider and evidence types, Koios adapter, local evaluation and pinned time fixtures, pure provider and trie tests, command composition, and private devnet facade. Their presence is not a fresh passing test result. Main still contains the obsolete node-internal component. The remaining delivery is its complete removal with migrated consumers and a passing packaged journey on the resulting commit.",
       "pause": 400
     },
     {
-      "text": "AnyOf is union and AllOf is intersection over exact output references, with full policy-and-name asset identity. Duplicate references with conflicting bytes refuse; empty NonEmpty compositions cannot be constructed. Resolved outputs preserve address, value, datum form and bytes, and reference scripts. Out-of-scope reads, unknown network, malformed bytes, missing input resolution and incomplete advertised history are named refusals, never successful empty answers. An honestly empty query result remains distinct from these failures.",
-      "pause": 400
-    },
-    {
-      "text": "Endorsement is abstract terminal-side information, with no witness format or implementation in Demo 1. The optional witness attaches to facts, not history. Submission returns the adapter's accepted transaction id or refusal reason; acceptance for relay is separate from confirmation or settlement.",
-      "pause": 400
-    },
-    {
-      "text": "TrieState has no witness parameter: these are application proofs, not ledger witnesses. Its immutable selection is the registry identity and state output/root consumed in the caller's session. Bound must match the acquired point; Unbound records an observation without inventing atomicity. CompleteFromCreate is constructed from checked backend coverage, never a caller-supplied Boolean. HistoryIncomplete, RootDoesNotChain and UndecodableRequest are named failures; wrong registry, stale root, missing proof and incomplete local coverage also refuse.",
-      "pause": 400
-    },
-    {
-      "text": "The current-mirror adapter preserves its file format, authenticatedLeaf/root checks, speculative walkEdge order and durable accepted-fold updates. It derives local coverage from checked create at the empty root and recorded trie-changing steps whose before/after roots form an unbroken, reproduced chain to the observed root. A-005 excludes equal-root moves from required records and coverage evidence; state selection is observed separately. Root matching cannot replace the chain. Missing coverage refuses. The pure State adapter uses fixture trie nodes, not the current IORef-backed \"Pure\" wrapper. Both run membership, non-membership and ordered edge proofs. Speculation never commits; acceptObservedFold preserves current observation, root-continuity and exactly-once recovery rules. Commands receive this capability instead of opening a mirror or manipulating TrieManager directly.",
+      "text": "The existing orchestrator supervises three implementation workers: Sol owns Haskell migration; Muse owns the devnet journey and executable checks; GLM owns required docs and packaging descriptions. The operator requested no independent audit. The orchestrator owns integration, final tests, PR and completion.",
       "pause": 400
     }
   ],
-  "component-responsibilities-and-data-flow": [
+  "required-outcomes-and-current-evidence": [
     {
-      "text": "Component responsibilities and data flow.",
+      "text": "Required outcomes and current evidence.",
+      "pause": 500
+    }
+  ],
+  "implementation-boundaries": [
+    {
+      "text": "Implementation boundaries.",
       "pause": 500
     },
     {
-      "text": "As a command maintainer, I obtain ledger facts through one session and give them to the common evaluator and time conversion. An adapter never evaluates scripts or interprets registry events. Signing and durable file handling remain at the executable boundary; confirmation uses injected clock and wait effects so that its bounded behavior can also run in a pure state fixture.",
+      "text": "Keep the current LedgerProvider w m, Session w m, Verifier w m and TrieState m contract. Confirmation remains the common bounded polling service specified by the ticket. Provider-owned waiting, new API publication surfaces, new verification systems, public-network transactions and changes to other tickets' acceptance are outside this reset.",
       "pause": 400
     },
     {
-      "text": "Local time conversion also consumes the pinned genesis and era history. Those reviewed network files are separate inputs to the common service.",
+      "text": "Sol owns offchain/ and conformance/ source, tests and component declarations. Move retained generic operations to their current non-node owners; delete obsolete node reads, in-memory indexing and their exclusive test machinery. The private devnet facade may connect to a node as test infrastructure; the shipping terminal may not. Preserve tracing introduced on main, recovery, request-carried destination datums, exact-output confirmation and signed-only submission. Do not restore old main behavior from the saved candidate.",
       "pause": 400
     },
     {
-      "text": "Move shared Provider responsibilities out of the node-internal component. Use one ledger-provider capability module, one evidence/verdict module, one generic history representation, common local evaluator and time modules, the recorded Koios adapter, TrieState with mirror and pure instances, and a pure State provider fixture adapter. Replace CLI.Node composition with terminal composition. Keep generic wallet/signing, transaction builders, application proofs and receipt durability; move them to their stable owners rather than retaining a node namespace as a compatibility shim.",
+      "text": "Muse owns journey/check scripts in tools/ and the relevant CI workflow wiring. Use the actual private ledger facade, never terminal receipts as its source. Retain tests for all required calls, named failures and every receipt fact's Unverified verdict. Adapt controls to removed components without removing the behavior they protect. Coordinate build and journey execution with Sol.",
       "pause": 400
     },
     {
-      "text": "Tip is a raw, evidenced provider observation needed by existing expiry and recovery decisions; it is not a snapshot binding. Script-credential registration is an additional raw fact used by deployment tools, authorized in answer A-003. Its Koios endpoint mapping must be demonstrated before acceptance; unknown registration refuses by name rather than returning False.",
+      "text": "GLM owns existing documentation, speech companions and documentation packaging references. Remove references to retired production components and make the existing API reference follow the actual component inventory. Do not broaden this ticket into a documentation redesign. Preserve historical decisions with explicit current applicability; superseded status is not current evidence.",
       "pause": 400
     }
   ],
-  "deletion-inventory-across-the-tracked-tree": [
+  "model-and-acceptance": [
     {
-      "text": "Deletion inventory across the tracked tree.",
+      "text": "Model and acceptance.",
       "pause": 500
     },
     {
-      "text": "As a reviewer, I want a complete discovery extent, so that an obsolete caller does not survive outside the obvious adapter files. The committed deletion inventory scans all 2,459 tracked paths at the frozen recovery base. It finds 258 paths and 1,605 distinct matching lines: 151 paths name node or indexer wiring, 172 name provider or derived calls, and 25 name the journey or mock, and 51 name trie/proof paths. These overlapping categories are not summed; trie rows preserve the mirror behind the new interface. Each row binds its path, content hash, matching line numbers and proposed disposition. Lexical discovery establishes scope only, not successful deletion.",
+      "text": "Behavioral authority is constitution 1.13.0 and the Lean files at the baseline: Model blob dc88ba5f9411173cfa655deab7e94ae5569dc395, Statements blob 71380017c1b99c43deda9ca3e44c393ed515a182, Driver blob 3f54cb1f9efd04de5004983cd84acf34dd7fcfd8. This is a representation migration: no changes to admission, folding, custody, refunds, signers or datum delivery. Lean does not model HTTP, sessions or verification policy. Preserve existing conformance mappings and visible limits; escalate a concrete model conflict.",
       "pause": 400
     },
     {
-      "text": "At implementation, rediscover all callers from the tracked source tree and compiler dependency graph. Quantify packaged command tests over the parser's nonempty command extent and public component inventory. Exercise the packaged binary with removed --backend and --node-socket settings and require a named parser refusal before acquisition. A renamed import or grep without a real binary check does not establish that a removed mechanism is unreachable.",
-      "pause": 400
-    }
-  ],
-  "runnable-vertical-slices": [
-    {
-      "text": "Runnable vertical slices.",
-      "pause": 500
-    },
-    {
-      "text": "As a demonstration user, I retain a working journey at every checkpoint. The epic owner's accepted slicing amendment places the behavior-preserving trie and local-computation migrations before the provider switch. Neither adds a second command route. Provider replacement and deletion still land together.",
-      "pause": 400
-    },
-    {
-      "text": "Each slice is pushed only after its local gate is green and every persistent auditor checkpoint is approved. The third slice remains indivisible at the command boundary. If either earlier migration cannot be separated, ask the epic owner with evidence instead of silently folding it into the switch. Resource limits and immutable per-slice checks are frozen before child launch. No additional seats are inferred.",
-      "pause": 400
-    }
-  ],
-  "development-network-provider-and-complete-call-coverage": [
-    {
-      "text": "Development-network provider and complete call coverage.",
-      "pause": 500
-    },
-    {
-      "text": "As a CI reviewer, I need a provider independent of singular's own receipts. Recommend a CI-only Koios-shaped facade over the generated devnet, replacing the receipt source in tools/demo1_mock_indexer.py. Its state comes from the devnet ledger, captured submitted CBOR and an independent history/input store. The existing readback disagreement modes stay as separate controls. The node belongs to this test provider; the singular executable never connects to it. The epic owner accepted loopback-only transport in the CI composition in answer A-001. Production live Koios HTTP is outside this ticket.",
-      "pause": 400
-    },
-    {
-      "text": "Every call must have a captured request, response, source and hash, linked to the consumer's effect trace. A required call returning 404, a synthetic empty answer, or the facade reading terminal receipts fails the CI journey. The facade remains unimplemented.",
-      "pause": 400
-    }
-  ],
-  "invariant-to-test-map-and-controlled-faults": [
-    {
-      "text": "Invariant-to-test map and controlled faults.",
-      "pause": 500
-    },
-    {
-      "text": "As a reviewer, I want each claimed guarantee to name the observation that would contradict it. These checks span the whole ticket; only the trie slice is reviewed so far. Behavioral red evidence must come from the subject running with a reachable fault, never a compiler or launcher failure.",
-      "pause": 400
-    },
-    {
-      "text": "The CI carriers are the dev-shell job's nix develop --quiet -c just ci, the packaged nix run --quiet .#demo1-cli-check journey, and focused checks added to that same local/CI surface for the new adapter. Existing .github/workflows/registry.yml also carries attach, readback, contract and recovery controls that must migrate rather than silently disappear. The implementation also adds this spec directory to the repository's presentation-check extent; this intake runs its existing checker explicitly.",
-      "pause": 400
-    }
-  ],
-  "accepted-checkpoints-and-remaining-delivery": [
-    {
-      "text": "Accepted checkpoints and remaining delivery.",
-      "pause": 500
-    },
-    {
-      "text": "As a maintainer, I need to distinguish the checked trie migration from the provider replacement still to come. The seven scoped TrieState reviews are approved. Local evaluation and pinned time, provider replacement with deletion, and published evidence remain unfinished; their checks above remain planned.",
-      "pause": 400
-    },
-    {
-      "text": "Focused trie checks passed 108 examples and the full suite passed 813, with no failures. Both packaged journeys and 628 recovery clauses passed. Execution before the checkpoint commits is bound by source-equivalence receipts; the journey's later formatting has no new exact-commit packaged run. These results establish application proofs and private-devnet recovery, not ledger verification.",
-      "pause": 400
-    },
-    {
-      "text": "If the state input moves between selection and fold construction, even with the same root, the fold now refuses without submitting and can be retried. Insert preview reach rests on shared source and its untraced successful receipt; update and terminate previews also have traced selection and refusal evidence.",
-      "pause": 400
-    },
-    {
-      "text": "Full CI remains held on docs-check for API narration. Draft pushes may name that gap; the operator's key holder supplies the audio. This is not full-CI or merge acceptance. Approved checkpoint ancestry is retained. The epic owner verifies final readiness and merges. Pages retain extracted speech; the prose ceiling is 24 KiB and 300 lines. No additional seats or gates are authorized.",
+      "text": "Completion requires nix develop --quiet -c just ci, the pure/recorded provider, trie and local-service tests, and the existing devnet journey jobs green on the final PR head. Record command, exit and commit; a build failure is not a behavioral failure or successful proof. The orchestrator updates task boxes only from execution evidence and closes #383 only after merge.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "7c0b2bb7ec42f33744ff173c2e26ddaa354a916f03f6a0b0aa47611d1f705ed2"
+    "sha256": "604a7b330f42b11e21e8aacf8a9486025d7dc122d8e98165e11c61dc218c99a5"
   }
 }

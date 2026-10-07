@@ -68,6 +68,7 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
+import Control.Concurrent (threadDelay)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -77,7 +78,15 @@ import Control.Exception
     )
 import Control.Monad (forM, forM_, unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
-import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
+import Data.Aeson
+    ( FromJSON (..)
+    , eitherDecode'
+    , encode
+    , object
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Data.Bits (complement)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -97,8 +106,10 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~), (^.))
 import MPF.Backend.Pure (MPFInMemoryDB)
 import PlutusCore.Data qualified as PLC
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
+import System.FilePath ((</>))
 import System.IO
     ( BufferMode (..)
     , hPutStrLn
@@ -163,18 +174,13 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
 import Cardano.Node.Client.E2E.Setup
-    ( Ed25519DSIGN
-    , SignKeyDSIGN
-    , addKeyWitness
+    ( addKeyWitness
     , enterpriseAddr
     , keyHashFromSignKey
     , mkSignKey
     )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Tx.Ledger (ConwayTx)
+
 import Naming.Datum
 import Naming.Register
 import Naming.Verify (singleNamingToken)
@@ -191,6 +197,7 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadBlueprint
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
     ( Attached (..)
@@ -204,6 +211,7 @@ import Singular.Registry.Deployment
     , readDeployment
     , saveMirror
     )
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -212,19 +220,11 @@ import Singular.Registry.Ledger
     , Root (..)
     , TokenId (..)
     )
+import Singular.Registry.LedgerProvider (Session, SubmitResult (..))
 import Singular.Registry.Lifecycle qualified as Lifecycle
-import Singular.Registry.Node
-    ( NodeSession (..)
-    , awaitChain
-    , awaitTx
-    , awaitTxId
-    , awaitTxWindow
-    , echoKoios
-    , funderAddr
-    , funderSignKey
-    , withNodeForPlannedFunding
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Runner (withRunner)
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -269,6 +269,8 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , OnChainTxOutRef
     )
+import Singular.Registry.Wallet (Wallet (..))
+import System.Timeout (timeout)
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -403,11 +405,10 @@ runMode mode blueprintPath registryPath = do
                 "consumer.consumer compiled code not found in the registry \
                 \blueprint (every Modify withdraws the pinned consumer)"
     args <- getArgs
-    withNodeForPlannedFunding $ \sess -> do
-        let prov = nsProvider sess
-            submit = nsSubmitter sess
-            pp = nsPParams sess
-            lifecycle = Lifecycle.lifecycleRequested sess args
+    withRunner $ \wallet caps -> Services.withLatest (capReads caps) $ \prov -> do
+        pp <- Services.parameters prov
+        let submit = caps
+            lifecycle = Lifecycle.lifecycleRequested (fst (capReads caps)) args
         when ("--funding-only" `elem` args && not lifecycle) $
             failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
@@ -419,7 +420,7 @@ runMode mode blueprintPath registryPath = do
                 dep <- readDeployment path
                 txInToRef <$> either failWith pure (parseOutRef (depSeedOutRef dep))
             Nothing -> do
-                utxos <- Cage.queryUTxOs prov genesisAddr
+                utxos <- Services.outputsAt prov (walletAddr wallet)
                 case sortOn (Down . (^. coinTxOutL) . snd) utxos of
                     [] -> failWith "boot: funding wallet has no UTxOs"
                     (txIn, _) : _ -> pure (txInToRef txIn)
@@ -540,6 +541,7 @@ runMode mode blueprintPath registryPath = do
             Nothing -> do
                 booted <-
                     bootRecoveryCage
+                        wallet
                         seedRef
                         prov
                         submit
@@ -571,40 +573,45 @@ runMode mode blueprintPath registryPath = do
                     \deployment was made; a run that attaches registers \
                     \nothing"
             Nothing -> do
-                unsignedReg <- registerConsumerImpl cfg prov genesisAddr
-                let signedReg = addKeyWitness genesisSignKey unsignedReg
-                regResult <- submitTx submit signedReg
+                unsignedReg <- registerConsumerImpl cfg prov (walletAddr wallet)
+                let signedReg = addKeyWitness (walletSignKey wallet) unsignedReg
+                regResult <- send wallet submit signedReg
                 case regResult of
-                    Submitted _ -> pure ()
-                    Rejected reason ->
+                    Right _ -> pure ()
+                    Left reason ->
                         failWith ("consumer-registration: rejected: " <> show reason)
                 _ <-
-                    waitConfirmationTx
+                    confirmHeld
+                        caps
                         signedReg
                         (txIdHex signedReg <> " (consumer-registration)")
                 emit
                     "consumer"
                     "consumer stake credential registered; hook withdrawals are live"
-                unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
-                let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
-                repRegResult <- submitTx submit signedRepReg
+                unsignedRepReg <-
+                    registerScriptImpl prov (walletAddr wallet) repAppliedHash
+                let signedRepReg = addKeyWitness (walletSignKey wallet) unsignedRepReg
+                repRegResult <- send wallet submit signedRepReg
                 case repRegResult of
-                    Submitted _ -> pure ()
-                    Rejected reason ->
+                    Right _ -> pure ()
+                    Left reason ->
                         failWith ("representative-registration: rejected: " <> show reason)
                 _ <-
-                    waitConfirmationTx
+                    confirmHeld
+                        caps
                         signedRepReg
                         (txIdHex signedRepReg <> " (representative-registration)")
                 emit
                     "representative"
                     "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
-        pool <- if lifecycle then pure [] else splitGenesis prov submit 80
+        pool <-
+            if lifecycle then pure [] else splitGenesis wallet prov submit 80
         poolRef <- newIORef pool
         scriptRefs <- case attached of
             Nothing ->
                 publishRecoveryRefs
+                    wallet
                     prov
                     submit
                     pp
@@ -626,7 +633,8 @@ runMode mode blueprintPath registryPath = do
                     { envAttached = attached
                     , envDumpTries = dumpTries
                     , envProv = prov
-                    , envSubmit = submit
+                    , envCaps = caps
+                    , envWallet = wallet
                     , envPp = pp
                     , envLifecycle = lifecycle
                     , envFundingOnly = "--funding-only" `elem` args
@@ -667,7 +675,7 @@ runMode mode blueprintPath registryPath = do
                     "folding the three recovery records (main, refusals, forged)"
                 (txMain, recMain) <-
                     setupGenuineRecord env oldSeed oldHash datumCorrect "main" "rc-main"
-                _ <- waitConfirmation (txMain <> " (setup: main)")
+                _ <- announceConfirmation (txMain <> " (setup: main)")
                 (txRef, recRefusals) <-
                     setupGenuineRecord
                         env
@@ -676,7 +684,7 @@ runMode mode blueprintPath registryPath = do
                         datumRefusals
                         "refusals"
                         "rc-refusals"
-                _ <- waitConfirmation (txRef <> " (setup: refusals)")
+                _ <- announceConfirmation (txRef <> " (setup: refusals)")
                 (txForged, recForged) <-
                     setupGenuineRecord
                         env
@@ -685,7 +693,7 @@ runMode mode blueprintPath registryPath = do
                         datumForged
                         "forged"
                         "rc-forged"
-                _ <- waitConfirmation (txForged <> " (setup: forged)")
+                _ <- announceConfirmation (txForged <> " (setup: forged)")
                 emit
                     "setup"
                     ( "records live at the application validator 0x"
@@ -741,12 +749,12 @@ fundPublicLifecycle env = do
                 pp
                 (envCfg env)
                 (envTok env)
-                genesisAddr
+                (walletAddr (envWallet env))
                 "rc-main"
                 edgeInsertActive
                 now
-        fund = Lifecycle.fundedOutput pp refs genesisAddr
-        collateral = Lifecycle.collateralOutput pp refs genesisAddr
+        fund = Lifecycle.fundedOutput pp refs (walletAddr (envWallet env))
+        collateral = Lifecycle.collateralOutput pp refs (walletAddr (envWallet env))
         lastDeposit = Coin 0
         -- Claim, connected fold, recovery, then maintenance.
         outs =
@@ -761,16 +769,18 @@ fundPublicLifecycle env = do
         -- The insert request spends the wallet change, outside the manual pool.
         reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs
     wallet <-
-        Cage.queryUTxOs
-            (Lifecycle.fundingProvider [] (envProv env))
-            genesisAddr
+        Services.outputsAt
+            (Lifecycle.fundingView [] (envProv env))
+            (walletAddr (envWallet env))
     let Coin available =
             mconcat
                 [ out ^. coinTxOutL
                 | (_, out) <- wallet
                 , out ^. referenceScriptTxOutL == SNothing
                 ]
-        Coin required = Lifecycle.fundingRequirement pp outs <> reserve
+        Coin required =
+            Lifecycle.fundingRequirement (walletAddr (envWallet env)) pp outs
+                <> reserve
     emit
         "funding"
         ( "public lifecycle total requirement "
@@ -785,7 +795,7 @@ fundPublicLifecycle env = do
         ("lifecycle total requirement: " <> show required <> " lovelace")
     unless (envFundingOnly env) $ do
         funded <-
-            Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+            Lifecycle.fundLifecycle (envWallet env) (envCaps env) outs
         writeIORef (envPool env) funded
 
 runLifecycle :: Env -> IO ()
@@ -810,8 +820,9 @@ data Env = Env
     -- ^ The deployment this run attached to, if any
     , envDumpTries :: IO (Map.Map TokenId MPFInMemoryDB)
     -- ^ Read this run's tries back out, for the run that follows
-    , envProv :: Cage.Provider IO
-    , envSubmit :: Submitter IO
+    , envProv :: Session NoWitness IO
+    , envCaps :: Capabilities NoWitness IO
+    , envWallet :: Wallet
     , envPp :: PParams ConwayEra
     , envLifecycle :: Bool
     , envFundingOnly :: Bool
@@ -846,19 +857,6 @@ data Env = Env
 -- ---------------------------------------------------------
 -- The eleven rows
 -- ---------------------------------------------------------
-
-{- | The wallet every actor of this run is funded from. On the factory
-devnet it is the genesis UTxO key, as it always was; in external-node
-mode it is the joiner's own signing key
-(`Singular.Registry.Node`). The name is kept so the funding sites
-below read unchanged.
--}
-genesisAddr :: Addr
-genesisAddr = funderAddr
-
--- | The signing key matching 'genesisAddr'.
-genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
-genesisSignKey = funderSignKey
 
 runRows :: Env -> TxIn -> TxIn -> TxIn -> IO ()
 runRows env recMain recRefusals recForged = do
@@ -926,13 +924,13 @@ ensureTrie tm mirrorTries tok =
     unless (Map.member tok mirrorTries) (createTrie tm tok)
 
 assertMirrorMatchesChain
-    :: Cage.Provider IO
+    :: Session NoWitness IO
     -> CageConfig
     -> TokenId
     -> TrieManager IO
     -> IO ()
 assertMirrorMatchesChain prov cfg tok tm = do
-    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    utxos <- Services.outputsAt prov (cageAddrFromCfg cfg Testnet)
     chain <- case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
         Nothing -> failWith "attach: the registry has no state UTxO"
         Just (_, out) -> case extractCageDatum out of
@@ -976,7 +974,7 @@ rowLR01 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     assertWitness env signed
     unless
         ( Set.singleton (addrWitnessKeyHash (envRevealedHash env))
@@ -992,7 +990,7 @@ rowLR01 env snap = do
         $ failWith
             "LR01: the old controller must not be among the required signers"
     submitAccepted env "LR01" signed
-    _ <- waitConfirmationTx signed (txIdHex signed <> " (LR01)")
+    _ <- confirmHeld (envCaps env) signed (txIdHex signed <> " (LR01)")
     contIn <-
         mustFindUTxO
             (envProv env)
@@ -1071,7 +1069,9 @@ rowLR02 env snap = do
             successor
             [envWrongHash env]
     let signed =
-            addKeyWitness (mkSignKey wrongSeed) (addKeyWitness genesisSignKey tx)
+            addKeyWitness
+                (mkSignKey wrongSeed)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1099,7 +1099,7 @@ rowLR03 mode env snap = do
             (scriptHashBytes (envScriptHash env))
             successor
             []
-    let signed = addKeyWitness genesisSignKey tx
+    let signed = addKeyWitness (walletSignKey (envWallet env)) tx
     expectRefused
         mode
         env
@@ -1129,7 +1129,7 @@ rowLR06 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1158,7 +1158,10 @@ rowLR07 env snap = do
             (scriptHashBytes (envScriptHash env))
             successor
             [envOldHash env]
-    let signed = addKeyWitness (mkSignKey oldSeed) (addKeyWitness genesisSignKey tx)
+    let signed =
+            addKeyWitness
+                (mkSignKey oldSeed)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1188,7 +1191,7 @@ rowLR08 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1219,7 +1222,7 @@ rowLR09 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1250,7 +1253,7 @@ rowLR10 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1285,7 +1288,7 @@ rowLR11 env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1315,7 +1318,7 @@ rowLR11Destination env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1344,7 +1347,7 @@ rowLR11Control env snap = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1374,7 +1377,7 @@ rowLR04 env snap1 = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     emit
         "row"
         ( "LR04-recovery-replay-refused: replaying the consumed reveal 0x"
@@ -1385,13 +1388,13 @@ rowLR04 env snap1 = do
             <> hex (nextControlCommitment current)
             <> ")"
         )
-    result <- submitTx (envSubmit env) signed
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ ->
+        Right _ ->
             failWith
                 "LR04: the replay was ACCEPTED — the consumed commitment authorized recovery twice"
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+        Left reason -> do
+            let reasonText = T.unpack reason
                 phase2 = "PlutusFailure" `isInfixOf` reasonText
                 namesApp = envAppHex env `isInfixOf` reasonText
             unless (phase2 && namesApp) $
@@ -1416,7 +1419,10 @@ rowLR05 env snap1 = do
     current <- chainDatumOf env snap1 "LR05"
     let maintained = current{paymentDestination = SomeDestination (envDestCodec env)}
     tx <- maintainTx env snap1 maintained [envOldHash env]
-    let signed = addKeyWitness (mkSignKey oldSeed) (addKeyWitness genesisSignKey tx)
+    let signed =
+            addKeyWitness
+                (mkSignKey oldSeed)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     expectRefused
         MainRun
         env
@@ -1435,10 +1441,13 @@ rowMaintainRecovered env snap1 = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
     submitAccepted env "maintain-recovered" signed
     _ <-
-        waitConfirmationTx signed (txIdHex signed <> " (maintain-recovered)")
+        confirmHeld
+            (envCaps env)
+            signed
+            (txIdHex signed <> " (maintain-recovered)")
     contIn <-
         mustFindUTxO
             (envProv env)
@@ -1516,10 +1525,10 @@ runControlValid env recRefusals = do
     let signed =
             addKeyWitness
                 (mkSignKey revealedSeed)
-                (addKeyWitness genesisSignKey tx)
-    result <- submitTx (envSubmit env) signed
+                (addKeyWitness (walletSignKey (envWallet env)) tx)
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ -> do
+        Right _ -> do
             emit
                 "row"
                 "LR03-missing-recovery-signer-refused: CONTROL valid-transaction \
@@ -1528,11 +1537,11 @@ runControlValid env recRefusals = do
                 "CONTROL valid-transaction: LR03's transaction, made actually \
                 \valid, SUCCEEDED — the guard did not refuse, so this run \
                 \fails as the control requires"
-        Rejected reason ->
+        Left reason ->
             failWith
                 ( "CONTROL valid-transaction: the control transaction was \
                   \unexpectedly refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
 
 runControlWrongReason :: Env -> TxIn -> TxIn -> IO ()
@@ -1560,7 +1569,7 @@ runControlWrongReason env recMain recRefusals = do
     let signedBad =
             addKeyWitness
                 (mkSignKey wrongSeed)
-                (addKeyWitness genesisSignKey txBad)
+                (addKeyWitness (walletSignKey (envWallet env)) txBad)
     expectRefused
         ControlWrongReason
         env
@@ -1588,16 +1597,16 @@ expectRefused mode env rowName modelReason guard signed = do
         expectedMarker
             | wrongReasonMode = wrongReasonMarker
             | otherwise = envAppHex env
-    result <- submitTx (envSubmit env) signed
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ ->
+        Right _ ->
             failWith
                 ( rowName
                     <> ": transaction was ACCEPTED — the guard did not hold: "
                     <> guard
                 )
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+        Left reason -> do
+            let reasonText = T.unpack reason
                 phase2 = "PlutusFailure" `isInfixOf` reasonText
             unless (phase2 || wrongReasonMode) $
                 failWith
@@ -1663,7 +1672,11 @@ recoverTx env snap revealed reps registry successor signers = do
                 (snapRepTokens env snap)
                 successor
         change =
-            changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [contOut]
+            changeOut
+                (walletAddr (envWallet env))
+                (snapCoin snap + coinOf fund)
+                (lifecycleFee env)
+                [contOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
@@ -1709,7 +1722,11 @@ maintainTx env snap successor signers = do
                 (snapRepTokens env snap)
                 successor
         change =
-            changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [contOut]
+            changeOut
+                (walletAddr (envWallet env))
+                (snapCoin snap + coinOf fund)
+                (lifecycleFee env)
+                [contOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
@@ -1748,16 +1765,17 @@ scriptOut pp addr coin tokens datum =
             & datumTxOutL .~ mkInlineDatum (namingDataToData datum)
 
 changeOut
-    :: Integer
+    :: Addr
+    -> Integer
     -> Integer
     -> [TxOut ConwayEra]
     -> TxOut ConwayEra
-changeOut inCoin fee outs =
+changeOut address inCoin fee outs =
     let spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
         change = inCoin - fee - spent
     in  if change <= 1_000_000
             then error "recovery-rows: change underflow while balancing"
-            else mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+            else mkBasicTxOut address (MaryValue (Coin change) mempty)
 
 -- ---------------------------------------------------------
 -- Setup transactions
@@ -1781,16 +1799,17 @@ snapRepTokens env snap =
         (Map.singleton (AssetName (SBS.toShort (snapRep snap))) 1)
 
 bootRecoveryCage
-    :: OnChainTxOutRef
-    -> Cage.Provider IO
-    -> Submitter IO
+    :: Wallet
+    -> OnChainTxOutRef
+    -> Session NoWitness IO
+    -> Capabilities NoWitness IO
     -> TrieManager IO
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> SBS.ShortByteString
     -> IO (CageConfig, TokenId)
-bootRecoveryCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
+bootRecoveryCage wallet seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
     let ConsumerBinding
             { cbPin = consumerPin
             , cbScriptBytes = consumerScriptBytes
@@ -1818,13 +1837,13 @@ bootRecoveryCage seedRef prov submit tm stateBytes requestBytes repPolicy consum
                \evidence alone; stake credential registered below before \
                \the first Modify)"
         )
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-    let signedBoot = addKeyWitness genesisSignKey unsignedBoot
-    result <- submitTx submit signedBoot
+    unsignedBoot <- bootTokenImpl cfg prov (walletAddr wallet)
+    let signedBoot = addKeyWitness (walletSignKey wallet) unsignedBoot
+    result <- send wallet submit signedBoot
     case result of
-        Submitted _ -> pure ()
-        Rejected reason -> failWith ("boot: rejected: " <> show reason)
-    awaitTx signedBoot
+        Right _ -> pure ()
+        Left reason -> failWith ("boot: rejected: " <> show reason)
+    capConfirm submit signedBoot
     let MultiAsset ma = signedBoot ^. bodyTxL . mintTxBodyL
         assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
     tok <- case assets of
@@ -1838,8 +1857,9 @@ bootRecoveryCage seedRef prov submit tm stateBytes requestBytes repPolicy consum
 resolve every purpose through reference inputs.
 -}
 publishRecoveryRefs
-    :: Cage.Provider IO
-    -> Submitter IO
+    :: Wallet
+    -> Session NoWitness IO
+    -> Capabilities NoWitness IO
     -> PParams ConwayEra
     -> IORef [(TxIn, TxOut ConwayEra)]
     -> CageConfig
@@ -1847,7 +1867,7 @@ publishRecoveryRefs
     -> Script ConwayEra
     -> Script ConwayEra
     -> IO [(TxIn, TxOut ConwayEra)]
-publishRecoveryRefs prov submit pp poolRef cfg tok appScript repScript = do
+publishRecoveryRefs wallet prov submit pp poolRef cfg tok appScript repScript = do
     let scripts =
             [ mkCageScript cfg
             , mkRequestScript cfg tok
@@ -1856,21 +1876,22 @@ publishRecoveryRefs prov submit pp poolRef cfg tok appScript repScript = do
             ]
     concat
         <$> mapM
-            (publishBatch prov submit pp poolRef genesisAddr)
+            (publishBatch wallet prov submit pp poolRef (walletAddr wallet))
             (batches scripts)
   where
     batches [] = []
     batches xs = take 2 xs : batches (drop 2 xs)
 
 publishBatch
-    :: Cage.Provider IO
-    -> Submitter IO
+    :: Wallet
+    -> Session NoWitness IO
+    -> Capabilities NoWitness IO
     -> PParams ConwayEra
     -> IORef [(TxIn, TxOut ConwayEra)]
     -> Addr
     -> [Script ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
-publishBatch prov submit pp poolRef addr scripts = do
+publishBatch wallet prov submit pp poolRef addr scripts = do
     pool <- readIORef poolRef
     (fund, rest) <- case pool of
         (f : fs) -> pure (f, fs)
@@ -1892,21 +1913,21 @@ publishBatch prov submit pp poolRef addr scripts = do
     unless (changeCoin > 1_000_000) $
         failWith "publish: funding UTxO too small for script outputs"
     let changeOutTx =
-            mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+            mkBasicTxOut (walletAddr wallet) (MaryValue (Coin changeCoin) mempty)
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton (fst fund)
                 & outputsTxBodyL .~ StrictSeq.fromList (outs <> [changeOutTx])
                 & feeTxBodyL .~ Coin 1_000_000
         tx = mkBasicTx body
-        signed = addKeyWitness genesisSignKey tx
-    result <- submitTx submit signed
+        signed = addKeyWitness (walletSignKey wallet) tx
+    result <- send wallet submit signed
     case result of
-        Submitted _ -> pure ()
-        Rejected reason -> failWith ("publish: refused: " <> show reason)
+        Right _ -> pure ()
+        Left reason -> failWith ("publish: refused: " <> show reason)
     let txid = txIdHex tx
-    awaitTx signed
-    after <- Cage.queryUTxOs prov addr
+    capConfirm submit signed
+    after <- Services.outputsAt prov addr
     let mine =
             sortBy
                 (comparing (txInIndex . fst))
@@ -1926,7 +1947,7 @@ submitRecoveryRequest env spelling value = do
     pool <- readIORef (envPool env)
     let prov =
             if envLifecycle env
-                then Lifecycle.fundingProvider (map fst pool) (envProv env)
+                then Lifecycle.fundingView (map fst pool) (envProv env)
                 else envProv env
     unsigned <-
         requestEdgeImpl
@@ -1936,15 +1957,16 @@ submitRecoveryRequest env spelling value = do
             tok
             spelling
             edgeInsertActive
-            genesisAddr
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTx (envSubmit env) signed
+            (walletAddr (envWallet env))
+    let signed = addKeyWitness (walletSignKey (envWallet env)) unsigned
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ -> pure ()
-        Rejected reason -> failWith ("request: rejected: " <> show reason)
+        Right _ -> pure ()
+        Left reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
     _ <-
-        waitConfirmationTx
+        confirmHeld
+            (envCaps env)
             signed
             (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
@@ -1957,7 +1979,7 @@ queryRecoveryState env = do
     let cfg = envCfg env
         tok = envTok env
         stateAddr = cageAddrFromCfg cfg Testnet
-    utxos <- Cage.queryUTxOs (envProv env) stateAddr
+    utxos <- Services.outputsAt (envProv env) stateAddr
     case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
         Just x -> pure x
         Nothing -> failWith "state UTxO not found"
@@ -1975,7 +1997,7 @@ queryRecoveryFee env
 
 mustOutAt :: Env -> Addr -> TxIn -> IO (TxOut ConwayEra)
 mustOutAt env addr txin = do
-    utxos <- Cage.queryUTxOs (envProv env) addr
+    utxos <- Services.outputsAt (envProv env) addr
     case filter ((== txin) . fst) utxos of
         [(_, o)] -> pure o
         _ -> failWith ("output " <> showIn txin <> " is not live")
@@ -2021,7 +2043,12 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
                     claimCoin
                     approvalTokens
                     datum
-        changeA = changeOut (coinOf fundA) (lifecycleFee env) [claimOut]
+        changeA =
+            changeOut
+                (walletAddr (envWallet env))
+                (coinOf fundA)
+                (lifecycleFee env)
+                [claimOut]
         redeemersA =
             Redeemers $
                 Map.singleton
@@ -2054,10 +2081,11 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     let signedA =
             addKeyWitness
                 (mkSignKey controllerSeed)
-                (addKeyWitness genesisSignKey evaluatedA)
+                (addKeyWitness (walletSignKey (envWallet env)) evaluatedA)
     submitAccepted env ("setup-" <> label <> "-insert") signedA
     _ <-
-        waitConfirmationTx
+        confirmHeld
+            (envCaps env)
             signedA
             (txIdHex signedA <> " (setup: " <> label <> " claim)")
     claimIn <-
@@ -2088,14 +2116,13 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
         connectedFoldTx
             ConnectedFoldArgs
                 { cfaCfg = envCfg env
-                , cfaProvider = envProv env
+                , cfaSession = envProv env
                 , cfaTrie = envTrie env
                 , cfaToken = envTok env
-                , cfaFeeAddr = genesisAddr
+                , cfaFeeAddr = walletAddr (envWallet env)
                 , cfaStateUtxo = (stateIn, stateOut)
                 , cfaReqUtxos = [(reqIn, reqOut)]
                 , cfaFeeUtxo = feeUtxo
-                , cfaPp = envPp env
                 , cfaSpends =
                     [ ConnectedSpend
                         { csUtxo = (claimIn, claimLive)
@@ -2140,10 +2167,11 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
         (envLifecycle env)
         (envPp env)
         unsignedF
-    let signedF = addKeyWitness genesisSignKey unsignedF
+    let signedF = addKeyWitness (walletSignKey (envWallet env)) unsignedF
     submitAccepted env ("setup-" <> label <> "-fold") signedF
     _ <-
-        waitConfirmationTx
+        confirmHeld
+            (envCaps env)
             signedF
             (txIdHex signedF <> " (setup: " <> label <> " fold)")
     syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
@@ -2185,12 +2213,13 @@ mintRepresentativeRedeemer :: PLC.Data
 mintRepresentativeRedeemer = PLC.Constr 0 []
 
 splitGenesis
-    :: Cage.Provider IO
-    -> Submitter IO
+    :: Wallet
+    -> Session NoWitness IO
+    -> Capabilities NoWitness IO
     -> Integer
     -> IO [(TxIn, TxOut ConwayEra)]
-splitGenesis prov submit nSplits = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
+splitGenesis wallet prov submit nSplits = do
+    utxos <- Services.outputsAt prov (walletAddr wallet)
     -- The largest output, which is what "big" meant all along. Ordering
     -- by transaction id picked the right one only because a devnet this
     -- run booted for itself has exactly one output at this address; a
@@ -2206,26 +2235,27 @@ splitGenesis prov submit nSplits = do
     unless (change > 1_000_000) $
         failWith "split: the genesis wallet cannot fund the splits"
     let splitOuts =
-            [ mkBasicTxOut genesisAddr (MaryValue (Coin perSplit) mempty)
+            [ mkBasicTxOut (walletAddr wallet) (MaryValue (Coin perSplit) mempty)
             | _ <- [1 .. nSplits]
             ]
-        changeOut' = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+        changeOut' = mkBasicTxOut (walletAddr wallet) (MaryValue (Coin change) mempty)
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton bigIn
                 & outputsTxBodyL .~ StrictSeq.fromList (splitOuts <> [changeOut'])
                 & feeTxBodyL .~ Coin fee
         splitTx = mkBasicTx body
-    result <- submitTx submit (addKeyWitness genesisSignKey splitTx)
+    result <-
+        send wallet submit (addKeyWitness (walletSignKey wallet) splitTx)
     case result of
-        Submitted _ -> pure ()
-        Rejected reason ->
+        Right _ -> pure ()
+        Left reason ->
             failWith
                 ( "split: refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
-    awaitTx splitTx
-    after <- Cage.queryUTxOs prov genesisAddr
+    capConfirm submit splitTx
+    after <- Services.outputsAt prov (walletAddr wallet)
     let txid = txIdHex splitTx
         mine =
             [ (i, o)
@@ -2262,7 +2292,6 @@ preparePublicTx env =
     Lifecycle.prepareLifecycleTx
         (envLifecycle env)
         (envProv env)
-        (envPp env)
         (envRefUtxos env)
 
 takeFundCollateral
@@ -2289,7 +2318,7 @@ data Snap = Snap
 
 mustSnap :: Env -> TxIn -> IO Snap
 mustSnap env txin = do
-    utxos <- Cage.queryUTxOs (envProv env) (envAppAddr env)
+    utxos <- Services.outputsAt (envProv env) (envAppAddr env)
     case filter ((== txin) . fst) utxos of
         [(_, o)] -> do
             let Coin c = o ^. coinTxOutL
@@ -2317,20 +2346,20 @@ mustSnap env txin = do
                 )
 
 mustFindUTxO
-    :: Cage.Provider IO
+    :: Session NoWitness IO
     -> Addr
     -> String
     -> String
     -> IO TxIn
 mustFindUTxO prov addr txid label =
-    awaitChain
+    observeWithin
         ( label
             <> ": no output of tx "
             <> txid
             <> " is live at the application validator"
         )
         $ do
-            utxos <- Cage.queryUTxOs prov addr
+            utxos <- Services.outputsAt prov addr
             let mine =
                     sortBy
                         (comparing (txInIndex . fst))
@@ -2455,16 +2484,16 @@ redeemerRecover revealed reps registry =
 submitAccepted :: Env -> String -> ConwayTx -> IO ()
 submitAccepted env label signed = do
     evDir <- evidenceDirFromEnv
-    result <- submitTx (envSubmit env) signed
-    echoKoios evDir label (serializeTxBytes signed)
+    result <- send (envWallet env) (envCaps env) signed
+    retainSubmission (envCaps env) evDir label signed
     case result of
-        Submitted _ ->
+        Right _ ->
             emit "submit" (label <> ": accepted tx=" <> txIdHex signed)
-        Rejected reason ->
+        Left reason ->
             failWith
                 ( label
                     <> ": the node refused an accepting row: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
 
 assertWitness :: Env -> ConwayTx -> IO ()
@@ -2482,17 +2511,17 @@ assertWitness env signed = do
                 <> " but it held "
                 <> show (Set.toList witnessHashes)
 
-waitConfirmation :: String -> IO ()
-waitConfirmation what = do
-    awaitTxId (take 64 what)
+announceConfirmation :: String -> IO ()
+announceConfirmation what =
     emit "confirm" ("confirmed on chain: " <> what)
 
 {- | Confirm a transaction the runner still holds, polling until that
 transaction's own validity upper bound expires — not a fixed window.
 -}
-waitConfirmationTx :: ConwayTx -> String -> IO ()
-waitConfirmationTx signed what = do
-    awaitTxWindow signed (take 64 what)
+confirmHeld
+    :: Capabilities NoWitness IO -> ConwayTx -> String -> IO ()
+confirmHeld caps signed what = do
+    capConfirm caps signed
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- | The evidence directory the run retains its diagnostics in.
@@ -2647,3 +2676,50 @@ nextControlCommitmentOf bs =
 forgedCommitmentOf :: ByteString -> ByteString
 forgedCommitmentOf bs =
     convert (hash bs :: Digest Blake2b_256)
+
+-- | Sealing must preserve the exact retained signed value before effects.
+send
+    :: Wallet
+    -> Capabilities NoWitness IO
+    -> ConwayTx
+    -> IO (Either T.Text TxId)
+send wallet caps transaction = do
+    let sealed = signTx (walletSignKey wallet) transaction
+        body = signedTx sealed
+    unless (body == transaction) $
+        failWith "submission would change the retained signed transaction"
+    capSubmit caps sealed >>= \case
+        SubmitAccepted identity -> do
+            unless (identity == txIdTx body) $
+                failWith "accepted identity differs from signed body"
+            pure (Right identity)
+        SubmitRefused reason -> pure (Left reason)
+        SubmitFailed reason -> failWith ("submission unavailable: " <> show reason)
+        SubmitWrongNetwork configured wanted ->
+            failWith ("submission network differs: " <> show (configured, wanted))
+
+{- | The former echo's second public submission is retired. Retain only the
+actual signed bytes and the shipping constructor's own evidence.
+-}
+retainSubmission
+    :: Capabilities NoWitness IO -> FilePath -> String -> ConwayTx -> IO ()
+retainSubmission caps directory label transaction = do
+    createDirectoryIfMissing True directory
+    BS.writeFile
+        (directory </> ("tx-" <> label <> ".cbor"))
+        (serializeTxBytes transaction)
+    facts <- capFacts caps
+    trace <- capTrace caps
+    BSL.writeFile
+        (directory </> ("tx-" <> label <> ".provider.json"))
+        (encode (object ["facts" .= facts, "rawSources" .= trace]) <> "\n")
+
+observeWithin :: String -> IO (Maybe a) -> IO a
+observeWithin label observe = do
+    result <- timeout 300_000_000 poll
+    maybe
+        (failWith (label <> " (still not observable after 300 seconds)"))
+        pure
+        result
+  where
+    poll = observe >>= maybe (threadDelay 2_000_000 >> poll) pure

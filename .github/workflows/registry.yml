@@ -362,12 +362,13 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #326 R1/R2/R3: one case list over every adapter — in-memory, the
-      # indexer over the in-memory node, and the node and indexer adapters on
-      # devnet nodes the suite generates — each run named with its evidence
-      # class, each case an adapter cannot exercise reported for it by name.
-      # The generated-node rows also hold the session's connection guard: a
-      # node call from inside a view fails by name instead of hanging.
+      # #326 R1/R2/R3, retired under #383: one case list over the generic
+      # provider harness — the eleven original node/indexer requirements keep
+      # their exact wording but are published as unsupported where the retired
+      # adapters' promises do not hold, never passed under weaker session
+      # semantics; separate cases exercise the generic provider. Each run names
+      # its evidence class: test-adapter (synthetic) or devnet (private);
+      # neither names a public-chain acceptance.
       # #326 R9: every case's result on every adapter is also written as one
       # JSON line (adapter, evidence class, case, outcome and reason, the
       # checked-out revision and whether the tree was clean) and kept as the

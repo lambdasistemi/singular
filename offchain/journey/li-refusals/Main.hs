@@ -85,8 +85,6 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -175,27 +173,8 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup
-    ( addKeyWitness
-    , devnetMagic
-    , genesisAddr
-    , genesisDir
-    , genesisSignKey
-    )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection
-    ( newLSQChannel
-    , newLTxSChannel
-    , runNodeClient
-    )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Node.Client.E2E.Setup (addKeyWitness)
+import Cardano.Tx.Ledger (ConwayTx)
 import Naming.Datum
 import Naming.Register (registryAssetId)
 import Naming.Wire
@@ -212,7 +191,9 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadBlueprint
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -220,8 +201,10 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.Node (boundedSubmitter, submissionBound)
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (Session, SubmitResult (..))
+import Singular.Registry.Runner (withRunner)
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , addrWitnessKeyHash
@@ -247,6 +230,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTxOutRef (..)
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -376,17 +360,10 @@ runMode mode registryPath namingPath = do
             "representative.representative.mint compiled code not found in the naming blueprint"
     si <- readScriptIdentity =<< identityPathFromEnv
     namingSi <- readNamingIdentity =<< namingIdentityPathFromEnv
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <- async $ runNodeClient devnetMagic sock lsqCh ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = boundedSubmitter submissionBound (mkN2CSubmitter ltxsCh)
-        _ <- Cage.queryProtocolParams prov
-        pp <- Cage.queryProtocolParams prov
+    withRunner $ \wallet caps -> Services.withLatest (capReads caps) $ \prov -> do
+        let submit = caps
+            genesisAddr = walletAddr wallet
+        pp <- Services.parameters prov
         -- Identity: the pinned unapplied state hash must equal the hash
         -- of this run's blueprint code; the applied state script is
         -- derived from it (previousPolicies=[]); the naming application
@@ -405,14 +382,14 @@ runMode mode registryPath namingPath = do
         -- lexically first UTxO of the genesis wallet — the LI01
         -- designation rule), output 1 the alternate seed (401), the
         -- rest fund and collateralise the attempts.
-        utxos0 <- Cage.queryUTxOs prov genesisAddr
+        utxos0 <- Services.outputsAt prov genesisAddr
         (genesisIn, genesisOut) <-
             case sortBy (comparing (outRefSortKey . fst)) utxos0 of
                 [g] -> pure g
                 _ -> failWith "world: expected exactly one genesis UTxO"
-        world <- designateWorld prov submit genesisIn genesisOut
-        _ <- waitConfirmation "world designation split"
-        utxos1 <- Cage.queryUTxOs prov genesisAddr
+        world <- designateWorld wallet prov submit genesisIn genesisOut
+        emit "confirm" "confirmed on chain: world designation split"
+        utxos1 <- Services.outputsAt prov genesisAddr
         canonicalSeed <-
             utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
         altSeed <- utxoByRef utxos1 (worldAltRef world) "alternate seed"
@@ -505,7 +482,8 @@ runMode mode registryPath namingPath = do
         let env =
                 Env
                     { envProv = prov
-                    , envSubmit = submit
+                    , envCaps = caps
+                    , envWallet = wallet
                     , envPp = pp
                     , envPool = worldPool world
                     , envAppliedScript = appliedScript
@@ -528,7 +506,6 @@ runMode mode registryPath namingPath = do
         case mode of
             ControlCanonical -> runControlCanonical env canonicalSeed
             _ -> runRows mode env canonicalSeed altSeed
-        cancel nodeThread
 
 {- | The seven rows in world order: the six fresh-world attempts
 (canonical seed still unspent — before.consumedSeeds=[]), the real
@@ -564,8 +541,9 @@ runRows mode env canonicalSeed altSeed = do
 -- ---------------------------------------------------------
 
 data Env = Env
-    { envProv :: Cage.Provider IO
-    , envSubmit :: Submitter IO
+    { envProv :: Session NoWitness IO
+    , envCaps :: Capabilities NoWitness IO
+    , envWallet :: Wallet
     , envPp :: PParams ConwayEra
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
     , envAppliedScript :: Script ConwayEra
@@ -602,12 +580,15 @@ transaction it is the lexically first UTxO of the genesis wallet
 (one txid, lowest index), so the LI01 designation rule names it.
 -}
 designateWorld
-    :: Cage.Provider IO
-    -> Submitter IO
+    :: Wallet
+    -> Session NoWitness IO
+    -> Capabilities NoWitness IO
     -> TxIn
     -> TxOut ConwayEra
     -> IO World
-designateWorld prov submit genesisIn genesisOut = do
+designateWorld wallet prov submit genesisIn genesisOut = do
+    let genesisAddr = walletAddr wallet
+        genesisSignKey = walletSignKey wallet
     let Coin total = genesisOut ^. coinTxOutL
         nFunders = 16 :: Integer
         funderCoin = 25_000_000
@@ -630,16 +611,16 @@ designateWorld prov submit genesisIn genesisOut = do
                 & outputsTxBodyL .~ StrictSeq.fromList (outs <> [changeOut'])
                 & feeTxBodyL .~ Coin fee
         splitTx = mkBasicTx body
-    result <- submitTx submit (addKeyWitness genesisSignKey splitTx)
+    result <- send wallet submit (addKeyWitness genesisSignKey splitTx)
     case result of
-        Submitted _ -> pure ()
-        Rejected reason ->
+        Right _ -> pure ()
+        Left reason ->
             failWith
                 ( "world: the designation split was refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
-    threadDelay 5_000_000
-    after <- Cage.queryUTxOs prov genesisAddr
+    capConfirm submit (addKeyWitness genesisSignKey splitTx)
+    after <- Services.outputsAt prov genesisAddr
     let txid = txIdHex splitTx
         mine =
             sortBy
@@ -795,24 +776,24 @@ rowLI03 mode env altSeed = case mode of
                     , rtxChangeTokens = mempty
                     , rtxReqSigners = Set.empty
                     }
-        let signed = addKeyWitness genesisSignKey tx
-        result <- submitTx (envSubmit env) signed
+        let signed = addKeyWitness (walletSignKey (envWallet env)) tx
+        result <- send (envWallet env) (envCaps env) signed
         case result of
-            Rejected reason ->
+            Left reason ->
                 failWith
                     ( "LI03: the rival was REFUSED ("
-                        <> T.unpack (TE.decodeUtf8Lenient reason)
+                        <> T.unpack reason
                         <> ") — the A-001 ruling recuts this row to assert the "
                         <> "rival is ACCEPTED; a refusal contradicts the ruled "
                         <> "model and fails the run"
                     )
-            Submitted _ -> do
-                threadDelay 5_000_000
+            Right _ -> do
+                capConfirm (envCaps env) signed
                 -- Read the accepted rival back from the chain and assert
                 -- what the ruling requires: it is live at the application
                 -- validator, under its own seed-derived name, and that name
                 -- differs from the canonical name.
-                scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
+                scriptUtxos <- Services.outputsAt (envProv env) (envScriptAddr env)
                 let rivalTokenId = TokenId (AssetName (SBS.toShort (envAltName env)))
                 (rivalIn, _) <- case findStateUtxo
                     (cagePolicyIdFromCfg (envCfg env))
@@ -825,7 +806,8 @@ rowLI03 mode env altSeed = case mode of
                 unless (envAltName env /= envCanonicalName env) $
                     failWith
                         "LI03: the rival name equals the canonical name — derivation broken"
-                wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+                wallet <-
+                    Services.outputsAt (envProv env) (walletAddr (envWallet env))
                 unless (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet) $
                     failWith
                         "LI03: the canonical seed is unexpectedly spent before LI01 ran"
@@ -1022,7 +1004,7 @@ li05BoundaryProbe :: Env -> IO ()
 li05BoundaryProbe env = do
     ((probeIn, probeOut), _) <- takeFundCollateral env
     let appPolicy = PolicyID (envAppHash env)
-        destBytes = serialiseAddr genesisAddr
+        destBytes = serialiseAddr (walletAddr (envWallet env))
         mintMA =
             MultiAsset $
                 Map.singleton
@@ -1049,10 +1031,10 @@ li05BoundaryProbe env = do
                 , rtxChangeTokens = mintMA
                 , rtxReqSigners = Set.singleton (envCtrlHash env)
                 }
-    let signed = addKeyWitness genesisSignKey tx
-    result <- submitTx (envSubmit env) signed
+    let signed = addKeyWitness (walletSignKey (envWallet env)) tx
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ ->
+        Right _ ->
             emit
                 "li05-boundary"
                 ( "the well-formed mint under the substituted application policy "
@@ -1064,12 +1046,12 @@ li05BoundaryProbe env = do
                     <> "own rule, not the initialization binding refusing a wrong "
                     <> "applicationPolicy; the canonical seed was not spent"
                 )
-        Rejected reason ->
+        Left reason ->
             emit
                 "li05-boundary"
                 ( "the well-formed mint under the substituted application policy "
                     <> "was refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                     <> " — the boundary is narrower than the source suggests"
                 )
 
@@ -1261,20 +1243,21 @@ runRealLi01 env canonicalSeed = do
         )
     unsigned <-
         buildCanonicalTx
+            (walletAddr (envWallet env))
             (envCfg env)
             (envPp env)
             (envProv env)
             canonicalSeed
             []
             (envNamingDatum env)
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTx (envSubmit env) signed
+    let signed = addKeyWitness (walletSignKey (envWallet env)) unsigned
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ -> pure ()
-        Rejected reason ->
+        Right _ -> pure ()
+        Left reason ->
             failWith
                 ( "li01: the node refused the canonical initialization: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
     let txid = txIdHex signed
     -- The script witness must be exactly the derived applied state
@@ -1290,7 +1273,7 @@ runRealLi01 env canonicalSeed = do
                 <> envAppliedHex env
                 <> " but it held "
                 <> show (Set.toList witnessHashes)
-    threadDelay 5_000_000
+    capConfirm (envCaps env) signed
     -- The mint is exactly the bootstrap asset.
     let MultiAsset mintMap = signed ^. bodyTxL . mintTxBodyL
         expectedMint =
@@ -1300,7 +1283,8 @@ runRealLi01 env canonicalSeed = do
     unless (mintMap == expectedMint) $
         failWith "li01: the mint is not exactly the bootstrap asset"
     -- Seed consumed, observed from the chain.
-    walletAfter <- Cage.queryUTxOs (envProv env) genesisAddr
+    walletAfter <-
+        Services.outputsAt (envProv env) (walletAddr (envWallet env))
     let seedStillThere =
             any (\(i, _) -> txInToRef i == cageSeed (envCfg env)) walletAfter
     when seedStillThere $
@@ -1314,7 +1298,7 @@ runRealLi01 env canonicalSeed = do
     -- both must be outputs of the LI01 transaction itself, so a rival
     -- registry left on the ledger by LI03's acceptance can never be
     -- mistaken for the canonical objects.
-    scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
+    scriptUtxos <- Services.outputsAt (envProv env) (envScriptAddr env)
     let tokenId = TokenId (AssetName (SBS.toShort (envCanonicalName env)))
         li01Utxos = filter ((== txid) . txInTxIdHex . fst) scriptUtxos
     (regIn, regOut) <- case findStateUtxo (cagePolicyIdFromCfg (envCfg env)) tokenId li01Utxos of
@@ -1418,7 +1402,8 @@ rowLI06
 rowLI06 env canonicalSeed signedLi01 _snap = do
     -- The consumed-seed state is the chain's own: the canonical seed is
     -- gone from the unspent set because a real LI01 consumed it.
-    wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+    wallet <-
+        Services.outputsAt (envProv env) (walletAddr (envWallet env))
     when (any ((== fst canonicalSeed) . fst) wallet) $
         failWith "LI06: the canonical seed is unexpectedly still live"
     emit
@@ -1432,16 +1417,16 @@ rowLI06 env canonicalSeed signedLi01 _snap = do
             <> ") after a real LI01 — the canonical seed 400 is already "
             <> "consumed (before.consumedSeeds=[400] is the chain's own state)"
         )
-    result <- submitTx (envSubmit env) signedLi01
+    result <- send (envWallet env) (envCaps env) signedLi01
     case result of
-        Submitted _ ->
+        Right _ ->
             failWith
                 ( "LI06: the replay was ACCEPTED — a consumed canonical seed "
                     <> "initialized the registry twice (model reason "
                     <> "canonical-seed-consumed)"
                 )
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+        Left reason -> do
+            let reasonText = T.unpack reason
                 consumed =
                     "All inputs are spent" `isInfixOf` reasonText
                         || "BadInputs" `isInfixOf` reasonText
@@ -1481,7 +1466,7 @@ the refused transactions left no trace.
 -}
 finalNoTrace :: Env -> CanonicalSnap -> IO ()
 finalNoTrace env snap = do
-    scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
+    scriptUtxos <- Services.outputsAt (envProv env) (envScriptAddr env)
     reg <- case filter ((== csRegistryIn snap) . fst) scriptUtxos of
         [p] -> pure p
         _ ->
@@ -1505,7 +1490,8 @@ finalNoTrace env snap = do
         failWith "no-trace: the registry UTxO changed after the rows"
     unless cpOK $
         failWith "no-trace: the checkpoint output changed after the rows"
-    wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+    wallet <-
+        Services.outputsAt (envProv env) (walletAddr (envWallet env))
     when (any ((== cageSeed (envCfg env)) . txInToRef . fst) wallet) $
         failWith "no-trace: the canonical seed is unexpectedly unspent again"
     emit
@@ -1532,16 +1518,17 @@ runControlCanonical :: Env -> (TxIn, TxOut ConwayEra) -> IO ()
 runControlCanonical env canonicalSeed = do
     unsigned <-
         buildCanonicalTx
+            (walletAddr (envWallet env))
             (envCfg env)
             (envPp env)
             (envProv env)
             canonicalSeed
             []
             (envNamingDatum env)
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTx (envSubmit env) signed
+    let signed = addKeyWitness (walletSignKey (envWallet env)) unsigned
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ ->
+        Right _ ->
             failWith
                 ( "CONTROL canonical-attempt: the canonical initialization "
                     <> "SUCCEEDED (tx="
@@ -1550,11 +1537,11 @@ runControlCanonical env canonicalSeed = do
                     <> "binding did not bind; this run fails as the control "
                     <> "requires"
                 )
-        Rejected reason ->
+        Left reason ->
             failWith
                 ( "CONTROL canonical-attempt: the canonical transaction was "
                     <> "unexpectedly refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                    <> T.unpack reason
                 )
 
 -- ---------------------------------------------------------
@@ -1598,7 +1585,7 @@ buildRefusalTx env spec = do
                 then error "li-refusals: change underflow while balancing"
                 else
                     mkBasicTxOut
-                        genesisAddr
+                        (walletAddr (envWallet env))
                         (MaryValue (Coin change) (rtxChangeTokens spec))
         body =
             mkBasicTxBody
@@ -1679,21 +1666,21 @@ expectRefused
     -> ConwayTx
     -> IO ()
 expectRefused mode env rowName modelReason marker guard tx = do
-    let signed = addKeyWitness genesisSignKey tx
+    let signed = addKeyWitness (walletSignKey (envWallet env)) tx
         wrongReasonMode = mode == ControlWrongReason
         expectedMarker
             | wrongReasonMode = wrongReasonMarker
             | otherwise = marker
-    result <- submitTx (envSubmit env) signed
+    result <- send (envWallet env) (envCaps env) signed
     case result of
-        Submitted _ ->
+        Right _ ->
             failWith
                 ( rowName
                     <> ": transaction was ACCEPTED — the guard did not hold: "
                     <> guard
                 )
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+        Left reason -> do
+            let reasonText = T.unpack reason
                 phase2 = "PlutusFailure" `isInfixOf` reasonText
             unless (phase2 || wrongReasonMode) $
                 failWith
@@ -1745,14 +1732,15 @@ output. Evaluation and fee balancing come from the same library
 path, so the accepted row and the LI06 replay are the #47 shape.
 -}
 buildCanonicalTx
-    :: CageConfig
+    :: Addr
+    -> CageConfig
     -> PParams ConwayEra
-    -> Cage.Provider IO
+    -> Session NoWitness IO
     -> (TxIn, TxOut ConwayEra)
     -> [(TxIn, TxOut ConwayEra)]
     -> NamingDatum
     -> IO ConwayTx
-buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
+buildCanonicalTx changeAddr cfg pp prov seedUtxo funders namingDatum = do
     let scriptAddr = cageAddrFromCfg cfg Testnet
         mintMA =
             MultiAsset $
@@ -1804,7 +1792,7 @@ buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton scriptHash script
                 & witsTxL . rdmrsTxWitsL .~ redeemers
-    evaluateAndBalance prov pp allInputUtxos genesisAddr tx
+    evaluateAndBalance prov pp allInputUtxos changeAddr tx
   where
     seedIn = fst seedUtxo
     seedRef = txInToRef seedIn
@@ -2067,30 +2055,25 @@ utxoByRef utxos ref label =
         [p] -> pure p
         _ -> failWith ("world: " <> label <> " " <> show ref <> " is not live")
 
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
-verifyConnection :: (Show e) => Async (Either e ()) -> IO ()
-verifyConnection nodeThread =
-    poll nodeThread >>= \case
-        Just (Left err) -> failWith ("node connection failed: " <> show err)
-        Just (Right (Left err)) ->
-            failWith ("node connection error: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Nothing -> pure ()
-
-waitConfirmation :: String -> IO ()
-waitConfirmation what = do
-    threadDelay 5_000_000
-    emit "confirm" ("confirmed on chain: " <> what)
+-- Sealing preserves the exact witnessed value used by the original row.
+send
+    :: Wallet
+    -> Capabilities NoWitness IO
+    -> ConwayTx
+    -> IO (Either T.Text TxId)
+send wallet caps transaction = do
+    let sealed = signTx (walletSignKey wallet) transaction
+    unless (signedTx sealed == transaction) $
+        failWith "submission would change the retained signed transaction"
+    capSubmit caps sealed >>= \case
+        SubmitAccepted identity -> do
+            unless (identity == txIdTx transaction) $
+                failWith "accepted identity differs from signed body"
+            pure (Right identity)
+        SubmitRefused reason -> pure (Left reason)
+        SubmitFailed reason -> failWith ("submission unavailable: " <> show reason)
+        SubmitWrongNetwork configured wanted ->
+            failWith ("submission network differs: " <> show (configured, wanted))
 
 -- ---------------------------------------------------------
 -- Narration helpers

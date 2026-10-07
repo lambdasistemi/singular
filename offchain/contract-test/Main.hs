@@ -1,18 +1,13 @@
 {- |
 Module      : Main
-Description : #326 — the backend contract suite, every adapter
+Description : The raw-session contract with explicit uncovered view requirements
 License     : Apache-2.0
 
-With no arguments: the in-memory adapter, the indexer adapter over the
-in-memory node, and the node and indexer adapters on development nodes
-the suite generates, plus the session's connection guard on a generated
-node.
-
-With @--node-socket PATH --network-magic N --wallet-skey FILE@: the node
-and indexer adapters on the node at that socket, started outside the
-suite, built by the retained private characterization constructor.
-Ordinary @singular@ writes use the shared HTTP provider. A partial set is refused; the external leg never falls back
-to a generated node.
+Without external settings, exercise the existing raw fixture and a generated
+private HTTP source. An external leg requires a provider URL, network magic,
+pinned time source, funded wallet and separate private oracle socket together.
+It never starts a generated fallback or passes a socket to the shipping provider.
+Original view/index and connection-guard requirements remain visibly unsupported.
 -}
 module Main (main) where
 
@@ -23,40 +18,31 @@ import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 import Text.Read (readMaybe)
 
-import Singular.Registry.ContractMemory
-    ( indexerMemoryHarness
-    , memoryHarness
-    )
+import Singular.Registry.ContractMemory (memoryHarness)
 import Singular.Registry.ContractNode
     ( Leg (..)
     , guardOnDevnet
-    , nodeHarness
     , phaseLogOnDevnet
+    , providerHarness
     )
 import Singular.Registry.ContractSuite (contractSuite)
-import Singular.Registry.Node.Options (Backend (..))
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
 
 main :: IO ()
 main = do
     args <- getArgs
     case external args of
         Left problem -> die ("contract-tests: " <> problem)
-        Right (Just (sock, magic, skey)) ->
-            withArgs [] . hspec $ do
+        Right (Just leg) ->
+            withArgs [] . hspec $
                 describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
-                    contractSuite (nodeHarness (Outside sock magic skey) NodeBackend)
-                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
-                    contractSuite (nodeHarness (Outside sock magic skey) IndexerBackend)
+                    contractSuite (providerHarness leg)
         Right Nothing ->
             withArgs args . hspec $ do
                 describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
                     contractSuite memoryHarness
                 describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
-                    contractSuite indexerMemoryHarness
-                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
-                    contractSuite (nodeHarness Generated NodeBackend)
-                describe (tagged "Singular.Registry.ContractSuite" [Provider, E2e]) $
-                    contractSuite (nodeHarness Generated IndexerBackend)
+                    contractSuite (providerHarness Generated)
                 describe
                     (tagged "Singular.Registry.ContractNode" [Provider, E2e])
                     guardOnDevnet
@@ -64,23 +50,43 @@ main = do
                     (tagged "Singular.Registry.ContractNode" [Provider, E2e])
                     phaseLogOnDevnet
 
-{- | The external node the command line names: all three settings, none,
-or a refusal naming what is missing.
--}
-external
-    :: [String] -> Either String (Maybe (FilePath, Word32, FilePath))
-external args = case (flag "--node-socket", flag "--network-magic", flag "--wallet-skey") of
-    (Nothing, Nothing, Nothing) -> Right Nothing
-    (Just sock, Just m, Just skey) ->
-        maybe
-            (Left ("--network-magic is not a number: " <> m))
-            (\magic -> Right (Just (sock, magic, skey)))
-            (readMaybe m)
-    _ ->
+-- | All external inputs, none, or an explicit refusal. No socket fallback.
+external :: [String] -> Either String (Maybe Leg)
+external args
+    | elem "--node-socket" args || elem "--backend" args =
         Left
-            "the external leg needs --node-socket, --network-magic and \
-            \--wallet-skey together"
+            "node/backend selectors are retired; use HTTP settings and --private-probe-socket for the independent oracle"
+    | otherwise = do
+        values <- traverse flag names
+        case values of
+            [Nothing, Nothing, Nothing, Nothing, Nothing] -> Right Nothing
+            [Just url, Just number, Just timeSource, Just key, Just socket] -> do
+                magic <-
+                    maybe
+                        (Left ("--network-magic is not a Word32: " <> number))
+                        Right
+                        (readMaybe number :: Maybe Word32)
+                if any null [url, timeSource, key, socket]
+                    then Left "external settings cannot be empty"
+                    else
+                        Right . Just $
+                            Outside
+                                (ProviderSettings url magic Nothing (Just timeSource))
+                                socket
+                                key
+            _ ->
+                Left
+                    "the external leg needs --provider-url, --network-magic, --time-source, --wallet-skey and --private-probe-socket together"
   where
+    names =
+        [ "--provider-url"
+        , "--network-magic"
+        , "--time-source"
+        , "--wallet-skey"
+        , "--private-probe-socket"
+        ]
     flag name = case dropWhile (/= name) args of
-        (_ : v : _) -> Just v
-        _ -> Nothing
+        [] -> Right Nothing
+        _ : value : _
+            | take 2 value /= "--" -> Right (Just value)
+        _ -> Left ("missing value for " <> name)

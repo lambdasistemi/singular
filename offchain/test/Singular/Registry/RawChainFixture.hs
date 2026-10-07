@@ -55,7 +55,10 @@ import Singular.Registry.Evidence
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTime (NetworkTime)
-import Singular.Registry.StubSession (servingSession, stubSession)
+import Singular.Registry.StubSession
+    ( servingSessionWithId
+    , stubSession
+    )
 
 data ChainFacts = ChainFacts
     { csNetwork :: Word32
@@ -179,10 +182,14 @@ rawChainProvider chain =
                                 n <-
                                     atomicModifyIORef' (chainAcquisitions chain) (\k -> (k + 1, k + 1))
                                 acquire
-                                    (snd (servingSession session))
-                                    request
-                                    ( \s -> action s{sessionId = SessionId ("raw-chain-" <> T.pack (show n))}
+                                    ( snd
+                                        ( servingSessionWithId
+                                            (pure (SessionId ("raw-chain-" <> T.pack (show n))))
+                                            session
+                                        )
                                     )
+                                    request
+                                    action
         , submitTx = \wanted _ ->
             pure $
                 if wanted /= configured

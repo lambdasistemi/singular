@@ -151,8 +151,8 @@ rowRequestInsert env cage key _val = do
             env
             cfg
             tid
-            genesisAddr
-            genesisSignKey
+            (genesisAddr env)
+            (genesisSignKey env)
             key
             edgeInsertAbsent
             dest
@@ -405,7 +405,7 @@ record datum the delivered output will hold — that is what `record_destination
 and a termination name nothing at all.
 -}
 edgeDestination :: Env -> Edge -> IO RequestDestination
-edgeDestination env = edgeDestinationFor env genesisAddr
+edgeDestination env = edgeDestinationFor env (genesisAddr env)
 
 {- | `edgeDestination` for a named payer: an absence binds the address its
 deposit comes back to, and that is the payer's own.

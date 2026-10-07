@@ -78,10 +78,9 @@ import Ouroboros.Consensus.Shelley.Ledger.Query
     ( pattern GetCurrentPParams
     )
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import Singular.Registry.Node.RawView
-    ( RawProvider (..)
-    , RawView (..)
-    , rawNodeProvider
+import Singular.Registry.Private.RawFacts
+    ( RawFacts (..)
+    , withRawFacts
     )
 
 {- | Eight slots accommodate the seven historical Cardano eras and Dijkstra;
@@ -110,22 +109,23 @@ captureNode output = do
             capture output sock (NetworkMagic magic)
         Nothing -> do
             genesis <- genesisDir
-            withCardanoNode genesis $ \sock _ -> do
-                let generated = takeDirectory sock
-                mapM_
-                    (\name -> copyFile (generated </> name) (output </> name))
-                    [ "byron-genesis.json"
-                    , "shelley-genesis.json"
-                    , "alonzo-genesis.json"
-                    , "conway-genesis.json"
-                    , "dijkstra-genesis.json"
-                    , "node-config.json"
-                    ]
-                probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
-                case probe of
-                    Just "1" -> captureConfirmation output sock (NetworkMagic 42)
-                    Just "smoke" -> confirmationSmoke output sock
-                    _ -> capture output sock (NetworkMagic 42)
+            probe <- lookupEnv "LOCAL_SERVICES_CONFIRMATION_PROBE"
+            case probe of
+                Just "smoke" -> confirmationSmoke output genesis
+                _ -> withCardanoNode genesis $ \sock _ -> do
+                    let generated = takeDirectory sock
+                    mapM_
+                        (\name -> copyFile (generated </> name) (output </> name))
+                        [ "byron-genesis.json"
+                        , "shelley-genesis.json"
+                        , "alonzo-genesis.json"
+                        , "conway-genesis.json"
+                        , "dijkstra-genesis.json"
+                        , "node-config.json"
+                        ]
+                    case probe of
+                        Just "1" -> captureConfirmation output sock (NetworkMagic 42)
+                        _ -> capture output sock (NetworkMagic 42)
 
 -- Only the missing caller context is recorded here; completed independent
 -- floor/ceiling and evaluator recordings are never recaptured by this probe.
@@ -134,11 +134,11 @@ captureConfirmation output sock magic@(NetworkMagic networkMagic) = do
     channel <- newLSQChannel 16
     submit <- newLTxSChannel 16
     withAsync (runNodeClient magic sock channel submit) $ \_ ->
-        withRawView (rawNodeProvider channel) $ \view -> do
-            snapshot <- rawSnapshot view
-            start <- rawSystemStart view
-            history <- rawEraHistory view
-            pp <- rawParameters view
+        withRawFacts channel $ \view -> do
+            snapshot <- factSnapshot view
+            start <- factSystemStart view
+            history <- factEraHistory view
+            pp <- factParameters view
             eras <-
                 either
                     (fail . show)

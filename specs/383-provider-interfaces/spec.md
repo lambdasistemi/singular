@@ -2,9 +2,15 @@
 
 As a registry user, I want each command to obtain ledger facts from a hosted
 provider, so that my machine needs neither a node nor a local chain index.
-This is the proposed contract for [the provider interface ticket](https://github.com/lambdasistemi/singular/issues/383),
+This is the contract for [the provider interface ticket](https://github.com/lambdasistemi/singular/issues/383),
 under [the Koios demonstration](https://github.com/lambdasistemi/singular/issues/371).
-It is an intake proposal. No implementation or behavioral acceptance is claimed.
+The intake was accepted, and main already carries the generic provider and
+evidence types, the Koios adapter, local evaluation with pinned time, the
+pure provider and trie tests, command composition and the private
+development-network facade. Their presence is not a passing test. The
+remaining delivery, owned by [the plan](plan.md), is the complete removal of
+the obsolete node-internal read and index paths with every retained consumer
+migrated, and the ticket's checks green on the resulting candidate.
 
 ## The user's stories
 
@@ -88,12 +94,17 @@ rate limits belong inside the adapter's effect, outside the capability types.
 
 ## Model authority and correspondence
 
-The frozen intake base is recovery commit `872c0ecf3c7cf1a10293793523c8521d5ef9aae9`
-from [PR #382](https://github.com/lambdasistemi/singular/pull/382).
-The [constitution](https://github.com/lambdasistemi/singular/blob/872c0ecf3c7cf1a10293793523c8521d5ef9aae9/.specify/memory/constitution.md) is version 1.12.0.
-Lean Model has blob `b548e3e93af7529a968e8cd1b46996d3157baf8b`, Statements
-has blob `dbc07cc222e121a9ba9d344c05c53d807b657da9`, and Driver has blob
-`fdabc45363b2ec1d693410598cd9cda24d2bcc51` at that commit.
+The intake was frozen at recovery commit
+`872c0ecf3c7cf1a10293793523c8521d5ef9aae9` from
+[PR #382](https://github.com/lambdasistemi/singular/pull/382), since merged;
+that history is recorded in [the decisions](decisions.md). The delivery reset
+of October 7, 2026 rebinds this ticket to main
+`6efe1f119a2332484e690b4c128c4bc5fd4d689b`. The
+[constitution](https://github.com/lambdasistemi/singular/blob/6efe1f119a2332484e690b4c128c4bc5fd4d689b/.specify/memory/constitution.md)
+is version 1.13.0. Lean Model has blob
+`dc88ba5f9411173cfa655deab7e94ae5569dc395` (`lean/Singular/Model.lean`),
+Statements has blob `71380017c1b99c43deda9ca3e44c393ed515a182`, and Driver has
+blob `3f54cb1f9efd04de5004983cd84acf34dd7fcfd8` at that baseline.
 
 Provider replacement is a representation change. It must preserve
 Singular.step, foldBatch, admittedExitStep, admittedTxOfExit, obligations,
@@ -107,31 +118,33 @@ FNV root; no byte equality between those two hashes is claimed.
 The preservation checks bind existing model-driver scenarios to observed
 transactions through the existing conformance translation, including
 fold_requires_no_signer, built_transaction_settles,
-destination_output_iff_delivers and delivered_datum_follows_request.
+destination_output_iff_delivers and delivered_datum_is_request_datum.
 Imported or dependency code carries the same correspondence obligation.
 Reject's provider migration preserves its current gate, refusals and receipts;
 the pre-existing admission discrepancy is escalated outside this ticket and
 no Lean-correspondence claim for reject is made here.
 
-The recovery base also supplies the requester's reclaim command and recovery
-of an interrupted fold signed by another wallet. Both must survive this
-replacement, including owner/window refusals, exactly-once application and
-no repeated submission. Reclaim corresponds to the model's retract admission;
-client recovery has no Lean counterpart and requires observed journal evidence.
+The requester's reclaim command and recovery of an interrupted fold signed
+by another wallet, merged from that recovery work, are on main. Both must
+survive this retirement, including owner/window refusals, exactly-once
+application and no repeated submission. Reclaim corresponds to the model's
+retract admission; client recovery has no Lean counterpart and requires
+observed journal evidence.
 
 ## Acceptance and visible limits
 
 Acceptance requires every command and its caller to move onto the new
 capabilities, while the node read adapter and in-process indexer are removed
-in that same runnable replacement. The [plan](plan.md) records the discovered
-deletion extent, endpoint coverage and falsifiable checks.
+in that same runnable replacement. The [plan](plan.md) records the reset
+baseline, the required outcomes against the evidence main already carries,
+and the completion checks.
 
 Recorded preprod reads and development-network responses exercise Koios-shaped
 decoding, history and submission paths. Local evaluation and time conversion
 must match independently captured node answers for identical transaction
 bytes, inputs, parameters, genesis and era history. Recording reads is allowed;
 no transaction is sent to a public network and no key or secret is accessed
-during this intake.
+during this delivery.
 
 The exact implementation head must pass `nix develop --quiet -c just ci` and
 the development-network journey in CI, with the required controlled faults
@@ -145,6 +158,6 @@ outside this ticket. Generic history delivery, TrieState's current-mirror and
 pure instances, and exercising the current replay boundary are inside it.
 Separate actor directories and reconstruction
 without the existing mirror remain the history-reconstruction ticket's work.
-The [decisions](decisions.md) record the four epic-owner answers. The existing
+The [decisions](decisions.md) record the epic owner's answers. The existing
 reject admission discrepancy remains unresolved outside this migration;
 its affected semantic guarantee is not counted as a pass.

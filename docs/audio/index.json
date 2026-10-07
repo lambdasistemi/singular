@@ -613,8 +613,8 @@
     "index": 2,
     "name": "docs-building/generated-api-references-02",
     "pause_ms": 400,
-    "text": "Private owners and executables are not Haddock-documented on their own by decision: nothing imports them outside their package, and an owner page that names each module's responsibility and links its source serves a contributor better than a second, unlinked reference. Each generated reference carries a manifest binding its pages to the digests of the source it was generated from, and the documentation check fails when a page, its source or its link targets no longer agree.",
-    "v": "f5d8e1d943bb"
+    "text": "Executables, test suites and the runtime service modules outside the library's extent have no generated pages here. That coverage gap stays visible, exactly as the off-chain reference's own page records it: wider generated coverage is a separate decision for the epic's owner, not one this page takes. Each generated reference carries a manifest binding its pages to the digests of the source it was generated from, and the documentation check fails when a page, its source or its link targets no longer agree.",
+    "v": "885ad188cce1"
    }
   ],
   "haskell-formatting": [
@@ -4348,8 +4348,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderTrace, Services, TimeMaterial, Trace and TraceRender; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-    "v": "51edad4cf425"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+    "v": "d8c7125c30ae"
    }
   ],
   "what-this-reference-contains": [
@@ -4371,540 +4371,22 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "9bb706141ca8"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 73 modules in three kinds: 56 explicitly exposed modules and four re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "afdc94f643a0"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Book — source",
-    "v": "94b777eba967"
+    "pause_ms": 400,
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Application.OpenDatum.Book — source - Singular.Application.OpenDatum.Build — source - Singular.Application.OpenDatum.Envelope — source - Singular.Application.OpenDatum.Release — source - Singular.Application.OpenDatum.Script — source - Singular.Application.OpenDatum.Update — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "98c037538313"
    },
    {
     "index": 4,
     "name": "docs-offchain-api-reference/what-this-reference-contains-04",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Build — source",
-    "v": "45c896d7f6c6"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-05",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Envelope — source",
-    "v": "a4f95254fa41"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-06",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Release — source",
-    "v": "e488117ac701"
-   },
-   {
-    "index": 7,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-07",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Script — source",
-    "v": "09ae7db8b9c4"
-   },
-   {
-    "index": 8,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-08",
-    "pause_ms": 300,
-    "text": "Singular.Application.OpenDatum.Update — source",
-    "v": "b6de64bb1ff5"
-   },
-   {
-    "index": 9,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-09",
-    "pause_ms": 300,
-    "text": "Naming.Datum — source",
-    "v": "7541ec4bf9c6"
-   },
-   {
-    "index": 10,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-10",
-    "pause_ms": 300,
-    "text": "Naming.Register — source",
-    "v": "f6b212fe1657"
-   },
-   {
-    "index": 11,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-11",
-    "pause_ms": 300,
-    "text": "Naming.Request — source",
-    "v": "005d366f3bf6"
-   },
-   {
-    "index": 12,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-12",
-    "pause_ms": 300,
-    "text": "Naming.Verify — source",
-    "v": "badc9608ffd6"
-   },
-   {
-    "index": 13,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-13",
-    "pause_ms": 300,
-    "text": "Naming.Wire — source",
-    "v": "d84437036260"
-   },
-   {
-    "index": 14,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-14",
-    "pause_ms": 300,
-    "text": "Naming.Wire.Vectors — source",
-    "v": "3da0cb5bb248"
-   },
-   {
-    "index": 15,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-15",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.Client — source",
-    "v": "96f0ae611f2d"
-   },
-   {
-    "index": 16,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-16",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.Recorded — source",
-    "v": "bb8fba2038c0"
-   },
-   {
-    "index": 17,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-17",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.Wire — source",
-    "v": "28ebb46c4be7"
-   },
-   {
-    "index": 18,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-18",
-    "pause_ms": 300,
-    "text": "Singular.Registry.AssetName — source",
-    "v": "4d4c9460e6fa"
-   },
-   {
-    "index": 19,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-19",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint — source",
-    "v": "d999cfdc88c5"
-   },
-   {
-    "index": 20,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-20",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Load — source",
-    "v": "43b172a2adfe"
-   },
-   {
-    "index": 21,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-21",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Params — source",
-    "v": "b0c33c4ffb66"
-   },
-   {
-    "index": 22,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-22",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Blueprint.Schema — source",
-    "v": "598192de18e0"
-   },
-   {
-    "index": 23,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-23",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Candidate — source",
-    "v": "5db66e84086b"
-   },
-   {
-    "index": 24,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-24",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Config — source",
-    "v": "52b5b0229045"
-   },
-   {
-    "index": 25,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-25",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Config.Application — source",
-    "v": "dfb8523954cd"
-   },
-   {
-    "index": 26,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-26",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Deployment — source",
-    "v": "8e6f8e25e3b0"
-   },
-   {
-    "index": 27,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-27",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Attach — source",
-    "v": "5875f3c569ff"
-   },
-   {
-    "index": 28,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-28",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Manifest — source",
-    "v": "1b5cccb07864"
-   },
-   {
-    "index": 29,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-29",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Deployment.Mirror — source",
-    "v": "4296c7d53104"
-   },
-   {
-    "index": 30,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-30",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Driver — source",
-    "v": "680b29f866ce"
-   },
-   {
-    "index": 31,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-31",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Ledger — source",
-    "v": "4c30136a025a"
-   },
-   {
-    "index": 32,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-32",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Lifecycle — source",
-    "v": "51e3838e7684"
-   },
-   {
-    "index": 33,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-33",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Node — source",
-    "v": "93111d345d29"
-   },
-   {
-    "index": 34,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-34",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Proof — source",
-    "v": "121591907dad"
-   },
-   {
-    "index": 35,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-35",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Provider — source",
-    "v": "af83b3bc03ef"
-   },
-   {
-    "index": 36,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-36",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Replay — source",
-    "v": "b1038c3551ed"
-   },
-   {
-    "index": 37,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-37",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Trie — source",
-    "v": "896627d8e4dd"
-   },
-   {
-    "index": 38,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-38",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Trie.Pure — source",
-    "v": "7f5ce5124dce"
-   },
-   {
-    "index": 39,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-39",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Trie.PureManager — source",
-    "v": "201d6e8a622a"
-   },
-   {
-    "index": 40,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-40",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TrieState — source",
-    "v": "b3b35df3724c"
-   },
-   {
-    "index": 41,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-41",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Core — source",
-    "v": "998595ac868a"
-   },
-   {
-    "index": 42,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-42",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Fixture — source",
-    "v": "d706a489850c"
-   },
-   {
-    "index": 43,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-43",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Lineage — source",
-    "v": "d60bb57ef618"
-   },
-   {
-    "index": 44,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-44",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TrieState.Types — source",
-    "v": "0fe49d35a3de"
-   },
-   {
-    "index": 45,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-45",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Boot — source",
-    "v": "2a01b1decc58"
-   },
-   {
-    "index": 46,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-46",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.ConnectedFold — source",
-    "v": "73939f481704"
-   },
-   {
-    "index": 47,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-47",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Edges — source",
-    "v": "9e29ddc4e6ba"
-   },
-   {
-    "index": 48,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-48",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal — source",
-    "v": "a9976b602fed"
-   },
-   {
-    "index": 49,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-49",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Edges — source",
-    "v": "b4f6a0f807bc"
-   },
-   {
-    "index": 50,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-50",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Identity — source",
-    "v": "68d7f780e502"
-   },
-   {
-    "index": 51,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-51",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Internal.Lookup — source",
-    "v": "740bdcb65207"
-   },
-   {
-    "index": 52,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-52",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Register — source",
-    "v": "19458c2901f0"
-   },
-   {
-    "index": 53,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-53",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Reject — source",
-    "v": "d0646a49f573"
-   },
-   {
-    "index": 54,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-54",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Request — source",
-    "v": "231500954217"
-   },
-   {
-    "index": 55,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-55",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Retract — source",
-    "v": "215b12615bd8"
-   },
-   {
-    "index": 56,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-56",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update — source",
-    "v": "75b2b2d081b5"
-   },
-   {
-    "index": 57,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-57",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Build — source",
-    "v": "636cbdd7a640"
-   },
-   {
-    "index": 58,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-58",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Context — source",
-    "v": "2af590c6c786"
-   },
-   {
-    "index": 59,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-59",
-    "pause_ms": 300,
-    "text": "Singular.Registry.TxBuilder.Update.Duties — source",
-    "v": "43deb2ab59e6"
-   },
-   {
-    "index": 60,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-60",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Types — source",
-    "v": "27bdac4bbc9e"
-   },
-   {
-    "index": 61,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-61",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Primitive — source",
-    "v": "74698d0cfd0b"
-   },
-   {
-    "index": 62,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-62",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Proof — source",
-    "v": "17276a91e32d"
-   },
-   {
-    "index": 63,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-63",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Redeemer — source",
-    "v": "64b23439768f"
-   },
-   {
-    "index": 64,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-64",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Wire.Request — source",
-    "v": "b10b245a4499"
-   },
-   {
-    "index": 65,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-65",
-    "pause_ms": 400,
-    "text": "Singular.Registry.Wire.State — source",
-    "v": "107b9298263b"
-   },
-   {
-    "index": 66,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-66",
-    "pause_ms": 400,
-    "text": "Singular.Provider.Koios.Evidence — source",
-    "v": "185353990ed9"
-   },
-   {
-    "index": 67,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-67",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.History — source",
-    "v": "84be50a5b7f1"
-   },
-   {
-    "index": 68,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-68",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.Provider — source",
-    "v": "634472b9d41d"
-   },
-   {
-    "index": 69,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-69",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.Runtime — source",
-    "v": "0afc3c8e801b"
-   },
-   {
-    "index": 70,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-70",
-    "pause_ms": 300,
-    "text": "Singular.Provider.Koios.State — source",
-    "v": "8c8e1d11344a"
-   },
-   {
-    "index": 71,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-71",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Capabilities — source",
-    "v": "d911206918c7"
-   },
-   {
-    "index": 72,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-72",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Confirmation — source",
-    "v": "504a6cfa4d46"
-   },
-   {
-    "index": 73,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-73",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Evidence — source",
-    "v": "63c566331a33"
-   },
-   {
-    "index": 74,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-74",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Funding — source",
-    "v": "ade92adce5e0"
-   },
-   {
-    "index": 75,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-75",
-    "pause_ms": 300,
-    "text": "Singular.Registry.LedgerProvider — source",
-    "v": "c5b4176ec83b"
-   },
-   {
-    "index": 76,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-76",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Signing — source",
-    "v": "a67349b171f5"
-   },
-   {
-    "index": 77,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-77",
-    "pause_ms": 300,
-    "text": "Singular.Registry.Wait — source",
-    "v": "e0da952bc13b"
-   },
-   {
-    "index": 78,
-    "name": "docs-offchain-api-reference/what-this-reference-contains-78",
     "pause_ms": 400,
     "text": "The facades and owners of the registry builder and blueprint extraction are described module by module in the builder and blueprint modules guide, and the registry wire's five owners behind the Types facade in Who owns the registry wire.",
-    "v": "525b416a54fb"
+    "v": "bc3e98ce927f"
    }
   ]
  },
@@ -5425,8 +4907,8 @@
     "index": 1,
     "name": "docs-offchain-development/module-ownership-maps-01",
     "pause_ms": 400,
-    "text": "The builder and blueprint modules, the node runtime, the registry fold and the four registry commands now each have a contributor map: which module owns a concern, where common edits land, and which decisions the extraction recorded. They are Builder and blueprint modules, Node module ownership, Who owns a registry fold and Who owns a registry command.",
-    "v": "edabd764ec9f"
+    "text": "The builder and blueprint modules, the runtime services, the registry fold and the four registry commands now each have a contributor map: which module owns a concern, where common edits land, and which decisions the extraction recorded. They are Builder and blueprint modules, Runtime service ownership, Who owns a registry fold and Who owns a registry command.",
+    "v": "a661b40ce0e7"
    },
    {
     "index": 2,
@@ -5455,8 +4937,8 @@
     "index": 2,
     "name": "docs-offchain-development/run-the-checks-02",
     "pause_ms": 400,
-    "text": "The root build gate covers the root flake's model, site and other declared build checks. It does not build every off-chain Cabal component. The off-chain lint app runs Fourmolu and HLint on its stated source extents. The component build carrier compiles the library, its test components, and supported components used by current required workflows and shipped registry commands. It runs no executables or tests. Its inventory lists every Cabal declaration and explains which are built here, covered by another required job, or unbuildable or unverified. The current measured inventory classifies all 20 Cabal declarations: the carrier compiles 11 of them here — the library, the private node ownership core the library links, and the supported commands and tests — and reports the other 9 retained commands unverified under their owning issues. A failing included member makes the carrier fail; a green result does not mean that every Cabal component builds.",
-    "v": "7ee29932e974"
+    "text": "The root build gate covers the root flake's model, site and other declared build checks. It does not build every off-chain Cabal component. The off-chain lint app runs Fourmolu and HLint on its stated source extents. The component build carrier compiles the library, its test components, and supported components used by current required workflows and shipped registry commands. It runs no executables or tests. Its inventory lists every Cabal declaration and explains which are built here, covered by another required job, or unbuildable or unverified. A failing included member makes the carrier fail; a green result does not mean that every Cabal component builds. The measured counts move with the tree — the provider retirement removed the node-internal declaration — so compare each claim with the carrier's next actual output rather than an earlier receipt.",
+    "v": "5dc1c1efb980"
    }
   ],
   "where-the-source-list-comes-from": [
@@ -5471,8 +4953,8 @@
     "index": 1,
     "name": "docs-offchain-development/where-the-source-list-comes-from-01",
     "pause_ms": 400,
-    "text": "offchain/nix/checks.nix reads every hs-source-dirs declaration in offchain/singular-registry.cabal at lint run time and adds naming/test and naming/drift, whose scripts compile them directly with GHC. The private node ownership core declares its own source root node-internal, so its modules are discovered like every other. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. The source-derived inventory at the #267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final acceptance checks off-chain lint row and pushed-head CI; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files and HLint over ten directories with no hints. These green receipts cover only the selected extents. At the #270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126 and HLint over ten directories with no hints: the thirty command-local modules the registry commands gained sit inside already declared source directories, so discovery found them without a configuration change. Since the house configuration landed (#278) the formatter runs under the committed fourmolu.yaml at the repository root — passed explicitly to every entrypoint, so a missing configuration fails loudly instead of falling back to Fourmolu defaults — over every discovered offchain Haskell source with no exclusions: 128 files at this writing, the two formerly fenced verifier sources included. HLint runs over the same 128 files: the 13 directories #264 left outside it (journey and its sub-stanzas, naming/test, naming/drift, update-terminal) had their hints resolved at the source, and the exclusion list is gone. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; compare the next actual lint output with this inventory rather than assuming a filename search proves coverage. The format controls run from the repository root (just format-controls): a source Fourmolu defaults accept but the house configuration rejects must fail the check, its formatter correction must pass it again, and a tree without the configuration must fail loudly rather than format with defaults.",
-    "v": "57ccb21e0275"
+    "text": "offchain/nix/checks.nix reads every hs-source-dirs declaration in offchain/singular-registry.cabal at lint run time and adds naming/test and naming/drift, whose scripts compile them directly with GHC. Every component — lib, local-services, koios-http, the commands and the test components — declares its own source root, so its modules are discovered like every other. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. The source-derived inventory at the #267 candidate measures 89 discovered Haskell files in 23 source directories: Fourmolu selects 87 after the two verifier exclusions, and HLint selects 76 within ten directories. The added end-to-end witness belongs to all three sets. At ae4fe9a, the lint app passed in the final acceptance checks off-chain lint row and pushed-head CI; that gate row reported 89 discovered files in 23 directories, Fourmolu over 87 files and HLint over ten directories with no hints. These green receipts cover only the selected extents. At the #270 candidate the same app reported 128 discovered files in 23 directories, Fourmolu over 126 and HLint over ten directories with no hints: the thirty command-local modules the registry commands gained sit inside already declared source directories, so discovery found them without a configuration change. Since the house configuration landed (#278) the formatter runs under the committed fourmolu.yaml at the repository root — passed explicitly to every entrypoint, so a missing configuration fails loudly instead of falling back to Fourmolu defaults — over every discovered offchain Haskell source with no exclusions: 128 files at this writing, the two formerly fenced verifier sources included. HLint runs over the same 128 files: the 13 directories #264 left outside it (journey and its sub-stanzas, naming/test, naming/drift, update-terminal) had their hints resolved at the source, and the exclusion list is gone. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; compare the next actual lint output with this inventory rather than assuming a filename search proves coverage. The format controls run from the repository root (just format-controls): a source Fourmolu defaults accept but the house configuration rejects must fail the check, its formatter correction must pass it again, and a tree without the configuration must fail loudly rather than format with defaults.",
+    "v": "88a4f6aa39af"
    },
    {
     "index": 2,
@@ -5916,52 +5398,13 @@
   ]
  },
  "docs/offchain-node-ownership.md": {
-  "decisions-this-split-recorded": [
+  "decisions-this-ownership-records": [
    {
     "index": 0,
-    "name": "docs-offchain-node-ownership/decisions-this-split-recorded-00",
+    "name": "docs-offchain-node-ownership/decisions-this-ownership-records-00",
     "pause_ms": 500,
-    "text": "Decisions this split recorded.",
-    "v": "816cb0313ac6"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-node-ownership/decisions-this-split-recorded-01",
-    "pause_ms": 400,
-    "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through withOpenSession, followChain brackets the follower and the guard through withFollowing (clearing the follower before the guard), confirmOutputZero and followedProvider read the follower through currentFollower, and followedProvider sets the guard through markFundingIndexed — each helper's body equal to the inline code it replaced; indexFunding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads. Every other moved declaration's body is equal to its base apart from whitespace. At candidate revision 7b4adf3 the repository's exact-head checks passed — the full cage suite, the devnet end-to-end paths and the bounded journey — and the focused cleanup brackets' installation, exceptional-exit removal and guard controls are bound to the same code by metered receipts. The external-node mode keeps its limit: nothing here claims public-network behavior, before or after the split.",
-    "v": "318ff1c64673"
-   }
-  ],
-  "facade-callers-and-the-private-boundary": [
-   {
-    "index": 0,
-    "name": "docs-offchain-node-ownership/facade-callers-and-the-private-boundary-00",
-    "pause_ms": 500,
-    "text": "Facade, callers and the private boundary.",
-    "v": "4ac98ea74422"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-node-ownership/facade-callers-and-the-private-boundary-01",
-    "pause_ms": 400,
-    "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
-    "v": "fdc134925ee9"
-   }
-  ],
-  "node-module-ownership": [
-   {
-    "index": 0,
-    "name": "docs-offchain-node-ownership/node-module-ownership-00",
-    "pause_ms": 500,
-    "text": "Node module ownership.",
-    "v": "2838752a9865"
-   },
-   {
-    "index": 1,
-    "name": "docs-offchain-node-ownership/node-module-ownership-01",
-    "pause_ms": 400,
-    "text": "A contributor changing how the registry's off-chain runner talks to a cardano node — a new mode, a different wallet, a longer confirmation window, a change to what a runner may leave behind when it fails — wants one obvious owner per concern, so the change is reviewed in one place and process state can never quietly exist twice. This page maps the node runtime to its owners: what each module is responsible for, where common changes land, the lifetimes a runner's process state keeps, and what the checks establish about the split.",
-    "v": "a7d0d19fec9f"
+    "text": "Decisions this ownership records.",
+    "v": "d3b9bb952ef8"
    }
   ],
   "one-owner-per-runtime-concern": [
@@ -5976,173 +5419,61 @@
     "index": 1,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-01",
     "pause_ms": 400,
-    "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
-    "v": "aa3a6ef3e1c1"
+    "text": "The runtime's owners are three public components. local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
+    "v": "e13a8d4be372"
    },
    {
     "index": 2,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-02",
     "pause_ms": 400,
-    "text": "The dependency direction is acyclic and downward: options and the wait owner depend on nothing local, wallet reads options, the indexer and the funding check read wallet and options, the session brackets the indexer and the funding check, and confirmation reads the session and the indexer — all three wait under the wait owner's bound — never the other way. The runtime owners read Ledger and Provider from public local-services; the main library re-exports both under their original import paths, so a module that imported Singular.Registry.Ledger before the split still does.",
-    "v": "a97208524767"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-03",
-    "pause_ms": 400,
-    "text": "The three chain owners sit behind one read interface and one write capability, and the singular command line reaches them through a single composition module of its own. Its commands are handed the read interface, the signed-only write and the confirmation wait; only the composition module, the public facade and the journey's lifecycle funding may name the node backend, which a source check over the off-chain command and library sources enforces in CI.",
-    "v": "38228944dfcd"
-   },
-   {
-    "index": 4,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-04",
-    "pause_ms": 400,
-    "text": "Each owner is package-private — not importable from the public library — so it has no page in the generated API reference: the reference documents the main library, and the site does not publish the private owners' pages. Each owner's implementation is one source file, linked below on the default branch, and the generated public pages that re-export an owner's names link to its entry here:",
-    "v": "1ecee15cee54"
-   },
-   {
-    "index": 5,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-05",
-    "pause_ms": 300,
-    "text": "Options — mode flags, environment precedence and the shared named-diagnostic helper — source.",
-    "v": "d1fca4fe36e8"
-   },
-   {
-    "index": 6,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-06",
-    "pause_ms": 300,
-    "text": "Wallet — keys, addresses and the funding identity — source.",
-    "v": "09642edf549b"
-   },
-   {
-    "index": 7,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-07",
-    "pause_ms": 300,
-    "text": "Indexer — the chain follower, the funding sweep, the indexer adapter on a followed devnet, the node-read guard and the address-read counter — source.",
-    "v": "17096f7c69e1"
-   },
-   {
-    "index": 8,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-08",
-    "pause_ms": 300,
-    "text": "IndexGate — the gate the follower writes the index through, the index's applied point, and holding the index for one view — source.",
-    "v": "15cdc625a57a"
-   },
-   {
-    "index": 9,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-09",
-    "pause_ms": 300,
-    "text": "IndexerView — the indexer adapter: address reads from the index and node reads at one chain point, and its named refusals — source.",
-    "v": "7673579dfefc"
-   },
-   {
-    "index": 10,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-10",
-    "pause_ms": 300,
-    "text": "Funding — the pre-run funding floor and its refusal diagnostic — source.",
-    "v": "7ed47249d7d0"
-   },
-   {
-    "index": 11,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-11",
-    "pause_ms": 300,
-    "text": "Session — the connection lifecycle and the bracketed runner session — source.",
-    "v": "0b841b69c36b"
-   },
-   {
-    "index": 12,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-12",
-    "pause_ms": 300,
-    "text": "Confirmation — confirmation waits, deadlines and windows — source.",
-    "v": "b53055da2827"
-   },
-   {
-    "index": 13,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-13",
-    "pause_ms": 300,
-    "text": "Wait — the wait stages, the named wait failure, the whole-wait bound, the bounded submitter and the wait-aware catch — source.",
-    "v": "433f0846864f"
-   },
-   {
-    "index": 14,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-14",
-    "pause_ms": 300,
-    "text": "View — the node adapter: one read view per acquired LocalStateQuery state — source.",
-    "v": "9a0fbc9d49ee"
-   },
-   {
-    "index": 15,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-15",
-    "pause_ms": 300,
-    "text": "RawView — raw reads through one held LocalStateQuery channel; adapters supply facts for fixed common computations — source.",
-    "v": "829a337c1e85"
-   },
-   {
-    "index": 16,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-16",
-    "pause_ms": 300,
-    "text": "Memory — the deterministic in-memory chain behind the same read interface — source.",
-    "v": "9a1baa7b10f8"
-   },
-   {
-    "index": 17,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-17",
-    "pause_ms": 300,
-    "text": "Submit — the write capability, which takes signed transactions only — source.",
-    "v": "5f09f42a9a84"
+    "text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
+    "v": "607edc6e2151"
    }
   ],
-  "process-state-and-its-lifetimes": [
+  "runtime-service-ownership": [
    {
     "index": 0,
-    "name": "docs-offchain-node-ownership/process-state-and-its-lifetimes-00",
+    "name": "docs-offchain-node-ownership/runtime-service-ownership-00",
     "pause_ms": 500,
-    "text": "Process state and its lifetimes.",
-    "v": "2425ca7929f8"
+    "text": "Runtime service ownership.",
+    "v": "320d630ed73c"
    },
    {
     "index": 1,
-    "name": "docs-offchain-node-ownership/process-state-and-its-lifetimes-01",
+    "name": "docs-offchain-node-ownership/runtime-service-ownership-01",
     "pause_ms": 400,
-    "text": "The runner keeps six pieces of process state. Each is created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard is set only on the devnet.",
-    "v": "8ff3db827e8f"
+    "text": "A contributor changing how the registry's off-chain commands obtain their ledger facts — a different wallet, a longer confirmation window, a new provider transport, a change to what a command reports about its reads — wants one obvious owner per concern, so the change is reviewed in one place and a fact or a wait can never quietly exist twice. This page maps the provider-era runtime to its owners: what each module is responsible for, where common changes land, and what the checks establish about the split.",
+    "v": "cc00e3bd8226"
    },
    {
     "index": 2,
-    "name": "docs-offchain-node-ownership/process-state-and-its-lifetimes-02",
+    "name": "docs-offchain-node-ownership/runtime-service-ownership-02",
     "pause_ms": 400,
-    "text": "On the devnet the follower bracket wraps the node client and the whole session; externally the node client is outermost and the follower wraps only the session. In both modes the session prepares before the open session is installed — protocol parameters first, then (devnet only) the one node address read that sweeps the funding wallet and sets the guard, then the funding-floor check when a floor is given, then the announcement — and the body runs inside the open-session bracket. When the body returns or throws, the brackets unwind from the inside out and the open session is removed first. What clears next depends on the mode: on the devnet the node client is cancelled, then the follower and guard clear together before the devnet itself is torn down; externally the follower clears and then the node client is cancelled. A later action never sees a torn-down runner.",
-    "v": "211f74766f54"
-   },
-   {
-    "index": 3,
-    "name": "docs-offchain-node-ownership/process-state-and-its-lifetimes-03",
-    "pause_ms": 400,
-    "text": "Because these live in the private library and nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance: a test that installs a session and a runner reader that answers from it are talking about the same memory. The focused cleanup suite proves each bracket both installs (the positive halves) and removes (after normal and exceptional bodies) its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after the body fails.",
-    "v": "519526c9ebc9"
+    "text": "The node runtime this page once mapped is retired. The package-private node-internal library — its read adapter, in-memory chain, session runner and indexer — no longer exists, and with it the public Singular.Registry.Node facade: no shipped command opens a node, holds a socket or keeps a chain index. That retirement is the provider migration's own record, with its operator rulings, in the provider ticket's decisions; this page describes what replaced it.",
+    "v": "5dc5cb742faa"
    }
   ],
-  "the-independent-evidence-boundary": [
+  "what-the-checks-establish": [
    {
     "index": 0,
-    "name": "docs-offchain-node-ownership/the-independent-evidence-boundary-00",
+    "name": "docs-offchain-node-ownership/what-the-checks-establish-00",
     "pause_ms": 500,
-    "text": "The independent evidence boundary.",
-    "v": "21dcc7e25eca"
+    "text": "What the checks establish.",
+    "v": "cef0a617f9ef"
    },
    {
     "index": 1,
-    "name": "docs-offchain-node-ownership/the-independent-evidence-boundary-01",
+    "name": "docs-offchain-node-ownership/what-the-checks-establish-01",
     "pause_ms": 400,
-    "text": "On the devnet, the funding wallet's genesis outputs exist in the ledger's initial state, not in any block, so the indexer cannot see them. The follower therefore performs one node address read — the funding wallet — moves everything the indexer does not know into one block-carried output, and from then on address reads are answered by the indexer while node address reads are refused. That refusal is what keeps a run's evidence independent of a single filtered view. This split changes none of it: the guard, the counter and the sweep live in Node.Indexer, behavior-identical to before.",
-    "v": "202ca4974903"
+    "text": "A source check confines every backend name: a module outside the confinement allow list that names a node backend fails the build, and each allow-list entry carries its reason. The commands never hold that list. Submission is signed bytes only, every wait runs under the common bound, and the development network's own machinery — the private Koios-shaped facade, its raw-facts recorder and the generated devnet — is test infrastructure that never ships with the terminal.",
+    "v": "bce380765720"
    },
    {
     "index": 2,
-    "name": "docs-offchain-node-ownership/the-independent-evidence-boundary-02",
+    "name": "docs-offchain-node-ownership/what-the-checks-establish-02",
     "pause_ms": 400,
-    "text": "What is deliberately not claimed here: the external-node mode has no executable public-network coverage in this work, and remains unverified there, exactly as before the split.",
-    "v": "d633959cf15a"
+    "text": "What is deliberately not claimed here: the live Koios HTTP transport's production behaviour — its retries, rate limits and public URLs — is outside the provider ticket's scope and belongs to the Koios client ticket, #389, whose implementation main already carries in Provider.Koios.Http and Provider.Koios.Client. This page records who owns what; it accepts and verifies nothing of that transport's production behaviour.",
+    "v": "30a48adc6563"
    }
   ],
   "where-common-changes-land": [
@@ -6157,85 +5488,64 @@
     "index": 1,
     "name": "docs-offchain-node-ownership/where-common-changes-land-01",
     "pause_ms": 300,
-    "text": "A mode flag, an environment variable or their precedence changes: Node.Options; the facade re-exports the result unchanged.",
-    "v": "9ccb0fc02040"
+    "text": "A provider transport, its HTTP behaviour or the terminal composition: koios-http — Terminal, Provider.Koios.Http — with ProviderSettings parsing what the operator supplies.",
+    "v": "0576496c2e36"
    },
    {
     "index": 2,
     "name": "docs-offchain-node-ownership/where-common-changes-land-02",
     "pause_ms": 300,
-    "text": "Wallet derivation, key handling or the funding identity changes: Node.Wallet. Key secrecy rules live there and nowhere else.",
-    "v": "df917693ce44"
+    "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
+    "v": "486a3239e9a6"
    },
    {
     "index": 3,
     "name": "docs-offchain-node-ownership/where-common-changes-land-03",
     "pause_ms": 300,
-    "text": "Connection setup, socket handling or the session bracket changes: Node.Session.",
-    "v": "3a1c3dd333dd"
+    "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation, NetworkTime or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
+    "v": "b7b443539c87"
    },
    {
     "index": 4,
     "name": "docs-offchain-node-ownership/where-common-changes-land-04",
     "pause_ms": 300,
-    "text": "Following a chain, the genesis funding sweep, indexed reads or the node-read guard changes: Node.Indexer.",
-    "v": "e45a976c9ca4"
+    "text": "A bounded wait, its failure or the submission bound: Wait, whose failure identity WaitTypes fixes. The common submission and confirmation bounds live here; a transport's per-request bound remains its adapter's concern, never an await of the chain.",
+    "v": "785d171e5272"
    },
    {
     "index": 5,
     "name": "docs-offchain-node-ownership/where-common-changes-land-05",
     "pause_ms": 300,
-    "text": "What a run must hold before it starts, or the refusal diagnostic when it cannot pay: Node.Funding.",
-    "v": "616ba883c0d1"
+    "text": "Confirmation of a submitted transaction: Confirmation, under the common bounded polling — never a provider-owned await.",
+    "v": "c9ecd5aca4ca"
    },
    {
     "index": 6,
     "name": "docs-offchain-node-ownership/where-common-changes-land-06",
     "pause_ms": 300,
-    "text": "A confirmation wait, deadline or window rule changes: Node.Confirmation.",
-    "v": "f8d14f3e6ba1"
+    "text": "The pre-run funding floor or its diagnostic: Funding.",
+    "v": "04d64b671924"
    },
    {
     "index": 7,
     "name": "docs-offchain-node-ownership/where-common-changes-land-07",
     "pause_ms": 300,
-    "text": "What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: Node.Wait. No other module adds a timeout of its own.",
-    "v": "b011482f54dc"
+    "text": "Wallet loading, key handling or signing: Wallet and Signing. Key bytes are never logged.",
+    "v": "3ec2a450ac02"
    },
    {
     "index": 8,
     "name": "docs-offchain-node-ownership/where-common-changes-land-08",
     "pause_ms": 300,
-    "text": "How a view is acquired from a node, its chain point, or the origin and lost-connection refusals: Node.View; the same behaviour over the in-memory chain: Node.Memory.",
-    "v": "8879d66ae1ac"
+    "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace and TraceRender.",
+    "v": "9927f7cb5acf"
    },
    {
     "index": 9,
     "name": "docs-offchain-node-ownership/where-common-changes-land-09",
     "pause_ms": 300,
-    "text": "What may be sent to the node: Node.Submit.",
-    "v": "727fe010f983"
-   },
-   {
-    "index": 10,
-    "name": "docs-offchain-node-ownership/where-common-changes-land-10",
-    "pause_ms": 300,
-    "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
-    "v": "9bcfec06ccf2"
-   },
-   {
-    "index": 11,
-    "name": "docs-offchain-node-ownership/where-common-changes-land-11",
-    "pause_ms": 300,
-    "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
-    "v": "2c8ed7c04a35"
-   },
-   {
-    "index": 12,
-    "name": "docs-offchain-node-ownership/where-common-changes-land-12",
-    "pause_ms": 300,
-    "text": "A shared named failure the runner prints: the diagnostic helper in Node.Options, the one cross-owner utility, at the graph's root.",
-    "v": "5c79410c4aab"
+    "text": "How a command reaches its capabilities, or what its journal records: Singular.CLI.Session beside the terminal composition.",
+    "v": "3f42c913c3ac"
    }
   ]
  },
@@ -8330,8 +7640,8 @@
     "index": 1,
     "name": "docs-singular-node/reading-through-an-index-01",
     "pause_ms": 400,
-    "text": "The former --backend node / --backend indexer comparison is retired. Ordinary commands use the Koios path only. They do not create an in-memory chain index or accept an ordinary node socket. Private generated nodes and independent LSQ probes remain test harness components in this integration slice; their remaining package closure is a published follow-up gap.",
-    "v": "992754822ff7"
+    "text": "The former --backend node / --backend indexer comparison is retired. Ordinary commands use the Koios path only. They do not create an in-memory chain index or accept an ordinary node socket: the production node read adapter and the in-memory indexer are removed with the provider migration, and no registry command names a node backend. Private generated nodes and independent LSQ probes remain test harness components behind the private facade; none of them ships with the terminal.",
+    "v": "4cd83664a495"
    },
    {
     "index": 2,

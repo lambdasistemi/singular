@@ -68,7 +68,7 @@ import Singular.Provider.Koios.Scripted
     , txIdOfByte
     )
 import Singular.Provider.Koios.Wire (tipRequest)
-import Singular.Registry.Node (signedTx)
+import Singular.Registry.Signing (signedTx)
 
 -- | Fast bounds: three attempts, short delays, a short timeout.
 fast :: Text -> HttpConfig

@@ -53,10 +53,10 @@ identifiers=(
   nodeAddressReads adaptProvider sessionFor withOpenSession currentTipSlot
   awaitConnection awaitTx awaitTxId awaitTxWindow
   runNodeClient newLSQChannel newLTxSChannel mkN2CProvider mkN2CSubmitter
-  nodeProvider Submitter submitTx signedSubmitter boundedSubmitter
+  nodeProvider Submitter submitTx signedSubmitter boundedSubmitter withRawFacts
 )
 # Modules whose import alone names the backend.
-modules='Singular\.Registry\.Node\.(Session|Options|Indexer|View|Confirmation)|Cardano\.Node\.Client\.(N2C|Provider)'
+modules='Singular\.Registry\.Private\.RawFacts|Singular\.Registry\.Node\.(Session|Options|Indexer|View|Confirmation)|Cardano\.Node\.Client\.(N2C|Provider)'
 
 word_re="\\b($(
   IFS='|'
@@ -169,21 +169,18 @@ while IFS= read -r line; do
   esac
 done <"$allow"
 
-# A spec is exempt only as a backend's own test: its entry reads
-# "own test of <module path> — <why>". The module it names must be one of
-# the backend's own session or adapter modules — a node-internal module
-# whose import alone names the backend (the module vocabulary above) —
-# never a composition root, facade or fixture; and the spec must name a
-# confined identifier that module defines.
+# An own-test exemption is bound to the sole private four-fact probe owner,
+# never a consumer, fixture or facade. The spec must name its actual
+# confined definition. Deleted node modules cannot authorize an exemption.
 for path in "${!ownTest[@]}"; do
   subject=${ownTest[$path]}
   module=""
-  case "$subject" in offchain/node-internal/*)
+  case "$subject" in offchain/private-facade/Singular/Registry/Private/RawFacts.hs)
     [ -f "$root/$subject" ] \
       && module=$(sed -nE 's/^module[[:space:]]+([A-Z][A-Za-z0-9_.]*)([[:space:]]|\(|$).*/\1/p' "$root/$subject" | head -1)
     ;;
   esac
-  if [ -z "$module" ] || ! grep -qE "^($modules)\$" <<<"$module"; then
+  if [ "$module" != Singular.Registry.Private.RawFacts ]; then
     echo "allowlist: '$path' is an own test of '$subject', which is not a backend session or adapter module" >&2
     status=1
     continue

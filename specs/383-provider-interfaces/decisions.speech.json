@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry user, I want the first provider replacement to keep the journey working and state its trust limits honestly. The settled operator rulings and the proposed engineering choices below carry different status. Intake acceptance applies to the exact intake head before implementation is dispatched. On October 4 the epic owner answered the four intake questions as recorded below.",
+      "text": "As a registry user, I want the first provider replacement to keep the journey working and state its trust limits honestly. The settled operator rulings and the proposed engineering choices below carry different status. Intake acceptance applied to the exact intake head before implementation was dispatched; on October 4 the epic owner answered the four intake questions as recorded below. On October 7, 2026 the operator reset the ticket to main 6efe1f119a2332484e690b4c128c4bc5fd4d689b, and the current plan owns execution. The intake-era status recorded below is history: preserved for what it settled, never as evidence that anything is delivered now.",
       "pause": 400
     }
   ],
@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "As a demonstration reviewer, I need the ledger observations to come from the development network, so that singular cannot write the answers it later uses as evidence. Recommend a CI-only Koios-shaped facade over that devnet, using an independent transaction/input archive for history. Preserve the existing mock's disagreement controls, replacing its receipt-derived honest data source. The plan's endpoint table accounts for every required call and the current gaps.",
+      "text": "As a demonstration reviewer, I need the ledger observations to come from the development network, so that singular cannot write the answers it later uses as evidence. Recommend a CI-only Koios-shaped facade over that devnet, using an independent transaction/input archive for history. Preserve the existing mock's disagreement controls, replacing its receipt-derived honest data source. The plan's outcomes table accounts for every required call and the current gaps.",
       "pause": 400
     },
     {
@@ -37,7 +37,7 @@
       "pause": 400
     },
     {
-      "text": "The epic owner accepted loopback-only Koios transport for independent packaged processes in answer A-001. It is compiled into the CI test composition, with a recorded adapter used for deterministic fixture tests. Public HTTP URLs, production HTTP retries and rate limits remain the next ticket. A test-only transport must not become a retained production node adapter or a claimed live Koios client. The facade is test infrastructure and may follow the generated node; singular never does. This resolves Q-001-devnet-provider without claiming the facade has been implemented.",
+      "text": "The epic owner accepted loopback-only Koios transport for independent packaged processes in answer A-001. It is compiled into the CI test composition, with a recorded adapter used for deterministic fixture tests. Public HTTP URLs, production HTTP retries and rate limits remain the next ticket. A test-only transport must not become a retained production node adapter or a claimed live Koios client. The facade is test infrastructure and may follow the generated node; singular never does. This resolved Q-001-devnet-provider at intake without claiming the facade was implemented then; the private development-network facade is on main today and the plan's outcomes table carries its evidence obligation.",
       "pause": 400
     }
   ],
@@ -55,11 +55,11 @@
       "pause": 400
     },
     {
-      "text": "Node fixtures record independent floor, ceiling, slot-start and evaluation results with exact transaction bytes, resolved spent/reference outputs, protocol parameters and cost models. Include valid and refusing scripts and times on both sides of slot/era boundaries. Synthetic fixture construction is labelled fixture evidence; only actual recorded results can support the differential claim. No such fixtures are captured during this intake.",
+      "text": "Node fixtures record independent floor, ceiling, slot-start and evaluation results with exact transaction bytes, resolved spent/reference outputs, protocol parameters and cost models. Include valid and refusing scripts and times on both sides of slot/era boundaries. Synthetic fixture construction is labelled fixture evidence; only actual recorded results can support the differential claim. No such fixtures were captured during the intake; the comparison fixtures main now carries are the plan's to rerun on the candidate.",
       "pause": 400
     },
     {
-      "text": "Answer A-002 accepts this manifest boundary and assigns refresh ownership to this repository. When preprod era history changes, a singular change refreshes the manifest; the named horizon refusal signals that it is due. The devnet manifest comes from the exact generator output of that run. This resolves Q-002-network-data. Actual source revisions and fixtures must still be frozen before the implementing slice is accepted; no network data was captured here.",
+      "text": "Answer A-002 accepts this manifest boundary and assigns refresh ownership to this repository. When preprod era history changes, a singular change refreshes the manifest; the named horizon refusal signals that it is due. The devnet manifest comes from the exact generator output of that run. This resolved Q-002-network-data. Actual source revisions and fixtures were frozen later on main; the plan's outcomes table requires them rerun on the candidate rather than trusted as presence.",
       "pause": 400
     }
   ],
@@ -135,6 +135,10 @@
       "pause": 500
     },
     {
+      "text": "This section is the intake release record, preserved as history. The recovery branch merged to main, and the October 7, 2026 reset rebinds delivery to main 6efe1f119a2332484e690b4c128c4bc5fd4d689b under the current plan: the slicing amendment and its commit-owner and persistent-auditor arrangement ended with that reset, and no checkpoint trail is claimed. The contract rulings recorded below stand as written.",
+      "pause": 400
+    },
+    {
       "text": "The epic owner accepted intake head 34804370f8321f4a341a13e1a809ae1119f5aaa8 with a slicing amendment: TrieState first, local evaluation and pinned time second, the indivisible provider switch/deletion third, evidence and handoff last. Each earlier checkpoint preserves the journey and has local green gates and persistent auditor approval before push. A separation failure is a question, not permission to combine slices. The approved commit owner and mute persistent auditor are released; intake acceptance does not accept their implementation.",
       "pause": 400
     },
@@ -165,16 +169,16 @@
       "pause": 500
     },
     {
-      "text": "As a builder author, I use one acquired view's raw parameters, validated time context and resolved spent, reference and collateral outputs. The public local-services component owns Ledger and Provider, together with fixed local execution and time services; the main library keeps the original Ledger and Provider import paths. An adapter supplies facts and cannot select an evaluator or time converter. The node and indexer remain the existing backends in this slice, and memory fixtures name an explicit finite synthetic context.",
+      "text": "As a builder author, I use one acquired view's raw parameters, validated time context and resolved spent, reference and collateral outputs. The public local-services component owns Ledger and Provider, together with fixed local execution and time services; the main library keeps the original Ledger and Provider import paths. An adapter supplies facts and cannot select an evaluator or time converter. This slice kept the node and indexer as the existing backends, and memory fixtures name an explicit finite synthetic context; the ticket's completion now requires those node and indexer routes removed, as the current plan records.",
       "pause": 400
     },
     {
-      "text": "The behavioral model remains the accepted recovery revision 872c0ecf3c7cf1a10293793523c8521d5ef9aae9; no Lean or registry admission law changes here. The existing reject-model discrepancy remains held and gains no acceptance from these computation checks. Recorded comparisons, reached faults, retained query and builder properties, compiler closure and the actual private journey and recovery are separate evidence obligations. The first approved checkpoint binds source comparisons and a reached caller fault; it does not accept the migrated callers. Acceptance requires final receipt-bound checks and the second checkpoint. API source links follow the moved public owner. Wider generated local service coverage remains a published gap; changed narration requires root generation and a successful clip check.",
+      "text": "The behavioral model remains the accepted revision the current plan binds — Model blob dc88ba5f9411173cfa655deab7e94ae5569dc395, Statements blob 71380017c1b99c43deda9ca3e44c393ed515a182, Driver blob 3f54cb1f9efd04de5004983cd84acf34dd7fcfd8 under constitution 1.13.0; no Lean or registry admission law changes here. The existing reject-model discrepancy remains held and gains no acceptance from these computation checks. Recorded comparisons, reached faults, retained query and builder properties, compiler closure and the actual private journey and recovery are separate evidence obligations. The checkpoint trail this slice ran under is history; the current plan owns acceptance, so final receipt-bound checks bind to its integrated candidate rather than to an intake checkpoint. API source links follow the moved public owner. Wider generated local service coverage remains a published gap; changed narration requires root generation and a successful clip check.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "430575b26072a8691f455484813fa24f091b5fde1e223e6ca5b33e61fc8afa9c"
+    "sha256": "c26e0c63f2212ff25fd5014be0c1c30766c43db9644f8d27efcbb565d258a799"
   }
 }

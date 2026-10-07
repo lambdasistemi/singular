@@ -16,6 +16,12 @@ module Conformance.Run.CaRows
     , stateUtxoByToken
     ) where
 
+import Conformance.Run.Actor
+    ( Actor (..)
+    , actorAddress
+    , actorSigningKey
+    )
+
 import Conformance.Run.Control
 import Conformance.Run.Environment
 import Conformance.Run.Manifest
@@ -65,7 +71,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (applyPreviousPolicies)
-import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Capabilities (capConfirm, capSubmit)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -137,11 +143,11 @@ outRef is published by the split transaction itself.
 -}
 designateSplit
     :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-    -> Capabilities Cage.NoWitness IO
+    -> Actor
     -> String
     -> IO (TxIn, TxIn)
 designateSplit prov submit label = do
-    (gIn, gOut) <- largestWalletUtxo prov
+    (gIn, gOut) <- largestWalletUtxo submit prov
     let Coin total = gOut ^. coinTxOutL
         seedCoin = 2_000_000
         fee = 1_000_000
@@ -151,15 +157,16 @@ designateSplit prov submit label = do
                 & inputsTxBodyL .~ Set.singleton gIn
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
-                        [ mkBasicTxOut genesisAddr (MaryValue (Coin seedCoin) mempty)
-                        , mkBasicTxOut genesisAddr (MaryValue (Coin rest) mempty)
+                        [ mkBasicTxOut (actorAddress submit) (MaryValue (Coin seedCoin) mempty)
+                        , mkBasicTxOut (actorAddress submit) (MaryValue (Coin rest) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
         tx = mkBasicTx body
     require
         ("designation: wallet too small for the " <> label <> " split")
         (rest > seedCoin)
-    result <- capSubmit submit (signTx genesisSignKey tx)
+    result <-
+        capSubmit (actorCaps submit) (signTx (actorSigningKey submit) tx)
     case result of
         SubmitAccepted _ -> pure ()
         SubmitRefused reason ->
@@ -168,8 +175,8 @@ designateSplit prov submit label = do
                     <> T.unpack reason
                 )
         unavailable -> failWith ("submission unavailable: " <> show unavailable)
-    capConfirm submit tx
-    after <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
+    capConfirm (actorCaps submit) tx
+    after <- Cage.withLatest prov (`Cage.outputsAt` actorAddress submit)
     let txid = txIdHex tx
         mine =
             sortOn
@@ -198,9 +205,9 @@ runCanonicalSeedIdentity env w = do
     let cfg = caCfg w
         prov = envProv env
     unsignedBoot <-
-        Cage.withLatest prov (\v -> bootTokenImpl cfg v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfg v (genesisAddr env))
     (mem, cpu) <- measureUnits env unsignedBoot
-    let signedBootWitnessed = signTx genesisSignKey unsignedBoot
+    let signedBootWitnessed = signTx (genesisSignKey env) unsignedBoot
         signedBoot = signedTx signedBootWitnessed
     result <- submitTxResilient (envSubmit env) signedBootWitnessed
     case result of
@@ -308,14 +315,14 @@ runRivalSeedAuthentication env w = do
         "rival-seed-authentication needs canonical-seed-identity's canonical registry; run canonical-seed-identity first"
         (isJust tidC)
     -- the second designation split: output 0 is the rival seed
-    (rivalIn, _) <- designateSplit (envProv env) (envCaps env) "rival"
+    (rivalIn, _) <- designateSplit (envProv env) (envActor env) "rival"
     let rivalRef = txInToRef rivalIn
         cfgR = (caCfg w){cageSeed = rivalRef}
         prov = envProv env
     unsignedRival <-
-        Cage.withLatest prov (\v -> bootTokenImpl cfgR v genesisAddr)
+        Cage.withLatest prov (\v -> bootTokenImpl cfgR v (genesisAddr env))
     (mem, cpu) <- measureUnits env unsignedRival
-    let signedRivalWitnessed = signTx genesisSignKey unsignedRival
+    let signedRivalWitnessed = signTx (genesisSignKey env) unsignedRival
         signedRival = signedTx signedRivalWitnessed
     result <- submitTxResilient (envSubmit env) signedRivalWitnessed
     case result of
@@ -740,7 +747,7 @@ runTokenlessOutputAuthentication env w = do
         _ ->
             failWith
                 "tokenless-output-authentication: the canonical state has no StateDatum to copy"
-    (funderIn, funderOut) <- largestWalletUtxo prov
+    (funderIn, funderOut) <- largestWalletUtxo (envActor env) prov
     let Coin avail = funderOut ^. coinTxOutL
         forgedCoin = 2_000_000
         fee = 500_000
@@ -748,7 +755,7 @@ runTokenlessOutputAuthentication env w = do
         forgedOut =
             mkBasicTxOut scriptAddr (MaryValue (Coin forgedCoin) mempty)
                 & datumTxOutL .~ mkInlineDatum (toPlcData (StateDatum datum))
-        changeOut = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+        changeOut = mkBasicTxOut (genesisAddr env) (MaryValue (Coin change) mempty)
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton funderIn
@@ -768,7 +775,7 @@ runTokenlessOutputAuthentication env w = do
             <> " script purposes on a plain payment"
         )
         (Map.null evalMap)
-    let signedWitnessed = signTx genesisSignKey unsigned
+    let signedWitnessed = signTx (genesisSignKey env) unsigned
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of

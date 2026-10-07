@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 75 modules in
-three kinds: 57 explicitly exposed modules and five re-exported modules
+re-exports under its own name. That complete extent is 73 modules in
+three kinds: 56 explicitly exposed modules and four re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -39,35 +39,42 @@ facade — `Singular.Registry.Deployment.Manifest`, `.Mirror` and
 here for the contributor reading the facades' implementations, but no
 caller import path: a caller compiles against the facades' exports, not
 against these modules. `Singular.Registry.Ledger`,
-`Singular.Registry.LedgerProvider`, `Singular.Registry.Evidence`,
-`Singular.Registry.Provider` and `Singular.Registry.Signing` are the
+`Singular.Registry.LedgerProvider`, `Singular.Registry.Evidence` and
+`Singular.Registry.Signing` are the
 re-exports: their implementations are owned by the public `local-services`
 component (`offchain/local-services/`) and the main library exposes their
 stable import paths. The generic provider interface and evidence types let a
 caller supply capabilities without selecting a node runtime; the Koios
 constructor supplies unbound, unverified HTTP facts through that interface.
-The private node runtime owners are deliberately not
-part of this reference — they are not importable from the public library
-— and are documented with source links in
-[Node module ownership](offchain-node-ownership.md). The extent below is
+The runtime service modules outside this extent — the terminal composition
+and its transport in `koios-http`, and the remaining service modules of
+`local-services` — are documented with source links in
+[Runtime service ownership](offchain-node-ownership.md). The extent below is
 the complete documented module surface — exposed, re-exported and
 package-internal alike; the site check fails until it and this list
 agree.
 
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="module">Singular.Application.OpenDatum.Book</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="module">Singular.Application.OpenDatum.Build</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="module">Singular.Application.OpenDatum.Envelope</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="module">Singular.Application.OpenDatum.Release</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="module">Singular.Application.OpenDatum.Script</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="module">Singular.Application.OpenDatum.Update</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="source">source</a>
+MkDocs environment ready!
+Run: mkdocs serve
 - <a href="../offchain/naming/src/Naming/Datum.hs" data-api="module">Naming.Datum</a> — <a href="../offchain/naming/src/Naming/Datum.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Register.hs" data-api="module">Naming.Register</a> — <a href="../offchain/naming/src/Naming/Register.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Request.hs" data-api="module">Naming.Request</a> — <a href="../offchain/naming/src/Naming/Request.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Verify.hs" data-api="module">Naming.Verify</a> — <a href="../offchain/naming/src/Naming/Verify.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Wire.hs" data-api="module">Naming.Wire</a> — <a href="../offchain/naming/src/Naming/Wire.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="module">Naming.Wire.Vectors</a> — <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="module">Singular.Application.OpenDatum.Book</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="module">Singular.Application.OpenDatum.Build</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="module">Singular.Application.OpenDatum.Envelope</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="module">Singular.Application.OpenDatum.Release</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="module">Singular.Application.OpenDatum.Script</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="module">Singular.Application.OpenDatum.Update</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="module">Singular.Provider.Koios.Client</a> — <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="module">Singular.Provider.Koios.Provider</a> — <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Recorded.hs" data-api="module">Singular.Provider.Koios.Recorded</a> — <a href="../offchain/lib/Singular/Provider/Koios/Recorded.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="module">Singular.Provider.Koios.Runtime</a> — <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="module">Singular.Provider.Koios.State</a> — <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Wire.hs" data-api="module">Singular.Provider.Koios.Wire</a> — <a href="../offchain/lib/Singular/Provider/Koios/Wire.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/AssetName.hs" data-api="module">Singular.Registry.AssetName</a> — <a href="../offchain/lib/Singular/Registry/AssetName.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="module">Singular.Registry.Blueprint</a> — <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="source">source</a>
@@ -75,19 +82,23 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="module">Singular.Registry.Blueprint.Params</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Params.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="module">Singular.Registry.Blueprint.Schema</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Schema.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="module">Singular.Registry.Candidate</a> — <a href="../offchain/lib/Singular/Registry/Candidate.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="module">Singular.Registry.Capabilities</a> — <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="module">Singular.Registry.Config</a> — <a href="../offchain/lib/Singular/Registry/Config.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Config/Application.hs" data-api="module">Singular.Registry.Config.Application</a> — <a href="../offchain/lib/Singular/Registry/Config/Application.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="module">Singular.Registry.Confirmation</a> — <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="module">Singular.Registry.Deployment</a> — <a href="../offchain/lib/Singular/Registry/Deployment.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="module">Singular.Registry.Deployment.Attach</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Attach.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="module">Singular.Registry.Deployment.Manifest</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="module">Singular.Registry.Funding</a> — <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="module">Singular.Registry.Node</a> — <a href="../offchain/lib/Singular/Registry/Node.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
-- <a href="../offchain/local-services/Singular/Registry/Provider.hs" data-api="module">Singular.Registry.Provider</a> — <a href="../offchain/local-services/Singular/Registry/Provider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="module">Singular.Registry.Replay</a> — <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="source">source</a>
+- <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="module">Singular.Registry.Signing</a> — <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="module">Singular.Registry.Trie</a> — <a href="../offchain/lib/Singular/Registry/Trie.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="module">Singular.Registry.Trie.Pure</a> — <a href="../offchain/lib/Singular/Registry/Trie/Pure.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="module">Singular.Registry.Trie.PureManager</a> — <a href="../offchain/lib/Singular/Registry/Trie/PureManager.hs" data-api="source">source</a>
@@ -112,24 +123,12 @@ agree.
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="module">Singular.Registry.Types</a> — <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="module">Singular.Registry.Wait</a> — <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="module">Singular.Registry.Wire.Primitive</a> — <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="module">Singular.Registry.Wire.Proof</a> — <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="module">Singular.Registry.Wire.Request</a> — <a href="../offchain/lib/Singular/Registry/Wire/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="module">Singular.Registry.Wire.State</a> — <a href="../offchain/lib/Singular/Registry/Wire/State.hs" data-api="source">source</a>
-
-- <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="module">Singular.Provider.Koios.Provider</a> — <a href="../offchain/lib/Singular/Provider/Koios/Provider.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="module">Singular.Provider.Koios.Runtime</a> — <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="module">Singular.Provider.Koios.State</a> — <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="module">Singular.Registry.Capabilities</a> — <a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="module">Singular.Registry.Confirmation</a> — <a href="../offchain/lib/Singular/Registry/Confirmation.hs" data-api="source">source</a>
-- <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="module">Singular.Registry.Funding</a> — <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="source">source</a>
-- <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
-- <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="module">Singular.Registry.Signing</a> — <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="module">Singular.Registry.Wait</a> — <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="source">source</a>
 
 The facades and owners of the registry builder and blueprint extraction
 are described module by module in the
@@ -196,13 +195,14 @@ suite's own library now has its own generated reference — the
 and checked by the same discipline from the Conformance tree. Together
 the two references cover the documented module surfaces of the two
 public libraries, no more: this reference's extent is the off-chain
-main library's, with the private node runtime owners staying
-outside it in [Node module ownership](offchain-node-ownership.md), and
+main library's, with the runtime service modules staying outside it in
+[Runtime service ownership](offchain-node-ownership.md), and
 the conformance reference's extent is the conformance library's. The
-package-private node-internal library, the executables and the on-chain
-Aiken validators remain outside the generated references. The public
-`local-services` component also exposes `LocalEvaluation`, `NetworkTime`,
-`ProviderTrace`, `Services`, `TimeMaterial`, `Trace` and `TraceRender`; their sources live under
+executables and the on-chain Aiken validators remain outside the
+generated references. The public `local-services` component also exposes
+`LocalEvaluation`, `NetworkTime`, `ProviderSettings`, `ProviderTrace`,
+`SessionEvidence`, `SessionIO`, `SessionServices`, `TimeMaterial`,
+`TimeSource`, `Trace`, `TraceRender`, `WaitTypes` and `Wallet`; their sources live under
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a

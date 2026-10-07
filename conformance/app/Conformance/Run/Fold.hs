@@ -252,7 +252,8 @@ assembleFoldSpec env0 fs = Cage.withLatest (envProv env0) $ \held -> do
     let prov = envProv env
 
     pp <- Cage.withLatest prov Cage.parameters
-    funder <- maybe (largestWalletUtxo prov) pure (fsFunder fs)
+    funder <-
+        maybe (largestWalletUtxo (envActor env) prov) pure (fsFunder fs)
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
     -- #157: a booked request carries the approval that certifies its
     -- edge, so it is no longer ada-only.
@@ -455,7 +456,7 @@ assembleFoldSpec env0 fs = Cage.withLatest (envProv env0) $ \held -> do
                     - sum refunds
                     - sum dutyCoins
                     - feeAmt
-            out = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+            out = mkBasicTxOut (genesisAddr env0) (MaryValue (Coin change) mempty)
             Coin minAda = getMinCoinTxOut @ConwayEra pp out
         require
             ("hand-build: change under min-ADA: " <> show change)
@@ -564,7 +565,7 @@ assembleFoldSpec env0 fs = Cage.withLatest (envProv env0) $ \held -> do
     -- are unaffected.
     harnessSigners :: [KeyHash Guard]
     harnessSigners =
-        [addrWitnessKeyHash (addrKeyHashBytes genesisAddr)]
+        [addrWitnessKeyHash (addrKeyHashBytes (genesisAddr env0))]
     adaOnly out = case out ^. valueTxOutL of
         MaryValue _ (MultiAsset ma) -> Map.null ma
     requestTokenMatches out = case extractCageDatum out of
@@ -733,8 +734,8 @@ rowRequestAndFold env cage label key _val _op = do
             env
             cfg
             tid
-            genesisAddr
-            genesisSignKey
+            (genesisAddr env)
+            (genesisSignKey env)
             key
             edgeInsertAbsent
             dest
@@ -745,7 +746,7 @@ rowRequestAndFold env cage label key _val _op = do
     (unsignedFold, stateIn, handFold) <- withHeldView env $ \held -> do
         lib <- Cage.withLatest (envProv held) $ \v -> do
             ctx <- rowRegistryContext held v cage tid
-            updateTokenWithDuties cfg v (envTm held) tid genesisAddr ctx
+            updateTokenWithDuties cfg v (envTm held) tid (genesisAddr env) ctx
         state@(stateIn, _) <- cageStateUtxo held cage
         reqUtxos <- pendingRequests held cage
         (handProofs, handRoot) <- speculativeApplyAll held cage tid reqUtxos
@@ -769,7 +770,7 @@ rowRequestAndFold env cage label key _val _op = do
     emit "calibration" (label <> ": hand model matches the library fold")
     (mem, cpu) <- measureUnits env unsignedFold
     writeIORef (rcUnits cage) (mem, cpu)
-    signed <- submitWithGenesis (envCaps env) unsignedFold
+    signed <- submitWithGenesis (envActor env) unsignedFold
     let size = txSizeBytes signed
     emitMeasure env label mem cpu size
     -- Commit what was FOLDED, which is the absence this row booked: the

@@ -1,17 +1,22 @@
 module Singular.Registry.WaitSpec (spec) where
 
 import Cardano.Ledger.Api.Tx (txIdTx)
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (myThreadId, threadDelay)
+import Control.Concurrent.Async (withAsync)
 import Control.Exception
     ( AsyncException (..)
     , ErrorCall (..)
     , finally
+    , getMaskingState
+    , mask_
     , throwIO
+    , throwTo
     , try
     )
 import Control.Monad qualified
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Singular.Provider.Koios.Scripted (signedTransaction)
+import Singular.Registry.LedgerProvider (SubmitResult (..))
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.Wait
 import System.Timeout (timeout)
@@ -41,6 +46,58 @@ spec = describe "Generic transport waits" $ do
                     expectationFailure
                         "a stalled signed submission did not raise its infrastructure failure"
             readIORef released `shouldReturn` True
+
+    -- Retained obligations from the old node-specific wait spec. They now
+    -- exercise the shipping transport-independent bound with actual IO.
+    it "preserves prompt signed acceptance and refusal unchanged" $ do
+        let accepted = SubmitAccepted identity
+            refused = SubmitRefused "original producer refusal"
+        boundedSignedSubmission 1 (const (pure accepted)) signedTransaction
+            `shouldReturn` accepted
+        boundedSignedSubmission 1 (const (pure refused)) signedTransaction
+            `shouldReturn` refused
+
+    it "runs the bounded action in its caller's masking state" $ do
+        let inspect = do
+                outside <- getMaskingState
+                inside <- boundWait SubmissionWait identity 10 getMaskingState
+                inside `shouldBe` outside
+        inspect
+        mask_ inspect
+
+    it "propagates the caller's interrupt and cleans the running action" $ do
+        caller <- myThreadId
+        released <- newIORef False
+        let interrupt =
+                threadDelay 200000 >> throwTo caller (ErrorCall "caller interrupted")
+            action = threadDelay 5000000 `finally` writeIORef released True
+        outcome <- withAsync interrupt $ \_ ->
+            try (timeout 3000000 (boundWait SubmissionWait identity 10 action))
+        case outcome of
+            Left failure -> show (failure :: ErrorCall) `shouldBe` "caller interrupted"
+            Right _ -> expectationFailure "the bound swallowed the caller's interrupt"
+        readIORef released `shouldReturn` True
+
+    it "counts preceding IO in elapsed time from the original wait clock" $ do
+        clock <- startWaitClock
+        threadDelay 4000000
+        outcome <-
+            try $
+                boundWaitClosingSince
+                    clock
+                    SessionConfirmationWait
+                    identity
+                    10
+                    (pure (Left 100000 :: Either Integer ()))
+        case outcome of
+            Left failure -> do
+                waitStage failure `shouldBe` SessionConfirmationWait
+                waitTxId failure `shouldBe` identity
+                waitBound failure `shouldBe` 10
+                waitClosedAt failure `shouldBe` Just 100000
+                waitElapsed failure
+                    `shouldSatisfy` (\seconds -> seconds >= 3.9 && seconds < 10)
+            Right () -> expectationFailure "a closed window became success"
 
     it "keeps a closed POSIX window as the same infrastructure exception" $ do
         clock <- startWaitClock

@@ -56,7 +56,7 @@ let
       '';
   # #326 R4: a SignedTx is constructible only by signing. The project's
   # GHC type-checks the fixtures under signed-tx-control against the
-  # defining Signing module and retained Submit facade, with node-internal's
+  # defining Signing module, with local-services'
   # compiled dependencies: no cabal, no package index (D-011).
   signedTxControl =
     pkgs.runCommand "signed-tx-control"
@@ -66,20 +66,18 @@ let
           root = ../..;
           fileset = pkgs.lib.fileset.unions [
             ../../tools/signed_tx_control.sh
-            ../../tools/signed-tx-exports.allow
             ../../tools/signing-exports.allow
             ../signed-tx-control
-            ../node-internal/Singular/Registry/Node/Submit.hs
             ../local-services/Singular/Registry/Signing.hs
           ];
         };
       }
       ''
-        # Every library node-internal was built against: its propagated
+        # Every library local-services was built against: its propagated
         # build inputs, followed transitively.
         dbs=()
         declare -A seen=()
-        queue=(${components.sublibs.node-internal})
+        queue=(${components.sublibs.local-services})
         while [ ''${#queue[@]} -gt 0 ]; do
           p=''${queue[0]}
           queue=("''${queue[@]:1}")
@@ -91,10 +89,10 @@ let
             queue+=("''${next[@]}")
           fi
         done
-        # Expose exactly node-internal's own dependencies, as Cabal does
-        # when it compiles Submit.hs.
+        # Expose exactly local-services's own dependencies, as Cabal does
+        # when it compiles Signing.hs.
         for id in $(sed -n '/^depends:/,/^[a-z-]*:/p' \
-            ${components.sublibs.node-internal}/package.conf.d/*-node-internal.conf \
+            ${components.sublibs.local-services}/package.conf.d/*-local-services.conf \
             | grep -v '^[a-z-]*:' ); do
           dbs+=(-package-id "$id")
         done

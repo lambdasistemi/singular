@@ -511,7 +511,7 @@ bookStoryRequest env state cage request booking = do
     tid <- cageTid cage
     refs <- storyReferences env cage key edge
     (owner, signer, deposit) <- case booking of
-        Nothing -> pure (genesisAddr, genesisSignKey, cgDeposit)
+        Nothing -> pure (genesisAddr env, genesisSignKey env, cgDeposit)
         Just (Live.Booking owner deposit) -> case lookup owner (liveSigners state) of
             Just signer -> pure (owner, signer, deposit)
             Nothing ->
@@ -593,7 +593,7 @@ submitEdge env state cage exit alteration placement request = do
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
     let registry = show tid
-    noteRequest state cage registry request
+    noteRequest (genesisAddr env) state cage registry request
     refs <- storyReferences env cage key edge
     let pendingKey =
             ( registry
@@ -622,10 +622,11 @@ submitEdge env state cage exit alteration placement request = do
                             codes
                             edge
                             key
-                            (addrKeyHashBytes genesisAddr)
+                            (addrKeyHashBytes (genesisAddr env))
                             (approvalDestination (storyDestination request))
                 modelRequest <-
                     storyModelRequest
+                        (genesisAddr env)
                         ids
                         cfg
                         exit
@@ -669,6 +670,7 @@ submitEdge env state cage exit alteration placement request = do
                     (ReferenceIdentity (txInReference reqIn))
             modelRequest <-
                 storyModelRequest
+                    (genesisAddr env)
                     ids
                     cfg
                     exit
@@ -683,9 +685,9 @@ submitEdge env state cage exit alteration placement request = do
             elsewhere <- case alteration of
                 Just payment | payment `elem` [Live.OtherAddress, Live.ShortByOne] -> do
                     other <-
-                        if wallet == genesisAddr
+                        if wallet == genesisAddr env
                             then snd <$> secondWallet env
-                            else pure genesisAddr
+                            else pure (genesisAddr env)
                     _ <-
                         allocateIdentity
                             (liveWallets ids)
@@ -760,7 +762,7 @@ submitEdge env state cage exit alteration placement request = do
                     (Map.fromList . concat)
                     ( mapM
                         (\a -> Cage.withLatest (envProv env) (`Cage.outputsAt` a))
-                        [ genesisAddr
+                        [ genesisAddr env
                         , wallet
                         , requestAddrFromCfg cfg tid (network cfg)
                         , cageAddrFromCfg cfg (network cfg)
@@ -780,7 +782,7 @@ submitEdge env state cage exit alteration placement request = do
             require
                 "generic fold has an input missing from the chain snapshot"
                 (all (`Map.member` visible) (Set.toList wanted))
-            let signedWitnessed = signTx genesisSignKey unsigned
+            let signedWitnessed = signTx (genesisSignKey env) unsigned
                 signed = signedTx signedWitnessed
                 submittedBudgets = transactionPurposeUnits signed
                 -- What each spent input holds of the state policy, which every
@@ -952,7 +954,9 @@ submitBatch env state cage exit placement alteration requests = do
             , fromEnum (Live.requestEdge request)
             , serialiseAddr (Live.requestWallet request)
             )
-    mapM_ (noteRequest state cage registry . fst) requests
+    mapM_
+        (noteRequest (genesisAddr env) state cage registry . fst)
+        requests
     -- The owner a booking names is a wallet of this registry, named while
     -- booking.
     mapM_
@@ -964,7 +968,8 @@ submitBatch env state cage exit placement alteration requests = do
                 <$> readIORef (livePendingRequests state)
         utxo <-
             maybe (bookStoryRequest env state cage request booking) pure retained
-        pure (request, maybe genesisAddr Live.bookingOwner booking, utxo)
+        pure
+            (request, maybe (genesisAddr env) Live.bookingOwner booking, utxo)
     let sorted = sortOn (\(_, _, (reqIn, _)) -> reqIn) named
         booked = [(request, utxo) | (request, _, utxo) <- sorted]
         owners = [owner | (_, owner, _) <- sorted]
@@ -1099,7 +1104,7 @@ submitBatch env state cage exit placement alteration requests = do
                         unsigned
                 [] -> unsigned
             _ -> unsigned
-        signedWitnessed = signTx genesisSignKey tampered
+        signedWitnessed = signTx (genesisSignKey env) tampered
         signed = signedTx signedWitnessed
         -- An honest folder claims, for each request, the delta of its own edge;
         -- the model reads that claim off its own table ("canonical"), never off
@@ -1507,11 +1512,16 @@ enterRegistry env state cage = do
 and wallet under its registry.
 -}
 noteRequest
-    :: LiveState -> RowCage -> String -> Live.EdgeRequest Addr -> IO ()
-noteRequest state cage registry request = do
+    :: Addr
+    -> LiveState
+    -> RowCage
+    -> String
+    -> Live.EdgeRequest Addr
+    -> IO ()
+noteRequest funder state cage registry request = do
     let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
         wallet = Live.requestWallet request
-    prepareRegistrationIdentities (liveIds state) cage key wallet
+    prepareRegistrationIdentities funder (liveIds state) cage key wallet
     modifyIORef'
         (liveRegistryKeys state)
         ( Map.alter
@@ -1536,7 +1546,7 @@ noteRequest state cage registry request = do
                             if address `elem` addresses then addresses else address : addresses
                         )
                         (fromMaybe [] known)
-                        [wallet, genesisAddr]
+                        [wallet, funder]
                     )
             )
             registry
@@ -1665,7 +1675,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
                 { fsCollateral = Just pot
                 , fsSigners =
                     Just
-                        [ addrWitnessKeyHash (addrKeyHashBytes genesisAddr)
+                        [ addrWitnessKeyHash (addrKeyHashBytes (genesisAddr env))
                         | alteration == Just Live.ExtraSigner
                         ]
                 , fsHolderUtxos = maybe [] pure witness
@@ -1681,7 +1691,7 @@ foldingBuilder env cage tid exit alteration placement request named before elsew
             (envFoldFixture env)
             (envProv env)
             (\budget -> assembleFoldWithFee env initialSpec{fsUnits = budget})
-            (submitTxResilient (envSubmit env) . signTx genesisSignKey)
+            (submitTxResilient (envSubmit env) . signTx (genesisSignKey env))
             initialUnits
     let spec = initialSpec{fsUnits = fixtureUnits}
         build units = do
@@ -1805,7 +1815,7 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                         units
                         pot
                         (sum (map (refScriptSize . snd) stateScripts))
-                        genesisAddr
+                        (genesisAddr env)
                         edited
                     )
             -- Removing the signer after declaring the fee changes no output:
@@ -1839,7 +1849,7 @@ buildRetraction env cage tid named@(reqIn, reqOut) before = do
         prov = envProv env
         (_, submittedAt) = requestDatumOf reqOut
     state <- cageStateUtxo env cage
-    wallet <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
+    wallet <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr env)
     funder <- case sortOn (negate . outCoin . snd) wallet of
         first : _ -> pure first
         [] -> failWith "retraction fee payer has no indexed outputs"
@@ -1886,7 +1896,7 @@ buildRetraction env cage tid named@(reqIn, reqOut) before = do
     either
         (failWith . show)
         (pure . balancedTx)
-        (balanceTx pp [funder, named] [] genesisAddr transaction)
+        (balanceTx pp [funder, named] [] (genesisAddr env) transaction)
 
 {- | Spend the registry's state beside a retraction: the state moves from the
 reference inputs to the inputs and is continued unchanged ahead of every other
@@ -2122,7 +2132,8 @@ the output reference the request sits at, the one its return is bound to; no
 other exit reads it.
 -}
 storyModelRequest
-    :: LiveIdentities
+    :: Addr
+    -> LiveIdentities
     -> CageConfig
     -> Live.Exit
     -> Live.EdgeRequest Addr
@@ -2131,7 +2142,7 @@ storyModelRequest
     -> Maybe Integer
     -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra)
     -> IO Value
-storyModelRequest = storyModelRequestBy genesisAddr
+storyModelRequest = storyModelRequestBy
 
 -- | 'storyModelRequest' for a request booked by the given wallet, its owner.
 storyModelRequestBy
@@ -2340,7 +2351,7 @@ observeAcceptedStep env state step transaction = do
     ownerId <-
         observeIdentity
             (liveWallets ids)
-            (WalletIdentity (serialiseAddr genesisAddr))
+            (WalletIdentity (serialiseAddr (genesisAddr env)))
     commitment <-
         maybe (failWith "request commitment cannot be derived") pure $
             Compare.approvalAssetName
@@ -3813,13 +3824,13 @@ observeIdentity state identity =
     readIORef state >>= either failWith pure . Identity.observe identity
 
 prepareRegistrationIdentities
-    :: LiveIdentities -> RowCage -> ByteString -> Addr -> IO ()
-prepareRegistrationIdentities ids cage key recipient = do
+    :: Addr -> LiveIdentities -> RowCage -> ByteString -> Addr -> IO ()
+prepareRegistrationIdentities funder ids cage key recipient = do
     let cfg = rcCfg cage
     _ <-
         allocateIdentity
             (liveWallets ids)
-            (WalletIdentity (serialiseAddr genesisAddr))
+            (WalletIdentity (serialiseAddr funder))
     _ <-
         allocateIdentity
             (liveWallets ids)

@@ -1,12 +1,10 @@
 # shellcheck shell=bash
 # #326 R5: the contract suite's external leg.
 #
-# A devnet is started here as a process of its own, funding a fresh key
-# with outputs in blocks; the suite is then handed only the socket path the
-# devnet settings name, the network magic and the key file. This retained
-# private legacy characterization builds the old node/indexer adapters; it
-# is not the shipping Koios constructor or node-deletion evidence. The suite
-# starts no node of its own on this leg.
+# The process below owns a private generated ledger and HTTP facade, funding
+# a fresh key with outputs in blocks. The suite receives the shipping URL,
+# network and time input, an explicit wallet, and a separately named private
+# oracle socket. The suite starts no node or fallback on this external leg.
 work="$(mktemp -d)"
 devnet_pid=""
 cleanup() {
@@ -50,4 +48,8 @@ if [ -z "$sock" ] || [ ! -S "$sock" ]; then
 fi
 echo "contract-external: devnet pid $devnet_pid at $sock, funded key generated"
 
-contract-tests --node-socket "$sock" --network-magic 42 --wallet-skey "$key"
+provider_url="$(jq -er '.providerUrl' <<<"$settings")"
+time_source="$(jq -er '.networkTimeDirectory' <<<"$settings")"
+magic="$(jq -er '.networkMagic' <<<"$settings")"
+contract-tests --provider-url "$provider_url" --network-magic "$magic" \
+  --time-source "$time_source" --wallet-skey "$key" --private-probe-socket "$sock"

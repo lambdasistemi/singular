@@ -346,9 +346,11 @@ journal and the exit status are as they would be with no narration at all.
 
 The former `--backend node` / `--backend indexer` comparison is retired. Ordinary
 commands use the Koios path only. They do not create an in-memory chain index or
-accept an ordinary node socket. Private generated nodes and independent LSQ
-probes remain test harness components in this integration slice; their remaining
-package closure is a published follow-up gap.
+accept an ordinary node socket: the production node read adapter and the
+in-memory indexer are removed with the provider migration, and no registry
+command names a node backend. Private generated nodes and independent LSQ
+probes remain test harness components behind the private facade; none of
+them ships with the terminal.
 
 An index must not fabricate transaction history for genesis-only allocations.
 The retained private genesis-only control uses genuine initial ledger outputs

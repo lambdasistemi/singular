@@ -150,6 +150,7 @@ import Data.Sequence.Strict qualified as StrictSeq
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import PlutusCore.Data qualified as PLC
 
+import Control.Tracer (nullTracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -226,7 +227,6 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.StubSession
@@ -586,7 +586,7 @@ require at the end that only recorded reads reached the transport.
 withRecordedStory :: (Recorded -> IO a) -> IO a
 withRecordedStory story = do
     (transport, calls) <- countedRecordedTransport
-    runtime <- newIORuntime noPhaseLog (\_ -> pure ())
+    runtime <- newIORuntime nullTracer (\_ -> pure ())
     let client = koiosWith 20 10 transport
         provider = koiosProvider runtime (Cage.Network 1) noTimeSource client
     Cage.withLatest (Cage.Network 1, provider) $ \view -> do
@@ -918,7 +918,7 @@ withRecordedWrite r evidence answer story =
         withSystemTempDirectory "singular-recovery" $ \dir -> do
             wallet <- storyWallet dir
             let registry = dir </> "registry"
-                ctx = storyContext registry wallet (recordedProvider r) answer
+            ctx <- storyContext registry wallet (recordedProvider r) answer
             outcome <-
                 try @CommandFailure
                     ( submitBuilt
@@ -968,15 +968,14 @@ storyContext
     -> Wallet
     -> (Cage.Network, Cage.LedgerProvider NoWitness IO)
     -> WriteAnswer
-    -> WriteContext
-storyContext dir wallet recordedReads = \case
-    LostAnswer ->
-        base{wcCapabilities = capabilities{capSubmit = loseTheAnswer}}
-    AnsweredAndConfirmed ->
-        base{wcCapabilities = capabilities{capSubmit = acceptAndConfirm}}
-  where
-    capabilities = wcCapabilities base
-    base =
+    -> IO WriteContext
+storyContext dir wallet recordedReads answer = do
+    confirmed <- newIORef Map.empty
+    placed <- newIORef Map.empty
+    let submit = case answer of
+            LostAnswer -> const (throwIO (userError "the submission connection was lost"))
+            AnsweredAndConfirmed -> pure . Cage.SubmitAccepted . txIdTx . signedTx
+    pure
         WriteContext
             { wcDir = dir
             , wcCommand = "insert"
@@ -984,15 +983,17 @@ storyContext dir wallet recordedReads = \case
             , wcCapabilities =
                 Capabilities
                     { capReads = recordedReads
-                    , capSubmit = loseTheAnswer
+                    , capSubmit = submit
                     , capConfirm = \_ -> pure ()
                     , capFacts = pure []
                     , capTrace = pure []
                     }
             , wcTimeout = Just 5
+            , wcTracer = nullTracer
+            , wcSource = "recorded"
+            , wcConfirmed = confirmed
+            , wcPlaced = placed
             }
-    loseTheAnswer _ = throwIO (userError "the submission connection was lost")
-    acceptAndConfirm sealed = pure (Cage.SubmitAccepted (txIdTx (signedTx sealed)))
 
 -- | The transaction the journal's one @prepared@ line names.
 preparedTxId :: FilePath -> IO Text
@@ -1115,6 +1116,8 @@ withSyntheticSavedRegistry publishHistory story =
     withSystemTempDirectory "singular-synthetic" $ \dir -> do
         wallet <- storyWallet dir
         historyRef <- newIORef emptyHistory
+        confirmed <- newIORef Map.empty
+        placed <- newIORef Map.empty
         let cfg = Booking.cfg
             seed =
                 either
@@ -1284,6 +1287,10 @@ withSyntheticSavedRegistry publishHistory story =
                             , capTrace = pure []
                             }
                     , wcTimeout = Just 5
+                    , wcTracer = nullTracer
+                    , wcSource = "fixture"
+                    , wcConfirmed = confirmed
+                    , wcPlaced = placed
                     }
         -- Permanent computed guard over the actual constructed request
         -- and holding: absent or foreign carried datum cannot regress

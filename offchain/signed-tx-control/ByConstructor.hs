@@ -2,7 +2,7 @@
 module ByConstructor (forged) where
 
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Node.Submit (SignedTx (..))
+import Singular.Registry.Signing (SignedTx (..))
 
 forged :: ConwayTx -> SignedTx
 forged = SignedTx

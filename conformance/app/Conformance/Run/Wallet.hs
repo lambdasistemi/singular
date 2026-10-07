@@ -16,6 +16,12 @@ module Conformance.Run.Wallet
     , carveSeed
     ) where
 
+import Conformance.Run.Actor
+    ( Actor (..)
+    , actorAddress
+    , actorSigningKey
+    )
+
 import Conformance.Run.Environment
 import Conformance.Run.Observe
 import Conformance.Run.Submit
@@ -63,7 +69,7 @@ import Cardano.Node.Client.E2E.Setup
     , keyHashFromSignKey
     , mkSignKey
     )
-import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Capabilities (capConfirm, capSubmit)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
@@ -86,10 +92,11 @@ only the seed and one more input. First-in-query-order would be
 dust after a session of folds.
 -}
 largestWalletUtxo
-    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    :: Actor
+    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> IO (TxIn, TxOut ConwayEra)
-largestWalletUtxo prov = do
-    utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
+largestWalletUtxo actor prov = do
+    utxos <- Cage.withLatest prov (`Cage.outputsAt` actorAddress actor)
     -- #157: a spent approval is not burned at the fold, so it returns to
     -- the funder and rides in the wallet. Fee and collateral inputs are
     -- taken from an ada-only output, which is what the ledger requires of
@@ -132,7 +139,7 @@ ownerWallet env amount = do
 fundWallet :: Env -> Addr -> Integer -> IO ()
 fundWallet env addr amount = do
     let prov = envProv env
-    (funderIn, funderOut) <- largestWalletUtxo prov
+    (funderIn, funderOut) <- largestWalletUtxo (envActor env) prov
     let Coin avail = funderOut ^. coinTxOutL
         fee = 200_000
         change = avail - amount - fee
@@ -146,11 +153,11 @@ fundWallet env addr amount = do
                     .~ StrictSeq.fromList
                         [ mkBasicTxOut addr (MaryValue (Coin amount) mempty)
                         , mkBasicTxOut
-                            genesisAddr
+                            (genesisAddr env)
                             (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-    _ <- submitWithGenesis (envCaps env) (mkBasicTx body)
+    _ <- submitWithGenesis (envActor env) (mkBasicTx body)
     pure ()
 
 {- | A small dedicated collateral pot for one refusing transaction:
@@ -164,7 +171,7 @@ collateralPot env = fst <$> collateralPotWithChange env
 collateralPotWithChange :: Env -> IO (TxIn, (TxIn, TxOut ConwayEra))
 collateralPotWithChange env = do
     let prov = envProv env
-    (funderIn, funderOut) <- largestWalletUtxo prov
+    (funderIn, funderOut) <- largestWalletUtxo (envActor env) prov
     let Coin avail = funderOut ^. coinTxOutL
         pot = 5_000_000
         fee = 200_000
@@ -176,14 +183,14 @@ collateralPotWithChange env = do
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
                         [ mkBasicTxOut
-                            genesisAddr
+                            (genesisAddr env)
                             (MaryValue (Coin pot) mempty)
                         , mkBasicTxOut
-                            genesisAddr
+                            (genesisAddr env)
                             (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-    tx <- submitWithGenesis (envCaps env) (mkBasicTx body)
+    tx <- submitWithGenesis (envActor env) (mkBasicTx body)
     -- The fresh change output is the next fold's exact ada-only funder.
     -- Carry its outref directly: a node query immediately after the split
     -- can still expose the consumed predecessor.
@@ -191,7 +198,7 @@ collateralPotWithChange env = do
         changeIn = TxIn (txIdTx tx) (TxIx 1)
     let awaitVisible 0 = failWith "collateral split is not yet visible in wallet UTxOs"
         awaitVisible n = do
-            utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr)
+            utxos <- Cage.withLatest prov (`Cage.outputsAt` genesisAddr env)
             if all (`elem` map fst utxos) [potIn, changeIn]
                 then pure ()
                 else threadDelay 1_000_000 >> awaitVisible (n - 1)
@@ -201,13 +208,13 @@ collateralPotWithChange env = do
         ,
             ( changeIn
             , mkBasicTxOut
-                genesisAddr
+                (genesisAddr env)
                 (MaryValue (Coin change) mempty)
             )
         )
 
 consolidateFunding :: Env -> IO ()
-consolidateFunding env = consolidateWallet (envProv env) (envCaps env)
+consolidateFunding env = consolidateWallet (envProv env) (envActor env)
 
 {- | The sweep, before there is an `Env` to carry: a registry-identity session designates
 its canonical seed during construction, and a sweep after that would
@@ -215,12 +222,12 @@ spend the very output canonical-seed-identity boots from.
 -}
 consolidateWallet
     :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-    -> Capabilities Cage.NoWitness IO
+    -> Actor
     -> IO ()
 consolidateWallet prov submit = do
     -- One transaction, one view: the wallet's outputs and the parameters.
     (utxos, pp) <- Cage.withLatest prov $ \v ->
-        (,) <$> Cage.outputsAt v genesisAddr <*> Cage.parameters v
+        (,) <$> Cage.outputsAt v (actorAddress submit) <*> Cage.parameters v
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
         clean = filter (adaOnlyOut . snd) spendable
@@ -245,22 +252,25 @@ consolidateWallet prov submit = do
                             in  c
                 fundingAda = total - fee - atticAda
                 outs =
-                    mkBasicTxOut genesisAddr (MaryValue (Coin fundingAda) mempty)
+                    mkBasicTxOut
+                        (actorAddress submit)
+                        (MaryValue (Coin fundingAda) mempty)
                         : [atticProbe atticAda | not (Map.null assets)]
                 body =
                     mkBasicTxBody
                         & inputsTxBodyL .~ Set.fromList (map fst spendable)
                         & outputsTxBodyL .~ StrictSeq.fromList outs
                         & feeTxBodyL .~ Coin fee
-                signedWitnessed = signTx genesisSignKey (mkBasicTx body)
+                signedWitnessed = signTx (actorSigningKey submit) (mkBasicTx body)
                 signed = signedTx signedWitnessed
             require
                 ("consolidateFunding: wallet too small: " <> show fundingAda)
                 (fundingAda > 5_000_000)
-            result <- submitTxResilient (capSubmit submit) signedWitnessed
+            result <-
+                submitTxResilient (capSubmit (actorCaps submit)) signedWitnessed
             case result of
                 SubmitAccepted _ -> do
-                    capConfirm submit signed
+                    capConfirm (actorCaps submit) signed
                     emit
                         "funding"
                         ( show (length clean)
@@ -301,7 +311,7 @@ is.
 carveSeed :: Env -> IO TxIn
 carveSeed env = do
     let prov = envProv env
-    (funderIn, funderOut) <- largestWalletUtxo prov
+    (funderIn, funderOut) <- largestWalletUtxo (envActor env) prov
     let Coin avail = funderOut ^. coinTxOutL
         seed = 20_000_000
         fee = 1_000_000
@@ -312,11 +322,11 @@ carveSeed env = do
                 & inputsTxBodyL .~ Set.singleton funderIn
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
-                        [ mkBasicTxOut genesisAddr (MaryValue (Coin seed) mempty)
-                        , mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+                        [ mkBasicTxOut (genesisAddr env) (MaryValue (Coin seed) mempty)
+                        , mkBasicTxOut (genesisAddr env) (MaryValue (Coin change) mempty)
                         ]
                 & feeTxBodyL .~ Coin fee
-        signedWitnessed = signTx genesisSignKey (mkBasicTx body)
+        signedWitnessed = signTx (genesisSignKey env) (mkBasicTx body)
         signed = signedTx signedWitnessed
     result <- submitTxResilient (envSubmit env) signedWitnessed
     case result of

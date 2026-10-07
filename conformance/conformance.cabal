@@ -151,6 +151,7 @@ common live-runner
     Conformance.Run.Submit
     Conformance.Run.Node
     Conformance.Run.Environment
+    Conformance.Run.Actor
     Conformance.Run.Observe
     Conformance.Run.Manifest
     Conformance.Run.Control
@@ -296,6 +297,7 @@ test-suite conformance-tests
     Conformance.FoldFixture
     Conformance.Run.Control
     Conformance.Run.Environment
+    Conformance.Run.Actor
     Conformance.Run.Manifest
     Conformance.Run.Observe
     Conformance.Run.Cage

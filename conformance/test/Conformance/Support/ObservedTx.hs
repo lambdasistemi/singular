@@ -20,6 +20,8 @@ never does.
 -}
 module Conformance.Support.ObservedTx (spec, mintTamperSpec) where
 
+import Cardano.Node.Client.E2E.Setup qualified as Setup
+
 import Conformance.Compare.Perturbation
     ( Step (..)
     , reportedDifferences
@@ -380,6 +382,7 @@ observedTx step transaction mint payments destination = do
     -- The bindings the live run makes before a step: the request's key and
     -- wallet and the registry's policies, so observation only looks them up.
     prepareRegistrationIdentities
+        Setup.genesisAddr
         ids
         (lsCage step)
         (BSC.pack (Live.requestKey (lsRequest step)))
@@ -964,7 +967,12 @@ spec =
             $ do
                 ids <- newLiveIdentities
                 cage <- fixtureCage
-                prepareRegistrationIdentities ids cage keyBytes holderWallet
+                prepareRegistrationIdentities
+                    Setup.genesisAddr
+                    ids
+                    cage
+                    keyBytes
+                    holderWallet
                 walletHoldingsOf
                     ids
                     [keyBytes]
@@ -994,7 +1002,12 @@ holdingsOn :: [(TxIn, TxOut ConwayEra)] -> IO (Integer, [Value])
 holdingsOn outputs = do
     ids <- newLiveIdentities
     cage <- fixtureCage
-    prepareRegistrationIdentities ids cage keyBytes holderWallet
+    prepareRegistrationIdentities
+        Setup.genesisAddr
+        ids
+        cage
+        keyBytes
+        holderWallet
     plain <- allocatePlainDatum ids
     (,) plain
         <$> walletHoldingsOf

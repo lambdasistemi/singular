@@ -72,12 +72,10 @@ let
       "contract-tests"
     ];
     # #389: the inherited public Koios HTTP client and recorder stay active.
-    # The main library links both the private node runtime and public
-    # local services. The private runtime keeps the facade, cleanup and
-    # test observers on one compiled instance of process state; the public
-    # component owns Ledger, Provider and fixed local computations.
+    # Generic ledger evidence, signing, wallet, time and fixed local services
+    # have stable public ownership. Shipping composition links koios-http;
+    # the old process-global node/indexer runtime is deleted.
     sublibs = [
-      "node-internal"
       "local-services"
       "koios-http"
     ];

@@ -47,8 +47,9 @@ should.
 -}
 module Conformance.Run (runForkProbe, runRows) where
 
+import Conformance.Run.Actor (Actor (..), actorAddress)
+
 import Conformance.FoldFixture qualified as FoldFixture
-import Singular.Registry.Evidence qualified as Cage
 
 import Conformance.Edge.Programs (programFor)
 import Conformance.Run.CaRows
@@ -75,14 +76,19 @@ import Data.Text qualified as T
 import System.Directory (createDirectoryIfMissing)
 
 import Singular.Registry.Blueprint (NamingCodes (..))
-import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Capabilities
+    ( capConfirm
+    , capFacts
+    , capReads
+    , capSubmit
+    , capTrace
+    )
 import Singular.Registry.Config (CageConfig)
 import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
     )
-import Singular.Registry.Node (funderAddr)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Internal
@@ -238,7 +244,7 @@ runSession
     -> String
     -> Bool
     -> FilePath
-    -> Capabilities Cage.NoWitness IO
+    -> Actor
     -> ReplayIndex
     -> IO ()
 runSession
@@ -252,8 +258,8 @@ runSession
     receiptsDir
     caps
     replayIndex = do
-        let prov = capReads caps
-        checkFunding prov funderAddr defaultFundingFloor
+        let prov = capReads (actorCaps caps)
+        checkFunding prov (actorAddress caps) defaultFundingFloor
         _ <- Cage.withLatest prov Cage.parameters
         let caMode = any (`elem` caRows) rows
             environment cfg world = do
@@ -271,12 +277,13 @@ runSession
                 liveMeasurementsRef <- newIORef []
                 pure
                     Env
-                        { envCfg = cfg
+                        { envWallet = actorWallet caps
+                        , envCfg = cfg
                         , envProv = prov
-                        , envSubmit = capSubmit caps
-                        , envConfirm = capConfirm caps
-                        , envFacts = capFacts caps
-                        , envTrace = capTrace caps
+                        , envSubmit = capSubmit (actorCaps caps)
+                        , envConfirm = capConfirm (actorCaps caps)
+                        , envFacts = capFacts (actorCaps caps)
+                        , envTrace = capTrace (actorCaps caps)
                         , envTm = tm
                         , -- never read: every registry row boots its own
                           -- registries, and the row validator keeps them out
@@ -339,7 +346,7 @@ runSession
                     -- session's config is an unbooted placeholder (the seed
                     -- query only names a real UTxO) kept for the record's
                     -- shape.
-                    (seedTxIn, _) <- largestWalletUtxo prov
+                    (seedTxIn, _) <- largestWalletUtxo caps prov
                     env <-
                         environment
                             ( cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)

@@ -37,7 +37,7 @@
       "pause": 400
     },
     {
-      "text": "Private owners and executables are not Haddock-documented on their own by decision: nothing imports them outside their package, and an owner page that names each module's responsibility and links its source serves a contributor better than a second, unlinked reference. Each generated reference carries a manifest binding its pages to the digests of the source it was generated from, and the documentation check fails when a page, its source or its link targets no longer agree.",
+      "text": "Executables, test suites and the runtime service modules outside the library's extent have no generated pages here. That coverage gap stays visible, exactly as the off-chain reference's own page records it: wider generated coverage is a separate decision for the epic's owner, not one this page takes. Each generated reference carries a manifest binding its pages to the digests of the source it was generated from, and the documentation check fails when a page, its source or its link targets no longer agree.",
       "pause": 400
     }
   ],
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "8fe3af32ec727026245e09eefdbec260f52b9c5766c012efec703e710f1ac2e4"
+    "sha256": "e437075c48467c5c1d6f73fd02e75d705b23273753897f674806bb954af4ebc9"
   }
 }

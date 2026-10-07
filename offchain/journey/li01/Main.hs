@@ -156,23 +156,13 @@ import Cardano.Ledger.Api.Tx.Wits
     , rdmrsTxWitsL
     , scriptTxWitsL
     )
-import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (extractHash, hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.Node.Client.E2E.Setup
-    ( Ed25519DSIGN
-    , SignKeyDSIGN
-    , addKeyWitness
-    )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter
-    ( SubmitResult (..)
-    , Submitter (..)
-    )
+import Cardano.Tx.Ledger (ConwayTx)
 import Data.Text (Text)
 import Naming.Datum
 import Naming.Wire
@@ -182,7 +172,9 @@ import Singular.Registry.Blueprint
     , extractCompiledCode
     , loadBlueprint
     )
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -190,14 +182,10 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.Node
-    ( NodeSession (..)
-    , awaitTx
-    , funderAddr
-    , funderSignKey
-    , withNode
-    )
-import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.LedgerProvider (Session, SubmitResult (..))
+import Singular.Registry.Runner (withRunner)
+import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , cageAddrFromCfg
@@ -222,6 +210,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTxOutRef (..)
     )
+import Singular.Registry.Wallet (Wallet (..))
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -388,19 +377,6 @@ printRow control = do
 -- The run
 -- ---------------------------------------------------------
 
-{- | The wallet every actor of this run is funded from. On the factory
-devnet it is the genesis UTxO key, as it always was; in external-node
-mode it is the joiner's own signing key
-(`Singular.Registry.Node`). The name is kept so the funding sites
-below read unchanged.
--}
-genesisAddr :: Addr
-genesisAddr = funderAddr
-
--- | The signing key matching 'genesisAddr'.
-genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
-genesisSignKey = funderSignKey
-
 runLi01
     :: Control
     -> ScriptIdentity
@@ -408,10 +384,9 @@ runLi01
     -> SBS.ShortByteString
     -> IO ()
 runLi01 control si stateBytes requestBytes = do
-    withNode $ \sess -> do
-        let prov = nsProvider sess
-            submit = nsSubmitter sess
-            pp = nsPParams sess
+    withRunner $ \wallet caps -> Services.withLatest (capReads caps) $ \prov -> do
+        pp <- Services.parameters prov
+        let genesisAddr = walletAddr wallet
         emit
             "identity"
             ( "upstream source revision "
@@ -426,7 +401,7 @@ runLi01 control si stateBytes requestBytes = do
         -- UTxO of the devnet genesis wallet. The abstract seed
         -- identity 400 realises as this concrete output reference,
         -- named here.
-        utxos <- Cage.queryUTxOs prov genesisAddr
+        utxos <- Services.outputsAt prov genesisAddr
         (seedUtxo, funders) <- case sortBy (comparing (outRefSortKey . fst)) utxos of
             [] -> failWith "genesis wallet has no UTxOs"
             (s : rest) -> pure (s, take 1 rest)
@@ -486,9 +461,9 @@ runLi01 control si stateBytes requestBytes = do
                       -- Any future Modify path must pin a bound consumer and
                       -- register it first (see register/recovery/retirement).
                       cfgConsumerScript = SBS.empty
-                    , network = Testnet
+                    , network = walletNetwork wallet
                     }
-            scriptAddr = cageAddrFromCfg cfg Testnet
+            scriptAddr = cageAddrFromCfg cfg (walletNetwork wallet)
         -- The naming checkpoint fixture: the four-field datum the
         -- initialization places on the chain.
         controlAddr <- case decodeAddress (serialiseAddr genesisAddr) of
@@ -512,17 +487,24 @@ runLi01 control si stateBytes requestBytes = do
                     }
         -- Build, sign, submit the initialization transaction.
         unsigned <-
-            buildLi01Tx cfg pp prov seedUtxo funders namingDatum
-        let signed = addKeyWitness genesisSignKey unsigned
-        result <- submitTx submit signed
+            buildLi01Tx cfg pp prov genesisAddr seedUtxo funders namingDatum
+        let sealed = signTx (walletSignKey wallet) unsigned
+            signed = signedTx sealed
+        result <- capSubmit caps sealed
         case result of
-            Submitted _ -> pure ()
-            Rejected reason ->
+            SubmitAccepted identity ->
+                unless (identity == txIdTx signed) $
+                    failWith "submission identity differs from the signed body"
+            SubmitRefused reason ->
                 failWith
                     ( "tx rejected: "
-                        <> show (TE.decodeUtf8Lenient reason)
+                        <> show reason
                     )
-        awaitTx signed
+            SubmitFailed reason -> failWith ("tx submission unavailable: " <> show reason)
+            SubmitWrongNetwork configured wanted ->
+                failWith
+                    ("tx submission network differs: " <> show (configured, wanted))
+        capConfirm caps signed
         let txid = txIdHex signed
         -- The script witness must be exactly the derived applied
         -- state script: the identity the row binds is what ran.
@@ -541,7 +523,7 @@ runLi01 control si stateBytes requestBytes = do
         -- Marker: witness shape, asserted on the signed tx (seven-admitted-edges).
         stepWitnessShape control cfg appliedHex seedName signed txid seedRef
         -- Marker: seed consumed, observed from the chain.
-        walletAfter <- Cage.queryUTxOs prov genesisAddr
+        walletAfter <- Services.outputsAt prov genesisAddr
         let seedStillThere =
                 any (\(i, _) -> txInToRef i == seedRef) walletAfter
         when seedStillThere $
@@ -561,7 +543,7 @@ runLi01 control si stateBytes requestBytes = do
                 <> " no longer unspent)"
             )
         -- Read the registry UTxO back from the chain.
-        scriptUtxos <- Cage.queryUTxOs prov scriptAddr
+        scriptUtxos <- Services.outputsAt prov scriptAddr
         registry <- case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId scriptUtxos of
             Just r -> pure r
             Nothing ->
@@ -599,13 +581,14 @@ row calls absent stays absent.
 buildLi01Tx
     :: CageConfig
     -> PParams ConwayEra
-    -> Cage.Provider IO
+    -> Session NoWitness IO
+    -> Addr
     -> (TxIn, TxOut ConwayEra)
     -> [(TxIn, TxOut ConwayEra)]
     -> NamingDatum
     -> IO ConwayTx
-buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
-    let scriptAddr = cageAddrFromCfg cfg Testnet
+buildLi01Tx cfg pp prov changeAddr seedUtxo funders namingDatum = do
+    let scriptAddr = cageAddrFromCfg cfg (network cfg)
         mintMA =
             MultiAsset
                 $ Map.singleton
@@ -658,7 +641,7 @@ buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton scriptHash script
                 & witsTxL . rdmrsTxWitsL .~ redeemers
-    evaluateAndBalance prov pp allInputUtxos genesisAddr tx
+    evaluateAndBalance prov pp allInputUtxos changeAddr tx
   where
     seedIn = fst seedUtxo
     seedRef = txInToRef seedIn

@@ -6,7 +6,7 @@ import Data.Coerce (coerce)
 
 import Cardano.Ledger.Conway.Tx (Tx (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Node.Submit (SignedTx (..))
+import Singular.Registry.Signing (SignedTx (..))
 
 forged :: ConwayTx -> SignedTx
 forged = coerce

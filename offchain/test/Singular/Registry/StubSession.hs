@@ -6,6 +6,7 @@ production common services; this fixture supplies no derived answers.
 module Singular.Registry.StubSession
     ( stubSession
     , servingSession
+    , servingSessionWithId
     , withParameters
     , withTime
     , withAddressOutputs
@@ -132,7 +133,16 @@ joinQueries intersect query queries = do
 -- | Fresh, guarded identity for each fixture acquisition; no production View.
 servingSession
     :: Session NoWitness IO -> (Network, LedgerProvider NoWitness IO)
-servingSession supplied = (configured, provider)
+servingSession = servingSessionWithId $ do
+    unique <- hashUnique <$> newUnique
+    pure (SessionId ("raw-fixture-" <> Text.pack (show unique)))
+
+-- | Bind an explicit fixture identity before constructing every release guard.
+servingSessionWithId
+    :: IO SessionId
+    -> Session NoWitness IO
+    -> (Network, LedgerProvider NoWitness IO)
+servingSessionWithId allocate supplied = (configured, provider)
   where
     configured = sessionNetwork supplied
     provider =
@@ -144,10 +154,9 @@ servingSession supplied = (configured, provider)
                     | wanted /= configured -> pure (Left (WrongNetwork configured wanted))
                 AtPoint _ point -> pure (Left (PointNotSupported point))
                 Latest _ -> do
-                    unique <- hashUnique <$> newUnique
+                    identity <- allocate
                     open <- newIORef True
-                    let identity = SessionId ("raw-fixture-" <> Text.pack (show unique))
-                        guarded readFact =
+                    let guarded readFact =
                             readIORef open >>= \alive ->
                                 if alive then readFact else pure (Left (ReleasedSession identity))
                         guardedHistory readBlocks =

@@ -9,6 +9,8 @@ module Singular.Registry.Terminal
     ( Capabilities (..)
     , withReads
     , withWrites
+    , withReadsObserved
+    , withWritesObserved
     , newCapabilities
     , submitWithWallet
     , tracedReads
@@ -18,7 +20,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (ErrorCall (..), throwIO)
 import Control.Monad qualified
 import Control.Tracer (Tracer)
-import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.Text qualified as Text
 import Singular.Provider.Koios.Client qualified as Client
 import Singular.Provider.Koios.Evidence (providerEventJson)
@@ -60,7 +62,11 @@ newCapabilities backend settings = do
     runtime <-
         newIORuntime
             backend
-            (\event -> modifyIORef' raw (<> [providerEventJson event]))
+            ( \event ->
+                atomicModifyIORef'
+                    raw
+                    (\previous -> (previous <> [providerEventJson event], ()))
+            )
     transport <-
         newHttpTransport
             (defaultHttpConfig (Text.pack (providerUrl settings)))
@@ -71,7 +77,8 @@ newCapabilities backend settings = do
         provider =
             observeProvider
                 unverifiedVerifier
-                (\fact -> modifyIORef' facts (<> [fact]))
+                ( \fact -> atomicModifyIORef' facts (\previous -> (previous <> [fact], ()))
+                )
                 $ koiosProvider
                     runtime
                     network
@@ -100,8 +107,19 @@ withReads
     -> ProviderSettings
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withReads backend reading settings action = do
+withReads backend reading = withReadsObserved backend reading (const (pure ()))
+
+-- | Register evidence before startup can read or refuse.
+withReadsObserved
+    :: Tracer IO BackendEvent
+    -> Tracer IO ReadEvent
+    -> (Capabilities NoWitness IO -> IO ())
+    -> ProviderSettings
+    -> (Capabilities NoWitness IO -> IO a)
+    -> IO a
+withReadsObserved backend reading observe settings action = do
     capabilities <- newCapabilities backend settings
+    observe capabilities
     withLatest (tracedReads koiosSource reading capabilities) $ \session ->
         Control.Monad.void (SessionIO.parameters session)
     action capabilities
@@ -116,7 +134,18 @@ withWrites
     -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withWrites backend reading settings wallet action = withReads backend reading settings $ \capabilities -> do
+withWrites backend reading = withWritesObserved backend reading (const (pure ()))
+
+-- | Startup and funding belong to the same command evidence.
+withWritesObserved
+    :: Tracer IO BackendEvent
+    -> Tracer IO ReadEvent
+    -> (Capabilities NoWitness IO -> IO ())
+    -> ProviderSettings
+    -> Wallet
+    -> (Capabilities NoWitness IO -> IO a)
+    -> IO a
+withWritesObserved backend reading observe settings wallet action = withReadsObserved backend reading observe settings $ \capabilities -> do
     checkFunding
         (tracedReads koiosSource reading capabilities)
         (walletAddr wallet)

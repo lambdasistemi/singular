@@ -25,18 +25,18 @@ has one, and what stands in for it where there is none:
 
 | Code | Reference on this site |
 | --- | --- |
-| The off-chain registry library's public modules | Haddock: the [off-chain API reference](offchain-api-reference.md), including the ledger and provider modules it re-exports from its package-private library |
+| The off-chain registry library's public modules | Haddock: the [off-chain API reference](offchain-api-reference.md), including the four modules it re-exports from the public `local-services` library |
 | The Conformance library | Haddock: the [Conformance API reference](conformance-api-reference.md) |
 | The registry validators under `onchain/` | `aiken docs` from the onchain flake's pinned compiler: the [validator API reference](onchain-api-reference.md) |
-| The six package-private node owners | None generated; each links its source file from the [Node module ownership](offchain-node-ownership.md) page, and the public pages that re-export an owner's names link that entry |
-| The rest of the package-private `node-internal` library | Its only other modules, the ledger and provider types, are re-exported and documented in the off-chain reference |
+| The runtime service modules outside the library's extent | None generated; the [Runtime service ownership](offchain-node-ownership.md) page records which module owns which concern |
 | The off-chain and Conformance executables and test suites | None generated; the [registry command owners](offchain-command-entrypoints.md) and [Conformance suite owners](conformance-architecture.md) pages link their sources |
 | The naming validators under `naming-onchain/` | None generated; a separate Aiken project, documented by [record value and recovery](record-value.md) |
 
-Private owners and executables are not Haddock-documented on their own by
-decision: nothing imports them outside their package, and an owner page
-that names each module's responsibility and links its source serves a
-contributor better than a second, unlinked reference. Each generated
+Executables, test suites and the runtime service modules outside the
+library's extent have no generated pages here. That coverage gap stays
+visible, exactly as the off-chain reference's own page records it: wider
+generated coverage is a separate decision for the epic's owner, not one
+this page takes. Each generated
 reference carries a manifest binding its pages to the digests of the
 source it was generated from, and the documentation check fails when a
 page, its source or its link targets no longer agree.
