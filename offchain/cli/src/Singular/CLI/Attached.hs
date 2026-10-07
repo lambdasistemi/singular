@@ -105,8 +105,14 @@ attached env dir blueprint access roles ws command body = do
         Cage.withLatest
             (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             $ \v -> do
-                wallet <- Cage.outputsAt v (walletAddr (wcWallet wc))
-                saved <- resolveSaved dir release access roles wallet v
+                saved <-
+                    resolveSaved
+                        dir
+                        release
+                        access
+                        roles
+                        (Just (walletAddr (wcWallet wc)))
+                        v
                 (reconciled, live) <-
                     timedRead
                         (wcTracer wc)
