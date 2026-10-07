@@ -8,7 +8,8 @@ shared directory. This is the intake for
 under [the Koios demonstration](https://github.com/lambdasistemi/singular/issues/371).
 It consumes the trie-state and history interfaces proposed by
 [the provider interface ticket](https://github.com/lambdasistemi/singular/issues/383).
-It is a proposal. No implementation or behavioral acceptance is claimed.
+Replay and command migration are merged. Independent-user CLI acceptance
+remains incomplete; see the ordered [tasks](tasks.md).
 
 ## The user stories
 
@@ -109,10 +110,9 @@ longer written or read; the replay replaces both. No local trie copy survives
 as a cache in this ticket. A later cache is a further trie-state backend and
 never overrides a replay.
 
-Today a fold that delivers a datum needs the booker's preimage, because an
-insertion's request names only its hash; that is an open limit
-([issue 419](https://github.com/lambdasistemi/singular/issues/419)), not a design. A
-termination needs no preimage: the holding it releases is public.
+A request now carries the datum it delivers under merged #419 and constitution
+1.13.0. Another actor can obtain that input publicly; the integrated journey
+must exercise cross-actor insertion folding without the booker's preimage file.
 
 ## Acceptance
 
