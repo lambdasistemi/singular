@@ -514,6 +514,9 @@
             type = "app";
             program = pkgs.lib.getExe cliRecoveryEvidence;
           };
+          # #396: the batch fold's two scenarios, one CI job each.
+          cli-recovery-fold-many-killed = recoveryApp "cli-recovery-fold-many-killed" "accepting fold-many-killed";
+          cli-recovery-fold-lost-race = recoveryApp "cli-recovery-fold-lost-race" "fold-lost-race";
         };
     in
     {
