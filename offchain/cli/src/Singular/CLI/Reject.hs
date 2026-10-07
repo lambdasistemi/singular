@@ -57,7 +57,11 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
-import Singular.CLI.Command (RejectArgs (..))
+import Singular.CLI.Command
+    ( Command (..)
+    , RejectArgs (..)
+    , neededRoles
+    )
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.FoldRules (fundedView)
 import Singular.CLI.Live
@@ -135,6 +139,8 @@ runReject env a =
         env
         (rejectRegistry a)
         (rejectBlueprint a)
+        (rejectAccess a)
+        (neededRoles (Reject a))
         (rejectWrite a)
         "reject"
         $ \at -> do

@@ -5,7 +5,7 @@ License     : Apache-2.0
 
 One owner for the deployment family's node decisions: the compiled
 release halves a manifest pins only by hash ('CageParts',
-'cageConfigFor', 'cageConfigForApplication'), the registry token a seed
+'cageConfigFor'), the registry token a seed
 determines, a live carrier of each recorded script found by its hash
 wherever it sits ("Singular.Registry.StateToken"; the recorded output
 reference is not read), the registry's state output, and the two
@@ -26,7 +26,6 @@ module Singular.Registry.Deployment.Attach
     ( -- * The release halves the manifest pins only by hash
       CageParts (..)
     , cageConfigFor
-    , cageConfigForApplication
 
       -- * Checking one against a node
     , verifyDeployment
@@ -43,26 +42,15 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 import Data.Text qualified as T
 
-
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
 import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Data.Map.Strict qualified as Map
-import Data.Text.Encoding qualified as TE
 
-import Singular.Application.OpenDatum.Script
-    ( Application
-    , applicationTitle
-    )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Config.Application
-    ( RegistryEconomics (..)
-    , configForApplication
-    )
 import Singular.Registry.Deployment.Manifest
     ( Deployment (..)
     , ReferenceScript (..)
@@ -287,12 +275,21 @@ referencesByHash view dep = do
     roleOf r = do
         role <-
             maybe
-                (die ("the deployment records an unknown reference role " <> T.unpack (refRole r)))
+                ( die
+                    ( "the deployment records an unknown reference role "
+                        <> T.unpack (refRole r)
+                    )
+                )
                 pure
                 (parseRole (refRole r))
         hash <-
             maybe
-                (die ("the deployment's " <> T.unpack (refRole r) <> " hash is not a script hash"))
+                ( die
+                    ( "the deployment's "
+                        <> T.unpack (refRole r)
+                        <> " hash is not a script hash"
+                    )
+                )
                 pure
                 (decodeScriptHash (refHash r))
         pure (r, role, hash)
@@ -363,58 +360,3 @@ decodeScriptHash :: Text -> Maybe ScriptHash
 decodeScriptHash t = case B16.decode (BC.pack (T.unpack t)) of
     Right raw -> ScriptHash <$> hashFromBytes raw
     Left _ -> Nothing
-
-{- | Attach to a deployment: derive every pin again from its seed and this
-release's codes, and refuse a record whose application hash differs;
-'cageConfigFor' then refuses a different state hash or active policy.
-The network is the test network, as 'cageConfigFor' fixes it.
--}
-cageConfigForApplication
-    :: Application
-    -> NamingCodes
-    -> SBS.ShortByteString
-    -> SBS.ShortByteString
-    -> Deployment
-    -> Either String (CageConfig, NamingCodes)
-cageConfigForApplication app codes stateBytes requestBytes dep = do
-    seedIn <- parseOutRef (depSeedOutRef dep)
-    let econ =
-            RegistryEconomics
-                { reProcessTime = depProcessTime dep
-                , reRetractTime = depRetractTime dep
-                , reTip = Coin (depTip dep)
-                }
-        (derived, pinned) =
-            configForApplication
-                app
-                codes
-                stateBytes
-                requestBytes
-                econ
-                Testnet
-                (txInToRef seedIn)
-        appHex = hexS (cfgApplicationPolicy derived)
-    when (appHex /= depApplicationHash dep) $
-        Left
-            ( "this release derives the "
-                <> T.unpack (applicationTitle app)
-                <> " application policy 0x"
-                <> T.unpack appHex
-                <> " for this registry, but the deployment records 0x"
-                <> T.unpack (depApplicationHash dep)
-            )
-    cfg <-
-        cageConfigFor
-            dep
-            CageParts
-                { partsStateBytes = stateBytes
-                , partsRequestBytes = requestBytes
-                , partsApplicationPolicy = cfgApplicationPolicy derived
-                , partsActivePolicy = cfgActivePolicy derived
-                , partsAbsentPolicy = cfgAbsentPolicy derived
-                , partsTerminalPolicy = cfgTerminalPolicy derived
-                , partsConsumerScript = cfgConsumerScript derived
-                }
-    pure (cfg, pinned)
-  where
-    hexS = TE.decodeUtf8 . B16.encode . SBS.fromShort

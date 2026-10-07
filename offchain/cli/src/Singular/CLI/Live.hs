@@ -2,18 +2,18 @@
 
 {- |
 Module      : Singular.CLI.Live
-Description : A saved registry attached to the live chain
+Description : A registry resolved from its state token, attached to the live chain
 License     : Apache-2.0
 
-A saved identity is checked against this release and the recorded seed.
-The acquired session supplies its live references and state output, then
-Session.history reconstructs its trie from create. Selections, leaves,
-proofs and speculation use that public replay; no local trie is opened.
+A command names its registry by the state token; the release and the chain
+say the rest ("Singular.Registry.StateToken"). The acquired session supplies
+the references the command runs and the state output, then Session.history
+reconstructs its trie from create. Selections, leaves, proofs and
+speculation use that public replay; no local trie is opened.
 -}
 module Singular.CLI.Live
     ( -- * The saved registry
       Saved (..)
-    , loadSaved
     , resolveSaved
 
       -- * Attached to the chain
@@ -59,6 +59,7 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
+import System.IO (hPutStrLn, stderr)
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
@@ -88,38 +89,16 @@ import Singular.Application.OpenDatum.Envelope
     , registryBytes
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
-import Singular.Application.OpenDatum.Script
-    ( Application (..)
-    , applicationTitle
-    )
-import Singular.CLI.Command (RegistryAccess)
+import Singular.CLI.Command (RegistryAccess (..))
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
 import Singular.CLI.Receipt qualified as Receipt
-import Singular.CLI.Registry
-    ( RegistryConfig (..)
-    , Release (..)
-    , checkPins
-    , hexT
-    , loadRelease
-    , partsOf
-    , pinsOf
-    , readConfig
-    , renderIdentityError
-    )
+import Singular.CLI.Registry (Release (..), hexT)
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.CLI.TrieTrace (observeTrie)
-import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Deployment
-    ( Attached (..)
-    , Deployment (..)
-    , attach
-    , cageConfigForApplication
-    , parseOutRef
-    , renderOutRef
-    )
+import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -129,14 +108,22 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.StateToken (ReferenceRole)
+import Singular.Registry.StateToken
+    ( ReferenceRole
+    , ResolvedRegistry (..)
+    , findReferences
+    , findStateOutput
+    , renderHintWarning
+    , renderIdentityRefusal
+    , renderReferenceRefusal
+    , resolveRegistry
+    )
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Lineage (lineageTrieStateObserved)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
     , scriptHashBytes
-    , txInToRef
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -144,10 +131,14 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     )
 
--- | A registry directory read and checked against this release.
+{- | A registry resolved from its state token in this release: the
+configuration and codes it runs, and the reference outputs found for the
+roles the command's transactions run. Nothing of it is read from or
+written to the actor's directory.
+-}
 data Saved = Saved
     { savedDir :: FilePath
-    , savedConfig :: RegistryConfig
+    -- ^ The actor's directory: its journal, never an input to identity
     , savedCfg :: CageConfig
     , savedCodes :: NamingCodes
     -- ^ As the registry pins them: the application applied
@@ -160,56 +151,6 @@ data Saved = Saved
 applied :: Saved -> SBS.ShortByteString
 applied = ncApplication . savedCodes
 
-{- | Read the registry at @dir@ and derive every pin again from the
-release at @blueprint@ and the recorded seed; refuse any difference.
--}
-loadSaved :: FilePath -> FilePath -> IO Saved
-loadSaved dir blueprint = do
-    conf <- readConfig dir
-    rel <-
-        loadRelease blueprint >>= either (failWith Receipt.ClientRefusal) pure
-    if confApplication conf == applicationTitle OpenDatumApplication
-        then pure ()
-        else
-            failWith
-                Receipt.ClientRefusal
-                ( "the saved registry names application "
-                    <> show (confApplication conf)
-                    <> "; this command serves "
-                    <> show (applicationTitle OpenDatumApplication)
-                )
-    let dep = confDeployment conf
-    (cfg, pinned) <-
-        either
-            (failWith Receipt.ClientRefusal)
-            pure
-            ( cageConfigForApplication
-                OpenDatumApplication
-                (releaseCodes rel)
-                (releaseState rel)
-                (releaseRequest rel)
-                dep
-            )
-    either
-        (failWith Receipt.ClientRefusal . renderIdentityError)
-        pure
-        (checkPins conf (pinsOf cfg))
-    seedIn <-
-        either
-            (failWith Receipt.ClientRefusal)
-            pure
-            (parseOutRef (depSeedOutRef dep))
-    pure
-        Saved
-            { savedDir = dir
-            , savedConfig = conf
-            , savedCfg = cfg
-            , savedCodes = pinned
-            , savedToken =
-                TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
-            , savedRefs = []
-            }
-
 -- | A saved registry with its live outputs resolved.
 data Live = Live
     { liveSession :: Cage.Session Cage.NoWitness IO
@@ -218,18 +159,31 @@ data Live = Live
     , liveState :: (TxIn, TxOut ConwayEra)
     }
 
--- | Resolve the recorded references and the current state output.
+{- | The registry's current state output, read again from this session: the
+output that holds the state token at the state address. The references are
+the ones the resolution found.
+-}
 attachLive :: Cage.Session Cage.NoWitness IO -> Saved -> IO Live
 attachLive view s = do
-    att <-
-        attach view (confDeployment (savedConfig s)) (partsOf (savedCfg s))
+    found <- findStateOutput (stateToken s) view
+    (stateIn, stateOut, _) <-
+        either
+            (failWith Receipt.StaleState . T.unpack . renderIdentityRefusal)
+            pure
+            found
     pure
         Live
             { liveSession = view
             , liveSaved = s
-            , liveRefs = attRefUtxos att
-            , liveState = attStateUtxo att
+            , liveRefs = savedRefs s
+            , liveState = (stateIn, stateOut)
             }
+
+-- | The state token of a saved registry.
+stateToken :: Saved -> Cage.Asset
+stateToken s =
+    let TokenId name = savedToken s
+    in  (PolicyID (cfgScriptHash (savedCfg s)), name)
 
 -- | The root the registry's live state output commits to.
 observedRoot :: Live -> Either String ByteString
@@ -449,5 +403,29 @@ resolveSaved
     -- ^ The actor's wallet outputs
     -> Cage.Session Cage.NoWitness IO
     -> IO Saved
-resolveSaved _ _ _ _ _ _ =
-    failWith Receipt.ClientRefusal "resolveSaved: not implemented"
+resolveSaved dir release access roles wallet view = do
+    resolved <-
+        resolveRegistry release (accessToken access) view
+            >>= either
+                (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
+                pure
+    (found, unadmitted) <-
+        findReferences
+            view
+            (accessHints access)
+            wallet
+            (resolvedExpected resolved)
+            roles
+            >>= either
+                (failWith Receipt.ClientRefusal . T.unpack . renderReferenceRefusal)
+                pure
+    mapM_ (hPutStrLn stderr . T.unpack . renderHintWarning) unadmitted
+    let (_, name) = resolvedToken resolved
+    pure
+        Saved
+            { savedDir = dir
+            , savedCfg = resolvedConfig resolved
+            , savedCodes = resolvedCodes resolved
+            , savedToken = TokenId name
+            , savedRefs = Map.elems found
+            }

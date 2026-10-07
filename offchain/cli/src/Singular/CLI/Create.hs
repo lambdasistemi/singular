@@ -12,15 +12,19 @@ the open-datum application applied to that identity and the three witness
 policies — so every pin is derived before anything is submitted, and
 @--preview@ stops there, submitting nothing and writing nothing.
 
-Otherwise, in order, each submission journalled and each result read
-back before the next: the state validator is published from outside the
-seed (the seed survives the publication); the boot consumes the seed and
-creates the state output at the empty root; the request validator, the
-three witness policies and the applied application are published as
-reference outputs. Only then are the public files written: the saved
-identity with its deployment record and
-the committed root. A directory that already holds any registry file is
-refused before a node is contacted: create never overwrites a registry.
+Otherwise, before anything is submitted, a live carrier of the state
+validator is looked for by its hash (the provider, then the hints, then the
+wallet) and the wallet is checked to fund every publication still to make.
+Then, in order, each submission journalled and each result read back before
+the next: the state validator is published from outside the seed unless a
+carrier was found (the seed survives the publication); the boot consumes
+the seed and creates the state output at the empty root, running the state
+validator from that reference; the request validator, the three witness
+policies and the applied application are published as reference outputs to
+the creator's wallet. The receipt names the state token, which is the
+registry: no identity file is written, and the pending identity recorded
+for an interrupted create is removed once it finishes. A directory that
+holds a journal or a pending create is refused before a node is contacted.
 -}
 module Singular.CLI.Create (runCreate) where
 
@@ -38,28 +42,23 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
-import Singular.Registry.Types
-    ( CageDatum (..)
-    , OnChainRoot (..)
-    , OnChainTokenState (..)
-    )
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, removeFile)
+import System.IO (hPutStrLn, stderr)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
-import Cardano.Ledger.Mary.Value (MultiAsset (..))
+import Cardano.Ledger.Mary.Value (MultiAsset (..), PolicyID (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Data.Word (Word32)
 
 import Singular.Application.OpenDatum.Script
     ( Application (..)
@@ -74,19 +73,18 @@ import Singular.CLI.Command
 import Singular.CLI.Live (receipt, txInText)
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
-    ( Release
+    ( Release (..)
     , economics
     , hexT
     , loadRelease
-    , mkRegistryConfig
     , parseEnterpriseAddress
     , pendingPath
     , pinsOf
+    , publicationFunding
     , refuseExisting
     , registryConfigFor
     , renderIdentityError
     , seedChecks
-    , writeConfig
     )
 import Singular.CLI.Session
     ( Building (..)
@@ -110,32 +108,44 @@ import Singular.CLI.Trace
     , What (Created, EdgeStarted, RegistrySeen)
     , report
     )
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment
-    ( Deployment (..)
-    , ReferenceScript (..)
+    ( ReferenceScript (..)
     , parseOutRef
     , renderAddrBytes
     )
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , ConwayEra
     , TokenId (..)
     )
+import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.StateToken
+    ( ReferenceRefusal (..)
+    , ReferenceRole (..)
+    , expectedReferences
+    , findReferences
+    , renderHintWarning
+    , renderReferenceRefusal
+    , renderStateToken
+    )
+import Singular.Registry.TxBuilder.Boot (bootTokenFrom)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
     , publishRefScriptTx
-    , stateRefIn
     , witnessScriptOf
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , cageAddrFromCfg
     , cagePolicyIdFromCfg
+    , computeScriptHash
     , emptyRoot
     , extractCageDatum
     , findStateUtxo
@@ -143,6 +153,11 @@ import Singular.Registry.TxBuilder.Internal
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
     )
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
@@ -195,28 +210,52 @@ createWith env a rel ws = do
                 -- must not boot a second registry over the first.
                 refuseExisting dir
                     >>= either (failWith ClientRefusal . renderIdentityError) pure
+                -- The state reference, found by its hash wherever it sits,
+                -- and the funding of every publication still to make, all
+                -- decided before anything is written or submitted.
+                (foundState, pp) <-
+                    readStep
+                        (wcTracer wc)
+                        (wcSource wc)
+                        ["reference scripts"]
+                        (wcCapabilities wc)
+                        $ \v -> do
+                            found <- stateReference v (createHints a) utxos rel seedIn
+                            (found,) <$> Cage.parameters v
+                let token = stateTokenOf rel seedIn
+                    stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+                    beforeBoot = case foundState of
+                        Just _ -> []
+                        Nothing -> [("state", stateScript)]
+                either
+                    (failWith ClientRefusal . renderIdentityError)
+                    pure
+                    ( publicationFunding
+                        pp
+                        seedIn
+                        beforeBoot
+                        (laterScripts cfg pinned (TokenId (snd token)))
+                        utxos
+                    )
                 createDirectoryIfMissing True dir
-                -- The public identity, durable before the first submission:
-                -- an interrupted create stays inspectable and is refused a
-                -- second boot.
-                let ProviderSettings _ magicNow _ _ = writeProvider ws
+                -- The pending identity, durable before the first submission:
+                -- an interrupted create stays inspectable with its own token
+                -- and is refused a second boot.
+                let ProviderSettings _ magic _ _ = writeProvider ws
                 durableWrite
                     (pendingPath dir)
                     ( BL.toStrict
                         ( encodePretty
                             ( Aeson.object
-                                ( ("networkMagic" Aeson..= magicNow)
+                                ( ("networkMagic" Aeson..= magic)
                                     : [(Key.fromText k, v) | (k, v) <- identity]
                                 )
                             )
                         )
                     )
-                booted <- boot wc cfg pinned seedIn
-                let ProviderSettings _ magic _ _ = writeProvider ws
-                    dep = deploymentOf magic cfg seedIn booted
-                -- The identity marks a create that finished; trie state is read
-                -- from public history by subsequent acquired commands.
-                writeConfig dir (mkRegistryConfig magic addr (pinsOf cfg) dep)
+                booted <- boot wc cfg pinned seedIn foundState
+                -- The registry is its token: nothing of it stays on disk.
+                removeFile (pendingPath dir)
                 pure
                     ( receipt
                         "create"
@@ -243,6 +282,50 @@ createWith env a rel ws = do
                         )
                     )
 
+-- | The state token a seed makes under this release.
+stateTokenOf :: Release -> TxIn -> Asset
+stateTokenOf rel seedIn =
+    ( PolicyID (computeScriptHash (releaseState rel))
+    , AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn)))
+    )
+
+{- | A live output carrying the state script, found by its hash through the
+provider, then the hints, then the wallet; none when no source has one.
+-}
+stateReference
+    :: LP.Session NoWitness IO
+    -> [TxIn]
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Release
+    -> TxIn
+    -> IO (Maybe (TxIn, TxOut ConwayEra))
+stateReference v hints wallet rel seedIn = do
+    found <-
+        findReferences
+            v
+            hints
+            wallet
+            (expectedReferences rel (stateTokenOf rel seedIn))
+            (Set.singleton RoleState)
+    case found of
+        Right (chosen, unadmitted) -> do
+            mapM_ (hPutStrLn stderr . T.unpack . renderHintWarning) unadmitted
+            pure (Map.lookup RoleState chosen)
+        Left (ReferenceMissing _ _) -> pure Nothing
+        Left refusal ->
+            failWith NodeUnavailable (T.unpack (renderReferenceRefusal refusal))
+
+-- | The scripts published after the boot, by role, as the registry runs them.
+laterScripts
+    :: CageConfig -> NamingCodes -> TokenId -> [(Text, Script ConwayEra)]
+laterScripts cfg pinned tid =
+    [ ("request", mkRequestScript cfg tid)
+    , ("witness-absent", witnessScriptOf cfg pinned 0)
+    , ("witness-active", witnessScriptOf cfg pinned 1)
+    , ("witness-terminal", witnessScriptOf cfg pinned 2)
+    , ("application", scriptFromBytes "open-datum" (ncApplication pinned))
+    ]
+
 -- | What a boot made.
 data Booted = Booted
     { bootedToken :: TokenId
@@ -260,8 +343,15 @@ data Booted = Booted
 tokenHex :: TokenId -> Text
 tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
-boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
-boot wc cfg pinned seedIn = do
+boot
+    :: WriteContext
+    -> CageConfig
+    -> NamingCodes
+    -> TxIn
+    -> Maybe (TxIn, TxOut ConwayEra)
+    -- ^ A live carrier of the state script, if one was found
+    -> IO Booted
+boot wc cfg pinned seedIn foundState = do
     let addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
@@ -274,31 +364,17 @@ boot wc cfg pinned seedIn = do
                     )
                     (\v -> publishRefScriptTx reserved v addr script)
             pure (TxIn (txIdTx signed) (TxIx 0), refOut)
-    -- The state validator, published from outside the seed, unless the
-    -- wallet already publishes it.
-    existing <-
-        readStep
-            (wcTracer wc)
-            (wcSource wc)
-            ["reference scripts"]
-            (wcCapabilities wc)
-            (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
+        stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+    -- The state validator, published from outside the seed, unless a live
+    -- carrier of it was found.
     stateRef@(stateIn, _) <-
         maybe
-            ( publish
-                "publish-state"
-                (Set.singleton seedIn)
-                (scriptFromBytes "state" (cageScriptBytes cfg))
-            )
+            (publish "publish-state" (Set.singleton seedIn) stateScript)
             pure
-            existing
-    observeReference
-        wc
-        "publish-state"
-        addr
-        (scriptFromBytes "state" (cageScriptBytes cfg))
-        stateRef
-    -- The boot, consuming the seed.
+            foundState
+    observeReference wc "publish-state" stateScript stateRef
+    -- The boot, consuming the seed and running the state script from the
+    -- reference, wherever it sits.
     (signedBoot, ()) <-
         submitBuiltIn
             wc
@@ -307,7 +383,7 @@ boot wc cfg pinned seedIn = do
             (const (expecting "state"))
             ( \building v -> do
                 place building [InEdge Booting] (EdgeStarted Booting)
-                (,()) <$> bootTokenImpl cfg v addr
+                (,()) <$> bootTokenFrom cfg stateRef v addr
             )
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
@@ -345,23 +421,15 @@ boot wc cfg pinned seedIn = do
                     (Just 0)
                 )
             pure (output, state)
-    -- The references every later command resolves its scripts through.
-    let scripts =
-            [ ("request", mkRequestScript cfg tid)
-            , ("witness-absent", witnessScriptOf cfg pinned 0)
-            , ("witness-active", witnessScriptOf cfg pinned 1)
-            , ("witness-terminal", witnessScriptOf cfg pinned 2)
-            , ("application", scriptFromBytes "open-datum" (ncApplication pinned))
-            ]
+    -- The references the registry's later commands find by hash.
     published <-
         mapM
             ( \(role, script) -> do
                 ref <- publish ("publish-" <> role) Set.empty script
-                observeReference wc ("publish-" <> role) addr script ref
-                pure (reference role addr script ref)
+                observeReference wc ("publish-" <> role) script ref
+                pure (reference role script ref)
             )
-            scripts
-    let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+            (laterScripts cfg pinned tid)
     pure
         Booted
             { bootedToken = tid
@@ -370,7 +438,7 @@ boot wc cfg pinned seedIn = do
             , bootedRoot = unOnChainRoot (stateRoot seenState)
             , bootedState = seenState
             , bootedBoot = txIdHex signedBoot
-            , bootedRefs = reference "state" addr stateScript stateRef : published
+            , bootedRefs = reference "state" stateScript stateRef : published
             , bootedTxs =
                 [txInTxId stateIn, txIdHex signedBoot]
                     <> map (txIdOfRef . refOutRef) published
@@ -379,27 +447,27 @@ boot wc cfg pinned seedIn = do
     txInTxId = T.takeWhile (/= '#') . txInText
     txIdOfRef = T.takeWhile (/= '#')
 
-{- | Read a published reference back — the exact output, live, carrying
-exactly this script — and only then journal it @observed@. A missing or
-different reference leaves the publication at @confirmed@, unresolved.
+{- | Read a reference back — the exact output, live, carrying exactly this
+script — and only then journal it @observed@. A missing or different
+reference leaves the publication at @confirmed@, unresolved.
 -}
 observeReference
     :: WriteContext
     -> Text
-    -> Addr
     -> Script ConwayEra
     -> (TxIn, TxOut ConwayEra)
     -> IO ()
-observeReference wc step addr script (i, _) = do
-    utxos <-
+observeReference wc step script (i, _) = do
+    answer <-
         readStep
             (wcTracer wc)
             (wcSource wc)
             ["reference scripts"]
             (wcCapabilities wc)
-            (`Cage.outputsAt` addr)
+            (\v -> LP.outputs v (LP.AtTxIn i))
     let wanted = hashScript script
-    case [o | (j, o) <- utxos, j == i] of
+        found = either (const []) (map snd . value) answer
+    case found of
         [o]
             | SJust carried <- o ^. referenceScriptTxOutL
             , hashScript carried == wanted ->
@@ -424,47 +492,24 @@ observeReference wc step addr script (i, _) = do
             failWith
                 Partial
                 ( T.unpack step
-                    <> ": the published reference output "
+                    <> ": the reference output "
                     <> T.unpack (txInText i)
                     <> " is not live"
                 )
 
+-- | A reference as the receipt names it: its role, script and place.
 reference
     :: Text
-    -> Addr
     -> Script ConwayEra
     -> (TxIn, TxOut ConwayEra)
     -> ReferenceScript
-reference role addr script (i, _) =
+reference role script (i, o) =
     ReferenceScript
         { refRole = role
         , refHash = hexT (scriptHashBytes (hashScript script))
         , refOutRef = txInText i
-        , refAddress = T.pack (bech32Address addr)
-        , refAddressBytes = renderAddrBytes addr
-        }
-
-deploymentOf :: Word32 -> CageConfig -> TxIn -> Booted -> Deployment
-deploymentOf magic cfg seedIn b =
-    Deployment
-        { depRelease = "singular"
-        , depLeanRevision = ""
-        , depNetworkMagic = magic
-        , depSeedOutRef = txInText seedIn
-        , depCageToken = tokenHex (bootedToken b)
-        , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
-        , depRequestHash =
-            maybe
-                ""
-                refHash
-                (lookup "request" [(refRole r, r) | r <- bootedRefs b])
-        , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-        , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-        , depProcessTime = defaultProcessTime cfg
-        , depRetractTime = defaultRetractTime cfg
-        , depTip = let Coin c = defaultTip cfg in c
-        , depReferenceScripts = bootedRefs b
-        , depBootstrapTxs = bootedTxs b
+        , refAddress = T.pack (bech32Address (o ^. addrTxOutL))
+        , refAddressBytes = renderAddrBytes (o ^. addrTxOutL)
         }
 
 {- | The registry identity a seed would give: the chosen or the largest
@@ -509,6 +554,7 @@ previewIdentity submitting a rel addr utxos = do
         (cfg, pinned) = registryConfigFor rel chosen (txInToRef seedIn)
         identity =
             [ ("application", toJSON (applicationTitle OpenDatumApplication))
+            , ("stateToken", toJSON (renderStateToken (stateTokenOf rel seedIn)))
             , ("seed", toJSON (txInText seedIn))
             , ("wallet", toJSON (T.pack (bech32Address addr)))
             , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
