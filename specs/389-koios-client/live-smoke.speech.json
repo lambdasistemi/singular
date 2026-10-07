@@ -1,0 +1,62 @@
+{
+  "public-preprod-read-only-smoke-7-october-2026": [
+    {
+      "text": "Public preprod read-only smoke, 7 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "As a CLI user, I need a preview to name the evidence it used without submitting a transaction. This run uses public Koios at https://preprod.koios.rest/api/v1, schema v1.4.2, without a node socket, signing key or bearer token. It does not complete #389's live acceptance.",
+      "pause": 400
+    }
+  ],
+  "observed-results": [
+    {
+      "text": "Observed results.",
+      "pause": 500
+    },
+    {
+      "text": "The baseline is main 32bba1adc232fb3da5e84ea52e51ab95f670e8f1. Its packaged executable is recorded in main-results.json. The fix changes only creation's public-address preview receipt: it adds the acquired scope's sessionReceipt after reading wallet outputs and deriving the identity. The fixed executable is recorded in fixed-results.json.",
+      "pause": 400
+    },
+    {
+      "text": "The refusal identifies transaction 979bae00b3c0ae3e7003b335f2239b867a2fd35a07b203a860e9e4aae08ca0ad, with one action and zero decoded requests. It is not successful inspect or preview evidence. The newer demo journal records a partial create, so it is not substituted for a completed compatible registry with an active holding.",
+      "pause": 400
+    }
+  ],
+  "reproduce-the-repaired-preview": [
+    {
+      "text": "Reproduce the repaired preview.",
+      "pause": 500
+    },
+    {
+      "text": "Build the candidate with cd offchain && nix build .#singular. Using a deployed blueprint and a funded public preprod address, run:",
+      "pause": 400
+    },
+    {
+      "text": "The same predicate fails on the baseline receipt and passes on the repaired receipt. The target directory remains absent. The saved source registry was copied for the baseline run and remained byte-identical.",
+      "pause": 400
+    }
+  ],
+  "retained-evidence-and-limits": [
+    {
+      "text": "Retained evidence and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Evidence files bind the uncompressed receipt and phase-log bytes by SHA-256. Gzip files preserve the complete evidence. main-results.json and fixed-results.json contain exact commands, wall times, URLs, schema revision and exit statuses. Schema receipts retain retrieval time and content hashes. The phase logs include each query duration and the insert attempt's complete phase sequence; a refused insert has no successful build phase to report.",
+      "pause": 400
+    },
+    {
+      "text": "The repaired create queried protocol parameters in 344.482 ms and wallet outputs in 642.936 ms. Its protocolMajorGuard phase took 582.923 ms, an enclosing measurement rather than an additional independent HTTP-call duration.",
+      "pause": 400
+    },
+    {
+      "text": "The scope receipt reports the creation preview's actual acquired scope; it does not mix in earlier configuration scopes. These observations establish reporting of provider evidence, not ledger verification, transaction submission, a fold, or a successful lifecycle. Successful live inspect, insert, update and terminate previews remain required before #389 can close.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "live-smoke.md",
+    "sha256": "41059f2ab57aa2bbf16c3351767809d1aefc4ed7fae53bd73494ab190796163b"
+  }
+}

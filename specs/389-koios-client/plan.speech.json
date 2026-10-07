@@ -1,4 +1,38 @@
 {
+  "live-koios-client-plan": [
+    {
+      "text": "Live Koios client: plan.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the Koios transport and decoding written once, so that",
+      "pause": 400
+    }
+  ],
+  "383s-recorded-instance-and-the-live-instance-run-the-same-requests-pages": [
+    {
+      "text": "383's recorded instance and the live instance run the same requests, pages.",
+      "pause": 500
+    },
+    {
+      "text": "and decoders. Read the stories first. Delivery base: main 32bba1adc232fb3da5e84ea52e51ab95f670e8f1 (2026-10-07).",
+      "pause": 400
+    }
+  ],
+  "remaining-delivery": [
+    {
+      "text": "Remaining delivery.",
+      "pause": 500
+    },
+    {
+      "text": "As a user, I need public preview receipts to expose the session and facts they actually consumed. The transport, decoders and provider composition below are already on main. The remaining tasks run serially: repair the missing create-preview evidence, retain its regression check, and record a current public read-only smoke with successful inspect, create, insert, update and terminate previews. Existing fake-server controls and final CI remain required.",
+      "pause": 400
+    },
+    {
+      "text": "The old GO-2 registry currently refuses history decoding, and its previous update/terminate runs found no holding. Neither is successful preview evidence. Use an existing compatible public registry with an active holding; do not create one through public submissions under this read-only ticket. This is an evidence dependency, not authorization to widen the work into demo recovery.",
+      "pause": 400
+    }
+  ],
   "module-boundary": [
     {
       "text": "Module boundary.",
@@ -6,14 +40,6 @@
     },
     {
       "text": "As a provider author on #383, I import a Koios client that knows nothing of registries or of the ledger-provider interface, and I choose its transport.",
-      "pause": 400
-    },
-    {
-      "text": "A diagram is shown here.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 4 rows is shown here.",
       "pause": 400
     },
     {
@@ -35,10 +61,6 @@
       "pause": 400
     },
     {
-      "text": "A table with 10 rows is shown here.",
-      "pause": 400
-    },
-    {
       "text": "Pages use Koios's offset and limit parameters with an explicit order. The page size defaults to Koios's maximum of 1000 rows. Reading stops at the first page shorter than the limit. The configured page ceiling bounds the number of pages.",
       "pause": 400
     }
@@ -50,10 +72,6 @@
     },
     {
       "text": "As a user, I need a short list of reasons a call can stop.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 9 rows is shown here.",
       "pause": 400
     },
     {
@@ -71,12 +89,20 @@
       "pause": 400
     },
     {
-      "text": "A recorder executable in koios-http takes a list of read requests and a.",
+      "text": "A recorder executable in koios-http takes a list of read requests and a target directory. Its request type has no submission case, so it cannot submit. It writes each answer with the request, the schema revision from Koios's published OpenAPI document, the time and a SHA-256.",
       "pause": 300
     },
     {
-      "text": "target directory. Its request type has no submission case, so it cannot   submit. It writes each answer with the request, the schema revision from   Koios's published OpenAPI document, the time and a SHA-256. - Fixtures live under offchain/test/fixtures/koios/preprod/. They are   recorded again when the schema revision changes; the revision check is a   test. - Decoder tests replay every fixture through Recorded, one per call above. - A fake server in the test suite listens on loopback with scripted answers:   a 429 with a requested wait then success; 429 forever; an answer slower   than the timeout; a body cut mid-array; a missing middle page; 503 then   success; 401. Each test asserts the named failure or the exact attempt   count the server counted.",
-      "pause": 400
+      "text": "Fixtures live under offchain/test/fixtures/koios/preprod/. They are recorded again when the schema revision changes; the revision check is a test.",
+      "pause": 300
+    },
+    {
+      "text": "Decoder tests replay every fixture through Recorded, one per call above.",
+      "pause": 300
+    },
+    {
+      "text": "A fake server in the test suite listens on loopback with scripted answers: a 429 with a requested wait then success; 429 forever; an answer slower than the timeout; a body cut mid-array; a missing middle page; 503 then success; 401. Each test asserts the named failure or the exact attempt count the server counted.",
+      "pause": 300
     }
   ],
   "slices": [
@@ -86,10 +112,6 @@
     },
     {
       "text": "As the epic owner, I want the part #383 imports to land first.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 2 rows is shown here.",
       "pause": 400
     },
     {
@@ -103,12 +125,12 @@
       "pause": 500
     },
     {
-      "text": "The gate is the hosted CI command set at the pushed head, including (cd offchain && nix run --quiet .#lint), nix build --quiet .#build-gate, nix build --quiet .#component-build in offchain/, nix run --quiet .#inventory-check, nix run --quiet .#docs-check and nix develop --quiet -c just ci. One commit owner executes each slice directly; one auditor gives a single verdict before each push.",
+      "text": "The gate is the hosted CI command set at the pushed head, including (cd offchain && nix run --quiet .#lint), nix build --quiet .#build-gate, nix build --quiet .#component-build in offchain/, nix run --quiet .#inventory-check, nix run --quiet .#docs-check and nix develop --quiet -c just ci. The epic owner completes the remaining tasks serially, with no audit seat, as explicitly requested by the operator on 2026-10-07. Required hosted checks must pass before merge.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "edea48d93d1d191325c365c1793938d90da110e488c3f6746f07ec6d4da7636d"
+    "sha256": "a16b71799907d2ad8876d445b0a1472d792bbbf8a0231f4f79b847c327bc2035"
   }
 }

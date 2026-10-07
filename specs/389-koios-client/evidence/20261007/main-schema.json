@@ -1,0 +1,22 @@
+{
+  "url": "https://preprod.koios.rest/koiosapi.yaml",
+  "version": "v1.4.2",
+  "started": 1791405708.853129,
+  "ended": 1791405709.0725038,
+  "headers": {
+    "accept-ranges": "bytes",
+    "content-length": "292799",
+    "content-type": "application/x-yaml",
+    "etag": "\"djyz4zrdnnpw69xb\"",
+    "last-modified": "Wed, 15 Jul 2026 07:42:08 GMT",
+    "date": "Wed, 07 Oct 2026 20:41:48 GMT",
+    "access-control-allow-origin": "*",
+    "vary": "Origin",
+    "access-control-allow-headers": "Content-Type, Accept, Authorization",
+    "access-control-allow-methods": "GET, HEAD, OPTIONS, POST, PATCH",
+    "access-control-max-age": "600",
+    "x-frame-options": "DENY",
+    "connection": "close"
+  },
+  "sha256": "90a834d6b8dd7fdfcb19c31c20e09301d90923fbf9190cbd4ec24be0f7c060af"
+}

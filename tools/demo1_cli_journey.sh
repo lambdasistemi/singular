@@ -559,6 +559,12 @@ run preview-public success -- registry create --process-time 90000 --retract-tim
 [ ! -e "$work/public-preview" ] || fail "a public preview created its target"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
   "$receipts/preview-public.json" >/dev/null || fail "the public preview names another identity than the key preview"
+jq -e '.sessionEvidence as $s
+  | $s.binding == {kind:"Unbound"}
+    and ($s.facts | type == "array" and length > 0)
+    and ($s.facts | all(.session == $s.session and .binding == $s.binding
+      and .verdict == "Unverified"))' "$receipts/preview-public.json" >/dev/null \
+  || fail "the public create preview lacks its Unbound session and Unverified facts"
 status=0
 "$singular" registry create --process-time 90000 --retract-time 30000 --preview --registry "$work/public-preview" --blueprint "$blueprint" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?

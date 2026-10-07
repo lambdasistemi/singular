@@ -1,0 +1,52 @@
+[
+  {
+    "form": "inspect",
+    "command": "/nix/store/njwcxbha1j9gdm5xlsgr9wvs0dwm8xds-singular-registry-exe-singular-0.1.0.0/bin/singular registry inspect --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/registry-copy --key demo1-key --outputs-at addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/inspect.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405709.1289446,
+    "ended": 1791405718.3324869,
+    "wall_seconds": 9.203949777409434,
+    "exit": 10
+  },
+  {
+    "form": "create",
+    "command": "/nix/store/njwcxbha1j9gdm5xlsgr9wvs0dwm8xds-singular-registry-exe-singular-0.1.0.0/bin/singular registry create --preview --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/create-preview-target --wallet-address addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/create.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405721.3335938,
+    "ended": 1791405722.7912648,
+    "wall_seconds": 1.4580634417943656,
+    "exit": 0
+  },
+  {
+    "form": "insert",
+    "command": "/nix/store/njwcxbha1j9gdm5xlsgr9wvs0dwm8xds-singular-registry-exe-singular-0.1.0.0/bin/singular registry insert --preview --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/registry-copy --key koios389-measurement --payload /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/payload.json --wallet-address addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/insert.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405725.7927468,
+    "ended": 1791405732.6192417,
+    "wall_seconds": 6.826712942216545,
+    "exit": 10
+  },
+  {
+    "form": "update",
+    "command": "/nix/store/njwcxbha1j9gdm5xlsgr9wvs0dwm8xds-singular-registry-exe-singular-0.1.0.0/bin/singular registry update --preview --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/registry-copy --key demo1-key --payload /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/payload.json --wallet-address addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/update.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405735.6203618,
+    "ended": 1791405741.555984,
+    "wall_seconds": 5.936043682042509,
+    "exit": 10
+  },
+  {
+    "form": "terminate",
+    "command": "/nix/store/njwcxbha1j9gdm5xlsgr9wvs0dwm8xds-singular-registry-exe-singular-0.1.0.0/bin/singular registry terminate --preview --registry /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/registry-copy --key demo1-key --wallet-address addr_test1vp338glqs9esyv36tvxjxtuvzq9rjj5cnuk4dtecrdtlc2gvmnf8q --blueprint /home/paolino/.orch-runtime/singular/epic-371/to-389/commit-owner-4/handoffs/evidence/deployed-plutus.json --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 --receipt /home/paolino/.orch-runtime/singular/epic-371/finish-389-20261007/smoke-20261007T204148Z/terminate.receipt.json",
+    "koios_url": "https://preprod.koios.rest/api/v1",
+    "schema_revision": "v1.4.2",
+    "started": 1791405744.5573738,
+    "ended": 1791405750.2959933,
+    "wall_seconds": 5.73900680989027,
+    "exit": 10
+  }
+]

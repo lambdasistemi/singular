@@ -111,6 +111,7 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.Registry.Blueprint (NamingCodes (..))
+import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment
@@ -157,16 +158,23 @@ runCreate env a = do
     case createMode a of
         Preview settings addrText -> do
             let magic = providerMagic settings
-            -- A preview for a public address reads the node and holds no key.
+            -- A preview for a public address reads the provider and holds no key.
             addr <-
                 either
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            readOnce env settings ["wallet outputs"] $ \_ v -> do
+            readOnce env settings ["wallet outputs"] $ \caps v -> do
                 utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
-                pure (receipt "create" Success (("preview", toJSON True) : identity))
+                scope <- sessionReceipt caps v
+                pure $
+                    receipt
+                        "create"
+                        Success
+                        ( [("preview", toJSON True), ("sessionEvidence", scope)]
+                            <> identity
+                        )
         Submit ws -> createWith env a rel ws
 
 createWith

@@ -1,0 +1,62 @@
+[
+  {
+    "file": "main-inspect.receipt.json.gz",
+    "raw_sha256": "084f6bf008d0f5c9109a28c024a196a81057b9e53cb0a463246ea19d7fbe1678",
+    "raw_bytes": 506
+  },
+  {
+    "file": "main-inspect.phase.jsonl.gz",
+    "raw_sha256": "3b266122af8da65ca06294af3b736db6949745a3df1a67852270c142d12c9859",
+    "raw_bytes": 4075
+  },
+  {
+    "file": "main-create.receipt.json.gz",
+    "raw_sha256": "691d9ca33c739188bb8173debc57c74836324b4775fdeaaa4837baef527809d5",
+    "raw_bytes": 821
+  },
+  {
+    "file": "main-create.phase.jsonl.gz",
+    "raw_sha256": "f4a1c5a6c5b85acfdcb990135366ad64dbd9f83bda14325a42d4d83de1d396c0",
+    "raw_bytes": 1186
+  },
+  {
+    "file": "main-insert.receipt.json.gz",
+    "raw_sha256": "418e1ebf4d1c3e6a16f4416eb617622935b93119303870ba7709b4c4a4c587ae",
+    "raw_bytes": 505
+  },
+  {
+    "file": "main-insert.phase.jsonl.gz",
+    "raw_sha256": "c8a8c77f938540ce136bde9c005ee7ebda4387f29fa87c9b05b45facbf9bd695",
+    "raw_bytes": 3610
+  },
+  {
+    "file": "main-update.receipt.json.gz",
+    "raw_sha256": "328b73f187bf3cf52e111afa65da2a94486aae8d70171072eda9e12a2c056872",
+    "raw_bytes": 505
+  },
+  {
+    "file": "main-update.phase.jsonl.gz",
+    "raw_sha256": "a66db58e3037b0c1f69edb5595dc3605310e23afd1ced6cd9a2d0c4011601532",
+    "raw_bytes": 3611
+  },
+  {
+    "file": "main-terminate.receipt.json.gz",
+    "raw_sha256": "3c4217358be95b419ac32512609cde6dcea4ea294a45370f68136b15356c1c4a",
+    "raw_bytes": 508
+  },
+  {
+    "file": "main-terminate.phase.jsonl.gz",
+    "raw_sha256": "a439d49ac5b948ae8ef79b4ed1e84005f1a70177428b5d25d481309f2780a5e4",
+    "raw_bytes": 3608
+  },
+  {
+    "file": "fixed-create.receipt.json.gz",
+    "raw_sha256": "86b5a15d067b63f916f5514ce44eec26d55b4771c9e9233fd8543ef979cff278",
+    "raw_bytes": 547953
+  },
+  {
+    "file": "fixed-create.phase.jsonl.gz",
+    "raw_sha256": "04f2fd141cfad025084f0f582076258e99fa8c9e21bf3ea61dfecb8d0af9e0ad",
+    "raw_bytes": 1188
+  }
+]
