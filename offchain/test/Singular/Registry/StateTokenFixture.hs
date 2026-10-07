@@ -42,6 +42,7 @@ import Data.IORef (IORef, modifyIORef')
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
@@ -199,6 +200,11 @@ data Chain = Chain
     {- ^ The existence index: what the provider answers for a script. It
     may lag or misname; the honest one lists the live carriers.
     -}
+    , chainHolders :: Maybe LP.Outputs
+    {- ^ What the provider answers when asked who holds an asset, when not
+    the honest listing. The answer is unverified: it may name outputs that
+    do not hold the asset at all.
+    -}
     }
 
 -- | The booted registry: its state output, its mint, no reference outputs.
@@ -216,6 +222,7 @@ honestChain =
                     , LP.mintSupply = 1
                     }
         , chainCarriers = const []
+        , chainHolders = Nothing
         }
 
 {- | A session over the chain. Every read is appended to the log, so a test
@@ -238,15 +245,16 @@ chainSession logRef chain =
         LP.AtAddress address ->
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == address]
         LP.HoldingAsset (policy, name) ->
-            Right
-                [ u
-                | u@(_, o) <- Map.toAscList live
-                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
-                , maybe
-                    False
-                    ((/= 0) . Map.findWithDefault 0 name)
-                    (Map.lookup policy assets)
-                ]
+            Right $
+                flip fromMaybe (chainHolders chain) $
+                    [ u
+                    | u@(_, o) <- Map.toAscList live
+                    , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+                    , maybe
+                        False
+                        ((/= 0) . Map.findWithDefault 0 name)
+                        (Map.lookup policy assets)
+                    ]
         LP.AtTxIn reference -> case Map.lookup reference live of
             Nothing -> Left (LP.MissingOutput reference)
             Just o -> Right [(reference, o)]
