@@ -338,6 +338,8 @@ data Options = Options
     , optWork :: FilePath
     , optStranger :: FilePath
     -- ^ A second funded wallet, never a controller in the story
+    , optUnderfunded :: FilePath
+    -- ^ A wallet funded too small to create with, for the funding refusal
     , optSpecification :: FilePath
     {- ^ The CLI's specification, whose rows the client obligations bind;
     by default the one in the repository holding the statement ledger
@@ -385,6 +387,7 @@ parseOptions =
             ""
             ""
             ""
+            ""
             Nothing
             Nothing
             ""
@@ -425,6 +428,7 @@ parseOptions =
         "--wallet-skey" -> go o{optWalletKey = v} rest
         "--work" -> go o{optWork = v} rest
         "--stranger-skey" -> go o{optStranger = v} rest
+        "--underfunded-skey" -> go o{optUnderfunded = v} rest
         "--specification" -> go o{optSpecification = v} rest
         "--registry" -> go o{optRegistry = Just v} rest
         "--state-token" -> go o{optStateToken = Just v} rest
@@ -682,6 +686,14 @@ perform env i = case i of
             t
             k
             (runCommand env c t k)
+            >>= answered env
+    RunByToken actor owner c k ->
+        recorded
+            env
+            ("run " <> T.pack (commandName c) <> " by token")
+            actor
+            k
+            (runCommandIn env c actor owner k)
             >>= answered env
     Book t k -> recorded env "book" t k (book env t k) >>= answered env
     FoldUnevaluated t k ->
@@ -1295,9 +1307,18 @@ submitBounded env caps wallet r unsigned = do
 
 runCommand
     :: Env -> Command -> Target -> String -> Receipt -> IO Receipt
-runCommand env c target key r = do
-    args <- commandArgs env c target key r
-    let journal = targetDir env target </> "journal.jsonl"
+runCommand env c target key r = runCommandIn env c target target key r
+
+{- | One command of this actor's directory against the registry another
+target created: the directory is the actor's own, and the registry is
+named only by the other target's state token. The two targets are the
+same for an actor's own registry.
+-}
+runCommandIn
+    :: Env -> Command -> Target -> Target -> String -> Receipt -> IO Receipt
+runCommandIn env c actor registry key r = do
+    args <- commandArgsFor env c actor registry key r
+    let journal = targetDir env actor </> "journal.jsonl"
     before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
     when
@@ -1315,7 +1336,7 @@ runCommand env c target key r = do
     observation <-
         if c == Inspect
             && printedField "outcome" printed == Just (String "success")
-            then rcObservation <$> observe env target key r
+            then rcObservation <$> observe env registry key r
             else pure Nothing
     pure
         (fromPrinted r status printed file)
@@ -1341,23 +1362,32 @@ developmentWindows = ["--process-time", "45000", "--retract-time", "15000"]
 -- | The arguments of one ordinary command, writing the files it reads.
 commandArgs
     :: Env -> Command -> Target -> String -> Receipt -> IO [String]
-commandArgs env c target key r = do
+commandArgs env c target key r =
+    commandArgsFor env c target target key r
+
+{- | The arguments of one command the actor runs: the actor's own directory
+ for its in-flight files, and the registry named by the registry target's
+ state token. The two targets are the same for an actor's own registry.
+-}
+commandArgsFor
+    :: Env -> Command -> Target -> Target -> String -> Receipt -> IO [String]
+commandArgsFor env c actor registry key r = do
     let o = envOptions env
-        dir = targetDir env target
+        dir = targetDir env actor
         node =
             providerArgs o
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
         directory = ["--registry", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key-hex", T.unpack (hex (keyBytes key))]
-        named = (directory <>) <$> tokenArgs env target
+        named = (directory <>) <$> tokenArgs env registry
     case c of
         Create -> do
             seed <- previewSeed env r "preview" (optWalletKey o) dir Nothing
             -- The run's record of which registry this target is: the
             -- seed its create boots, from which the token derives.
-            createDirectoryIfMissing True (backendDir env target)
-            writeFile (backendDir env target </> "seed") seed
+            createDirectoryIfMissing True (backendDir env actor)
+            writeFile (backendDir env actor </> "seed") seed
             let common = directory
             pure
                 ( ["registry", "create", "--seed", seed]
@@ -1368,7 +1398,7 @@ commandArgs env c target key r = do
                 )
         Insert -> do
             common <- named
-            reg <- openRegistry env target
+            reg <- openRegistry env registry
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
             let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
                 path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
@@ -1675,6 +1705,73 @@ provoke env p target key r = do
                     { peFilesBefore = copies
                     , peFilesAfter = filesAfter
                     , peSeedProbe = Just probe
+                    }
+        UnderfundedCreate -> do
+            let poor = optUnderfunded o
+                poorDir = work </> "underfunded-create"
+            when (null poor) $
+                fail
+                    "cli-controls: --underfunded-skey is required to run a create the wallet cannot fund"
+
+            createDirectoryIfMissing True poorDir
+            seedPoor <-
+                previewSeed env r "preview-poor" poor (work </> "probe-poor") Nothing
+            copiesBefore <- digests poorDir
+            beforeCount <- journalLines (poorDir </> "journal.jsonl")
+            (status, printed, file) <-
+                singular env r label (createArgs poorDir poor seedPoor)
+            afterLines <- journalLines' (poorDir </> "journal.jsonl")
+            let gainedPoor = drop beforeCount afterLines
+            (submissions, resolved) <- journalledSubmissions env (pure gainedPoor)
+            filesAfter <- digests poorDir
+            (_, probePrinted, probe) <-
+                singular
+                    env
+                    r
+                    "seed-poor-after"
+                    $ [ "registry"
+                      , "create"
+                      , "--preview"
+                      , "--registry"
+                      , work </> "probe-poor-after"
+                      , "--blueprint"
+                      , optBlueprint o
+                      , "--koios-url"
+                      , optProviderUrl o
+                      , "--network-time"
+                      , optNetworkTime o
+                      , "--network-magic"
+                      , show (optMagic o)
+                      , "--wallet-skey"
+                      , poor
+                      , "--seed"
+                      , seedPoor
+                      ]
+                        <> developmentWindows
+            unless
+                (printedField "outcome" probePrinted == Just (String "success"))
+                $ fail "the underfunded wallet's seed did not stay unspent"
+            pure
+                (fromPrinted r status printed file)
+                    { rcSubmissions = submissions
+                    , rcResolved = resolved
+                    , rcProcess =
+                        Just
+                            ( ProcessEvidence
+                                { peJournal =
+                                    T.pack
+                                        (makeRelative work (poorDir </> "journal.jsonl"))
+                                , peJournalBefore = beforeCount
+                                , peJournalAfter = length afterLines
+                                , peLastEvent = maybe "" lastEventOf (lastMaybe afterLines)
+                                , peSubmitted = submittedIn gainedPoor
+                                , peExit = exitNumber status
+                                , peWaited = Nothing
+                                , peFilesBefore = copiesBefore
+                                , peFilesAfter = filesAfter
+                                , peSeedProbe = Just probe
+                                }
+                            )
                     }
         NodeLost -> do
             args <- timeoutTo "30" <$> commandArgs env (Update 4) target key r

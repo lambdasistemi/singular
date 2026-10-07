@@ -23,6 +23,12 @@ outputs, as a real wallet does, so a seed it chooses is one of them
 rather than the genesis output itself. The key file is read, never
 printed; only its public address is reported, on standard error.
 
+@--fund FILE:N:LOVELACE@ pays one wallet-sized group: @N@ outputs of
+@LOVELACE@ lovelace to the wallet of @FILE@, beside the uniform flags,
+which pay every @--fund-skey@ wallet the same. A journey that needs one
+wallet funded differently from the others names it this way; the value
+is read before the node starts and a malformed one is refused by name.
+
 @--genesis-only@ retains the checked initial allocation without the private
 funding actor, for the retained coverage refusal control. It changes no
 ledger, genesis, epoch, slot, safe-zone or time-publication setting.
@@ -144,7 +150,7 @@ main = do
 spawn :: [String] -> IO ()
 spawn args = do
     withFixture args $ \evidence facade -> withReads nullTracer nullTracer (facadeSettings facade) $ \caps -> do
-        mapM_ (fund caps) (fundingFrom args)
+        mapM_ (fund caps) =<< either die pure (fundingFrom args)
         let settings = facadeSettings facade
         LBS.putStrLn
             ( encode
@@ -246,19 +252,45 @@ withFixture args action = do
                         (encode event <> "\n")
                 )
     let funding = if "--genesis-only" `elem` args then LeaveGenesis else FundGenesis
-    unless (funding /= LeaveGenesis || null (fundingFrom args)) $
+    requested <- either die pure (fundingFrom args)
+    unless (funding /= LeaveGenesis || null requested) $
         die "devnet: --genesis-only cannot also fund caller wallets"
     withGeneratedFacade funding gDir observe $ \_ facade -> action evidence facade
 
 {- | Read the funding flags: every @--fund-skey@ given (it may repeat, one
-wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@.
-None when any of the three is absent.
+wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@, plus
+every @--fund FILE:N:LOVELACE@, one wallet-sized group each. None of the
+uniform flags pays anything unless all three are present; each group pays
+exactly what it says. A malformed group is named, before any node starts.
 -}
-fundingFrom :: [String] -> [Funding]
-fundingFrom args = fromMaybe [] $ do
-    outputs <- flag "--fund-outputs" args >>= readMaybe
-    lovelace <- flag "--fund-lovelace" args >>= readMaybe
-    pure [Funding key outputs lovelace | key <- every "--fund-skey" args]
+fundingFrom :: [String] -> Either String [Funding]
+fundingFrom args = do
+    groups <- traverse fundGroup (every "--fund" args)
+    let uniform = fromMaybe [] $ do
+            outputs <- flag "--fund-outputs" args >>= readMaybe
+            lovelace <- flag "--fund-lovelace" args >>= readMaybe
+            pure [Funding key outputs lovelace | key <- every "--fund-skey" args]
+    pure (uniform <> groups)
+
+{- | One @--fund FILE:N:LOVELACE@: a key file, a positive number of outputs
+and a positive lovelace amount, each separated by a colon.
+-}
+fundGroup :: String -> Either String Funding
+fundGroup spelling = case break (== ':') spelling of
+    (key, ':' : rest) -> case break (== ':') rest of
+        (outputs, ':' : lovelace)
+            | Just n <- readMaybe outputs
+            , Just l <- readMaybe lovelace
+            , n > 0
+            , l > 0 ->
+                Right (Funding key n l)
+        _ -> Left malformed
+    _ -> Left malformed
+  where
+    malformed =
+        "devnet: --fund expects FILE:N:LOVELACE, a key file, a positive"
+            <> " output count and a positive lovelace amount, not "
+            <> show spelling
 
 -- | Every value a repeatable flag was given.
 every :: String -> [String] -> [String]
