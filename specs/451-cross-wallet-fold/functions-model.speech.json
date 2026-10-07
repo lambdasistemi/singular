@@ -1,0 +1,36 @@
+{
+  "recovery-interfaces": [
+    {
+      "text": "Recovery interfaces.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the repair to preserve the existing command interface, so that operators can run the selected part without learning a second recovery protocol.",
+      "pause": 400
+    }
+  ],
+  "signature-boundary": [
+    {
+      "text": "Signature boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No new or changed product function signature is authorized. The existing recoveryApp name parts abstraction exposes the additional app. CLI_RECOVERY_PARTS remains a space-separated selection of existing scenario names. cli_recovery_controls_check.sh takes one repository-root argument; cli_recovery_controls.sh retains its five executable, blueprint, workspace and repository arguments.",
+      "pause": 400
+    }
+  ],
+  "observable-effects": [
+    {
+      "text": "Observable effects.",
+      "pause": 500
+    },
+    {
+      "text": "The cross-wallet selection establishes its own prerequisite through ordinary CLI calls and retains the existing evidence and refusal outcomes. Failed-command reporting adds the command's actual evidence to job output. Any new signature, altered model rule or production repair requires a revised mandate before work continues.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "6b6bfdba2bd5a828fcbfe4962d9a3228d1b24c7e2c53a022545c52c6f3c2c7aa"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "deliver-and-verify-the-recovery-part": [
+    {
+      "text": "Deliver and verify the recovery part.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry operator, I want an independently runnable hosted recovery check and honest limits, so that its result tells me what has actually been shown.",
+      "pause": 400
+    }
+  ],
+  "work": [
+    {
+      "text": "Work.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] diagnose-selected-part: retain the two authorized revision-bound runs and record the diagnosis before any fix.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] establish-independent-starting-state: establish the cross-wallet part's prerequisite through real ordinary CLI commands without selecting a sibling part.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] expose-failed-command-evidence: retain and print failed commands' actual receipts and refusal reasons while preserving their outcomes.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] host-cross-wallet-part: add the distinct root app and Registry job using the existing selection and ran-proof.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] verify-and-deliver: obtain all checkpoint approvals, local lint and presentation receipts, exact-head hosted CI, finalization and an authorized merge commit.",
+      "pause": 300
+    }
+  ],
+  "limits": [
+    {
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "The historical fold refusal remains unreproduced and unidentified unless further evidence establishes it. This shared-directory scenario establishes no public-only fold from another directory, and no consumer conformance row changes state through this repair.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "3ea5b8be46b95d619c1dc4466a76ac8dca4ba3be378b6e8b2e15492924c028c8"
+  }
+}

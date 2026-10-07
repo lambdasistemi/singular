@@ -1,0 +1,46 @@
+{
+  "recovery-evidence": [
+    {
+      "text": "Recovery evidence.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want verdicts traceable to the commands that produced them, so that a refusal is never inferred from an exit code alone.",
+      "pause": 400
+    }
+  ],
+  "records": [
+    {
+      "text": "Records.",
+      "pause": 500
+    },
+    {
+      "text": "Existing records remain authoritative: a command receipt and stderr, the command's observed exit, prepared transaction bodies, journal events, root snapshots, selected-part clause counts and the discovered hold list. The setup produces the prerequisite holding through ordinary commands on the same registry and node. It is not a typed final-state fixture.",
+      "pause": 400
+    }
+  ],
+  "relationships": [
+    {
+      "text": "Relationships.",
+      "pause": 500
+    },
+    {
+      "text": "The diagram shows evidence sources feeding a computed verdict. Failure output presents those actual sources and does not manufacture a refusal name. Selection and nonempty clause counts continue to establish that the requested part ran.",
+      "pause": 400
+    }
+  ],
+  "validation": [
+    {
+      "text": "Validation.",
+      "pause": 500
+    },
+    {
+      "text": "A successful cross-wallet part must retain all existing positive and altered-evidence checks. Empty, missing or malformed evidence cannot count as recovery, and a setup error stays distinct from a product refusal. The expected root, transaction identity and payments are obtained from the producing commands and ledger evidence rather than typed into the fixture.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "893652efded7b93b618ea90aa0578d19f8d9e605a07ac33ef411d0a82a03f506"
+  }
+}

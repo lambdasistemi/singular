@@ -1,0 +1,36 @@
+{
+  "recovery-components": [
+    {
+      "text": "Recovery components.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want each recovery component to have one clear responsibility, so that selecting a scenario cannot hide a missing prerequisite.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The job selects the existing part mechanism through a distinct root app. The harness owns its connected setup, scenario execution and evidence-derived verdicts. The CLI and ledger continue to own product behavior.",
+      "pause": 400
+    }
+  ],
+  "boundaries": [
+    {
+      "text": "Boundaries.",
+      "pause": 500
+    },
+    {
+      "text": "No implementation moves into the specification or a second acceptance oracle. The harness remains a consumer of ordinary CLI processes and real ledger observations. The data and function models describe the changed surface only; product modules, validators and dependencies remain governed by the bound Lean revision.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "fde7cd677c6e5bced5b0ac3b3bc29cbc436bebac65349411ccdeec540c286193"
+  }
+}
