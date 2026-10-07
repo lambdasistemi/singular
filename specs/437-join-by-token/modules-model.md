@@ -3,6 +3,9 @@
 Only new or changed modules are listed. Fields are in the [data model](data-model.md) and
 signatures in the [functions model](functions-model.md). Dependencies point downward: the CLI
 depends on the registry library, and the library depends on the provider interface.
+PR1 binds main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed`, Lean tree
+`16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. No model or on-chain
+change is authorised. New reference commands, closed-wallet funding and the page follow in PR2.
 
 ## The provider interface
 
@@ -45,8 +48,8 @@ whole derivation from a state token.
 - **Ownership.** It replaces resolution by saved output reference, which is deleted from
   `Singular/Registry/Deployment/Attach.hs`. The `Deployment` manifest stays only for the
   `offchain/deployment` and `offchain/journey` tools.
-- **Placement.** It sits in the library, not in the CLI, so the library tests and `describe` share
-  one implementation.
+- **Placement.** It sits in the library, so CLI callers and library tests share one implementation;
+  a future page can consume it in PR2.
 
 ## The CLI
 
@@ -57,24 +60,30 @@ whole derivation from a state token.
   used during `create`, and the refusal to create over an existing journal or pending identity.
 - **`Live`, `Attached`, `Inspect`, `Preview`.** Build their view from the resolver instead of the
   saved identity.
-- **`Command`.** Adds `--state-token` (with `SINGULAR_STATE_TOKEN`). In
-  slice 2 it also adds `--publish-references` and the two reference commands. In slice 3 it adds
-  `describe`.
+- **`Command`.** Adds `--state-token` (with `SINGULAR_STATE_TOKEN`) to existing commands.
 - **`Create`.**
   - It finds the state reference through the resolver's reference search.
   - It checks the funding for every publication before the boot (#406).
   - It writes no `registry.json` and prints the state token.
-- **Slice 2: coin selection and the reference commands.** Coin selection in the wallet funding path
-  skips outputs that carry a reference script. A reference-command module owns
-  `publish-references` and `retire-references`.
-- **Slice 3: the page.** A `describe` module renders the page from the resolver, the replay and
-  the release.
+- **PR2: funding and the reference commands.** The closed wallet-output interface and narrowed
+  fund inputs protect ordinary funding; a reference-command module handles publication and
+  retirement. These interfaces remain in the preserved PR2 plans rather than this PR1 model.
+- **PR2: the page.** A page module renders chain-derived information and release-archive evidence.
+
+## Public evidence and inherited fold inputs
+
+The CLI description language explicitly retires the saved-selector promise with its history and
+reason. Retirement does not conceal live clauses, reuse receipts or transfer state. Independently
+derived report action identity remains a separate unmet PR2 requirement. Preserve the current
+issue #419 history-withholding controls, carried datum and public fold consumers. Actor files contain
+only their own in-flight submissions; no private preimage or Alice-file dependency is restored.
 
 ## Demo scripts, CI apps and docs
 
 `tools/demo1_*.sh`, `flake.nix` apps, and `docs/` and `onchain-release/` pages that mention
 `registry.json`.
 
-- **Demo scripts.** They pass the state token instead of sharing a registry directory. Each actor
-  starts from an empty directory.
+- **Demo scripts.** They pass the state token instead of sharing a registry directory. Bob starts
+  empty, receives no Alice context and follows the connected public-input path. The existing
+  deliberate-open control must fail the hosted run on an Alice-file open.
 - **Pages.** Updated in the slice that changes their subject, with stamped speech files.

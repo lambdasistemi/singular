@@ -12,6 +12,10 @@ slice. Historical receipts keep their original scope; revised discovery needs it
 
 ## Strategy
 
+The operator's 2026-10-07 cut makes PR1 the token-only command and connected Bob journey. PR2
+follows on the same open issue for the wallet, page, report action identity and new reference
+features. The archived earlier plans and working/index snapshot preserve that unfinished work.
+
 The registry's identity moves from a file to a derivation. One library module resolves a state
 token into everything a command needs and refuses by name when the chain disagrees with the
 release. References are found by script hash, through a new provider query. The saved identity
@@ -24,22 +28,29 @@ law, like `checkPins` today.
 
 | slice | runnable outcome | starts after |
 |---|---|---|
-| The token is the registry | the provider query and mint record (Koios, facade, fixtures); the resolver and its refusals; references found by hash from the provider then the actor's wallet; `--state-token` on every command; `registry.json` neither written nor read; publication funding checked before the boot; demo scripts run each actor from an empty directory | base `9011ca17` |
-| Anyone publishes | `publish-references`, `--publish-references`, `retire-references`; coin selection skips reference outputs | the first slice |
-| The page | `registry describe`, as Markdown and as `--json` | the first slice |
+| PR1: the token is the registry | provider query and mint record; resolver and named refusals; provider-first lazy-wallet reference search; token-only existing commands; no registry.json; complete create publication funding before boot; Bob's connected hosted journey without Alice files; explicit saved-selector promise retirement | main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed` |
+| PR2: protected funding and references | closed wallet-output boundary, narrowed fund inputs, reference publication and retirement, automatic publication and their connected evidence | PR1 merged |
+| PR2: the page and report | deterministic chain-derived page, tagged release archive, independently derived report action identity and their controls | PR1 merged |
 
-The second and third slices are independent of each other. Each slice runs one commit owner and
-one mute persistent auditor, and is pushed only as an approved candidate. If a slice runs long,
-its green checkpoint is integrated and the rest is split into a follow-up.
+The existing GLM commit owner and persistent mute auditor continue; no extra seat is needed.
+The owner may push a coherent draft after final static preflight while the fresh exact-range audit
+and exact-head hosted CI run in parallel. Merge requires both plus the actual Bob story and its
+deliberate-open discrimination. Historical source approvals are not approvals of the new range.
 
 ## Live boundaries and evidence
 
 | claim | evidence |
 |---|---|
 | Koios answers the existence query as designed | recorded Koios fixtures taken from preprod (read-only), replayed in unit tests |
-| commands work from an empty directory on the state token alone | the devnet journey through the facade, with the second actor's directory empty at start |
+| commands work from an empty directory on the state token alone | exact-head hosted journey through the facade, with Bob's directory empty at start and no Alice context passed |
 | each refusal fires for its cause | a devnet or unit negative control per refusal name |
-| `create` leaves a registry others can join | the devnet journey: create, then another actor's command, with no file copied |
+| `create` leaves a registry others can join | hosted create then Bob's connected commands, with no Alice file copied or opened; deliberate-open control fails the run |
+
+Local final-head static preflight runs root lint, conformance HLint, conformance format checking
+and offchain lint, each with its exact hosted command and actual exit recorded. Focused checks
+retain the frozen carriers. Full devnet, Demo1, conformance and recovery campaigns run hosted.
+Public conformance state is computed from receipts; no planning checkbox or local green closes
+an uncovered product requirement.
 
 There are no preprod writes and no new registry.
 
@@ -47,8 +58,10 @@ There are no preprod writes and no new registry.
 
 - **#381 separate actors (draft PR #433)** consumes this path: no identity record and no join
   command. Its two-actor journey uses `--state-token`.
-- **#419 changes the request format.** There is no blueprint conflict, because this ticket changes
-  no script. `preimages/` stays #419's scope.
+- **#419 is inherited at the exact base.** Lean tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`
+  and constitution 1.13.0 bind carried request datum values, public fold construction and carrier
+  settlement. Preserve its public-history controls and removed private preimage dependency.
+  PR1 changes no Lean, validator, blueprint or script identity relative to that base.
 
 ## Ceilings
 
