@@ -906,11 +906,10 @@ attachRegistry reg v = do
     found <-
         findReferences
             v
-            []
-            []
+            Nothing
             (regExpected reg)
             (Set.fromList [minBound .. maxBound])
-    (refs, _) <-
+    refs <-
         either (fail . T.unpack . renderReferenceRefusal) pure found
     pure
         Attached

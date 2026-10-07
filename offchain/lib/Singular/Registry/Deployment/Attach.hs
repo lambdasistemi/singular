@@ -268,8 +268,8 @@ referencesByHash view dep = do
     recorded <- mapM roleOf (depReferenceScripts dep)
     let expected = Map.fromList [(role, hash) | (_, role, hash) <- recorded]
     found <-
-        findReferences view [] [] expected (Map.keysSet expected)
-            >>= either (die . T.unpack . renderReferenceRefusal) (pure . fst)
+        findReferences view Nothing expected (Map.keysSet expected)
+            >>= either (die . T.unpack . renderReferenceRefusal) pure
     pure [(r, found Map.! role) | (r, role, _) <- recorded]
   where
     roleOf r = do

@@ -304,7 +304,8 @@ inspectSaved env dir key settings release a = do
     reached <-
         try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             -- An inspect runs no transaction: it looks up no reference.
-            saved <- resolveSaved dir release (inspectAccess a) Set.empty [] v
+            saved <-
+                resolveSaved dir release (inspectAccess a) Set.empty Nothing v
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved

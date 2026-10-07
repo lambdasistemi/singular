@@ -123,9 +123,8 @@ data WriteSettings = WriteSettings
 @SINGULAR_STATE_TOKEN@) and the outputs the caller suggests as carriers of
 its reference scripts (@--reference-hint@, repeatable).
 -}
-data RegistryAccess = RegistryAccess
+newtype RegistryAccess = RegistryAccess
     { accessToken :: Asset
-    , accessHints :: [TxIn]
     }
     deriving stock (Eq, Show)
 
@@ -586,8 +585,8 @@ parseWith environment args = do
             first
                 (BadValue "--state-token" . T.unpack)
                 (parseStateToken (T.pack tokenStr))
-        hints <- referenceHints flags
-        pure RegistryAccess{accessToken = token, accessHints = hints}
+        _ <- referenceHints flags
+        pure RegistryAccess{accessToken = token}
     -- Repeatable, in the order given.
     referenceHints flags =
         mapM
