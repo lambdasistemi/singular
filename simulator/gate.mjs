@@ -251,10 +251,12 @@ assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
 // ---- 4b. a fold's admission and what a batch creates ------------------------
 {
   const s = initial();
-  const at = (submittedAt) =>
-    approved('insertActive', 1, { owner: 42, output: 555, submittedAt });
+  const at = (submittedAt) => approved('insertActive', 1, { owner: 42, output: 555, submittedAt });
   const deadline = 100 + s.config.processTime;
-  assert.ok(admittedFold(s, at(100), { validTo: deadline }).accepted, 'bound at the deadline admitted');
+  assert.ok(
+    admittedFold(s, at(100), { validTo: deadline }).accepted,
+    'bound at the deadline admitted',
+  );
   assert.equal(
     admittedFold(s, at(100), { validTo: deadline + 1 }).reason,
     'not-phase1',
@@ -268,14 +270,25 @@ assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
     'not-phase1',
     'of two requests, one past its deadline refuses the batch',
   );
-  assert.ok(admittedFoldBatch(s, [fresh], { validTo: deadline }).accepted, 'the batch inside its window');
+  assert.ok(
+    admittedFoldBatch(s, [fresh], { validTo: deadline }).accepted,
+    'the batch inside its window',
+  );
   const pair = (create, consume) =>
     foldBatch(s, [
       claim(approved(create, 60, { owner: 60, output: 600, refundAddress: 60 })),
       claim(approved(consume, 60, { owner: 60, output: 600, refundAddress: 60 })),
     ]).reason;
-  assert.equal(pair('insertActive', 'updateTerminal'), 'token-missing', 'holding created then consumed');
-  assert.equal(pair('insertActive', 'deleteActive'), 'token-missing', 'holding created then deleted');
+  assert.equal(
+    pair('insertActive', 'updateTerminal'),
+    'token-missing',
+    'holding created then consumed',
+  );
+  assert.equal(
+    pair('insertActive', 'deleteActive'),
+    'token-missing',
+    'holding created then deleted',
+  );
   assert.equal(pair('insertAbsent', 'updateActive'), 'not-booked', 'custody created then consumed');
   assert.equal(pair('insertAbsent', 'deleteAbsent'), 'not-booked', 'custody created then deleted');
 }
