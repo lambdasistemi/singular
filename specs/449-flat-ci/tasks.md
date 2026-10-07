@@ -6,13 +6,13 @@ As a maintainer, I want delivery stamps tied to real checks and approved commits
 
 The first slice adds composed recovery tests and proves each failure mode detects a relevant defect. Its fixtures disclose provenance and its test registration rejects empty selection.
 
-- [ ] recorded-recovery-boundary: record fixture provenance and execute the production reconciliation composition.
-- [ ] synthetic-saved-reconciliation-public-history: label synthetic fixture provenance, execute saved-registry reconciliation and keyed observation, and show missing or empty history turns it red; recorded saved-registry coverage remains uncovered.
-- [ ] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.
-- [ ] interrupted-confirmation-offline: reconcile durable confirmation before observation, preserving original evidence and detecting a controlled fault.
-- [ ] expiry-offline: distinguish bounded live-input exclusion from unbounded and undetermined evidence, with a real fault control.
-- [ ] rollback-offline: observe rollback from positive live-input evidence once, preserve the unresolved identity and block resend, with a real fault control.
-- [ ] recovery-selection-and-receipts: register tagged tests, prove executed extent and retain RED/GREEN command receipts plus every checkpoint approval.
+- [x] recorded-recovery-boundary: record fixture provenance and execute the production reconciliation composition.
+- [x] synthetic-saved-reconciliation-public-history: label synthetic fixture provenance, execute saved-registry reconciliation and keyed observation, and show missing or empty history turns it red; recorded saved-registry coverage remains uncovered.
+- [x] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.
+- [x] interrupted-confirmation-offline: reconcile durable confirmation before observation, preserving original evidence and detecting a controlled fault.
+- [x] expiry-offline: distinguish bounded live-input exclusion from unbounded and undetermined evidence, with a real fault control.
+- [x] rollback-offline: observe rollback from positive live-input evidence once, preserve the unresolved identity and block resend, with a real fault control.
+- [x] recovery-selection-and-receipts: register tagged tests, prove executed extent and retain RED/GREEN command receipts plus every checkpoint approval.
 
 ## Offline evidence mutations
 
