@@ -19,10 +19,10 @@ receipts say which clauses that leaves uncovered or unmet.
 * A readback is the registry's state root, the key's holding at the
   application, the pending requests and the wallet, read from the node.
 
-A registry's configuration is derived here again from the release and the
-saved deployment record, and its pins compared with the ones the command
-saved, so a disagreement between this reader and the command is a
-refusal rather than a silent choice.
+A registry is resolved here from the release and its state token, as every
+command resolves it: the run's own registries by the token their create's
+seed derives, a take's by the token it is given. Nothing is read from a
+registry directory but the journal.
 -}
 module Conformance.Cli.Backend (runControls, runAttach) where
 
@@ -34,7 +34,6 @@ import Control.Exception
     , SomeException
     , bracket
     , evaluate
-    , finally
     , fromException
     , throwIO
     , try
@@ -63,6 +62,7 @@ import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -140,8 +140,12 @@ import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
-import Cardano.Ledger.Hashes (extractHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Hashes (ScriptHash, extractHash)
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
@@ -183,12 +187,8 @@ import Singular.Registry.Blueprint
     , loadBlueprint
     )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Config.Application (cageConfigForApplication)
 import Singular.Registry.Deployment
     ( Attached (..)
-    , CageParts (..)
-    , Deployment (..)
-    , attach
     , parseOutRef
     , renderOutRef
     )
@@ -207,6 +207,18 @@ import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.StateToken
+    ( ReferenceRole
+    , Release (..)
+    , ResolvedRegistry (..)
+    , findReferences
+    , findStateOutput
+    , parseStateToken
+    , renderIdentityRefusal
+    , renderReferenceRefusal
+    , renderStateToken
+    , resolveRegistry
+    )
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedFoldArgs (..)
     , ConnectedMint (..)
@@ -331,9 +343,11 @@ data Options = Options
     by default the one in the repository holding the statement ledger
     -}
     , optRegistry :: Maybe FilePath
-    {- ^ A take on this existing registry directory, not on registries the run
-    creates
+    {- ^ A take on an existing registry, from this actor directory, not on
+    registries the run creates
     -}
+    , optStateToken :: Maybe String
+    -- ^ The existing registry a take runs on, by its state token
     , optKey :: String
     -- ^ The key a take on an existing registry uses, as the text the story names it by
     , optAllowance :: Maybe Integer
@@ -371,6 +385,7 @@ parseOptions =
             ""
             ""
             ""
+            Nothing
             Nothing
             ""
             Nothing
@@ -412,6 +427,7 @@ parseOptions =
         "--stranger-skey" -> go o{optStranger = v} rest
         "--specification" -> go o{optSpecification = v} rest
         "--registry" -> go o{optRegistry = Just v} rest
+        "--state-token" -> go o{optStateToken = Just v} rest
         "--key" -> go o{optKey = v} rest
         "--collateral-allowance" -> case reads v of
             [(n, "")] | n > 0 -> go o{optAllowance = Just n} rest
@@ -475,6 +491,7 @@ runAttach = runWith attachStory
 attachStory :: Options -> Either String (Story ())
 attachStory o = do
     when (isNothing (optRegistry o)) (Left "--registry is required")
+    when (isNothing (optStateToken o)) (Left "--state-token is required")
     when (null (optKey o)) (Left "--key is required")
     case optAllowance o of
         Just n | n > 0 -> Right ()
@@ -528,14 +545,6 @@ runWith chooseStory args = do
                 ( "cli-controls: the Blockfrost credential file "
                     <> optBlockfrostCredential o
                     <> " is not a readable file"
-                )
-    forM_ (optRegistry o) $ \dir -> do
-        there <- doesFileExist (dir </> "registry.json")
-        unless there $
-            fail
-                ( "cli-controls: "
-                    <> dir
-                    <> " holds no registry; a take runs on an existing one and never creates it"
                 )
     ledger <-
         Aeson.eitherDecodeFileStrict' (optLedger o)
@@ -815,30 +824,18 @@ keyBytes = BC.pack
 hex :: ByteString -> Text
 hex = TE.decodeUtf8 . B16.encode
 
--- | A registry as this reader derives it from the release and the record.
+-- | A registry as this reader resolves it from the release and its state token.
 data Registry = Registry
     { regCfg :: CageConfig
     , regCodes :: NamingCodes
     , regToken :: TokenId
-    , regDeployment :: Deployment
+    , regAsset :: Cage.Asset
+    , regExpected :: Map.Map ReferenceRole ScriptHash
     }
 
-{- | Read @registry.json@, derive its configuration again, and refuse any
-pin that differs from the one the command saved.
--}
-openRegistry :: Env -> Target -> IO Registry
-openRegistry env target = do
-    let dir = targetDir env target
-    saved <-
-        Aeson.eitherDecodeFileStrict' (dir </> "registry.json")
-            >>= either (fail . ("registry.json: " <>)) pure
-    (dep, pins) <- case saved of
-        Object o
-            | Just d <- KeyMap.lookup "confDeployment" o
-            , Just (Object p) <- KeyMap.lookup "confPins" o
-            , Aeson.Success dep <- Aeson.fromJSON d ->
-                pure (dep, p)
-        _ -> fail "registry.json carries no deployment record and pins"
+-- | The release the run was given.
+runRelease :: Env -> IO Release
+runRelease env = do
     bp <-
         loadBlueprint (optBlueprint (envOptions env)) >>= either fail pure
     let code name =
@@ -846,58 +843,82 @@ openRegistry env target = do
                 (fail ("the blueprint carries no " <> name))
                 pure
                 (extractCompiledCode (T.pack name) bp)
-    stateCode <- code "state.state"
-    requestCode <- code "request.request"
-    codes <-
-        either fail pure (loadApplicationCodes OpenDatumApplication bp)
-    (cfg, pinned) <-
+    Release
+        <$> code "state.state"
+        <*> code "request.request"
+        <*> either fail pure (loadApplicationCodes OpenDatumApplication bp)
+
+{- | The state token of a target: the one a take is given, or the one the
+seed of the run's own create derives under this release.
+-}
+targetToken :: Env -> Target -> IO Cage.Asset
+targetToken env target = case optStateToken (envOptions env) of
+    Just spelled ->
         either
-            fail
+            (fail . ("--state-token: " <>) . T.unpack)
             pure
-            ( cageConfigForApplication
-                OpenDatumApplication
-                codes
-                stateCode
-                requestCode
-                dep
+            (parseStateToken (T.pack spelled))
+    Nothing -> do
+        release <- runRelease env
+        seed <- readFile (backendDir env target </> "seed")
+        seedIn <- either fail pure (parseOutRef (T.pack seed))
+        pure
+            ( PolicyID (computeScriptHash (releaseState release))
+            , AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn)))
             )
-    let derived =
-            [ ("pinState", hex (scriptHashBytes (cfgScriptHash cfg)))
-            , ("pinApplication", hex (SBS.fromShort (cfgApplicationPolicy cfg)))
-            , ("pinAbsent", hex (SBS.fromShort (cfgAbsentPolicy cfg)))
-            , ("pinActive", hex (SBS.fromShort (cfgActivePolicy cfg)))
-            , ("pinTerminal", hex (SBS.fromShort (cfgTerminalPolicy cfg)))
-            ]
-    forM_ derived $ \(name, value) ->
-        unless (KeyMap.lookup name pins == Just (String value)) $
-            fail
-                ( "the saved "
-                    <> show name
-                    <> " is not the one this release and seed give (0x"
-                    <> T.unpack value
-                    <> ")"
-                )
-    seedIn <- either fail pure (parseOutRef (depSeedOutRef dep))
+
+-- | The state token as the command line spells it.
+tokenArgs :: Env -> Target -> IO [String]
+tokenArgs env target = do
+    asset <- targetToken env target
+    pure ["--state-token", T.unpack (renderStateToken asset)]
+
+{- | Resolve the target's registry from its state token and the release, as
+every command does, refusing by name; nothing is read from its directory.
+-}
+openRegistry :: Env -> Target -> IO Registry
+openRegistry env target = do
+    release <- runRelease env
+    asset <- targetToken env target
+    resolved <-
+        withSession env $ \caps _ ->
+            Cage.withLatest (ncReads caps) (resolveRegistry release asset)
+    r <- either (fail . T.unpack . renderIdentityRefusal) pure resolved
+    let (_, name) = asset
     pure
         Registry
-            { regCfg = cfg
-            , regCodes = pinned
-            , regToken =
-                TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn))))
-            , regDeployment = dep
+            { regCfg = resolvedConfig r
+            , regCodes = resolvedCodes r
+            , regToken = TokenId name
+            , regAsset = asset
+            , regExpected = resolvedExpected r
             }
 
-partsOf :: CageConfig -> CageParts
-partsOf cfg =
-    CageParts
-        { partsStateBytes = cageScriptBytes cfg
-        , partsRequestBytes = requestScriptBytes cfg
-        , partsApplicationPolicy = cfgApplicationPolicy cfg
-        , partsActivePolicy = cfgActivePolicy cfg
-        , partsAbsentPolicy = cfgAbsentPolicy cfg
-        , partsTerminalPolicy = cfgTerminalPolicy cfg
-        , partsConsumerScript = cfgConsumerScript cfg
-        }
+{- | The registry in this view: its current state output, and a carrier of
+each of its six scripts, found by hash.
+-}
+attachRegistry
+    :: Registry -> Cage.Session Cage.NoWitness IO -> IO Attached
+attachRegistry reg v = do
+    state <- findStateOutput (regAsset reg) v
+    (stateIn, stateOut, _) <-
+        either (fail . T.unpack . renderIdentityRefusal) pure state
+    found <-
+        findReferences
+            v
+            []
+            []
+            (regExpected reg)
+            (Set.fromList [minBound .. maxBound])
+    (refs, _) <-
+        either (fail . T.unpack . renderReferenceRefusal) pure found
+    pure
+        Attached
+            { attCfg = regCfg reg
+            , attToken = regToken reg
+            , attRefUtxos = Map.elems refs
+            , attStateUtxo = (stateIn, stateOut)
+            }
 
 applied :: Registry -> SBS.ShortByteString
 applied = ncApplication . regCodes
@@ -980,7 +1001,7 @@ reclaim env target key partial seen r = do
             -- The registry as one view holds it, and the one request this take
             -- may spend in it, or the reason it may spend none.
             verifiedIn v = do
-                att <- attach v (regDeployment reg) (partsOf cfg)
+                att <- attachRegistry reg v
                 (state, root) <- case extractCageDatum (snd (attStateUtxo att)) of
                     Just (StateDatum st) ->
                         let OnChainRoot b = stateRoot st in pure (st, b)
@@ -1327,11 +1348,17 @@ commandArgs env c target key r = do
             providerArgs o
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
-        common = ["--registry", dir, "--blueprint", optBlueprint o]
+        directory = ["--registry", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key-hex", T.unpack (hex (keyBytes key))]
+        named = (directory <>) <$> tokenArgs env target
     case c of
         Create -> do
             seed <- previewSeed env r "preview" (optWalletKey o) dir Nothing
+            -- The run's record of which registry this target is: the
+            -- seed its create boots, from which the token derives.
+            createDirectoryIfMissing True (backendDir env target)
+            writeFile (backendDir env target </> "seed") seed
+            let common = directory
             pure
                 ( ["registry", "create", "--seed", seed]
                     <> developmentWindows
@@ -1340,6 +1367,7 @@ commandArgs env c target key r = do
                     <> wallet
                 )
         Insert -> do
+            common <- named
             reg <- openRegistry env target
             w <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
             let e = envelopeOfRun env reg (addrKeyHashBytes (walletAddr w)) key
@@ -1355,7 +1383,8 @@ commandArgs env c target key r = do
                     <> outlay
                     <> ["--fold"]
                 )
-        Terminate ->
+        Terminate -> do
+            common <- named
             pure
                 ( ["registry", "terminate"]
                     <> common
@@ -1366,6 +1395,7 @@ commandArgs env c target key r = do
                     <> ["--fold"]
                 )
         Update n -> do
+            common <- named
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
             BL.writeFile
                 path
@@ -1384,7 +1414,9 @@ commandArgs env c target key r = do
                     <> wallet
                     <> outlay
                 )
-        Inspect -> pure (["registry", "inspect"] <> common <> keyArg <> node)
+        Inspect -> do
+            common <- named
+            pure (["registry", "inspect"] <> common <> keyArg <> node)
 
 {- | A preview of a create into @dir@ with a wallet: the seed it names. With
 a seed, the preview succeeds only while that seed is an unspent output of
@@ -1520,16 +1552,14 @@ provoke env p target key r = do
                     setLock fd (WriteLock, AbsoluteSeek, 0, 0)
                     plain args
                 )
-        SelectorChanged -> do
-            args <- commandArgs env Insert target key r
-            let config = dir </> "registry.json"
-            saved <- BS.readFile config
-            changed <- case Aeson.decodeStrict saved of
-                Just (Object m) ->
-                    pure (Object (KeyMap.insert "confApplication" (String "open.open") m))
-                _ -> fail "the saved configuration is not a JSON object"
-            (BL.writeFile config (Aeson.encode changed) >> plain args)
-                `finally` BS.writeFile config saved
+        SelectorChanged ->
+            pure
+                r
+                    { rcOutcome = "client-error"
+                    , rcReason =
+                        Just
+                            "commands read no saved application selector; the application is the one the release derives for the state token, so this control has no witness"
+                    }
         WithoutHistory -> do
             args <- commandArgs env Inspect target key r
             reg <- openRegistry env target
@@ -1589,6 +1619,7 @@ provoke env p target key r = do
             seedLate <-
                 previewSeed env r "preview-late" late (work </> "probe-late") Nothing
             when (first == seedLate) $ fail "the two creates name the same seed"
+            writeFile seedFile first
             let lateArgs = createArgs dir late seedLate
                 firstArgs = createArgs dir (optWalletKey o) first
             (late', out) <-
@@ -1716,8 +1747,7 @@ provoke env p target key r = do
             )
             existing
     savedFiles =
-        [ "registry.json"
-        , "registry.pending.json"
+        [ "registry.pending.json"
         , "journal.jsonl"
         ]
 
@@ -1879,7 +1909,7 @@ book env target key r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf cfg))
+                (attachRegistry reg)
         (appRef, _) <- applicationReference reg att
         let e = envelopeFor reg (addrKeyHashBytes (walletAddr wallet)) key
             approval =
@@ -1981,7 +2011,7 @@ foldWith env target selection tweak byStranger r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf cfg))
+                (attachRegistry reg)
         let (stateIn, stateOut) = attStateUtxo att
         oldState <- case extractCageDatum stateOut of
             Just (StateDatum st) -> pure st
@@ -2150,7 +2180,7 @@ observe env target key r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf cfg))
+                (attachRegistry reg)
         root <- case extractCageDatum (snd (attStateUtxo att)) of
             Just (StateDatum st) -> let OnChainRoot b = stateRoot st in pure b
             _ -> fail "the registry's state output carries no state datum"
@@ -2176,7 +2206,7 @@ observe env target key r = do
                 (`Cage.outputsAt` requestAddrFromCfg cfg (regToken reg) Testnet)
         wallets <- Cage.withLatest prov (`Cage.outputsAt` walletAddr wallet)
         leaf <- Cage.withLatest prov $ \session -> do
-            selected <- attach session (regDeployment reg) (partsOf cfg)
+            selected <- attachRegistry reg session
             authenticatedLeaf session reg (fst (attStateUtxo selected)) root key
         let lovelace o = let Coin c = o ^. coinTxOutL in c
         pure
@@ -2293,7 +2323,7 @@ craftHolding env c target key r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf (regCfg reg)))
+                (attachRegistry reg)
         appRef <- applicationReference reg att
         live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         holding@(hIn, hOut) <- case holdingsOf reg key live of
@@ -2480,7 +2510,7 @@ craftBooking env c target key r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf cfg))
+                (attachRegistry reg)
         (appRef, _) <- applicationReference reg att
         let approval =
                 (insertApproval Testnet (applied reg) (fst (attStateUtxo att)) e)
@@ -2525,7 +2555,7 @@ craftTermination env byStranger target key r = do
         att <-
             Cage.withLatest
                 prov
-                (\v -> attach v (regDeployment reg) (partsOf cfg))
+                (attachRegistry reg)
         (appRef, _) <- applicationReference reg att
         live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
         (liveIn, _) <- case holdingsOf reg key live of
