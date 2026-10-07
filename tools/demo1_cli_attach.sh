@@ -113,6 +113,12 @@ jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $
 "$singular" registry create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" >"$receipts/create.json"
 jq -e '.outcome == "success"' "$receipts/create.json" >/dev/null || setup_fail "the registry was not created"
+# Every later command names the registry by the state token create printed;
+# the registry directory is only the creator's journal.
+state_token="$(jq -r .stateToken "$receipts/create.json")"
+[[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "create printed no state token"
+[ ! -e "$registry/registry.json" ] || setup_fail "create wrote a registry.json"
+common+=(--state-token "$state_token")
 jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/create.json" >/dev/null \
   || setup_fail "the attach registry did not read back the short CI windows"
 "$singular" registry inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
@@ -144,7 +150,7 @@ take() {
   "$controls" attach \
     --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
     "${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
-    --registry "$registry" --key "$key" \
+    --registry "$registry" --state-token "$state_token" --key "$key" \
     --collateral-allowance 10000000 --max-outlay 40000000 \
     --koios-base-url "$indexer_url" --blockfrost-base-url "$indexer_url" $(indexer_args) \
     --work "$work/$name" >"$work/$name.md" 2> >(tee "$work/$name.err" >&2) || status=$?
@@ -276,7 +282,7 @@ attach_with() { # NAME KEY [extra options]
   local name="$1" key="$2"
   shift 2
   "$controls" attach --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
-    "${node_args[@]}" --registry "$registry" --key "$key" --work "$work/$name" "$@" \
+    "${node_args[@]}" --registry "$registry" --state-token "$state_token" --key "$key" --work "$work/$name" "$@" \
     >"$work/$name.md" 2>"$work/$name.err"
 }
 journal_lines() { wc -l <"$registry/journal.jsonl"; }

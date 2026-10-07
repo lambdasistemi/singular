@@ -314,7 +314,7 @@ with open(os.path.join(registry, ".lock"), "a") as lock:
         raise RuntimeError(f"public root unavailable: exit={result.returncode} receipt={receipt}")
     print(root)
 PY
-root_now() { python3 "$work/read-root.py" "$singular" "$reg" "$blueprint" "${node[@]}"; }
+root_now() { python3 "$work/read-root.py" "$singular" "$reg" "$blueprint" --state-token "$state_token" "${node[@]}"; }
 trie_files_absent() { [ ! -e "$reg/state.json" ] && [ ! -e "$reg/registry.mirror.json" ]; }
 snap() {
   if [ -f "$journal" ]; then cp "$journal" "$snaps/$1.jsonl"; else : >"$snaps/$1.jsonl"; fi
@@ -374,6 +374,10 @@ jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create.json" 
   || setup_fail "the recovery registry did not read back the short CI windows"
 outcome_is create success || setup_fail "create did not succeed"
 token="$(field create .token)"
+# Every later command names the registry by the state token create printed.
+state_token="$(field create .stateToken)"
+[[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "create printed no state token"
+common+=(--state-token "$state_token")
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
@@ -482,7 +486,7 @@ if part accepting; then
     source_dir="$clean_source"
     [ "$source" != corrupt ] || source_dir="$corrupt_source"
     run "inspect-$source-source" registry inspect --key-hex 6b0a \
-      --registry "$source_dir" --blueprint "$blueprint" "${node[@]}"
+      --registry "$source_dir" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
     clause "$source directory reads the active key from public history" \
       is_equal "$(field "inspect-$source-source" '.outcome + "/" + .leaf')" success/active
   done
@@ -525,7 +529,7 @@ if part accepting; then
   mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
   preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
   run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
-    --registry "$preview_copy" --blueprint "$blueprint" "${node[@]}" --wallet-address "$(field preview .wallet)"
+    --registry "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
   clause "preview succeeds without the local boot journal" exit_is preview-incomplete 0
   clause "preview without local boot records reads the same public root" is_equal \
     "$(field preview-incomplete .stateRoot)" "$(field update-active-preview .stateRoot)"
@@ -1088,6 +1092,9 @@ if part rollback; then
   jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
     || setup_fail "the rollback registry did not read back the short CI windows"
   outcome_is create-rb success || setup_fail "the second create did not succeed"
+  state_token="$(field create-rb .stateToken)"
+  [[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the second create printed no state token"
+  common+=(--state-token "$state_token")
   insert_of 6c00
   run insert-rb0 "${args[@]}"
   outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did not succeed"
