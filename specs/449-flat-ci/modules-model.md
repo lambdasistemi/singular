@@ -11,7 +11,7 @@ flowchart TD
     R -->|Writes and returns| O[Journal and receipt]
 ```
 
-The tests supply provider answers and inspect what production reconciliation writes and returns. They own no competing recovery implementation or expected registry law.
+The tests supply provider answers and inspect what production reconciliation writes and returns. The four-mode core uses recorded answers with `reconcileIncomplete`; a labelled synthetic supplement uses existing fixture facilities to exercise saved-registry `reconcile` and public history. They own no competing recovery implementation or expected registry law.
 
 | Component | Responsibility | Permitted dependency |
 | --- | --- | --- |

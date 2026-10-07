@@ -4,7 +4,7 @@ As a maintainer, I want each shared recovery failure checked offline and each ne
 
 ## Stories and acceptance
 
-The first slice checks lost acknowledgement, interruption after confirmation, expiry and rollback against recorded provider answers. Each check executes the production journal/reconciliation composition, reads its resulting journal and receipt fields, and detects a relevant controlled fault. Positive inclusion, live-input exclusion and undetermined evidence remain distinct. A repeated recovery neither resends nor duplicates an observation or terminal phase. An unresolved next write preserves its transaction identity and public outcome.
+The first slice checks four modes through production `reconcileIncomplete`: lost acknowledgement, interruption after confirmation, expiry and rollback, on recorded provider answers. A separate, explicitly synthetic saved-registry test exercises `reconcile`, public-history acquisition and keyed observation; removing its history must turn it red. Results come from actual journals and receipts, with fault controls. Positive inclusion, live-input exclusion and undetermined evidence stay distinct; repeated recovery never resends or duplicates effects. Saved-registry recovery on recorded answers remains uncovered.
 
 The second slice checks evidence mutations offline. Original recorded evidence passes; altered evidence is rejected for the relevant clause; missing or empty extent fails closed. It establishes evidence judgement, not chain execution.
 

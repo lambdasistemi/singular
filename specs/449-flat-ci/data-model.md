@@ -15,6 +15,7 @@ The original signed body and journal prefix are immutable inputs. The provider v
 | Abstraction | Fields and relationships | Validation |
 | --- | --- | --- |
 | recorded-provider-answer | Existing provider representation, chain point, output references and available history; producer provenance | Decode using the existing provider; distinguish positive, live-input and undetermined evidence |
+| synthetic-saved-provider | Test-built booted registry outputs and public history from existing fixture facilities | Disclose synthetic provenance; actual acquisition succeeds, while removed or empty history fails |
 | recorded-signed-transaction | Existing body bytes, derived id, inputs, validity bounds and prepared expectation | Body/id binding through existing `boundBody`; no typed identity standing in for the producer |
 | recovery-input-journal | Existing ordered `JournalEntry` values recording the interruption point | Original byte prefix retained; journal cases remain distinct |
 | recovery-result | Existing `Reconciliation`, `Recovery`, serialized receipt fields and appended journal phases | Actual result supplies the observation; repeat execution cannot duplicate terminal effects |

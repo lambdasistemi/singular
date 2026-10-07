@@ -23,6 +23,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] synthetic-saved-reconciliation-public-history: label synthetic fixture provenance, execute saved-registry reconciliation and keyed observation, and show missing or empty history turns it red; recorded saved-registry coverage remains uncovered.",
+      "pause": 300
+    },
+    {
       "text": "[ ] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.",
       "pause": 300
     },
@@ -95,6 +99,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5507bb9b6544d4481137ac393fd64f353667306098a0d0196ba2e04465de6264"
+    "sha256": "524c5a18532621b3c091e61733659fa7931003ecf3db3ca363009bb9ce5f633a"
   }
 }

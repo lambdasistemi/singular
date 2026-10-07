@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The tests supply provider answers and inspect what production reconciliation writes and returns. They own no competing recovery implementation or expected registry law.",
+      "text": "The tests supply provider answers and inspect what production reconciliation writes and returns. The four-mode core uses recorded answers with reconcileIncomplete; a labelled synthetic supplement uses existing fixture facilities to exercise saved-registry reconcile and public history. They own no competing recovery implementation or expected registry law.",
       "pause": 400
     }
   ],
@@ -35,6 +35,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "fbc326fd5100c1e010dc9e353f74b4e39d5f4778e0381a0b37c7ae2a48330cc1"
+    "sha256": "4e44711260a63256217e97914e08fa7a372b689e3a23ff1fadb8ecad6f9c1f92"
   }
 }

@@ -16,4 +16,4 @@ As a maintainer, I want the recovery tests to call the production composition, s
 | `reconciledJson` | `reconciliation :: Reconciliation`; result `Value` | Serializes the production result, not a fixture-authored verdict |
 | `recoveryJson` | `recoveries :: [Recovery]`; result `Value` | Serializes recorded recovery decisions using the existing vocabulary |
 
-No new or changed production signature is authorized. A needed injection/placement change returns a concrete contract challenge. The second slice receives its own selected signatures before its worker dispatch.
+The recorded four-mode core calls `reconcileIncomplete`; a separately labelled synthetic saved-registry supplement calls `reconcile` and demonstrates public-history acquisition with a discriminating missing-history control. No new or changed production signature is authorized. A needed injection/placement change returns a concrete contract challenge. The second slice receives its own selected signatures before its worker dispatch.

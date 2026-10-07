@@ -18,6 +18,8 @@ First add the recorded-provider recovery tests. Then add offline evidence-mutati
 
 The commit owner owns `offchain/test/Singular/CLI/RecoverySpec.hs`, test-only support under that directory, recorded recovery fixtures under `offchain/test/fixtures/recovery/`, registration in `offchain/test/Main.hs`, and the test module list in `offchain/singular-registry.cabal`. Existing test helpers may be reused; promoted shared test support needs a contract update. No dependencies, production modules, root `flake.nix`, `registry.yml`, Lean, validators, serial controls, conformance claims or private mirror are modified. If the existing composition cannot be exercised with the permitted test seam, return the exact missing seam before widening the fence.
 
+Epic A-003 requires both paths: recorded incomplete-create recovery core and an explicitly synthetic saved-registry supplement through existing fixture facilities. The supplement reaches public-history acquisition and turns red when history is removed or emptied. Names, descriptions and the PR distinguish synthetic provenance. Saved-registry reconciliation on recorded chain answers stays uncovered; no successor is claimed. Bind the changed mandate and rows before use.
+
 The second and final slices receive their own signature-level planning and gate before dispatch. Their implementation details are not supplied by this first-slice mandate.
 
 ## Verification and cost
