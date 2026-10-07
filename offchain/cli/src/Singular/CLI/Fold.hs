@@ -873,7 +873,7 @@ foldPending at FoldSpec{..} = do
                             , InEdge (Folding (edgeText (requestEdge req)))
                             ]
                     )
-                    (toList steps)
+                    steps
             opening =
                 edgeText
                     ( requestEdge
