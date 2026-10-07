@@ -253,6 +253,11 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet --no-link .#devShells.x86_64-linux.default
+      # #463: whole-repository `just lint` runs here, inside the development
+      # shell that pins its checkers, on every PR. No other hosted job runs
+      # it (`just ci-shell` is a local bundle only); the off-chain Haskell
+      # lint keeps its own job.
+      - run: nix develop --quiet -c just lint
   release-check:
     if: github.event.action != 'closed'
     needs: build-gate

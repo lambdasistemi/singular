@@ -167,19 +167,19 @@ jobs:
       - name: List the inventory as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance -- list
-      # Read all eleven model-and-chain step records from the retirement
-      # receipt. The refusals must carry state-script attribution, and
-      # every accepted step must compare the declared surface and reject
-      # discovered-value perturbations. The separate registry makes the
-      # unknown-key attempt independent of the Absent refusal. The two
-      # tampered deletions, paying the deposit back one lovelace short and
-      # to another address, are refused by the state script and by the
-      # model, whose reason is the one the compiled Aiken suite names for
-      # the shape: onchain/validators/deposit_exits.tests.ak
-      # e5_deposit_one_lovelace_short_refuses and
-      # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
-      # The ledger's own reason comes from the traced replay of each refused
-      # transaction (#287) and must equal the model's.
+        # Read all eleven model-and-chain step records from the retirement
+        # receipt. The refusals must carry state-script attribution, and
+        # every accepted step must compare the declared surface and reject
+        # discovered-value perturbations. The separate registry makes the
+        # unknown-key attempt independent of the Absent refusal. The two
+        # tampered deletions, paying the deposit back one lovelace short and
+        # to another address, are refused by the state script and by the
+        # model, whose reason is the one the compiled Aiken suite names for
+        # the shape: onchain/validators/deposit_exits.tests.ak
+        # e5_deposit_one_lovelace_short_refuses and
+        # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
+        # The ledger's own reason comes from the traced replay of each refused
+        # transaction (#287) and must equal the model's.
   conformance-budget:
     name: "Conformance devnet: honest fold budget regression"
     runs-on: nixos
