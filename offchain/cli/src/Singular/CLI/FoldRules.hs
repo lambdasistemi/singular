@@ -82,7 +82,10 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
-import Singular.Registry.TxBuilder.Internal (approvalDestination, approvalName)
+import Singular.Registry.TxBuilder.Internal
+    ( approvalDestination
+    , approvalName
+    )
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)

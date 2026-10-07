@@ -324,16 +324,16 @@ runFold env a =
         (foldWrite a)
         "fold"
         $ \at -> do
-        folded <-
-            foldPending
-                at
-                FoldSpec
-                    { fsOrigin = Standalone
-                    , fsRequest = foldRequest a
-                    , fsFund = foldFund a
-                    , fsAllowance = foldMaxOutlay a
-                    }
-        pure (receipt "fold" Success (foldedFields folded))
+            folded <-
+                foldPending
+                    at
+                    FoldSpec
+                        { fsOrigin = Standalone
+                        , fsRequest = foldRequest a
+                        , fsFund = foldFund a
+                        , fsAllowance = foldMaxOutlay a
+                        }
+            pure (receipt "fold" Success (foldedFields folded))
 
 {- | A fold's receipt fields, in the order a reader meets them: the same shape
 for one request or many, and for every command that folds.
@@ -869,8 +869,7 @@ foldPending at FoldSpec{..} = do
                 concatMap
                     ( \step ->
                         let req = srRequest (stSelected step)
-                        in
-                            [ InRequest (txInText (srInput (stSelected step)))
+                        in  [ InRequest (txInText (srInput (stSelected step)))
                             , InEdge (Folding (edgeText (requestEdge req)))
                             ]
                     )
