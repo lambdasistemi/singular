@@ -40,7 +40,11 @@ import Cardano.Ledger.TxIn (TxIn (..))
 
 import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
-import Singular.CLI.Command (ReclaimArgs (..))
+import Singular.CLI.Command
+    ( Command (..)
+    , ReclaimArgs (..)
+    , neededRoles
+    )
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.FoldRules (boundStartMs, fundedView, placedEdge)
 import Singular.CLI.Live
@@ -86,6 +90,8 @@ runReclaim env a = attached
     env
     (reclaimRegistry a)
     (reclaimBlueprint a)
+    (reclaimAccess a)
+    (neededRoles (Reclaim a))
     (reclaimWrite a)
     "reclaim"
     $ \at -> do

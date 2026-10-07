@@ -96,7 +96,10 @@ import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
-import Singular.Registry.StateToken (ReferenceRole)
+import Singular.Registry.StateToken
+    ( ReferenceRole (..)
+    , parseStateToken
+    )
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
@@ -142,6 +145,8 @@ data CreateArgs = CreateArgs
     -- ^ Positive processing window in milliseconds, fixed at creation
     , createRetractTime :: Integer
     -- ^ Positive retract window in milliseconds, fixed at creation
+    , createHints :: [TxIn]
+    -- ^ Outputs suggested as carriers of the state script
     }
     deriving stock (Eq, Show)
 
@@ -237,9 +242,9 @@ data ReclaimArgs = ReclaimArgs
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
-    , inspectAccess :: Maybe RegistryAccess
-    {- ^ Required, except to read back a create interrupted before its
-    registry existed
+    , inspectAccess :: RegistryAccess
+    {- ^ The registry, by its state token: required on every command but
+    create.
     -}
     , inspectBlueprint :: FilePath
     , inspectProvider :: ProviderSettings
@@ -292,7 +297,11 @@ keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
 
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
-parseCommand args = do
+parseCommand = parseWith []
+
+-- | Parse a command line with its environment.
+parseWith :: [(String, String)] -> [String] -> Either CLIError Command
+parseWith environment args = do
     (words', flags) <- tokens args
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
@@ -306,23 +315,23 @@ parseCommand args = do
                         >> refuseFold flags
                         >> (Create <$> createArgs flags)
                 ["registry", "insert"] ->
-                    refuseRequest flags >> (Insert <$> insertArgs flags)
+                    refuseRequest flags >> (Insert <$> insertArgs environment flags)
                 ["registry", "update"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
-                        >> (Update <$> entryArgs False (Just "--payload") flags)
+                        >> (Update <$> entryArgs False (Just "--payload") environment flags)
                 ["registry", "terminate"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
-                        >> (Terminate <$> entryArgs True Nothing flags)
-                ["registry", "fold"] -> Fold <$> foldArgs flags
-                ["registry", "reject"] -> Reject <$> rejectArgs flags
-                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs flags
+                        >> (Terminate <$> entryArgs True Nothing environment flags)
+                ["registry", "fold"] -> Fold <$> foldArgs environment flags
+                ["registry", "reject"] -> Reject <$> rejectArgs environment flags
+                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs environment flags
                 ["registry", "inspect"] ->
                     refuseSpendingFlags "inspect" flags
                         >> refuseRequest flags
                         >> refuseFold flags
-                        >> (Inspect <$> inspectArgs flags)
+                        >> (Inspect <$> inspectArgs environment flags)
                 _ -> Left (UnknownCommand words')
   where
     refuseWindows words' flags =
@@ -370,6 +379,12 @@ parseCommand args = do
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
     createArgs flags = do
+        when (isJust (lookup "--state-token" flags)) $
+            Left
+                ( BadValue
+                    "--state-token"
+                    "is refused by registry create, which makes one"
+                )
         processing <-
             windowFrom "--process-time" (reProcessTime economics) flags
         retracting <-
@@ -384,6 +399,7 @@ parseCommand args = do
             if publicPreview
                 then previewMode flags
                 else Submit <$> writeSettings flags
+        hints <- referenceHints flags
         seed <- case lookup "--seed" flags of
             Just (Just s) -> case parseOutRef (T.pack s) of
                 Right _ -> Right (Just s)
@@ -401,6 +417,7 @@ parseCommand args = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createHints = hints
                 }
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
@@ -410,8 +427,8 @@ parseCommand args = do
                 Left (BadValue name "needs a positive integer number of milliseconds")
     -- An insert is an entry command that also names the deposit its envelope
     -- protects: --deposit LOVELACE, else the minimum, read by the library.
-    insertArgs flags = do
-        parsed <- entryArgs True (Just "--payload") flags
+    insertArgs env flags = do
+        parsed <- entryArgs True (Just "--payload") env flags
         deposit <-
             first
                 DepositRefused
@@ -424,7 +441,7 @@ parseCommand args = do
                     "--deposit"
                     "is a registry insert flag: only insert sets a deposit"
                 )
-    entryArgs books document flags = do
+    entryArgs books document env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
@@ -448,7 +465,7 @@ parseCommand args = do
         doc <- traverse (`required` flags) document
         fund <- fundFrom flags
         outlay <- outlayFrom flags
-        access <- registryAccess flags
+        access <- registryAccess env flags
         pure
             EntryArgs
                 { entryRegistry = dir
@@ -463,7 +480,7 @@ parseCommand args = do
                 , entryReceipt = optional "--receipt" flags
                 , entryFold = isJust (lookup "--fold" flags)
                 }
-    foldArgs flags = do
+    foldArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -485,7 +502,7 @@ parseCommand args = do
                 Left err -> Left (BadValue "--request" err)
         fund <- fundFrom flags
         outlay <- outlayFrom flags
-        access <- registryAccess flags
+        access <- registryAccess env flags
         pure
             FoldArgs
                 { foldRegistry = dir
@@ -497,7 +514,7 @@ parseCommand args = do
                 , foldMaxOutlay = outlay
                 , foldReceipt = optional "--receipt" flags
                 }
-    rejectArgs flags = do
+    rejectArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -517,7 +534,7 @@ parseCommand args = do
         settings <- writeSettings flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
-        access <- registryAccess flags
+        access <- registryAccess env flags
         pure
             RejectArgs
                 { rejectRegistry = dir
@@ -528,7 +545,7 @@ parseCommand args = do
                 , rejectMaxOutlay = outlay
                 , rejectReceipt = optional "--receipt" flags
                 }
-    reclaimArgs flags = do
+    reclaimArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -547,7 +564,7 @@ parseCommand args = do
         request <- first (BadValue "--request") (parseOutRef (T.pack named))
         fund <- fundFrom flags
         outlay <- outlayFrom flags
-        access <- registryAccess flags
+        access <- registryAccess env flags
         pure
             ReclaimArgs
                 { reclaimRegistry = dir
@@ -559,7 +576,23 @@ parseCommand args = do
                 , reclaimMaxOutlay = outlay
                 , reclaimReceipt = optional "--receipt" flags
                 }
-    registryAccess _ = Left (MissingFlag "--state-token")
+    registryAccess env flags = do
+        tokenStr <- case optional "--state-token" flags of
+            Just s -> Right s
+            Nothing -> case lookup "SINGULAR_STATE_TOKEN" env of
+                Just s -> Right s
+                Nothing -> Left (MissingFlag "--state-token")
+        token <-
+            first
+                (BadValue "--state-token" . T.unpack)
+                (parseStateToken (T.pack tokenStr))
+        hints <- referenceHints flags
+        pure RegistryAccess{accessToken = token, accessHints = hints}
+    -- Repeatable, in the order given.
+    referenceHints flags =
+        mapM
+            (first (BadValue "--reference-hint") . parseOutRef . T.pack)
+            [s | ("--reference-hint", Just s) <- flags]
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -572,17 +605,18 @@ parseCommand args = do
             _ ->
                 Left
                     (BadValue "--max-outlay" "is not a positive number of lovelace")
-    inspectArgs flags = do
+    inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         settings <- providerSettings flags
+        access <- registryAccess env flags
         pure
             InspectArgs
                 { inspectRegistry = dir
-                , inspectAccess = Nothing
+                , inspectAccess = access
                 , inspectBlueprint = bp
                 , inspectProvider = settings
                 , inspectKey = key
@@ -688,7 +722,7 @@ parseCommandWithEnvironment
 parseCommandWithEnvironment environment args = do
     when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
-    parseCommand args
+    parseWith environment args
 
 {- | A whole command line: the command, and the tracing it asks for with
 @--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
@@ -772,6 +806,7 @@ tokens = go [] []
                                     else Left (BadValue name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
+        | name == "--reference-hint" = (name, Just v) : fs
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
     switches = ["--help", "-h", "--preview", "--fold"]
@@ -800,6 +835,8 @@ valuedFlags =
     , "--deposit"
     , "--payload"
     , "--request"
+    , "--state-token"
+    , "--reference-hint"
     ]
 
 -- | One line naming the refusal.
@@ -941,4 +978,19 @@ usage =
 references it looks up.
 -}
 neededRoles :: Command -> Set ReferenceRole
-neededRoles _ = Set.empty
+neededRoles = \case
+    Create _ -> Set.singleton RoleState
+    Insert a
+        | entryFold a -> everything
+        | otherwise -> Set.singleton RoleApplication
+    Update _ -> Set.singleton RoleApplication
+    Terminate a
+        | entryFold a -> everything
+        | otherwise -> Set.singleton RoleApplication
+    Fold _ -> everything
+    Reject _ -> Set.fromList [RoleState, RoleRequest]
+    Reclaim _ -> Set.empty
+    Inspect _ -> Set.empty
+    Help -> Set.empty
+  where
+    everything = Set.fromList [minBound .. maxBound]

@@ -67,7 +67,6 @@ module Singular.Registry.Deployment
       -- * The release halves the manifest pins only by hash
     , CageParts (..)
     , cageConfigFor
-    , cageConfigForApplication
 
       -- * Checking one against a node
     , verifyDeployment
@@ -93,7 +92,6 @@ import Singular.Registry.Deployment.Attach
     , CageParts (..)
     , attach
     , cageConfigFor
-    , cageConfigForApplication
     , verifyDeployment
     )
 import Singular.Registry.Deployment.Manifest

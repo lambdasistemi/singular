@@ -7,12 +7,12 @@ Module      : Singular.CLISpec
 Description : Focused rows for the packaged singular registry commands
 License     : Apache-2.0
 
-The @singular@ command is one process per registry command over a saved
-registry directory. These rows run its effect-free parts over the real
+The @singular@ command is one process per registry command, run from an
+actor's directory. These rows run its effect-free parts over the real
 modules: the command line refusals that must happen before any file,
-node or key is read; the saved identity's checks against the network,
-wallet, seed and pins a later process brings; the journal that keeps a submission a dying process
-never saw confirmed; and the local proof of a key's leaf against the
+node or key is read; the checks a creator's seed and directory must
+pass; the journal that keeps a submission a dying process never saw
+confirmed; and the local proof of a key's leaf against the
 root the ledger holds.
 
 Every compared identity is produced at run time: wallet addresses come
@@ -78,8 +78,7 @@ import Singular.CLI.Recovery
 import Singular.CLI.Registry
 import Singular.CLI.Session (CommandFailure (..), admitSubmissions)
 import Singular.Registry.Deployment
-    ( Deployment (..)
-    , parseOutRef
+    ( parseOutRef
     , renderOutRef
     )
 import Singular.Registry.Ledger
@@ -115,7 +114,7 @@ import Singular.Registry.Wallet
 spec :: Spec
 spec = describe "singular registry commands" $ do
     commandLine
-    savedIdentity
+    creatorChecks
     journal
     localProof
     recovery
@@ -199,6 +198,7 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         , createProcessTime = 600_000
                         , createRetractTime = 300_000
+                        , createHints = []
                         }
                 )
     describe "registry creation windows" $ do
@@ -643,7 +643,7 @@ seedText :: String
 seedText = replicate 64 'b' <> "#1"
 
 -- ---------------------------------------------------------
--- The saved identity
+-- A creator's seed and directory
 -- ---------------------------------------------------------
 
 keyFile :: FilePath -> Char -> IO Wallet
@@ -652,63 +652,8 @@ keyFile dir c = do
     BS.writeFile path (B16.encode (BC.replicate 32 c))
     loadWallet 42 path
 
-pins :: Pins
-pins = Pins "aa" "bb" "cc" "dd" "ee"
-
-deployment :: Deployment
-deployment =
-    Deployment
-        { depRelease = "test"
-        , depLeanRevision = "test"
-        , depNetworkMagic = 42
-        , depSeedOutRef = T.pack seedText
-        , depCageToken = "00"
-        , depStatePolicy = "aa"
-        , depRequestHash = "ff"
-        , depApplicationHash = "bb"
-        , depRepresentativePolicy = "dd"
-        , depProcessTime = 30_000
-        , depRetractTime = 30_000
-        , depTip = 1_000_000
-        , depReferenceScripts = []
-        , depBootstrapTxs = []
-        }
-
-savedIdentity :: Spec
-savedIdentity = describe "the saved identity" $ do
-    it "records the booting wallet's public address and never its key" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            writeConfig dir conf
-            back <- readConfig dir
-            back `shouldBe` conf
-            raw <- BS.readFile (configPath dir)
-            BS.isInfixOf (BC.replicate 32 'k') raw `shouldBe` False
-            BS.isInfixOf "6b6b6b6b6b6b6b6b" raw `shouldBe` False
-            confWalletAddress conf `shouldNotBe` ""
-    it "refuses another network" $ withTempDir $ \dir -> do
-        w <- keyFile dir 'k'
-        let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-        checkNetwork conf 42 `shouldBe` Right ()
-        checkNetwork conf 1 `shouldBe` Left (NetworkMismatch 42 1)
-    it "refuses a wallet other than the one it was booted from" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            other <- keyFile dir 'o'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            checkWallet conf (walletAddr w) `shouldBe` Right ()
-            checkWallet conf (walletAddr other)
-                `shouldSatisfy` isLeftWith isWallet
-    it "refuses a blueprint whose pins differ, naming the pin" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            checkPins conf pins `shouldBe` Right ()
-            checkPins conf pins{pinTerminal = "e0"}
-                `shouldBe` Left (PinMismatch "terminal" "ee" "e0")
-            checkPins conf pins{pinApplication = "b0"}
-                `shouldBe` Left (PinMismatch "application" "bb" "b0")
+creatorChecks :: Spec
+creatorChecks = describe "a creator's seed and directory" $ do
     it
         "refuses a seed the wallet does not hold, one that is not ada-only, or one with no funding beside it"
         $ do
@@ -790,7 +735,6 @@ savedIdentity = describe "the saved identity" $ do
             BS.writeFile (used </> "registry.mirror.json") "corrupted mirror"
             refuseExisting used `shouldReturn` Right ()
   where
-    isWallet = \case WalletMismatch _ _ -> True; _ -> False
     isNotInWallet = \case SeedNotInWallet _ -> True; _ -> False
     isNotAdaOnly = \case SeedNotAdaOnly _ -> True; _ -> False
     isNoFunding = \case NoFundingBesideSeed _ -> True; _ -> False

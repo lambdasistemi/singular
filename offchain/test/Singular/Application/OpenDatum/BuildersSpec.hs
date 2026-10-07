@@ -16,17 +16,14 @@ these.
 -}
 module Singular.Application.OpenDatum.BuildersSpec (spec) where
 
-import Data.Bifunctor (bimap)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
 import Data.Either (isLeft, isRight)
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import Test.Hspec
 
@@ -61,16 +58,10 @@ import Singular.PhaseLogFixture
     , textField
     , withLogFile
     )
-import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
-import Singular.Registry.Deployment
-    ( Deployment (..)
-    , cageConfigForApplication
-    , parseOutRef
-    , renderOutRef
-    )
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
 import Singular.Registry.LedgerProvider (Session (..))
 import Singular.Registry.SessionIO (withLatest)
@@ -347,7 +338,7 @@ updates = describe "a payload update" $ do
                            )
 
 -- ---------------------------------------------------------
--- Pinning at boot, re-deriving at attach
+-- Pinning at boot
 -- ---------------------------------------------------------
 
 stateBytes, requestBytes :: SBS.ShortByteString
@@ -371,40 +362,8 @@ bootWith app seed =
         Testnet
         (txInToRef seed)
 
-hexOf :: SBS.ShortByteString -> T.Text
-hexOf = TE.decodeUtf8 . B16.encode . SBS.fromShort
-
--- | The deployment record a boot of this application from `seedRef` writes.
-recordOf :: Application -> Deployment
-recordOf app =
-    let (cfg, _) = bootWith app seedRef
-    in  Deployment
-            { depRelease = "test"
-            , depLeanRevision = "test"
-            , depNetworkMagic = 42
-            , depSeedOutRef = renderOutRef seedRef
-            , depCageToken =
-                TE.decodeUtf8 (B16.encode (deriveAssetName (txInToRef seedRef)))
-            , depStatePolicy =
-                TE.decodeUtf8 (B16.encode (scriptHashBytes (cfgScriptHash cfg)))
-            , depRequestHash = "00"
-            , depApplicationHash = hexOf (cfgApplicationPolicy cfg)
-            , depRepresentativePolicy = hexOf (cfgActivePolicy cfg)
-            , depProcessTime = 30_000
-            , depRetractTime = 30_000
-            , depTip = 1_000_000
-            , depReferenceScripts = []
-            , depBootstrapTxs = []
-            }
-
--- | The application pin and the pinned code, the parts these rows compare.
-pinsOf
-    :: Either String (CageConfig, NamingCodes)
-    -> Either String (SBS.ShortByteString, SBS.ShortByteString)
-pinsOf = fmap (bimap cfgApplicationPolicy ncApplication)
-
 pinning :: Spec
-pinning = describe "pinning the application at boot and attach" $ do
+pinning = describe "pinning the application at boot" $ do
     it
         "pins the open-datum script applied to the identity the seed determines"
         $ let (cfg, pinned) = bootWith OpenDatumApplication seedRef
@@ -419,32 +378,3 @@ pinning = describe "pinning the application at boot and attach" $ do
     it "pins another open-datum policy for another seed" $
         cfgApplicationPolicy (fst (bootWith OpenDatumApplication seedRef))
             `shouldNotBe` cfgApplicationPolicy (fst (bootWith OpenDatumApplication (ref '8' 0)))
-    it
-        "re-derives, at attach, the configuration and codes the boot pinned"
-        $ attachAs OpenDatumApplication (recordOf OpenDatumApplication)
-            `shouldBe` pinsOf (Right (bootWith OpenDatumApplication seedRef))
-    it
-        "refuses to attach as open-datum to a registry that pins the open application"
-        $ attachAs OpenDatumApplication (recordOf OpenApplication)
-            `shouldSatisfy` isLeft
-    it "refuses a record whose application hash was altered" $
-        attachAs
-            OpenDatumApplication
-            (recordOf OpenDatumApplication){depApplicationHash = "00"}
-            `shouldSatisfy` isLeft
-    it "refuses a record whose seed was altered: every derived pin moves" $
-        attachAs
-            OpenDatumApplication
-            (recordOf OpenDatumApplication)
-                { depSeedOutRef = renderOutRef (ref '8' 0)
-                }
-            `shouldSatisfy` isLeft
-
--- | Attach as `app` to `dep`, keeping the parts these rows compare.
-attachAs
-    :: Application
-    -> Deployment
-    -> Either String (SBS.ShortByteString, SBS.ShortByteString)
-attachAs app dep =
-    pinsOf
-        (cageConfigForApplication app codes stateBytes requestBytes dep)

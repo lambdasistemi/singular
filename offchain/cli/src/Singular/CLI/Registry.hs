@@ -3,53 +3,34 @@
 
 {- |
 Module      : Singular.CLI.Registry
-Description : The saved registry a command attaches to, and its identity checks
+Description : The release a command brings, and the files of an actor's directory
 License     : Apache-2.0
 
-A registry directory keeps its identity and submission journal:
-
-* @registry.json@ — the public saved identity ('RegistryConfig'): the
-  network, the wallet address the registry was booted from, the open
-  application and the three witness policies, and the deployment record
-  ("Singular.Registry.Deployment") naming the seed, the token and the
-  published reference outputs. No signing key, no key path.
-* @journal.jsonl@ — every submission and confirmation, appended
-  ("Singular.CLI.Receipt").
-
-Every check here is pure or reads only these files: which network,
-wallet, seed and pins a command may use is decided before a node is
-contacted.
+A registry is its state token and the release that made it
+("Singular.Registry.StateToken"); nothing per-registry is kept on disk.
+An actor's directory holds only the actor's own in-flight submissions:
+the journal ("Singular.CLI.Receipt"), the saved submission bodies, the
+lock and, during @create@, the pending identity. Every check here is
+pure or reads only those files.
 -}
 module Singular.CLI.Registry
-    ( -- * Saved identity
-      RegistryConfig (..)
-    , Pins (..)
-    , configVersion
-    , mkRegistryConfig
-
-      -- * The release a command brings
-    , Release (..)
+    ( -- * The release a command brings
+      Release (..)
     , loadRelease
     , registryConfigFor
     , economics
+    , Pins (..)
     , pinsOf
-    , partsOf
     , hexT
     , keyFields
     , parseEnterpriseAddress
 
       -- * Files
-    , configPath
     , pendingPath
-    , readConfig
-    , writeConfig
 
-      -- * Identity checks
+      -- * Checks
     , IdentityError (..)
     , renderIdentityError
-    , checkNetwork
-    , checkWallet
-    , checkPins
     , checkSeed
     , seedHeld
     , seedChecks
@@ -58,38 +39,45 @@ module Singular.CLI.Registry
     , checkPendingToken
     ) where
 
-import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
+import Data.List (sortOn)
+import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Word (Word32)
 import GHC.Generics (Generic)
+import Lens.Micro ((&), (.~), (^.))
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 
 import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
-import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , getMinCoinTxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    )
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
 import Cardano.Ledger.Core (PParams, Script)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 
 import Singular.Application.OpenDatum.Script
     ( Application (..)
-    , applicationTitle
     , loadApplicationCodes
     )
 import Singular.Registry.Blueprint
@@ -102,21 +90,15 @@ import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
     , configForApplication
     )
-import Singular.Registry.Deployment
-    ( CageParts (..)
-    , Deployment
-    , renderAddrBytes
-    , renderOutRef
-    )
+import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
-import Singular.Registry.StateToken (Release (..))
+import Singular.Registry.StateToken (Release (..), renderStateToken)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
-import Singular.Registry.Wallet (bech32Address)
 
--- | The pins a registry identity carries, as hex.
+-- | The pins a registry's configuration carries, as hex.
 data Pins = Pins
     { pinState :: Text
     , pinApplication :: Text
@@ -130,43 +112,6 @@ instance ToJSON Pins where
     toJSON = Aeson.genericToJSON Aeson.defaultOptions
 instance FromJSON Pins where
     parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
-
--- | The public saved identity of one registry.
-data RegistryConfig = RegistryConfig
-    { confVersion :: Int
-    , confNetworkMagic :: Word32
-    , confWalletAddress :: Text
-    -- ^ Hex bytes of the address the registry was booted from
-    , confWalletBech32 :: Text
-    , confApplication :: Text
-    -- ^ The blueprint validator the application policy is compiled from
-    , confPins :: Pins
-    , confDeployment :: Deployment
-    }
-    deriving stock (Eq, Show, Generic)
-
-instance ToJSON RegistryConfig where
-    toJSON = Aeson.genericToJSON Aeson.defaultOptions
-instance FromJSON RegistryConfig where
-    parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
-
--- | The file format version this build reads and writes.
-configVersion :: Int
-configVersion = 1
-
--- | The saved identity of a registry booted from this wallet.
-mkRegistryConfig
-    :: Word32 -> Addr -> Pins -> Deployment -> RegistryConfig
-mkRegistryConfig magic addr pins dep =
-    RegistryConfig
-        { confVersion = configVersion
-        , confNetworkMagic = magic
-        , confWalletAddress = renderAddrBytes addr
-        , confWalletBech32 = T.pack (bech32Address addr)
-        , confApplication = applicationTitle OpenDatumApplication
-        , confPins = pins
-        , confDeployment = dep
-        }
 
 -- ---------------------------------------------------------
 -- The release a command brings
@@ -217,7 +162,7 @@ registryConfigFor rel chosen =
         chosen
         Testnet
 
--- | The pins a configuration carries, as a saved identity names them.
+-- | The pins a configuration carries.
 pinsOf :: CageConfig -> Pins
 pinsOf cfg =
     Pins
@@ -226,19 +171,6 @@ pinsOf cfg =
         , pinAbsent = hexT (SBS.fromShort (cfgAbsentPolicy cfg))
         , pinActive = hexT (SBS.fromShort (cfgActivePolicy cfg))
         , pinTerminal = hexT (SBS.fromShort (cfgTerminalPolicy cfg))
-        }
-
--- | The compiled halves 'attach' checks a deployment record against.
-partsOf :: CageConfig -> CageParts
-partsOf cfg =
-    CageParts
-        { partsStateBytes = cageScriptBytes cfg
-        , partsRequestBytes = requestScriptBytes cfg
-        , partsApplicationPolicy = cfgApplicationPolicy cfg
-        , partsActivePolicy = cfgActivePolicy cfg
-        , partsAbsentPolicy = cfgAbsentPolicy cfg
-        , partsTerminalPolicy = cfgTerminalPolicy cfg
-        , partsConsumerScript = cfgConsumerScript cfg
         }
 
 hexT :: ByteString -> Text
@@ -259,53 +191,22 @@ keyFields key =
 -- ---------------------------------------------------------
 
 {- | The identity a create records before its first submission, so an
-interrupted create stays inspectable and is never booted again.
+interrupted create stays inspectable and is never booted again. A create
+that finishes removes it.
 -}
 pendingPath :: FilePath -> FilePath
 pendingPath dir = dir </> "registry.pending.json"
 
-configPath :: FilePath -> FilePath
-configPath dir = dir </> "registry.json"
-
-readJsonFile :: (FromJSON a) => String -> FilePath -> IO a
-readJsonFile what path =
-    Aeson.eitherDecodeFileStrict' path
-        >>= either
-            (\err -> throwIO (ErrorCall (what <> " " <> path <> ": " <> err)))
-            pure
-
-writeJsonFile :: (ToJSON a) => FilePath -> a -> IO ()
-writeJsonFile path = BL.writeFile path . (<> "\n") . encodePretty
-
--- | Read a saved identity, refusing a version this build does not know.
-readConfig :: FilePath -> IO RegistryConfig
-readConfig dir = do
-    conf <- readJsonFile "registry configuration" (configPath dir)
-    if confVersion conf == configVersion
-        then pure conf
-        else
-            throwIO
-                ( ErrorCall
-                    (renderIdentityError (UnsupportedVersion (confVersion conf)))
-                )
-
-writeConfig :: FilePath -> RegistryConfig -> IO ()
-writeConfig dir = writeJsonFile (configPath dir)
-
 -- ---------------------------------------------------------
--- Identity checks
+-- Checks
 -- ---------------------------------------------------------
 
--- | Why a command may not use this registry, wallet, network or seed.
+-- | Why a create may not use this wallet, seed or directory.
 data IdentityError
-    = NetworkMismatch Word32 Word32
-    | WalletMismatch Text Text
-    | PinMismatch String Text Text
-    | SeedNotInWallet Text
+    = SeedNotInWallet Text
     | SeedNotAdaOnly Text
     | NoFundingBesideSeed Text
     | RegistryExists FilePath
-    | UnsupportedVersion Int
     | {- | A publication the wallet cannot fund: its role, the ada-only output
       it needs, and the largest the wallet holds for it
       -}
@@ -314,23 +215,6 @@ data IdentityError
 
 renderIdentityError :: IdentityError -> String
 renderIdentityError = \case
-    NetworkMismatch saved given ->
-        "the registry was saved on network magic "
-            <> show saved
-            <> " but this command names "
-            <> show given
-    WalletMismatch saved given ->
-        "the registry was booted from wallet "
-            <> T.unpack saved
-            <> " but this command signs with "
-            <> T.unpack given
-    PinMismatch name saved given ->
-        "the "
-            <> name
-            <> " pin differs: the registry saved 0x"
-            <> T.unpack saved
-            <> " but this blueprint and seed give 0x"
-            <> T.unpack given
     SeedNotInWallet seed ->
         "the seed "
             <> T.unpack seed
@@ -345,42 +229,16 @@ renderIdentityError = \case
             <> " is the only ada-only output the wallet holds; the registry's first publication is paid from another one while the seed stays unspent, so fund the wallet with a second ada-only output first"
     RegistryExists dir ->
         dir
-            <> " already holds a registry or its journal; create never \
-               \overwrites one"
-    UnsupportedVersion v ->
-        "registry files of version "
-            <> show v
-            <> " are not version "
-            <> show configVersion
-    PublicationUnfunded{} -> ""
-
-checkNetwork :: RegistryConfig -> Word32 -> Either IdentityError ()
-checkNetwork conf magic
-    | confNetworkMagic conf == magic = Right ()
-    | otherwise = Left (NetworkMismatch (confNetworkMagic conf) magic)
-
-checkWallet :: RegistryConfig -> Addr -> Either IdentityError ()
-checkWallet conf addr
-    | confWalletAddress conf == renderAddrBytes addr = Right ()
-    | otherwise =
-        Left
-            (WalletMismatch (confWalletBech32 conf) (T.pack (bech32Address addr)))
-
--- | Every pin the saved identity names, compared in a fixed order.
-checkPins :: RegistryConfig -> Pins -> Either IdentityError ()
-checkPins conf given = mapM_ one fields
-  where
-    saved = confPins conf
-    one (name, field)
-        | field saved == field given = Right ()
-        | otherwise = Left (PinMismatch name (field saved) (field given))
-    fields =
-        [ ("state", pinState)
-        , ("application", pinApplication)
-        , ("absent", pinAbsent)
-        , ("active", pinActive)
-        , ("terminal", pinTerminal)
-        ]
+            <> " already holds a journal or a pending create; create never \
+               \starts over one"
+    PublicationUnfunded role needed largest ->
+        "publication-unfunded "
+            <> T.unpack role
+            <> ": publishing this reference script needs an ada-only output of more than "
+            <> show needed
+            <> " lovelace and the largest the wallet has for it holds "
+            <> show largest
+            <> "; nothing was submitted"
 
 {- | The seed, as this wallet holds it: unspent and ada only. This is all a
 registry's identity needs; creating it needs 'checkSeed'.
@@ -435,15 +293,17 @@ seedChecks submitting seedIn utxos
                 )
             ]
 
--- | Refuse a directory that already holds any file of a registry.
+{- | Refuse a directory that holds an actor's journal or a pending create.
+Any other file, a @registry.json@ an earlier release wrote included, is
+not an input and does not refuse it.
+-}
 refuseExisting :: FilePath -> IO (Either IdentityError ())
 refuseExisting dir = do
     present <-
         or
             <$> mapM
                 doesFileExist
-                [ configPath dir
-                , pendingPath dir
+                [ pendingPath dir
                 , dir </> "journal.jsonl"
                 ]
     pure (if present then Left (RegistryExists dir) else Right ())
@@ -485,7 +345,8 @@ parseEnterpriseAddress magic text = do
 each from its largest ada-only output with its change returned, as
 'Singular.Registry.TxBuilder.Edges.publishRefScriptTx' funds it: the
 publications before the boot leave the seed alone, those after it go
-without the seed the boot spent. Checked before anything is submitted.
+without the seed the boot spent. Checked before anything is submitted;
+the first publication the publisher would refuse is named.
 -}
 publicationFunding
     :: PParams ConwayEra
@@ -498,7 +359,45 @@ publicationFunding
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ The wallet
     -> Either IdentityError ()
-publicationFunding _ _ _ _ _ = Right ()
+publicationFunding pp seed before after wallet = do
+    left <- publishing before [(Left i, o) | (i, o) <- wallet]
+    _ <- publishing after (filter ((/= Left seed) . fst) left)
+    pure ()
+  where
+    publishing scripts held = foldl (\acc s -> acc >>= publishOne s) (Right held) scripts
+    -- One publication from the largest ada-only output that is not the
+    -- seed; its change, a fresh output, joins the wallet.
+    publishOne (role, script) held =
+        case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o] of
+            [] -> Left (PublicationUnfunded role (needed script) 0)
+            (fund@(_, out) : _) ->
+                let Coin inCoin = out ^. coinTxOutL
+                    change = inCoin - fee - referenceCoin script
+                in  if change > minimumChange
+                        then
+                            Right
+                                ( filter ((/= fst fund) . fst) held
+                                    <> [
+                                           ( Right (length held)
+                                           , out & coinTxOutL .~ Coin change
+                                           )
+                                       ]
+                                )
+                        else Left (PublicationUnfunded role (needed script) inCoin)
+    -- The reference output is paid to the wallet's own address.
+    referenceCoin script = case wallet of
+        (_, o) : _ ->
+            let probe =
+                    mkBasicTxOut (o ^. addrTxOutL) (MaryValue (Coin 0) mempty)
+                        & referenceScriptTxOutL .~ SJust script
+                Coin minCoin = getMinCoinTxOut pp probe
+            in  minCoin + 1_000_000
+        [] -> 1_000_000
+    needed script = referenceCoin script + fee + minimumChange
+    fee = 1_000_000
+    minimumChange = 1_000_000
 
 {- | An inspect of an interrupted create may read its pending identity only
 when the requested state token is the pending registry's own: the actor's
@@ -506,5 +405,18 @@ in-flight submission, never another registry's. The pending token is the
 one the pending seed derives under this release; a token from any other
 seed is refused before anything is read.
 -}
-checkPendingToken :: Asset -> Asset -> Either Text ()
-checkPendingToken _ _ = Left "checkPendingToken: not implemented"
+checkPendingToken
+    :: Asset
+    -- ^ The token the pending seed derives
+    -> Asset
+    -- ^ The token the command names
+    -> Either Text ()
+checkPendingToken pending requested
+    | pending == requested = Right ()
+    | otherwise =
+        Left
+            ( "state-token mismatch: this directory's pending create makes "
+                <> renderStateToken pending
+                <> ", not "
+                <> renderStateToken requested
+            )
