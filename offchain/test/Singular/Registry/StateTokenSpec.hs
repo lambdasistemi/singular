@@ -304,14 +304,15 @@ refusals = describe "the identity refusals" $ do
                     impostors
             found `shouldBe` [(what, Right stateIn) | (what, _) <- impostors]
     it
-        "keep the declared order when an impostor competes with a later cause" $ do
-        let mismatched = stateOutput bootState{stateAppPolicy = otherPin}
-            chain =
-                claimedHolders
-                    [(stateIn, holdingOnly Nothing mismatched)]
-                    honestChain
-        (result, _) <- resolveOn chain token
-        void result `shouldBe` Left StateOutputMissing
+        "keep the declared order when an impostor competes with a later cause"
+        $ do
+            let mismatched = stateOutput bootState{stateAppPolicy = otherPin}
+                chain =
+                    claimedHolders
+                        [(stateIn, holdingOnly Nothing mismatched)]
+                        honestChain
+            (result, _) <- resolveOn chain token
+            void result `shouldBe` Left StateOutputMissing
     it "render each refusal starting with its name" $
         mapM_
             ( \(refusal, name) ->
