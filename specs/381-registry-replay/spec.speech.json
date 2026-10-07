@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As Alice and Bob, each with our own machine, wallet and registry directory, we want to insert, terminate, fold and inspect keys of one registry through a hosted provider, so that neither of us needs the other's files, a node or a shared directory. This is the intake for the reconstruction ticket, under the Koios demonstration. It consumes the trie-state and history interfaces proposed by the provider interface ticket. It is a proposal. No implementation or behavioral acceptance is claimed.",
+      "text": "As Alice and Bob, each with our own machine, wallet and registry directory, we want to insert, terminate, fold and inspect keys of one registry through a hosted provider, so that neither of us needs the other's files, a node or a shared directory. This is the intake for the reconstruction ticket, under the Koios demonstration. It consumes the trie-state and history interfaces proposed by the provider interface ticket. Replay and command migration are merged. Independent-user CLI acceptance remains incomplete; see the ordered tasks.",
       "pause": 400
     }
   ],
@@ -81,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "Today a fold that delivers a datum needs the booker's preimage, because an insertion's request names only its hash; that is an open limit (issue 419), not a design. A termination needs no preimage: the holding it releases is public.",
+      "text": "A request now carries the datum it delivers under merged #419 and constitution 1.13.0. Another actor can obtain that input publicly; the integrated journey must exercise cross-actor insertion folding without the booker's preimage file.",
       "pause": 400
     }
   ],
@@ -139,6 +139,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "dd3d1e1520bfc9f9b42cfd2f18559d13a894492d412a8c98a6d4ecbeb48971a2"
+    "sha256": "6938c2b169f00ceea41f421ba9d1e073df6ac82eba5c1f7db04d1777198c6b08"
   }
 }
