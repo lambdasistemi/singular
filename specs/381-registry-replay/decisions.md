@@ -65,8 +65,8 @@ The pre-#437 part of #381 lands as part of the ticket: public replay and
 cross-actor decision controls at unit level, the creator fixture and empty-user
 journey harness, and these superseded statements. Joining and every later
 journey step are pending by name under #437. The complete integrated journey is
-a separate pull request after #437 merges. Cross-actor insertion folding also
-remains pending under #419.
+a separate pull request after #437 merges. The #419 dependency is now merged; cross-actor insertion folding remains an
+unexecuted integration requirement.
 
 ## The directory keeps nothing the replay replaces
 
@@ -81,16 +81,12 @@ Rejected alternative: keeping the mirror as a cache checked against the replay.
 The operator places caching in a later backend, and two trie sources in one
 release would need a reconciliation rule no ticket specifies.
 
-## Folding an insertion needs the booker's preimage today
+## Folding an insertion uses its public carried datum
 
-This is a limit, not a decision. An insertion's request carries only the hash of
-the datum it delivers, and today a fold that delivers a datum needs the booker's
-preimage file (`offchain/cli/src/Singular/CLI/Preimage.hs:9-14`), so only the
-booker can fold it. The operator contradicted that as a design on October 6: it
-would make every application invent an off-chain service. The design is open in
-[issue 419](https://github.com/lambdasistemi/singular/issues/419). No control asserts
-the cross-actor refusal as correct behaviour; the existing unit test checks only
-today's refusal. A termination fold needs no preimage and runs across actors.
+The October 6 #419 ruling is implemented on main: a request carries the datum
+its delivery writes, and a folder uses public inputs (`Singular.buildFold`).
+The earlier hash-only/preimage-file limitation is superseded. #381 must execute
+another actor's insertion fold without access to the booker's directory.
 
 ## Recovery is observed from public history
 
@@ -144,9 +140,8 @@ the pure replay and its chain oracles first, against nothing unpublished.
 The epic owner forwards each as an inbox note. If the published contract does not
 fit lineage reconstruction, that is a question, not a change to the provider ticket.
 
-After acceptance of the intake head, this window runs one commit owner and one
-mute persistent auditor, in its own detached audit worktree, with the models the
-operator names. Until October 4 these were Claude claude-opus-5-5 and Codex
-gpt-6.1-sol; from October 5, Codex gpt-6.1-sol and Grok grok-4.7. No gate authors or
-draft seats are authorised. Merge readiness is the auditor's approval of every
-checkpoint and exact-head CI green; the epic owner merges.
+The October 7 operator instruction supersedes the earlier roster: use the
+existing Sol, Muse and GLM team under the epic owner, serially, with no audit.
+Only one worker executes at a time. Exact-head CI and the actual story receipts
+remain required; the owner verifies and merges. #437 remains a separate epic's
+dependency with an explicit stop-for-today order until that order is resolved.

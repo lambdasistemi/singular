@@ -3,11 +3,10 @@
 As a maintainer, I want one trie-state backend that rebuilds a registry's trie
 from its full public history at every selection, so that commands get the
 chain's trie without any actor's local copy. Read the [stories](spec.md) first,
-then the [decisions](decisions.md). The pure replay, the exclusion of failed
-transactions and the named refusals are on main
-([PR 391](https://github.com/lambdasistemi/singular/pull/391)). The commands slice
-starts from main at `2cafe6b2`, where the provider ticket published
-`Session.history` ([PR 410](https://github.com/lambdasistemi/singular/pull/410)).
+then the [decisions](decisions.md). The pure replay and command migration are merged in PRs 391 and 411.
+The remaining branch is rebased onto main `23964e667fa278b2027d0c05169c0f5e0e9233cb`.
+The remaining deliverable is the actual independent-user journey. The ordered
+[task list](tasks.md) tracks it; an empty-user harness alone does not complete it.
 
 ## The contract consumed
 
@@ -132,8 +131,9 @@ simulated joined directory:
    membership proof from her own replay and no envelope. Alice books the
    termination of her own key; Bob folds it likewise. Bob's update and
    termination attempts on Alice's key stay refused as not the controller.
-4. Alice inserts and folds her own key. Whether another actor can fold her
-   insertion waits for [issue 419](https://github.com/lambdasistemi/singular/issues/419).
+4. Alice books an insertion and Bob folds it from the public request datum;
+   Bob books an insertion and Alice folds it likewise. #419 is merged, so no
+   booker preimage is needed.
 5. Rejection and reclaim run across actors, as today.
 6. After every fold, both actors' inspect roots equal the fold's state root.
 
@@ -153,7 +153,7 @@ and stacks on the provider ticket's published slices.
 | --- | --- | --- |
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
-| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. The journey names joining and all subsequent CLI steps pending under #437, with cross-actor insertion folding also pending #419. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. The journey names joining and all subsequent CLI steps pending under #437, with all actual joined-user steps still to execute. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
 | Separate actors integrated | Actual token/page-driven joining and the full two-user CLI journey, in a separate pull request. No creator identity file is shared. | #437 merged and its actual interface available |
 | Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
@@ -178,7 +178,8 @@ the provider.
 ## Invariant-to-test map and controlled faults
 
 As a reviewer, I want every guarantee paired with the observation that would
-contradict it. These are planned checks; none has run on an implementation.
+contradict it. Prior slices have checks; the remaining branch needs evidence bound to its
+final candidate. The task list distinguishes that verification from new work.
 Each must run red under its fault, from the subject itself, never from a build
 failure.
 
@@ -200,12 +201,20 @@ the packaged two-actor journey, and the focused replay checks added to that
 same surface. Every product claim is described in the public suite's language,
 its state computed from receipts. Uncovered rows remain visible.
 
-## Acceptance boundaries and phase stop
+## Execution and acceptance
 
-As the epic owner, I receive this intake before authorising execution. This
-seat writes planning and PR metadata only; no code, tests or gates change here.
-Each page has its speech extracted by mkdocs-speech and stamped against its
-bytes, within 24 KiB and 300 lines. Each slice runs one commit owner and one mute
-auditor in its own detached audit worktree, with the models the operator names
-(see the [decisions](decisions.md#sequencing-and-staffing)), both in this
-ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.
+The October 7 instruction supersedes the old staffing plan: the existing Sol,
+Muse and GLM team works serially under the epic owner; no auditor is commissioned.
+Only one worker executes at a time. The owner verifies and merges.
+
+#437 owns the token-only join. Its lane has an explicit October 7 stop order,
+so resuming that separate epic's lane requires resolving that order. #381 can
+finish rebase, tasks and independent replay checks meanwhile. Its full journey
+cannot be accepted while token-only joining is missing. No identity-file copy
+or handwritten registry configuration substitutes for the joining feature.
+
+Lean behavior is bound to `bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713`,
+`Singular.step`, `exitStep`, `foldActions`, `buildFold` and the public-fold-input
+statements. No model change is planned. Mixed transactions retain the separately
+stated validator oracle. Final acceptance requires exact-head CI and executed
+journey receipts, including the negative controls, with all missing rows visible.
