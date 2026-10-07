@@ -7,7 +7,9 @@ reference-script hash) and [#406](https://github.com/lambdasistemi/singular/issu
 checks publication funding one script at a time). Read the [plan](plan.md) for the slices, the
 [modules model](modules-model.md), [data model](data-model.md) and
 [functions model](functions-model.md) for the changed rows, and the [tasks](tasks.md) for the
-commit boundaries. Base: main `9011ca17`.
+commit boundaries. PR1 base: main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed`.
+The operator's 2026-10-07 cut ships token-only commands and Bob's connected journey first.
+Issue #437 remains open for PR2; the preserved plans and unfinished work are follow-up scope.
 
 ## User stories
 
@@ -15,15 +17,12 @@ As Carol, a registry creator, I run `create` from an empty directory. It prints 
 publish nothing else and keep no file that anyone else needs.
 
 As Bob, a registrant, I start in an empty directory with the release, my wallet and a Koios URL.
-I copy the state token from the registry's page and run any command with `--state-token`. It works,
+I receive the state token and run any existing command with `--state-token`. It works,
 or it refuses by name. I copy nothing from Carol's disk.
 
-As Carol, I spend the reference outputs I published and get their ada back. The registry keeps
-working: the next actor finds another holder's output, or publishes the scripts again from the
-release.
-
-As anyone, I run `singular registry describe --state-token …` and get the registry's page,
-computed from the chain. I can compare it with a published copy.
+As Bob, I book, inspect and fold using public registry inputs and my own actor context. My process
+receives no Alice directory or files. The hosted two-actor journey must establish the connected
+steps, and its deliberate-open control must reject an attempt to open any Alice file.
 
 ## Where the registry's facts come from
 
@@ -65,7 +64,8 @@ expected hash serves, whoever made it and wherever it sits.
   in-flight submissions: the journal, the saved submission bodies, the lock and, during `create`,
   the pending identity. `registry.json` is neither written nor read. There is no join command: an
   empty directory is a valid start.
-- **`create` prints the state token** and the `describe` command, and writes no identity file.
+- **`create` prints the state token** and writes no identity file. Printing a usable page command
+  follows when PR2 delivers that command.
 
 ### Reference outputs found by hash
 
@@ -87,32 +87,14 @@ expected hash serves, whoever made it and wherever it sits.
   The boot runs the state script from whichever reference was found. The funding for every
   publication is checked before the boot.
 
-### Anyone publishes, anyone retires
+### Follow-up on the same issue
 
-- **`singular registry publish-references --state-token … [--role ROLE]…`** builds each missing
-  script from the release blueprint applied to the token. It checks the result against the expected
-  hash before publishing, then publishes it to the actor's own wallet, one output each, at the
-  minimum ada. `--publish-references` on a transaction-building command does the same for that
-  command's missing roles.
-- **`singular registry retire-references --state-token …`** spends the actor's own reference
-  outputs for that registry back to the actor's wallet.
-- **Coin selection never spends an output that carries a reference script.**
-
-### The page
-
-- **`singular registry describe --state-token …`** prints Markdown, and with `--json` the same
-  fields. The output is deterministic for a given chain state and is anchored at the block of the
-  last state transaction. It has these sections:
-  - **Identity:** the state token, the seed, the creation transaction and the network.
-  - **Release:** the tag, the blueprint SHA-256 and the state script hash.
-  - **Rules:** the windows, the tip, who folds (anyone, with no signature) and the application.
-  - **Live state:** the active and terminal counts and the root from the replay of the token's
-    history, the pending requests, and the last fold.
-  - **Reference outputs:** what the provider query returns, as information.
-  - **Known limits:** the release's stated limits.
-
-  The rules and the live state are computed from the chain. The application text and the limits
-  come from the release.
+PR2 delivers reference publication and retirement commands, automatic publication, protection of
+ordinary funding through a closed wallet-output interface, narrowed fund inputs, and the registry
+page with tagged release-archive evidence. It also owes independently derived action identity in
+the conformance report under the operator's A-013 ruling. These are unmet follow-up requirements,
+not PR1 claims. Their accepted rulings and preserved work remain authoritative; this cut does not
+waive them or close the issue.
 
 ### Changed public promise
 
@@ -124,8 +106,8 @@ no replacement row; token-only requirements, including the foreign-release refus
 own evidence.
 
 The same day's reference-search ruling removes caller-supplied reference hints and their flag,
-parsing, warning, search source and tests. The page lists provider-found reference outputs only as
-information. Discovery uses the provider and then the actor's wallet.
+parsing, warning, search source and tests. Discovery uses the provider and then the actor's wallet.
+The future page's provider-found reference information remains a separate PR2 requirement.
 
 ## Existing registries
 
@@ -136,10 +118,9 @@ their published identity record. There is no migration and no `registry.json` fa
 
 ## Limits
 
-- **Rebuilding scripts from the release.** `publish-references` derives every script from the
-  release blueprint applied to the token and checks it against the expected hash. With every
-  reference output spent, anyone who holds the release can restore them.
-- **Verification boundary.** The page is unsigned. The resolver checks the token against Koios
+- **Missing carriers.** PR1 retains the named missing-reference refusal. Its diagnostic names the
+  planned publication command; that command and restoration journey are still PR2 requirements.
+- **Verification boundary.** The resolver checks the token against Koios
   answers, which are unverified under the Lockness rules
   ([lockness#39](https://github.com/lambdasistemi/lockness/issues/39)). Writes are protected by the
   ledger revalidating every reference input. Nothing binds "the registry I meant" to a token, so a
@@ -152,7 +133,15 @@ their published identity record. There is no migration and no `registry.json` fa
 
 ## Model and constitution
 
-There is no Lean change. Reference scripts, reference outputs and registry files are not modelled.
+PR1 binds Lean tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0 at
+the exact base above. There is no Lean change. Reference scripts, reference outputs and registry
+files are not modelled.
 `Singular.Reachable.initial` admits any `Config`, as genesis does, and the pin re-derivation is an
 off-chain admission check outside the law, as `checkPins` is today. There is no constitution
 amendment and no on-chain change: the blueprint and `onchain/script-identity.json` are unchanged.
+The inherited #419 model carries each request's datum value, builds folds from public inputs
+through `Singular.buildFold`, and refuses a destination with a foreign or missing carrier even
+at a zero floor. Token-only identity does not weaken those transaction or settlement obligations.
+Focused provider/resolver/funding checks establish their selected cases only. Acceptance of Bob's
+journey requires exact-head hosted transactions and the file-open control, with receipt-computed
+public state and every uncovered requirement visible.

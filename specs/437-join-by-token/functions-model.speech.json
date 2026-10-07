@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "This file lists only new or changed signatures. The names are proposals for the commit owner. A signature change goes back to the ticket owner as a challenge. Types refer to the data model.",
+      "text": "This file lists only new or changed signatures. The names are proposals for the commit owner. A signature change goes back to the ticket owner as a challenge. Types refer to the data model. PR1 binds main 5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed, Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0. Signatures below concern token-only existing commands; PR2 retains its separately versioned unfinished interfaces.",
       "pause": 400
     }
   ],
@@ -151,34 +151,24 @@
     {
       "text": "A test pins the set per command.",
       "pause": 300
+    }
+  ],
+  "inherited-public-fold-and-deferred-interfaces": [
+    {
+      "text": "Inherited public fold and deferred interfaces.",
+      "pause": 500
     },
     {
-      "text": "Slice 2:",
-      "pause": 300
+      "text": "Singular.buildFold derives the fold from public registry holdings and pending requests. Each request carries its datum value; witness inputs present the held datum, and settlement rejects foreign or missing destination carriers at any floor. Existing CLI inspection/preview/fold callers must preserve this #419 behavior and never add an Alice-file argument.",
+      "pause": 400
     },
     {
-      "text": "publish-references [--role ROLE]… and retire-references;",
-      "pause": 300
-    },
-    {
-      "text": "--publish-references on transaction-building commands;",
-      "pause": 300
-    },
-    {
-      "text": "a coin-selection predicate that rejects outputs carrying a reference script.",
-      "pause": 300
-    },
-    {
-      "text": "Slice 3: describe [--json].",
-      "pause": 300
-    },
-    {
-      "text": "These two slices are versioned here when they start.",
+      "text": "PR2 owes publication/retirement/automatic publication, the closed wallet-output funding boundary, narrowed fund inputs, deterministic page renderers with tagged release-archive evidence and independently derived report action identity. Their previous interface versions are preserved outside the PR1 cut and remain authoritative for that follow-up. A planning signature, helper check or generated URL is not evidence of those outcomes.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "7da63800cc37208932aad023d3027ef4e30658ad63b07d08c6c73e62fb40e7bd"
+    "sha256": "f1c215463b827351ffa655b3caa8fdb20d933fd2e281c30fb8043fdfe4c6568a"
   }
 }

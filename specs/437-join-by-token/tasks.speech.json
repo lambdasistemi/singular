@@ -5,13 +5,13 @@
       "pause": 500
     },
     {
-      "text": "Read the plan for the slices. There is one commit per task, in order. Each acceptance task is a review checkpoint.",
+      "text": "Read the plan for the operator's PR1/PR2 cut. Tasks describe requirements, not computed product state. Checkpoint receipts, the exact-range audit and hosted evidence decide acceptance.",
       "pause": 400
     }
   ],
-  "slice-the-token-is-the-registry": [
+  "pr1-the-token-is-the-registry": [
     {
-      "text": "Slice: the token is the registry.",
+      "text": "PR1: the token is the registry.",
       "pause": 500
     },
     {
@@ -113,11 +113,19 @@
     {
       "text": "The public saved-selector promise is retired with the operator's reason in the description language; history remains visible, no receipt or state is reused, and no replacement row is invented. The spec and PR identify the changed public promise.",
       "pause": 300
+    },
+    {
+      "text": "Bob's connected hosted booking/inspection/fold path receives the token and his own context only; no Alice directory or file. Preserve #419 public-history/datum behavior and the deliberate-open control that fails on an Alice-file open.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Exact cut accepted. Bind main5c4c3dd0, Lean tree16ee2d4a and constitution1.13; source cut/rebase map and conflict receipts; all four exact static commands with actual exit0; fresh PR1-range review, exact-head hosted CI and Bob story/control evidence. Draft push may precede review completion; merge waits. Issue437 stays open.",
+      "pause": 300
     }
   ],
-  "slice-anyone-publishes": [
+  "pr2-after-pr1-merges-protected-funding-and-references": [
     {
-      "text": "Slice: anyone publishes.",
+      "text": "PR2 after PR1 merges: protected funding and references.",
       "pause": 500
     },
     {
@@ -129,7 +137,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] publish-references, --publish-references and retire-references.",
+      "text": "[ ] Reference publication, retirement and automatic-publication commands.",
       "pause": 300
     },
     {
@@ -139,11 +147,15 @@
     {
       "text": "[ ] The devnet journey: references retired, a fold refused reference-missing, the references published again, then the fold succeeds.",
       "pause": 300
+    },
+    {
+      "text": "[ ] Closed wallet-output funding interface and full protected-funding controls under A-012; required token selection separated from ordinary funding, and narrowed reclaim fund inputs.",
+      "pause": 300
     }
   ],
-  "slice-the-page": [
+  "pr2-after-pr1-merges-the-page-and-report": [
     {
-      "text": "Slice: the page.",
+      "text": "PR2 after PR1 merges: the page and report.",
       "pause": 500
     },
     {
@@ -155,16 +167,20 @@
       "pause": 300
     },
     {
-      "text": "[ ] registry describe as Markdown and as --json.",
+      "text": "[ ] Chain-derived registry page in both deterministic renderers, with the A-009/A-011 tagged release-archive binding and actual packaged evidence.",
       "pause": 300
     },
     {
       "text": "[ ] The devnet page matches a replay, and regeneration is byte-identical.",
       "pause": 300
+    },
+    {
+      "text": "[ ] Independently derived action kind and target for every live and retired clause of the two current story families, with distinct lines and action-swap discrimination under A-013.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a9a25f0cceb44659954aaa32aede18d8c4a491078e6574b3862662830f6d3f9f"
+    "sha256": "a38b68d653080d710903543745c153f767ba2cfc4d817600eb467e59a0bee3fb"
   }
 }

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue #437, child of epic #301. It absorbs #439 (the provider cannot find outputs by reference-script hash) and #406 (create checks publication funding one script at a time). Read the plan for the slices, the modules model, data model and functions model for the changed rows, and the tasks for the commit boundaries. Base: main 9011ca17.",
+      "text": "Issue #437, child of epic #301. It absorbs #439 (the provider cannot find outputs by reference-script hash) and #406 (create checks publication funding one script at a time). Read the plan for the slices, the modules model, data model and functions model for the changed rows, and the tasks for the commit boundaries. PR1 base: main 5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed. The operator's 2026-10-07 cut ships token-only commands and Bob's connected journey first. Issue #437 remains open for PR2; the preserved plans and unfinished work are follow-up scope.",
       "pause": 400
     }
   ],
@@ -19,15 +19,11 @@
       "pause": 400
     },
     {
-      "text": "As Bob, a registrant, I start in an empty directory with the release, my wallet and a Koios URL. I copy the state token from the registry's page and run any command with --state-token. It works, or it refuses by name. I copy nothing from Carol's disk.",
+      "text": "As Bob, a registrant, I start in an empty directory with the release, my wallet and a Koios URL. I receive the state token and run any existing command with --state-token. It works, or it refuses by name. I copy nothing from Carol's disk.",
       "pause": 400
     },
     {
-      "text": "As Carol, I spend the reference outputs I published and get their ada back. The registry keeps working: the next actor finds another holder's output, or publishes the scripts again from the release.",
-      "pause": 400
-    },
-    {
-      "text": "As anyone, I run singular registry describe --state-token … and get the registry's page, computed from the chain. I can compare it with a published copy.",
+      "text": "As Bob, I book, inspect and fold using public registry inputs and my own actor context. My process receives no Alice directory or files. The hosted two-actor journey must establish the connected steps, and its deliberate-open control must reject an attempt to open any Alice file.",
       "pause": 400
     }
   ],
@@ -93,7 +89,7 @@
       "pause": 300
     },
     {
-      "text": "create prints the state token and the describe command, and writes no identity file.",
+      "text": "create prints the state token and writes no identity file. Printing a usable page command follows when PR2 delivers that command.",
       "pause": 300
     }
   ],
@@ -123,59 +119,13 @@
       "pause": 300
     }
   ],
-  "anyone-publishes-anyone-retires": [
+  "follow-up-on-the-same-issue": [
     {
-      "text": "Anyone publishes, anyone retires.",
+      "text": "Follow-up on the same issue.",
       "pause": 500
     },
     {
-      "text": "singular registry publish-references --state-token … [--role ROLE]… builds each missing script from the release blueprint applied to the token. It checks the result against the expected hash before publishing, then publishes it to the actor's own wallet, one output each, at the minimum ada. --publish-references on a transaction-building command does the same for that command's missing roles.",
-      "pause": 300
-    },
-    {
-      "text": "singular registry retire-references --state-token … spends the actor's own reference outputs for that registry back to the actor's wallet.",
-      "pause": 300
-    },
-    {
-      "text": "Coin selection never spends an output that carries a reference script.",
-      "pause": 300
-    }
-  ],
-  "the-page": [
-    {
-      "text": "The page.",
-      "pause": 500
-    },
-    {
-      "text": "singular registry describe --state-token … prints Markdown, and with --json the same fields. The output is deterministic for a given chain state and is anchored at the block of the last state transaction. It has these sections:",
-      "pause": 300
-    },
-    {
-      "text": "Identity: the state token, the seed, the creation transaction and the network.",
-      "pause": 300
-    },
-    {
-      "text": "Release: the tag, the blueprint SHA-256 and the state script hash.",
-      "pause": 300
-    },
-    {
-      "text": "Rules: the windows, the tip, who folds (anyone, with no signature) and the application.",
-      "pause": 300
-    },
-    {
-      "text": "Live state: the active and terminal counts and the root from the replay of the token's history, the pending requests, and the last fold.",
-      "pause": 300
-    },
-    {
-      "text": "Reference outputs: what the provider query returns, as information.",
-      "pause": 300
-    },
-    {
-      "text": "Known limits: the release's stated limits.",
-      "pause": 300
-    },
-    {
-      "text": "The rules and the live state are computed from the chain. The application text and the limits come from the release.",
+      "text": "PR2 delivers reference publication and retirement commands, automatic publication, protection of ordinary funding through a closed wallet-output interface, narrowed fund inputs, and the registry page with tagged release-archive evidence. It also owes independently derived action identity in the conformance report under the operator's A-013 ruling. These are unmet follow-up requirements, not PR1 claims. Their accepted rulings and preserved work remain authoritative; this cut does not waive them or close the issue.",
       "pause": 400
     }
   ],
@@ -189,7 +139,7 @@
       "pause": 400
     },
     {
-      "text": "The same day's reference-search ruling removes caller-supplied reference hints and their flag, parsing, warning, search source and tests. The page lists provider-found reference outputs only as information. Discovery uses the provider and then the actor's wallet.",
+      "text": "The same day's reference-search ruling removes caller-supplied reference hints and their flag, parsing, warning, search source and tests. Discovery uses the provider and then the actor's wallet. The future page's provider-found reference information remains a separate PR2 requirement.",
       "pause": 400
     }
   ],
@@ -209,11 +159,11 @@
       "pause": 500
     },
     {
-      "text": "Rebuilding scripts from the release. publish-references derives every script from the release blueprint applied to the token and checks it against the expected hash. With every reference output spent, anyone who holds the release can restore them.",
+      "text": "Missing carriers. PR1 retains the named missing-reference refusal. Its diagnostic names the planned publication command; that command and restoration journey are still PR2 requirements.",
       "pause": 300
     },
     {
-      "text": "Verification boundary. The page is unsigned. The resolver checks the token against Koios answers, which are unverified under the Lockness rules (lockness#39). Writes are protected by the ledger revalidating every reference input. Nothing binds \"the registry I meant\" to a token, so a genuine copycat registry of the same release passes every check.",
+      "text": "Verification boundary. The resolver checks the token against Koios answers, which are unverified under the Lockness rules (lockness#39). Writes are protected by the ledger revalidating every reference input. Nothing binds \"the registry I meant\" to a token, so a genuine copycat registry of the same release passes every check.",
       "pause": 300
     },
     {
@@ -235,12 +185,12 @@
       "pause": 500
     },
     {
-      "text": "There is no Lean change. Reference scripts, reference outputs and registry files are not modelled. Singular.Reachable.initial admits any Config, as genesis does, and the pin re-derivation is an off-chain admission check outside the law, as checkPins is today. There is no constitution amendment and no on-chain change: the blueprint and onchain/script-identity.json are unchanged.",
+      "text": "PR1 binds Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0 at the exact base above. There is no Lean change. Reference scripts, reference outputs and registry files are not modelled. Singular.Reachable.initial admits any Config, as genesis does, and the pin re-derivation is an off-chain admission check outside the law, as checkPins is today. There is no constitution amendment and no on-chain change: the blueprint and onchain/script-identity.json are unchanged. The inherited #419 model carries each request's datum value, builds folds from public inputs through Singular.buildFold, and refuses a destination with a foreign or missing carrier even at a zero floor. Token-only identity does not weaken those transaction or settlement obligations. Focused provider/resolver/funding checks establish their selected cases only. Acceptance of Bob's journey requires exact-head hosted transactions and the file-open control, with receipt-computed public state and every uncovered requirement visible.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "e48f6337f981945c59c3784eb0261107f00171d3a6f73e7f3207a6884abd9e69"
+    "sha256": "dc087cba47af8f02d84f5373971ad4fe96cbf1f33ff83b07c04d0a078ce6e205"
   }
 }

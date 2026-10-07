@@ -2,6 +2,9 @@
 
 These are the new or changed records. Module placement is in the
 [modules model](modules-model.md).
+PR1 base `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed` carries Lean tree
+`16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. The #419 request datum
+value, held/witness datum and public fold representation are inherited without a model change.
 
 ## State token
 
@@ -80,8 +83,17 @@ Its message names `singular registry publish-references` as the remedy.
 
 Allowed contents:
 - `journal.jsonl`, `submissions/`, `.lock`;
-- `preimages/`, while #419 owns its removal;
 - `registry.pending.json`, during `create` only.
 
 Anything else is ignored. Nothing in the directory is an input to identity or reference
 resolution.
+Bob receives no Alice directory/files. His fold uses the registry's public history and requests
+whose datums carry the value they name, preserving #419's removal of private preimage inputs.
+
+## Deferred PR2 records
+
+The closed wallet-output funding view, required-token selection, narrowed fund inputs, registry
+page/release-archive records and independently derived report action identity are not delivered
+by PR1. Their accepted A-009/A-011/A-012/A-013 bindings and preserved plans remain requirements
+for the same open issue. Retirement records retain their reason/history without carrying an old
+receipt or product state into another row.
