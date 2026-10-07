@@ -63,7 +63,7 @@
       "pause": 400
     },
     {
-      "text": "[ ] T008 [US2] Run and reconcile existing offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs and offchain/test/Singular/Registry/TrieStateContractSpec.hs coverage for every-fold roots, mixed applied/rejected folds, input order and membership/non-membership proofs. Preserve the validator oracle for mixed folds; add only missing acceptance cases.",
+      "text": "[x] T008 [US2] Run and reconcile existing offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs and offchain/test/Singular/Registry/TrieStateContractSpec.hs coverage for every-fold roots, mixed applied/rejected folds, input order and membership/non-membership proofs. Preserve the validator oracle for mixed folds; add only missing acceptance cases. Executed October 7: 48 replay and 36 capability examples passed; source binding and limits in verification.",
       "pause": 300
     },
     {
@@ -71,7 +71,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] T010 [US2] Verify replay controls in offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs detect wrong edges, corrupted proofs and missing history; retain exact commands and outcomes in specs/381-registry-replay/verification.md.",
+      "text": "[x] T010 [US2] Verify replay controls in offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs detect wrong edges, corrupted proofs and missing history; retain exact commands and outcomes in specs/381-registry-replay/verification.md. Executed October 7: altered-edge and missing-history refusals and corrupted-proof rejection passed within the 48-example replay scope.",
       "pause": 300
     }
   ],
@@ -113,6 +113,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "49ed67fb5d2dd2ef862aad9ae0533dd474b56837d85590a11c85acf5f454fc99"
+    "sha256": "f50aa4df3eb42e03e70195d4e42f0000714282e3cb4f7585129e11528eb1d1b9"
   }
 }
