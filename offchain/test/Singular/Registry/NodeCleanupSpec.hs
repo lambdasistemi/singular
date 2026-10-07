@@ -22,6 +22,7 @@ the bracket's cleanup and not a test that never set anything up.
 module Singular.Registry.NodeCleanupSpec (spec) where
 
 import Control.Exception (ErrorCall, throwIO, try)
+import Control.Tracer (nullTracer)
 import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe, isJust)
@@ -129,6 +130,7 @@ spec = describe "what a runner leaves behind when its body ends" $ do
                     markFundingIndexed
                     Cage.withView
                         ( adaptProvider
+                            nullTracer
                             (NetworkMagic 42)
                             syntheticMaterial
                             (rawFixture unusedNode)
@@ -144,6 +146,7 @@ spec = describe "what a runner leaves behind when its body ends" $ do
                 before <- nodeAddressReads
                 Cage.withView
                     ( adaptProvider
+                        nullTracer
                         (NetworkMagic 42)
                         syntheticMaterial
                         (rawFixture unusedNode)
@@ -186,6 +189,7 @@ stubSession =
         , nsTipSlot = pure (SlotNo 7)
         , nsTipTime = pure 7000
         , nsMode = Devnet
+        , nsTracer = nullTracer
         }
 
 {- | The node side of 'adaptProvider': an acquired view at one block,

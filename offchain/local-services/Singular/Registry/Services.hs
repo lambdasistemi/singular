@@ -9,14 +9,13 @@ module Singular.Registry.Services
     , slotStart
     ) where
 
-import Cardano.Ledger.Plutus (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (throwIO)
 import Control.Monad (unless)
-import Data.Aeson ((.=))
-import Data.Either (rights)
+import Control.Tracer (traceWith)
 import Data.Map.Strict qualified as Map
+import Data.Text (Text)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LocalEvaluation
     ( EvaluateTxResult
@@ -31,8 +30,14 @@ import Singular.Registry.NetworkTime
     , posixMsFloorSlot
     , slotStartMs
     )
-import Singular.Registry.PhaseLog (logPhase, queryPhase)
 import Singular.Registry.Provider (ChainPoint (..), View (..))
+import Singular.Registry.ProviderTrace (localSource)
+import Singular.Registry.Trace
+    ( ReadEvent (..)
+    , evaluationOf
+    , startTimer
+    , tracedQuery
+    )
 
 -- | Validate the binding to this view's network before deriving any answer.
 timeOf :: View IO -> IO NetworkTime
@@ -45,40 +50,43 @@ timeOf view = do
 
 evaluateTx :: View IO -> ConwayTx -> IO (EvaluateTxResult ConwayEra)
 evaluateTx view tx = do
-    let lg = viewPhaseLog view
-    result <- queryPhase lg "evaluateTx" Map.size $ do
+    let tracer = viewTracer view
+    elapsed <- startTimer
+    result <- tracedQuery tracer localSource Nothing "evaluateTx" (Just . Map.size) $ do
         time <- timeOf view
         localEvaluation
             (EvaluationContext (viewProtocolParams view) time)
             (viewResolvedOutputs view)
             tx
             >>= either throwIO pure
-    let done = rights (Map.elems result)
-        total f = sum [toInteger (f units) | units <- done]
-    logPhase
-        lg
-        "eval"
-        [ "redeemers" .= Map.size result
-        , "failed" .= (Map.size result - length done)
-        , "mem" .= total (\(ExUnits memory _) -> memory)
-        , "steps" .= total (\(ExUnits _ steps) -> steps)
-        ]
+    ms <- elapsed
+    traceWith tracer (Evaluated (evaluationOf ms result))
     pure result
 
 floorSlot :: View IO -> Integer -> IO SlotNo
 floorSlot view ms =
-    queryPhase (viewPhaseLog view) "posixMsToSlot" (const 1) $ do
+    local view "posixMsToSlot" $ do
         time <- timeOf view
         either throwIO pure (posixMsFloorSlot time ms)
 
 ceilingSlot :: View IO -> Integer -> IO SlotNo
 ceilingSlot view ms =
-    queryPhase (viewPhaseLog view) "posixMsCeilSlot" (const 1) $ do
+    local view "posixMsCeilSlot" $ do
         time <- timeOf view
         either throwIO pure (posixMsCeilingSlot time ms)
 
 slotStart :: View IO -> SlotNo -> IO Integer
 slotStart view slot =
-    queryPhase (viewPhaseLog view) "slotStart" (const 1) $ do
+    local view "slotStart" $ do
         time <- timeOf view
         either throwIO pure (slotStartMs time slot)
+
+-- | One local computation over the view, traced into the view's scope.
+local :: View IO -> Text -> IO a -> IO a
+local view name =
+    tracedQuery
+        (viewTracer view)
+        localSource
+        Nothing
+        name
+        (const (Just 1))

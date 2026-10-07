@@ -47,12 +47,14 @@ module Singular.CLI.Command
     , CLIError (..)
     , parseCommand
     , parseCommandWithEnvironment
+    , parseInvocation
     , renderCLIError
     , usage
     , maxKeyBytes
     , keyFlags
     ) where
 
+import Control.Applicative ((<|>))
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
@@ -65,6 +67,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Maybe qualified
 import Data.Text qualified as T
+import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
@@ -78,6 +81,13 @@ import Singular.Application.OpenDatum.Build
     , readKey
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.Trace
+    ( TraceFormat (..)
+    , TraceLevel (..)
+    , TraceRequest (..)
+    , TraceSink (..)
+    , noTraceRequest
+    )
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -229,7 +239,7 @@ data Command
     | Reject RejectArgs
     | Reclaim ReclaimArgs
     | Inspect InspectArgs
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Generic)
 
 -- | Why a command line was refused before anything ran.
 data CLIError
@@ -646,6 +656,62 @@ parseCommandWithEnvironment environment args = do
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
     parseCommand args
 
+{- | A whole command line: the command, and the tracing it asks for with
+@--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
+-}
+parseInvocation
+    :: [(String, String)]
+    -> [String]
+    -> Either CLIError (Command, TraceRequest)
+parseInvocation environment args = do
+    (rest, request) <- tracingFlags args
+    command <- parseCommandWithEnvironment environment rest
+    pure (command, request)
+
+{- | Take the tracing flags out of a command line, each value read and
+refused at parse: @--trace@ and @--trace-format@ once (the first occurrence
+wins, as for every flag), @--trace-to@ once per sink, in order. A value flag
+keeps its value, so a value spelled like a tracing flag stays a value.
+-}
+tracingFlags :: [String] -> Either CLIError ([String], TraceRequest)
+tracingFlags = go [] noTraceRequest
+  where
+    go kept asked = \case
+        [] ->
+            Right
+                (reverse kept, asked{requestSinks = reverse (requestSinks asked)})
+        a : rest
+            | name `elem` ["--trace", "--trace-to", "--trace-format"] ->
+                case (inline, rest) of
+                    ('=' : v, _) -> withValue name v asked >>= \r -> go kept r rest
+                    (_, v : rest') -> withValue name v asked >>= \r -> go kept r rest'
+                    (_, []) -> Left (BadValue name "needs a value")
+            | name `elem` valuedFlags
+            , null inline
+            , v : rest' <- rest ->
+                go (v : a : kept) asked rest'
+            | otherwise -> go (a : kept) asked rest
+          where
+            (name, inline) = break (== '=') a
+    withValue name v asked = case name of
+        "--trace" -> case v of
+            "off" -> level TraceOff
+            "what" -> level TraceWhat
+            "how" -> level TraceHow
+            _ -> Left (BadValue name "is off, what or how")
+        "--trace-to" -> case v of
+            "stderr" -> sink ToStderr
+            'f' : 'i' : 'l' : 'e' : ':' : path@(_ : _) -> sink (ToFile path)
+            _ -> Left (BadValue name "is stderr or file:PATH")
+        _ -> case v of
+            "text" -> format TextFormat
+            "json" -> format JsonFormat
+            _ -> Left (BadValue name "is text or json")
+      where
+        level l = Right asked{requestLevel = requestLevel asked <|> Just l}
+        sink s = Right asked{requestSinks = s : requestSinks asked}
+        format f = Right asked{requestFormat = requestFormat asked <|> Just f}
+
 {- | Split a command line into its words and its flags, the first
 occurrence of a flag winning. A value flag takes the next token or its
 @=value@ spelling; a switch takes nothing.
@@ -664,7 +730,7 @@ tokens = go [] []
                         if name `elem` switches
                             then go ws ((name, Nothing) : fs) rest
                             else
-                                if name `elem` valued
+                                if name `elem` valuedFlags
                                     then case (inline, rest) of
                                         ('=' : v, _) -> go ws (keep name v fs) rest
                                         (_, v : rest') -> go ws (keep name v fs) rest'
@@ -675,29 +741,32 @@ tokens = go [] []
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
     switches = ["--help", "-h", "--preview", "--fold"]
-    valued =
-        [ "--registry"
-        , "--blueprint"
-        , "--koios-url"
-        , "--koios-token-file"
-        , "--network-time"
-        , "--network-magic"
-        , "--wallet-skey"
-        , "--seed"
-        , "--process-time"
-        , "--retract-time"
-        , "--key"
-        , "--key-hex"
-        , "--receipt"
-        , "--confirm-timeout"
-        , "--wallet-address"
-        , "--outputs-at"
-        , "--fund-input"
-        , "--max-outlay"
-        , "--deposit"
-        , "--payload"
-        , "--request"
-        ]
+
+-- | The flags that take a value: the next token, or their @=value@ spelling.
+valuedFlags :: [String]
+valuedFlags =
+    [ "--registry"
+    , "--blueprint"
+    , "--koios-url"
+    , "--koios-token-file"
+    , "--network-time"
+    , "--network-magic"
+    , "--wallet-skey"
+    , "--seed"
+    , "--process-time"
+    , "--retract-time"
+    , "--key"
+    , "--key-hex"
+    , "--receipt"
+    , "--confirm-timeout"
+    , "--wallet-address"
+    , "--outputs-at"
+    , "--fund-input"
+    , "--max-outlay"
+    , "--deposit"
+    , "--payload"
+    , "--request"
+    ]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -795,6 +864,11 @@ usage =
         , "the shared HTTP client reads it without exposing a command-line token."
         , "Every command also takes --network-time DIR for pinned time-manifest.json,"
         , "shelley-genesis.json and era-history.cbor; preprod uses the package when omitted."
+        , "Every command also takes --trace off|what|how, --trace-to stderr|file:PATH and --trace-format text|json:"
+        , "it narrates its protocol steps, and at how their mechanics, to each sink named, the"
+        , "option repeated per sink, or to standard error. With no level named it narrates what"
+        , "on a terminal and nothing otherwise; text goes to standard error and JSON lines to a"
+        , "file unless a format is named. Standard output carries the receipt alone."
         , "insert and terminate book the request and leave it pending: the registry's"
         , "fold is its own command, registry fold, run by whichever wallet folds, before"
         , "the processing deadline the booking's receipt names. Given the fold switch,"

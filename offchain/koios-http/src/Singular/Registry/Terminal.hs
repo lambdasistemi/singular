@@ -11,11 +11,13 @@ module Singular.Registry.Terminal
     , withWrites
     , newCapabilities
     , submitWithWallet
+    , tracedReads
     ) where
 
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (ErrorCall (..), throwIO)
 import Control.Monad qualified
+import Control.Tracer (Tracer)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text qualified as Text
 import Singular.Provider.Koios.Client qualified as Client
@@ -26,34 +28,38 @@ import Singular.Provider.Koios.Http
     , newHttpTransport
     )
 import Singular.Provider.Koios.Provider (koiosProvider)
-import Singular.Provider.Koios.Runtime (newIORuntime)
+import Singular.Provider.Koios.Runtime (koiosSource, newIORuntime)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Confirmation (awaitTransaction)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.LedgerProvider
-    ( Network (..)
+    ( LedgerProvider
+    , Network (..)
     , SubmitResult (..)
     , submitTx
     )
-import Singular.Registry.PhaseLog (phaseLogFromEnv)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.ProviderTrace (tracedLedgerProvider)
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO (withLatest)
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.TimeSource (loadPinnedSource)
+import Singular.Registry.Trace (BackendEvent, ReadEvent)
 import Singular.Registry.Wait (boundedSignedSubmission)
 import Singular.Registry.Wallet (Wallet (..))
 
-newCapabilities :: ProviderSettings -> IO (Capabilities NoWitness IO)
-newCapabilities settings = do
-    logHandle <- phaseLogFromEnv
+newCapabilities
+    :: Tracer IO BackendEvent
+    -> ProviderSettings
+    -> IO (Capabilities NoWitness IO)
+newCapabilities backend settings = do
     raw <- newIORef []
     facts <- newIORef []
     runtime <-
         newIORuntime
-            logHandle
+            backend
             (\event -> modifyIORef' raw (<> [providerEventJson event]))
     transport <-
         newHttpTransport
@@ -83,24 +89,36 @@ newCapabilities settings = do
             , capTrace = readIORef raw
             }
 
+{- | The capabilities for the named provider, its own mechanics traced into the
+first tracer. Startup validates the pinned network context in its own
+acquisition, read into the second tracer; it is never spliced into a built
+body.
+-}
 withReads
-    :: ProviderSettings -> (Capabilities NoWitness IO -> IO a) -> IO a
-withReads settings action = do
-    capabilities <- newCapabilities settings
-    -- Startup validates the pinned network context in its own logged scope,
-    -- as the former composition did. It is never spliced into a built body.
-    withLatest (capReads capabilities) $ \session ->
+    :: Tracer IO BackendEvent
+    -> Tracer IO ReadEvent
+    -> ProviderSettings
+    -> (Capabilities NoWitness IO -> IO a)
+    -> IO a
+withReads backend reading settings action = do
+    capabilities <- newCapabilities backend settings
+    withLatest (tracedReads koiosSource reading capabilities) $ \session ->
         Control.Monad.void (SessionIO.parameters session)
     action capabilities
 
+{- | The same, with the wallet's funding checked first, its reads traced into
+the second tracer.
+-}
 withWrites
-    :: ProviderSettings
+    :: Tracer IO BackendEvent
+    -> Tracer IO ReadEvent
+    -> ProviderSettings
     -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withWrites settings wallet action = withReads settings $ \capabilities -> do
+withWrites backend reading settings wallet action = withReads backend reading settings $ \capabilities -> do
     checkFunding
-        (capReads capabilities)
+        (tracedReads koiosSource reading capabilities)
         (walletAddr wallet)
         defaultFundingFloor
     action capabilities
@@ -116,3 +134,15 @@ submitWithWallet wallet capabilities unsigned = do
         other -> throwIO (ErrorCall ("tx submission unavailable: " <> show other))
     capConfirm capabilities (signedTx signed)
     pure (signedTx signed)
+
+{- | The capabilities' provider with its reads traced into this tracer, under
+the source name its reads report.
+-}
+tracedReads
+    :: Text.Text
+    -> Tracer IO ReadEvent
+    -> Capabilities w IO
+    -> (Network, LedgerProvider w IO)
+tracedReads source tracer capabilities =
+    let (network, provider) = capReads capabilities
+    in  (network, tracedLedgerProvider source tracer provider)

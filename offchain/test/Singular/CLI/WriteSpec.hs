@@ -24,12 +24,11 @@ module Singular.CLI.WriteSpec (spec) where
 import Control.Exception
     ( SomeException
     , bracket
-    , bracket_
     , fromException
     , throwIO
     , try
     )
-import Control.Monad (forM_, void)
+import Control.Monad (forM_, void, when)
 import Data.Aeson ((.:))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
@@ -47,7 +46,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf, nub, sort)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, isJust, mapMaybe)
@@ -70,11 +69,18 @@ import System.Directory
     ( doesDirectoryExist
     , doesFileExist
     , listDirectory
+    , removeFile
     , withCurrentDirectory
     )
-import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.FilePath (takeDirectory, (</>))
-import System.IO (hFlush, stderr, stdout)
+import System.IO
+    ( hClose
+    , hFlush
+    , hPrint
+    , openTempFile
+    , stderr
+    , stdout
+    )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.IO
     ( OpenFileFlags (..)
@@ -122,6 +128,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
 import Singular.Registry.AssetName (deriveAssetName)
 
+import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson.KeyMap qualified as KeyMap
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
@@ -154,9 +161,33 @@ import Singular.CLI.Session
     ( CommandFailure (..)
     , WriteContext (..)
     , expecting
+    , failWith
     , journalObserved
     , submitBuilt
     , txIdHex
+    )
+import Singular.CLI.Trace
+    ( ConfirmVerdict (..)
+    , EdgeAction (..)
+    , Ended (..)
+    , Event (..)
+    , How (..)
+    , Output (..)
+    , RefusalKind (..)
+    , Scope (..)
+    , SubmitVerdict (..)
+    , Trace (..)
+    , TraceFormat (..)
+    , TraceLevel (..)
+    , TraceSink (..)
+    , TxEvent (..)
+    , What (..)
+    , fanOut
+    , outputSink
+    , phaseLogSink
+    , renderJsonLine
+    , renderPhaseLog
+    , renderText
     )
 import Singular.Registry.Capabilities
     ( Capabilities (..)
@@ -167,7 +198,7 @@ import Singular.Registry.Deployment
     ( Deployment (..)
     , parseOutRef
     )
-import Singular.Registry.Evidence (unverifiedVerifier)
+import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -193,6 +224,10 @@ import Singular.Registry.StubSession
     , stubSession
     , withAddressOutputs
     )
+import Singular.Registry.Trace
+    ( ErrorClass (..)
+    , Evaluation (..)
+    )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -213,7 +248,7 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = writeRows >> phaseLogRows >> inputRows
+spec = writeRows >> phaseLogRows >> inputRows >> narrationRows
 
 writeRows :: Spec
 writeRows = describe "a singular write on injected capabilities (#323)" $ do
@@ -513,6 +548,8 @@ data Fixture = Fixture
     , fxBuiltAt :: IORef (Maybe (Aeson.Value, Cage.TipObservation))
     , fxUnsigned :: IORef (Maybe ConwayTx)
     , fxFacts :: IORef [FactRecord]
+    , fxConfirmations :: IORef (Map.Map Text (IO Double))
+    , fxPlacements :: IORef (Map.Map Text [Scope])
     }
 
 magic :: Word32
@@ -550,6 +587,8 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
         <*> newIORef Nothing
         <*> newIORef Nothing
         <*> newIORef []
+        <*> newIORef Map.empty
+        <*> newIORef Map.empty
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -580,6 +619,10 @@ writeContext fx =
                 , capTrace = pure []
                 }
         , wcTimeout = Just 5
+        , wcTracer = nullTracer
+        , wcSource = "fixture"
+        , wcConfirmed = fxConfirmations fx
+        , wcPlaced = fxPlacements fx
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the
@@ -647,7 +690,7 @@ outRef c =
 -- The phase log of a write (#363)
 -- ---------------------------------------------------------
 
-{- | The write of the ordinary CLI with @SINGULAR_LOG@ set or unset. Every
+{- | The write of the ordinary CLI with the phase log on or off. Every
 compared value is obtained at run time: the transaction id from the
 signed body, the tip from a fresh acquisition after the write, the
 validity interval from the body that was built, and the secrets from the
@@ -664,7 +707,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                 -- the process runs in a directory of its own, so a log written
                 -- to a default path would show there
                 withSystemTempDirectory "singular-cwd" $ \cwd ->
-                    withCurrentDirectory cwd $ withLogEnv Nothing $ do
+                    withCurrentDirectory cwd $ do
                         ((), out, err) <- captured (void (write fx))
                         here <- listDirectory (takeDirectory (fxDir fx))
                         there <- listDirectory (fxDir fx)
@@ -676,11 +719,11 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                            , ["journal.jsonl", "submissions"]
                            )
             (out, err) `shouldBe` ("", "")
-            -- the control: the variable is what makes the file appear
+            -- the control: the phase-log tracer is what makes the file appear
             logged <- withFixture $ \fx -> do
                 let path = takeDirectory (fxDir fx) </> "phase.log"
-                withLogEnv (Just path) $ do
-                    _ <- writeVia (writeContext fx) id fx
+                do
+                    _ <- writeVia (loggedTo path (writeContext fx)) id fx
                     doesFileExist path
             logged `shouldBe` True
     it
@@ -694,8 +737,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     bodyTxL . vldtTxBodyL
                         .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
             (signed, ()) <-
-                withLogEnv (Just path) $
-                    writeVia (writeContext fx) bounded fx
+                writeVia (loggedTo path (writeContext fx)) bounded fx
             built <- readIORef (fxBuiltAt fx)
             builtPoint <- maybe (fail "the build never ran") pure built
             tip <-
@@ -738,7 +780,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = writeContext fx
+                ctx = loggedTo path (writeContext fx)
                 caps = wcCapabilities ctx
                 broken =
                     ctx
@@ -748,8 +790,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                     throwIO (userError "403 for project_id=CRED-5c1d2")
                                 }
                         }
-            _ <-
-                withLogEnv (Just path) (try @SomeException (writeVia broken id fx))
+            _ <- try @SomeException (writeVia broken id fx)
             objects <- logObjects path
             outcomesOf "confirm" objects `shouldBe` [Just "failed"]
             raw <- BS.readFile path
@@ -760,7 +801,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             let path = takeDirectory (fxDir fx) </> "phase.log"
-                ctx = writeContext fx
+                ctx = loggedTo path (writeContext fx)
                 caps = wcCapabilities ctx
                 key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
                 hex = B16.encode key
@@ -781,7 +822,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                     throwIO (userError "401 for project_id=CRED-9e4b7")
                                 }
                         }
-            _ <- withLogEnv (Just path) $ do
+            _ <- do
                 _ <- writeVia ctx id fx
                 try @SomeException (writeVia rejecting id fx)
             raw <- BS.readFile path
@@ -805,12 +846,12 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                         , journalSession = normalizeSessionIds <$> journalSession e
                         }
                 run logPath = withFixture $ \fx -> do
-                    ((), out, err) <- withLogEnv logPath $ captured $ do
+                    ((), out, err) <- captured $ do
                         _ <-
                             writeVia
                                 ( maybe
                                     (writeContext fx)
-                                    (\_ -> writeContext fx)
+                                    (\p -> loggedTo p (writeContext fx))
                                     logPath
                                 )
                                 id
@@ -845,7 +886,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                     let ctx0 =
                             maybe
                                 (writeContext fx)
-                                (\_ -> writeContext fx)
+                                (\p -> loggedTo p (writeContext fx))
                                 logPath
                         caps = wcCapabilities ctx0
                         ctx
@@ -855,7 +896,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
                                         caps{capConfirm = \_ -> throwIO (userError "the wait broke")}
                                     }
                             | otherwise = ctx0
-                    r <- withLogEnv logPath (try @SomeException (writeVia ctx id fx))
+                    r <- try @SomeException (writeVia ctx id fx)
                     events <- map journalEvent <$> readJournal (fxDir fx)
                     pure
                         ( events
@@ -880,7 +921,7 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
         $ withFixture
         $ \fx -> do
             t0 <- getCurrentTime
-            (signed, ()) <- withLogEnv Nothing (write fx)
+            (signed, ()) <- write fx
             let ctx = writeContext fx
             journalObserved ctx "fold" signed "read back"
             earlier <-
@@ -947,12 +988,9 @@ normalizeSessionIds = \case
     Aeson.Array values -> Aeson.Array (fmap normalizeSessionIds values)
     value -> value
 
--- | Run with @SINGULAR_LOG@ set to a path or unset, restoring it after.
-withLogEnv :: Maybe FilePath -> IO a -> IO a
-withLogEnv new act = do
-    old <- lookupEnv "SINGULAR_LOG"
-    let put = maybe (unsetEnv "SINGULAR_LOG") (setEnv "SINGULAR_LOG")
-    bracket_ (put new) (put old) act
+-- | The write's context with its events also written to the phase log at a path.
+loggedTo :: FilePath -> WriteContext -> WriteContext
+loggedTo path ctx = ctx{wcTracer = phaseLogSink path}
 
 -- | The log's lines, each a JSON object.
 logObjects :: FilePath -> IO [Aeson.Object]
@@ -1001,3 +1039,369 @@ redirecting target path act =
             closeFd saved
         )
         (const act)
+
+-- ---------------------------------------------------------
+-- The narration of a write (#416)
+-- ---------------------------------------------------------
+
+{- | The typed events a write reports, collected from the tracer its context
+carries. Every compared value is the producer's: the transaction id from the
+signed body, the steps and the journal from the journal on disk.
+-}
+narrationRows :: Spec
+narrationRows = describe "the narration of a write (#416)" $ do
+    it
+        "reports each transaction's build, signing, submission, confirmation and \
+        \readback under its own step, naming the transaction the journal names"
+        $ withFixture
+        $ \fx -> do
+            (seen, collect) <- traceCollector
+            let ctx = (writeContext fx){wcTracer = collect}
+                later =
+                    bodyTxL . vldtTxBodyL
+                        .~ ValidityInterval (SJust (SlotNo 10)) (SJust (SlotNo 99))
+            (folded, ()) <- writeStepVia "fold" ctx id fx
+            journalObserved ctx "fold" folded "read back"
+            (booked, ()) <- writeStepVia "book" ctx later fx
+            journalObserved ctx "book" booked "read back"
+            events <- readIORef seen
+            prepared <- readJournal (fxDir fx)
+            let journalled =
+                    [ (journalStep e, journalTxId e)
+                    | e <- prepared
+                    , journalEvent e == "prepared"
+                    ]
+                txOf = \case
+                    TxBuilt{} -> Nothing
+                    TxSigned _ t _ _ _ -> Just t
+                    TxSubmitted{submitTxId = t} -> Just t
+                    TxConfirmed _ t _ _ -> Just t
+                    TxObserved _ t _ -> Just t
+                stepOf = \case
+                    TxBuilt s _ _ -> s
+                    TxSigned s _ _ _ _ -> s
+                    TxSubmitted{submitStep = s} -> s
+                    TxConfirmed s _ _ _ -> s
+                    TxObserved s _ _ -> s
+                txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
+            journalled
+                `shouldBe` [("fold", txIdHex folded), ("book", txIdHex booked)]
+            txIdHex folded `shouldNotBe` txIdHex booked
+            forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
+                let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
+                map stepOf mine `shouldSatisfy` all (== step)
+                [() | TxBuilt{} <- mine] `shouldBe` [()]
+                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
+                [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
+                [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
+                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex signed]
+            length txEvents `shouldBe` 10
+    it
+        "names the four places a failure happens as four distinct events, \
+        \leaving every outcome class as it was"
+        $ do
+            let refusing = \case
+                    ClientRefused -> \fx ctx -> writeBuilding ctx fx $ \_ ->
+                        failWith ClientRefusal "no fold is built"
+                    EvaluationRefused -> \fx ctx -> writeBuilding ctx fx $ \v -> do
+                        -- the build's session records a failed evaluation, as the local
+                        -- evaluator does (the real path: CommandRunSpec)
+                        Cage.sessionEvaluated v (Evaluation 3 2 1 0 0)
+                        failWith ClientRefusal "its fold could not be built"
+                    LedgerRejected -> \fx ctx ->
+                        writeVia
+                            (submitting (pure (Cage.SubmitRefused "the ledger said no")) ctx)
+                            id
+                            fx
+                    TransportFailed -> \fx ctx ->
+                        writeVia
+                            (submitting (pure (Cage.SubmitFailed "connection refused")) ctx)
+                            id
+                            fx
+                run kind = withFixture $ \fx -> do
+                    (seen, collect) <- traceCollector
+                    r <-
+                        try @CommandFailure
+                            (refusing kind fx (writeContext fx){wcTracer = collect})
+                    events <- readIORef seen
+                    pure
+                        ( [k | Trace _ (What (Refused k _)) <- events]
+                        , either (\(CommandFailure c _ _) -> Just c) (const Nothing) r
+                        , ()
+                        , mapMaybe renderText [t | t@(Trace _ (What (Refused{}))) <- events]
+                        )
+            results <- mapM run [minBound .. maxBound]
+            map (\(k, _, _, _) -> k) results
+                `shouldBe` map pure [minBound .. maxBound]
+            map (\(_, c, _, _) -> c) results
+                `shouldBe` [ Just ClientRefusal
+                           , Just ClientRefusal
+                           , Just LedgerRefusal
+                           , Just Partial
+                           ]
+            let lines' = concatMap (\(_, _, _, l) -> l) results
+            length lines' `shouldBe` 4
+            length (nub lines') `shouldBe` 4
+    it
+        "never carries the signing key, in any of its renderings, nor a \
+        \credential an operation failed with, in any renderer"
+        $ withFixture
+        $ \fx -> do
+            (seen, collect) <- traceCollector
+            let ctx = (writeContext fx){wcTracer = collect}
+                caps = wcCapabilities ctx
+                key = rawSerialiseSignKeyDSIGN (walletSignKey (fxWallet fx))
+                hex = B16.encode key
+                secrets =
+                    [ key
+                    , hex
+                    , BC.map toUpper hex
+                    , "5820" <> hex
+                    , BC.map toUpper ("5820" <> hex)
+                    , bech32Of "addr_sk" key
+                    , bech32Of "ed25519_sk" key
+                    , "CRED-9e4b7"
+                    , "CRED-5c1d2"
+                    ]
+                throwingSubmit =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capSubmit = \_ -> throwIO (userError "401 for project_id=CRED-9e4b7")
+                                }
+                        }
+                throwingConfirm =
+                    ctx
+                        { wcCapabilities =
+                            caps
+                                { capConfirm = \_ -> throwIO (userError "403 for project_id=CRED-5c1d2")
+                                }
+                        }
+            _ <- writeVia ctx id fx
+            _ <-
+                try @SomeException
+                    ( writeVia
+                        throwingSubmit
+                        (bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust (SlotNo 77)))
+                        fx
+                    )
+            _ <-
+                try @SomeException
+                    ( writeVia
+                        throwingConfirm
+                        (bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing (SJust (SlotNo 88)))
+                        fx
+                    )
+            events <- readIORef seen
+            let texts = BS.concat [TE.encodeUtf8 l | Just l <- map renderText events]
+                jsons = BS.concat (map renderJsonLine events)
+                phases =
+                    BS.concat
+                        [ BL.toStrict
+                            (Aeson.encode (Aeson.object (("phase", Aeson.toJSON p) : fs)))
+                        | Just (p, fs) <- map renderPhaseLog events
+                        ]
+            -- the stream holds the steps a leak would come from
+            [() | Trace _ (How (Tx TxSigned{})) <- events] `shouldBe` [(), (), ()]
+            [ c
+              | Trace _ (How (Tx TxSubmitted{submitVerdict = SubmitThrew c})) <-
+                    events
+              ]
+                `shouldSatisfy` ((== 1) . length)
+            [v | Trace _ (How (Tx (TxConfirmed _ _ _ v))) <- events]
+                `shouldBe` [Confirmed, ConfirmFailed (ErrorClass "IOException")]
+            forM_
+                [("text" :: Text, texts), ("json", jsons), ("phase log", phases)]
+                $ \(renderer, bytes) -> do
+                    (renderer, BS.null bytes) `shouldBe` (renderer, False)
+                    (renderer, [s | s <- secrets, s `BS.isInfixOf` bytes])
+                        `shouldBe` (renderer, [])
+    it
+        "narrates on standard error and leaves standard output to the receipt"
+        $ withFixture
+        $ \fx -> do
+            let ctx =
+                    (writeContext fx)
+                        { wcTracer =
+                            outputSink (Just stderr) TraceHow (Output ToStderr TextFormat)
+                        }
+            ((), out, err) <- captured (void (writeVia ctx id fx))
+            out `shouldBe` ""
+            err `shouldSatisfy` ("how  sign " `BS.isInfixOf`)
+    it
+        "keeps tracing total: a sink that throws and one on a closed handle change \
+        \no outcome, journal or exception, and the other sinks still see every event"
+        $ do
+            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConwayTx, ()))]
+                scenarios =
+                    [ ("submitted, confirmed", (`writeVia` id))
+                    ,
+                        ( "the build fails"
+                        , \ctx fx ->
+                            writeBuilding ctx fx (\_ -> failWith ClientRefusal "no fold is built")
+                        )
+                    ,
+                        ( "the confirmation fails"
+                        , \ctx ->
+                            writeVia
+                                ctx
+                                    { wcCapabilities =
+                                        (wcCapabilities ctx)
+                                            { capConfirm = \_ -> throwIO (userError "the wait broke")
+                                            }
+                                    }
+                                id
+                        )
+                    ]
+                outcome = \case
+                    Right _ -> "completed"
+                    Left e -> case fromException e of
+                        Just (CommandFailure c why _) -> outcomeName c <> ": " <> T.pack why
+                        Nothing -> "uncaught: " <> T.pack (show e)
+                run act tracing = withFixture $ \fx -> do
+                    tracer <- tracing
+                    r <- try @SomeException (act (writeContext fx){wcTracer = tracer} fx)
+                    events <- map journalEvent <$> readJournal (fxDir fx)
+                    pure (outcome r, events)
+            forM_ scenarios $ \(name, act) -> do
+                plain <- run act (pure nullTracer)
+                (seen, collect) <- traceCollector
+                closed <- closedHandleSink
+                traced <- run act (fanOut [throwingSink, closed, collect])
+                (name, traced) `shouldBe` (name, plain)
+                events <- readIORef seen
+                -- the live sink saw the write, after its submission and around its failure
+                (name, null events) `shouldBe` (name, False)
+                when (name /= "the build fails") $
+                    [() | Trace _ (How (Tx TxSubmitted{})) <- events] `shouldBe` [()]
+                when (name == "the build fails") $
+                    [() | Trace _ (How (Tx (TxBuilt _ _ (FailedWith _)))) <- events]
+                        `shouldBe` [()]
+    forM_ [(2, "key-two"), (5, "key-five")] $ \(edge, key) ->
+        it
+            ( "a fold names the request, its key and its edge before it refuses "
+                <> edgeName edge
+                <> ", as its receipt does"
+            )
+            $ withInputFixture
+            $ \fx saved live mirror boot -> do
+                (seen, collect) <- traceCollector
+                let request = TxIn (txIdTx boot) (TxIx 0)
+                    requestAddr = requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet
+                    requestOut =
+                        mkBasicTxOut requestAddr (MaryValue (Coin 3_000_000) mempty)
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    ( mkRequestDatumWith
+                                        (savedToken saved)
+                                        (walletAddr (fxWallet fx))
+                                        key
+                                        edge
+                                        2_000_000
+                                        0
+                                        ("", Nothing)
+                                    )
+                    ctx =
+                        (writeContext fx)
+                            { wcCommand = "fold"
+                            , wcTracer = collect
+                            , wcCapabilities =
+                                (wcCapabilities (writeContext fx))
+                                    { capReads =
+                                        servingSession $
+                                            withAddressOutputs
+                                                ( \addr ->
+                                                    if addr == requestAddr
+                                                        then pure [(request, requestOut)]
+                                                        else fail "an inadmissible request reached a later provider read"
+                                                )
+                                                stubSession
+                                    }
+                            }
+                result <-
+                    try @CommandFailure $
+                        foldPending
+                            (Attached ctx live mirror)
+                            FoldSpec
+                                { fsOrigin = Standalone
+                                , fsRequest = Just request
+                                , fsFund = Nothing
+                                , fsAllowance = Nothing
+                                }
+                events <- readIORef seen
+                fields <- case result of
+                    Left (CommandFailure _ _ fs) -> pure fs
+                    Right _ -> fail "an unsupported pending edge folded"
+                let named = lookup "pendingRequest" fields
+                    seenRequests =
+                        [ (r, e, k)
+                        | Trace _ (What (RequestSeen r e k _ _)) <- events
+                        ]
+                named `shouldBe` Just (Aeson.toJSON (txInText request))
+                seenRequests
+                    `shouldBe` [(txInText request, T.pack (edgeName edge), key)]
+                [k | Trace _ (What (Refused k _)) <- events]
+                    `shouldBe` [ClientRefused]
+                -- every event inside a request is inside this one
+                [ r
+                  | Trace scope _ <- events
+                  , InRequest r <- scope
+                  ]
+                    `shouldSatisfy` all (== txInText request)
+                [() | Trace scope _ <- events, InEdge (Folding _) <- scope]
+                    `shouldBe` []
+
+-- | A tracer collecting every event, in order.
+traceCollector :: IO (IORef [Trace], Tracer IO Trace)
+traceCollector = do
+    ref <- newIORef []
+    pure (ref, Tracer (\t -> modifyIORef' ref (<> [t])))
+
+-- | The fixture's write under another journal step.
+writeStepVia
+    :: Text
+    -> WriteContext
+    -> (ConwayTx -> ConwayTx)
+    -> Fixture
+    -> IO (ConwayTx, ())
+writeStepVia step ctx shape fx =
+    submitBuilt ctx step (const (expecting "state")) $ \v -> do
+        utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
+        let tx =
+                shape $
+                    mkBasicTx
+                        ( mkBasicTxBody
+                            & inputsTxBodyL .~ Set.fromList (map fst utxos)
+                            & outputsTxBodyL .~ StrictSeq.fromList (map snd utxos)
+                        )
+        pure (tx, ())
+
+-- | A write whose build does this instead of building.
+writeBuilding
+    :: WriteContext
+    -> Fixture
+    -> (Cage.Session NoWitness IO -> IO ConwayTx)
+    -> IO (ConwayTx, ())
+writeBuilding ctx _ build =
+    submitBuilt
+        ctx
+        "fold"
+        (const (expecting "state"))
+        (fmap (,()) . build)
+
+-- | The context with the provider answering every submission so.
+submitting :: IO Cage.SubmitResult -> WriteContext -> WriteContext
+submitting answer ctx =
+    ctx{wcCapabilities = (wcCapabilities ctx){capSubmit = const answer}}
+
+-- | A sink that throws on every event.
+throwingSink :: Tracer IO Trace
+throwingSink = Tracer (\_ -> throwIO (userError "the sink broke"))
+
+-- | A sink writing to a handle that is already closed.
+closedHandleSink :: IO (Tracer IO Trace)
+closedHandleSink = do
+    (path, h) <- openTempFile "/tmp" "closed-sink"
+    hClose h
+    removeFile path
+    pure (Tracer (hPrint h))

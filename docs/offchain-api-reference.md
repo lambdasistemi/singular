@@ -202,7 +202,7 @@ the conformance reference's extent is the conformance library's. The
 package-private node-internal library, the executables and the on-chain
 Aiken validators remain outside the generated references. The public
 `local-services` component also exposes `LocalEvaluation`, `NetworkTime`,
-`PhaseLog`, `Services` and `TimeMaterial`; their sources live under
+`ProviderTrace`, `Services`, `TimeMaterial`, `Trace` and `TraceRender`; their sources live under
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a

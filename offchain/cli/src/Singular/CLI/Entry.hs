@@ -51,6 +51,7 @@ import Control.Monad (unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.ByteString (ByteString)
 import Data.Text (Text)
+import Data.Text qualified as T
 
 import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
@@ -72,7 +73,7 @@ import Singular.CLI.Command
     , Key (..)
     )
 import Singular.CLI.Fold
-    ( Deadline
+    ( Deadline (..)
     , Delivery (..)
     , FoldOrigin (..)
     , FoldSpec (..)
@@ -91,6 +92,13 @@ import Singular.CLI.Preview (Kind (..), runPreview)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, RootSeen, Updated)
+    , report
+    )
+import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -103,6 +111,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest
     , OnChainTokenState
+    , edgeName
     )
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -147,13 +156,19 @@ book at a key plan = do
         cfg = savedCfg s
         wc = atWrite at
     (booking, decided) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "book"
+            ["state", "key outputs"]
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
-            ( \v -> do
+            ( \building v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
+                let edge = T.pack (edgeName (bookedEdge b))
+                place
+                    building
+                    [InKey key, InEdge (Booking edge)]
+                    (EdgeStarted (Booking edge))
                 tx <-
                     bookEdgeMeasured
                         cfg
@@ -175,7 +190,7 @@ book at a key plan = do
             )
     let request = TxIn (txIdTx booking) (TxIx 0)
     deadline <-
-        reading at $ \v -> do
+        readingBack at "book" booking ["requests", "state"] $ \v -> do
             reqs <-
                 Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
             unless (any ((== request) . fst) reqs) $
@@ -193,6 +208,10 @@ book at a key plan = do
         "book"
         booking
         ("request " <> txInText request <> " live")
+    report
+        (wcTracer wc)
+        [InRequest (txInText request)]
+        (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
     pure (booking, decided, deadline)
 
 -- | What a booking-only command's receipt names of its pending request.
@@ -220,13 +239,13 @@ foldAfter at a booking =
 -- insert
 -- ---------------------------------------------------------
 
-runInsert :: EntryArgs -> IO Value
-runInsert a = case entryMode a of
-    Preview node addr -> runPreview KInsert a node addr
+runInsert :: Env -> EntryArgs -> IO Value
+runInsert env a = case entryMode a of
+    Preview node addr -> runPreview env KInsert a node addr
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
-        attached (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
+        attached env (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
             let s = savedOf at
                 envelope = insertionOf s a (callerKey at) payload
             -- The approval is decided in the booking's own view, from the
@@ -267,9 +286,9 @@ runInsert a = case entryMode a of
 -- update
 -- ---------------------------------------------------------
 
-runUpdate :: EntryArgs -> IO Value
-runUpdate a = case entryMode a of
-    Preview node addr -> runPreview KUpdate a node addr
+runUpdate :: Env -> EntryArgs -> IO Value
+runUpdate env a = case entryMode a of
+    Preview node addr -> runPreview env KUpdate a node addr
     Submit ws -> do
         let Key key = entryKey a
         path <-
@@ -279,7 +298,7 @@ runUpdate a = case entryMode a of
                 (entryDocument a)
         payload <-
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
-        attached (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
+        attached env (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
             let s = savedOf at
                 wc = atWrite at
                 addr = walletAddr (wcWallet wc)
@@ -287,10 +306,12 @@ runUpdate a = case entryMode a of
             -- The live output, its controller, the funding output, the
             -- parameters, the script evaluation and the outlay judged against
             -- the allowance all come from the update's one view.
+            let placed = [InKey key, InEdge Updating]
             (signed, envelope) <-
-                submitBuilt
+                submitBuiltIn
                     wc
                     "update"
+                    ["state", "key outputs"]
                     ( \envelope ->
                         Expectation
                             (Just key)
@@ -299,23 +320,25 @@ runUpdate a = case entryMode a of
                             Nothing
                             Nothing
                     )
-                    ( \v -> do
+                    ( \building v -> do
                         live <- attachLive v s
                         outs <- liveOutputs v s
                         (holding, envelope) <- planUpdate live (callerKey at) key outs
+                        place building placed (EdgeStarted Updating)
                         unsigned <-
                             buildUpdate v live addr (entryFund a) holding payload
                         refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
                         pure (unsigned, envelope)
                     )
-            after <- reading at (`liveOutputs` s)
+            after <-
+                readingBack at "update" signed ["key outputs"] (`liveOutputs` s)
             ((liveIn, _), seen) <-
                 either (failWith Partial) pure (liveOutputFor s key after)
             unless (seen == envelope{envPayload = payload}) $
                 failWith
                     Partial
                     "the updated output carries another envelope than the one sent"
-            state <- reading at (`attachLive` s)
+            state <- readingBack at "update" signed ["state"] (`attachLive` s)
             rootAfter <- either (failWith Partial) pure (observedRoot state)
             when (rootAfter /= rootBefore) $
                 failWith StaleState "the registry root moved during an update"
@@ -327,6 +350,8 @@ runUpdate a = case entryMode a of
                     <> txInText liveIn
                     <> " with the new payload; root unchanged"
                 )
+            report (wcTracer wc) placed (Updated key (txInText liveIn))
+            report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
             pure $
                 receipt
                     "update"
@@ -343,12 +368,12 @@ runUpdate a = case entryMode a of
 -- terminate
 -- ---------------------------------------------------------
 
-runTerminate :: EntryArgs -> IO Value
-runTerminate a = case entryMode a of
-    Preview node addr -> runPreview KTerminate a node addr
+runTerminate :: Env -> EntryArgs -> IO Value
+runTerminate env a = case entryMode a of
+    Preview node addr -> runPreview env KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
-        attached (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
+        attached env (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
             let s = savedOf at
             -- The live output the booking releases is resolved in the
             -- booking's own view, with the state the approval binds.

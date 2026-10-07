@@ -71,6 +71,7 @@ import Singular.Registry.Deployment
     , renderOutRef
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TxIn)
+import Singular.Registry.LedgerProvider (Session (..))
 import Singular.Registry.SessionIO (withLatest)
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
@@ -78,6 +79,7 @@ import Singular.Registry.SyntheticLedger
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.TraceRender (readPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Edges (BookingApproval (..))
 import Singular.Registry.TxBuilder.Internal
@@ -265,7 +267,11 @@ updates = describe "a payload update" $ do
         "logs the build of an update, refused or built, as the preview of an update reaches it (#363)"
         $ withLogFile
         $ \path -> do
-            r <- updatePayloadTx (args (liveWith 1 Nothing))
+            r <-
+                updatePayloadTx
+                    (args (liveWith 1 Nothing))
+                        { uaSession = stubSession{sessionTracer = readPhaseLog path}
+                        }
             r `shouldSatisfy` isLeft
             objects <- logObjects path
             map (textField "builder") (phaseLines "build-body" objects)
@@ -290,7 +296,7 @@ updates = describe "a payload update" $ do
                                         , reference `Set.member` wanted
                                         ]
                                 )
-                                stubSession
+                                stubSession{sessionTracer = readPhaseLog path}
                 funding = mkBasicTxOut wallet (MaryValue (Coin 9_000_000_000) mempty)
                 held =
                     liveWith 1 (Just (envelopeToData envelope))

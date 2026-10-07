@@ -47,7 +47,7 @@ module Singular.Registry.Node.Indexer
 import Control.Concurrent.Async (link)
 import Control.Exception (bracket_)
 import Control.Monad (unless, void, when)
-import Control.Tracer (nullTracer)
+import Control.Tracer (Tracer, nullTracer)
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (for_)
@@ -128,7 +128,6 @@ import Singular.Registry.Node.IndexerView
     , requireCovered
     )
 import Singular.Registry.Node.Options (NodeMode (..), die)
-import Singular.Registry.Node.PhaseLog (phaseLogFromEnv, queryPhase)
 import Singular.Registry.Node.RawView (RawProvider)
 import Singular.Registry.Node.View (nodeProvider)
 import Singular.Registry.Node.Wait
@@ -142,7 +141,9 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.ProviderTrace (nodeSource)
 import Singular.Registry.TimeMaterial (TimeMaterial)
+import Singular.Registry.Trace (ReadEvent, tracedQuery)
 
 {- | The indexer this process follows its chain with, installed by
 'followChain'. 'awaitIndexed', 'confirmOutputZero' and
@@ -256,8 +257,8 @@ output; name the transaction when it is not indexed within the
 window (in seconds). A wait inside a view that holds the index could
 never see the block, so it is refused at once.
 -}
-awaitIndexedWithin :: Int -> ConwayTx -> IO ()
-awaitIndexedWithin window tx = do
+awaitIndexedWithin :: Tracer IO ReadEvent -> Int -> ConwayTx -> IO ()
+awaitIndexedWithin lg window tx = do
     clock <- startWaitClock
     following <-
         readIORef chainFollower
@@ -274,14 +275,18 @@ awaitIndexedWithin window tx = do
             \the index; a runner must confirm after the view has closed"
     let idx = followingIndexer following
         tid@(TxId h) = txIdTx tx
-    lg <- phaseLogFromEnv
-    boundWaitSince clock IndexedConfirmationWait tid window $
-        void $
-            queryPhase lg "awaitTxIn" (maybe 0 (const 1)) $
-                awaitTxIn
-                    idx
-                    (Indexer.TxIn (hashToBytes (extractHash h)) 0)
-                    Nothing
+    boundWaitSince clock IndexedConfirmationWait tid window
+        $ void
+        $ tracedQuery
+            lg
+            nodeSource
+            Nothing
+            "awaitTxIn"
+            (Just . maybe 0 (const 1))
+        $ awaitTxIn
+            idx
+            (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+            Nothing
 
 {- | 'awaitIndexedWithin' the production confirmation window: five
 minutes, which covers a public test network's block time with room for
@@ -289,7 +294,9 @@ a slow epoch boundary.
 -}
 awaitIndexed :: ConwayTx -> IO ()
 awaitIndexed =
-    awaitIndexedWithin (confirmationAttempts * confirmationPollSeconds)
+    awaitIndexedWithin
+        nullTracer
+        (confirmationAttempts * confirmationPollSeconds)
 
 {- | The provider a runner reads the chain through.
 
@@ -314,8 +321,11 @@ reads are of the one block the node view was acquired at, or the view
 is refused by name within 'agreementBound'.
 -}
 followedProvider
-    :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
-followedProvider node submit =
+    :: Tracer IO ReadEvent
+    -> Cage.Provider IO
+    -> Submitter IO
+    -> IO (Cage.Provider IO)
+followedProvider lg node submit =
     currentFollower >>= \case
         Just
             Following
@@ -326,7 +336,7 @@ followedProvider node submit =
                 | isNothing (coverageStart (gateCoverage gate)) -> do
                     indexFunding idx node submit
                     markFundingIndexed
-                    pure (indexerProvider gate readiness agreementBound node)
+                    pure (indexerProvider lg gate readiness agreementBound node)
         _ -> pure node
 
 {- | The indexer backend's provider over a node followed from its origin
@@ -338,8 +348,11 @@ there and the index does not — one only the genesis state carries — is
 refused by name rather than read as absent.
 -}
 originProvider
-    :: Cage.Provider IO -> Maybe Addr -> IO (Cage.Provider IO)
-originProvider node wallet =
+    :: Tracer IO ReadEvent
+    -> Cage.Provider IO
+    -> Maybe Addr
+    -> IO (Cage.Provider IO)
+originProvider lg node wallet =
     currentFollower >>= \case
         Just
             Following
@@ -348,8 +361,8 @@ originProvider node wallet =
                 }
                 | isNothing (coverageStart (gateCoverage gate)) -> do
                     awaitIndexerReady readiness readinessBound
-                    for_ wallet (requireCovered gate readiness agreementBound node)
-                    pure (indexerProvider gate readiness agreementBound node)
+                    for_ wallet (requireCovered lg gate readiness agreementBound node)
+                    pure (indexerProvider lg gate readiness agreementBound node)
         _ ->
             die
                 "the indexer backend reads through an index following the \
@@ -438,9 +451,13 @@ state, refused once 'followedProvider' has handed the reads of a
 followed devnet to its indexer.
 -}
 adaptProvider
-    :: NetworkMagic -> TimeMaterial -> RawProvider IO -> Cage.Provider IO
-adaptProvider magic material p =
-    Cage.Provider $ \action -> Cage.withView (nodeProvider magic material p) $ \v ->
+    :: Tracer IO ReadEvent
+    -> NetworkMagic
+    -> TimeMaterial
+    -> RawProvider IO
+    -> Cage.Provider IO
+adaptProvider lg magic material p =
+    Cage.Provider $ \action -> Cage.withView (nodeProvider lg magic material p) $ \v ->
         action
             v
                 { Cage.viewUTxOsAt = \addr -> do

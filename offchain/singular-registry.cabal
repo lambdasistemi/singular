@@ -60,6 +60,7 @@ library
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers                        >=0.6  && <0.8
+    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -188,8 +189,8 @@ library local-services
     Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
-    Singular.Registry.PhaseLog
     Singular.Registry.Provider
+    Singular.Registry.ProviderTrace
     Singular.Registry.Services
     Singular.Registry.SessionServices
     Singular.Registry.SessionIO
@@ -200,6 +201,8 @@ library local-services
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
     Singular.Registry.ProviderSettings
+    Singular.Registry.Trace
+    Singular.Registry.TraceRender
 
   build-depends:
     , aeson
@@ -208,7 +211,6 @@ library local-services
     , bech32
     , bytestring
     , cardano-crypto-class
-    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
@@ -218,6 +220,7 @@ library local-services
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
+    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -249,7 +252,6 @@ library node-internal
     Singular.Registry.Node.IndexGate
     Singular.Registry.Node.Memory
     Singular.Registry.Node.Options
-    Singular.Registry.Node.PhaseLog
     Singular.Registry.Node.RawView
     Singular.Registry.Node.Session
     Singular.Registry.Node.Submit
@@ -258,7 +260,6 @@ library node-internal
     Singular.Registry.Node.Wallet
 
   build-depends:
-    , aeson
     , async
     , base                                   >=4.14 && <5
     , base16-bytestring
@@ -303,6 +304,7 @@ executable local-services-record
     EvaluationFixture
 
   build-depends:
+    , contra-tracer
     , aeson
     , async
     , base                              >=4.14 && <5
@@ -381,6 +383,7 @@ library koios-http
     , cardano-ledger-mary
     , cardano-slotting
     , case-insensitive
+    , contra-tracer
     , cardano-tx-tools:tx-build
     , directory
     , filepath
@@ -916,31 +919,43 @@ test-suite cage-tests
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLI.Attached
     Singular.CLI.Command
+    Singular.CLI.CommandRunSpec
+    Singular.CLI.Create
+    Singular.CLI.Entry
+    Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
     Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
+    Singular.CLI.Inspect
     Singular.CLI.Live
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Plan
+    Singular.CLI.Preview
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
+    Singular.CLI.Reclaim
     Singular.CLI.ReclaimRules
     Singular.CLI.ReclaimSpec
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.Registry
+    Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
     Singular.CLI.RequestWindow
+    Singular.CLI.Root
     Singular.CLI.Session
+    Singular.CLI.Trace
+    Singular.CLI.TraceSpec
     Singular.CLI.TrieHistory
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
+    Singular.CLI
     Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
@@ -1015,6 +1030,8 @@ test-suite cage-tests
     , cardano-tx-tools:tx-build
     , case-insensitive
     , containers
+    , contra-tracer
+    , contra-tracer-contrib
     , crypton
     , directory
     , filepath
@@ -1069,6 +1086,7 @@ test-suite contract-tests
     Singular.Registry.SyntheticTime
 
   build-depends:
+    , contra-tracer
     , aeson
     , async
     , base
@@ -1282,6 +1300,7 @@ executable singular
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Entry
+    Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.InsertEnvelope
@@ -1301,7 +1320,9 @@ executable singular
     Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RequestWindow
+    Singular.CLI.Root
     Singular.CLI.Session
+    Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
 
@@ -1321,6 +1342,8 @@ executable singular
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers
+    , contra-tracer
+    , contra-tracer-contrib
     , directory
     , filepath
     , microlens
@@ -1330,6 +1353,7 @@ executable singular
     , singular-registry:local-services
     , singular-registry:koios-http
     , text
+    , time
     , unix
 
   ghc-options:      -threaded -with-rtsopts=-N

@@ -91,13 +91,12 @@ import Singular.CLI.Registry
     , parseEnterpriseAddress
     , renderIdentityError
     )
-import Singular.CLI.Session (failWith, txIdHex)
+import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
@@ -114,8 +113,13 @@ kindName KTerminate = "terminate"
 address the caller named, and report what it would submit.
 -}
 runPreview
-    :: Kind -> EntryArgs -> ProviderSettings -> String -> IO Value
-runPreview kind a settings addrText = do
+    :: Env
+    -> Kind
+    -> EntryArgs
+    -> ProviderSettings
+    -> String
+    -> IO Value
+runPreview env kind a settings addrText = do
     let magic = providerMagic settings
     addr <-
         either
@@ -134,55 +138,56 @@ runPreview kind a settings addrText = do
     -- One view for the whole preparation: the state, the replayed root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
-    withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
-        pp <- Cage.parameters v
-        point <- Cage.tip v
-        either
-            (failWith ClientRefusal . renderIdentityError)
-            pure
-            (checkNetwork (savedConfig saved) magic)
-        context <- openTrie saved
-        live <- attachLive v saved
-        observed <- either (failWith StaleState) pure (observedRoot live)
-        requireTrieSelection saved live context
-        prepared <- case kind of
-            KInsert -> do
-                envelope <-
-                    maybe (failWith ClientRefusal "insert has no envelope") pure inserted
-                booked <- planInsert live envelope
-                (<> [("envelope", envelopeToJson envelope)])
-                    <$> previewBooking a v live addr key booked
-            KTerminate -> do
-                outs <- liveOutputs v saved
-                (booked, _, _) <- planTerminate live caller key outs
-                previewBooking a v live addr key booked
-            KUpdate -> do
-                payload <- document "update needs --payload" dataFromJson
-                outs <- liveOutputs v saved
-                (holding, _) <- planUpdate live caller key outs
-                tx <- buildUpdate v live addr (entryFund a) holding payload
-                let outlay = updateOutlay tx
-                refuseOver (entryMaxOutlay a) outlay
+    envReads env settings $ \caps ->
+        Cage.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
+            pp <- Cage.parameters v
+            point <- Cage.tip v
+            either
+                (failWith ClientRefusal . renderIdentityError)
                 pure
-                    [ ("update", bodyReport pp tx)
-                    , ("outlay", outlayReport (entryMaxOutlay a) outlay)
-                    ]
-        scope <- sessionReceipt caps v
-        pure $
-            receipt
-                (kindName kind)
-                Success
-                ( [("preview", toJSON True)]
-                    <> keyFields key
-                    <> [ ("networkMagic", toJSON magic)
-                       , ("caller", callerReport addrText caller)
-                       , ("stateRoot", toJSON (hexT observed))
-                       , ("observedTip", toJSON (pointText point))
-                       , ("sessionEvidence", scope)
-                       , ("protocolParameters", parametersDigest pp)
-                       ]
-                    <> prepared
-                )
+                (checkNetwork (savedConfig saved) magic)
+            context <- openTrie saved
+            live <- attachLive v saved
+            observed <- either (failWith StaleState) pure (observedRoot live)
+            requireTrieSelection saved live context
+            prepared <- case kind of
+                KInsert -> do
+                    envelope <-
+                        maybe (failWith ClientRefusal "insert has no envelope") pure inserted
+                    booked <- planInsert live envelope
+                    (<> [("envelope", envelopeToJson envelope)])
+                        <$> previewBooking a v live addr key booked
+                KTerminate -> do
+                    outs <- liveOutputs v saved
+                    (booked, _, _) <- planTerminate live caller key outs
+                    previewBooking a v live addr key booked
+                KUpdate -> do
+                    payload <- document "update needs --payload" dataFromJson
+                    outs <- liveOutputs v saved
+                    (holding, _) <- planUpdate live caller key outs
+                    tx <- buildUpdate v live addr (entryFund a) holding payload
+                    let outlay = updateOutlay tx
+                    refuseOver (entryMaxOutlay a) outlay
+                    pure
+                        [ ("update", bodyReport pp tx)
+                        , ("outlay", outlayReport (entryMaxOutlay a) outlay)
+                        ]
+            scope <- sessionReceipt caps v
+            pure $
+                receipt
+                    (kindName kind)
+                    Success
+                    ( [("preview", toJSON True)]
+                        <> keyFields key
+                        <> [ ("networkMagic", toJSON magic)
+                           , ("caller", callerReport addrText caller)
+                           , ("stateRoot", toJSON (hexT observed))
+                           , ("observedTip", toJSON (pointText point))
+                           , ("sessionEvidence", scope)
+                           , ("protocolParameters", parametersDigest pp)
+                           ]
+                        <> prepared
+                    )
   where
     document :: String -> (Aeson.Value -> Either String b) -> IO b
     document missing parse = do

@@ -4348,8 +4348,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, PhaseLog, Services and TimeMaterial; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-    "v": "b02fcf0dda5a"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the private node runtime owners staying outside it in Node module ownership, and the conformance reference's extent is the conformance library's. The package-private node-internal library, the executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderTrace, Services, TimeMaterial, Trace and TraceRender; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+    "v": "51edad4cf425"
    }
   ],
   "what-this-reference-contains": [
@@ -6088,15 +6088,8 @@
     "index": 17,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-17",
     "pause_ms": 300,
-    "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-    "v": "c1c47dc30868"
-   },
-   {
-    "index": 18,
-    "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-18",
-    "pause_ms": 300,
     "text": "Submit — the write capability, which takes signed transactions only — source.",
-    "v": "cccd3ecced5b"
+    "v": "5f09f42a9a84"
    }
   ],
   "process-state-and-its-lifetimes": [
@@ -6227,15 +6220,22 @@
     "index": 10,
     "name": "docs-offchain-node-ownership/where-common-changes-land-10",
     "pause_ms": 300,
-    "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
-    "v": "38a3103dbb9f"
+    "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
+    "v": "9bcfec06ccf2"
    },
    {
     "index": 11,
     "name": "docs-offchain-node-ownership/where-common-changes-land-11",
     "pause_ms": 300,
+    "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
+    "v": "2c8ed7c04a35"
+   },
+   {
+    "index": 12,
+    "name": "docs-offchain-node-ownership/where-common-changes-land-12",
+    "pause_ms": 300,
     "text": "A shared named failure the runner prints: the diagnostic helper in Node.Options, the one cross-owner utility, at the graph's root.",
-    "v": "3dce0f71a9e5"
+    "v": "5c79410c4aab"
    }
   ]
  },
@@ -8242,6 +8242,50 @@
     "pause_ms": 400,
     "text": "The ordinary provider is Koios. Old backend and socket settings are refused before acquisition or registry effects. The current provider session promises no coherent chain snapshot and carries no verification witness.",
     "v": "aaff8e789c25"
+   }
+  ],
+  "following-what-a-command-does": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/following-what-a-command-does-00",
+    "pause_ms": 500,
+    "text": "Following what a command does.",
+    "v": "c1182ea4ee78"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/following-what-a-command-does-01",
+    "pause_ms": 400,
+    "text": "As a registry operator, you can watch a command take its protocol steps while it runs, and keep the same account as data. Every command narrates one stream of events: at --trace what, the registry it attached, each key and request it read, the edge action it takes on them and its result; at --trace how, also the mechanics under each step, each with its time. Standard output still carries the receipt alone, so a script reading the receipt is unaffected by any narration.",
+    "v": "dda27c220cf8"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/following-what-a-command-does-02",
+    "pause_ms": 400,
+    "text": "On a terminal a command narrates what to standard error unless told otherwise. A fold, narrated at how:",
+    "v": "d80767187644"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/following-what-a-command-does-03",
+    "pause_ms": 400,
+    "text": "Each line is indented by where it happened: the registry, then the key or request, then the edge action, with each mechanic under the action it belongs to. Identifiers are shortened in text; amounts are in tADA. A failure says where it happened, and the four places are distinct: refused by the client before anything was submitted, refused by local script evaluation before anything was submitted, rejected by the ledger, or refused by the provider, so that no ledger judged the transaction.",
+    "v": "5e502538d991"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/following-what-a-command-does-04",
+    "pause_ms": 400,
+    "text": "With --trace-format json, or a file:PATH sink, each event is one JSON object on its own line, written as it happens: its level (what or how), its scope (the registry, key, request, edge action and transaction it happened in, outermost first) and its event with that event's fields, in full. The last line of every stream is command-ended, naming the command, the outcome class of its receipt and its elapsed time. Keys are written in base16, and no event carries a signing key or the text of a failure: a failure names only its type.",
+    "v": "37a4f1799b53"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/following-what-a-command-does-05",
+    "pause_ms": 400,
+    "text": "A sink that cannot be written, a closed standard error or a full disk loses that sink's narration and nothing else: the other sinks, the receipt, the journal and the exit status are as they would be with no narration at all.",
+    "v": "caf9b5f26add"
    }
   ],
   "harness-appendix-test-hooks": [

@@ -88,6 +88,7 @@ import Cardano.Node.Client.E2E.Setup
     , genesisSignKey
     , rawSerialiseSignKeyDSIGN
     )
+import Control.Tracer (nullTracer)
 import Devnet.Probe qualified as Probe
 import Singular.Registry.Private.Facade
 import Singular.Registry.Private.Smoke (runFacadeSmoke)
@@ -142,7 +143,7 @@ main = do
 -- | Spawn the private facade, fund through shared HTTP, print settings, wait.
 spawn :: [String] -> IO ()
 spawn args = do
-    withFixture args $ \evidence facade -> withReads (facadeSettings facade) $ \caps -> do
+    withFixture args $ \evidence facade -> withReads nullTracer nullTracer (facadeSettings facade) $ \caps -> do
         mapM_ (fund caps) (fundingFrom args)
         let settings = facadeSettings facade
         LBS.putStrLn

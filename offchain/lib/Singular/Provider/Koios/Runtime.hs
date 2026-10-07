@@ -1,10 +1,12 @@
 {- | IO lifecycle effects for the same constructor used in pure State.
-Query timing wraps the actual raw read; disabled logging changes no facts.
+Each raw read is timed where it happens and traced as one of the backend's
+own exchanges; opening and closing a session are traced too. The sink keeps
+the raw evidence a receipt records, which no trace carries.
 -}
-module Singular.Provider.Koios.Runtime (newIORuntime) where
+module Singular.Provider.Koios.Runtime (newIORuntime, koiosSource) where
 
 import Control.Exception (finally, mask)
-import Data.Aeson ((.=))
+import Control.Tracer (Tracer, traceWith)
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -13,19 +15,29 @@ import Singular.Provider.Koios.Provider
     , ProviderRuntime (..)
     )
 import Singular.Registry.Evidence (SessionId (..))
-import Singular.Registry.PhaseLog
-    ( PhaseLog
+import Singular.Registry.Trace
+    ( BackendEvent (..)
+    , Query (..)
+    , QueryEnd (..)
+    , ViewOpening (..)
+    , ViewRelease (..)
     , isoNow
-    , logPhase
-    , timedPhase
+    , timedTrace
     )
 
-{- | The sink retains raw evidence for receipts. Phase logging records names,
-identities, durations and failure classes without raw error text or keys.
+-- | The source Koios's exchanges and reads report as.
+koiosSource :: Text.Text
+koiosSource = "Koios"
+
+{- | The sink retains raw evidence for receipts. The tracer records names,
+identities, durations and failure classes, without raw bodies, error text
+or keys.
 -}
 newIORuntime
-    :: PhaseLog -> (ProviderEvent -> IO ()) -> IO (ProviderRuntime IO)
-newIORuntime logHandle sink = do
+    :: Tracer IO BackendEvent
+    -> (ProviderEvent -> IO ())
+    -> IO (ProviderRuntime IO)
+newIORuntime tracer sink = do
     prefix <- isoNow
     state <- newIORef (0 :: Integer, Set.empty)
     let identityText (SessionId identity) = identity
@@ -33,14 +45,11 @@ newIORuntime logHandle sink = do
             sink event
             case event of
                 SessionOpened identity _ ->
-                    logPhase
-                        logHandle
-                        "view"
-                        [ "session" .= identityText identity
-                        , "binding" .= ("Unbound" :: Text.Text)
-                        ]
+                    traceWith tracer . BackendViewOpened $
+                        SessionViewOpened (identityText identity) "Unbound"
                 SessionClosed identity ->
-                    logPhase logHandle "view-release" ["session" .= identityText identity]
+                    traceWith tracer . BackendViewReleased $
+                        SessionViewClosed (identityText identity)
                 _ -> pure ()
     pure
         ProviderRuntime
@@ -57,10 +66,17 @@ newIORuntime logHandle sink = do
             , sessionOpen = \identity -> Set.member identity . snd <$> readIORef state
             , recordEvent = observe
             , measureRead = \identity name event action ->
-                timedPhase
-                    logHandle
-                    "query"
-                    ["session" .= identityText identity, "query" .= name]
-                    (const [])
+                timedTrace
+                    tracer
+                    ( \ms end ->
+                        Exchanged
+                            Query
+                                { queryName = name
+                                , querySource = koiosSource
+                                , querySession = Just (identityText identity)
+                                , queryElapsed = ms
+                                , queryEnd = either QueryFailed (const (Answered Nothing)) end
+                                }
+                    )
                     (do result <- action; sink (event result); pure result)
             }

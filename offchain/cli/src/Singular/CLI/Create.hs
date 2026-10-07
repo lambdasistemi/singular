@@ -89,15 +89,26 @@ import Singular.CLI.Registry
     , writeConfig
     )
 import Singular.CLI.Session
-    ( WriteContext (..)
+    ( Building (..)
+    , Env
+    , WriteContext (..)
     , expecting
     , failWith
     , journalObserved
     , journalObservedId
+    , readOnce
+    , readStep
     , submitBuilt
+    , submitBuiltIn
     , txIdHex
     , withSession
     , withWrite
+    )
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (Created, EdgeStarted, RegistrySeen)
+    , report
     )
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -114,7 +125,6 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
@@ -136,8 +146,8 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
-runCreate :: CreateArgs -> IO Value
-runCreate a = do
+runCreate :: Env -> CreateArgs -> IO Value
+runCreate env a = do
     let dir = createRegistry a
     refuseExisting dir
         >>= either (failWith ClientRefusal . renderIdentityError) pure
@@ -153,21 +163,27 @@ runCreate a = do
                     (failWith ClientRefusal)
                     pure
                     (parseEnterpriseAddress magic addrText)
-            withReads settings $ \caps -> do
-                utxos <- Cage.withLatest (capReads caps) (`Cage.outputsAt` addr)
+            readOnce env settings ["wallet outputs"] $ \_ v -> do
+                utxos <- Cage.outputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
                 pure (receipt "create" Success (("preview", toJSON True) : identity))
-        Submit ws -> createWith a rel ws
+        Submit ws -> createWith env a rel ws
 
-createWith :: CreateArgs -> Release -> WriteSettings -> IO Value
-createWith a rel ws = do
+createWith
+    :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
+createWith env a rel ws = do
     let dir = createRegistry a
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
-    session dir "create" ws $ \wc -> do
+    session env dir "create" ws $ \wc -> do
         let addr = walletAddr (wcWallet wc)
         utxos <-
-            Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
+            readStep
+                (wcTracer wc)
+                (wcSource wc)
+                ["wallet outputs"]
+                (wcCapabilities wc)
+                (`Cage.outputsAt` addr)
         ((seedIn, cfg, pinned), identity) <-
             previewIdentity (not (createPreview a)) a rel addr utxos
         if createPreview a
@@ -246,8 +262,7 @@ tokenHex (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 boot :: WriteContext -> CageConfig -> NamingCodes -> TxIn -> IO Booted
 boot wc cfg pinned seedIn = do
-    let prov = capReads (wcCapabilities wc)
-        addr = walletAddr (wcWallet wc)
+    let addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
             (signed, refOut) <-
@@ -262,7 +277,12 @@ boot wc cfg pinned seedIn = do
     -- The state validator, published from outside the seed, unless the
     -- wallet already publishes it.
     existing <-
-        Cage.withLatest prov (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["reference scripts"]
+            (wcCapabilities wc)
+            (\v -> stateRefIn cfg <$> Cage.outputsAt v addr)
     stateRef@(stateIn, _) <-
         maybe
             ( publish
@@ -280,18 +300,25 @@ boot wc cfg pinned seedIn = do
         stateRef
     -- The boot, consuming the seed.
     (signedBoot, ()) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "boot"
+            []
             (const (expecting "state"))
-            (\v -> (,()) <$> bootTokenImpl cfg v addr)
+            ( \building v -> do
+                place building [InEdge Booting] (EdgeStarted Booting)
+                (,()) <$> bootTokenImpl cfg v addr
+            )
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
             _ -> failWith LedgerRefusal "the boot minted no single registry token"
     stateUtxos <-
-        Cage.withLatest
-            prov
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["state"]
+            (wcCapabilities wc)
             (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
     (seenOutput, seenState) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
@@ -305,6 +332,18 @@ boot wc cfg pinned seedIn = do
                 "boot"
                 signedBoot
                 "the state output holds the registry token"
+            report
+                (wcTracer wc)
+                [InEdge Booting]
+                (Created (tokenHex tid) (txInText output))
+            report
+                (wcTracer wc)
+                [InRegistry (tokenHex tid)]
+                ( RegistrySeen
+                    (txInText output)
+                    (hexT (unOnChainRoot (stateRoot state)))
+                    (Just 0)
+                )
             pure (output, state)
     -- The references every later command resolves its scripts through.
     let scripts =
@@ -353,7 +392,12 @@ observeReference
     -> IO ()
 observeReference wc step addr script (i, _) = do
     utxos <-
-        Cage.withLatest (capReads (wcCapabilities wc)) (`Cage.outputsAt` addr)
+        readStep
+            (wcTracer wc)
+            (wcSource wc)
+            ["reference scripts"]
+            (wcCapabilities wc)
+            (`Cage.outputsAt` addr)
     let wanted = hashScript script
     case [o | (j, o) <- utxos, j == i] of
         [o]

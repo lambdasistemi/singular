@@ -51,6 +51,12 @@ import Singular.CLI.ReclaimRules
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, Reclaimed, RequestSeen, RootSeen)
+    , report
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.SessionIO qualified as Services
@@ -75,8 +81,9 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
-runReclaim :: ReclaimArgs -> IO Value
-runReclaim a = attached
+runReclaim :: Env -> ReclaimArgs -> IO Value
+runReclaim env a = attached
+    env
     (reclaimRegistry a)
     (reclaimBlueprint a)
     (reclaimWrite a)
@@ -93,13 +100,17 @@ runReclaim a = attached
             boundDatum = mkInlineDatum (toPlcData (txInToRef named))
             requestField = [("request", toJSON (txInText named))]
             stop why = failWithFields ClientRefusal why requestField
+            edgeText = T.pack . edgeName . requestEdge
+            placed r =
+                [InRequest (txInText named), InEdge (Reclaiming (edgeText r))]
         root <- selectedTrieRoot (atTrie at)
         (tx, (locked, req, bounds, tipSlot, opens, closes, returned)) <-
-            submitBuilt
+            submitBuiltIn
                 wc
                 "reclaim"
+                ["requests", "state"]
                 (const (expecting ("reclaim:" <> txInText named)))
-                $ \v -> do
+                $ \building v -> do
                     allRequests <- Cage.outputsAt v requestAddr
                     let pending = findRequestUtxos (savedToken s) allRequests
                     locked <-
@@ -126,6 +137,17 @@ runReclaim a = attached
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (processingEnds b)
                     closes <-
                         fmap (toInteger . Cage.unSlotNo) <$> slotAt v (retractEnds b)
+                    found
+                        building
+                        [InRequest (txInText named)]
+                        ( RequestSeen
+                            (txInText named)
+                            (edgeText req)
+                            (requestKey req)
+                            (Just (processingEnds b))
+                            (fromInteger <$> opens)
+                        )
+                    place building (placed req) (EdgeStarted (Reclaiming (edgeText req)))
                     bounds <-
                         either (stop . renderReclaimRefusal) pure $
                             reclaimGate
@@ -199,7 +221,7 @@ runReclaim a = attached
                     refuseOver (reclaimMaxOutlay a) (updateOutlay unsigned)
                     pure
                         (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
-        (pendingAfter, liveAfter, ownerOuts) <- reading at $ \v -> do
+        (pendingAfter, liveAfter, ownerOuts) <- readingBack at "reclaim" tx ["requests", "state", "owner outputs"] $ \v -> do
             requests <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             ownerOuts <- Cage.outputsAt v recipient
@@ -221,6 +243,11 @@ runReclaim a = attached
             "reclaim"
             tx
             "the request is gone and its whole bound owner return is live; root unchanged"
+        report
+            (wcTracer wc)
+            (placed req)
+            (Reclaimed (txInText named) (coinOf returned))
+        report (wcTracer wc) [] (RootSeen (hexT root) (hexT rootAfter))
         pure $
             receipt
                 "reclaim"

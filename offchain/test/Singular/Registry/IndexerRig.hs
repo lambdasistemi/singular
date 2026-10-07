@@ -18,6 +18,7 @@ module Singular.Registry.IndexerRig
       Rig (..)
     , withRigAt
     , adapter
+    , adapterTraced
     , readinessOf
     , setReadiness
     , shortBound
@@ -41,10 +42,12 @@ import Control.Concurrent.STM
     , readTVar
     , writeTVar
     )
+import Control.Tracer (Tracer, nullTracer)
 import Data.Map.Strict qualified as Map
 import Data.Time.Clock (getCurrentTime)
 import Data.Word (Word32)
 import Lens.Micro ((^.))
+import Singular.Registry.Trace (ReadEvent)
 
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Address (serialiseAddr)
@@ -120,8 +123,13 @@ withRigAt magic start coverage k = withInMemoryIndexer $ \idx -> do
     k Rig{rigFollower = gatedHandle rigGate, ..}
 
 adapter :: Rig -> Int -> Provider IO
-adapter rig bound =
+adapter = adapterTraced nullTracer
+
+-- | The adapter, its index admissions traced.
+adapterTraced :: Tracer IO ReadEvent -> Rig -> Int -> Provider IO
+adapterTraced tracer rig bound =
     indexerProvider
+        tracer
         (rigGate rig)
         (readinessOf rig)
         bound

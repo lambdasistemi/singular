@@ -36,7 +36,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM, unless)
+import Control.Monad (forM, forM_, unless)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.Foldable (toList)
@@ -68,6 +68,13 @@ import Singular.CLI.Registry (hexT)
 import Singular.CLI.RejectRules
 import Singular.CLI.RequestWindow (Bounds (..), windowOf)
 import Singular.CLI.Session
+import Singular.CLI.Trace
+    ( EdgeAction (..)
+    , Scope (..)
+    , What (EdgeStarted, RequestSeen, RootSeen)
+    , report
+    )
+import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -122,9 +129,10 @@ data Rejected = Rejected
 {- | @singular registry reject@: reject the registry's pending requests, signed
 and funded by this wallet, and journal it.
 -}
-runReject :: RejectArgs -> IO Value
-runReject a =
+runReject :: Env -> RejectArgs -> IO Value
+runReject env a =
     attached
+        env
         (rejectRegistry a)
         (rejectBlueprint a)
         (rejectWrite a)
@@ -142,11 +150,12 @@ rejectPending at a = do
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
     rootBefore <- selectedTrieRoot (atTrie at)
     (tx, plan) <-
-        submitBuilt
+        submitBuiltIn
             wc
             "reject"
+            ["state", "requests"]
             (const (expecting "state"))
-            ( \v -> do
+            ( \building v -> do
                 allAtRequestAddr <- Cage.outputsAt v requestAddr
                 let pending = sortOn fst (findRequestUtxos (savedToken s) allAtRequestAddr)
                     pendingIns = map fst pending
@@ -188,6 +197,18 @@ rejectPending at a = do
                         | ((i, o, r), (_, b)) <- zip booked taken
                         ]
                     tip = stateMaxFee st
+                forM_ rows $ \r ->
+                    found
+                        building
+                        [InRequest (txInText (rowRequest r))]
+                        ( RequestSeen
+                            (txInText (rowRequest r))
+                            (T.pack (edgeName (rowEdge r)))
+                            (rowKey r)
+                            Nothing
+                            Nothing
+                        )
+                place building [InEdge Rejecting] (EdgeStarted Rejecting)
                 funded <-
                     fundedView (rejectFund a) addr v
                         >>= either
@@ -272,7 +293,7 @@ rejectPending at a = do
     -- Observed: every rejected request output is gone, the root is where it was,
     -- and each refund is live at its owner's address as built.
     after <-
-        reading at $ \v -> do
+        readingBack at "reject" tx ["requests", "state", "owner outputs"] $ \v -> do
             left <- Cage.outputsAt v requestAddr
             live <- attachLive v s
             owners <-
@@ -316,6 +337,14 @@ rejectPending at a = do
         ( T.pack (show (length rejectedIns))
             <> " request(s) rejected and refunded; root unchanged"
         )
+    report
+        (wcTracer wc)
+        [InEdge Rejecting]
+        (Trace.Rejected (map (txInText . rowRequest) (plRows plan)))
+    report
+        (wcTracer wc)
+        []
+        (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
     pure Rejected{rjTx = tx, rjPlan = plan, rjRejector = callerKey at}
   where
     refuse tip = \case

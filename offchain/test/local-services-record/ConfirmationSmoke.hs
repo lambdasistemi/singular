@@ -34,6 +34,7 @@ import Codec.Serialise (deserialiseOrFail)
 import Control.Concurrent.Async (concurrently, withAsync)
 import Control.Exception (try)
 import Control.Monad (unless)
+import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
@@ -80,9 +81,9 @@ import Singular.Registry.Node.Session
     ( guardRawConnection
     , serveSession
     )
-import Singular.Registry.PhaseLog (noPhaseLog, startTimer)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import Singular.Registry.Trace (startTimer)
 import System.FilePath (takeDirectory, (</>))
 
 confirmationSmoke :: FilePath -> FilePath -> IO ()
@@ -99,7 +100,7 @@ confirmationSmoke output sock = withDevnetIndexer sock $ do
                 (boundedSubmitter submissionBound (mkN2CSubmitter ltxs))
                 (rawNodeProvider lsq)
         material <- loadTimeMaterial 42 (takeDirectory sock)
-        let provider = adaptProvider magic material raw
+        let provider = adaptProvider nullTracer magic material raw
         awaitConnection magic sock client provider
         -- Retain only the missing confirmation context, not the completed
         -- independent evaluation/conversion recording campaign.
@@ -123,7 +124,7 @@ confirmationSmoke output sock = withDevnetIndexer sock $ do
                 _ -> fail "ConfirmationSmokeMissingFiniteHorizon"
             pure (floor (utcTimeToPOSIXSeconds start * 1000), end)
         serveSession
-            noPhaseLog
+            nullTracer
             opened
             Nothing
             NodeBackend

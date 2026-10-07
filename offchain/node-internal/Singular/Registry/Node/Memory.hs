@@ -48,13 +48,13 @@ import Cardano.Ledger.Hashes (ScriptHash)
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL)
+import Control.Tracer (nullTracer)
 import Singular.Registry.Ledger
     ( ConwayEra
     , PParams
     , TxIn
     )
 import Singular.Registry.NetworkTime (NetworkTime)
-import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.Provider
     ( ChainPoint (..)
     , Provider
@@ -127,7 +127,7 @@ memoryProvider chain = scopedProvider $ \action -> do
                 , viewProtocolParams = csPParams s
                 , viewTimeContext = reading (pure (csNetworkTime s))
                 , viewResolvedOutputs = resolved
-                , viewPhaseLog = noPhaseLog
+                , viewTracer = nullTracer
                 , viewUTxOsAt = \addr ->
                     reading . pure $
                         [u | u@(_, out) <- Map.toList utxo, out ^. addrTxOutL == addr]

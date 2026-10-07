@@ -15,7 +15,7 @@ module Singular.CLI.Attached
     , attached
     , callerKey
     , provider
-    , reading
+    , readingBack
     , savedOf
     , tokenName
     ) where
@@ -25,7 +25,11 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
+import Data.IORef (readIORef)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
     ( ProviderSettings (..)
@@ -40,9 +44,11 @@ import Singular.CLI.Reconcile
     )
 import Singular.CLI.Registry
     ( checkNetwork
+    , hexT
     , renderIdentityError
     )
 import Singular.CLI.Session
+import Singular.CLI.Trace (Scope (..), What (..), report, within)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -50,7 +56,6 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..))
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -71,33 +76,53 @@ transaction the write then builds reads the chain again, from a view of
 its own. The receipt says what the reconciliation did.
 -}
 attached
-    :: FilePath
+    :: Env
+    -> FilePath
     -> FilePath
     -> WriteSettings
     -> Text
     -> (Attached -> IO Value)
     -> IO Value
-attached dir blueprint ws command body = do
+attached env dir blueprint ws command body = do
     saved <- loadSaved dir blueprint
-    withWrite dir command ws $ \wc -> do
-        let ProviderSettings _ magic _ _ = writeProvider ws
+    withWrite env dir command ws $ \connected -> do
+        -- everything the write reports is inside its registry
+        let wc =
+                connected
+                    { wcTracer =
+                        within (InRegistry (hexT (tokenName saved))) (wcTracer connected)
+                    }
+            ProviderSettings _ magic _ _ = writeProvider ws
         either
             (failWith ClientRefusal . renderIdentityError)
             pure
             (checkNetwork (savedConfig saved) magic)
-        Cage.withLatest (capReads (wcCapabilities wc)) $ \v -> do
-            reconciled <- reconcile command dir saved v
-            refuseUnreconciled reconciled
-            live <- attachLive v saved
-            context <- openTrie saved
-            requireTrieSelection saved live context
-            printed <-
-                body Attached{atWrite = wc, atLive = live, atTrie = context}
-            pure $ case printed of
-                Aeson.Object o ->
-                    Aeson.Object
-                        (KeyMap.insert "reconciled" (reconciledJson reconciled) o)
-                other -> other
+        Cage.withLatest
+            (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
+            $ \v -> do
+                (reconciled, live) <-
+                    timedRead
+                        (wcTracer wc)
+                        (wcSource wc)
+                        ["journal transactions", "state"]
+                        $ do
+                            r <- reconcile command dir saved v
+                            refuseUnreconciled r
+                            (,) r <$> attachLive v saved
+                context <- openTrie saved
+                requireTrieSelection saved live context
+                observed <- either (failWith StaleState) pure (observedRoot live)
+                report
+                    (wcTracer wc)
+                    []
+                    (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
+                printed <-
+                    body Attached{atWrite = wc, atLive = live, atTrie = context}
+                pure $ case printed of
+                    Aeson.Object o ->
+                        Aeson.Object
+                            (KeyMap.insert "reconciled" (reconciledJson reconciled) o)
+                    other -> other
 
 -- | The payment key hash of the wallet this command signs with.
 callerKey :: Attached -> ByteString
@@ -105,12 +130,31 @@ callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
 
 provider
     :: Attached -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
-provider = capReads . wcCapabilities . atWrite
+provider at =
+    let wc = atWrite at
+    in  readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
 
--- | One read operation: acquire a view and read through it.
-reading
-    :: Attached -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
-reading at = Cage.withLatest (provider at)
+{- | A read-back of what a confirmed transaction made: one read step, inside
+the scopes the transaction's build placed it in, so it sits with the
+observation it serves.
+-}
+readingBack
+    :: Attached
+    -> Text
+    -> ConwayTx
+    -> [Text]
+    -> (Cage.Session Cage.NoWitness IO -> IO a)
+    -> IO a
+readingBack at step tx items body = do
+    let wc = atWrite at
+    placed <-
+        Map.findWithDefault [] (txIdHex tx) <$> readIORef (wcPlaced wc)
+    readStep
+        (inScopes (placed <> [InTransaction step]) (wcTracer wc))
+        (wcSource wc)
+        items
+        (wcCapabilities wc)
+        body
 
 savedOf :: Attached -> Saved
 savedOf = liveSaved . atLive

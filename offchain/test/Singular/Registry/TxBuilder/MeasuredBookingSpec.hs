@@ -115,6 +115,7 @@ import Singular.Registry.SessionIO (parameters, withLatest)
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger (withCostCoefficients)
 import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.TraceRender (readPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture
 import Singular.Registry.TxBuilder.CollateralJudgement
     ( Spend (..)
@@ -491,7 +492,8 @@ spec =
                 evaluations <- newIORef (0 :: Int)
                 let counted =
                         base
-                            { outputs = \query -> do
+                            { sessionTracer = readPhaseLog path
+                            , outputs = \query -> do
                                 case query of
                                     AnyOf _ -> atomicModifyIORef' evaluations (\n -> (n + 1, ()))
                                     AtTxIn _ -> atomicModifyIORef' evaluations (\n -> (n + 1, ()))

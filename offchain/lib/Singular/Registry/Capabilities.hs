@@ -25,6 +25,9 @@ import Singular.Registry.Signing (SignedTx)
 
 data Capabilities w m = Capabilities
     { capReads :: (Network, LedgerProvider w m)
+    {- ^ The provider, undecorated: each scope that reads wraps it with its own
+    tracer ('Singular.Registry.ProviderTrace.tracedLedgerProvider')
+    -}
     , capSubmit :: SignedTx -> m SubmitResult
     , capConfirm :: ConwayTx -> m ()
     , capFacts :: m [FactRecord]

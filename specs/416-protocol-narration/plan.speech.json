@@ -1,0 +1,76 @@
+{
+  "protocol-narration-plan": [
+    {
+      "text": "Protocol narration: plan.",
+      "pause": 500
+    },
+    {
+      "text": "One typed event stream, threaded as an argument from the entry point, with every output a renderer of it. Base: main 2cafe6b2.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Contra-tracer with typed events, built with contra-tracer-contrib, which is already pinned. The phase log module and its environment reads are deleted in the same change. Missing combinators, such as a socket sink, go to contra-tracer-contrib by pull request. No model rule, transaction, receipt field or exit code changes.",
+      "pause": 400
+    }
+  ],
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    },
+    {
+      "text": "Provider-level events live in local services. The library builders, the Koios runtime and the node services take a tracer argument. The write session owns transaction events, the command handlers own registry, request and edge events, and a CLI trace module owns the controls, the sinks and the three renderers. The Demo 1 journey and the node guide are updated.",
+      "pause": 400
+    }
+  ],
+  "data-rows": [
+    {
+      "text": "Data rows.",
+      "pause": 500
+    },
+    {
+      "text": "Trace level, trace sink, protocol scope from registry down to transaction, step events with elapsed time, and four disjoint refusal kinds.",
+      "pause": 400
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    },
+    {
+      "text": "Command handlers and the session functions gain a tracer argument; the functions that read the environment take a tracer instead; the text and phase-log renderers are pure functions.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Narration first, tasks one to five, merged before the Demo 1 review on 8 October. Then the socket sink, task six.",
+      "pause": 400
+    }
+  ],
+  "live-boundary": [
+    {
+      "text": "Live boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No preprod writes and no new registry. The operator makes the Demo 1 recording.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "07128298553dae11c7dcc92575387d03a245a6f6e1db38c556f6ef7b86424d47"
+  }
+}

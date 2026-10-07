@@ -38,6 +38,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (finally, try)
 import Control.Monad (forM_, void)
 import Control.Monad.State.Strict (State, gets, modify', runState)
+import Control.Tracer (nullTracer)
 import Data.Aeson
     ( Value (..)
     , decodeStrict'
@@ -112,13 +113,13 @@ import Singular.Registry.NetworkTime
     , networkMagic
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
-import Singular.Registry.PhaseLog (noPhaseLog, phaseLogAt)
 import Singular.Registry.SessionEvidence
     ( FactRecord (..)
     , observeProvider
     )
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.TimeSource (loadPinnedSource)
+import Singular.Registry.TraceRender (backendPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
 import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
 import System.Directory (createDirectoryIfMissing, doesFileExist)
@@ -1156,7 +1157,7 @@ spec = describe "Koios ledger provider constructor" $ do
             requests <- newIORef []
             released <- newIORef False
             runtime <-
-                newIORuntime noPhaseLog (\event -> modifyIORef' events (<> [event]))
+                newIORuntime nullTracer (\event -> modifyIORef' events (<> [event]))
             let client = Client.Koios recordedConfig $ Client.Transport $ \request -> do
                     modifyIORef' requests (<> [request])
                     ( threadDelay 60000000
@@ -1208,7 +1209,7 @@ spec = describe "Koios ledger provider constructor" $ do
                     let logPath = directory </> "phases.jsonl"
                     runtime <-
                         newIORuntime
-                            (phaseLogAt logPath)
+                            (backendPhaseLog logPath)
                             (\event -> modifyIORef' events (<> [event]))
                     transport <- newHttpTransport (defaultHttpConfig url) >>= requireRight
                     let provider =
@@ -1290,7 +1291,10 @@ spec = describe "Koios ledger provider constructor" $ do
             forM_ [False, True] $ \enabled -> withSystemTempDirectory "provider-refusal" $ \directory -> do
                 runtime <-
                     newIORuntime
-                        (if enabled then phaseLogAt (directory </> "phase.log") else noPhaseLog)
+                        ( if enabled
+                            then backendPhaseLog (directory </> "phase.log")
+                            else nullTracer
+                        )
                         (const (pure ()))
                 let provider = koiosProvider runtime (Network 1) (pure (Right source)) client
                 result <-

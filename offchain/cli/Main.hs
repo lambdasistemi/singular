@@ -3,31 +3,20 @@ Module      : Main
 Description : The packaged @singular@ command
 License     : Apache-2.0
 
-@singular registry create|insert|terminate|inspect@: one ordinary
-process per command over a saved registry directory. See
-"Singular.CLI.Command" for the command line and "Singular.CLI" for what
-each command does.
+@singular registry create|insert|update|terminate|fold|reject|reclaim|inspect@:
+one ordinary process per command over a saved registry directory. See
+"Singular.CLI.Command" for the command line, "Singular.CLI" for what each
+command does and "Singular.CLI.Root" for the composition this runs.
 -}
 module Main (main) where
 
 import System.Environment (getArgs, getEnvironment)
-import System.Exit (ExitCode (..), exitWith)
-import System.IO (hPutStrLn, stderr)
+import System.Exit (exitWith)
 
-import Singular.CLI (runCommand)
-import Singular.CLI.Command
-    ( parseCommandWithEnvironment
-    , renderCLIError
-    , usage
-    )
+import Singular.CLI.Root (runPackaged)
 
 main :: IO ()
 main = do
     args <- getArgs
     environment <- getEnvironment
-    case parseCommandWithEnvironment environment args of
-        Left err -> do
-            hPutStrLn stderr ("singular: " <> renderCLIError err)
-            hPutStrLn stderr usage
-            exitWith (ExitFailure 2)
-        Right command -> runCommand command >>= exitWith
+    runPackaged args environment >>= exitWith

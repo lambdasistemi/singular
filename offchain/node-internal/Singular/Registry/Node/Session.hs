@@ -29,6 +29,7 @@ module Singular.Registry.Node.Session
     , withNodeForPlannedFunding
     , withNodeMode
     , withNodeModeOn
+    , withNodeModeTraced
     , withNodeSocket
     , awaitConnection
     , firstViewWithin
@@ -78,7 +79,6 @@ import Control.Exception
     , try
     )
 import Control.Monad (void)
-import Data.Aeson ((.=))
 import Data.Foldable (for_)
 import Data.IORef
     ( IORef
@@ -109,6 +109,7 @@ import Cardano.Node.Client.N2C.Types (ConnectionLost (..), LSQChannel)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter (..))
 import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
+import Control.Tracer (Tracer, nullTracer, traceWith)
 import Data.Word (Word32, Word64)
 import Singular.Registry.Node.Funding
     ( FundingFloor
@@ -130,14 +131,6 @@ import Singular.Registry.Node.Options
     , die
     , runMode
     )
-import Singular.Registry.Node.PhaseLog
-    ( PhaseLog
-    , logPhase
-    , loggedProvider
-    , phaseLogFromEnv
-    , queryPhase
-    , startTimer
-    )
 import Singular.Registry.Node.RawView
     ( RawProvider (..)
     , RawView (..)
@@ -153,8 +146,14 @@ import Singular.Registry.Node.Wallet
     , walletForMode
     )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.ProviderTrace (nodeSource, tracedProvider)
 import Singular.Registry.Services qualified as Services
 import Singular.Registry.TimeMaterial (loadTimeMaterial)
+import Singular.Registry.Trace
+    ( ReadEvent (..)
+    , startTimer
+    , tracedQuery
+    )
 import System.FilePath (takeDirectory)
 
 -- | Everything a runner needs from the chain it runs against.
@@ -173,6 +172,8 @@ data NodeSession = NodeSession
     -}
     , nsTipTime :: IO Integer
     -- ^ Latest observed block start in POSIX milliseconds, for local waits
+    , nsTracer :: Tracer IO ReadEvent
+    -- ^ Where the session's own node reads and waits report
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
@@ -190,16 +191,20 @@ newtype NodeReads = NodeReads
 answer or carries another magic.
 -}
 withNodeReads :: Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
-withNodeReads = withNodeReadsOn NodeBackend
+withNodeReads = withNodeReadsOn nullTracer NodeBackend
 
 {- | 'withNodeReads' with its address reads from a backend: the node's own,
 or, for 'IndexerBackend', an in-process index following the node's chain
 from its origin for as long as the reader runs ('originProvider').
 -}
 withNodeReadsOn
-    :: Backend -> Word32 -> FilePath -> (NodeReads -> IO a) -> IO a
-withNodeReadsOn backend magicWord sock k = do
-    lg <- phaseLogFromEnv
+    :: Tracer IO ReadEvent
+    -> Backend
+    -> Word32
+    -> FilePath
+    -> (NodeReads -> IO a)
+    -> IO a
+withNodeReadsOn lg backend magicWord sock k = do
     opened <- startTimer
     let magic = NetworkMagic magicWord
     lsqCh <- newLSQChannel 16
@@ -213,15 +218,15 @@ withNodeReadsOn backend magicWord sock k = do
                 (rawNodeProvider lsqCh)
         awaitRawConnection magic sock nodeThread lsqCh
         material <- loadTimeMaterial magicWord (takeDirectory sock)
-        let prov = adaptProvider magic material raw
-        awaitConnection magic sock nodeThread (loggedProvider lg prov)
+        let prov = adaptProvider lg magic material raw
+        awaitConnection magic sock nodeThread (tracedProvider lg prov)
         case backend of
             NodeBackend -> do
                 sessionOpened lg opened
                 k (readsOf lg prov)
             IndexerBackend ->
                 followChain magic publicByronEpochSlots Nothing sock $ do
-                    indexed <- originProvider prov Nothing
+                    indexed <- originProvider lg prov Nothing
                     sessionOpened lg opened
                     k (readsOf lg indexed)
 
@@ -265,22 +270,32 @@ the node's chain from its origin ('originProvider'), which must cover the
 funding wallet. A devnet session reads through its indexer either way.
 -}
 withNodeModeOn :: Backend -> NodeMode -> (NodeSession -> IO a) -> IO a
-withNodeModeOn = withNodeModeAndFunding (Just defaultFundingFloor)
+withNodeModeOn = withNodeModeAndFunding nullTracer (Just defaultFundingFloor)
+
+-- | 'withNodeModeOn', the session's reads and waits traced into this tracer.
+withNodeModeTraced
+    :: Tracer IO ReadEvent
+    -> Backend
+    -> NodeMode
+    -> (NodeSession -> IO a)
+    -> IO a
+withNodeModeTraced lg = withNodeModeAndFunding lg (Just defaultFundingFloor)
 
 {- | The lifecycle runners calculate their complete funding plans from the
 live parameters before submitting. A fixed 100 ADA floor here would reject
 wallets that can afford those plans, and would block read-only estimates.
 -}
 withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
-withNodeForPlannedFunding = withNodeModeAndFunding Nothing NodeBackend runMode
+withNodeForPlannedFunding = withNodeModeAndFunding nullTracer Nothing NodeBackend runMode
 
 withNodeModeAndFunding
-    :: Maybe FundingFloor
+    :: Tracer IO ReadEvent
+    -> Maybe FundingFloor
     -> Backend
     -> NodeMode
     -> (NodeSession -> IO a)
     -> IO a
-withNodeModeAndFunding fundingFloor backend mode k = case mode of
+withNodeModeAndFunding lg fundingFloor backend mode k = case mode of
     Devnet -> do
         gDir <- genesisDir
         withCardanoNode gDir $ \sock _startMs ->
@@ -289,7 +304,6 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
   where
     middle (_, submitter, _) = submitter
     connect magic sock = do
-        lg <- phaseLogFromEnv
         opened <- startTimer
         lsqCh <- newLSQChannel 16
         ltxsCh <- newLTxSChannel 16
@@ -309,7 +323,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                     magic
                     sock
                     nodeThread
-                    (loggedProvider lg (adaptProvider magic material raw))
+                    (tracedProvider lg (adaptProvider lg magic material raw))
                 case mode of
                     Devnet ->
                         serveSession
@@ -320,7 +334,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                             mode
                             magic
                             sock
-                            (adaptProvider magic material raw)
+                            (adaptProvider lg magic material raw)
                             (n2c, middle connection)
                             k
                     External _ -> do
@@ -334,7 +348,7 @@ withNodeModeAndFunding fundingFloor backend mode k = case mode of
                                 mode
                                 magic
                                 sock
-                                (adaptProvider magic material raw)
+                                (adaptProvider lg magic material raw)
                                 (n2c, middle connection)
                                 k
 
@@ -346,7 +360,7 @@ opening a session after the connection, taking the connected client as a
 value.
 -}
 serveSession
-    :: PhaseLog
+    :: Tracer IO ReadEvent
     -> IO Double
     -> Maybe FundingFloor
     -> Backend
@@ -363,10 +377,10 @@ serveSession lg opened fundingFloor backend mode magic sock nodeProv (n2c, submi
     -- node through the node adapter, or through the indexer backend
     -- when that is the backend asked for.
     prov <- case (mode, backend) of
-        (Devnet, _) -> followedProvider nodeProv submitter
+        (Devnet, _) -> followedProvider lg nodeProv submitter
         (External _, NodeBackend) -> pure nodeProv
         (External _, IndexerBackend) ->
-            originProvider nodeProv (Just (walletAddr wallet))
+            originProvider lg nodeProv (Just (walletAddr wallet))
     let sess =
             assembleSession
                 lg
@@ -387,21 +401,27 @@ index backend none, because the index follows from the origin and the
 node is not asked.
 -}
 followerStart
-    :: PhaseLog
+    :: Tracer IO ReadEvent
     -> Backend
     -> N2C.Provider IO
     -> IO (Maybe (Indexer.SlotNo, Indexer.BlockHash))
 followerStart lg NodeBackend n2c =
     startingAt . N2C.ledgerChainPoint
-        <$> queryPhase lg "ledgerSnapshot" (const 1) (N2C.queryLedgerSnapshot n2c)
+        <$> tracedQuery
+            lg
+            nodeSource
+            Nothing
+            "ledgerSnapshot"
+            (const (Just 1))
+            (N2C.queryLedgerSnapshot n2c)
 followerStart _ IndexerBackend _ = pure Nothing
 
 {- | The reads a key-free reader holds over a provider: the provider, logged.
 The one place a reader's provider is built, so that a reader of any
 backend reads through the phase log.
 -}
-readsOf :: PhaseLog -> Cage.Provider IO -> NodeReads
-readsOf lg prov = NodeReads{nrProvider = loggedProvider lg prov}
+readsOf :: Tracer IO ReadEvent -> Cage.Provider IO -> NodeReads
+readsOf lg prov = NodeReads{nrProvider = tracedProvider lg prov}
 
 {- | The session record over the provider a command reads through, the
 submitter and the upstream node client: its provider logged, and its tip
@@ -409,7 +429,7 @@ read (a direct query of the node, outside any view) one line each. The one
 place a session is built.
 -}
 assembleSession
-    :: PhaseLog
+    :: Tracer IO ReadEvent
     -> NodeMode
     -> NetworkMagic
     -> Network
@@ -419,29 +439,32 @@ assembleSession
     -> NodeSession
 assembleSession lg mode magic network prov submitter n2c =
     NodeSession
-        { nsProvider = loggedProvider lg prov
+        { nsProvider = tracedProvider lg prov
         , nsSubmitter = submitter
         , nsMagic = magic
         , nsNetwork = network
         , nsTipSlot =
-            queryPhase
+            tracedQuery
                 lg
+                nodeSource
+                Nothing
                 "tipSlot"
-                (const 1)
+                (const (Just 1))
                 (N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c)
-        , nsTipTime = Cage.withView (loggedProvider lg prov) $ \view ->
+        , nsTipTime = Cage.withView (tracedProvider lg prov) $ \view ->
             Services.slotStart view (Cage.cpSlot (Cage.viewPoint view))
         , nsMode = mode
+        , nsTracer = lg
         }
 
 {- | The line that says how long opening the session took: connecting, the
 handshake, the first view and, for a write, the funding check — what a
 command spends before its own first phase.
 -}
-sessionOpened :: PhaseLog -> IO Double -> IO ()
+sessionOpened :: Tracer IO ReadEvent -> IO Double -> IO ()
 sessionOpened lg opened = do
     ms <- opened
-    logPhase lg "session-open" ["duration_ms" .= ms]
+    traceWith lg (SessionOpened ms)
 
 {- | Byron epoch length of the public networks. A follower started at the
 tip never decodes a Byron block, and the development network has none,
@@ -652,7 +675,8 @@ guardNodeConnection client magic sock channel upstream submit = do
     awaitRawConnection magic sock client channel
     material <-
         loadTimeMaterial (unNetworkMagic magic) (takeDirectory sock)
-    pure (node, guardedSubmit, adaptProvider magic material raw)
+    pure
+        (node, guardedSubmit, adaptProvider nullTracer magic material raw)
 
 -- | Raw and legacy routes share the same holder set and connection lifetime.
 guardRawConnection

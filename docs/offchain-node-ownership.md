@@ -137,10 +137,6 @@ names link to its entry here:
 - <span id="memory-owner"></span>**Memory** — the deterministic in-memory chain
   behind the same read interface —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Memory.hs">source</a>.
-- <span id="phase-log-owner"></span>**PhaseLog** — the opt-in, append-only,
-  timestamped log of a command's phases, and the logged read interface that
-  writes one line for each view acquisition and each read through it —
-  <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/PhaseLog.hs">source</a>.
 - <span id="submit-owner"></span>**Submit** — the write capability, which takes
   signed transactions only —
   <a href="https://github.com/lambdasistemi/singular/blob/main/offchain/node-internal/Singular/Registry/Node/Submit.hs">source</a>.
@@ -166,6 +162,13 @@ names link to its entry here:
   and lost-connection refusals: `Node.View`; the same behaviour over the
   in-memory chain: `Node.Memory`.
 - What may be sent to the node: `Node.Submit`.
+- What the node runtime reports about its reads and waits: typed events into
+  the tracer its caller hands it. `Node.View`, `Node.Session`,
+  `Node.IndexerView`, `Node.Indexer` and `Node.Confirmation` take one; none
+  reads an environment variable or decides whether to log. The event types
+  and the provider boundary's tracing live in `local-services`
+  (`Singular.Registry.Trace`, `Singular.Registry.ProviderTrace`), and the
+  `SINGULAR_LOG` lines they stand for in `Singular.Registry.TraceRender`.
 - How the `singular` commands reach a node, or which settings they read:
   `Singular.CLI.Node`, the one command-line module allowed to name the
   backend; a new module that needs to name it is added to

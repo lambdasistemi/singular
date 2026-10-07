@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 {- |
 Module      : Singular.CLI
@@ -10,7 +9,7 @@ License     : Apache-2.0
 'runCommand' dispatches the registry commands and help. Each
 command prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
-outcome class ("Singular.CLI.Receipt"). A command that stops early
+outcome class ("Singular.CLI.Finish"). A command that stops early
 prints a receipt naming its outcome class and why; no secret is ever
 printed.
 -}
@@ -18,12 +17,6 @@ module Singular.CLI
     ( runCommand
     ) where
 
-import Control.Exception (SomeException, fromException, try)
-import Data.Aeson (Value (..), toJSON)
-import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Aeson.KeyMap qualified as KeyMap
-import Data.ByteString.Lazy.Char8 qualified as BLC
-import Data.Text qualified as T
 import System.Exit (ExitCode (..))
 
 import Singular.CLI.Command
@@ -38,56 +31,31 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Create (runCreate)
 import Singular.CLI.Entry (runInsert, runTerminate, runUpdate)
+import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
-import Singular.CLI.Live (receipt)
-import Singular.CLI.Receipt
-    ( OutcomeClass (..)
-    , exitCodeOf
-    , outcomeName
-    )
 import Singular.CLI.Reclaim (runReclaim)
 import Singular.CLI.Reject (runReject)
-import Singular.CLI.Session (CommandFailure (..))
+import Singular.CLI.Session (Env (..))
 
--- | Run one command; the exit status names its outcome class.
-runCommand :: Command -> IO ExitCode
-runCommand = \case
+-- | Run one command in the environment the entry point composed; the exit status names its outcome class.
+runCommand :: Env -> Command -> IO ExitCode
+runCommand env = \case
     Help -> putStr usage >> pure ExitSuccess
-    Create a -> finish "create" (createReceipt a) (runCreate a)
-    Insert a -> finish "insert" (entryReceipt a) (runInsert a)
-    Update a -> finish "update" (entryReceipt a) (runUpdate a)
-    Terminate a -> finish "terminate" (entryReceipt a) (runTerminate a)
-    Fold a -> finish "fold" (foldReceipt a) (runFold a)
-    Reject a -> finish "reject" (rejectReceipt a) (runReject a)
-    Reclaim a -> finish "reclaim" (reclaimReceipt a) (runReclaim a)
-    Inspect a -> finish "inspect" (inspectReceipt a) (runInspect a)
-
-{- | Print the receipt, write it where asked, and exit with the class of
-its outcome. A failure is its own receipt.
--}
-finish :: T.Text -> Maybe FilePath -> IO Value -> IO ExitCode
-finish command target action = do
-    result <- try action
-    let (value, outcome) = case result of
-            Right v -> (v, outcomeOf v)
-            Left (e :: SomeException) -> case fromException e of
-                Just (CommandFailure c why fields) ->
-                    (receipt command c (("reason", toJSON (T.pack why)) : fields), c)
-                Nothing ->
-                    ( receipt command ClientRefusal [("reason", toJSON (T.pack (show e)))]
-                    , ClientRefusal
-                    )
-        rendered = encodePretty value
-    BLC.putStrLn rendered
-    maybe (pure ()) (\p -> BLC.writeFile p (rendered <> "\n")) target
-    pure (exitCodeOf outcome)
-
--- | The outcome class a receipt names.
-outcomeOf :: Value -> OutcomeClass
-outcomeOf = \case
-    Object o
-        | Just (String name) <- KeyMap.lookup "outcome" o
-        , (c : _) <- [c | c <- [minBound .. maxBound], outcomeName c == name] ->
-            c
-    _ -> ClientRefusal
+    Create a ->
+        finish (envTracer env) "create" (createReceipt a) (runCreate env a)
+    Insert a -> finish (envTracer env) "insert" (entryReceipt a) (runInsert env a)
+    Update a -> finish (envTracer env) "update" (entryReceipt a) (runUpdate env a)
+    Terminate a ->
+        finish
+            (envTracer env)
+            "terminate"
+            (entryReceipt a)
+            (runTerminate env a)
+    Fold a -> finish (envTracer env) "fold" (foldReceipt a) (runFold env a)
+    Reject a ->
+        finish (envTracer env) "reject" (rejectReceipt a) (runReject env a)
+    Reclaim a ->
+        finish (envTracer env) "reclaim" (reclaimReceipt a) (runReclaim env a)
+    Inspect a ->
+        finish (envTracer env) "inspect" (inspectReceipt a) (runInspect env a)

@@ -30,7 +30,7 @@ data NodeCaps = NodeCaps
 withBackendNode
     :: ProviderSettings -> Wallet -> (NodeCaps -> IO a) -> IO a
 withBackendNode settings wallet body =
-    withWrites settings wallet $ \caps ->
+    withWrites mempty mempty settings wallet $ \caps ->
         body
             NodeCaps
                 { ncReads = capReads caps

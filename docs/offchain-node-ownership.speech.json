@@ -79,10 +79,6 @@
       "pause": 300
     },
     {
-      "text": "PhaseLog — the opt-in, append-only, timestamped log of a command's phases, and the logged read interface that writes one line for each view acquisition and each read through it — source.",
-      "pause": 300
-    },
-    {
       "text": "Submit — the write capability, which takes signed transactions only — source.",
       "pause": 300
     }
@@ -126,6 +122,10 @@
     },
     {
       "text": "What may be sent to the node: Node.Submit.",
+      "pause": 300
+    },
+    {
+      "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
       "pause": 300
     },
     {
@@ -191,6 +191,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "cdb71dc286e349ecaea826541464d635e7bacf1a7dc8f85c8502fed438f44c58"
+    "sha256": "3b310dd7517eba8f35e2cb58f4faac764413f117c79270de0edca7a563502033"
   }
 }

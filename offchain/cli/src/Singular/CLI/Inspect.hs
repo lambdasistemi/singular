@@ -69,6 +69,7 @@ import Singular.Application.OpenDatum.Envelope
     , dataToJson
     , envelopeToJson
     )
+import Singular.CLI.Attached (tokenName)
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
@@ -108,13 +109,20 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( CommandFailure (..)
+    , Env (..)
     , failWith
+    , readOnce
     , withTargetLockOr
+    )
+import Singular.CLI.Trace
+    ( Scope (..)
+    , What (KeySeen, RegistrySeen, RequestSeen)
+    , report
+    , within
     )
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Terminal (Capabilities (..), withReads)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , extractOwnerBytes
@@ -129,16 +137,16 @@ import Singular.Registry.Types
     , edgeName
     )
 
-runInspect :: InspectArgs -> IO Value
-runInspect a = do
+runInspect :: Env -> InspectArgs -> IO Value
+runInspect env a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
         settings = inspectProvider a
     complete <- doesFileExist (configPath dir)
     pending <- doesFileExist (pendingPath dir)
     if not complete && pending
-        then inspectIncompleteCreate dir settings
-        else inspectSaved dir key settings a
+        then inspectIncompleteCreate env dir settings
+        else inspectSaved env dir key settings a
 
 {- | Reconcile under the registry's lock, or not at all when another
 process holds it.
@@ -174,13 +182,14 @@ ledger (confirmed, and observed where their own after-state reads back),
 and the outcome is @partial@ with no leaf. Create refuses the directory;
 nothing is booted again or resubmitted.
 -}
-inspectIncompleteCreate :: FilePath -> ProviderSettings -> IO Value
-inspectIncompleteCreate dir settings = do
+inspectIncompleteCreate
+    :: Env -> FilePath -> ProviderSettings -> IO Value
+inspectIncompleteCreate env dir settings = do
     identity <-
         Aeson.eitherDecodeFileStrict' (pendingPath dir)
             >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
     reached <-
-        try $ withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
+        try $ readOnce env settings ["chain tip", "journal transactions"] $ \caps v -> do
             point <- Cage.tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
@@ -238,20 +247,27 @@ inlineDatum o = case o ^. datumTxOutL of
     _ -> Nothing
 
 inspectSaved
-    :: FilePath
+    :: Env
+    -> FilePath
     -> ByteString
     -> ProviderSettings
     -> InspectArgs
     -> IO Value
-inspectSaved dir key settings a = do
+inspectSaved env dir key settings a = do
     let magic = providerMagic settings
     saved <- loadSaved dir (inspectBlueprint a)
+    -- everything inspect reads and finds is inside its registry
+    let registryEnv =
+            env
+                { envTracer =
+                    within (InRegistry (hexT (tokenName saved))) (envTracer env)
+                }
     either
         (failWith ClientRefusal . renderIdentityError)
         pure
         (checkNetwork (savedConfig saved) magic)
     reached <-
-        try $ withReads settings $ \caps -> Cage.withLatest (capReads caps) $ \v -> do
+        try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved
@@ -291,6 +307,34 @@ inspectSaved dir key settings a = do
                 keyOutput = liveOutputFor saved key outs
             entries <- readJournal dir
             let pending = unresolved entries
+            let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
+                -- what the read found, reported once its read step closes
+                findings =
+                    ( []
+                    , RegistrySeen
+                        (txInText (fst (liveState live)))
+                        (hexT root)
+                        (Just (length pendingOuts))
+                    )
+                        : [ ( [InKey key]
+                            , KeySeen
+                                key
+                                (leafName l)
+                                (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
+                            )
+                          | Right l <- [leaf]
+                          ]
+                            <> [ ( [InRequest (txInText i)]
+                                 , RequestSeen
+                                    (txInText i)
+                                    (T.pack (edgeName (requestEdge r)))
+                                    (requestKey r)
+                                    Nothing
+                                    Nothing
+                                 )
+                               | (i, o) <- pendingOuts
+                               , Just (RequestDatum r) <- [extractCageDatum o]
+                               ]
             let chainPoint = renderPoint point
                 application = case keyOutput of
                     Right ((i, o), e) ->
@@ -331,7 +375,7 @@ inspectSaved dir key settings a = do
                                , toJSON
                                     ( map
                                         pendingJson
-                                        (sortOn fst (findRequestUtxos (savedToken saved) requests))
+                                        pendingOuts
                                     )
                                )
                            ]
@@ -340,7 +384,7 @@ inspectSaved dir key settings a = do
                 agrees = \case
                     Active -> length holdings == 1
                     _ -> null holdings
-            pure $ case (pending, leaf) of
+            pure . (,) findings $ case (pending, leaf) of
                 (Just e, _) ->
                     receipt
                         "inspect"
@@ -395,7 +439,9 @@ inspectSaved dir key settings a = do
                                    ]
                             )
     case reached of
-        Right v -> pure v
+        Right (findings, v) -> do
+            mapM_ (uncurry (report (envTracer registryEnv))) findings
+            pure v
         Left (e :: SomeException) -> case fromException e of
             Just (failure :: CommandFailure) -> throwIO failure
             Nothing ->
