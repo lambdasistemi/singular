@@ -107,6 +107,62 @@ async function checkPage(page, evidence) {
   await page.click('#edge-insertActive');
   assert(/admitted/.test(await text('#edge-result')), 'a matching approval is admitted');
 
+  // A story step is narrated as the model answers it under the reader's fold
+  // bound, not as the story recorded it. The book step was recorded admitted;
+  // its request was submitted at 0 and the processing time is 2, so a fold
+  // valid to 3 is past its deadline: refused not-phase1, the key unbooked.
+  await page.selectOption('#story-picker', 'book');
+  await page.fill('#valid-to-input', '3');
+  await page.click('#hist-next');
+  const late = await text('#narration');
+  assert(
+    /refused: not-phase1/.test(late) && !/→ admitted/.test(late),
+    `a story fold past its deadline is narrated refused not-phase1 (${late})`,
+  );
+  assert(
+    /recorded/.test(late),
+    `the story's recorded admission is shown as disagreeing with the answer (${late})`,
+  );
+  where = await text('#where');
+  assert(
+    /leaf Unknown/.test(where) && /active 0/.test(where),
+    `a refused fold does not advance (${where})`,
+  );
+  await page.fill('#valid-to-input', '2');
+  await page.click('#hist-first');
+  await page.click('#hist-next');
+  const onTime = await text('#narration');
+  assert(
+    /→ admitted/.test(onTime) && !/recorded/.test(onTime),
+    `the same fold at its deadline is narrated admitted (${onTime})`,
+  );
+
+  // A terminal witness folds under the submission time the reader entered:
+  // submitted at 100 with processing time 2, a fold valid to 101 or 102 (the
+  // deadline) is admitted; valid to 103 is past it and refused not-phase1.
+  await page.fill('#valid-to-input', '0');
+  await page.selectOption('#story-picker', 'retire');
+  await page.click('#hist-next');
+  await page.click('#hist-next');
+  assert(/leaf Known terminal/.test(await text('#where')), 'the retire story reaches terminal');
+  await page.fill('#key-input', '42');
+  await page.fill('#submitted-input', '100');
+  for (const [validTo, want] of [
+    ['101', /witnessTerminal → admitted/],
+    ['102', /witnessTerminal → admitted/],
+    ['103', /witnessTerminal → refused: not-phase1/],
+  ]) {
+    await page.fill('#valid-to-input', validTo);
+    await page.click('#edge-witnessTerminal');
+    const answer = await text('#edge-result');
+    assert(
+      want.test(answer),
+      `a terminal witness submitted at 100 folded valid to ${validTo}: ${answer}`,
+    );
+  }
+  await page.fill('#submitted-input', '0');
+  await page.fill('#valid-to-input', '0');
+
   // The naming profile: the Over witness, minted by a folded read and burned.
   await page.selectOption('#profile-picker', 'naming');
   const journey = await page.locator('#naming-journey tr').allInnerTexts();

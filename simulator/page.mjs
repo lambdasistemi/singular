@@ -66,19 +66,27 @@ function loadStory(id) {
   replayTo(0);
 }
 
+// A story records what each step answered under its own inputs; the page
+// narrates what the model answers under the reader's fold bound, and says so
+// when the two differ.
+const answerOf = (r) => (r.accepted ? 'admitted' : 'refused: ' + r.reason);
+const recordedOf = (e) => (e.expect === 'accept' ? 'admitted' : 'refused: ' + e.expect);
+
 function replayTo(n) {
   state = initial();
   prefix = [state];
+  let last = null;
   for (let i = 0; i < n && i < story.steps.length; i++) {
-    const r = admittedFold(state, story.steps[i].request, foldWitness());
-    if (r.accepted) state = r.value.state;
+    last = admittedFold(state, story.steps[i].request, foldWitness());
+    if (last.accepted) state = last.value.state;
     prefix.push(state);
   }
   cursor = n;
   const e = n === 0 ? null : story.steps[n - 1];
   narrate(
     e
-      ? `${e.what} → ${e.expect === 'accept' ? 'admitted' : 'refused: ' + e.expect}`
+      ? `${e.what} → ${answerOf(last)}` +
+          (answerOf(last) === recordedOf(e) ? '' : ` (this story recorded ${recordedOf(e)})`)
       : `${story.title}. Press ▶ to fold the first request.`,
   );
   renderBranches();
@@ -120,7 +128,7 @@ function buildEdgeButtons() {
       const opts = { owner, output, deposit, refundAddress: owner, submittedAt };
       const req =
         edge === 'witnessTerminal'
-          ? read(key, output)
+          ? read(key, output, submittedAt)
           : kind === 'matching'
             ? approved(edge, key, opts)
             : kind === 'mismatched'

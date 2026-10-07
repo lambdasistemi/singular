@@ -61,5 +61,7 @@ export const otherPolicy = (edge, key, opts = {}) => {
   return { ...r, approval: approvalFor(r, { ...opts, policy: 99 }) };
 };
 
-/** The read needs no approval at all. */
-export const read = (key, output = 0) => request('witnessTerminal', key, { output });
+/** The read needs no approval at all. Like every request it carries its own
+ * submission time, which a fold's admission reads. */
+export const read = (key, output = 0, submittedAt = 0) =>
+  request('witnessTerminal', key, { output, submittedAt });
