@@ -89,7 +89,13 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isSpace)
 import Data.Foldable (toList)
-import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
@@ -191,6 +197,7 @@ import Singular.CLI.Session
     , submitBuilt
     , txIdHex
     )
+import Singular.CLI.Trace (Scope)
 import Singular.Provider.Koios.Client
     ( Answer (..)
     , RawRequest (..)
@@ -917,8 +924,17 @@ withRecordedWrite r evidence answer story =
     writeWith producer =
         withSystemTempDirectory "singular-recovery" $ \dir -> do
             wallet <- storyWallet dir
+            confirmedRef <- newIORef Map.empty
+            placedRef <- newIORef Map.empty
             let registry = dir </> "registry"
-                ctx = storyContext registry wallet (recordedProvider r) answer
+                ctx =
+                    storyContext
+                        confirmedRef
+                        placedRef
+                        registry
+                        wallet
+                        (recordedProvider r)
+                        answer
             outcome <-
                 try @CommandFailure
                     ( submitBuilt
@@ -964,12 +980,14 @@ storyWallet dir = do
     loadWallet 1 keyPath
 
 storyContext
-    :: FilePath
+    :: IORef (Map.Map Text (IO Double))
+    -> IORef (Map.Map Text [Scope])
+    -> FilePath
     -> Wallet
     -> (Cage.Network, Cage.LedgerProvider NoWitness IO)
     -> WriteAnswer
     -> WriteContext
-storyContext dir wallet recordedReads = \case
+storyContext confirmedRef placedRef dir wallet recordedReads = \case
     LostAnswer ->
         base{wcCapabilities = capabilities{capSubmit = loseTheAnswer}}
     AnsweredAndConfirmed ->
@@ -990,6 +1008,10 @@ storyContext dir wallet recordedReads = \case
                     , capTrace = pure []
                     }
             , wcTimeout = Just 5
+            , wcTracer = nullTracer
+            , wcSource = "fixture"
+            , wcConfirmed = confirmedRef
+            , wcPlaced = placedRef
             }
     loseTheAnswer _ = throwIO (userError "the submission connection was lost")
     acceptAndConfirm sealed = pure (Cage.SubmitAccepted (txIdTx (signedTx sealed)))
@@ -1115,6 +1137,8 @@ withSyntheticSavedRegistry publishHistory story =
     withSystemTempDirectory "singular-synthetic" $ \dir -> do
         wallet <- storyWallet dir
         historyRef <- newIORef emptyHistory
+        confirmedRef <- newIORef Map.empty
+        placedRef <- newIORef Map.empty
         let cfg = Booking.cfg
             seed =
                 either
@@ -1284,6 +1308,10 @@ withSyntheticSavedRegistry publishHistory story =
                             , capTrace = pure []
                             }
                     , wcTimeout = Just 5
+                    , wcTracer = nullTracer
+                    , wcSource = "fixture"
+                    , wcConfirmed = confirmedRef
+                    , wcPlaced = placedRef
                     }
         -- Permanent computed guard over the actual constructed request
         -- and holding: absent or foreign carried datum cannot regress
