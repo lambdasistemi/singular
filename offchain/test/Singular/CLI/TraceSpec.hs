@@ -48,7 +48,7 @@ import System.IO
     ( Handle
     , hClose
     , hFlush
-    , hPutStrLn
+    , hPrint
     , openTempFile
     , stderr
     , stdout
@@ -174,14 +174,10 @@ controls = describe "the tracing controls on every command" $ do
                                ]
                         )
                         `shouldBe` fmap
-                            ( \c ->
-                                ( c
-                                , TraceRequest
-                                    (Just level)
-                                    [ToStderr, ToFile "/tmp/trace.jsonl"]
-                                    (Just JsonFormat)
-                                )
-                            )
+                            (,TraceRequest
+                                (Just level)
+                                [ToStderr, ToFile "/tmp/trace.jsonl"]
+                                (Just JsonFormat))
                             plain
                 parseInvocation
                     []
@@ -194,12 +190,10 @@ controls = describe "the tracing controls on every command" $ do
                            ]
                     )
                     `shouldBe` fmap
-                        ( \c ->
-                            (c, TraceRequest Nothing [ToFile "/a", ToFile "/b"] (Just TextFormat))
-                        )
+                        (,TraceRequest Nothing [ToFile "/a", ToFile "/b"] (Just TextFormat))
                         plain
                 parseInvocation [] args
-                    `shouldBe` fmap (\c -> (c, noTraceRequest)) plain
+                    `shouldBe` fmap (,noTraceRequest) plain
         it (name <> " refuses an unknown level, sink or format at parse") $ do
             forM_ ["", "loud", "HOW", "1"] $ \level ->
                 parseInvocation [] (args <> ["--trace", level])
@@ -225,7 +219,7 @@ defaults = describe "the tracing defaults" $ do
     it
         "writes text to stderr and json to a file, unless a format is named"
         $ do
-            let asked sinks format = TraceRequest (Just TraceHow) sinks format
+            let asked = TraceRequest (Just TraceHow)
             forM_ [True, False] $ \terminal -> do
                 resolveOutputs terminal (asked [] Nothing)
                     `shouldBe` (TraceHow, [Output ToStderr TextFormat])
@@ -418,7 +412,7 @@ jsonLines = describe "the JSON lines" $ do
             let line = renderJsonLine t
             in  ( BC.count '\n' line
                 , BC.last <$> nonEmpty line
-                , (Aeson.decodeStrict (BC.init line) :: Maybe Aeson.Object) /= Nothing
+                , isJust (Aeson.decodeStrict (BC.init line) :: Maybe Aeson.Object)
                 , decodeJsonLine line
                 )
                     === (1, Just '\n', True, Just t)
@@ -631,8 +625,8 @@ genRead =
                 )
         , SessionOpened <$> genMs
         , HorizonWaited
-            <$> ( HorizonWait
-                    <$> (fromIntegral <$> genWord)
+            <$> ( HorizonWait . fromIntegral
+                    <$> genWord
                     <*> (fromIntegral <$> genWord)
                     <*> genMaybe (fromIntegral <$> genWord)
                     <*> (fromIntegral <$> genWord)
@@ -641,15 +635,15 @@ genRead =
                     <*> chooseInteger (0, 99_999)
                     <*> genMs
                     <*> oneof
-                        [ HorizonMoved
-                            <$> (fromIntegral <$> genWord)
+                        [ HorizonMoved . fromIntegral
+                            <$> genWord
                             <*> (fromIntegral <$> genWord)
                         , HorizonFailed <$> genClass
                         ]
                 )
         , ValiditySelected
-            <$> ( ValiditySelection
-                    <$> (fromIntegral <$> genWord)
+            <$> ( ValiditySelection . fromIntegral
+                    <$> genWord
                     <*> (fromIntegral <$> genWord)
                     <*> genMaybe (fromIntegral <$> genWord)
                     <*> chooseInteger (0, 2 ^ (40 :: Int))
@@ -1136,7 +1130,7 @@ lineKinds =
   where
     how' = Trace [] . How
     line h keys = (how' h, Just keys)
-    query h = line h
+    query = line
     failure = ErrorClass "IOException"
     tx = T.replicate 64 "a"
     answered = ["answer_size", "duration_ms", "outcome", "phase", "query", "ts"]
@@ -1169,7 +1163,7 @@ lineKinds =
         , "validity_lower"
         , "validity_upper"
         ]
-    submitted tip verdict = TxSubmitted "fold" tx (Just 1) (Just 9) tip 1.5 verdict
+    submitted tip = TxSubmitted "fold" tx (Just 1) (Just 9) tip 1.5
     confirming = ["duration_ms", "outcome", "phase", "step", "ts", "tx"]
 
 phaseLogKeys :: Spec
@@ -1226,7 +1220,7 @@ closedHandleSink = do
     (path, h) <- openTempFile "/tmp" "closed-sink"
     hClose h
     removeFile path
-    pure (Tracer (hPutStrLn h . show))
+    pure (Tracer (hPrint h))
 
 -- | A handle that is already closed: every write to it throws.
 closedHandle :: IO Handle

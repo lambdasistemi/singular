@@ -48,7 +48,7 @@ import Data.IORef
     )
 import Data.List (nub, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, listToMaybe)
+import Data.Maybe (isJust, isNothing, listToMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -79,7 +79,7 @@ import System.IO
     ( IOMode (..)
     , hClose
     , hFlush
-    , hPutStrLn
+    , hPrint
     , openFile
     , openTempFile
     , stderr
@@ -1001,7 +1001,7 @@ textAt k = \case
 objectsIn :: Aeson.Value -> [Aeson.Object]
 objectsIn = \case
     Aeson.Object o -> o : concatMap objectsIn (KeyMap.elems o)
-    Aeson.Array xs -> concatMap objectsIn (toList xs)
+    Aeson.Array xs -> concatMap objectsIn xs
     _ -> []
 
 {- | A request the receipt names: its key, edge and processing deadline, where
@@ -1067,12 +1067,12 @@ submissionsOf = \case
         | Just (Aeson.Array xs) <- KeyMap.lookup "submissions" o ->
             [ (s, t, c, observed)
             | Aeson.Object x <- toList xs
-            , Just (Aeson.String s) <- [KeyMap.lookup "step" x]
-            , Just (Aeson.String t) <- [KeyMap.lookup "tx" x]
             , let c = case KeyMap.lookup "case" x of
                     Just (Aeson.String v) -> Just v
                     _ -> Nothing
                   observed = KeyMap.lookup "observed" x == Just (Aeson.Bool True)
+            , Just (Aeson.String s) <- [KeyMap.lookup "step" x]
+            , Just (Aeson.String t) <- [KeyMap.lookup "tx" x]
             ]
     _ -> []
 
@@ -1089,9 +1089,9 @@ inRole command receiptEdge action = case (command, action) of
     (Just "terminate", Booking e) -> e == booked edgeUpdateTerminal
     (Just "terminate", Folding e) -> e == booked edgeUpdateTerminal
     (Just "update", Updating) -> True
-    (Just "fold", Folding e) -> Just e == receiptEdge || receiptEdge == Nothing
+    (Just "fold", Folding e) -> Just e == receiptEdge || isNothing receiptEdge
     (Just "reject", Rejecting) -> True
-    (Just "reclaim", Reclaiming e) -> Just e == receiptEdge || receiptEdge == Nothing
+    (Just "reclaim", Reclaiming e) -> Just e == receiptEdge || isNothing receiptEdge
     _ -> False
   where
     booked = T.pack . edgeName
@@ -1306,10 +1306,10 @@ disagreements invokedKey receipt events =
     eventTxs =
         [ (s, t, observedOnly)
         | Trace _ (How (Tx e)) <- events
-        , Just (s, t) <- [txOf e]
         , let observedOnly = case e of
                 TxObserved{} -> True
                 _ -> False
+        , Just (s, t) <- [txOf e]
         ]
     txOf = \case
         TxBuilt{} -> Nothing
@@ -1547,7 +1547,7 @@ closedHandleSink = do
     (path, h) <- openTempFile "/tmp" "closed-sink"
     hClose h
     removeFile path
-    pure (Tracer (hPutStrLn h . show))
+    pure (Tracer (hPrint h))
 
 -- | Every fact 'alterations' plants a contradiction in.
 plantedFacts :: [String]

@@ -88,6 +88,7 @@ import Data.Aeson (Value (..), (.:), (.:?), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key (Key)
 import Data.Aeson.Types (Pair, Parser, parseMaybe)
+import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -426,7 +427,7 @@ renderText (Trace scope event) = place <$> line
     registry = listToMaybe (reverse [t | InRegistry t <- scope])
     line = case event of
         What w -> whatLine registry w
-        How h -> (\(l, t) -> ("how  " <> l, t)) <$> howLine h
+        How h -> first ("how  " <>) <$> howLine h
 
 isTransaction :: Scope -> Bool
 isTransaction = \case

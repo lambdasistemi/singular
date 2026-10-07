@@ -954,7 +954,7 @@ journalObservedId wc step txid detail = do
         (wcDir wc)
         (blankEntry wc step txid "observed"){journalDetail = Just detail}
     readback <-
-        readIORef (wcConfirmed wc) >>= maybe (pure 0) id . Map.lookup txid
+        readIORef (wcConfirmed wc) >>= fromMaybe (pure 0) . Map.lookup txid
     placed <- Map.findWithDefault [] txid <$> readIORef (wcPlaced wc)
     traceWith
         (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))

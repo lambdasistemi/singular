@@ -76,7 +76,7 @@ import System.FilePath (takeDirectory, (</>))
 import System.IO
     ( hClose
     , hFlush
-    , hPutStrLn
+    , hPrint
     , openTempFile
     , stderr
     , stdout
@@ -1089,7 +1089,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
             txIdHex folded `shouldNotBe` txIdHex booked
             forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
                 let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
-                map (stepOf) mine `shouldSatisfy` all (== step)
+                map stepOf mine `shouldSatisfy` all (== step)
                 [() | TxBuilt{} <- mine] `shouldBe` [()]
                 mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
                 [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
@@ -1234,7 +1234,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
         $ do
             let scenarios :: [(String, WriteContext -> Fixture -> IO (ConwayTx, ()))]
                 scenarios =
-                    [ ("submitted, confirmed", \ctx -> writeVia ctx id)
+                    [ ("submitted, confirmed", (`writeVia` id))
                     ,
                         ( "the build fails"
                         , \ctx fx ->
@@ -1387,7 +1387,7 @@ writeBuilding ctx _ build =
         ctx
         "fold"
         (const (expecting "state"))
-        (fmap (\tx -> (tx, ())) . build)
+        (fmap (,()) . build)
 
 -- | The context with the provider answering every submission so.
 submitting :: IO Cage.SubmitResult -> WriteContext -> WriteContext
@@ -1404,4 +1404,4 @@ closedHandleSink = do
     (path, h) <- openTempFile "/tmp" "closed-sink"
     hClose h
     removeFile path
-    pure (Tracer (hPutStrLn h . show))
+    pure (Tracer (hPrint h))

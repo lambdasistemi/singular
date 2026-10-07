@@ -33,6 +33,8 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (void)
+import Data.Either (fromRight)
 import System.Exit (ExitCode (..))
 import System.IO
     ( Handle
@@ -85,7 +87,7 @@ runSingularVia provider errors environment args =
             terminal <- case errors of
                 Nothing -> pure False
                 Just h ->
-                    either (const False) id <$> attempt (hIsTerminalDevice h)
+                    fromRight False <$> attempt (hIsTerminalDevice h)
             withTracing
                 errors
                 terminal
@@ -96,7 +98,7 @@ runSingularVia provider errors environment args =
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
         _ -> Nothing
-    quietly act = () <$ attempt act
+    quietly act = void (attempt act)
 
 -- | Run an action, its synchronous failure returned; an asynchronous one propagates.
 attempt :: IO a -> IO (Either SomeException a)
@@ -141,7 +143,7 @@ runPackagedVia
     -> [(String, String)]
     -> IO ExitCode
 runPackagedVia provider getErrors args environment = do
-    errors <- either (const Nothing) id <$> attempt getErrors
+    errors <- fromRight Nothing <$> attempt getErrors
     runSingularVia provider errors environment args
 
 -- | The packaged command with the process's own standard error.
