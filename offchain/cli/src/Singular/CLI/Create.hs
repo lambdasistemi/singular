@@ -37,11 +37,12 @@ import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.Directory (createDirectoryIfMissing, removeFile)
 
 import Cardano.Ledger.Address (Addr)
@@ -51,11 +52,16 @@ import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , coinTxOutL
+    , mkBasicTxOut
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Core (Script, hashScript)
-import Cardano.Ledger.Mary.Value (MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -120,6 +126,7 @@ import Singular.Registry.Deployment
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
+    , Coin (..)
     , ConwayEra
     , TokenId (..)
     )
@@ -134,7 +141,7 @@ import Singular.Registry.StateToken
     , renderReferenceRefusal
     , renderStateToken
     )
-import Singular.Registry.TxBuilder.Boot (bootTokenFrom)
+import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)
 import Singular.Registry.TxBuilder.Edges
     ( adaOnlyOut
     , publishRefScriptTx
@@ -243,12 +250,22 @@ createWith env a rel ws = do
                     beforeBoot = case foundState of
                         Just _ -> []
                         Nothing -> [("state", stateScript)]
+                    -- The boot references a carrier of this script, found
+                    -- or about to be published; its size prices the boot.
+                    carrier =
+                        fromMaybe
+                            ( seedIn
+                            , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                                & referenceScriptTxOutL .~ SJust stateScript
+                            )
+                            foundState
                 either
                     (failWith ClientRefusal . renderIdentityError)
                     pure
                     ( publicationFunding
                         pp
                         seedIn
+                        (bootCostBound pp carrier)
                         beforeBoot
                         (laterScripts cfg pinned (TokenId (snd token)))
                         utxos

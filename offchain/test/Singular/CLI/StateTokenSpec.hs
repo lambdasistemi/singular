@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 {- |
 Module      : Singular.CLI.StateTokenSpec
@@ -80,7 +79,7 @@ import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger (withSyntheticCosts)
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Boot (bootTokenFrom)
+import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)
 import Singular.Registry.TxBuilder.Edges (publishRefScriptTx)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -298,7 +297,11 @@ funding = describe "a create's publication funding" $ do
                 : [ (refOf (T.pack (replicate 63 'c' <> show i) <> "#0"), adaOnly a)
                   | (i, a) <- zip [0 :: Int ..] amounts
                   ]
-        preflight = publicationFunding preprodParams seedIn
+        preflight =
+            publicationFunding
+                preprodParams
+                seedIn
+                (bootCostBound preprodParams reusedCarrier)
     it "is accepted when the real create can fund every publication" $ do
         let funded = walletOf [400_000_000]
         createAll Nothing beforeBoot laterScripts funded
