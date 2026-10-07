@@ -5,27 +5,41 @@
 
 {- |
 Module      : Singular.CLI.RecoverySpec
-Description : Offline recovery over recorded preprod answers
+Description : Offline recovery: a recorded-answer core and a labelled synthetic supplement
 License     : Apache-2.0
 
 A submission can die between any two journal phases: the node's answer
 never arrives, the process stops after a confirmation, its validity
 expires, or an inclusion is rolled back. The next command reconciles
 the journal against the chain ("Singular.CLI.Reconcile"), submitting
-nothing. These stories exercise that production composition offline,
-against recorded answers.
+nothing. This module holds two groups, kept distinct by name and by
+provenance:
 
-Provider provenance: every chain read comes from the recorded preprod
-Koios fixture set @test/fixtures/koios/preprod@ — raw status, headers
-and body recorded read-only from @https://preprod.koios.rest/api/v1@ by
-the @koios-http@ recorder on 4 October 2026, replayed through the
-recorded transport ("Singular.Provider.Koios.Recorded") and the
-shipping Koios provider constructor. No node runs and no block is
-waited for.
+- the __recovery core on recorded answers (incomplete create)__, which
+  exercises the production 'reconcileIncomplete' composition against
+  recorded answers; and
+- a __synthetic saved-registry supplement__ (its own describe group,
+  labelled "not recorded answers"), which exercises the production
+  'reconcile' composition over a stub provider this suite builds. A
+  synthetic read is never a recorded one: nothing in that group is
+  served by the recorded fixture set.
 
-Saved bodies come from two producers, both bound to their @prepared@
-line by byte hash and derived id through the production
-"Singular.CLI.ReceiptBody" reader:
+Provider provenance of the recorded core: every chain read it makes
+comes from the recorded preprod Koios fixture set
+@test/fixtures/koios/preprod@ — raw status, headers and body recorded
+read-only from @https://preprod.koios.rest/api/v1@ by the @koios-http@
+recorder on 4 October 2026, replayed through the recorded transport
+("Singular.Provider.Koios.Recorded") and the shipping Koios provider
+constructor. No node runs and no block is waited for in either group.
+
+Provider provenance of the synthetic supplement: a stub session over
+the repository's own fixture facilities serves a booted registry and
+its public history; see the group's own documentation below. No
+recorded fixture set holds a booted registry.
+
+Saved bodies in the recorded core come from two producers, both bound
+to their @prepared@ line by byte hash and derived id through the
+production "Singular.CLI.ReceiptBody" reader:
 
 - recorded transactions, served by the same fixture set: a real
   preprod transaction whose first output the recorded snapshot shows
@@ -37,22 +51,24 @@ line by byte hash and derived id through the production
   injected submitter either loses the answer or reports an acceptance,
   and the recorded transport cannot submit at all.
 
-Every compared value is obtained at run time from the producer: the
-candidate transactions are discovered from the fixture set, their ids,
-inputs, outputs, addresses, script hashes and validity bounds are read
-from the decoded bodies, and the live inputs come from the recorded
-address answers. Journals, receipts, refusal classes and exit codes
-are read back from the production composition; none is supplied by the
-provider.
+Every compared value in the recorded core is obtained at run time from
+the producer: the candidate transactions are discovered from the
+fixture set, their ids, inputs, outputs, addresses, script hashes and
+validity bounds are read from the decoded bodies, and the live inputs
+come from the recorded address answers. Journals, receipts, refusal
+classes and exit codes are read back from the production composition;
+none is supplied by the provider.
 
-What this establishes: client recovery over recorded answers. It does
-not establish ledger acceptance of any transaction here, chain
+What the recorded core establishes: client recovery over recorded
+answers for a create interrupted before its registry was saved. It
+does not establish ledger acceptance of any transaction here, chain
 finality, a node rollback, or a connected registry lifecycle; the
-recorded snapshot is a replay of one moment, not a ledger. The
-saved-registry 'Singular.CLI.Reconcile.reconcile' variant is not
-exercised by these stories (its deployment attach needs a recorded
-booted registry the fixture set does not hold); the create-interrupted
-'reconcileIncomplete' composition is.
+recorded snapshot is a replay of one moment, not a ledger. Saved-registry
+reconciliation on recorded chain answers is not exercised anywhere in
+this module and remains uncovered: the recorded fixture set holds no
+booted registry, and the saved-registry 'Singular.CLI.Reconcile.reconcile'
+variant runs only in the synthetic supplement, whose provider and
+history are synthetic.
 -}
 module Singular.CLI.RecoverySpec (spec) where
 
