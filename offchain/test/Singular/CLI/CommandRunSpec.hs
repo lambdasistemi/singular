@@ -38,7 +38,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
-import Data.Foldable (toList)
+import Data.Foldable (forM_, toList)
 import Data.IORef
     ( IORef
     , modifyIORef'
@@ -54,6 +54,8 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Time (UTCTime)
+import Data.Time.Format.ISO8601 (iso8601ParseM)
 import GHC.Generics
     ( C1
     , Constructor
@@ -63,13 +65,22 @@ import GHC.Generics
     , (:+:)
     )
 import Lens.Micro ((^.))
-import System.Directory (removeFile)
+import System.Directory
+    ( createDirectory
+    , doesDirectoryExist
+    , doesFileExist
+    , listDirectory
+    , removeFile
+    , removePathForcibly
+    )
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO
-    ( hClose
+    ( IOMode (..)
+    , hClose
     , hFlush
     , hPutStrLn
+    , openFile
     , openTempFile
     , stderr
     , stdout
@@ -100,6 +111,7 @@ import Data.Word (Word64)
 
 import Singular.CLI (runCommand)
 import Singular.CLI.Command (Command (..), parseCommand)
+import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
 import Singular.Registry.Capabilities (Capabilities (..))
@@ -142,7 +154,10 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = describe
+spec = handlerRows >> setupRecut
+
+handlerRows :: Spec
+handlerRows = describe
     "every command handler, run in process, against its receipt (#416)"
     $ do
         it
@@ -364,6 +379,181 @@ constructorOf = \case
     Inspect _ -> "Inspect"
 
 -- ---------------------------------------------------------
+-- Tracing setup re-cut: a trace file that cannot be written
+-- ---------------------------------------------------------
+
+{- | Two writes, the creates of two registries, through the packaged composition
+over the rig's chain, untraced and then under three tracing settings. Each run is
+on a fresh rig in the same directory, so its receipts and its registry's
+files compare byte for byte with the untraced run's. The only field set
+aside is the journal's wall-clock stamp, 'journalStamp', which must be
+present and an ISO-8601 time on every line of both runs.
+
+The file sink reports no failure of its own, so the failed appends are shown
+by a pair: with a writable file and standard error at the same setting, the
+file receives exactly the lines standard error does; with only the file's
+path made unwritable, standard error receives as many lines again and the
+file does not exist.
+-}
+setupRecut :: Spec
+setupRecut = describe "(#416) tracing setup re-cut"
+    $ it
+        "keeps a write's receipt, journal, outcome and exit when its trace file \
+        \cannot be written, the same run with a writable file receiving every event"
+    $ withSystemTempDirectory "trace-recut"
+    $ \base -> do
+        let at = base </> "rig"
+            writable = base </> "trace.jsonl"
+            unwritable = base </> "missing" </> "trace.jsonl"
+            json = ["--trace", "what", "--trace-format", "json"]
+            paired file = json <> ["--trace-to", "file:" <> file, "--trace-to", "stderr"]
+        plain <- packagedWrites at []
+        control <- packagedWrites at (paired writable)
+        faulted <- packagedWrites at (paired unwritable)
+        alone <-
+            packagedWrites
+                at
+                ["--trace", "what", "--trace-to", "file:" <> unwritable]
+        -- the baseline is a write: each command submitted and journalled
+        map (\(n, code, _, _) -> (n, code)) (writtenRuns plain)
+            `shouldBe` [("create", ExitSuccess), ("create two", ExitSuccess)]
+        let prepared =
+                [ ()
+                | Just "prepared" <- map (textAt "journalEvent") (writtenJournal plain)
+                ]
+            submitted =
+                [ ()
+                | (_, _, out, _) <- writtenRuns plain
+                , Just (Aeson.Object r) <- [Aeson.decodeStrict out]
+                , Just (Aeson.Array s) <- [KeyMap.lookup "submissions" r]
+                , _ <- toList s
+                ]
+        length prepared `shouldSatisfy` (>= 2)
+        length prepared `shouldBe` length submitted
+        -- the fault is reached: the writable twin receives every event
+        controlFile <- BS.readFile writable
+        let lineCount = length . BC.lines
+            narrated w = [lineCount err | (_, _, _, err) <- writtenRuns w]
+        sum (narrated control) `shouldSatisfy` (> 0)
+        all (> 0) (narrated control) `shouldBe` True
+        lineCount controlFile `shouldBe` sum (narrated control)
+        narrated faulted `shouldBe` narrated control
+        doesFileExist unwritable `shouldReturn` False
+        doesDirectoryExist (base </> "missing") `shouldReturn` False
+        narrated alone `shouldBe` [0, 0]
+        -- and changes nothing a write leaves
+        forM_
+            [ ("writable" :: String, control)
+            , ("unwritable", faulted)
+            , ("unwritable alone", alone)
+            ]
+            $ \(name, w) -> do
+                (name, [(n, code, out) | (n, code, out, _) <- writtenRuns w])
+                    `shouldBe` (name, [(n, code, out) | (n, code, out, _) <- writtenRuns plain])
+                (name, writtenFiles w) `shouldBe` (name, writtenFiles plain)
+                (name, writtenJournal w) `shouldBe` (name, writtenJournal plain)
+                (name, writtenStamps w)
+                    `shouldBe` (name, map (const True) (writtenStamps plain))
+        writtenStamps plain `shouldBe` map (const True) (writtenStamps plain)
+
+-- | What two packaged writes left: each run, the registry's files and its journal.
+data Written = Written
+    { writtenRuns :: [(String, ExitCode, BS.ByteString, BS.ByteString)]
+    -- ^ Each command: its name, exit, standard output and standard error
+    , writtenFiles :: [(FilePath, BS.ByteString)]
+    -- ^ Every file of the registry but its journal
+    , writtenJournal :: [Aeson.Value]
+    -- ^ Every journal line, its wall-clock stamp removed
+    , writtenStamps :: [Bool]
+    -- ^ Per journal line: its stamp is present and an ISO-8601 time
+    }
+
+-- | The journal's wall-clock field, the one field the comparison sets aside.
+journalStamp :: Aeson.Key
+journalStamp = "journalTime"
+
+-- | Two creates, of two registries, through the packaged composition, on a fresh rig here.
+packagedWrites :: FilePath -> [String] -> IO Written
+packagedWrites at flags = do
+    removePathForcibly at
+    createDirectory at
+    withRigIn at syntheticBlueprint pure $ \rig -> do
+        first <- fundSeed rig
+        one <-
+            packaged
+                rig
+                "registry"
+                "create"
+                ["registry", "create", "--seed", first]
+        second <- fundSeed2 rig
+        two <-
+            packaged
+                rig
+                "registry-2"
+                "create two"
+                ["registry", "create", "--seed", second]
+        registries <-
+            mapM (registryFiles . (rigDir rig </>)) ["registry", "registry-2"]
+        let files = concatMap fst registries
+            journal = concatMap snd registries
+        pure
+            Written
+                { writtenRuns = [one, two]
+                , writtenFiles = files
+                , writtenJournal = map unstamped journal
+                , writtenStamps = map stamped journal
+                }
+  where
+    packaged rig registry name args = do
+        let errPath = rigDir rig </> (registry <> ".stderr")
+        h <- openFile errPath WriteMode
+        (code, out, _) <-
+            captured
+                ( runPackagedVia
+                    (\tracer -> (envOf rig){envTracer = tracer})
+                    (pure (Just h))
+                    (commandLine rig registry args <> flags)
+                    []
+                )
+        hClose h
+        err <- BS.readFile errPath
+        pure (name, code, out, err)
+    registryFiles registry = do
+        names <- sort <$> listDirectoryRecursive registry
+        files <-
+            mapM
+                (\p -> (,) (registry </> p) <$> BS.readFile (registry </> p))
+                (filter (/= "journal.jsonl") names)
+        journal <-
+            mapM
+                (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
+                . BC.lines
+                =<< BS.readFile (registry </> "journal.jsonl")
+        pure (files, journal)
+    unstamped = \case
+        Aeson.Object o -> Aeson.Object (KeyMap.delete journalStamp o)
+        other -> other
+    stamped = \case
+        Aeson.Object o
+            | Just (Aeson.String t) <- KeyMap.lookup journalStamp o ->
+                isJust (iso8601ParseM (T.unpack t) :: Maybe UTCTime)
+        _ -> False
+
+-- | Every file below a directory, as paths relative to it.
+listDirectoryRecursive :: FilePath -> IO [FilePath]
+listDirectoryRecursive dir = do
+    entries <- listDirectory dir
+    concat
+        <$> mapM
+            ( \e -> do
+                isDir <- doesDirectoryExist (dir </> e)
+                if isDir
+                    then map (e </>) <$> listDirectoryRecursive (dir </> e)
+                    else pure [e]
+            )
+            entries
+
+-- ---------------------------------------------------------
 -- The rig
 -- ---------------------------------------------------------
 
@@ -408,7 +598,18 @@ withRigOf
     -> (Tracer IO Trace -> IO (Tracer IO Trace))
     -> (Rig -> IO a)
     -> IO a
-withRigOf blueprintJson compose use = withSystemTempDirectory "command-run" $ \dir -> do
+withRigOf blueprintJson compose use =
+    withSystemTempDirectory "command-run" $ \dir ->
+        withRigIn dir blueprintJson compose use
+
+-- | The rig over this blueprint, in this directory.
+withRigIn
+    :: FilePath
+    -> Aeson.Value
+    -> (Tracer IO Trace -> IO (Tracer IO Trace))
+    -> (Rig -> IO a)
+    -> IO a
+withRigIn dir blueprintJson compose use = do
     let keyPath = dir </> "payment.skey"
         blueprint = dir </> "plutus.json"
     BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
@@ -739,21 +940,11 @@ run rig = runAt rig "registry"
 runAt :: Rig -> FilePath -> String -> [String] -> IO Run
 runAt rig registry label args = do
     writeIORef (rigEvents rig) []
-    let full =
-            args
-                <> [ "--registry"
-                   , rigDir rig </> registry
-                   , "--blueprint"
-                   , rigBlueprint rig
-                   , "--koios-url"
-                   , "http://fixture.invalid"
-                   , "--network-magic"
-                   , show magic
-                   ]
-                <> ["--wallet-skey" | wantsKey]
-                <> [rigKey rig | wantsKey]
-        wantsKey = take 2 args /= ["registry", "inspect"]
-    command <- either (fail . show) pure (parseCommand full)
+    command <-
+        either
+            (fail . show)
+            pure
+            (parseCommand (commandLine rig registry args))
     (code, out, _) <- captured (runCommand (envOf rig) command)
     receipt <-
         maybe
@@ -774,6 +965,24 @@ runAt rig registry label args = do
                     | ("--key", k) <- zip args (drop 1 args)
                     ]
             }
+
+-- | A command line over the rig, as the packaged command is given it.
+commandLine :: Rig -> FilePath -> [String] -> [String]
+commandLine rig registry args =
+    args
+        <> [ "--registry"
+           , rigDir rig </> registry
+           , "--blueprint"
+           , rigBlueprint rig
+           , "--koios-url"
+           , "http://fixture.invalid"
+           , "--network-magic"
+           , show magic
+           ]
+        <> ["--wallet-skey" | wantsKey]
+        <> [rigKey rig | wantsKey]
+  where
+    wantsKey = take 2 args /= ["registry", "inspect"]
 
 -- ---------------------------------------------------------
 -- The comparison

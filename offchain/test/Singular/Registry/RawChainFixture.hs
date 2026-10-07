@@ -44,9 +44,14 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Text qualified as T
 import Data.Word (Word32)
 import Lens.Micro ((^.))
-import Singular.Registry.Evidence (Evidenced (..), NoWitness)
+import Singular.Registry.Evidence
+    ( Evidenced (..)
+    , NoWitness
+    , SessionId (..)
+    )
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTime (NetworkTime)
@@ -67,6 +72,8 @@ data RawChain = RawChain
     , chainConnected :: IORef Bool
     , chainHistory :: IORef [HistoryBlock]
     -- ^ Every transaction recorded, oldest first, one block each
+    , chainAcquisitions :: IORef Int
+    -- ^ How many views were acquired: each view is named by its count
     }
 newRawChain :: ChainFacts -> IO RawChain
 newRawChain facts =
@@ -74,6 +81,7 @@ newRawChain facts =
         <$> newIORef facts
         <*> newIORef True
         <*> newIORef []
+        <*> newIORef 0
 
 advanceChain :: RawChain -> (ChainFacts -> ChainFacts) -> IO ()
 advanceChain chain change = atomicModifyIORef' (chainFacts chain) $ \facts ->
@@ -168,7 +176,13 @@ rawChainProvider chain =
                                             , history = \asset _ ->
                                                 pure (Right (streamOf (filter (touches asset) recorded)))
                                             }
-                                acquire (snd (servingSession session)) request action
+                                n <-
+                                    atomicModifyIORef' (chainAcquisitions chain) (\k -> (k + 1, k + 1))
+                                acquire
+                                    (snd (servingSession session))
+                                    request
+                                    ( \s -> action s{sessionId = SessionId ("raw-chain-" <> T.pack (show n))}
+                                    )
         , submitTx = \wanted _ ->
             pure $
                 if wanted /= configured
