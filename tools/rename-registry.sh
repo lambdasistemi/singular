@@ -35,8 +35,10 @@
 #      Untouched: PROVENANCE.md, docs/prior-art.md (+ its bound speech
 #      companion docs/prior-art.speech.json, which cannot be edited without
 #      its page), CHANGELOG.md, site/, .docs-source/, frozen evidence logs,
-#      and the upstream cardano-mpfs-onchain #100/#101 citations in
-#      conformance/app/Conformance/Run.hs and conformance/rows.json.
+#      the upstream cardano-mpfs-onchain #100/#101 citations in
+#      conformance/app/Conformance/Run.hs and conformance/rows.json, and
+#      every line citing the upstream repository by its owner-qualified
+#      name, cardano-foundation/cardano-mpfs-onchain.
 #      MPF trie identifiers (MPF.*, mkMPFHash, merkle-patricia-forestry,
 #      MPFStandalone*, cage_vectors.ak, Cage/CageConfig/cage-*) stay.
 #   6b. Identifier sweep (offchain/journey and conformance only): local
@@ -46,7 +48,7 @@
 #      matches only: MPFStandalone*, mpfCodecs, MPFHash and haskell-mts
 #      imports (the trie, not the product) cannot match.
 #   7. Final gate: git grep -iw mpfs (with the exclusions above) may only
-#      leave hits sitting on the two upstream citation lines. Allowed files
+#      leave hits sitting on upstream citation lines. Allowed files
 #      are derived from that same grep, never a hand list.
 #
 # Targeted step-6 fixups name exact paths. A path another PR deleted is
@@ -310,11 +312,13 @@ step7_gate() {
   fi
   # Allowed residuals are derived from the same grep above, never a hand
   # list (#108): a file survives only if every one of its mpfs hits sits on
-  # an upstream citation line (cardano-mpfs-onchain#100/#101, with or
-  # without the space before the issue number). The gate must pass on a
-  # clean main and fail on any other product mention.
+  # an upstream citation line: cardano-mpfs-onchain#100/#101, with or
+  # without the space before the issue number, or the upstream repository
+  # named with its owner, cardano-foundation/cardano-mpfs-onchain. The gate
+  # must pass on a clean main and fail on any other product mention,
+  # the repository named without its owner included.
   strays="$(printf '%s\n' "$residual" \
-    | grep -Ev 'cardano-mpfs-onchain ?#(100|101)' || true)"
+    | grep -Ev 'cardano-mpfs-onchain ?#(100|101)|cardano-foundation/cardano-mpfs-onchain' || true)"
   if [ -n "$strays" ]; then
     echo "error: mpfs remains outside the upstream citation lines:" >&2
     echo "$strays" >&2

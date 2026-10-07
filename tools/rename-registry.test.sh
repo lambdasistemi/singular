@@ -17,7 +17,10 @@
 #   4. the gate alone FAILS when residuals are seeded in a tracked .lean
 #      and a tracked .html file, naming both paths (negative; a setup or
 #      missing-file failure is not the control);
-#   5. the gate alone FAILS when a stray MPFS_BLUEPRINT line is planted in
+#   5. the gate alone FAILS when the owner-qualified upstream citation
+#      (cardano-foundation/cardano-mpfs-onchain) loses its owner, so the
+#      citation allowance cannot admit a bare repository name;
+#   6. the gate alone FAILS when a stray MPFS_BLUEPRINT line is planted in
 #      a tracked .sh file — the kind of stray the pre-#108 scan missed.
 #
 # The rename tool and this test are exempt from the scan and the gate: they
@@ -143,6 +146,24 @@ grep -q 'MPFS residual negative control' "$neg_lean" \
   && fail "negative cleanup failed for .lean" || true
 grep -q 'MPFS residual negative control' "$neg_html" \
   && fail "negative cleanup failed for .html" || true
+
+echo "control: the upstream repository named without its owner must fail the gate"
+unqualified="$scratch/specs/419-public-fold-inputs/ruling.md"
+[ -f "$unqualified" ] || fail "unqualified setup: $unqualified missing"
+grep -q 'cardano-foundation/cardano-mpfs-onchain' "$unqualified" \
+  || fail "unqualified setup: no owner-qualified citation to strip"
+cp "$unqualified" "$workdir/ruling.md.orig"
+sed -i 's#cardano-foundation/cardano-mpfs-onchain#cardano-mpfs-onchain#g' "$unqualified"
+grep -q 'cardano-foundation/cardano-mpfs-onchain' "$unqualified" \
+  && fail "unqualified setup: owner still present" || true
+set +e
+unq_out="$(run_rename --gate-only 2>&1)"
+unq_rc=$?
+set -e
+[ "$unq_rc" -ne 0 ] || fail "gate passed an upstream citation without its owner"
+echo "$unq_out" | grep -q 'specs/419-public-fold-inputs/ruling.md' \
+  || fail "gate failure does not name the unqualified citation's file"
+cp "$workdir/ruling.md.orig" "$unqualified"
 
 echo "control: stray MPFS_BLUEPRINT in a .sh must fail the gate"
 planted="$scratch/offchain/naming/run-suite.sh"
