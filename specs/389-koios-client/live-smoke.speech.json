@@ -43,7 +43,7 @@
       "pause": 500
     },
     {
-      "text": "Evidence files bind the uncompressed receipt and phase-log bytes by SHA-256. Gzip files preserve the complete evidence. main-results.json and fixed-results.json contain exact commands, wall times, URLs, schema revision and exit statuses. Schema receipts retain retrieval time and content hashes. The phase logs include each query duration and the insert attempt's complete phase sequence; a refused insert has no successful build phase to report.",
+      "text": "Evidence files bind the receipt and phase-log bytes by SHA-256. JSON receipts and line-delimited JSON phase logs preserve the complete evidence. main-results.json and fixed-results.json contain exact commands, wall times, URLs, schema revision and exit statuses. Schema receipts retain retrieval time and content hashes. The phase logs include each query duration and the insert attempt's complete phase sequence; a refused insert has no successful build phase to report.",
       "pause": 400
     },
     {
@@ -57,6 +57,6 @@
   ],
   "_source": {
     "file": "live-smoke.md",
-    "sha256": "41059f2ab57aa2bbf16c3351767809d1aefc4ed7fae53bd73494ab190796163b"
+    "sha256": "eaf33c2c98d683e9bf5f931a24fe2ccff596542b0f4361c93096bc507f5036f1"
   }
 }

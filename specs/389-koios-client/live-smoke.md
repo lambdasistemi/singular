@@ -52,8 +52,9 @@ copied for the baseline run and remained byte-identical.
 
 ## Retained evidence and limits
 
-[Evidence files](evidence/20261007/manifest.json) bind the uncompressed receipt
-and phase-log bytes by SHA-256. Gzip files preserve the complete evidence.
+[Evidence files](evidence/20261007/manifest.json) bind the receipt
+and phase-log bytes by SHA-256. JSON receipts and line-delimited JSON phase
+logs preserve the complete evidence.
 `main-results.json` and `fixed-results.json` contain exact commands, wall times,
 URLs, schema revision and exit statuses. Schema receipts retain retrieval time
 and content hashes. The phase logs include each query duration and the insert

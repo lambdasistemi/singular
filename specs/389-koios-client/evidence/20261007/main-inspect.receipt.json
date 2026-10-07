@@ -1,0 +1,15 @@
+{
+    "command": "inspect",
+    "outcome": "client-refusal",
+    "reason": "TrieState UndecodableRequest",
+    "trieRefusal": {
+        "actions": 1,
+        "cause": "action-count",
+        "registry": {
+            "name": "1ffd2d0deb7896e08eda018f071f4fe15e542d3c603a430e974730358a1de516",
+            "policy": "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c"
+        },
+        "requests": 0,
+        "transaction": "979bae00b3c0ae3e7003b335f2239b867a2fd35a07b203a860e9e4aae08ca0ad"
+    }
+}
