@@ -22,6 +22,7 @@ module Singular.CLI.Root
     ( runSingular
     , runPackaged
     , runPackagedWith
+    , runPackagedVia
     , standardError
     ) where
 
@@ -48,18 +49,30 @@ import System.Posix.Files
     )
 import System.Posix.Types (Fd (..))
 
+import Control.Tracer (Tracer)
+
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
     ( parseInvocation
     , renderCLIError
     , usage
     )
-import Singular.CLI.Session (koiosEnv)
-import Singular.CLI.Trace (withTracing)
+import Singular.CLI.Session (Env, koiosEnv)
+import Singular.CLI.Trace (Trace, withTracing)
 
 -- | Run one command line, with this environment and standard error.
-runSingular :: Maybe Handle -> [(String, String)] -> [String] -> IO ExitCode
-runSingular errors environment args =
+runSingular
+    :: Maybe Handle -> [(String, String)] -> [String] -> IO ExitCode
+runSingular = runSingularVia koiosEnv
+
+-- | The same, over the chain provider built from the composed tracer.
+runSingularVia
+    :: (Tracer IO Trace -> Env)
+    -> Maybe Handle
+    -> [(String, String)]
+    -> [String]
+    -> IO ExitCode
+runSingularVia provider errors environment args =
     case parseInvocation environment args of
         Left err -> do
             case errors of
@@ -78,7 +91,7 @@ runSingular errors environment args =
                 terminal
                 (phaseLog environment)
                 request
-                (\tracer -> runCommand (koiosEnv tracer) command)
+                (\tracer -> runCommand (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
@@ -112,10 +125,24 @@ containment as emission: a synchronous failure taking it leaves no handle
 and its sink dropped, never an aborted command. Asynchronous exceptions
 propagate.
 -}
-runPackagedWith :: IO (Maybe Handle) -> [String] -> [(String, String)] -> IO ExitCode
-runPackagedWith getErrors args environment = do
+runPackagedWith
+    :: IO (Maybe Handle) -> [String] -> [(String, String)] -> IO ExitCode
+runPackagedWith = runPackagedVia koiosEnv
+
+{- | The packaged command over the chain provider built from the composed
+tracer: every step of the packaged composition, its standard error taken,
+its command line parsed, its tracing resolved and contained, and the command
+run with that provider. The packaged binary is this with Koios.
+-}
+runPackagedVia
+    :: (Tracer IO Trace -> Env)
+    -> IO (Maybe Handle)
+    -> [String]
+    -> [(String, String)]
+    -> IO ExitCode
+runPackagedVia provider getErrors args environment = do
     errors <- either (const Nothing) id <$> attempt getErrors
-    runSingular errors environment args
+    runSingularVia provider errors environment args
 
 -- | The packaged command with the process's own standard error.
 runPackaged :: [String] -> [(String, String)] -> IO ExitCode
