@@ -91,7 +91,7 @@
       "pause": 300
     },
     {
-      "text": "[x] Run nix develop --quiet -c just ci and required offchain tests on the integrated candidate; fix failures and record exact commands, exits and commit. Owner: orchestrator with assigned workers. nix develop --quiet -c just ci exit 0 in a clean checkout at 12bdae8c — a clean checkout excludes the ignored Cabal build cache that a format-control scratch copy still carries — with the full local cage suite 1028/0 with 11 retired pending and the conformance appendix 590/0 at source 64d8f9f0 as recorded above. Hosted at the same head: CI and Conformance, both success. Not the final repaired head: after this result, source-only test corrections a0456196 (generic phase-log schema; packaged contract suite 40/0 with 26 retired pending) and ef93d4f4 (E2E checks the exact generic AtTxIn fact instead of forbidding the adapter's necessary address lookup; local execution pending) changed no production behavior, and exact-head verification remains the open tasks below.",
+      "text": "[x] Run nix develop --quiet -c just ci and required offchain tests on the integrated candidate; fix failures and record exact commands, exits and commit. Owner: orchestrator with assigned workers. nix develop --quiet -c just ci exit 0 in a clean checkout at 12bdae8c — a clean checkout excludes the ignored Cabal build cache that a format-control scratch copy still carries — with the full local cage suite 1028/0 with 11 retired pending and the conformance appendix 590/0 at source 64d8f9f0 as recorded above. Hosted at the same head: CI and Conformance, both success. Not the final repaired head: after this result, source-only test corrections a0456196 (generic phase-log schema; packaged contract suite 40/0 with 26 retired pending) and ef93d4f4 (E2E checks the exact generic AtTxIn fact instead of forbidding the adapter's necessary address lookup) changed no production behavior. The ef93d4f4 repair's local verification is complete: the packaged node-boot lane ran nix run --quiet .#cage-tests-e2e -- --match '{lane:node-boot}' --fail-on=empty with the release blueprint — 22 examples, 0 failures, 7 retired pending (log /tmp/muse-node-boot.log, read independently by the parent). Exact-head verification of the assembled candidate — its hosted gates and the merge — remains the open tasks below.",
       "pause": 300
     },
     {
@@ -115,6 +115,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "fe856664f2054a61bee531576b3ca5c09229f404d175630c1a1c66ec0fbfeeed"
+    "sha256": "0d64a8fd85ce9d18d64dd7c25705a24afd63063bbdaea95ae0555a4347331e75"
   }
 }
