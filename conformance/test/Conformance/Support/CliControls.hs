@@ -131,6 +131,7 @@ honestReceipts story = do
         :: IORef Int -> IORef [String] -> IORef [Receipt] -> CliI a -> IO a
     act step inserted out i = case i of
         Require _ _ -> pure ()
+        Retire _ -> pure ()
         Run Inspect (Target "interrupted") k ->
             emit "run inspect" "interrupted" k $ \r ->
                 r
@@ -378,11 +379,44 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             validateControls refusedOnly `shouldSatisfy` isLeft
             validateControls (duplicateStory >> refusedOnly)
                 `shouldSatisfy` isLeft
-    it "holds every clause on an honest run" $ do
+    it
+        "holds every clause on an honest run, but the two the operator retired"
+        $ do
+            rs <- honestReceipts controlsStory
+            let results = judge rs controlsStory
+                retiredTitle t = "selector" `isInfixOf` t
+            length results `shouldBe` 98
+            [crStatus r | r <- results, not (retiredTitle (crTitle r))]
+                `shouldBe` replicate 96 Held
+            [crStatus r | r <- results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
+            held results `shouldBe` True
+    it
+        "judges a retired promise retired from no receipt, whatever the receipts say"
+        $ do
+            rs <- honestReceipts controlsStory
+            let refused = map (\r -> r{rcOutcome = "ledger-refusal"}) rs
+                results = judge refused controlsStory
+            clauseStatuses "saved application selector changed" results
+                `shouldBe` [Retired selectorRetirement]
+            clauseStatuses "selector restored" results
+                `shouldBe` [Retired selectorRetirement]
+            -- the same receipts fail the clauses that are still promised
+            any isNotHeld (statuses results) `shouldBe` True
+    it "keeps a retired promise in the report, with its reason" $ do
         rs <- honestReceipts controlsStory
-        let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 98 Held
-        held results `shouldBe` True
+        let report = renderControls (judge rs controlsStory) controlsStory
+        report
+            `shouldSatisfy` isInfixOf
+                ( "an insert with the saved application selector changed is refused before submitting | "
+                    <> selectorRetirement
+                )
+        report
+            `shouldSatisfy` isInfixOf
+                ( "the same insert, with the selector restored, is accepted | "
+                    <> selectorRetirement
+                )
+        report `shouldSatisfy` isInfixOf "; 2 are retired."
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
         $ do
@@ -778,7 +812,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "30 of 32 approved cases are covered live; 2 are not."
+            `shouldSatisfy` isInfixOf "29 of 32 approved cases are covered live; 3 are not."
         -- a replaced clause stays visible beside the clause replacing it
         full
             `shouldSatisfy` isInfixOf
@@ -787,6 +821,12 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         full
             `shouldSatisfy` isInfixOf
                 "Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover."
+        -- the retired promise stays visible, with the operator's reason
+        full
+            `shouldSatisfy` isInfixOf
+                ( "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement | "
+                    <> selectorRetirement
+                )
         -- the indexer read belongs to a take on an existing registry: the
         -- development controls do not reach it, and say so
         full
@@ -1518,7 +1558,6 @@ provoked p r =
                 }
     in  case p of
             WhileLocked -> r{rcOutcome = "concurrent-writer", rcProcess = Just still}
-            SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
             WithoutHistory ->
                 (noLeaf "stale-state")
                     { rcReason = Just "TrieState HistoryIncomplete"
@@ -1575,3 +1614,8 @@ provoked p r =
                                 , peWaited = Just 31
                                 }
                     }
+
+-- | The operator's reason for retiring the saved-selector promise, as ruled.
+selectorRetirement :: String
+selectorRetirement =
+    "Retired: a registry is joined from its state token alone; there is no saved selector file to change."

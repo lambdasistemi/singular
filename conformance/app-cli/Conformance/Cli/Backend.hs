@@ -674,6 +674,7 @@ type ClauseProgram thm = Program (Clause thm CliI)
 perform :: Env -> CliI a -> IO a
 perform env i = case i of
     Require req rs -> when (envStrict env) (holds env req rs)
+    Retire _ -> pure ()
     Run c t k ->
         recorded
             env
@@ -1551,14 +1552,6 @@ provoke env p target key r = do
                     setLock fd (WriteLock, AbsoluteSeek, 0, 0)
                     plain args
                 )
-        SelectorChanged ->
-            pure
-                r
-                    { rcOutcome = "client-error"
-                    , rcReason =
-                        Just
-                            "commands read no saved application selector; the application is the one the release derives for the state token, so this control has no witness"
-                    }
         WithoutHistory -> do
             args <- commandArgs env Inspect target key r
             reg <- openRegistry env target

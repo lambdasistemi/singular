@@ -273,8 +273,6 @@ CLI's own specification; no model statement covers it.
 data Provocation
     = -- | @insert@, while another process holds the registry's lock
       WhileLocked
-    | -- | @insert@, with the saved configuration's application selector changed
-      SelectorChanged
     | -- | @inspect@, with the public history it needs withheld
       WithoutHistory
     | -- | @inspect@, against a node socket that does not exist
@@ -301,7 +299,6 @@ data Provocation
 provocationName :: Provocation -> String
 provocationName p = case p of
     WhileLocked -> "insert-while-locked"
-    SelectorChanged -> "insert-selector-changed"
     WithoutHistory -> "inspect-without-history"
     WithoutNode -> "inspect-without-node"
     TerminateKilled -> "terminate-killed"
@@ -316,8 +313,6 @@ provocationPhrase :: Provocation -> String
 provocationPhrase p = case p of
     WhileLocked ->
         "Run `singular registry insert` while another process holds the registry's lock"
-    SelectorChanged ->
-        "Run `singular registry insert` with the saved application selector changed"
     WithoutHistory ->
         "Run `singular registry inspect` with the public history it needs withheld"
     WithoutNode ->
@@ -505,6 +500,11 @@ data CliI res where
     -}
     ReadIndexer :: Indexer -> Target -> String -> Receipt -> CliI Receipt
     Require :: Requirement -> [Receipt] -> CliI ()
+    {- | The enclosing clause's promise is retired, for this reason. The clause
+    keeps its words as history and is judged retired, never from a receipt;
+    it leaves no receipt
+    -}
+    Retire :: String -> CliI ()
 
 type Story = Specification.Story CliI
 
@@ -1640,6 +1640,7 @@ actionsOf = go
     blank :: CliI a -> a
     blank i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
@@ -1659,6 +1660,11 @@ forbiddenInPermanent =
     ["run create"]
         <> [ "provoke " <> T.pack (provocationName p) | p <- [minBound .. maxBound]
            ]
+
+-- | Why the saved-selector promise is retired.
+selectorRetired :: String
+selectorRetired =
+    "Retired: a registry is joined from its state token alone; there is no saved selector file to change."
 
 {- | The client's obligations under conditions of its process, each told
 under the row of the CLI's specification it bears on: a changed selector,
@@ -1686,16 +1692,20 @@ processStory = do
                 "the key reached Active through the ordinary commands, and inspect reads it Active"
                 ReachedActive
                 (reach False target)
+        -- Retired by operator ruling: no command reads a saved selector. The
+        -- second key is still inserted, for the clauses below that use it.
         _ <-
             clause
                 "an insert with the saved application selector changed is refused before submitting"
                 (requirement identityBinds RefusedBeforeSubmitting)
-                (pure <$> action (Provoke SelectorChanged target second))
+                ([] <$ action (Retire selectorRetired))
         void $
             clause
                 "the same insert, with the selector restored, is accepted"
                 (requirement identityBinds CommandSucceeded)
-                (pure <$> action (Run Insert target second))
+                ( action (Retire selectorRetired)
+                    >> (pure <$> action (Run Insert target second))
+                )
     theorem authenticated $ do
         _ <- reading heldKey "inspect reads the key Active" authenticated
         void $
@@ -2343,6 +2353,7 @@ identify i = case i of
     ReadIndexer ix (Target t) k _ ->
         Just ("read-indexer " <> T.pack (indexerName ix), T.pack t, T.pack k)
     Require _ _ -> Nothing
+    Retire _ -> Nothing
 
 -- ---------------------------------------------------------
 -- Checks
@@ -2379,7 +2390,6 @@ outcomeIs r expected =
 expectedOutcome :: Receipt -> Text
 expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
     Just "insert-while-locked" -> "concurrent-writer"
-    Just "insert-selector-changed" -> "client-refusal"
     Just "inspect-without-history" -> "stale-state"
     Just "inspect-without-node" -> "node-unavailable"
     Just "create-again" -> "client-refusal"
@@ -3213,6 +3223,8 @@ data ClauseStatus
     = Held
     | NotHeld [String]
     | Uncovered String
+    | -- | The promise is retired, for this reason; no receipt judges it
+      Retired String
     deriving stock (Eq, Show)
 
 data ClauseResult = ClauseResult
@@ -3222,9 +3234,15 @@ data ClauseResult = ClauseResult
     }
     deriving stock (Eq, Show)
 
--- | Every clause's verdict holds.
+-- | Every clause's verdict holds, or its promise is retired.
 held :: [ClauseResult] -> Bool
-held = all ((== Held) . crStatus)
+held = all (\r -> crStatus r == Held || isRetired (crStatus r))
+
+-- | Whether a clause's promise is retired.
+isRetired :: ClauseStatus -> Bool
+isRetired s = case s of
+    Retired _ -> True
+    _ -> False
 
 {- | Interpret the story over receipts. A receipt answers the action at its
 step exactly when it names that action, target and key; the first missing
@@ -3275,13 +3293,14 @@ replay byStep story =
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, (bodyFailures, _)), Nothing) ->
+                    (Just (obs, (bodyFailures, retired)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
                                 bodyFailures <> maybe [] (\(_, (fs, _)) -> fs) checked
                             isPremise = maybe False (\(_, (_, p)) -> p) checked
                             status
+                                | Just why <- retired = Retired why
                                 | Just why <- stop' = Uncovered why
                                 | Just failed <- premise =
                                     Uncovered ("its premise does not hold: " <> failed)
@@ -3312,22 +3331,24 @@ replay byStep story =
     collect
         :: Replay
         -> Story a
-        -> (Maybe (a, ([String], Bool)), Replay)
-    collect st0 = walk st0 ([], False)
+        -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
+    collect st0 = walk st0 ([], False, Nothing)
       where
         walk
             :: Replay
-            -> ([String], Bool)
+            -> ([String], Bool, Maybe String)
             -> Story a
-            -> (Maybe (a, ([String], Bool)), Replay)
+            -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
         walk st@(Replay _ _ (Just _)) _ _ = (Nothing, st)
-        walk st acc@(fs, p) program = case view program of
+        walk st acc@(fs, p, retired) program = case view program of
             Return a -> (Just (a, acc), st)
             Action (Require req rs) :>>= next ->
                 walk
                     st
-                    (fs <> check req rs, p || req `elem` premises)
+                    (fs <> check req rs, p || req `elem` premises, retired)
                     (next ())
+            Action (Retire why) :>>= next ->
+                walk st (fs, p, Just why) (next ())
             Action i :>>= next -> case perform st i of
                 (Just r, st') -> walk st' acc (next r)
                 (Nothing, st') -> (Nothing, st')
@@ -3337,6 +3358,7 @@ replay byStep story =
     perform :: Replay -> CliI a -> (Maybe a, Replay)
     perform st i = case i of
         Require _ _ -> (Just (), st)
+        Retire _ -> (Just (), st)
         Run{} -> answer st i
         Book{} -> answer st i
         FoldUnevaluated{} -> answer st i
@@ -3426,6 +3448,7 @@ outline story = snd (walk 0 story)
     placeholder :: Int -> CliI a -> (Int, a)
     placeholder n i = case i of
         Require _ _ -> (n, ())
+        Retire _ -> (n, ())
         Run{} -> (n + 1, emptyReceipt n "" "" "")
         Book{} -> (n + 1, emptyReceipt n "" "" "")
         FoldUnevaluated{} -> (n + 1, emptyReceipt n "" "" "")
@@ -3551,18 +3574,21 @@ renderControls results story =
         Held -> "holds"
         NotHeld why -> "does not hold: " <> intercalate "; " why
         Uncovered why -> "uncovered: " <> why
+        Retired why -> why
     judged = results
     uncovered = length [() | ClauseResult _ _ (Uncovered _) <- judged]
     notHeld = length [() | ClauseResult _ _ (NotHeld _) <- judged]
+    retired = length [() | ClauseResult _ _ (Retired _) <- judged]
     summary =
-        show (length judged - uncovered - notHeld)
+        show (length judged - uncovered - notHeld - retired)
             <> " of "
             <> show (length judged)
             <> " clauses hold; "
             <> show notHeld
             <> " do not; "
             <> show uncovered
-            <> " are uncovered."
+            <> " are uncovered"
+            <> (if retired > 0 then "; " <> show retired <> " are retired." else ".")
     coverage cov = case cov of
         NotLive why -> "uncovered: " <> why
         ByClause stmt title ->
@@ -3573,6 +3599,7 @@ renderControls results story =
                  ] of
                 [Held] -> "covered: the clause holds"
                 [Uncovered why] -> "uncovered: " <> why
+                [Retired why] -> why
                 [NotHeld why] -> "not covered: the clause does not hold: " <> intercalate "; " why
                 _ -> "uncovered: its clause did not run"
         ByObligations rows ->
@@ -3588,6 +3615,7 @@ renderControls results story =
                         | length ss /= length wanted ->
                             "uncovered: a clause of it did not run"
                         | all (== Held) ss -> "covered: the clause holds"
+                        | (Retired why : _) <- filter (/= Held) ss -> why
                         | (Uncovered why : _) <- filter (/= Held) ss -> "uncovered: " <> why
                         | (NotHeld why : _) <- filter (/= Held) ss ->
                             "not covered: a clause does not hold: " <> intercalate "; " why
@@ -3842,6 +3870,7 @@ steps story = snd (walk 0 story)
     say :: Int -> CliI a -> (Int, a, Maybe String)
     say n i = case i of
         Require _ _ -> (n, (), Nothing)
+        Retire why -> (n, (), Just why)
         Run c (Target t) k ->
             ( n + 1
             , emptyReceipt n "" "" ""
@@ -3983,6 +4012,7 @@ tellings = go
     placeholderOf :: CliI a -> a
     placeholderOf i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
@@ -4239,6 +4269,7 @@ shape = go
     placeholderOf :: CliI a -> a
     placeholderOf i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
