@@ -2875,13 +2875,13 @@
     "terminalPolicy": 10
   },
   "modelSha256": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
-  "payloadSha256": "9e69f818a4838eb6bfa684aeae3458805072c4db385d4d165b70d7a69d44a49f",
+  "payloadSha256": "a0b056e369950cee952fd8652266c74eea79cb957bab5432b3b828fb4a18bb2e",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
     "lean/Main.lean": "5233a0256f7898834d27992ad63cf5e23b170dabc0851bb2a1a2290024e77acc",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "1e9b45aa670382978d87fcf22dc2d36c0c1845d651aac8fc586bee9f9307fcc4",
+    "lean/Singular/Driver.lean": "b1144d7c22e00722dc721e0caad10f8c1ff9be01c01061fb05b670b49b307f69",
     "lean/Singular/Lemmas.lean": "cd7608d34e7f93ad7f67a23cbe80d03abc7ac7dca7c7fbe0806c360c0c308636",
     "lean/Singular/Model.lean": "d3daccc2bb59d3faa36d37d17195bf6e1a9b75e7efa336bcef3909130f22bee7",
     "lean/Singular/Statements.lean": "af6a7d9163cc0cd1771ec2e96a8659c920aa6badbebb7e3453dd6bf6a9b3282a"
