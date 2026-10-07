@@ -91,12 +91,16 @@
       "pause": 500
     },
     {
-      "text": "The executed scope establishes the replay and proof verification tasks only. Token-only joining, both users' real CLI lifecycles and cross-actor insertion folding, actual actor-provider fault controls, public row receipts, remaining documentation reconciliation, the complete packaged journey, repository-wide checks and exact-head hosted CI remain outstanding. This is a worker handback for owner verification, with no independent auditor commissioned and no ticket-wide acceptance, push or merge claimed.",
+      "text": "The executed scope establishes the replay and proof verification tasks only. Token-only joining, both users' real CLI lifecycles and cross-actor insertion folding, actual actor-provider fault controls, public row receipts, the complete packaged journey, repository-wide checks and exact-head hosted CI remain outstanding. This is a worker handback for owner verification, with no independent auditor commissioned and no ticket-wide acceptance, push or merge claimed.",
+      "pause": 400
+    },
+    {
+      "text": "The owner subsequently reconciled the obsolete preimage-file statements with merged #419 and marked the #324 adapter plan historical after #383 removal. The journey report no longer lists merged #419 as a dependency; all unexecuted product rows remain pending on #437. This changes no executed product claim.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "5f8a95c97c254158dc18c71c0aaaf799c12cee5e7cd153478931a2f2293d5c02"
+    "sha256": "14ed90c8362ba1577694ee40a344f011ef932b2853066f138fae5184e9034cf5"
   }
 }

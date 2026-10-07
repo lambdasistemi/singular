@@ -41,7 +41,7 @@
       "pause": 400
     },
     {
-      "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Cross-actor insertion folding separately remains pending under #419.",
+      "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
       "pause": 400
     },
     {
@@ -235,6 +235,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "ca1962193250e9d17045d85a83be7f4e2184556d052b31c7ef00e87d8785402a"
+    "sha256": "ddaaa4380c22707861a9dfb3e59aada4c92af296252a617e879b7477b632db03"
   }
 }

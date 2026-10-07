@@ -23,7 +23,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--registry DIR` | all eight | Your directory for one registry: its public identity, your submission journal and your own insertion preimages. `create` initialises it. Commands reconstruct proof state from public history, without a persisted mirror or saved root. |
+| `--registry DIR` | all eight | Your directory for one registry: its public identity and your submission journal. `create` initialises it. Commands reconstruct proof state from public history, without a persisted mirror or saved root. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
@@ -81,7 +81,9 @@ is published as pending: both insertions, reciprocal termination folds, reject,
 reclaim, controller refusals, matching roots and history controls. No copied
 identity or fabricated joined directory substitutes for that integration.
 Once #437 is available, the complete journey can be connected to its actual command
-interface. Cross-actor insertion folding separately remains pending under #419.
+interface. Requests already carry their insertion envelopes publicly under
+merged #419; cross-actor insertion folding remains to be exercised in this
+joined-user journey.
 
 Unit controls exercise public replay, proof preparation and the existing
 controller and request-window decisions over component fixtures. They establish

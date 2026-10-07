@@ -104,8 +104,8 @@ not copied. A dedicated mixed-fold test covers it.
 ## What the registry directory keeps
 
 As a registry owner, my directory keeps only what I alone hold: the registry's
-identity, the journal of my own submissions and the envelopes my own
-insertions will deliver. The trie mirror and the saved root commitment are no
+identity and the journal of my own submissions. Insertion requests carry their
+envelopes publicly; commands do not keep private preimage files. The trie mirror and the saved root commitment are no
 longer written or read; the replay replaces both. No local trie copy survives
 as a cache in this ticket. A later cache is a further trie-state backend and
 never overrides a replay.

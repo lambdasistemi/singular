@@ -79,7 +79,7 @@
       "pause": 400
     },
     {
-      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion fold still needs the booker's envelope preimage; folding another actor's insertion remains pending under #419. A termination fold can use another actor's independent directory and public replay.",
+      "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
       "pause": 400
     },
     {
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "2dfdb4ba0ecd5ab22022ae84c9a08a6b8bb9d3fc93040c9ca6b63d87882ffc00"
+    "sha256": "d4cc56a7da80f2dee5d4e9a3ee62744ce4e171a734af6617d892106512fc7805"
   }
 }
