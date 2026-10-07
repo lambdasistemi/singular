@@ -1,0 +1,100 @@
+{
+  "deliver-measurable-recovery-coverage": [
+    {
+      "text": "Deliver measurable recovery coverage.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want delivery stamps tied to real checks and approved commits, so partial offline coverage cannot close the whole CI story.",
+      "pause": 400
+    }
+  ],
+  "offline-recovery": [
+    {
+      "text": "Offline recovery.",
+      "pause": 500
+    },
+    {
+      "text": "The first slice adds composed recovery tests and proves each failure mode detects a relevant defect. Its fixtures disclose provenance and its test registration rejects empty selection.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] recorded-recovery-boundary: record fixture provenance and execute the production reconciliation composition.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] interrupted-confirmation-offline: reconcile durable confirmation before observation, preserving original evidence and detecting a controlled fault.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] expiry-offline: distinguish bounded live-input exclusion from unbounded and undetermined evidence, with a real fault control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] rollback-offline: observe rollback from positive live-input evidence once, preserve the unresolved identity and block resend, with a real fault control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] recovery-selection-and-receipts: register tagged tests, prove executed extent and retain RED/GREEN command receipts plus every checkpoint approval.",
+      "pause": 300
+    }
+  ],
+  "offline-evidence-mutations": [
+    {
+      "text": "Offline evidence mutations.",
+      "pause": 500
+    },
+    {
+      "text": "The next slice receives its own gate and function bindings before dispatch. Its checks are over recorded evidence and do not remove a serial predecessor yet.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] recorded-evidence-mutations: original evidence passes and altered evidence is rejected by the corresponding clause, with nonempty discovered extent.",
+      "pause": 300
+    }
+  ],
+  "parallel-hosted-carriers": [
+    {
+      "text": "Parallel hosted carriers.",
+      "pause": 500
+    },
+    {
+      "text": "The final slice remains held for the sibling merges and accepted job mapping. Every replacement carries its successor and ran-proof in the same diff; no offline receipt implies ledger acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] successor-selection-and-ran-proof: map every removed serial scenario to a successor proven to execute.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] parallel-edge-smokes: independently selectable jobs add one node per edge without extending existing executions; every selected recovery part runs alone, with a cross-part dependency control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] bounded-sequential-journey: retain one connected story and establish the accepted six-minute execution budget per node part.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] exact-head-hosted-acceptance: preserve sibling parts, union receipts, verify all checkpoints and hosted checks, and merge through merge-guard.",
+      "pause": 300
+    }
+  ],
+  "completion-limits": [
+    {
+      "text": "Completion limits.",
+      "pause": 500
+    },
+    {
+      "text": "Only the ticket owner stamps a task after evidence-bound acceptance. An offline-slice PR leaves the final-slice tasks open and does not close the issue. Missing evidence and unresolved requirements remain visible.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5507bb9b6544d4481137ac393fd64f353667306098a0d0196ba2e04465de6264"
+  }
+}

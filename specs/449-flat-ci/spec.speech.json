@@ -1,0 +1,72 @@
+{
+  "ci-stays-bounded-as-the-registry-grows": [
+    {
+      "text": "CI stays bounded as the registry grows.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want each shared recovery failure checked offline and each new edge checked in parallel, so adding registry behavior does not add serial block waits. As a CLI user, I want an uncertain submission reconciled without resending it or inventing state.",
+      "pause": 400
+    }
+  ],
+  "stories-and-acceptance": [
+    {
+      "text": "Stories and acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "The first slice checks lost acknowledgement, interruption after confirmation, expiry and rollback against recorded provider answers. Each check executes the production journal/reconciliation composition, reads its resulting journal and receipt fields, and detects a relevant controlled fault. Positive inclusion, live-input exclusion and undetermined evidence remain distinct. A repeated recovery neither resends nor duplicates an observation or terminal phase. An unresolved next write preserves its transaction identity and public outcome.",
+      "pause": 400
+    },
+    {
+      "text": "The second slice checks evidence mutations offline. Original recorded evidence passes; altered evidence is rejected for the relevant clause; missing or empty extent fails closed. It establishes evidence judgement, not chain execution.",
+      "pause": 400
+    },
+    {
+      "text": "The final slice gives each chain-bound edge its own parallel hosted part and retains one sequential journey. Each node part has six minutes of test execution after cached setup, with setup/build measured separately and a whole-job timeout. It waits for the sibling recovery/control changes and an accepted job mapping.",
+      "pause": 400
+    },
+    {
+      "text": "Shared client failures, independent chain smokes and the connected journey contribute different evidence. None substitutes for the others.",
+      "pause": 400
+    }
+  ],
+  "invariants": [
+    {
+      "text": "Invariants.",
+      "pause": 500
+    }
+  ],
+  "behavioral-authority-and-refusal": [
+    {
+      "text": "Behavioral authority and refusal.",
+      "pause": 500
+    },
+    {
+      "text": "Constitution 1.12.0 governs. The refreshed base is 0676e5354353b823b40b9cad5cac31a170a8fd08, whose Lean tree is 042a9798ce44282ddf41f675b226d634b0155d6f. Singular.step, refusal, rootOf and admittedExitStep remain unchanged. Recovery is the accepted client obligation in the CLI recovery specification; Lean describes registry transitions, not uncertain acknowledgement or provider rollback. This test change creates no new model guarantee.",
+      "pause": 400
+    },
+    {
+      "text": "Unknown, timed out and rolled-back submissions remain unresolved until evidence resolves them. The next write keeps its public partial class and transaction identity; an included after-state that cannot be observed retains stale-state. No refusal or exit code is renamed. Ambiguous or conflicting model behavior holds affected acceptance and returns a concrete story to the user.",
+      "pause": 400
+    }
+  ],
+  "evidence-limits-and-delivery": [
+    {
+      "text": "Evidence limits and delivery.",
+      "pause": 500
+    },
+    {
+      "text": "Recorded-provider tests establish client recovery over those recorded answers. They do not establish node rollback, signatures accepted by a ledger, chain finality, or a connected registry lifecycle seeded only as a fixture. Product conformance rows remain receipt-computed with uncovered rows visible; any harness evidence belongs in its appendix. The replacement diff must carry each named successor and its selection/ran-proof.",
+      "pause": 400
+    },
+    {
+      "text": "Cross-wallet execution remains the sibling fold ticket. No existing node scenario is removed in the first slice. Until CI reshaping lands, never-sent, whole-journal, rollback and trie-capability retain their named hosted gaps. Slices one and two may ship separately; the whole ticket remains open until its final acceptance is established.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "a6d2691819747676dec40197bce8fa1876ad6faf3b30faca9837f3331aaa18ca"
+  }
+}
