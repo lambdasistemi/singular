@@ -72,6 +72,12 @@ cmp -s "$scratch/trustworthy/copy/receipts/step-005.json" \
 case_of client-refusal '.outcome = "client-refusal" | .command.outcome = "client-refusal" | .process.exit = 10' 1 \
   '{"outcome":"client-refusal","leaf":"active"}' "$beside" 1
 expect client-refusal 1 "is not a successful ordinary inspect"
+case_of outcome-only '.outcome = "client-refusal"' 1 "$printed" "$alone" 1
+expect outcome-only 1 "is not a successful ordinary inspect"
+case_of printed-outcome-only '.command.outcome = "client-refusal"' 1 '{"outcome":"client-refusal","leaf":"active"}' "$alone" 1
+expect printed-outcome-only 1 "is not a successful ordinary inspect"
+case_of exit-only '.process.exit = 10' 1 "$printed" "$alone" 1
+expect exit-only 1 "is not a successful ordinary inspect"
 case_of output-missing . 1 "" "$alone" 1
 expect output-missing 1 "is not kept"
 case_of output-differs . 1 '{"outcome":"success","leaf":"terminal"}' "$alone" 1
