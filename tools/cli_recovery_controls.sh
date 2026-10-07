@@ -124,6 +124,17 @@ common=(--registry "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 bob=(--wallet-skey "$work/bob.skey")
 
+# say_run NAME STATUS: a command's actual answer — its receipt's outcome and
+# refusal reason when the receipt parses, an explicitly named absence
+# otherwise, never replacing the command's own exit or the verdict signal.
+say_run() {
+  local name="$1" status="$2"
+  if jq -e 'type == "object" and has("outcome")' "$receipts/$name.json" >/dev/null 2>&1; then
+    say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json") (exit $status)"
+  else
+    say "$name: no parsable receipt (exit $status); stderr: $(head -n 1 "$receipts/$name.err" 2>/dev/null || echo none)"
+  fi
+}
 # run NAME ARGS...: one singular process; its receipt and exit status kept.
 run() {
   local name="$1"
@@ -134,9 +145,7 @@ run() {
     "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
-  # A failed command names its actual refusal reason; its full receipt and
-  # exit stay in the files, and the verdict table keeps the failure signal.
-  say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  say_run "$name" "$status"
 }
 # held NAME VAR ARGS...: one singular process with the harness hold VAR set
 # to a path, killed once it waits there. Returns 0 only when it was killed
@@ -165,6 +174,9 @@ held() {
   local status=0
   wait "$victim" || status=$?
   say "$name: never reached its hold point (exit $status)"
+  # A command that failed before its hold names its actual refusal, so the
+  # historical before-hold failure shape is visible, not just its exit.
+  say_run "$name" "$status"
   return 1
 }
 # paused NAME VAR CHECK ARGS...: one singular process with the harness hold
@@ -194,8 +206,7 @@ paused() {
   local status=0
   wait "$victim" || status=$?
   echo "$status" >"$receipts/$name.exit"
-  # Same naming of the actual refusal as run(), for a released held process.
-  say "$name: $(jq -r 'if .reason then .outcome + "/" + .reason else .outcome end' "$receipts/$name.json" 2>/dev/null || echo none) (exit $status)"
+  say_run "$name" "$status"
   return "$reached"
 }
 field() { jq -r "$2" "$receipts/$1.json"; }
@@ -635,20 +646,30 @@ if part cross-wallet; then
     done
     cross_check=$((cross_check + 1))
   }
-  # The part's own starting state (#451): each case's next ordinary write
-  # updates a key this part inserted itself through the real ordinary CLI,
-  # so a cross-wallet-only selection judges recovery, never another part's
-  # setup (the killed part owns 6b0d; these keys are this part's own, one
-  # per case, because an update retires the key it writes).
+  # The part's own starting state (#451): every case the runtime discovery
+  # names gets its own reachable prerequisite through the real ordinary CLI
+  # — one key inserted per discovered case, because an update retires the
+  # key it writes — so a cross-wallet-only selection judges recovery, never
+  # another part's setup (the killed part owns 6b0d; these keys are its own).
   control="the part's own starting state"
-  for i in 0 1 2 3 4; do
-    printf -v own_key '6e%02x' "$i"
+  mapfile -t own_keys < <(
+    for i in $(seq 0 $((${#cross_cases[@]} - 1))); do printf '6e%02x\n' "$i"; done
+  )
+  cross_prereq=0
+  for own_key in "${own_keys[@]}"; do
     insert_of "$own_key"
-    run "insert-cross-state-$i" "${args[@]}"
+    run "insert-cross-state-$cross_prereq" "${args[@]}"
     clause "the part's prerequisite insert of $own_key succeeds" \
-      outcome_is "insert-cross-state-$i" success
+      outcome_is "insert-cross-state-$cross_prereq" success
+    if outcome_is "insert-cross-state-$cross_prereq" success; then
+      cross_prereq=$((cross_prereq + 1))
+    fi
   done
-  run inspect-cross-state registry inspect --key-hex 6e00 "${common[@]}" "${node[@]}"
+  # The two runtime extents must agree: a case discovered without its own
+  # prerequisite, or a prerequisite no case owns, fails here by name.
+  clause "every discovered case has its own prerequisite insert: extents agree" \
+    is_equal "$cross_prereq" "${#cross_cases[@]}"
+  run inspect-cross-state registry inspect --key-hex "${own_keys[0]}" "${common[@]}" "${node[@]}"
   clause "the first prerequisite key is live at the ledger's root, ready for the part's writes" \
     is_equal "$(field inspect-cross-state '.outcome + "/" + .leaf')" success/active
   clause "the prerequisite inserts left no retired trie files" trie_files_absent
@@ -680,7 +701,7 @@ if part cross-wallet; then
     unset SINGULAR_HARNESS_HOLD_STEP
     cross_fold="$(fold_since "$cross-booked")"
     snap "$cross-held"
-    printf -v next_key '6e%02x' "$((cross_index - 1))"
+    next_key="${own_keys[$((cross_index - 1))]}"
     refusals_clean=0
     for i in $(seq 1 40); do
       snap "$cross-try-$i"

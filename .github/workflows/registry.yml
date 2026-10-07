@@ -820,35 +820,64 @@ jobs:
       # stories, diagrams, no index labels, speech stamps.
       - name: Check the cross-wallet specification's presentation
         run: nix develop --quiet --no-write-lock-file -c python3 tools/check_presentation.py --front specs/451-cross-wallet-fold/spec.md specs/451-cross-wallet-fold
-      # #451: retain the part's genuine recorded evidence on success and
-      # failure — receipts, journal, saved bodies, verdicts and snapshots —
-      # bound to this candidate and run for offline consumers. The private
-      # funding keys and the node database stay out of the bundle, and a
-      # record an early failure never produced is named, never fabricated.
+      # #451: retain a bounded, genuine, replayable evidence bundle on
+      # success and failure — the original receipts real commands printed,
+      # the journal and saved bodies, the verdict table and hold coverage —
+      # bound to this candidate and run for offline consumers. The derived
+      # tampered copies the mutation predicates judge and the snapshot
+      # journal duplicates stay out and are named by measured extent; the
+      # private funding keys and the node database are never bundled; an
+      # expected record an early failure never produced is named absent,
+      # never fabricated, and an upload failure fails this delivery check.
       - name: Collect the cross-wallet part's recorded evidence
         if: always()
         run: |
           out="$RUNNER_TEMP/cross-wallet-evidence"
           rm -rf "${out:?}"
-          mkdir -p "$out"
+          mkdir -p "$out/receipts" "$out/registry"
+          manifest="$out/manifest.txt"
+          note() { printf '%s\n' "$*" >>"$manifest"; }
           printf 'candidate=%s\nrun_id=%s\n' \
             "${{ github.event.pull_request.head.sha || github.sha }}" \
-            "${{ github.run_id }}" >"$out/manifest.txt"
+            "${{ github.run_id }}" >"$manifest"
           run_dir=""
           for candidate_dir in "$RUNNER_TEMP"/cli-recovery.*/run; do
             if [ -d "$candidate_dir" ]; then run_dir="$candidate_dir"; fi
           done
           if [ -n "$run_dir" ] && [ -d "$run_dir/receipts" ]; then
-            for item in receipts registry snapshots verdicts.md fold-holds.list \
+            find "$run_dir/receipts" -maxdepth 1 -type f \
+              ! -name '*-tampered.json' ! -name '*-red.out' ! -name '*-red.err' ! -name '*-red.exit' \
+              -exec cp -a {} "$out/receipts/" \;
+            if [ -e "$run_dir/registry/journal.jsonl" ]; then
+              cp -a "$run_dir/registry/journal.jsonl" "$out/registry/"
+            else
+              note "absent: registry/journal.jsonl"
+            fi
+            if [ -d "$run_dir/registry/submissions" ]; then
+              cp -a "$run_dir/registry/submissions" "$out/registry/"
+            else
+              note "absent: registry/submissions"
+            fi
+            for item in verdicts.md fold-holds.list fold-hold-coverage.json \
               direct-processes.trie.jsonl trie-command-invocations; do
-              if [ -e "$run_dir/$item" ]; then cp -a "$run_dir/$item" "$out/"; fi
+              if [ -e "$run_dir/$item" ]; then
+                cp -a "$run_dir/$item" "$out/"
+              else
+                note "absent: $item"
+              fi
             done
+            derived=$(find "$run_dir/receipts" -maxdepth 1 -type f \
+              \( -name '*-tampered.json' -o -name '*-red.out' -o -name '*-red.err' -o -name '*-red.exit' \) \
+              -printf '%s\n' | awk '{n++; s+=$1} END {printf "%d files %d bytes", n, s}')
+            snaps=$(du -sb "$run_dir/snapshots" 2>/dev/null | cut -f1)
+            note "records: receipts=$(find "$out/receipts" -type f | wc -l)"
+            note "excluded-by-measured-extent: derived mutation copies ($derived); snapshot journal duplicates (${snaps:-absent} bytes); funding keys; node database"
             (
               cd "$out"
               find . -type f ! -name manifest.txt -print0 | sort -z | xargs -0 sha256sum
-            ) >>"$out/manifest.txt"
+            ) >>"$manifest"
           else
-            printf 'no recovery run directory was produced before the failure\n' >>"$out/manifest.txt"
+            note "no recovery run directory or receipts were produced before the failure"
           fi
       - name: Retain the cross-wallet part's recorded evidence
         if: always()
