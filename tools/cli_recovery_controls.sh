@@ -88,6 +88,16 @@ for requested in ${CLI_RECOVERY_PARTS:-}; do
   done
   [ "$case_ok" -eq 0 ] || setup_fail "CLI_RECOVERY_PARTS names an unknown cross-wallet case: $requested (census: ${cross_all[*]})"
 done
+# part:needed — the part's next ordinary write updates the key the needed part
+# creates, so a selection naming the part without it fails here.
+part_needs="killed:accepting fold-many-killed:accepting"
+for requested in ${CLI_RECOVERY_PARTS:-}; do
+  for need in $part_needs; do
+    [ "${need%%:*}" = "$requested" ] || continue
+    [[ " $CLI_RECOVERY_PARTS " == *" ${need#*:} "* ]] ||
+      setup_fail "CLI_RECOVERY_PARTS selects $requested without ${need#*:}, whose key its next ordinary write updates"
+  done
+done
 
 printf '| control | clause | verdict |\n|---|---|---|\n' >"$verdicts"
 failed=0
@@ -433,7 +443,8 @@ bobkey="$(field bob-preview .walletKeyHash)"
 
 # Parts (#449): CLI_RECOVERY_PARTS names the scenarios to run, space separated;
 # unset runs them all. Each part runs on this script's own node and registry,
-# so separate CI jobs run separate parts in parallel. "killed" needs "accepting".
+# so separate CI jobs run separate parts in parallel. "killed" and
+# "fold-many-killed" need "accepting" (part_needs above).
 # A name that is not a part fails here, and every part that runs must judge at
 # least one clause, so a selection that matches nothing can never read as a pass.
 part() {
