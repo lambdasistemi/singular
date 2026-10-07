@@ -84,7 +84,7 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding (decodeUtf8)
 import Data.Unique (hashUnique, newUnique)
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.Cardano.Block
@@ -108,7 +108,6 @@ import Singular.PhaseLogFixture
     , textField
     , withLogFile
     )
-import Singular.Provider.Koios.Wire qualified as Wire
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.ContractSuite
     ( AdapterHarness (..)
@@ -454,28 +453,23 @@ phaseLogOnDevnet =
                 shouldBe
                     (map (textField "session") (phaseLines "view-release" records))
                     (map Just closingIds)
-                forM_ (phaseLines "view" records) $ \row -> do
+                -- Generic scopes expose identity and binding; only the retired
+                -- node-view constructors carried acquisition/hold timings.
+                forM_ (phaseLines "view" records) $ \row ->
                     shouldBe (textField "binding" row) (Just "Unbound")
-                    case KeyMap.lookup "duration_ms" row of
-                        Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
-                        _ -> expectationFailure "scope acquisition lacks numeric duration_ms"
-                forM_ (phaseLines "view-release" records) $ \row ->
-                    case KeyMap.lookup "held_ms" row of
-                        Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
-                        _ -> expectationFailure "scope release lacks numeric held_ms"
                 let queries = phaseLines "query" records
                     actual =
                         [ ( textField "session" row
                           , textField "query" row
                           , numberField "answer_size" row
-                          , numberField "answer_bytes" row
                           )
                         | row <- queries
                         , KeyMap.member "session" row
                         ]
                 unless (actual == expected) $
                     expectationFailure omissionMessage
-                forM_ queries $ \row ->
+                forM_ queries $ \row -> do
+                    shouldBe (textField "outcome" row) (Just "ok")
                     case KeyMap.lookup "duration_ms" row of
                         Just (Number elapsed) -> shouldSatisfy elapsed (>= 0)
                         _ -> expectationFailure "raw query lacks numeric duration_ms"
@@ -521,20 +515,11 @@ phaseLogOnDevnet =
 
     rawRead row = do
         identity <- requiredText "session" row
-        (query, body, bytes) <- case KeyMap.lookup "kind" row of
-            Just (String "raw-time") -> pure ("network-time", Object row, Nothing)
-            Just (String "raw-exchange") -> do
-                query <- requiredText "call" row
-                result <- case KeyMap.lookup "result" row of
-                    Just (Object fields) -> pure fields
-                    _ -> fail "actual HTTP trace lacks a result object"
-                encoded <- requiredText "bodyHex" result
-                bytes <- either fail pure (B16.decode (encodeUtf8 encoded))
-                parsed <- either (fail . show) pure (Wire.parseBody bytes)
-                pure (query, parsed, Just (toInteger (BS.length bytes)))
+        query <- case KeyMap.lookup "kind" row of
+            Just (String "raw-time") -> pure "network-time"
+            Just (String "raw-exchange") -> requiredText "call" row
             _ -> fail "the trace row is not an actual successful raw read"
-        let cardinality = case body of
-                Array rows -> toInteger (length rows)
-                Object _ -> 1
-                _ -> 0
-        pure (Just identity, Just query, Just cardinality, bytes)
+        -- Koios.Runtime measures raw reads as Answered Nothing: the public
+        -- phase log has no raw answer size or body-byte count. Reconcile the
+        -- fields it actually supplies, including the absent answer_size.
+        pure (Just identity, Just query, Nothing)
