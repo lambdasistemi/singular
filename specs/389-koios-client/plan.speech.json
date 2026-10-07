@@ -5,17 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want the Koios transport and decoding written once, so that",
-      "pause": 400
-    }
-  ],
-  "383s-recorded-instance-and-the-live-instance-run-the-same-requests-pages": [
-    {
-      "text": "383's recorded instance and the live instance run the same requests, pages.",
-      "pause": 500
-    },
-    {
-      "text": "and decoders. Read the stories first. Delivery base: main 32bba1adc232fb3da5e84ea52e51ab95f670e8f1 (2026-10-07).",
+      "text": "As a maintainer, I want the Koios transport and decoding written once, so that the recorded instance from #383 and the live instance run the same requests, pages and decoders. Read the stories first. Delivery base: main 32bba1adc232fb3da5e84ea52e51ab95f670e8f1 (2026-10-07).",
       "pause": 400
     }
   ],
@@ -131,6 +121,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a16b71799907d2ad8876d445b0a1472d792bbbf8a0231f4f79b847c327bc2035"
+    "sha256": "095b48e8704cf70c4111ef392804497973b26dede493dee865a44b7e7c449b83"
   }
 }

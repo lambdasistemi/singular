@@ -1,7 +1,7 @@
 # Live Koios client: plan
 
 As a maintainer, I want the Koios transport and decoding written once, so that
-#383's recorded instance and the live instance run the same requests, pages
+the recorded instance from #383 and the live instance run the same requests, pages
 and decoders. Read the [stories](spec.md) first. Delivery base: main
 `32bba1adc232fb3da5e84ea52e51ab95f670e8f1` (2026-10-07).
 
