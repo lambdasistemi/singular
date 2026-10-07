@@ -119,7 +119,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Exact cut accepted. Bind main5c4c3dd0, Lean tree16ee2d4a and constitution1.13; source cut/rebase map and conflict receipts; all four exact static commands with actual exit0; fresh PR1-range review, exact-head hosted CI and Bob story/control evidence. Draft push may precede review completion; merge waits. Issue437 stays open.",
+      "text": "[ ] Exact cut accepted. Bind main21f1d856, Lean tree16ee2d4a and constitution1.13; source cut/rebase map and conflict receipts; all four exact static commands with actual exit0; fresh PR1-range review, exact-head hosted CI and Bob story/control evidence. Draft push may precede review completion; merge waits. Issue437 stays open.",
       "pause": 300
     }
   ],
@@ -181,6 +181,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a38b68d653080d710903543745c153f767ba2cfc4d817600eb467e59a0bee3fb"
+    "sha256": "c12cebc7a55c18e4be7c4b8a4b8d4675fd687f77f848a9476e85f333a34ad7d3"
   }
 }

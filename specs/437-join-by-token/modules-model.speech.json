@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Only new or changed modules are listed. Fields are in the data model and signatures in the functions model. Dependencies point downward: the CLI depends on the registry library, and the library depends on the provider interface. PR1 binds main 5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed, Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0. No model or on-chain change is authorised. New reference commands, closed-wallet funding and the page follow in PR2.",
+      "text": "Only new or changed modules are listed. Fields are in the data model and signatures in the functions model. Dependencies point downward: the CLI depends on the registry library, and the library depends on the provider interface. PR1 binds main 21f1d8560be008a8b2045e583fc384f10809260e, Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0. No model or on-chain change is authorised. New reference commands, closed-wallet funding and the page follow in PR2.",
       "pause": 400
     }
   ],
@@ -173,6 +173,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "e65c1f650c99028bdfd96ae1e0a9c1896eb0733d6bc8be264b06bf8270c39c29"
+    "sha256": "7e849297e6cfb55c79813791ab6c30c81867cec1f9dc492b2aae3312443bd80b"
   }
 }

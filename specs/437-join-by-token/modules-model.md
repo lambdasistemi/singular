@@ -3,7 +3,7 @@
 Only new or changed modules are listed. Fields are in the [data model](data-model.md) and
 signatures in the [functions model](functions-model.md). Dependencies point downward: the CLI
 depends on the registry library, and the library depends on the provider interface.
-PR1 binds main `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed`, Lean tree
+PR1 binds main `21f1d8560be008a8b2045e583fc384f10809260e`, Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. No model or on-chain
 change is authorised. New reference commands, closed-wallet funding and the page follow in PR2.
 
