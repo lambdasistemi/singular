@@ -72,6 +72,7 @@ import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , referenceScriptTxOutL
+    , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
@@ -82,7 +83,12 @@ import Cardano.Ledger.Credential
     , StakeReference (StakeRefNull)
     )
 import Cardano.Ledger.Hashes (ScriptHash (..))
-import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 
 import Singular.Application.OpenDatum.Script
@@ -311,6 +317,7 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
         (stateRef, stateOut, datum) <-
             case [ (i, o, st)
                  | (i, o) <- held
+                 , holdsToken o
                  , o ^. addrTxOutL == stateAddress
                  , Just (StateDatum st) <- [extractCageDatum o]
                  ] of
@@ -348,6 +355,12 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
                 , resolvedNetwork = network
                 }
   where
+    holdsToken o =
+        let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+        in  maybe
+                False
+                ((> 0) . Map.findWithDefault 0 (AssetName name))
+                (Map.lookup (PolicyID policy) assets)
     derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
     readFact action =
         ExceptT
