@@ -394,38 +394,42 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
     it
-        "publishes the missing-proof control uncovered when its receipt records no reachable witness"
+        "publishes the withheld-history control uncovered when its receipt records no reachable witness"
         $ do
             rs <- honestReceipts controlsStory
             let unavailable =
                     alter
-                        "provoke inspect-without-proof"
+                        "provoke inspect-without-history"
                         "process"
                         ( \r ->
                             r
                                 { rcOutcome = "client-error"
                                 , rcCommand = Nothing
                                 , rcProcess = Nothing
-                                , rcReason = Just "no saved proof file is reachable"
+                                , rcReason = Just "no provider withholds the history"
                                 }
                         )
                         rs
                 results = judge unavailable controlsStory
-            clauseStatuses "proof material moved aside" (judge rs controlsStory)
+            clauseStatuses
+                "public history it needs withheld"
+                (judge rs controlsStory)
                 `shouldBe` [Held]
             putStrLn
-                ( "Harness receipt-computed missing-proof states: "
+                ( "Harness receipt-computed withheld-history states: "
                     <> show
-                        ( clauseStatuses "proof material moved aside" (judge rs controlsStory)
-                        , clauseStatuses "proof material moved aside" results
+                        ( clauseStatuses
+                            "public history it needs withheld"
+                            (judge rs controlsStory)
+                        , clauseStatuses "public history it needs withheld" results
                         )
                 )
-            clauseStatuses "proof material moved aside" results
+            clauseStatuses "public history it needs withheld" results
                 `shouldSatisfy` (\ss -> length ss == 1 && all isUncovered ss)
             clauseStatuses "root does not move" results
                 `shouldSatisfy` all (== Held)
             show results
-                `shouldSatisfy` isInfixOf "no saved proof file is reachable"
+                `shouldSatisfy` isInfixOf "no provider withholds the history"
     it
         "refuses interrupted-fold recovery with another root or a repeated submission"
         $ do
@@ -620,19 +624,24 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 "with the node stopped"
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
             judged
-                "provoke inspect-without-proof"
+                "provoke inspect-without-history"
                 ( \r ->
                     r
                         { rcCommand =
                             Just
                                 ( object
-                                    [ "outcome" .= ("proof-missing" :: String)
+                                    [ "outcome" .= ("stale-state" :: String)
                                     , "leaf" .= ("active" :: String)
                                     ]
                                 )
                         }
                 )
-                "proof material moved aside"
+                "public history it needs withheld"
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            judged
+                "provoke inspect-without-history"
+                (\r -> r{rcReason = Just "TrieState RootMismatch"})
+                "public history it needs withheld"
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
             lateJudged
                 ( process
@@ -675,6 +684,10 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
             `shouldSatisfy` isInfixOf "30 of 32 approved cases are covered live; 2 are not."
+        -- a replaced clause stays visible beside the clause replacing it
+        full
+            `shouldSatisfy` isInfixOf
+                "- Under `INV299-AUTHENTICATED`, \"inspect with the saved proof material moved aside prints no leaf\" is replaced by \"inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete\": "
         -- the indexer read belongs to a take on an existing registry: the
         -- development controls do not reach it, and say so
         full
@@ -1407,7 +1420,8 @@ provoked p r =
     in  case p of
             WhileLocked -> r{rcOutcome = "concurrent-writer", rcProcess = Just still}
             SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
-            WithoutProof -> noLeaf "proof-missing"
+            WithoutHistory ->
+                (noLeaf "stale-state"){rcReason = Just "TrieState HistoryIncomplete"}
             WithoutNode -> noLeaf "node-unavailable"
             TerminateKilled ->
                 (killed "fold" "f9")

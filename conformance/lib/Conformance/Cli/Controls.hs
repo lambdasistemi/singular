@@ -275,8 +275,8 @@ data Provocation
       WhileLocked
     | -- | @insert@, with the saved configuration's application selector changed
       SelectorChanged
-    | -- | @inspect@, with the saved proof material moved aside
-      WithoutProof
+    | -- | @inspect@, with the public history it needs withheld
+      WithoutHistory
     | -- | @inspect@, against a node socket that does not exist
       WithoutNode
     | -- | @terminate@, killed once the node accepted its fold
@@ -302,7 +302,7 @@ provocationName :: Provocation -> String
 provocationName p = case p of
     WhileLocked -> "insert-while-locked"
     SelectorChanged -> "insert-selector-changed"
-    WithoutProof -> "inspect-without-proof"
+    WithoutHistory -> "inspect-without-history"
     WithoutNode -> "inspect-without-node"
     TerminateKilled -> "terminate-killed"
     UpdateAfterKill -> "update-after-kill"
@@ -318,8 +318,8 @@ provocationPhrase p = case p of
         "Run `singular registry insert` while another process holds the registry's lock"
     SelectorChanged ->
         "Run `singular registry insert` with the saved application selector changed"
-    WithoutProof ->
-        "Run `singular registry inspect` with the saved proof material moved aside"
+    WithoutHistory ->
+        "Run `singular registry inspect` with the public history it needs withheld"
     WithoutNode ->
         "Run `singular registry inspect` against a node socket that does not exist"
     TerminateKilled ->
@@ -1662,7 +1662,7 @@ forbiddenInPermanent =
 
 {- | The client's obligations under conditions of its process, each told
 under the row of the CLI's specification it bears on: a changed selector,
-missing proof material and an absent node; a terminate and a create killed
+withheld public history and an absent node; a terminate and a create killed
 once the node accepted them; and, last because it stops the node, a
 concurrent writer, a racing create and an update that loses its node.
 -}
@@ -1700,9 +1700,9 @@ processStory = do
         _ <- reading heldKey "inspect reads the key Active" authenticated
         void $
             clause
-                "inspect with the saved proof material moved aside prints no leaf"
+                "inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete"
                 (requirement authenticated NoLeafPrinted)
-                (pure <$> action (Provoke WithoutProof target heldKey))
+                (pure <$> action (Provoke WithoutHistory target heldKey))
     theorem readOnly $ do
         _ <- reading heldKey "inspect reads the key Active" readOnly
         void $
@@ -2372,7 +2372,7 @@ expectedOutcome :: Receipt -> Text
 expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
     Just "insert-while-locked" -> "concurrent-writer"
     Just "insert-selector-changed" -> "client-refusal"
-    Just "inspect-without-proof" -> "proof-missing"
+    Just "inspect-without-history" -> "stale-state"
     Just "inspect-without-node" -> "node-unavailable"
     Just "create-again" -> "client-refusal"
     _ -> "a provoked command's outcome"
@@ -2974,6 +2974,11 @@ check req rs = case (req, rs) of
                | let leaf = at [field "leaf"] r
                , leaf `notElem` [Nothing, Just Aeson.Null]
                ]
+            <> [ "the refusal does not name HistoryIncomplete: "
+                    <> maybe "no reason" T.unpack (rcReason r)
+               | rcAction r == "provoke inspect-without-history"
+               , not (maybe False ("HistoryIncomplete" `T.isInfixOf`) (rcReason r))
+               ]
             <> admitted r
     (StoppedAfterAcceptance, [r]) ->
         withProcess
@@ -3285,7 +3290,7 @@ replay byStep story =
                     st
                     (fs <> check req rs, p || req `elem` premises, unavailable)
                     (next ())
-            Action i@(Provoke WithoutProof _ _) :>>= next -> case perform st i of
+            Action i@(Provoke WithoutHistory _ _) :>>= next -> case perform st i of
                 (Just r, st') ->
                     let missing =
                             rcOutcome r == "client-error"
@@ -3502,6 +3507,22 @@ renderControls results story =
                ]
             <> [ ""
                , caseSummary
+               , ""
+               , "### Replaced clauses"
+               , ""
+               , "A clause a ruling replaced is listed here with the clause that replaces it, so a verdict published under the old wording can be read against the new one."
+               , ""
+               ]
+            <> [ "- Under `"
+                    <> obligation
+                    <> "`, \""
+                    <> old
+                    <> "\" is replaced by \""
+                    <> new
+                    <> "\": "
+                    <> why
+                    <> "."
+               | (obligation, old, new, why) <- replacedClauses
                ]
   where
     verdictText s = case s of
@@ -3572,6 +3593,20 @@ data Coverage
 
 qualified :: String -> String
 qualified = ("OpenDatumApplication.Statements." <>)
+
+{- | Clauses a ruling replaced: the obligation, the clause as it read, the
+clause that replaces it, and why. Printed at the end of the verdict
+section, so the old wording stays visible beside the new one.
+-}
+replacedClauses :: [(String, String, String, String)]
+replacedClauses =
+    [
+        ( "INV299-AUTHENTICATED"
+        , "inspect with the saved proof material moved aside prints no leaf"
+        , "inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete"
+        , "inspect now reads no saved proof material; it rebuilds a root-checked trie from public history, so the witness withholds that history instead, while the obligation, that inspect never prints a leaf it cannot authenticate, is unchanged (operator ruling of 7 October 2026)"
+        )
+    ]
 
 {- | The approved matrix of controls for the ordinary CLI and the
 open-datum application, each with the statement it bears on (or the
@@ -3718,12 +3753,14 @@ approvedCases =
                 ]
            ]
         <> [
-               ( "missing proof material, a changed application selector, an unavailable node"
+               ( "withheld public history, a changed application selector, an unavailable node"
                , "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement"
                , ByObligations
                     [
                         ( "INV299-AUTHENTICATED"
-                        , ["inspect with the saved proof material moved aside prints no leaf"]
+                        ,
+                            [ "inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete"
+                            ]
                         )
                     ,
                         ( "INV299-IDENTITY"

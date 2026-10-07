@@ -1529,13 +1529,13 @@ provoke env p target key r = do
                 _ -> fail "the saved configuration is not a JSON object"
             (BL.writeFile config (Aeson.encode changed) >> plain args)
                 `finally` BS.writeFile config saved
-        WithoutProof ->
+        WithoutHistory ->
             pure
                 r
                     { rcOutcome = "client-error"
                     , rcReason =
                         Just
-                            "inspect never reads saved proof material; it rebuilds a root-checked trie from public history, so this control has no missing-proof witness"
+                            "no provider in this run withholds the public history inspect reads, so this control has no witness yet"
                     }
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
