@@ -119,6 +119,7 @@ refusingSession calls =
         , LP.tipObservation = unread
         , LP.networkTime = unread
         , LP.scriptRegistered = const unread
+        , LP.mintRecord = const unread
         , LP.history = \_ _ -> do
             modifyIORef' calls (+ 1)
             pure (Left (LP.HistoryOrderMismatch 1 0))
