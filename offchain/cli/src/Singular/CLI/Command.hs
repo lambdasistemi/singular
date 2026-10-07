@@ -120,8 +120,7 @@ data WriteSettings = WriteSettings
     deriving stock (Eq, Show)
 
 {- | The registry a command acts on: its state token (@--state-token@, or
-@SINGULAR_STATE_TOKEN@) and the outputs the caller suggests as carriers of
-its reference scripts (@--reference-hint@, repeatable).
+@SINGULAR_STATE_TOKEN@), the only name a registry has.
 -}
 newtype RegistryAccess = RegistryAccess
     { accessToken :: Asset
@@ -144,8 +143,6 @@ data CreateArgs = CreateArgs
     -- ^ Positive processing window in milliseconds, fixed at creation
     , createRetractTime :: Integer
     -- ^ Positive retract window in milliseconds, fixed at creation
-    , createHints :: [TxIn]
-    -- ^ Outputs suggested as carriers of the state script
     }
     deriving stock (Eq, Show)
 
@@ -398,7 +395,6 @@ parseWith environment args = do
             if publicPreview
                 then previewMode flags
                 else Submit <$> writeSettings flags
-        hints <- referenceHints flags
         seed <- case lookup "--seed" flags of
             Just (Just s) -> case parseOutRef (T.pack s) of
                 Right _ -> Right (Just s)
@@ -416,7 +412,6 @@ parseWith environment args = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
-                , createHints = hints
                 }
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
@@ -585,13 +580,7 @@ parseWith environment args = do
             first
                 (BadValue "--state-token" . T.unpack)
                 (parseStateToken (T.pack tokenStr))
-        _ <- referenceHints flags
         pure RegistryAccess{accessToken = token}
-    -- Repeatable, in the order given.
-    referenceHints flags =
-        mapM
-            (first (BadValue "--reference-hint") . parseOutRef . T.pack)
-            [s | ("--reference-hint", Just s) <- flags]
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -805,7 +794,6 @@ tokens = go [] []
                                     else Left (BadValue name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
-        | name == "--reference-hint" = (name, Just v) : fs
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
     switches = ["--help", "-h", "--preview", "--fold"]
@@ -835,7 +823,6 @@ valuedFlags =
     , "--payload"
     , "--request"
     , "--state-token"
-    , "--reference-hint"
     ]
 
 -- | One line naming the refusal.
@@ -885,62 +872,61 @@ usage =
         [ "usage:"
         , "  singular registry create --registry DIR --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
-        , "      [--reference-hint TXID#IX]..."
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reclaim --registry DIR --blueprint PLUTUS_JSON --request TXID#IX"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME [--reference-hint TXID#IX]..."
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
         , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry: the"
-        , "directory holds only the actor's own journal and submissions. A reference hint"
-        , "suggests an output that may carry a script the command runs; it is admitted"
-        , "only by the hash of the script it carries, and one not admitted is warned of."
+        , "directory holds only the actor's own journal and submissions. A command finds"
+        , "the reference scripts its transactions run by hash, from the provider and then"
+        , "its own wallet."
         , "create takes positive integer windows in milliseconds. Its processing window"
         , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
         , "for the life of the registry; create and inspect report them from the state datum."

@@ -21,9 +21,15 @@ name.
 - [ ] **One resolver turns a state token into a registry.**
   - Expected hashes are derived from the release and the token.
   - The seven identity refusals.
-  - Reference search through the provider, then hints, then the wallet, with the local hash check.
+  - Reference search through the provider, then the wallet, with the local hash check and lowest
+    admitted output reference in the first source supplying each needed role.
+  - Focused controls: provider supplies all needed roles and the wallet is not read; provider
+    empty and the wallet supplies a carrier; both empty and the exact reference refusal; no
+    needed roles and no discovery reads.
 - [ ] **Commands run on the state token.**
-  - `--state-token` and `--reference-hint` on every command.
+  - `--state-token` on every command except `create`.
+  - Caller-supplied reference flags, parsing, source, warning, helpers and tests removed in the
+    same diff as the two-source search, documentation and help.
   - `registry.json` and its checks deleted.
   - `create` checks the funding for every publication before the boot, finds the state reference
     by hash, and prints the token.
@@ -32,6 +38,9 @@ name.
   - Each actor in the demo scripts and CI apps starts from an empty directory with the state
     token.
   - Pages that describe `registry.json` are updated, with speech.
+  - The public saved-selector promise is retired with the operator's reason in the description
+    language; history remains visible, no receipt or state is reused, and no replacement row is
+    invented. The spec and PR identify the changed public promise.
 
 ## Slice: anyone publishes
 

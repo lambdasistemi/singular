@@ -13,8 +13,8 @@ policies — so every pin is derived before anything is submitted, and
 @--preview@ stops there, submitting nothing and writing nothing.
 
 Otherwise, before anything is submitted, a live carrier of the state
-validator is looked for by its hash (the provider, then the hints, then the
-wallet) and the wallet is checked to fund every publication still to make.
+validator is looked for by its hash (the provider, then the wallet) and the
+wallet is checked to fund every publication still to make.
 Then, in order, each submission journalled and each result read back before
 the next: the state validator is published from outside the seed unless a
 carrier was found (the seed survives the publication); the boot consumes

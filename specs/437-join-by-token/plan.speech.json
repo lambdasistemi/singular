@@ -5,7 +5,11 @@
       "pause": 500
     },
     {
-      "text": "Read the spec for the requirements. The design was ruled in two rounds on 2026-10-06: the identity, the page, existing registries and the Lean impact were accepted as proposed; references became a convenience found by hash, with no on-chain lock. The provider query takes the shape decided by the Lockness epic owner (lockness#39).",
+      "text": "Read the spec for the requirements. The design was ruled in two rounds on 2026-10-06: - the identity, the page, existing registries and the Lean impact were accepted as proposed; - references became a convenience found by hash, with no on-chain lock. The provider query takes the shape decided by the Lockness epic owner (lockness#39).",
+      "pause": 400
+    },
+    {
+      "text": "The operator's 2026-10-07 rulings remove caller-supplied reference hints and retire the public saved-selector promise. Code, tests, help and these documents change in the same implementation slice. Historical receipts keep their original scope; revised discovery needs its own controls.",
       "pause": 400
     }
   ],
@@ -16,6 +20,10 @@
     },
     {
       "text": "The registry's identity moves from a file to a derivation. One library module resolves a state token into everything a command needs and refuses by name when the chain disagrees with the release. References are found by script hash, through a new provider query. The saved identity (registry.json) and its checks are deleted in the same slice that stops reading them.",
+      "pause": 400
+    },
+    {
+      "text": "No Lean, validator or blueprint change. The off-chain resolver is an admission check outside the law, like checkPins today.",
       "pause": 400
     }
   ],
@@ -45,8 +53,12 @@
       "pause": 500
     },
     {
-      "text": "#381 separate actors (draft PR #433) consumes this path: no identity record and no join command. Its two-actor journey uses --state-token. #419 changes the request format. There is no blueprint conflict, because this ticket changes no script. preimages/ stays #419's scope.",
-      "pause": 400
+      "text": "#381 separate actors (draft PR #433) consumes this path: no identity record and no join command. Its two-actor journey uses --state-token.",
+      "pause": 300
+    },
+    {
+      "text": "#419 changes the request format. There is no blueprint conflict, because this ticket changes no script. preimages/ stays #419's scope.",
+      "pause": 300
     }
   ],
   "ceilings": [
@@ -57,6 +69,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c39ede5c787999da7e685c9a751ff52c01af7e3422ebfbcbebc0eaea52d73ebd"
+    "sha256": "98707bc982a877e6092ea54475d45482a6fff7cc6677a253089d5742fdad782b"
   }
 }

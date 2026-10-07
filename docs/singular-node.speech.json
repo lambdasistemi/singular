@@ -37,7 +37,7 @@
       "pause": 400
     },
     {
-      "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then the hints given with --reference-hint, then the wallet's own outputs, taking the lowest output reference among the outputs that carry the right script. The hash is computed from the script each output carries, never taken from the provider. When no source has one the command refuses reference-missing ROLE HASH: not found by this provider, hints or wallet. An empty provider answer means only that this provider found none.",
+      "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
       "pause": 400
     },
     {
@@ -231,6 +231,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "f3d458f352a6ba53ca2d9706dccef3deb71d13a7d5e9237ea84089c6e5d47317"
+    "sha256": "c9f0f95dee5fb02f849589fb77d926133eca593aafb380d1bfe9eaf10d854671"
   }
 }

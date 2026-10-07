@@ -44,17 +44,14 @@ module Singular.Registry.StateToken
     , carriesReference
     , findReferences
     , renderReferenceRefusal
-    , renderHintWarning
     ) where
 
 import Control.Monad (forM_, when)
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
-import Control.Monad.Trans (lift)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
-import Data.Containers.ListUtils (nubOrd)
 import Data.List (minimumBy)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -111,7 +108,6 @@ import Singular.Registry.LedgerProvider
     , MintRecord (..)
     , Network (..)
     , OutputQuery (..)
-    , Outputs
     , ReadFailure (..)
     , Session (..)
     )
@@ -432,10 +428,11 @@ carriesReference expected output = case output ^. referenceScriptTxOutL of
     SNothing -> False
 
 {- | Find a carrier for each needed role: from the provider's existence
-query, then the hints, then the wallet's outputs. A carrier is admitted
-only by 'carriesReference'; among the admitted carriers of the first
-source that has any, the lowest output reference is chosen. The second
-result lists the hints that carry no needed role's script.
+query, then the actor's wallet, read only when the provider carries none
+of some role. A carrier is admitted only by 'carriesReference'; among the
+admitted carriers of the first source that has any, the lowest output
+reference is chosen. A command that runs no reference script reads
+nothing.
 -}
 findReferences
     :: (Monad m)
@@ -448,58 +445,32 @@ findReferences
     -> m
         (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra)))
 findReferences session walletAt expected needed = runExceptT $ do
-    wallet <-
-        maybe (pure []) (readReference . outputs session . AtAddress) walletAt
-    fst <$> ExceptT (searchSources session [] wallet expected needed)
-
-searchSources
-    :: (Monad m)
-    => Session w m
-    -> [TxIn]
-    -> Outputs
-    -> Map ReferenceRole ScriptHash
-    -> Set ReferenceRole
-    -> m
-        ( Either
-            ReferenceRefusal
-            (Map ReferenceRole (TxIn, TxOut ConwayEra), [TxIn])
-        )
-searchSources session hints wallet expected needed = runExceptT $ do
     let wanted =
             [ (role, hash)
             | role <- Set.toAscList needed
             , Just hash <- [Map.lookup role expected]
             ]
+        carries hash = filter (carriesReference hash . snd)
     fromProvider <-
         traverse
-            ( \(_, hash) -> readFact (outputs session (CarryingReferenceScript hash))
+            ( \(_, hash) ->
+                carries hash
+                    <$> readReference (outputs session (CarryingReferenceScript hash))
             )
             wanted
-    hinted <- concat <$> traverse lookupHint (nubOrd hints)
-    let carries hash = filter (carriesReference hash . snd)
-        admittedHints =
-            [ hint
-            | hint <- nubOrd hints
-            , any (\(_, hash) -> any ((== hint) . fst) (carries hash hinted)) wanted
-            ]
-        choose ((role, hash), provided) =
-            case filter (not . null) (map (carries hash) [provided, hinted, wallet]) of
+    wallet <-
+        if any null fromProvider
+            then
+                maybe (pure []) (readReference . outputs session . AtAddress) walletAt
+            else pure []
+    let choose ((role, hash), provided) =
+            case filter (not . null) [provided, carries hash wallet] of
                 found : _ -> Right (role, minimumBy (comparing fst) found)
                 [] -> Left (ReferenceMissing role hash)
-    chosen <-
-        either throwError pure (traverse choose (zip wanted fromProvider))
-    pure
-        ( Map.fromList chosen
-        , filter (`notElem` admittedHints) (nubOrd hints)
-        )
-  where
-    readFact = readReference
-    lookupHint hint = do
-        answer <- lift (outputs session (AtTxIn hint))
-        case answer of
-            Right found -> pure (value found)
-            Left (MissingOutput _) -> pure []
-            Left failure -> throwError (ReferenceUnreadable failure)
+    either
+        throwError
+        (pure . Map.fromList)
+        (traverse choose (zip wanted fromProvider))
 
 -- | A provider read, its failure a reference refusal.
 readReference
@@ -518,14 +489,10 @@ renderReferenceRefusal = \case
             <> roleName role
             <> " "
             <> hexText (scriptHashBytes hash)
-            <> ": not found by this provider, hints or wallet; publish it with singular registry publish-references"
+            <> ": not found by this provider or wallet; publish it with singular registry publish-references"
     ReferenceUnreadable failure ->
         "the provider could not be read while finding references: "
             <> T.pack (show failure)
-
--- | The warning printed once for a hint that is not admitted.
-renderHintWarning :: TxIn -> Text
-renderHintWarning hint = "reference-hint-invalid " <> renderOutRef hint
 
 -- | A pin field as refusals spell it.
 pinName :: PinField -> Text

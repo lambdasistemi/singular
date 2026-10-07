@@ -75,10 +75,12 @@ expected hash serves, whoever made it and wherever it sits.
 - **The command computes each candidate's script hash itself,** from the output, and never trusts
   a provider-supplied hash. A candidate that is spent, or whose script hash differs, is discarded.
 - **A command looks up only the scripts its own transaction runs.** The sources are tried in order:
-  the provider query, then hints given as `--reference-hint TX#IX`, then the actor's own wallet.
-  Among the valid candidates, the lowest output reference wins.
+  the provider query, then the actor's own wallet for roles the provider did not supply.
+  The wallet is not consulted when the provider supplies every needed role. With no needed roles,
+  discovery reads nothing. Within the first source supplying a role, the lowest valid output
+  reference wins.
 - **When no source finds a carrier,** the command refuses
-  `reference-missing <role> <hash>: not found by this provider, hints or wallet`. The message names
+  `reference-missing <role> <hash>: not found by this provider or wallet`. The message names
   the remedy, `singular registry publish-references`.
 - **`create`'s order is unchanged.** It publishes the state reference only if none is found, then
   boots, then publishes the request, witness and application references to the creator's wallet.
@@ -106,11 +108,24 @@ expected hash serves, whoever made it and wherever it sits.
   - **Rules:** the windows, the tip, who folds (anyone, with no signature) and the application.
   - **Live state:** the active and terminal counts and the root from the replay of the token's
     history, the pending requests, and the last fold.
-  - **Reference outputs (hints):** what the provider query returns, labelled as hints.
+  - **Reference outputs:** what the provider query returns, as information.
   - **Known limits:** the release's stated limits.
 
   The rules and the live state are computed from the chain. The application text and the limits
   come from the release.
+
+### Changed public promise
+
+The saved-application-selector refusal promise is retired by the operator's 2026-10-07 ruling:
+"Retired: a registry is joined from its state token alone; there is no saved selector file to
+change." The suite records that reason in its description language and keeps the promise's history
+visible. Its last receipts are not reused and its state is not carried into another row. There is
+no replacement row; token-only requirements, including the foreign-release refusal, retain their
+own evidence.
+
+The same day's reference-search ruling removes caller-supplied reference hints and their flag,
+parsing, warning, search source and tests. The page lists provider-found reference outputs only as
+information. Discovery uses the provider and then the actor's wallet.
 
 ## Existing registries
 
