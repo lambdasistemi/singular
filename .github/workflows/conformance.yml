@@ -306,7 +306,9 @@ jobs:
             and .steps[8].model.reason == "deposit-returned"
             and .steps[9].model.reason == "deposit-returned"
             and all(.steps[8,9]; (.chain.txid | txid) and (.chain.refusal.hashes | index($state) != null))
-            and ([.steps[8,9,10].request] | unique | length) == 1
+            and ([.steps[8,9,10].request | del(.submittedAt)] | unique | length) == 1
+            and ([.steps[8,9,10].request.submittedAt] as $t
+              | all($t[]; type == "number" and . > 0) and $t == ($t | sort) and ($t | unique | length) == 3)
             and .steps[10].registry == .steps[0].registry
             and .steps[7].registry == .steps[0].registry
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
