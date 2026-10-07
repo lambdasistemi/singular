@@ -57,7 +57,8 @@ booted registry the fixture set does not hold); the create-interrupted
 module Singular.CLI.RecoverySpec (spec) where
 
 import Control.Exception (throwIO, try)
-import Control.Monad (forM, forM_)
+import Control.Monad (forM, forM_, when)
+import Control.Monad.State.Strict (evalState)
 import Data.Aeson ((.:))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -68,9 +69,12 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BSL
+import Data.ByteString.Short qualified as SBS
 import Data.Char (isSpace)
 import Data.Foldable (toList)
-import Data.IORef (modifyIORef', newIORef, readIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -85,28 +89,63 @@ import Test.Hspec
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
-import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
+import Cardano.Ledger.Api.Scripts.Data (Data (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( ValidityInterval (..)
     , inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
-    ( addrTxOutL
+    ( TxOut
+    , addrTxOutL
+    , datumTxOutL
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
+import Cardano.Ledger.Api.Tx.Wits (rdmrsTxWitsL)
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
+import Cardano.Ledger.Binary
+    ( decCBOR
+    , decodeFullAnnotator
+    , serialize'
+    )
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Sequence.Strict qualified as StrictSeq
+import MPF.Backend.Pure (emptyMPFInMemoryDB)
+import PlutusCore.Data qualified as PLC
 
-import Singular.CLI.Live (txInText)
+import Singular.Application.OpenDatum.Envelope
+    ( Control (..)
+    , Envelope (..)
+    , StateAsset (..)
+    , envelopeHash
+    , envelopeToData
+    , envelopeVersion
+    )
+import Singular.CLI.Live
+    ( Saved (..)
+    , applicationAddr
+    , txInText
+    )
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
@@ -119,13 +158,15 @@ import Singular.CLI.Receipt
 import Singular.CLI.Reconcile
     ( Reconciliation (..)
     , Recovery (..)
+    , reconcile
     , reconcileIncomplete
     , reconciledJson
     , refuseUnreconciled
     )
-import Singular.CLI.Registry (hexT)
+import Singular.CLI.Registry (hexT, mkRegistryConfig, pinsOf)
 import Singular.CLI.Session
     ( CommandFailure (..)
+    , Expectation (..)
     , WriteContext (..)
     , expecting
     , submitBuilt
@@ -148,30 +189,71 @@ import Singular.Provider.Koios.Runtime (newIORuntime)
 import Singular.Provider.Koios.Scripted (koiosWith)
 import Singular.Provider.Koios.Wire (Body (..))
 import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Config
+    ( CageConfig (..)
+    , bootStateFromCfg
+    , defaultProcessTime
+    , defaultRetractTime
+    )
+import Singular.Registry.Deployment (Deployment (..), parseOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Addr
     , Coin (..)
     , ConwayEra
+    , Root (..)
     , SlotNo (..)
+    , TokenId (..)
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.StubSession
+    ( servingSession
+    , stubSession
+    , withAddressOutputs
+    , withTip
+    )
 import Singular.Registry.TimeSource (TimeSource)
-import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Singular.Registry.Trie (Trie (getRoot))
+import Singular.Registry.Trie.Pure (stateTrie)
+import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
+import Singular.Registry.TxBuilder.Internal
+    ( addrKeyHashBytes
+    , cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , mkInlineDatum
+    , mkRequestDatumWith
+    , policyIdFromPin
+    , requestAddrFromCfg
+    , scriptHashBytes
+    , toPlcData
+    , txInToRef
+    , walkEdge
+    )
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , MintRedeemer (..)
+    , OnChainRoot (..)
+    , RequestAction (..)
+    , UpdateRedeemer (..)
+    , edgeInsertActive
+    )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = describe "offline recovery over recorded answers" $ do
-    boundaryRows
-    lostAcknowledgementRows
-    confirmedInterruptionRows
-    expiryRows
-    rollbackRows
-    repeatedRows
+spec = do
+    describe "offline recovery over recorded answers" $ do
+        boundaryRows
+        lostAcknowledgementRows
+        confirmedInterruptionRows
+        expiryRows
+        rollbackRows
+        repeatedRows
+    syntheticRows
 
 -- ---------------------------------------------------------
 -- The recorded boundary
@@ -925,3 +1007,325 @@ jsonField :: Aeson.Value -> Text -> Maybe Aeson.Value
 jsonField value key = case value of
     Aeson.Object o -> KeyMap.lookup (Key.fromText key) o
     _ -> Nothing
+
+-- ---------------------------------------------------------
+-- The synthetic saved-registry supplement (not recorded answers)
+-- ---------------------------------------------------------
+
+{- | A saved registry this suite synthesizes from the repository's own
+fixture facilities, labelled synthetic wherever it is named. Its
+provider is a stub session: a booted registry whose state output and
+application holding are live at their addresses, and whose public
+history serves the boot and one insert-active fold as one recorded
+block. It stands in for a recorded booted registry, which no recorded
+fixture set holds; nothing here is a recorded chain answer, and no
+ledger ever accepted these transactions.
+-}
+data Synthetic = Synthetic
+    { syntheticDir :: FilePath
+    , syntheticSaved :: Saved
+    , syntheticView :: Cage.Session NoWitness IO
+    , syntheticTxId :: Text
+    , syntheticKey :: ByteString
+    , syntheticExpectation :: Text
+    }
+
+{- | Build, sign, journal and confirm one insert-active fold through the
+production 'submitBuilt' seam over the synthetic provider, then run
+the story with the fold's history published or withheld.
+-}
+withSyntheticSavedRegistry :: Bool -> (Synthetic -> IO a) -> IO a
+withSyntheticSavedRegistry publishHistory story =
+    withSystemTempDirectory "singular-synthetic" $ \dir -> do
+        wallet <- storyWallet dir
+        historyRef <- newIORef emptyHistory
+        let cfg = Booking.cfg
+            seed =
+                either
+                    (error . ("synthetic fixture: " <>))
+                    id
+                    (parseOutRef (T.pack (replicate 64 '7' <> "#0")))
+            seedOut =
+                mkBasicTxOut (walletAddr wallet) (MaryValue (Coin 10_000_000) mempty)
+            tid@(TokenId (AssetName name)) =
+                TokenId (AssetName (SBS.toShort (deriveAssetName (txInToRef seed))))
+            policy = cagePolicyIdFromCfg cfg
+            key = "synthetic-key"
+            bootRoot = BS.replicate 32 0
+            activeRoot =
+                evalState
+                    (walkEdge stateTrie key edgeInsertActive >> getRoot stateTrie)
+                    emptyMPFInMemoryDB
+            stateOutAt root =
+                mkBasicTxOut
+                    (cageAddrFromCfg cfg Testnet)
+                    ( MaryValue
+                        (Coin 2_000_000)
+                        (MultiAsset (Map.singleton policy (Map.singleton (AssetName name) 1)))
+                    )
+                    & datumTxOutL
+                        .~ mkInlineDatum
+                            (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot root))))
+            bootStateOut = stateOutAt bootRoot
+            foldStateOut = stateOutAt (unRoot activeRoot)
+            requestOut =
+                mkBasicTxOut
+                    (requestAddrFromCfg cfg tid Testnet)
+                    (MaryValue (Coin 2_000_000) mempty)
+                    & datumTxOutL
+                        .~ mkInlineDatum
+                            ( mkRequestDatumWith
+                                tid
+                                (walletAddr wallet)
+                                key
+                                edgeInsertActive
+                                2_000_000
+                                0
+                                ("", "")
+                            )
+            boot :: ConwayTx
+            boot =
+                mkBasicTx
+                    ( mkBasicTxBody
+                        & inputsTxBodyL .~ Set.singleton seed
+                        & outputsTxBodyL
+                            .~ StrictSeq.fromList [bootStateOut, requestOut]
+                        & mintTxBodyL
+                            .~ MultiAsset (Map.singleton policy (Map.singleton (AssetName name) 1))
+                    )
+                    & witsTxL . rdmrsTxWitsL
+                        .~ Redeemers
+                            ( Map.singleton
+                                (ConwayMinting (AsIx 0))
+                                (Data (toPlcData (Minting (txInToRef seed))), ExUnits 0 0)
+                            )
+            bootId = txIdTx boot
+            bootStateIn = TxIn bootId (TxIx 0)
+            bootRequestIn = TxIn bootId (TxIx 1)
+            -- The fold's id is its body's hash: signing changes no
+            -- identifier, so the live references are known before the
+            -- signed body exists.
+            foldStateIn = TxIn (txIdTx unsigned) (TxIx 0)
+            foldHoldingIn = TxIn (txIdTx unsigned) (TxIx 1)
+            envelope =
+                Envelope
+                    { envControl =
+                        Control
+                            { ctlVersion = envelopeVersion
+                            , ctlRegistry =
+                                StateAsset
+                                    (scriptHashBytes (cfgScriptHash cfg))
+                                    (SBS.fromShort name)
+                            , ctlActivePolicy = SBS.fromShort (cfgActivePolicy cfg)
+                            , ctlKey = key
+                            , ctlController = addrKeyHashBytes (walletAddr wallet)
+                            , ctlDeposit = 2_000_000
+                            }
+                    , envPayload = PLC.Constr 0 []
+                    }
+            holding =
+                mkBasicTxOut
+                    (applicationAddr saved)
+                    ( MaryValue
+                        (Coin 2_000_000)
+                        ( MultiAsset
+                            ( Map.singleton
+                                (policyIdFromPin (cfgActivePolicy cfg))
+                                (Map.singleton (AssetName (SBS.toShort key)) 1)
+                            )
+                        )
+                    )
+                    & datumTxOutL .~ mkInlineDatum (envelopeToData envelope)
+            unsigned :: ConwayTx
+            unsigned =
+                mkBasicTx
+                    ( mkBasicTxBody
+                        & inputsTxBodyL .~ Set.fromList [bootStateIn, bootRequestIn]
+                        & outputsTxBodyL .~ StrictSeq.fromList [foldStateOut, holding]
+                    )
+                    & witsTxL . rdmrsTxWitsL
+                        .~ Redeemers
+                            ( Map.singleton
+                                (ConwaySpending (AsIx 0))
+                                (Data (toPlcData (Modify [Update []])), ExUnits 0 0)
+                            )
+            deployment =
+                Deployment
+                    { depRelease = "synthetic-saved-registry-supplement"
+                    , depLeanRevision = "no-ledger-admission-claim"
+                    , depNetworkMagic = 1
+                    , depSeedOutRef = T.pack (replicate 64 '7' <> "#0")
+                    , depCageToken = hexT (SBS.fromShort name)
+                    , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
+                    , depRequestHash = ""
+                    , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
+                    , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
+                    , depProcessTime = defaultProcessTime cfg
+                    , depRetractTime = defaultRetractTime cfg
+                    , depTip = 1_000
+                    , depReferenceScripts = []
+                    , depBootstrapTxs = []
+                    }
+            saved =
+                Saved
+                    (dir </> "registry")
+                    (mkRegistryConfig 1 (walletAddr wallet) (pinsOf cfg) deployment)
+                    cfg
+                    Booking.codes
+                    tid
+            expectation = "active:" <> hexT (envelopeHash envelope)
+            serve addr
+                | addr == cageAddrFromCfg cfg Testnet =
+                    pure [(foldStateIn, foldStateOut)]
+                | addr == applicationAddr saved = pure [(foldHoldingIn, holding)]
+                | otherwise =
+                    fail "the synthetic registry serves no other address"
+            session =
+                ( withTip
+                    (Cage.TipObservation (SlotNo 7) (BS.replicate 32 3) 7 0)
+                    (withAddressOutputs serve stubSession)
+                )
+                    { Cage.history = \_ _ -> Right <$> readIORef historyRef
+                    }
+            provider = servingSession session
+            ctx =
+                WriteContext
+                    { wcDir = dir </> "registry"
+                    , wcCommand = "insert"
+                    , wcWallet = wallet
+                    , wcCapabilities =
+                        Capabilities
+                            { capReads = provider
+                            , capSubmit =
+                                pure . Cage.SubmitAccepted . txIdTx . signedTx
+                            , capConfirm = \_ -> pure ()
+                            , capFacts = pure []
+                            , capTrace = pure []
+                            }
+                    , wcTimeout = Just 5
+                    }
+        (signed, _) <-
+            submitBuilt
+                ctx
+                "fold"
+                ( \(key', wanted) -> Expectation (Just key') wanted Nothing Nothing Nothing
+                )
+                (\_ -> pure (unsigned, (key, expectation)))
+        when publishHistory $
+            writeIORef
+                historyRef
+                ( syntheticHistory
+                    boot
+                    [(seed, seedOut)]
+                    [(bootStateIn, bootStateOut), (bootRequestIn, requestOut)]
+                    signed
+                )
+        story
+            Synthetic
+                { syntheticDir = dir </> "registry"
+                , syntheticSaved = saved
+                , syntheticView = session
+                , syntheticTxId = txIdHex signed
+                , syntheticKey = key
+                , syntheticExpectation = expectation
+                }
+
+-- | An empty stream: history that answers nothing.
+emptyHistory :: Cage.HistoryStream IO
+emptyHistory = Cage.HistoryStream (pure (Right Nothing))
+
+{- | The registry's public history as one recorded block: the boot
+creates the state and the request, and the fold spends both.
+-}
+syntheticHistory
+    :: ConwayTx
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ConwayTx
+    -> Cage.HistoryStream IO
+syntheticHistory boot bootSpent foldSpent signed =
+    Cage.HistoryStream
+        ( pure
+            ( Right
+                ( Just
+                    ( Cage.HistoryBlock
+                        7
+                        (record boot bootSpent :| [record signed foldSpent])
+                    , emptyHistory
+                    )
+                )
+            )
+        )
+  where
+    record tx spent =
+        Cage.HistoricalTransaction
+            { Cage.historicalId = txIdTx tx
+            , Cage.historicalCbor = serialize' (eraProtVerHigh @ConwayEra) tx
+            , Cage.historicalTx = tx
+            , Cage.spentOutputs = spent
+            , Cage.referenceOutputs = []
+            , Cage.createdOutputs =
+                [ (TxIn (txIdTx tx) (TxIx (fromIntegral index)), out)
+                | (index, out) <-
+                    zip [0 :: Int ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+                ]
+            , Cage.scriptValid = True
+            }
+
+syntheticRows :: Spec
+syntheticRows =
+    describe
+        "a synthetic saved-registry reconciliation (not recorded answers)"
+        $ do
+            it "observes the keyed after-state through replayed public history" $
+                withSyntheticSavedRegistry True $ \s -> do
+                    entries <- readJournal (syntheticDir s)
+                    case [e | e <- entries, journalEvent e == "prepared"] of
+                        [prepared] -> do
+                            journalKey prepared `shouldBe` Just (hexT (syntheticKey s))
+                            journalExpect prepared `shouldBe` Just (syntheticExpectation s)
+                        _ -> fail "the synthetic journal holds no single prepared line"
+                    journalBefore <- journalBytes (syntheticDir s)
+                    bodyBefore <- case [journalBody e | e <- entries, journalEvent e == "prepared"] of
+                        [Just path] -> BS.readFile path
+                        _ -> fail "the prepared line names no saved body"
+                    result <-
+                        reconcile
+                            "inspect"
+                            (syntheticDir s)
+                            (syntheticSaved s)
+                            (syntheticView s)
+                    rcObserved result `shouldBe` [syntheticTxId s]
+                    recIncluded (recoveryOf (syntheticTxId s) result) `shouldBe` True
+                    eventsOf (syntheticTxId s) (syntheticDir s)
+                        `shouldReturn` ["prepared", "submitted", "confirmed", "observed"]
+                    journalAfter <- journalBytes (syntheticDir s)
+                    BS.isPrefixOf journalBefore journalAfter `shouldBe` True
+                    entriesAfter <- readJournal (syntheticDir s)
+                    case [journalBody e | e <- entriesAfter, journalEvent e == "prepared"] of
+                        [Just path] -> BS.readFile path `shouldReturn` bodyBefore
+                        _ -> fail "the prepared line names no saved body"
+                    jsonField (reconciledJson result) "observed"
+                        `shouldBe` Just (Aeson.toJSON [syntheticTxId s])
+                    refuseUnreconciled result -- settled: writing proceeds
+            it "refuses without history rather than serving an unreplayed trie" $
+                withSyntheticSavedRegistry False $ \s -> do
+                    journalBefore <- journalBytes (syntheticDir s)
+                    outcome <-
+                        try @CommandFailure
+                            ( reconcile
+                                "inspect"
+                                (syntheticDir s)
+                                (syntheticSaved s)
+                                (syntheticView s)
+                            )
+                    case outcome of
+                        Right _ -> expectationFailure "an unreplayed trie reconciled"
+                        Left failure -> do
+                            outcomeClass failure `shouldBe` StaleState
+                            fieldsOf failure "trieRefusal" `shouldSatisfy` isJust
+                            journalBytes (syntheticDir s) `shouldReturn` journalBefore
+                            eventsOf (syntheticTxId s) (syntheticDir s)
+                                `shouldReturn` ["prepared", "submitted", "confirmed"]
+  where
+    fieldsOf (CommandFailure _ _ fields) key = lookup key fields
