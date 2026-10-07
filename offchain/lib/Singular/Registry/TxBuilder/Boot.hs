@@ -16,6 +16,7 @@ without one is refused 'StateValidatorNotPublished'.
 module Singular.Registry.TxBuilder.Boot
     ( bootTokenImpl
     , bootTokenFrom
+    , bootCostBound
     , BootRefusal (..)
     ) where
 
@@ -87,6 +88,7 @@ import Singular.Registry.Ledger
     , ConwayEra
     )
 import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -251,7 +253,7 @@ bootFrom cfg pp utxos stateRef view addr = do
                 (network cfg)
         outValue =
             MaryValue
-                (Coin 2_000_000)
+                (Coin bootStateLovelace)
                 mintMA
         txOut =
             mkBasicTxOut
@@ -314,6 +316,22 @@ bootFrom cfg pp utxos stateRef view addr = do
             addr
             (payForReferenceScripts pp (SBS.length (cageScriptBytes cfg)) balanced)
         )
+
+-- | The lovelace a boot locks in the state output it creates.
+bootStateLovelace :: Integer
+bootStateLovelace = 2_000_000
+
+{- | The most a boot takes from the payer's spending inputs: the lovelace its
+state output locks, and a fee allowance for one maximum-size transaction at
+the execution limit referencing this state carrier ('protocolFeeReserve').
+A create checks its publications against what the boot leaves with it,
+before anything is submitted.
+-}
+bootCostBound
+    :: PParams ConwayEra -> (TxIn, TxOut ConwayEra) -> Integer
+bootCostBound pp carrier =
+    let Coin allowance = protocolFeeReserve pp [carrier]
+    in  bootStateLovelace + allowance
 
 {- | Pay for the reference script the boot now resolves through (#177
 A-003).
