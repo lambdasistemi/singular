@@ -286,12 +286,12 @@ jobs:
           f="$receipts/receipt-retire-active-key.json"
           test -f "$f" || { echo 'FAIL: missing retire-active-key receipt'; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
-          # The assertion program is held in one variable and run twice: once
-          # against the receipt, and once against a control receipt whose
-          # untampered step books a fresh request — its own input and its own
-          # submission time — which it must refuse (#396 A-008: the public
-          # story promises the same booked request for the tampered attempts
-          # and their control).
+          # The assertion program is held in one variable. It runs on the
+          # receipt, then on two well-formed copies. A different output index
+          # with the same request must fail input identity. The same input
+          # with a changed submission time must fail request equality. A copy
+          # whose input is not txid#index does not establish either check
+          # (#396 A-008).
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
           assert_retire='
@@ -335,13 +335,40 @@ jobs:
             and (.transactions | length) == 7
           '
           nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$f" > /dev/null || { echo 'FAIL: retire-active-key retirement evidence moved'; exit 1; }
-          fresh_booking="$(mktemp "$RUNNER_TEMP/retire-fresh-booking.XXXXXX.json")"
+          index_shift="$(mktemp "$RUNNER_TEMP/retire-index-shift.XXXXXX.json")"
           nix run --quiet nixpkgs#jq -- '
             .steps[10].requestInput |= sub("#[0-9]+$"; "#4242")
-            | .steps[10].request.submittedAt |= . + 1
-          ' "$f" > "$fresh_booking"
-          if nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$fresh_booking" > /dev/null 2>&1; then
-            echo 'FAIL: retire-active-key accepted a fresh booking for the untampered control'
+          ' "$f" > "$index_shift"
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e '
+            def requestinput: type == "string" and test("^[0-9a-f]{64}#[0-9]+$");
+            all(.steps[8,9,10]; .requestInput | requestinput)
+            and ([.steps[8,9,10].request] | unique | length) == 1
+            and ([.steps[8,9,10].requestInput] | unique | length) == 2
+          ' "$index_shift" > /dev/null || {
+            echo 'FAIL: retire-active-key index control is not one request at a different well-formed input'
+            exit 1
+          }
+          if nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$index_shift" > /dev/null 2>&1; then
+            echo 'FAIL: retire-active-key accepted a different output index for the same request'
+            exit 1
+          fi
+          time_shift="$(mktemp "$RUNNER_TEMP/retire-time-shift.XXXXXX.json")"
+          nix run --quiet nixpkgs#jq -- '
+            .steps[10].request.submittedAt |= . + 1
+          ' "$f" > "$time_shift"
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e '
+            def requestinput: type == "string" and test("^[0-9a-f]{64}#[0-9]+$");
+            all(.steps[8,9,10]; .requestInput | requestinput)
+            and ([.steps[8,9,10].requestInput] | unique | length) == 1
+            and ([.steps[8,9,10].request] | unique | length) == 2
+          ' "$time_shift" > /dev/null || {
+            echo 'FAIL: retire-active-key submission-time control is not the same well-formed input'
+            exit 1
+          }
+          if nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$time_shift" > /dev/null 2>&1; then
+            echo 'FAIL: retire-active-key accepted a changed submission time for the same input'
             exit 1
           fi
           bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: retire-active-key refused steps lack the traced replay of their reason'; exit 1; }

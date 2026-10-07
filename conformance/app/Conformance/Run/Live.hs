@@ -202,6 +202,7 @@ import PlutusTx.Builtins.Internal
     , BuiltinData (..)
     )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -3526,7 +3527,7 @@ compareStep env state step observation = do
                 , "edge" .= Live.edgeName (Live.requestEdge (lsRequest step))
                 , "exit" .= exitNamed
                 , "request" .= lsModelRequest step
-                , "requestInput" .= fmap txInToText (lsRequestIn step)
+                , "requestInput" .= fmap renderOutRef (lsRequestIn step)
                 , "tamper" .= fmap Live.tamperName (lsTamper step)
                 , "model" .= model
                 , "chain" .= chain
