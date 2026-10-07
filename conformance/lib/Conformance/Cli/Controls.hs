@@ -2400,28 +2400,44 @@ withProcess r f =
         f
         (rcProcess r)
 
-{- | For an @inspect@ run with the public history it needs withheld: the
-refusal names @HistoryIncomplete@, the forwarder in front of its provider
-withheld at least one of the targeted registry's history reads, and the
-registry's journal did not move. A withholding that never reached the
-history read is not this witness, whatever the command printed.
+{- | A provoked @inspect@: its outcome is the class its condition names,
+and it printed no leaf.
+-}
+noLeaf :: Receipt -> [String]
+noLeaf r =
+    outcomeIs r (expectedOutcome r)
+        <> [ "a leaf was printed: " <> maybe "" show leaf
+           | let leaf = at [field "leaf"] r
+           , leaf `notElem` [Nothing, Just Aeson.Null]
+           ]
+
+{- | An @inspect@ run with the public history it needs withheld. The
+forwarder in front of its provider must have withheld at least one of the
+targeted registry's history reads; then the command ends stale-state,
+prints no leaf and names @HistoryIncomplete@. A withholding that never
+reached the history read is judged for that alone: what the command then
+printed is its consequence, not a second finding. In every case the
+registry's journal must not have moved.
 -}
 withheldHistory :: Receipt -> [String]
-withheldHistory r
-    | rcAction r /= "provoke inspect-without-history" = []
-    | otherwise =
-        [ "the refusal does not name HistoryIncomplete: "
-            <> maybe "no reason" T.unpack (rcReason r)
-        | not (maybe False ("HistoryIncomplete" `T.isInfixOf`) (rcReason r))
-        ]
-            <> case rcWithheldReads r of
-                Nothing -> ["no forwarder recorded withholding the command's history reads"]
-                Just n
-                    | n < 1 ->
-                        [ "the withholding never reached the command's history read: none of the registry's history reads was withheld"
-                        ]
-                    | otherwise -> []
-            <> withProcess r journalStill
+withheldHistory r =
+    reached <> withProcess r journalStill
+  where
+    reached = case rcWithheldReads r of
+        Nothing -> ["no forwarder recorded withholding the command's history reads"]
+        Just n
+            | n < 1 -> [neverReached]
+            | otherwise ->
+                noLeaf r
+                    <> [ "the refusal does not name HistoryIncomplete: "
+                            <> maybe "no reason" T.unpack (rcReason r)
+                       | not (maybe False ("HistoryIncomplete" `T.isInfixOf`) (rcReason r))
+                       ]
+
+-- | The one finding of a withholding that missed the command's history read.
+neverReached :: String
+neverReached =
+    "the withholding never reached the command's history read: none of the registry's history reads was withheld"
 
 -- | Fail unless the registry's journal did not move while the command ran.
 journalStill :: ProcessEvidence -> [String]
@@ -2999,14 +3015,10 @@ check req rs = case (req, rs) of
         outcomeIs r (expectedOutcome r)
             <> withProcess r (\p -> journalStill p <> nothingSubmitted r p)
             <> admitted r
-    (NoLeafPrinted, [r]) ->
-        outcomeIs r (expectedOutcome r)
-            <> [ "a leaf was printed: " <> maybe "" show leaf
-               | let leaf = at [field "leaf"] r
-               , leaf `notElem` [Nothing, Just Aeson.Null]
-               ]
-            <> withheldHistory r
-            <> admitted r
+    (NoLeafPrinted, [r])
+        | rcAction r == "provoke inspect-without-history" ->
+            withheldHistory r <> admitted r
+        | otherwise -> noLeaf r <> admitted r
     (StoppedAfterAcceptance, [r]) ->
         withProcess
             r

@@ -288,6 +288,7 @@
                 runtimeInputs = with pkgs; [
                   bash
                   coreutils
+                  diffutils
                   findutils
                   gawk
                   gnugrep
@@ -297,8 +298,10 @@
                 ];
                 text = ''
                   bash ${./tools/demo1_cli_controls_ran.test.sh} ${./tools/demo1_cli_controls_ran.sh}
+                  bash ${./tools/demo1_cli_controls_composition.test.sh} ${./tools/demo1_cli_controls_composition.sh}
                   DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} \
                     DEMO1_CONTROLS_RAN=${./tools/demo1_cli_controls_ran.sh} \
+                    DEMO1_CONTROLS_COMPOSITION=${./tools/demo1_cli_controls_composition.sh} \
                     bash ${./tools/demo1_cli_controls_check.sh} "$PWD"
                 '';
               }

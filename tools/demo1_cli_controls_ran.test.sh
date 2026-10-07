@@ -25,6 +25,12 @@ verdicts() {
   shift
   mkdir -p "$scratch/$name/receipts"
   echo '{}' >"$scratch/$name/receipts/step-001.json"
+  mkdir -p "$scratch/$name/evidence" "$scratch/$name/targets/process" "$scratch/$name/artifact-controls/withheld-elsewhere"
+  echo '{}' >"$scratch/$name/evidence/step-001-inspect-without-history-another-asset.receipt.json"
+  : >"$scratch/$name/targets/process/journal.jsonl"
+  for kept in withheld-elsewhere.md withheld-elsewhere.err withheld-elsewhere.sha256 inputs.sha256; do
+    echo "$kept" >"$scratch/$name/artifact-controls/$kept"
+  done
   printf '%s\n' "$@" >"$scratch/$name/controls.md"
 }
 # expect NAME STATUS WANT TEXT: judging NAME after a runner exit STATUS exits
@@ -46,6 +52,13 @@ verdicts all-hold "$held" "" "2 of 2 clauses hold; 0 do not; 0 are uncovered."
 expect all-hold 0 0 "clauses judged: 2 of 2 clauses hold"
 [ -f "$scratch/results-all-hold/controls.md" ] && [ -f "$scratch/results-all-hold/receipts/step-001.json" ] \
   || fail "all-hold: the verdict section and receipts were not kept for upload"
+for kept in evidence/step-001-inspect-without-history-another-asset.receipt.json targets/process/journal.jsonl \
+  artifact-controls/withheld-elsewhere.md artifact-controls/withheld-elsewhere.err \
+  artifact-controls/withheld-elsewhere.sha256 artifact-controls/inputs.sha256; do
+  [ -f "$scratch/results-all-hold/$kept" ] || fail "all-hold: $kept was not kept for upload"
+done
+[ ! -e "$scratch/results-all-hold/artifact-controls/withheld-elsewhere" ] \
+  || fail "all-hold: a whole copy of the run was uploaded beside the composition files"
 
 verdicts red "$held" "$broken" "$saved" "" "1 of 3 clauses hold; 1 do not; 1 are uncovered." "" "$case_row"
 expect red 1 1 "not holding: $broken"

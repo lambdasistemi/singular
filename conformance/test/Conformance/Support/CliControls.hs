@@ -4,7 +4,7 @@
 -- | The refusal controls are judged from receipts, and only from receipts.
 module Conformance.Support.CliControls (spec) where
 
-import Conformance.Cli.Admission (sha256Hex)
+import Conformance.Cli.Admission (admit, sha256Hex)
 import Conformance.Cli.Controls
     ( Account (..)
     , ClauseResult (..)
@@ -65,6 +65,7 @@ import Control.Monad.Operational
 import Data.Aeson
     ( Value (..)
     , eitherDecodeFileStrict'
+    , encode
     , object
     , toJSON
     , (.=)
@@ -72,12 +73,16 @@ import Data.Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BL
 import Data.Char (ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import System.Directory (createDirectoryIfMissing, removeFile)
+import System.FilePath ((</>))
+import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
     ( Spec
     , describe
@@ -704,6 +709,68 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                             resolveObligation digest (T.replace "R299-05" "R299-5" rows) b
                                 `shouldSatisfy` isLeft
                         [] -> fail "no client obligation is bound"
+    it
+        "admits a successful other-asset inspect and fails the authentication clause for the missed withholding alone, but not one whose printed output is missing"
+        $ withSystemTempDirectory "composition"
+        $ \work -> do
+            rs <- honestReceipts controlsStory
+            witness <- case [r | r <- rs, rcAction r == "provoke inspect-without-history"] of
+                [w] -> pure w
+                ws ->
+                    fail
+                        ("expected one withheld-history receipt, found " <> show (length ws))
+            let printedFile = "evidence/step-control-another-asset.json"
+                printedValue =
+                    object
+                        [ "outcome" .= ("success" :: String)
+                        , "leaf" .= ("active" :: String)
+                        ]
+                journal = "targets/process/journal.jsonl"
+                control r =
+                    r
+                        { rcOutcome = "success"
+                        , rcReason = Nothing
+                        , rcWithheldReads = Just 0
+                        , rcCommand = Just printedValue
+                        , rcEvidence = [printedFile]
+                        , rcSubmissions = []
+                        , rcAdmission = Nothing
+                        , rcProcess =
+                            Just
+                                ProcessEvidence
+                                    { peJournal = journal
+                                    , peJournalBefore = 0
+                                    , peJournalAfter = 0
+                                    , peLastEvent = ""
+                                    , peSubmitted = []
+                                    , peExit = 0
+                                    , peWaited = Nothing
+                                    , peFilesBefore = []
+                                    , peFilesAfter = []
+                                    , peSeedProbe = Nothing
+                                    }
+                        }
+                swapped admittedControl =
+                    renderControls
+                        ( judge
+                            (map (\r -> if r == witness then admittedControl else r) rs)
+                            controlsStory
+                        )
+                        controlsStory
+                alone =
+                    "| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: the withholding never reached the command's history read: none of the registry's history reads was withheld |"
+            createDirectoryIfMissing True (work </> "evidence")
+            createDirectoryIfMissing True (work </> "targets" </> "process")
+            BS.writeFile (work </> T.unpack journal) ""
+            BL.writeFile (work </> T.unpack printedFile) (encode printedValue)
+            kept <- admit work (control witness)
+            rcAdmission kept `shouldBe` Just []
+            lines (swapped kept) `shouldSatisfy` elem alone
+            removeFile (work </> T.unpack printedFile)
+            missing <- admit work (control witness)
+            rcAdmission missing `shouldSatisfy` maybe False (not . null)
+            lines (swapped missing) `shouldSatisfy` notElem alone
+            swapped missing `shouldSatisfy` isInfixOf "is missing"
     it "computes each approved case's coverage from the clause verdicts" $ do
         rs <- honestReceipts controlsStory
         let full = renderControls (judge rs controlsStory) controlsStory

@@ -11,8 +11,12 @@
 # run that judged nothing can never read as a pass. The summary and every
 # clause that does not hold or is uncovered are printed, so a red run names
 # its clauses in the log. With DEMO1_CONTROLS_RESULTS set, the verdict
-# section, the runner's stderr and the receipts are copied there for upload,
-# whatever the outcome. Exits with the resulting status.
+# section, the runner's stderr, the receipts and what admission reads back
+# (the evidence and the targets' journals and bodies; the
+# composition control's other-asset receipt and its printed output among
+# them) are copied there for upload, whatever the outcome, with the
+# composition control's render, its stderr and the hashes of its inputs and
+# render. Exits with the resulting status.
 set -euo pipefail
 
 [ "$#" -eq 2 ] || {
@@ -25,8 +29,14 @@ verdicts="$run/controls.md"
 
 if [ -n "${DEMO1_CONTROLS_RESULTS:-}" ]; then
   mkdir -p "$DEMO1_CONTROLS_RESULTS"
-  for kept in controls.md controls.err receipts; do
+  for kept in controls.md controls.err receipts evidence targets; do
     [ ! -e "$run/$kept" ] || cp -R "$run/$kept" "$DEMO1_CONTROLS_RESULTS/"
+  done
+  for kept in withheld-elsewhere.md withheld-elsewhere.err withheld-elsewhere.sha256 inputs.sha256; do
+    if [ -e "$run/artifact-controls/$kept" ]; then
+      mkdir -p "$DEMO1_CONTROLS_RESULTS/artifact-controls"
+      cp "$run/artifact-controls/$kept" "$DEMO1_CONTROLS_RESULTS/artifact-controls/"
+    fi
   done
 fi
 

@@ -255,27 +255,7 @@ expect_command journal-cut "the journal has $kept lines"
 say "process control: the cut journal fails the killed terminate's claim"
 
 # The withheld-history witness rests on a withholding that reached inspect's
-# history read. The backend also ran the same inspect through a forwarder
-# withholding another asset's history and kept that receipt beside the
-# evidence. Swapped in for the witness's own receipt, it must fail the
-# authentication clause for exactly that reason, by the same judgement.
-witness="$(first_receipt "provoke inspect-without-history" process)"
-[ -n "$witness" ] || fail_control "no receipt of the withheld-history inspect"
-missed="$work/evidence/$(basename "$witness" .json)-inspect-without-history-another-asset.receipt.json"
-[ -s "$missed" ] || fail_control "the backend kept no receipt of the inspect whose forwarder withheld another asset's history"
-jq -e '.withheldReads >= 1' "$witness" >/dev/null \
-  || fail_control "the witness's forwarder withheld none of the registry's history reads"
-jq -e '.command != null and .process.exit != null and .withheldReads == 0' "$missed" >/dev/null \
-  || fail_control "the other-asset inspect did not run to a printed receipt with no history read withheld"
-sha256sum "$witness" "$missed" >>"$copies/inputs.sha256"
+# history read; its composition control runs on its own copy of the run.
 copy withheld-elsewhere
-cp "$missed" "$copies/withheld-elsewhere/receipts/$(basename "$witness")"
-status_elsewhere=0
-"$controls" render "$copies/withheld-elsewhere/receipts" >"$copies/withheld-elsewhere.md" 2>"$copies/withheld-elsewhere.err" || status_elsewhere=$?
-[ "$status_elsewhere" -ne 0 ] || fail_control "withheld-elsewhere: the swapped copy still holds"
-# shellcheck disable=SC2016 # the backticks are the section's own Markdown
-line_with "$copies/withheld-elsewhere.md" \
-  '| `INV299-AUTHENTICATED` | inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete | does not hold: ' \
-  "the withholding never reached the command's history read" \
-  || fail_control "withheld-elsewhere: the authentication clause does not fail for a withholding that missed the history read"
-say "composition control: inspect with another asset's history withheld fails the authentication clause because the withholding never reached its history read"
+bash "${DEMO1_CONTROLS_COMPOSITION:-$(dirname "$0")/demo1_cli_controls_composition.sh}" \
+  "$work" "$controls" "$copies/withheld-elsewhere"
