@@ -258,6 +258,35 @@ jobs:
       # it (`just ci-shell` is a local bundle only); the off-chain Haskell
       # lint keeps its own job.
       - run: nix develop --quiet -c just lint
+  dev-shell-checks:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Development shell checks
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #467: the dev-shell checks no other hosted job runs, each inside the
+      # development shell that pins its tools. Parallel to the Development
+      # shell build job; inventory and format keep their existing carriers.
+      - run: nix develop --quiet -c just application-model
+      - run: nix develop --quiet -c just check-presentation
+      - run: nix develop --quiet -c just rename-registry-test
+      - run: nix develop --quiet -c bash tools/no-global-fixture-state.sh
+      - run: nix develop --quiet -c just node-confinement
+      - run: nix develop --quiet -c just node-confinement-controls
+      - run: nix develop --quiet -c just lint-controls
   release-check:
     if: github.event.action != 'closed'
     needs: build-gate

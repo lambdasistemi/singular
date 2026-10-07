@@ -85,7 +85,7 @@ ci:
     just lint
     just lint-controls
 
-# Local bundle: no hosted job runs this recipe; whole-repo `just lint` runs hosted in the Development shell build job.
+# Local bundle for the dev-shell-only checks. Hosted: the Development shell checks job runs application-model, check-presentation, rename-registry-test, no-global-fixture-state, node-confinement, node-confinement-controls and lint-controls; whole-repository `just lint` runs in the Development shell build job; inventory, inventory-controls, format-check and format-controls keep their existing hosted carriers.
 ci-shell:
     just application-model
     just check-presentation
