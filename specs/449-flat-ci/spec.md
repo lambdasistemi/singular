@@ -35,7 +35,7 @@ Shared client failures, independent chain smokes and the connected journey contr
 
 ## Behavioral authority and refusal
 
-Constitution 1.12.0 governs. The refreshed base is `0676e5354353b823b40b9cad5cac31a170a8fd08`, whose Lean tree is `042a9798ce44282ddf41f675b226d634b0155d6f`. `Singular.step`, `refusal`, `rootOf` and `admittedExitStep` remain unchanged. Recovery is the accepted client obligation in [the CLI recovery specification](../325-cli-recovery/spec.md); Lean describes registry transitions, not uncertain acknowledgement or provider rollback. This test change creates no new model guarantee.
+Constitution 1.13.0 governs. Base `5c4c3dd048fd0f29a1b5c2cac0c5035e07f163ed` binds Lean tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and open-datum Lean tree `14f523d8cc6ca464add4bb846e8a51427ea8af7c`. `Singular.step`, `refusal`, `rootOf` and `admittedExitStep` are read at that revision, including the datum-carrying public-fold ruling. Recovery remains the client obligation in [the CLI recovery specification](../325-cli-recovery/spec.md), outside Lean's acknowledgement and provider-rollback vocabulary. This test change creates no model guarantee.
 
 Unknown, timed out and rolled-back submissions remain unresolved until evidence resolves them. The next write keeps its public `partial` class and transaction identity; an included after-state that cannot be observed retains `stale-state`. No refusal or exit code is renamed. Ambiguous or conflicting model behavior holds affected acceptance and returns a concrete story to the user.
 
@@ -43,4 +43,4 @@ Unknown, timed out and rolled-back submissions remain unresolved until evidence 
 
 Recorded-provider tests establish client recovery over those recorded answers. They do not establish node rollback, signatures accepted by a ledger, chain finality, or a connected registry lifecycle seeded only as a fixture. Product conformance rows remain receipt-computed with uncovered rows visible; any harness evidence belongs in its appendix. The replacement diff must carry each named successor and its selection/ran-proof.
 
-Cross-wallet execution remains [the sibling fold ticket](https://github.com/lambdasistemi/singular/issues/451). No existing node scenario is removed in the first slice. Until CI reshaping lands, never-sent, whole-journal, rollback and trie-capability retain their named hosted gaps. Slices one and two may ship separately; the whole ticket remains open until its final acceptance is established.
+Cross-wallet execution remains [the sibling fold ticket](https://github.com/lambdasistemi/singular/issues/451). The ordinary CLI refusal-controls hosted carrier is restored on main. No node scenario is removed here; further hosted coverage needs exact-head receipts. Slices one and two may ship separately; the ticket remains open until final acceptance.

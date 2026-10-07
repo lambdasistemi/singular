@@ -19,31 +19,31 @@
       "pause": 400
     },
     {
-      "text": "[ ] recorded-recovery-boundary: record fixture provenance and execute the production reconciliation composition.",
+      "text": "[x] recorded-recovery-boundary: record fixture provenance and execute the production reconciliation composition.",
       "pause": 300
     },
     {
-      "text": "[ ] synthetic-saved-reconciliation-public-history: label synthetic fixture provenance, execute saved-registry reconciliation and keyed observation, and show missing or empty history turns it red; recorded saved-registry coverage remains uncovered.",
+      "text": "[x] synthetic-saved-reconciliation-public-history: label synthetic fixture provenance, execute saved-registry reconciliation and keyed observation, and show missing or empty history turns it red; recorded saved-registry coverage remains uncovered.",
       "pause": 300
     },
     {
-      "text": "[ ] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.",
+      "text": "[x] lost-acknowledgement-offline: observe an included uncertain transaction once without resend, with a real fault control.",
       "pause": 300
     },
     {
-      "text": "[ ] interrupted-confirmation-offline: reconcile durable confirmation before observation, preserving original evidence and detecting a controlled fault.",
+      "text": "[x] interrupted-confirmation-offline: reconcile durable confirmation before observation, preserving original evidence and detecting a controlled fault.",
       "pause": 300
     },
     {
-      "text": "[ ] expiry-offline: distinguish bounded live-input exclusion from unbounded and undetermined evidence, with a real fault control.",
+      "text": "[x] expiry-offline: distinguish bounded live-input exclusion from unbounded and undetermined evidence, with a real fault control.",
       "pause": 300
     },
     {
-      "text": "[ ] rollback-offline: observe rollback from positive live-input evidence once, preserve the unresolved identity and block resend, with a real fault control.",
+      "text": "[x] rollback-offline: observe rollback from positive live-input evidence once, preserve the unresolved identity and block resend, with a real fault control.",
       "pause": 300
     },
     {
-      "text": "[ ] recovery-selection-and-receipts: register tagged tests, prove executed extent and retain RED/GREEN command receipts plus every checkpoint approval.",
+      "text": "[x] recovery-selection-and-receipts: register tagged tests, prove executed extent and retain RED/GREEN command receipts plus every checkpoint approval.",
       "pause": 300
     }
   ],
@@ -95,10 +95,14 @@
     {
       "text": "Only the ticket owner stamps a task after evidence-bound acceptance. An offline-slice PR leaves the final-slice tasks open and does not close the issue. Missing evidence and unresolved requirements remain visible.",
       "pause": 400
+    },
+    {
+      "text": "The checked tasks record pre-refresh accepted coverage. Acceptance on the new public-fold base remains held for fresh gates and independent delta review.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "3768312e877eef1beb3099868352390b79846edec98559bada1a0e8d17a73fc9"
+    "sha256": "5ce49d7fdfa448ce62f3860455a08b024eafbb15f1cb43d3cba5330fa427ff69"
   }
 }

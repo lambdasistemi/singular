@@ -32,3 +32,5 @@ The final slice remains held for the sibling merges and accepted job mapping. Ev
 ## Completion limits
 
 Only the ticket owner stamps a task after evidence-bound acceptance. An offline-slice PR leaves the final-slice tasks open and does not close the issue. Missing evidence and unresolved requirements remain visible.
+
+The checked tasks record pre-refresh accepted coverage. Acceptance on the new public-fold base remains held for fresh gates and independent delta review.
