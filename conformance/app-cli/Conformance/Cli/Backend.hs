@@ -298,6 +298,7 @@ import Conformance.Cli.Controls
     , validateControls
     )
 import Conformance.Cli.FoldHistory (publicFoldTrie)
+import Conformance.Cli.Withhold (Withholding (..), withWithholding)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -1529,14 +1530,17 @@ provoke env p target key r = do
                 _ -> fail "the saved configuration is not a JSON object"
             (BL.writeFile config (Aeson.encode changed) >> plain args)
                 `finally` BS.writeFile config saved
-        WithoutHistory ->
-            pure
-                r
-                    { rcOutcome = "client-error"
-                    , rcReason =
-                        Just
-                            "no provider in this run withholds the public history inspect reads, so this control has no witness yet"
-                    }
+        WithoutHistory -> do
+            args <- commandArgs env Inspect target key r
+            reg <- openRegistry env target
+            let asset =
+                    ( hex (scriptHashBytes (cfgScriptHash (regCfg reg)))
+                    , hex (tokenBytes reg)
+                    )
+            withWithholding (optProviderUrl o) asset $ \w -> do
+                done <- plain (providerTo (withholdingUrl w) args)
+                withheld <- withheldReads w
+                pure done{rcWithheldReads = Just withheld}
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
             plain (providerTo "http://127.0.0.1:1/api/v1" args)

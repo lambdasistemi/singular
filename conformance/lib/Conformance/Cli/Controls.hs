@@ -2213,6 +2213,11 @@ data Receipt = Receipt
     -- ^ Files beside the receipt: command output, transaction bodies
     , rcCommand :: Maybe Aeson.Value
     -- ^ A command's own printed receipt, as it printed it
+    , rcWithheldReads :: Maybe Int
+    {- ^ For an @inspect@ run with the public history it needs withheld:
+    how many of the targeted registry's history reads the forwarder in
+    front of its provider answered empty
+    -}
     }
     deriving stock (Eq, Show)
 
@@ -2250,6 +2255,7 @@ emptyReceipt step act target key =
         , rcMaxLag = Nothing
         , rcEvidence = []
         , rcCommand = Nothing
+        , rcWithheldReads = Nothing
         }
 
 instance ToJSON Receipt where
@@ -2283,6 +2289,7 @@ instance ToJSON Receipt where
             , "maxLag" .= rcMaxLag r
             , "evidence" .= rcEvidence r
             , "command" .= rcCommand r
+            , "withheldReads" .= rcWithheldReads r
             ]
 
 instance FromJSON Receipt where
@@ -2319,6 +2326,7 @@ instance FromJSON Receipt where
             <*> o .:? "maxLag"
             <*> o .: "evidence"
             <*> o .:? "command"
+            <*> o .:? "withheldReads"
 
 -- | The action name, target and key a receipt for this action must carry.
 identify :: CliI res -> Maybe (Text, Text, Text)
@@ -2391,6 +2399,29 @@ withProcess r f =
         ["what the command's process left is not recorded"]
         f
         (rcProcess r)
+
+{- | For an @inspect@ run with the public history it needs withheld: the
+refusal names @HistoryIncomplete@, the forwarder in front of its provider
+withheld at least one of the targeted registry's history reads, and the
+registry's journal did not move. A withholding that never reached the
+history read is not this witness, whatever the command printed.
+-}
+withheldHistory :: Receipt -> [String]
+withheldHistory r
+    | rcAction r /= "provoke inspect-without-history" = []
+    | otherwise =
+        [ "the refusal does not name HistoryIncomplete: "
+            <> maybe "no reason" T.unpack (rcReason r)
+        | not (maybe False ("HistoryIncomplete" `T.isInfixOf`) (rcReason r))
+        ]
+            <> case rcWithheldReads r of
+                Nothing -> ["no forwarder recorded withholding the command's history reads"]
+                Just n
+                    | n < 1 ->
+                        [ "the withholding never reached the command's history read: none of the registry's history reads was withheld"
+                        ]
+                    | otherwise -> []
+            <> withProcess r journalStill
 
 -- | Fail unless the registry's journal did not move while the command ran.
 journalStill :: ProcessEvidence -> [String]
@@ -2974,11 +3005,7 @@ check req rs = case (req, rs) of
                | let leaf = at [field "leaf"] r
                , leaf `notElem` [Nothing, Just Aeson.Null]
                ]
-            <> [ "the refusal does not name HistoryIncomplete: "
-                    <> maybe "no reason" T.unpack (rcReason r)
-               | rcAction r == "provoke inspect-without-history"
-               , not (maybe False ("HistoryIncomplete" `T.isInfixOf`) (rcReason r))
-               ]
+            <> withheldHistory r
             <> admitted r
     (StoppedAfterAcceptance, [r]) ->
         withProcess
@@ -3236,15 +3263,14 @@ replay byStep story =
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, (bodyFailures, _, unavailable)), Nothing) ->
+                    (Just (obs, (bodyFailures, _)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
-                                bodyFailures <> maybe [] (\(_, (fs, _, _)) -> fs) checked
-                            isPremise = maybe False (\(_, (_, p, _)) -> p) checked
+                                bodyFailures <> maybe [] (\(_, (fs, _)) -> fs) checked
+                            isPremise = maybe False (\(_, (_, p)) -> p) checked
                             status
                                 | Just why <- stop' = Uncovered why
-                                | Just why <- unavailable = Uncovered why
                                 | Just failed <- premise =
                                     Uncovered ("its premise does not hold: " <> failed)
                                 | null failures = Held
@@ -3274,38 +3300,22 @@ replay byStep story =
     collect
         :: Replay
         -> Story a
-        -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
-    collect st0 = walk st0 ([], False, Nothing)
+        -> (Maybe (a, ([String], Bool)), Replay)
+    collect st0 = walk st0 ([], False)
       where
         walk
             :: Replay
-            -> ([String], Bool, Maybe String)
+            -> ([String], Bool)
             -> Story a
-            -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
+            -> (Maybe (a, ([String], Bool)), Replay)
         walk st@(Replay _ _ (Just _)) _ _ = (Nothing, st)
-        walk st acc@(fs, p, unavailable) program = case view program of
+        walk st acc@(fs, p) program = case view program of
             Return a -> (Just (a, acc), st)
             Action (Require req rs) :>>= next ->
                 walk
                     st
-                    (fs <> check req rs, p || req `elem` premises, unavailable)
+                    (fs <> check req rs, p || req `elem` premises)
                     (next ())
-            Action i@(Provoke WithoutHistory _ _) :>>= next -> case perform st i of
-                (Just r, st') ->
-                    let missing =
-                            rcOutcome r == "client-error"
-                                && isNothing (rcCommand r)
-                                && isNothing (rcProcess r)
-                        why =
-                            if missing
-                                then
-                                    Just
-                                        ( T.unpack
-                                            (fromMaybe "the control recorded no command witness" (rcReason r))
-                                        )
-                                else unavailable
-                    in  walk st' (fs, p, why) (next r)
-                (Nothing, st') -> (Nothing, st')
             Action i :>>= next -> case perform st i of
                 (Just r, st') -> walk st' acc (next r)
                 (Nothing, st') -> (Nothing, st')
@@ -3604,7 +3614,7 @@ replacedClauses =
         ( "INV299-AUTHENTICATED"
         , "inspect with the saved proof material moved aside prints no leaf"
         , "inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete"
-        , "inspect now reads no saved proof material; it rebuilds a root-checked trie from public history, so the witness withholds that history instead, while the obligation, that inspect never prints a leaf it cannot authenticate, is unchanged (operator ruling of 7 October 2026)"
+        , "inspect now reads no saved proof material; it rebuilds a root-checked trie from public history, so the witness withholds that history instead, while the obligation, that inspect never prints a leaf it cannot authenticate, is unchanged (operator ruling of 7 October 2026). Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover"
         )
     ]
 

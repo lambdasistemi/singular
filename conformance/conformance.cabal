@@ -228,8 +228,13 @@ executable cli-controls
     Conformance.Cli.FoldHistory
     Conformance.Cli.Node
     Conformance.Cli.Proof
+    Conformance.Cli.Withhold
   build-depends:
     , aeson >=2.1 && <2.3
+    , case-insensitive
+    , http-types
+    , wai
+    , warp
     , aeson-pretty
     , async
     , base >=4.14 && <5
@@ -282,6 +287,9 @@ test-suite conformance-tests
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test app app-default app-cli ../offchain/test-tags
   main-is:          Main.hs
+  -- the history-withholding forwarder runs warp, whose timer manager needs
+  -- the threaded runtime
+  ghc-options:      -threaded
   other-modules:
     Test.Tags
     Conformance.Mirror
@@ -327,6 +335,8 @@ test-suite conformance-tests
     Conformance.Cli.Attach
     Conformance.Cli.Proof
     Conformance.Cli.FoldHistory
+    Conformance.Cli.Withhold
+    Conformance.Support.Withhold
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
@@ -339,6 +349,10 @@ test-suite conformance-tests
     Paths_conformance
   build-depends:
     , aeson >=2.1 && <2.3
+    , case-insensitive
+    , http-types
+    , wai
+    , warp
     , base >=4.14 && <5
     , base16-bytestring
     , bytestring >=0.11 && <0.13
@@ -363,6 +377,7 @@ test-suite conformance-tests
     , microlens
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:koios-http
     , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
     , plutus-ledger-api

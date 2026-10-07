@@ -394,42 +394,45 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             drop 3 (statuses results) `shouldSatisfy` all isUncovered
             held results `shouldBe` False
     it
-        "publishes the withheld-history control uncovered when its receipt records no reachable witness"
+        "holds the withheld-history clause only when the withholding reached the history read and the journal stayed still"
         $ do
             rs <- honestReceipts controlsStory
-            let unavailable =
-                    alter
-                        "provoke inspect-without-history"
-                        "process"
-                        ( \r ->
-                            r
-                                { rcOutcome = "client-error"
-                                , rcCommand = Nothing
-                                , rcProcess = Nothing
-                                , rcReason = Just "no provider withholds the history"
-                                }
-                        )
-                        rs
-                results = judge unavailable controlsStory
-            clauseStatuses
-                "public history it needs withheld"
-                (judge rs controlsStory)
-                `shouldBe` [Held]
-            putStrLn
-                ( "Harness receipt-computed withheld-history states: "
-                    <> show
-                        ( clauseStatuses
-                            "public history it needs withheld"
-                            (judge rs controlsStory)
-                        , clauseStatuses "public history it needs withheld" results
-                        )
+            let withheldClause receipts =
+                    clauseStatuses
+                        "public history it needs withheld"
+                        (judge receipts controlsStory)
+                altered f = alter "provoke inspect-without-history" "process" f rs
+                notHeld = \ss -> not (null ss) && all isNotHeld ss
+            withheldClause rs `shouldBe` [Held]
+            -- a forwarder that withheld nothing: the withholding never
+            -- reached the history read
+            withheldClause (altered (\r -> r{rcWithheldReads = Just 0}))
+                `shouldSatisfy` notHeld
+            -- no forwarder recorded at all
+            withheldClause (altered (\r -> r{rcWithheldReads = Nothing}))
+                `shouldSatisfy` notHeld
+            -- a provider that errored: a client refusal is not this witness
+            withheldClause
+                ( altered
+                    ( \r ->
+                        r
+                            { rcOutcome = "client-refusal"
+                            , rcReason = Just "TrieState HistoryIncomplete"
+                            }
+                    )
                 )
-            clauseStatuses "public history it needs withheld" results
-                `shouldSatisfy` (\ss -> length ss == 1 && all isUncovered ss)
-            clauseStatuses "root does not move" results
-                `shouldSatisfy` all (== Held)
-            show results
-                `shouldSatisfy` isInfixOf "no provider withholds the history"
+                `shouldSatisfy` notHeld
+            -- the registry's journal moved while inspect ran
+            withheldClause
+                ( altered
+                    ( \r ->
+                        r
+                            { rcProcess =
+                                fmap (\p -> p{peJournalAfter = peJournalBefore p + 1}) (rcProcess r)
+                            }
+                    )
+                )
+                `shouldSatisfy` notHeld
     it
         "refuses interrupted-fold recovery with another root or a repeated submission"
         $ do
@@ -688,6 +691,10 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         full
             `shouldSatisfy` isInfixOf
                 "- Under `INV299-AUTHENTICATED`, \"inspect with the saved proof material moved aside prints no leaf\" is replaced by \"inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete\": "
+        -- and the witness's named limit is published with it
+        full
+            `shouldSatisfy` isInfixOf
+                "Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover."
         -- the indexer read belongs to a take on an existing registry: the
         -- development controls do not reach it, and say so
         full
@@ -1421,7 +1428,10 @@ provoked p r =
             WhileLocked -> r{rcOutcome = "concurrent-writer", rcProcess = Just still}
             SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
             WithoutHistory ->
-                (noLeaf "stale-state"){rcReason = Just "TrieState HistoryIncomplete"}
+                (noLeaf "stale-state")
+                    { rcReason = Just "TrieState HistoryIncomplete"
+                    , rcWithheldReads = Just 1
+                    }
             WithoutNode -> noLeaf "node-unavailable"
             TerminateKilled ->
                 (killed "fold" "f9")
