@@ -1,5 +1,10 @@
 # #324 plan
 
+> Historical plan: #383 removed the production node read path and this in-memory
+> indexer. Current commands use the ledger-provider interfaces and reconstruct
+> registry proof state from public history under #381. The implementation choices
+> below record the retired adapter, not a current backend option.
+
 **Strategy.** Replace the point-agnostic `indexedReads` in `Singular.Registry.Node.Indexer` with an indexer adapter that yields #323 views at one chain point. Fact at the pin: the chain-sync follower mutates the index only through the caller-owned `IndexerHandle` record that Singular passes to `withChainSyncFollower` (`applyAtSlot`, `rollbackTo`, `pruneRollbacks`). Singular therefore owns the index's write path: while a view is held, the index does not advance, and a view is admitted only when the index's applied point equals the node view's point. The devnet produces ten blocks per second and the pinned node client cannot acquire at a named point, so agreement must be reached deterministically, never by chance. `followedProvider` keeps its signature; its devnet consumers (journeys, e2e) exercise the adapter live in adapter-contract-spec-adapter-its-failure-classes.
 
 **Invariants.**

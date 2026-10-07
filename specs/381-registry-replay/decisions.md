@@ -70,7 +70,8 @@ unexecuted integration requirement.
 
 ## The directory keeps nothing the replay replaces
 
-As a registry owner, I keep the identity, my own journal and my own envelopes.
+As a registry owner, I keep the identity and my own journal. Insertion envelopes
+are carried publicly by their requests under #419.
 The mirror file and the saved root commitment are retired with the mirror
 adapter in the commands slice, and the slice receipt names every caller removed.
 No cache survives. A directory written by an earlier release still holds those
