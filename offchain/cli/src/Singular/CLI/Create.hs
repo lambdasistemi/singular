@@ -372,6 +372,8 @@ boot wc cfg pinned seedIn foundState = do
             (publish "publish-state" (Set.singleton seedIn) stateScript)
             pure
             foundState
+    -- A carrier found elsewhere was not submitted by this create.
+    let stateTxs = [txInTxId stateIn | null foundState]
     observeReference wc "publish-state" stateScript stateRef
     -- The boot, consuming the seed and running the state script from the
     -- reference, wherever it sits.
@@ -440,7 +442,8 @@ boot wc cfg pinned seedIn foundState = do
             , bootedBoot = txIdHex signedBoot
             , bootedRefs = reference "state" stateScript stateRef : published
             , bootedTxs =
-                [txInTxId stateIn, txIdHex signedBoot]
+                stateTxs
+                    <> [txIdHex signedBoot]
                     <> map (txIdOfRef . refOutRef) published
             }
   where
