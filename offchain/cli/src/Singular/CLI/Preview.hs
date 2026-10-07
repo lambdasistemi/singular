@@ -153,14 +153,13 @@ runPreview env kind a settings addrText = do
         Cage.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
             pp <- Cage.parameters v
             point <- Cage.tip v
-            wallet <- Cage.outputsAt v addr
             saved <-
                 resolveSaved
                     (entryRegistry a)
                     release
                     (entryAccess a)
                     (neededRoles (commandOf kind a))
-                    wallet
+                    (Just addr)
                     v
             let inserted = insertionOf saved a caller <$> insertPayload
             context <- openTrie saved

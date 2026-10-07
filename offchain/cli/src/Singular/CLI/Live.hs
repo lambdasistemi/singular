@@ -59,7 +59,6 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
-import System.IO (hPutStrLn, stderr)
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
@@ -113,7 +112,6 @@ import Singular.Registry.StateToken
     , ResolvedRegistry (..)
     , findReferences
     , findStateOutput
-    , renderHintWarning
     , renderIdentityRefusal
     , renderReferenceRefusal
     , resolveRegistry
@@ -399,8 +397,8 @@ resolveSaved
     -> Release
     -> RegistryAccess
     -> Set ReferenceRole
-    -> [(TxIn, TxOut ConwayEra)]
-    -- ^ The actor's wallet outputs
+    -> Maybe Addr
+    -- ^ The actor's wallet, when the command has one
     -> Cage.Session Cage.NoWitness IO
     -> IO Saved
 resolveSaved dir release access roles wallet view = do
@@ -409,17 +407,11 @@ resolveSaved dir release access roles wallet view = do
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
                 pure
-    (found, unadmitted) <-
-        findReferences
-            view
-            (accessHints access)
-            wallet
-            (resolvedExpected resolved)
-            roles
+    found <-
+        findReferences view wallet (resolvedExpected resolved) roles
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderReferenceRefusal)
                 pure
-    mapM_ (hPutStrLn stderr . T.unpack . renderHintWarning) unadmitted
     let (_, name) = resolvedToken resolved
     pure
         Saved

@@ -440,19 +440,31 @@ result lists the hints that carry no needed role's script.
 findReferences
     :: (Monad m)
     => Session w m
-    -> [TxIn]
-    -- ^ Hints
-    -> Outputs
-    -- ^ The actor's wallet outputs
+    -> Maybe Addr
+    -- ^ The actor's wallet, when the command has one
     -> Map ReferenceRole ScriptHash
     -> Set ReferenceRole
     -- ^ The roles the command's transaction runs
+    -> m
+        (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra)))
+findReferences session walletAt expected needed = runExceptT $ do
+    wallet <-
+        maybe (pure []) (readReference . outputs session . AtAddress) walletAt
+    fst <$> ExceptT (searchSources session [] wallet expected needed)
+
+searchSources
+    :: (Monad m)
+    => Session w m
+    -> [TxIn]
+    -> Outputs
+    -> Map ReferenceRole ScriptHash
+    -> Set ReferenceRole
     -> m
         ( Either
             ReferenceRefusal
             (Map ReferenceRole (TxIn, TxOut ConwayEra), [TxIn])
         )
-findReferences session hints wallet expected needed = runExceptT $ do
+searchSources session hints wallet expected needed = runExceptT $ do
     let wanted =
             [ (role, hash)
             | role <- Set.toAscList needed
@@ -481,15 +493,22 @@ findReferences session hints wallet expected needed = runExceptT $ do
         , filter (`notElem` admittedHints) (nubOrd hints)
         )
   where
-    readFact action =
-        ExceptT
-            (fmap (either (Left . ReferenceUnreadable) (Right . value)) action)
+    readFact = readReference
     lookupHint hint = do
         answer <- lift (outputs session (AtTxIn hint))
         case answer of
             Right found -> pure (value found)
             Left (MissingOutput _) -> pure []
             Left failure -> throwError (ReferenceUnreadable failure)
+
+-- | A provider read, its failure a reference refusal.
+readReference
+    :: (Monad m)
+    => m (Either ReadFailure (Evidenced w a))
+    -> ExceptT ReferenceRefusal m a
+readReference action =
+    ExceptT
+        (fmap (either (Left . ReferenceUnreadable) (Right . value)) action)
 
 -- | The refusal, with the remedy.
 renderReferenceRefusal :: ReferenceRefusal -> Text

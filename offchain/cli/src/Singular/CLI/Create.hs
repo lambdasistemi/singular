@@ -43,7 +43,6 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
 import System.Directory (createDirectoryIfMissing, removeFile)
-import System.IO (hPutStrLn, stderr)
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
@@ -131,7 +130,6 @@ import Singular.Registry.StateToken
     , ReferenceRole (..)
     , expectedReferences
     , findReferences
-    , renderHintWarning
     , renderReferenceRefusal
     , renderStateToken
     )
@@ -220,7 +218,7 @@ createWith env a rel ws = do
                         ["reference scripts"]
                         (wcCapabilities wc)
                         $ \v -> do
-                            found <- stateReference v (createHints a) utxos rel seedIn
+                            found <- stateReference v addr rel seedIn
                             (found,) <$> Cage.parameters v
                 let token = stateTokenOf rel seedIn
                     stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
@@ -290,27 +288,24 @@ stateTokenOf rel seedIn =
     )
 
 {- | A live output carrying the state script, found by its hash through the
-provider, then the hints, then the wallet; none when no source has one.
+provider, then the wallet; none when neither has one.
 -}
 stateReference
     :: LP.Session NoWitness IO
-    -> [TxIn]
-    -> [(TxIn, TxOut ConwayEra)]
+    -> Addr
+    -- ^ The creator's wallet
     -> Release
     -> TxIn
     -> IO (Maybe (TxIn, TxOut ConwayEra))
-stateReference v hints wallet rel seedIn = do
+stateReference v wallet rel seedIn = do
     found <-
         findReferences
             v
-            hints
-            wallet
+            (Just wallet)
             (expectedReferences rel (stateTokenOf rel seedIn))
             (Set.singleton RoleState)
     case found of
-        Right (chosen, unadmitted) -> do
-            mapM_ (hPutStrLn stderr . T.unpack . renderHintWarning) unadmitted
-            pure (Map.lookup RoleState chosen)
+        Right chosen -> pure (Map.lookup RoleState chosen)
         Left (ReferenceMissing _ _) -> pure Nothing
         Left refusal ->
             failWith NodeUnavailable (T.unpack (renderReferenceRefusal refusal))

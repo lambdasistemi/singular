@@ -155,7 +155,7 @@ tokenSpelling =
 
 -- | What a command parsed with @reg@ acts on.
 access :: RegistryAccess
-access = RegistryAccess{accessToken = token, accessHints = []}
+access = RegistryAccess{accessToken = token}
 
 commandLine :: Spec
 commandLine = describe "the command line" $ do

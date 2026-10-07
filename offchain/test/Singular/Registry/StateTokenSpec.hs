@@ -31,6 +31,7 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import Test.Hspec
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
@@ -58,7 +59,8 @@ import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.StateToken
 import Singular.Registry.StateTokenFixture
 import Singular.Registry.TxBuilder.Internal
-    ( cageAddrFromCfg
+    ( addrFromKeyHashBytes
+    , cageAddrFromCfg
     , scriptFromBytes
     , scriptHashBytes
     )
@@ -372,9 +374,8 @@ search = describe "finding the references a command needs" $ do
                 low = refOf (T.replicate 64 "a" <> "#5")
                 high = refOf (T.replicate 64 "b" <> "#0")
                 chain = carrying [(low, script), (high, script)] Reverse honestChain
-            found <- searchOn chain [] [] (Set.singleton role)
-            fmap (Map.map fst . fst) found
-                `shouldBe` Right (Map.singleton role low)
+            (found, _) <- searchOn chain (Set.singleton role)
+            fmap (Map.map fst) found `shouldBe` Right (Map.singleton role low)
     it
         "never admits a carrier the provider names for a hash its script does not have"
         $ do
@@ -392,66 +393,68 @@ search = describe "finding the references a command needs" $ do
                                 then [(liar, carrierOf otherScript), (honest, carrierOf script)]
                                 else []
                         }
-            found <- searchOn chain [] [] (Set.singleton role)
-            fmap (Map.map fst . fst) found
-                `shouldBe` Right (Map.singleton role honest)
+            (found, _) <- searchOn chain (Set.singleton role)
+            fmap (Map.map fst) found `shouldBe` Right (Map.singleton role honest)
     it
-        "tries the hints when the provider has none, and warns once for each hint not admitted"
+        "does not read the wallet when the provider carries every role the command runs"
         $ do
-            let (role, script) = needed RoleApplication
-                hinted = refOf (T.replicate 64 "d" <> "#1")
-                gone = refOf (T.replicate 64 "e" <> "#0")
-                empty = refOf (T.replicate 64 "f" <> "#3")
+            let wanted = [RoleRequest, RoleApplication]
+                fromProvider =
+                    [ ( refOf (T.pack (replicate 63 'f' <> show (fromEnum r)) <> "#0")
+                      , snd (needed r)
+                      )
+                    | r <- wanted
+                    ]
+                inWallet =
+                    [ ( refOf (T.pack (replicate 63 '1' <> show (fromEnum r)) <> "#0")
+                      , snd (needed r)
+                      )
+                    | r <- wanted
+                    ]
+                chain = inTheWallet inWallet (carrying fromProvider Forward honestChain)
+            (found, reads') <- searchOn chain (Set.fromList wanted)
+            fmap (Map.map fst) found
+                `shouldBe` Right (Map.fromList (zip wanted (map fst fromProvider)))
+            filter walletRead reads' `shouldBe` []
+    it
+        "takes the wallet's lowest admitted carrier when the provider has none"
+        $ do
+            let (role, script) = needed RoleWitnessActive
+                low = refOf (T.replicate 64 "9" <> "#4")
+                high = refOf (T.replicate 64 "a" <> "#0")
+                wrongScript = refOf (T.replicate 64 "2" <> "#0")
+                noScript = refOf (T.replicate 64 "3" <> "#0")
                 chain =
-                    honestChain
-                        { chainOutputs =
-                            Map.fromList [(hinted, carrierOf script), (empty, plain)]
-                                <> chainOutputs honestChain
-                        }
-            found <-
-                searchOn chain [gone, hinted, empty, gone] [] (Set.singleton role)
-            fmap (Map.map fst . fst) found
-                `shouldBe` Right (Map.singleton role hinted)
-            fmap (sortOn id . snd) found
-                `shouldBe` Right (sortOn id [gone, empty])
-    it "tries the wallet when neither the provider nor a hint has one" $ do
-        let (role, script) = needed RoleWitnessActive
-            mine = refOf (T.replicate 64 "9" <> "#4")
-            wallet =
-                [ (mine, carrierOf script)
-                , (refOf (T.replicate 64 "8" <> "#0"), plain)
+                    inTheWallet
+                        [(high, script), (low, script), (wrongScript, otherScript)]
+                        honestChain
+                            { chainOutputs =
+                                Map.insert noScript (atWallet plain) (chainOutputs honestChain)
+                            }
+            (found, reads') <- searchOn chain (Set.singleton role)
+            fmap (Map.map fst) found `shouldBe` Right (Map.singleton role low)
+            length (filter walletRead reads') `shouldBe` 1
+    it
+        "refuses a role neither the provider nor the wallet carries, naming its hash and the remedy"
+        $ do
+            let wanted = Set.fromList [RoleWitnessAbsent, RoleWitnessTerminal]
+                hash = bootExpected Map.! RoleWitnessAbsent
+            (found, _) <- searchOn honestChain wanted
+            found `shouldBe` Left (ReferenceMissing RoleWitnessAbsent hash)
+            renderReferenceRefusal (ReferenceMissing RoleWitnessAbsent hash)
+                `shouldBe` ( "reference-missing witness-absent "
+                                <> hashHex hash
+                                <> ": not found by this provider or wallet; publish it with singular registry publish-references"
+                           )
+    it "reads nothing when the command runs no reference script" $ do
+        let published =
+                [ (refOf (T.pack (replicate 63 c <> "1") <> "#0"), script)
+                | (c, (_, script)) <- zip "abcdef" bootScripts
                 ]
-        found <- searchOn honestChain [] wallet (Set.singleton role)
-        fmap (Map.map fst . fst) found
-            `shouldBe` Right (Map.singleton role mine)
-    it "prefers an earlier source to a lower output reference" $ do
-        let (role, script) = needed RoleState
-            fromProvider = refOf (T.replicate 64 "f" <> "#9")
-            fromHint = refOf (T.replicate 64 "5" <> "#0")
-            fromWallet = refOf (T.replicate 64 "1" <> "#7")
-            chain =
-                (carrying [(fromProvider, script)] Forward honestChain)
-                    { chainOutputs =
-                        Map.fromList
-                            [(fromProvider, carrierOf script), (fromHint, carrierOf script)]
-                            <> chainOutputs honestChain
-                    }
-        found <-
-            searchOn
-                chain
-                [fromHint]
-                [(fromWallet, carrierOf script)]
-                (Set.singleton role)
-        fmap (Map.map fst . fst) found
-            `shouldBe` Right (Map.singleton role fromProvider)
-        foundNoProvider <-
-            searchOn
-                chain{chainCarriers = const []}
-                [fromHint]
-                [(fromWallet, carrierOf script)]
-                (Set.singleton role)
-        fmap (Map.map fst . fst) foundNoProvider
-            `shouldBe` Right (Map.singleton role fromHint)
+            chain = carrying published Forward honestChain
+        (found, reads') <- searchOn chain Set.empty
+        found `shouldBe` Right Map.empty
+        reads' `shouldBe` []
     it "looks up only the roles the command runs" $ do
         let wanted = Set.fromList [RoleRequest, RoleApplication]
             published =
@@ -459,45 +462,10 @@ search = describe "finding the references a command needs" $ do
                 | (c, (_, script)) <- zip "abcdef" bootScripts
                 ]
             chain = carrying published Forward honestChain
-        logRef <- newIORef []
-        found <-
-            findReferences
-                (chainSession logRef chain)
-                []
-                []
-                bootExpected
-                wanted
-        fmap (Map.keysSet . fst) found `shouldBe` Right wanted
-        reads' <- readIORef logRef
+        (found, reads') <- searchOn chain wanted
+        fmap Map.keysSet found `shouldBe` Right wanted
         length (filter ("CarryingReferenceScript" `T.isPrefixOf`) reads')
             `shouldBe` 2
-    it
-        "refuses the first role no source carries, naming its hash and the remedy"
-        $ do
-            let wanted = Set.fromList [RoleWitnessAbsent, RoleWitnessTerminal]
-            found <- searchOn honestChain [] [] wanted
-            let expected = bootExpected
-            found
-                `shouldBe` Left
-                    ( ReferenceMissing
-                        RoleWitnessAbsent
-                        (expected Map.! RoleWitnessAbsent)
-                    )
-            let rendered =
-                    renderReferenceRefusal
-                        (ReferenceMissing RoleWitnessAbsent (expected Map.! RoleWitnessAbsent))
-            rendered
-                `shouldSatisfy` T.isPrefixOf
-                    ( "reference-missing witness-absent "
-                        <> hashHex (expected Map.! RoleWitnessAbsent)
-                        <> ": not found by this provider, hints or wallet"
-                    )
-            rendered
-                `shouldSatisfy` T.isInfixOf "singular registry publish-references"
-    it "warns for a hint by naming it" $ do
-        let hint = refOf (T.replicate 64 "e" <> "#0")
-        renderHintWarning hint
-            `shouldBe` ("reference-hint-invalid " <> T.replicate 64 "e" <> "#0")
 
 -- ---------------------------------------------------------------------------
 -- Helpers
@@ -513,24 +481,49 @@ resolveOn chain asked = do
     reads' <- readIORef logRef
     pure (result, reads')
 
+{- | Search the chain for the roles, from the actor's wallet at
+'walletAddress', returning the outcome and every read the search made.
+-}
 searchOn
     :: Chain
-    -> [TxIn]
-    -> LP.Outputs
     -> Set.Set ReferenceRole
     -> IO
         ( Either
             ReferenceRefusal
-            (Map.Map ReferenceRole (TxIn, TxOut ConwayEra), [TxIn])
+            (Map.Map ReferenceRole (TxIn, TxOut ConwayEra))
+        , [Text]
         )
-searchOn chain hints wallet wanted = do
+searchOn chain wanted = do
     logRef <- newIORef []
-    findReferences
-        (chainSession logRef chain)
-        hints
-        wallet
-        bootExpected
-        wanted
+    found <-
+        findReferences
+            (chainSession logRef chain)
+            (Just walletAddress)
+            bootExpected
+            wanted
+    reads' <- readIORef logRef
+    pure (found, reads')
+
+-- | The actor's own wallet address.
+walletAddress :: Addr
+walletAddress = addrFromKeyHashBytes Testnet (BS.replicate 28 0x77)
+
+-- | The output moved to the actor's wallet.
+atWallet :: TxOut ConwayEra -> TxOut ConwayEra
+atWallet o = o & addrTxOutL .~ walletAddress
+
+-- | The chain with these carriers live in the actor's wallet, unlisted by the provider.
+inTheWallet :: [(TxIn, Script ConwayEra)] -> Chain -> Chain
+inTheWallet held chain =
+    chain
+        { chainOutputs =
+            Map.fromList [(i, atWallet (carrierOf s)) | (i, s) <- held]
+                <> chainOutputs chain
+        }
+
+-- | Whether a read was of the actor's wallet.
+walletRead :: Text -> Bool
+walletRead = (== T.pack (show (LP.AtAddress walletAddress)))
 
 {- | A receipt name to its role, written by hand from the six names the
 boot publishes, never by the code under test.

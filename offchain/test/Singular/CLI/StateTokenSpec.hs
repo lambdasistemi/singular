@@ -148,7 +148,7 @@ accessOf = \case
     _ -> Nothing
 
 ours :: RegistryAccess
-ours = RegistryAccess{accessToken = token, accessHints = []}
+ours = RegistryAccess{accessToken = token}
 
 tokenOnEveryCommand :: Spec
 tokenOnEveryCommand = describe "the state token" $ do
@@ -203,21 +203,32 @@ tokenOnEveryCommand = describe "the state token" $ do
         checkPendingToken token token `shouldBe` Right ()
         checkPendingToken other token `shouldSatisfy` mismatched
         checkPendingToken token other `shouldSatisfy` mismatched
-    it "carries repeatable reference hints in the order given" $ do
-        let hints = [replicate 64 'a' <> "#1", replicate 64 'b' <> "#0"]
-        forM_ commands $ \(_, line) ->
-            fmap
-                (fmap accessHints . accessOf)
-                ( parseCommand
-                    (line <> tokenFlag <> concatMap (\h -> ["--reference-hint", h]) hints)
-                )
-                `shouldBe` Right (Just (map (refOf . T.pack) hints))
-    it "refuses a reference hint that is not TXID#IX" $
-        forM_ commands $ \(_, line) ->
-            parseCommand (line <> tokenFlag <> ["--reference-hint", "nothing"])
-                `shouldSatisfy` badValueOf "--reference-hint"
+    it
+        "is the only name of the registry: no command reads a reference hint"
+        $ do
+            let every = ("create", createLine) : commands
+                hinted line =
+                    parseCommand
+                        ( line
+                            <> tokenFlagFor line
+                            <> ["--reference-hint", replicate 64 'a' <> "#1"]
+                        )
+            [(name, hinted line) | (name, line) <- every]
+                `shouldBe` [ ( name
+                             , Left (BadValue "--reference-hint" "is not a flag singular reads")
+                             )
+                           | (name, _) <- every
+                           ]
   where
     environment t = ("SINGULAR_STATE_TOKEN", spelled t)
+    createLine =
+        ["registry", "create", "--seed", request]
+            <> dirAndRelease
+            <> provider
+            <> wallet
+    tokenFlagFor line
+        | "create" `elem` take 2 line = []
+        | otherwise = tokenFlag
 
 -- | A refusal of the flag whose reason names the word.
 refusedNaming :: String -> String -> Either CLIError a -> Bool
@@ -421,7 +432,7 @@ directories = describe "the actor's directory" $ do
             release
             ours
             (Set.singleton RoleApplication)
-            []
+            Nothing
             (chainSession logRef chain)
 
 -- | The six published scripts by role.
