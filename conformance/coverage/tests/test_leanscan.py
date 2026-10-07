@@ -109,14 +109,16 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree: 124 = 65 manifest-bound + 59 unclassified.
+    """The frozen tree: 126 = 67 manifest-bound + 59 unclassified.
 
-    The registry's 44 statements include the two of the batch questions
+    The registry's 46 statements include the three of public fold inputs
+    (#419) — a delivered output carries exactly the request's datum, a fold is
+    built from the public view, a foreign datum is refused — the two of the batch questions
     (#344) — a batch fold of one request folds as its step, and a batch of one
     reject judges as the reject — the three of the destination-row
-    ruling (#304) — a fold describes a destination output only when it
-    delivers, a delivered output carries the datum its request named, a spent
-    witness carries the datum its holding records — and the absent-insertion
+    ruling (#304) that remain — a fold describes a destination output only
+    when it delivers, a spent witness carries the datum its holding records —
+    and the absent-insertion
     transaction row, the statement that no fold requires a signer, the four
     statements of where every exit's deposit goes, the statement that every
     transaction an exit builds settles what it owes, the statement that
@@ -127,7 +129,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
     three more read a retraction's bound return as its largest output, and
     two read retraction admission's edge and window checks as propositions;
     six state keyed mint sums pointwise, which a batch of one rests on.
-    The predecessor populations were 116 = 63 + 53, 113 = 60 + 53,
+    The predecessor populations were 124 = 65 + 59, 116 = 63 + 53, 113 = 60 + 53,
     107 = 56 + 51 and 104 = 56 + 48.
     """
 
@@ -136,11 +138,11 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            124,
+            126,
             "base population drifted; the denominator must be re-examined",
         )
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 65)
+        self.assertEqual(len(statements), 67)
 
     def test_attributed_count_at_base(self):
         # The fourth is the @[simp] on trieGet_erase_eq.

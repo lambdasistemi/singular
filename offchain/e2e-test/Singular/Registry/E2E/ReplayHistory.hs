@@ -114,6 +114,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
+    , RequestDestination
     , edgeInsertActive
     , edgeUpdateTerminal
     )
@@ -188,7 +189,7 @@ recordHistory stateBytes requestBytes =
         let single label key edge dest = do
                 outcome <- Driver.foldEdgeTo reg key edge dest
                 statePoint cfg prov tid (Driver.foFoldTx outcome) label
-            wallet' = (serialiseAddr genesisAddr, BS.empty)
+            wallet' = (serialiseAddr genesisAddr, Nothing)
         -- The two edges the command line books, on one key.
         edgeFolds <-
             sequence
@@ -338,7 +339,7 @@ book
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> RequestDestination
     -> IO TxIn
 book cfg codes prov submit = Edges.bookEdgeTo cfg codes prov submit genesisAddr
 
@@ -352,7 +353,7 @@ bookUntilOrdersDiffer
     -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
     -> Edges.SubmitSigned
     -> TokenId
-    -> (ByteString, ByteString)
+    -> RequestDestination
     -> IO [TxIn]
 bookUntilOrdersDiffer cfg codes prov submit tid dest = go (1 :: Int) []
   where
@@ -406,7 +407,7 @@ makeDecoys cfg prov submit tid = do
                             , requestEdge = edgeInsertActive
                             , requestDeposit = 0
                             , requestSubmittedAt = 0
-                            , requestDestination = (BS.empty, BS.empty)
+                            , requestDestination = (BS.empty, Nothing)
                             }
                     )
                 )

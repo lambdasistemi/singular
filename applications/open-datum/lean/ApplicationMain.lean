@@ -81,51 +81,53 @@ def datumChecks : IO Nat := do
   let mut failed := 0
   let valid := insertRequest 5 (envelopeFor 5 payload0)
   let roundTrips := fun (r : Request) => (requestFromJson (requestToJson r)).toOption == some r
-  failed := failed + (← report (roundTrips valid && roundTrips { valid with namesDatum := false })
-    "codec: a request naming its datum and one naming none each round-trip exactly")
+  failed := failed + (← report (roundTrips valid && roundTrips { valid with datum := none })
+    "codec: a request carrying its datum and one carrying none each round-trip exactly")
   let unflagged := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))]
   failed := failed + (← report
-    ((requestFromJson unflagged).toOption.map (·.namesDatum) == some false)
-    "codec: a request that does not say names no datum, the root default")
+    ((requestFromJson unflagged).toOption.map (·.datum) == some none)
+    "codec: a request that does not say carries no datum, the root default")
   let badFlag := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))
-    , ("namesDatum", toJson "yes")]
+    , ("datum", toJson "yes")]
   failed := failed + (← report (requestFromJson badFlag).toOption.isNone
-    "codec: a namesDatum that is not a Boolean is refused")
+    "codec: a datum that is not a value is refused")
   let g := genesis app0 cfg0 app0.registry
   let refusedNoDatum := match appStep g bookingNoDatum with
     | .error why => why == "app-envelope-datum"
     | .ok _ => false
   failed := failed + (← report (refusedNoDatum && (appStep g (bookInsertKey 5)).toOption.isSome)
-    "booking: the valid insertion is accepted, and the same booking naming no datum is refused app-envelope-datum")
+    "booking: the valid insertion is accepted, and the same booking carrying no datum is refused app-envelope-datum")
   let selected := (appStep bookedWorld selectionFold).toOption.isSome
   let unselected := match appStep unnamedPendingWorld selectionFold with
     | .error why => why == "fold-envelope-datum"
     | .ok _ => false
   failed := failed + (← report (selected && unselected)
-    "selection: the fold accepts the booked insertion, and refuses fold-envelope-datum when its pending request names no datum")
+    "selection: the fold accepts the booked insertion, and refuses fold-envelope-datum when its pending request carries no datum")
+  let envelope := some (envelopeHash (envelopeFor 5 payload0))
   let inlineHeld := ordinaryWorld.registry.held.any fun h =>
-    h.key == 5 && h.kind == .active && h.datum == .inline
+    h.key == 5 && h.kind == .active && h.datum == envelope
   failed := failed + (← report inlineHeld
-    "delivery: after the insertion fold the registry holds key 5's active token with its datum inline")
+    "delivery: after the insertion fold the registry holds key 5's active token with its envelope as its datum")
   let insertion? := bookedWorld.pending.head?.map (·.request)
   let destinations := match insertion? with
     | some r => match Singular.txOf bookedWorld.registry r (r.deposit + r.tip) with
-      | .ok tx => (tx.outputs.filter (·.role == .destination)).map (·.datum)
+      | .ok tx => (tx.outputs.filter (·.role == .destination)).map fun o => (o.datum, o.datumValue)
       | .error _ => []
     | none => []
-  failed := failed + (← report (destinations == [.inline])
-    "delivery: the transaction the root builds for that insertion has one destination output, its datum inline")
+  failed := failed + (← report (destinations == [(.inline, envelope)])
+    "delivery: the transaction the root builds for that insertion has one destination output, carrying the envelope inline")
   let terminating := reachWorld (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller]])
   let termination? := (terminating.pending.find? (·.request.edge == .updateTerminal)).map (·.request)
   let termOk := match termination? with
     | some r => match Singular.txOf terminating.registry r (r.deposit + r.tip) with
       | .ok tx =>
         !(tx.outputs.any (·.role == .destination)) &&
-          (tx.inputs.filter (·.role == .witness)).map (·.datum) == [.inline]
+          (tx.inputs.filter (·.role == .witness)).map (fun i => (i.datum, i.datumValue))
+            == [(.inline, envelope)]
       | .error _ => false
     | none => false
   failed := failed + (← report termOk
-    "termination: the root transaction has no destination output, and the witness it burns is spent with the inline datum its insertion delivered")
+    "termination: the root transaction has no destination output, and the witness it burns is spent with the envelope its insertion delivered, inline")
   pure failed
 
 def check (dir : String) : IO UInt32 := do

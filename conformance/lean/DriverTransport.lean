@@ -34,13 +34,6 @@ def optionalNat (j : Json) (name : String) : Except String Nat :=
   | .ok Json.null => pure 0
   | .ok v => fromJson? v
 
-/-- A flag a caller may leave out, read as false when absent or null. -/
-def optionalBool (j : Json) (name : String) : Except String Bool :=
-  match j.getObjVal? name with
-  | .error _ => pure false
-  | .ok Json.null => pure false
-  | .ok v => fromJson? v
-
 /-- The model's own decoders do not cover `Request`, which carries defaults. -/
 def toRequest (j : Json) : Except String Request := do
   let edge ← (j.getObjVal? "edge") >>= fromJson?
@@ -57,9 +50,10 @@ def toRequest (j : Json) : Except String Request := do
   -- that names neither describes a request holding its deposit alone, at reference 0.
   let tip ← optionalNat j "tip"
   let reference ← optionalNat j "reference"
-  -- Whether the request names a datum for its delivered output: a caller that
-  -- says nothing describes a booking naming an empty datum hash, which names none.
-  let namesDatum ← optionalBool j "namesDatum"
+  -- The datum the request carries for its delivered output, as the identity the
+  -- caller allocated for it while booking: a caller that says nothing describes a
+  -- booking carrying none.
+  let datum ← datumOfJson j "datum"
   -- The mint a request claims, which only a batch's mint guard reads: a caller
   -- that names none claims nothing. "canonical" asks for the claim an honest
   -- folder makes for this very request, the delta of its own edge, read off the
@@ -77,7 +71,7 @@ def toRequest (j : Json) : Except String Request := do
     | .ok _ => throw "claimed is not an array"
   let base : Request :=
     { edge, key, owner, refundAddress, deposit, output, approval := none, claimed, tip
-    , reference, namesDatum }
+    , reference, datum }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none
@@ -178,9 +172,10 @@ def toInput (j : Json) : Except String TxInput := do
   pure { role := .request, datum := .none, stateTokens, approvals := 0, lovelace := 0 }
 
 /-- One output a caller observed, as the driver's judgement reads it: its role,
-the identity of its address, its lovelace, the form of its datum, and the identity
-of the output reference its inline datum presents, if any. The judgement, `settle`, reads
-nothing else of an output, so nothing else is taken from the caller. -/
+the identity of its address, its lovelace, the form of its datum, the identity of
+the datum it carries, if any, and the identity of the output reference its inline
+datum presents, if any. The judgement, `settle`, reads nothing else of an output,
+so nothing else is taken from the caller. -/
 def toOutput (j : Json) : Except String TxOutput := do
   let role ← match (← (j.getObjVal? "role") >>= fromJson? : String) with
     | "destination" => pure TxRole.destination
@@ -198,8 +193,9 @@ def toOutput (j : Json) : Except String TxOutput := do
     | .error _ => pure none
     | .ok Json.null => pure none
     | .ok r => some <$> fromJson? r
+  let datumValue ← datumOfJson j "datumValue"
   pure { role, datum, address := some address, stateTokens := 0, config := none
-       , commitment := none, assets := [], lovelace, reference }
+       , commitment := none, assets := [], lovelace, reference, datumValue }
 
 /-- A batch question: `foldBatch`, requests each folded on its own edge, or
 `rejectBatch`, requests each named with the exit it takes and, optionally, the

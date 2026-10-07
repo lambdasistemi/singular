@@ -64,7 +64,7 @@ pub const testTerminalPolicy =
 /// requests in this module exercise the cage's non-registry paths —
 /// minting, contribute, retract, sweep, rejection — none of which moves
 /// a token to a destination. The registry-mode rows build their own.
-pub const noDestination: (ByteArray, ByteArray) = (#"", #"")
+pub const noDestination: (ByteArray, Option<Data>) = (#"", None)
 
 // Phase 1 validity range: [0, 5_000] — entirely before submitted_at(0) + process_time(10_000)
 pub const phase1Range = interval.between(0, 5_000)
@@ -155,13 +155,18 @@ pub const legacyKey: ByteArray = "42"
 pub const legacyWallet: ByteArray =
   #"60eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
-pub const legacyDestination: (ByteArray, ByteArray) = (legacyWallet, #"")
+pub const legacyDestination: (ByteArray, Option<Data>) = (legacyWallet, None)
 
 /// The approval the application minted for exactly this request.
 pub const legacyApproval =
   from_asset(
     testAppPolicy,
-    lib.approvalName(1, legacyKey, "owner", legacyDestination),
+    lib.approvalName(
+      1,
+      legacyKey,
+      "owner",
+      lib.approvalDestination(legacyDestination),
+    ),
     1,
   )
 
@@ -228,7 +233,12 @@ pub const feeOwner: ByteArray = "requester_key_aaaaaaaaaaaaaaa"
 pub const feeApproval =
   from_asset(
     testAppPolicy,
-    lib.approvalName(1, legacyKey, feeOwner, legacyDestination),
+    lib.approvalName(
+      1,
+      legacyKey,
+      feeOwner,
+      lib.approvalDestination(legacyDestination),
+    ),
     1,
   )
 

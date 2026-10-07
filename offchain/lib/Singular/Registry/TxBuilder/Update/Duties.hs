@@ -24,7 +24,6 @@ module Singular.Registry.TxBuilder.Update.Duties
     , registryDuties
     ) where
 
-import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((&), (.~), (^.))
@@ -157,7 +156,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
             _ -> Left "registryDuties: a request input carries no request datum"
         let key = requestKey req
             edge = requestEdge req
-            dest@(destAddr, destHash) = requestDestination req
+            dest@(destAddr, _) = requestDestination req
             Coin held = reqOut ^. coinTxOutL
             floorAda = held - tip
         -- #183: the tag IS the edge, so admissibility is a range and
@@ -182,7 +181,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             )
             else do
                 mints <- mintsFor edge key
-                rest <- dutiesFor edge key dest destAddr destHash floorAda
+                rest <- dutiesFor edge key dest destAddr floorAda
                 back <-
                     if returnsDeposit edge
                         then pure mempty
@@ -240,18 +239,18 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             }
                 )
                 (deltaOf edge)
-    dutiesFor edge key dest destAddr destHash floorAda
+    dutiesFor edge key dest destAddr floorAda
         | edge == 0 = lockCustody key destAddr floorAda
-        | edge == 1 = deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 1 = deliver (cfgActivePolicy cfg) key dest floorAda
         | edge == 2 =
             (<>)
                 <$> spendCustody key
-                <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
+                <*> deliver (cfgActivePolicy cfg) key dest floorAda
         | edge == 3 = burnSource (cfgActivePolicy cfg) key
         | edge == 4 = spendCustody key
         | edge == 5 = burnSource (cfgActivePolicy cfg) key
         | edge == 6 =
-            deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
+            deliver (cfgTerminalPolicy cfg) key dest floorAda
         | otherwise = Left ("registryDuties: unknown edge " <> show edge)
     -- \| #177 I177-BUILDER, #236: the retirement and the deletion of an
     --    active key burn a token they must first hold. `deltaOf 3` and
@@ -343,10 +342,9 @@ registryDuties cfg pp st ctx reqUtxos processed = do
         requireMinAda "custody" out
         pure mempty{rdOutputs = [out]}
     -- T1/T2: the minted token lands in exactly the output the request
-    -- named, carrying the datum whose hash the approval bound.
-    deliver policy key _dest destHash floorAda = do
+    -- named, carrying the datum the request carries (#419).
+    deliver policy key (destAddr, datum) floorAda = do
         addr <- destinationAddr
-        datum <- destinationDatum destHash
         let value =
                 MaryValue
                     (Coin floorAda)
@@ -362,24 +360,14 @@ registryDuties cfg pp st ctx reqUtxos processed = do
         requireMinAda "destination" out
         pure mempty{rdOutputs = [out]}
       where
-        destinationAddr = case addrFromBytes (fst _dest) of
+        destinationAddr = case addrFromBytes destAddr of
             Just a -> Right a
             Nothing ->
                 Left
                     ( "registryDuties: the request names an address this \
                       \builder cannot decode: "
-                        <> show (fst _dest)
+                        <> show destAddr
                     )
-        destinationDatum h
-            | BS.null h = Right Nothing
-            | otherwise = case Prelude.lookup h (rcDatums ctx) of
-                Just d -> Right (Just d)
-                Nothing ->
-                    Left
-                        ( "registryDuties: no preimage in hand for the \
-                          \destination datum hash "
-                            <> show h
-                        )
     -- T4/T5: the custody this edge consumes is spent, and its deposit
     -- goes back to the address it recorded.
     spendCustody key = do

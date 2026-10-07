@@ -1,0 +1,134 @@
+{
+  "public-fold-inputs-plan": [
+    {
+      "text": "Public fold inputs: plan.",
+      "pause": 500
+    },
+    {
+      "text": "Read the spec for the stories and requirements and the ruling for the decision. Base: main 7b255f96.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The request carries the datum it names, as upstream MPFS requests carry their content. Lean moves first and states the property; the cage and the off-chain wire then swap together, because a request written in one wire cannot be read in the other; the two-actor run closes the story on a development network. Each slice is pushed as soon as its gate is green.",
+      "pause": 400
+    }
+  ],
+  "module-rows": [
+    {
+      "text": "Module rows.",
+      "pause": 500
+    }
+  ],
+  "data-rows": [
+    {
+      "text": "Data rows.",
+      "pause": 500
+    },
+    {
+      "text": "Request destination (chain). Address bytes, then None or Some(datum). The datum hash used by the approval name is blake2b_256(cbor.serialise(datum)) for Some, empty for None. Nothing else stores a hash.",
+      "pause": 300
+    },
+    {
+      "text": "Request datum (model). Request.datum : Option Nat, an abstract datum value. namesDatum is removed.",
+      "pause": 300
+    },
+    {
+      "text": "Delivered output datum (model). A transaction output carries none or inline v with its value; the receiving output of a delivering fold carries the request's datum.",
+      "pause": 300
+    },
+    {
+      "text": "Holding datum (model). A holding records the datum value its delivery wrote; a witness input presents it.",
+      "pause": 300
+    },
+    {
+      "text": "Public view (model). The registry state as its outputs show it, the holdings with their datums, and the pending requests as they sit at the cage. It has no other field.",
+      "pause": 300
+    }
+  ],
+  "function-rows": [
+    {
+      "text": "Function rows.",
+      "pause": 500
+    },
+    {
+      "text": "lib.approvalName keeps its signature over (ByteArray, ByteArray); the cage feeds it the address and destinationDatumHash.",
+      "pause": 400
+    }
+  ],
+  "lean-statements": [
+    {
+      "text": "Lean statements.",
+      "pause": 500
+    },
+    {
+      "text": "delivered_datum_is_request_datum: every receiving output of an admitted fold carries exactly r.datum, over all seven edges.",
+      "pause": 300
+    },
+    {
+      "text": "fold_inputs_public: for every state and request, txOf s r lovelace = buildFold (publicView s [r]) r.reference lovelace.",
+      "pause": 300
+    },
+    {
+      "text": "fold_refuses_foreign_datum: an observed fold whose receiving output carries a datum other than r.datum is refused destination.",
+      "pause": 300
+    }
+  ],
+  "consumers-of-the-model-change": [
+    {
+      "text": "Consumers of the model change.",
+      "pause": 500
+    },
+    {
+      "text": "Each one is run locally before the first push of the Lean slice: lean/driver-corpus.json, lean/corpus.json, lean/Main.lean, the theorem manifest and docs/theorems.md, tools/check_model.py, applications/open-datum, the simulator mirror and its derived output, conformance/lean/DriverTransport.lean, Conformance.Run.Live, the coverage records under conformance/coverage/, and the constitution's tx row.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Model. The datum value in request, output and holding; the three statements; every consumer above; constitution amendment for the tx row.",
+      "pause": 300
+    },
+    {
+      "text": "Wire. The cage, naming's mirror, script identities and vectors, the off-chain wire, booking and fold, in one change; Preimage.hs and preimages/ removed.",
+      "pause": 300
+    },
+    {
+      "text": "Two actors. On a development network Alice books and Bob folds from a directory holding only registry.json, with Alice's directory unreadable; the trie is rebuilt from chain history (#411) and the envelope read from the request.",
+      "pause": 300
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the existing CI commands that exercise what each slice can break; the RED commit is the failure control; nix develop --quiet -c just ci runs once on the final candidate; hosted CI is the net. The frozen gate with its rows, commands and expected exits is kept with the ticket's runtime records.",
+      "pause": 400
+    }
+  ],
+  "live-boundary": [
+    {
+      "text": "Live boundary.",
+      "pause": 500
+    },
+    {
+      "text": "No preprod write and no new registry. The two-actor run uses the CI development network.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "76170d121a4eca649ec940c66b2621d2a01b315c687ffb5a7bb9fb5e5e959546"
+  }
+}

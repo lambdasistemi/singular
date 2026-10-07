@@ -55,7 +55,8 @@ def txInputJson (c : Config) (i : TxInput) : Json :=
     , ("stateToken", toJson i.stateTokens)
     , ("approvalQuantity", toJson i.approvals)
     , ("lovelace", toJson i.lovelace)
-    , ("assets", assetsJson c i.assets) ]
+    , ("assets", assetsJson c i.assets)
+    , ("datumValue", datumJson i.datumValue) ]
 
 def txOutputJson (c : Config) (o : TxOutput) : Json :=
   Json.mkObj
@@ -68,7 +69,8 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("assets", assetsJson c o.assets)
     , ("custodyDatum", toJson o.custodyDatum)
     , ("lovelace", toJson o.lovelace)
-    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x)
+    , ("datumValue", datumJson o.datumValue) ]
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -160,7 +162,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 5
+  , protocolVersion := 6
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable
@@ -229,6 +231,9 @@ structure Scenario where
   request : Request
   lovelace : Nat
   witness : Option RetractWitness := none
+  /-- The outputs of a transaction a caller observed for this exit, judged by
+  `judgeSurface`; none when the scenario judges nothing. -/
+  outputs : Option (List TxOutput) := none
 
 /-- One executed setup step and the state it produced. -/
 structure SetupStep where
@@ -356,6 +361,19 @@ def setupStepJson (stp : SetupStep) : Json :=
     , ("reason", match stp.reason with | none => Json.null | some why => toJson why)
     , ("state", toJson stp.state) ]
 
+/-- One judged output in the spelling a caller gives it: its role, the identity of
+its address, its lovelace, the form of its datum, the datum value it carries and
+the reference its inline datum presents. `settle` reads nothing else of an
+output. -/
+def judgedOutputJson (o : TxOutput) : Json :=
+  Json.mkObj
+    [ ("role", toJson (txRoleName o.role))
+    , ("address", match o.address with | none => Json.null | some a => toJson a)
+    , ("lovelace", toJson o.lovelace)
+    , ("datum", toJson (datumFormName o.datum))
+    , ("datumValue", datumJson o.datumValue)
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
+
 /-- One executed scenario, serialized as the corpus row the checker reads. A
 row carries its scenario's witness when it has one. -/
 def scenarioJson (sc : Scenario) : Json :=
@@ -380,6 +398,13 @@ def scenarioJson (sc : Scenario) : Json :=
         [ ("declaration", toJson premiseDeclaration)
         , ("checked", toJson result.premiseChecked) ])
     , ("observations", match result.observations with | none => Json.null | some o => o) ]
+    ++ (match sc.outputs, result.outcome with
+        | some outputs, .accepted =>
+          [ ("outputs", Json.arr ((outputs.map judgedOutputJson).toArray))
+          , ("settle", match judgeSurface sc [] outputs with
+              | none => Json.null
+              | some why => toJson why) ]
+        | _, _ => [])
 
 /-! ## The batch questions
 
@@ -512,17 +537,6 @@ structure BatchScenario where
   setup : List Request
   question : BatchQuestion
   outputs : Option (List TxOutput) := none
-
-/-- One judged output in the spelling a caller gives it: its role, the identity of
-its address, its lovelace, the form of its datum and the reference its inline datum
-presents. `settle` reads nothing else of an output. -/
-def judgedOutputJson (o : TxOutput) : Json :=
-  Json.mkObj
-    [ ("role", toJson (txRoleName o.role))
-    , ("address", match o.address with | none => Json.null | some a => toJson a)
-    , ("lovelace", toJson o.lovelace)
-    , ("datum", toJson (datumFormName o.datum))
-    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
 
 /-- One executed batch scenario, serialized as the corpus row the checker reads.
 A fold batch row carries its step trace (`folded`); a batch of rejects carries

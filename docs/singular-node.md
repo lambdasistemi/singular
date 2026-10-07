@@ -80,10 +80,9 @@ registry's root, its mirror and its saved state do not move.
 
 `registry fold` folds that request. It is an ordinary command: it signs and
 funds with the wallet it is given, journals its own transactions, and may be
-run by any wallet, not only the one that booked. The registry directory is the
-shared state: the booking leaves there the envelope an insertion delivers, and
-the fold reads it back and checks it against the hash the request names before
-it builds anything.
+run by any wallet, not only the one that booked. An insertion's request carries
+the envelope its fold delivers, so the folder reads it from the pending request
+on the chain; nothing the booking wrote to its own registry directory is needed.
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -114,8 +113,8 @@ sequenceDiagram
 The registry's fold takes every pending request, so a fold is built only while
 exactly one is pending. Before anything is signed the command refuses, naming
 the reason: nothing pending; the request named by `--request` is not the one
-pending; more than one pending, each named; an insertion whose envelope is not
-in the registry directory or is not the one the request names; an edge other
+pending; more than one pending, each named; an insertion whose request carries
+no envelope, or something that is not one; an edge other
 than an insertion or a termination; the outlay past `--max-outlay`; a funding
 output that is not the wallet's; and a request whose processing deadline has
 passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it.

@@ -1,0 +1,56 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, a folder unrelated to Alice, I want to fold her pending insertion from what the chain shows, so it is processed without her staying online and without an application running its own datum service.",
+      "pause": 400
+    }
+  ],
+  "decision": [
+    {
+      "text": "Decision.",
+      "pause": 500
+    },
+    {
+      "text": "The operator ruled on the sixth of October: the datum goes inline in the request, as upstream does. The cage checks the delivered datum by equality and derives the approval hash from it. Existing registries stay as they are, with the limit stated in the release notes. Bob's test directory holds only the registry identity and trie state.",
+      "pause": 400
+    }
+  ],
+  "candidates-compared": [
+    {
+      "text": "Candidates compared.",
+      "pause": 500
+    },
+    {
+      "text": "Only the datum inline in the request is readable from a node alone and present by construction for every delivering edge, with no work for applications. The witness set, metadata and a separate datum output cannot be required by any script that runs at booking. A datum fixed by the protocol would end the application's choice of datum.",
+      "pause": 400
+    }
+  ],
+  "upstream": [
+    {
+      "text": "Upstream.",
+      "pause": 500
+    },
+    {
+      "text": "Upstream requests carry their operation's bytes inline. The defect is Singular's own, and the ruling restores the upstream shape while keeping the protection that no folder chooses the address or the datum.",
+      "pause": 400
+    }
+  ],
+  "consequences": [
+    {
+      "text": "Consequences.",
+      "pause": 500
+    },
+    {
+      "text": "The request wire changes, so the cage and naming script hashes move and a breaking release follows. The model carries the datum value, its consumers follow, and the preimage store is removed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling.md",
+    "sha256": "fc6d10a38dd5dd4c21d9a053ff1aababb25755c9d58cfcd8cf4df22b34bc7349"
+  }
+}

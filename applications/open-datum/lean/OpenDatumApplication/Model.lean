@@ -403,8 +403,9 @@ def pendingOf (w : World) (edge : Edge) (key : Key) : Option Pending :=
 application serves the registry whose state asset the world actually carries,
 the envelope names that full state asset, the registry's active policy, the key
 and the controller as owner, the controller signs, the destination is this
-contract with this envelope's hash, the request names that datum — so the
-delivered output carries the envelope inline — and the protected deposit is the
+contract with this envelope's hash, the request carries that envelope as its
+datum — so the delivered output carries the envelope inline — and the protected
+deposit is the
 request's. Whether the key may be inserted is the fold's question, not the
 application's. -/
 def bookInsertStep (law : Law) (w : World) (r : Request) (e : Envelope)
@@ -419,7 +420,7 @@ def bookInsertStep (law : Law) (w : World) (r : Request) (e : Envelope)
   ensure (e.control.controller == r.owner) "app-owner"
   ensure (signatures.contains e.control.controller) "app-controller-signature"
   ensure (r.output == destinationOf w.app e) "app-destination"
-  ensure r.namesDatum "app-envelope-datum"
+  ensure (r.datum == some (envelopeHash e)) "app-envelope-datum"
   ensure (e.control.deposit == r.deposit) "app-deposit"
   pure { w with pending := w.pending ++ [{ request := booked w.app r signatures
                                           , envelope := some e }] }
@@ -472,8 +473,8 @@ structure FoldRow where
   deriving BEq
 
 /-- Select one booked request for a fold. An insertion's envelope is bound
-again to its request, which must name its datum so the fold delivers the envelope
-inline, and to the actual registry; a termination spends its key's
+again to its request, which must carry that envelope as its datum so the fold
+delivers the envelope inline, and to the actual registry; a termination spends its key's
 live output, whose controller must own the request and whose envelope must name
 the actual registry. -/
 def selectRow (law : Law) (w : World) (sel : Edge × Key) : Except String FoldRow := do
@@ -483,7 +484,7 @@ def selectRow (law : Law) (w : World) (sel : Edge × Key) : Except String FoldRo
     let some e := p.envelope | .error "no-pending-request"
     ensure (p.request.output == destinationOf w.app e && e.control.deposit == p.request.deposit)
       "fold-envelope-binding"
-    ensure p.request.namesDatum "fold-envelope-datum"
+    ensure (p.request.datum == some (envelopeHash e)) "fold-envelope-datum"
     ensure (!law.checkRegistryAsset || e.control.registry == w.registryAsset) "fold-registry"
     pure { pending := p, spent := none }
   | .updateTerminal =>
@@ -511,7 +512,7 @@ carrying the delivered token and the insertion deposit. -/
 def deliveryOf (app : App) (o : AppOutput) : TxOutput :=
   { role := .destination, datum := .inline, address := some (destinationOf app o.envelope)
   , stateTokens := 0, config := none, commitment := some (envelopeHash o.envelope)
-  , assets := o.assets, lovelace := o.lovelace }
+  , assets := o.assets, lovelace := o.lovelace, datumValue := some (envelopeHash o.envelope) }
 
 /-- What the application releases for one spent output: its protected deposit,
 to its controller's key. -/

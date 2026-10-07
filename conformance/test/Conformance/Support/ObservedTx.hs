@@ -35,8 +35,11 @@ import Conformance.Observe.Payments
     )
 import Conformance.Run.Environment (RowCage (..))
 import Conformance.Run.Live
-    ( LiveStep (..)
+    ( DatumIdentity (..)
+    , LiveIdentities (..)
+    , LiveStep (..)
     , StepOutcome (..)
+    , allocateIdentity
     , heldObservation
     , mintOnFirstKey
     , newLiveIdentities
@@ -82,7 +85,7 @@ import Test.Hspec
     , shouldThrow
     )
 
-import Cardano.Crypto.Hash.Class (hashFromBytes)
+import Cardano.Crypto.Hash.Class (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
@@ -102,7 +105,7 @@ import Cardano.Ledger.Api.Tx.Out
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
-import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Hashes (ScriptHash (..), extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -259,6 +262,19 @@ registry datum, so a fold's continued state output stays its only state output.
 plainDatum :: Datum ConwayEra
 plainDatum = mkInlineDatum (PLC.I 0)
 
+{- | Name 'plainDatum' as the datum a booked request carries, as the live run
+does while booking, so an output carrying it is looked up rather than refused.
+-}
+allocatePlainDatum :: LiveIdentities -> IO Integer
+allocatePlainDatum ids =
+    allocateIdentity
+        (liveDatums ids)
+        ( DatumIdentity
+            ( hashToBytes
+                (extractHash (hashData (Data (PLC.I 0) :: Data ConwayEra)))
+            )
+        )
+
 -- | A form told to a non-state output: told inline, it carries 'plainDatum'.
 nonState :: Datum ConwayEra -> Datum ConwayEra
 nonState form = case form of
@@ -368,6 +384,7 @@ observedTx step transaction mint payments destination = do
         (lsCage step)
         (BSC.pack (Live.requestKey (lsRequest step)))
         (Live.requestWallet (lsRequest step))
+    _ <- allocatePlainDatum ids
     observedStepTx
         undefined
         ids
@@ -435,7 +452,9 @@ roleOf value = case value of
         fromMaybe Null (KM.lookup (Key.fromText "role") fields)
     _ -> Null
 
--- | The form an observed input or output reports for its datum.
+{- | The datum field an observed entry reports: its form, on a transaction's
+input or output; the datum it carries, on a holding.
+-}
 datumFormOf :: Value -> Value
 datumFormOf value = case value of
     Object fields ->
@@ -919,53 +938,71 @@ spec =
                 `shouldThrow` errorMentioning "custody"
 
         -- A held token sits on the output its delivery wrote: the census
-        -- reads that output's own datum form for each token it carries.
-        forM_ carriedForms $ \(told, form, reported) ->
-            it
-                ( "a held token on an output "
-                    <> told
-                    <> " is held as "
-                    <> reported
-                )
-                ( do
-                    forms <- heldForms [(custodyIn, carrier form)]
-                    forms `shouldBe` [String (T.pack reported)]
-                )
+        -- reads the datum that output carries for each token it carries, as
+        -- the identity named for it while booking.
+        it
+            "a held token on an output carrying its datum inline is held with that datum"
+            $ do
+                (plain, datums) <- heldDatums [(custodyIn, carrier inlineDatum)]
+                datums `shouldBe` [Number (fromInteger plain)]
 
-        it "keeps each held token's form bound to its own output" $ do
-            forms <-
-                heldForms
-                    [ (custodyIn, carrier hashedDatum)
+        forM_ nonInlineForms $ \(told, form, _) ->
+            it ("a held token on an output " <> told <> " is held with no datum") $ do
+                (_, datums) <- heldDatums [(custodyIn, carrier form)]
+                datums `shouldBe` [Null]
+
+        it "keeps each held token's datum bound to its own output" $ do
+            (plain, datums) <-
+                heldDatums
+                    [ (custodyIn, carrier inlineDatum)
                     , (elsewhere, carrier NoDatum)
                     ]
-            forms `shouldBe` [String "hashed", String "none"]
+            datums `shouldBe` [Number (fromInteger plain), Null]
 
         it
-            "the held census keeps key, kind and output, and leaves the form to the state"
+            "a held token carrying a datum no booked request carries is refused"
             $ do
-                holdings <- holdingsOn [(custodyIn, carrier hashedDatum)]
+                ids <- newLiveIdentities
+                cage <- fixtureCage
+                prepareRegistrationIdentities ids cage keyBytes holderWallet
+                walletHoldingsOf
+                    ids
+                    [keyBytes]
+                    [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
+                    holderWallet
+                    [(custodyIn, carrier inlineDatum)]
+                    `shouldThrow` errorMentioning "datum"
+
+        it
+            "the held census keeps key, kind and output, and leaves the datum to the state"
+            $ do
+                holdings <- snd <$> holdingsOn [(custodyIn, carrier hashedDatum)]
                 map (fieldsOf . heldObservation) holdings
                     `shouldBe` [["key", "kind", "output"]]
                 map fieldsOf holdings `shouldBe` [["datum", "key", "kind", "output"]]
 
-{- | The datum form of every holding the census reads off a holder's outputs,
-in the order it reads them.
+{- | The datum of every holding the census reads off a holder's outputs, in the
+order it reads them, beside the identity named for 'plainDatum'.
 -}
-heldForms :: [(TxIn, TxOut ConwayEra)] -> IO [Value]
-heldForms outputs = map datumFormOf <$> holdingsOn outputs
+heldDatums :: [(TxIn, TxOut ConwayEra)] -> IO (Integer, [Value])
+heldDatums outputs = fmap (map datumFormOf) <$> holdingsOn outputs
 
--- | The holdings the census reads off a holder's outputs.
-holdingsOn :: [(TxIn, TxOut ConwayEra)] -> IO [Value]
+{- | The holdings the census reads off a holder's outputs, beside the identity
+named for 'plainDatum' while booking.
+-}
+holdingsOn :: [(TxIn, TxOut ConwayEra)] -> IO (Integer, [Value])
 holdingsOn outputs = do
     ids <- newLiveIdentities
     cage <- fixtureCage
     prepareRegistrationIdentities ids cage keyBytes holderWallet
-    walletHoldingsOf
-        ids
-        [keyBytes]
-        [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
-        holderWallet
-        outputs
+    plain <- allocatePlainDatum ids
+    (,) plain
+        <$> walletHoldingsOf
+            ids
+            [keyBytes]
+            [("active", SBS.fromShort (cfgActivePolicy fixtureCfg))]
+            holderWallet
+            outputs
 
 -- | The field names of an observed object, in order.
 fieldsOf :: Value -> [Text]

@@ -92,6 +92,7 @@ import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , addrWitnessKeyHash
+    , approvalDestination
     , approvalName
     , computeScriptHash
     , currentPosixMs
@@ -109,6 +110,7 @@ import Singular.Registry.Types
     , Edge
     , OnChainRequest (..)
     , ProofStep (..)
+    , RequestDestination
     , edgeInsertAbsent
     , edgeInsertActive
     , edgeWitnessTerminal
@@ -276,8 +278,8 @@ bookEdge
     -> ByteString
     -- ^ Registry key
     -> Edge
-    -> (ByteString, ByteString)
-    -- ^ Destination: address bytes and datum hash
+    -> RequestDestination
+    -- ^ Destination: address bytes and the datum the request carries
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ Reference inputs the certifying arm reads (custody, for a deletion)
     -> Integer
@@ -323,7 +325,13 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        approval = RegistryEdges.bookingApproval codes edge key owner dest
+        approval =
+            RegistryEdges.bookingApproval
+                codes
+                edge
+                key
+                owner
+                (approvalDestination dest)
         requestAddr = requestAddrFromCfg cfg tid (network cfg)
         -- #183: the datum binds the DEPOSIT, not the tip. The output
         -- holds `bond` = tip + deposit and the fold checks
@@ -381,7 +389,9 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
             <> maybe
                 " with no approval"
                 ( const
-                    (" certified by approval 0x" <> hex (approvalName edge key owner dest))
+                    ( " certified by approval 0x"
+                        <> hex (approvalName edge key owner (approvalDestination dest))
+                    )
                 )
                 approval
         )
@@ -390,28 +400,28 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
 {- | Where an edge delivers (#157 request-destination-binding, naming-approval-rules).
 
 An absence names the address its deposit comes back to, and no datum. An
-activation names the naming application's own address and the record datum
-it will carry — that is what `record_destination` demands of it. A deletion
+activation names the naming application's own address and carries the
+record datum the delivered output will hold — that is what `record_destination` demands of it. A deletion
 and a termination name nothing at all.
 -}
-edgeDestination :: Env -> Edge -> IO (ByteString, ByteString)
+edgeDestination :: Env -> Edge -> IO RequestDestination
 edgeDestination env = edgeDestinationFor env genesisAddr
 
 {- | `edgeDestination` for a named payer: an absence binds the address its
 deposit comes back to, and that is the payer's own.
 -}
 edgeDestinationFor
-    :: Env -> Addr -> Edge -> IO (ByteString, ByteString)
+    :: Env -> Addr -> Edge -> IO RequestDestination
 edgeDestinationFor env payerAddr edge = do
     let (_, _, codes) = envCodes env
         appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network (envCfg env)) (ScriptHashObj appHash) StakeRefNull
     pure $ case edge of
-        0 -> (serialiseAddr payerAddr, BS.empty)
-        1 -> (serialiseAddr appAddr, recordDatumHash)
-        2 -> (serialiseAddr appAddr, recordDatumHash)
-        6 -> (serialiseAddr payerAddr, BS.empty)
-        _ -> (BS.empty, BS.empty)
+        0 -> (serialiseAddr payerAddr, Nothing)
+        1 -> (serialiseAddr appAddr, Just recordDatum)
+        2 -> (serialiseAddr appAddr, Just recordDatum)
+        6 -> (serialiseAddr payerAddr, Nothing)
+        _ -> (BS.empty, Nothing)
 
 {- | What the certifying arm needs to read. A deletion is authorised by the
 custody's own refund address, which naming reads from the custody UTxO as a

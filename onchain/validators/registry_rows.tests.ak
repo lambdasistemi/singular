@@ -48,7 +48,7 @@ fn foldOne(
   key: ByteArray,
   edge: Int,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   carried: Value,
   lovelace: Int,
   proof: Proof,
@@ -805,7 +805,7 @@ fn edgeOwner(edge: Int) -> ByteArray {
   }
 }
 
-fn edgeDestination(edge: Int) -> (ByteArray, ByteArray) {
+fn edgeDestination(edge: Int) -> (ByteArray, Option<Data>) {
   if edge == 0 {
     fx.refundDestination()
   } else if edge == 1 || edge == 2 {
@@ -1073,7 +1073,14 @@ test prop_approval_name_binds_the_key(
 ) {
   let (left, right) = pair
   let nameOf =
-    fn(key) { lib.approvalName(1, key, fx.bookerKey, fx.bookingDestination()) }
+    fn(key) {
+      lib.approvalName(
+        1,
+        key,
+        fx.bookerKey,
+        lib.approvalDestination(fx.bookingDestination()),
+      )
+    }
   if left == right {
     nameOf(left) == nameOf(right)
   } else {
@@ -1094,7 +1101,12 @@ test foreign_policy_approval_refuses() fail {
     1,
     from_asset(
       fx.foreignPolicy,
-      lib.approvalName(1, fx.keyA, fx.bookerKey, fx.bookingDestination()),
+      lib.approvalName(
+        1,
+        fx.keyA,
+        fx.bookerKey,
+        lib.approvalDestination(fx.bookingDestination()),
+      ),
       1,
     ),
   )
@@ -1801,4 +1813,140 @@ test request_at_the_request_script_accepts() {
       redeemers: [Pair(Spend(fx.stateRef), modify)],
     },
   )
+}
+
+// ============================================================================
+// request-carries-datum, delivered-datum-is-request-datum — the request carries the datum it
+// names, and the receiving output carries exactly it
+// ============================================================================
+
+/// One fold of `edge` whose request names `destination`, under the
+/// approval minted for exactly that destination.
+fn foldEdgeDestined(
+  edge: Int,
+  destination: (ByteArray, Option<Data>),
+  outputs: List<Output>,
+) -> Bool {
+  foldOne(
+    edgeRoot(edge),
+    edgeNextRoot(edge),
+    fx.keyA,
+    edge,
+    edgeOwner(edge),
+    destination,
+    fx.approval(edge, fx.keyA, edgeOwner(edge), destination),
+    fx.requestLovelace,
+    edgeProof(edge),
+    edgeInputs(edge),
+    outputs,
+    edgeMint(edge),
+  )
+}
+
+test active_token_with_the_carried_datum_accepts() {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_with_another_than_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.otherDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_with_a_datum_where_none_is_carried_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, None),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test active_token_without_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    1,
+    (fx.recordAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        NoDatum,
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test terminal_token_with_the_carried_datum_accepts() {
+  foldEdgeDestined(
+    6,
+    (fx.bookerAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.terminalPolicy,
+        fx.keyA,
+        fx.bookerAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+test terminal_token_with_another_than_the_carried_datum_refuses() fail {
+  foldEdgeDestined(
+    6,
+    (fx.bookerAddress, Some(fx.recordDatum())),
+    [
+      fx.deliveryOutput(
+        fx.terminalPolicy,
+        fx.keyA,
+        fx.bookerAddress,
+        InlineDatum(fx.otherDatum()),
+        fx.deposit,
+      ),
+    ],
+  )
+}
+
+/// The approval binds the carried datum by the same hash it bound before
+/// the request carried it: the hash of the serialised datum, empty for
+/// none, so an approval name is byte-identical for the same tuple.
+test carried_datum_hash_is_the_named_hash() {
+  and {
+    lib.destinationDatumHash(Some(fx.recordDatum())) == fx.datumHashOf(
+      fx.recordDatum(),
+    ),
+    lib.destinationDatumHash(None) == #"",
+  }
 }

@@ -1,0 +1,48 @@
+{
+  "slice-model": [
+    {
+      "text": "Slice: model.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the model to fail whenever a fold needs an input the chain does not hold.",
+      "pause": 400
+    },
+    {
+      "text": "The three statements are committed failing, then proved over the datum value, then every consumer of the model follows.",
+      "pause": 400
+    }
+  ],
+  "slice-wire": [
+    {
+      "text": "Slice: wire.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice, I want my request to carry my datum, so anyone can fold it.",
+      "pause": 400
+    },
+    {
+      "text": "Cage refusal tests are committed failing; the cage destination carries the datum with naming's mirror, identities and vectors; booking and fold use the request's datum; the preimage store is removed.",
+      "pause": 400
+    }
+  ],
+  "slice-two-actors": [
+    {
+      "text": "Slice: two actors.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I want to fold Alice's insertion with none of her files.",
+      "pause": 400
+    },
+    {
+      "text": "Bob's fold is refused for the missing envelope on a tree without the wire slice, then passes on the development network in the job that runs the packaged commands.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5ef63426d8c0f23fe2293d41f1ce2444bc2193a620038395984dad0374b752dd"
+  }
+}

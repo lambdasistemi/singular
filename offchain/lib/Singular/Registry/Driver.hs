@@ -66,6 +66,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
+import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
@@ -260,8 +261,8 @@ foldEdgeTo
     :: Registry
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
-    -- ^ destination address and datum, as `Edges.bookEdgeTo` takes them
+    -> (ByteString, Maybe PLC.Data)
+    -- ^ destination address and the datum it carries, as `Edges.bookEdgeTo` takes them
     -> IO FoldOutcome
 foldEdgeTo reg key edge dest = foldEdgeWith reg key edge (Just dest)
 
@@ -269,7 +270,7 @@ foldEdgeWith
     :: Registry
     -> ByteString
     -> Edge
-    -> Maybe (ByteString, ByteString)
+    -> Maybe (ByteString, Maybe PLC.Data)
     -> IO FoldOutcome
 foldEdgeWith reg key edge mDest = do
     rootBefore <- mirrorRoot reg

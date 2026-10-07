@@ -898,7 +898,6 @@ foldSpecContext env0 v fs = do
             { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
-            , rcDatums = [(recordDatumHash, recordDatum)]
             , rcHolderUtxos = fsHolderUtxos fs
             , rcHolderReleases = Map.empty
             , -- A refusal row exists to watch the chain refuse a fold the

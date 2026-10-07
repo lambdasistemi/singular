@@ -88,22 +88,20 @@ def optNat (j : Json) (field : String) : Nat :=
   (j.getObjValAs? Nat field).toOption.getD 0
 
 /-- A request as a scenario states it: no approval and no claim, which the
-application's booking supplies. Whether it names its destination datum is read
-as written; a request that does not say names none, the root model's default,
-and a flag that is not a Boolean is refused. -/
+application's booking supplies. The datum it carries is read as written; a
+request that does not say carries none, the root model's default, and a datum
+that is not a value is refused. -/
 def requestFromJson (j : Json) : Except String Request := do
-  let namesDatum ← match j.getObjVal? "namesDatum" with
-    | .error _ => pure false
-    | .ok v => fromJson? v
+  let datum ← datumOfJson j "datum"
   pure { edge := ← j.getObjValAs? Edge "edge", key := ← j.getObjValAs? Nat "key"
        , owner := optNat j "owner", refundAddress := optNat j "refundAddress"
        , deposit := optNat j "deposit", output := optNat j "output", tip := optNat j "tip"
-       , namesDatum }
+       , datum }
 
 def requestToJson (r : Request) : Json :=
   Json.mkObj [("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
-    , ("output", toJson r.output), ("tip", toJson r.tip), ("namesDatum", toJson r.namesDatum)]
+    , ("output", toJson r.output), ("tip", toJson r.tip), ("datum", datumJson r.datum)]
 
 /-- A payment output at a key, the only output kind a release is judged on. -/
 def ownerOutput (key lovelace : Nat) : TxOutput :=
@@ -274,11 +272,11 @@ def envelopeFor (key : Key) (payload : PlutusData) : Envelope :=
   , payload := payload }
 
 /-- A valid insertion request: its destination is this contract with the
-envelope's hash, and it names that datum, so the delivery carries the envelope
-inline. -/
+envelope's hash, and it carries that envelope as its datum, so the delivery
+carries the envelope inline. -/
 def insertRequest (key : Key) (e : Envelope) : Request :=
   { edge := .insertActive, key := key, owner := controller, deposit := insertDeposit
-  , output := destinationOf app0 e, namesDatum := true }
+  , output := destinationOf app0 e, datum := some (envelopeHash e) }
 
 def terminateRequest (key : Key) : Request :=
   { edge := .updateTerminal, key := key, owner := controller, deposit := terminateDeposit }
@@ -307,9 +305,9 @@ def otherRegistryEnvelope : Envelope :=
     control := { (envelopeFor 5 payload0).control with registry := { policy := 50, assetName := 52 } } }
 
 /-- A booking identical to a valid insertion of key 5 except that its request
-names no datum: the delivered output would carry no envelope. -/
+carries no datum: the delivered output would carry no envelope. -/
 def bookingNoDatum : AppAction :=
-  .bookInsert { insertRequest 5 (envelopeFor 5 payload0) with namesDatum := false }
+  .bookInsert { insertRequest 5 (envelopeFor 5 payload0) with datum := none }
     (envelopeFor 5 payload0) [controller]
 
 /-- Book and fold the termination of key 5, whose output reference is `ref`. -/
@@ -454,8 +452,9 @@ def boundaryWorlds : List BoundaryWorld :=
 /-! ## The selection boundary
 
 A pending insertion reaches a fold only through a booking, which requires it to
-name its datum. The fold's selection re-checks it anyway, so a world no action
-reaches — the booked insertion of key 5 with its flag cleared — cannot turn into
+carry its envelope as its datum. The fold's selection re-checks it anyway, so a
+world no action reaches — the booked insertion of key 5 with its datum cleared —
+cannot turn into
 an envelope the registry never delivers: the same fold that accepts the reached
 booking refuses it at selection. -/
 
@@ -463,7 +462,7 @@ def bookedWorld : World := reachWorld [bookInsertKey 5]
 
 def unnamedPendingWorld : World :=
   { bookedWorld with pending := bookedWorld.pending.map fun p =>
-      { p with request := { p.request with namesDatum := false } } }
+      { p with request := { p.request with datum := none } } }
 
 def selectionFold : AppAction := .fold [(.insertActive, 5)] []
 

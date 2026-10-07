@@ -925,7 +925,6 @@ test-suite cage-tests
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Plan
-    Singular.CLI.Preimage
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
@@ -1161,7 +1160,6 @@ test-suite e2e-tests
     , base
     , base16-bytestring
     , bytestring
-    , cardano-crypto-class
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
@@ -1291,7 +1289,6 @@ executable singular
     Singular.CLI.Live
     Singular.CLI.Outlay
     Singular.CLI.Plan
-    Singular.CLI.Preimage
     Singular.CLI.Preview
     Singular.CLI.Proof
     Singular.CLI.Receipt

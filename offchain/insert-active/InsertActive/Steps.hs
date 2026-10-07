@@ -95,6 +95,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef
+    , RequestDestination
     , edgeInsertActive
     )
 import Singular.Registry.Wallet (Wallet (..))
@@ -127,8 +128,8 @@ an @insertActive@ to the APPLICATION's script address, which is right
 for naming and wrong here: @open.ak@ is a minting policy with no
 spending arm, so a token routed there is locked forever.
 -}
-walletDestination :: Story -> (ByteString, ByteString)
-walletDestination story = (serialiseAddr (walletAddr (storyWallet story)), "")
+walletDestination :: Story -> RequestDestination
+walletDestination story = (serialiseAddr (walletAddr (storyWallet story)), Nothing)
 
 {- | Boot the open registry in this node session and narrate its two
 policies and its token.

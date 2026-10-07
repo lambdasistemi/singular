@@ -106,6 +106,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef
+    , RequestDestination
     , edgeInsertAbsent
     , edgeInsertActive
     , edgeUpdateTerminal
@@ -150,8 +151,8 @@ naming and wrong here: @open.ak@ is a minting policy with no spending
 arm, so a token routed there is locked forever and could never be
 retired.
 -}
-walletDestination :: Registry -> (ByteString, ByteString)
-walletDestination reg = (serialiseAddr (walletAddr (sessWallet (regSession reg))), "")
+walletDestination :: Registry -> RequestDestination
+walletDestination reg = (serialiseAddr (walletAddr (sessWallet (regSession reg))), Nothing)
 
 -- | Start the run's shared state over these capabilities.
 openSession

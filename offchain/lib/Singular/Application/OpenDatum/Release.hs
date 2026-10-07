@@ -5,11 +5,10 @@ License     : Apache-2.0
 
 A fold of an open-datum registry runs the registry's own duties
 ('Singular.Registry.TxBuilder.Update.updateTokenWithDuties'); the
-application adds two things to the context it folds with.
+application adds one thing to the context it folds with. An insertion's
+request carries its envelope (#419), so the delivery needs nothing from
+here.
 
-- **Deliveries.** An insertion's request names only the envelope's hash;
-  the delivered output carries the envelope itself. 'deliveries' puts
-  each booked envelope's preimage where the delivery duty looks for it.
 - **Releases.** A termination burns the key's active token from its live
   output at this script. 'releases' reads each live output's inline
   envelope and returns how the fold spends it — the @Release@ redeemer
@@ -23,8 +22,7 @@ the fold owes, the script decides whether the spend is valid; this
 module only supplies what the application knows.
 -}
 module Singular.Application.OpenDatum.Release
-    ( deliveries
-    , releaseOf
+    ( releaseOf
     , releases
     , withApplication
     , liveEnvelope
@@ -52,8 +50,6 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , envelopeFromData
-    , envelopeHash
-    , envelopeToData
     )
 import Singular.Registry.Ledger (ConwayEra, TxIn)
 import Singular.Registry.TxBuilder.Internal
@@ -64,10 +60,6 @@ import Singular.Registry.TxBuilder.Update
     ( HolderRelease (..)
     , RegistryContext (..)
     )
-
--- | The preimages of the envelopes the booked insertions name.
-deliveries :: [Envelope] -> [(SBS.ShortByteString, PLC.Data)]
-deliveries es = [(SBS.toShort (envelopeHash e), envelopeToData e) | e <- es]
 
 -- | The envelope a live output carries inline, or why it carries none.
 liveEnvelope :: TxOut ConwayEra -> Either String Envelope
@@ -117,9 +109,8 @@ releases
     -> Either String (Map.Map TxIn HolderRelease)
 releases applied = fmap Map.fromList . mapM (releaseOf applied)
 
-{- | The fold context with the application's part added: the delivered
-envelopes' preimages, the live outputs as the burn sources a termination
-draws from, how each is released, and the output carrying the applied
+{- | The fold context with the application's part added: the live outputs
+as the burn sources a termination draws from, how each is released, and the output carrying the applied
 script as a reference script, so a release spend resolves its script
 beside the registry's own references. Without that output the fold
 attaches the script instead.
@@ -128,20 +119,15 @@ withApplication
     :: SBS.ShortByteString
     -> Maybe (TxIn, TxOut ConwayEra)
     -- ^ The applied script's published reference output
-    -> [Envelope]
-    -- ^ Envelopes the pending insertions name
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ The live outputs at the applied script
     -> RegistryContext
     -> Either String RegistryContext
-withApplication applied reference envelopes live ctx = do
+withApplication applied reference live ctx = do
     released <- releases applied live
     pure
         ctx
-            { rcDatums =
-                rcDatums ctx
-                    <> [(SBS.fromShort h, d) | (h, d) <- deliveries envelopes]
-            , rcHolderUtxos = rcHolderUtxos ctx <> live
+            { rcHolderUtxos = rcHolderUtxos ctx <> live
             , rcHolderReleases = Map.union (rcHolderReleases ctx) released
             , rcRefUtxos = rcRefUtxos ctx <> maybe [] pure reference
             }

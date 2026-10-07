@@ -154,10 +154,12 @@ theorem settle_none_le (ps : List Payment) (outs : List TxOutput) (h : settle ps
   · have hm : rcp ∈ (ps.map (·.recipient)).eraseDups := (mem_eraseDups _ _).2 hr
     unfold settle at h
     have := List.findSome?_eq_none_iff.1 h rcp hm
+    dsimp only at this
     by_cases hle : owedTo rcp ps ≤ receivedBy rcp outs
     · exact hle
-    · rw [if_neg hle] at this
-      exact Option.noConfusion this
+    · exfalso
+      revert this
+      split <;> (try split) <;> simp_all
   · have : ps.filter (·.recipient == rcp) = [] := by
       rw [List.filter_eq_nil_iff]
       intro p hp hpr
@@ -468,10 +470,10 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
         | exact Except.noConfusion h
         | (simp at h)
 
-/-- An insertion `selectRow` accepts names its datum. -/
+/-- An insertion `selectRow` accepts carries a datum. -/
 theorem selectRow_insert_names_datum (w : World) (key : Key) (row : FoldRow)
     (h : selectRow Law.standard w (.insertActive, key) = .ok row) :
-    row.pending.request.namesDatum = true := by
+    row.pending.request.datum.isSome = true := by
   unfold selectRow at h
   cases hp : pendingOf w .insertActive key with
   | none =>
@@ -494,7 +496,9 @@ theorem selectRow_insert_names_datum (w : World) (key : Key) (row : FoldRow)
       obtain ⟨_, _, h⟩ := bind_ok h
       have hrow := (ok_inj h).symm
       subst hrow
-      exact ensure_ok e2
+      have hd := ensure_ok e2
+      simp only [beq_iff_eq] at hd
+      simp [hd]
 
 theorem mapM_ok_mem {α β : Type} (f : α → Except String β) : ∀ (xs : List α) (ys : List β),
     xs.mapM f = .ok ys → (∀ y ∈ ys, ∃ x ∈ xs, f x = .ok y) ∧ (∀ x ∈ xs, ∃ y ∈ ys, f x = .ok y)
@@ -1228,7 +1232,7 @@ theorem foldActions_insert_holding : ∀ (batch : List Request) (s : RegistrySta
     (∀ b ∈ batch, b.edge = .insertActive ∨ b.edge = .updateTerminal) →
     ∀ b ∈ batch, b.edge = .insertActive →
       (∀ c ∈ batch, c.edge = .updateTerminal → c.key ≠ b.key) →
-      ∃ x ∈ t.state.held, x.key = b.key ∧ x.kind = .active ∧ x.datum = deliveredDatum b
+      ∃ x ∈ t.state.held, x.key = b.key ∧ x.kind = .active ∧ x.datum = b.datum
   | [], _, _, _, _, b, hb, _, _ => absurd hb (List.not_mem_nil)
   | b0 :: bs, s, t, h, hE, b, hb, hins, hT => by
     obtain ⟨m, r, hs, hr, rfl⟩ := foldActions_cons_ok s b0 bs t h
@@ -1237,7 +1241,7 @@ theorem foldActions_insert_holding : ∀ (batch : List Request) (s : RegistrySta
     rcases List.mem_cons.1 hb with rfl | hb'
     · obtain ⟨_, hm⟩ := step_eq_ok s b m hs
       have hheld := (applyEdge_insertActive s b hins).2.2.2.1
-      let x : Holding := { key := b.key, kind := .active, output := b.output, datum := deliveredDatum b }
+      let x : Holding := { key := b.key, kind := .active, output := b.output, datum := b.datum }
       have hxm : x ∈ m.state.held := by
         rw [hm, hheld]
         exact List.mem_cons_self ..

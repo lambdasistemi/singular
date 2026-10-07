@@ -49,7 +49,7 @@ envelopeA =
                 { ctlVersion = envelopeVersion
                 , ctlRegistry =
                     StateAsset
-                        (unhex "7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c")
+                        (unhex "270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd93")
                         "cage-token"
                 , ctlActivePolicy = BS.replicate 28 0xaa
                 , ctlKey = "keyA"
@@ -68,11 +68,11 @@ golden = describe "golden vector" $ do
 
 goldenCbor :: ByteString
 goldenCbor =
-    "d8799fd8799f01d8799f581c7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c4a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
+    "d8799fd8799f01d8799f581c270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd934a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
 
 goldenHash :: ByteString
 goldenHash =
-    "6d22573e020d4fc75938bb98f9bca53b51906f07627447a09cbe2405a45cc1c1"
+    "2844c9737cde5dca3effcff86669cd38affda906362c5c6fccdd529e3fca9609"
 
 -- ---------------------------------------------------------
 -- Plutus data codec

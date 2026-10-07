@@ -19,7 +19,7 @@ use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
 }
-use lib.{approvalName}
+use lib.{approvalDestination, approvalName}
 use open_datum
 use registry_fixtures as fx
 use state
@@ -144,23 +144,31 @@ fn holding() -> Input {
 /// `Singular.Application.OpenDatum.EnvelopeSpec` asserts for the same
 /// envelope.
 test envelope_a_serialises_to_the_shared_cbor() {
-  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c7c58a200ab88798562d98e3223dff44d27e2be29b18387c1b1bd450c4a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
+  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd934a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
 }
 
 test envelope_a_hashes_to_the_shared_digest() {
-  envelopeHash(envelopeA()) == #"6d22573e020d4fc75938bb98f9bca53b51906f07627447a09cbe2405a45cc1c1"
+  envelopeHash(envelopeA()) == #"2844c9737cde5dca3effcff86669cd38affda906362c5c6fccdd529e3fca9609"
 }
 
 // ----------------------------------------------------------------------------
 // Booking an insertion
 // ----------------------------------------------------------------------------
 
-fn insertDestination(e: Envelope) -> (ByteArray, ByteArray) {
-  (appAddress(), envelopeHash(e))
+/// An insertion's request destination: this script, carrying the
+/// envelope itself as the datum the delivered output must hold.
+fn insertDestination(e: Envelope) -> (ByteArray, Option<Data>) {
+  let carried: Data = e
+  (appAddress(), Some(carried))
 }
 
 fn insertName(e: Envelope) -> ByteArray {
-  approvalName(1, e.control.key, controller, insertDestination(e))
+  approvalName(
+    1,
+    e.control.key,
+    controller,
+    approvalDestination(insertDestination(e)),
+  )
 }
 
 /// The booked request, carrying its approval.
@@ -168,7 +176,7 @@ fn requestOutput(
   edge: Int,
   key: ByteArray,
   owner: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   depositAmount: Int,
   name: ByteArray,
 ) -> Output {
@@ -360,17 +368,21 @@ test insert_booking_short_request_deposit_refuses() {
   ) == False
 }
 
-/// A request that names no datum: its destination is this script with an
-/// EMPTY datum hash, and the minted name binds exactly that request, so
-/// nothing but the missing datum is wrong. The mint refuses at
-/// `app-envelope-datum`; `insert_booking_control_accepts` is the same
-/// booking naming the envelope's hash.
+/// A request that carries no datum: its destination is this script with
+/// none, and the minted name binds exactly that request, so nothing but
+/// the missing datum is wrong. The mint refuses at `app-envelope-datum`;
+/// `insert_booking_control_accepts` is the same booking carrying the
+/// envelope.
 test insert_booking_naming_no_datum_refuses() {
   let e = envelopeA()
-  let bare = (appAddress(), #"")
+  let bare = (appAddress(), None)
   bookInsert(
     e,
-    insertTxTo(e, bare, approvalName(1, e.control.key, controller, bare)),
+    insertTxTo(
+      e,
+      bare,
+      approvalName(1, e.control.key, controller, approvalDestination(bare)),
+    ),
   ) == False
 }
 
@@ -378,7 +390,7 @@ test insert_booking_naming_no_datum_refuses() {
 /// approval named `name`.
 fn insertTxTo(
   e: Envelope,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   name: ByteArray,
 ) -> Transaction {
   Transaction {
@@ -402,7 +414,12 @@ fn insertTxTo(
 test insert_booking_other_edge_refuses() {
   let e = envelopeA()
   let updateActive =
-    approvalName(2, e.control.key, controller, insertDestination(e))
+    approvalName(
+      2,
+      e.control.key,
+      controller,
+      approvalDestination(insertDestination(e)),
+    )
   bookInsert(
     e,
     insertTx(e, [stateInput()], [controller], e.control.deposit, updateActive),
@@ -787,7 +804,7 @@ fn terminateRequest(owner: ByteArray, key: ByteArray) -> Input {
       3,
       key,
       owner,
-      (#"", #""),
+      (#"", None),
       fx.deposit,
       approvalName(3, key, owner, (#"", #"")),
     ),
@@ -1265,7 +1282,7 @@ fn requestTwo() -> Input {
             requestKey: fx.keyA,
             edge: 3,
             submitted_at: 0,
-            destination: (#"", #""),
+            destination: (#"", None),
             deposit: fx.deposit,
           },
         ),

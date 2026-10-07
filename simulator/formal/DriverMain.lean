@@ -69,16 +69,16 @@ def insertAbsentDigest : String :=
   "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
+  "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
+  "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
-  "6ed0639458ff3086da939df84bcb8578a7ffea396441560382897ba4c245a160"
+  "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"
 def updateTerminalInversion : String := "Singular.Statements.update_terminal_inversion"
 def updateTerminalInversionDigest : String :=
   "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
@@ -94,6 +94,13 @@ def retractAdmittedIffDigest : String :=
 def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
 def retractRefusalFirstFailingDigest : String :=
   "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+def deliveredDatumIsRequestDatum : String :=
+  "Singular.Statements.delivered_datum_is_request_datum"
+def deliveredDatumIsRequestDatumDigest : String :=
+  "76247fab5884aefffb7639b05675206c16b48c191fb0bd8c63ce87afba58c4a5"
+def foldRefusesForeignDatum : String := "Singular.Statements.fold_refuses_foreign_datum"
+def foldRefusesForeignDatumDigest : String :=
+  "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
 def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
 def bookedAtMostOnceDigest : String :=
   "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
@@ -160,6 +167,37 @@ def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with 
 def ownerPaid (owner lovelace : Nat) : TxOutput :=
   { role := .owner, datum := .none, address := some owner, stateTokens := 0, config := none
   , commitment := none, assets := [], lovelace := lovelace }
+
+/-- An active registration of key 5 for owner 42, routed to output 99 with no
+deposit, whose request carries the datum 7. -/
+def zeroDepositCarryingDatum : Request :=
+  { request .insertActive 5 42 99 0 0 with datum := some 7 }
+
+/-- The token carrier of that registration as a caller observed it: at output 99,
+carrying the datum 8 inline rather than the request's 7. -/
+def foreignCarrier : TxOutput :=
+  { role := .destination, datum := .inline, address := some 99, stateTokens := 0
+  , config := none, commitment := none, assets := [], lovelace := 0, datumValue := some 8 }
+
+/-- The registration folded with a carrier bearing a foreign datum: the deposit is
+zero, so no floor is short, and the delivery is still refused `destination`. -/
+def foreignDatumDelivery : Scenario :=
+  { id := "DR16-deliver-foreign-datum-without-deposit"
+  , theoremName := foldRefusesForeignDatum, statementSha256 := foldRefusesForeignDatumDigest
+  , kind := "witness", mutates := none, requiresReachableState := false
+  , start := s0, setup := [], exit := .fold .insertActive
+  , request := zeroDepositCarryingDatum, lovelace := lovelace
+  , outputs := some [foreignCarrier] }
+
+/-- Its twin with no carrier at all: nothing reaches the destination. -/
+def carrierlessDelivery : Scenario :=
+  { foreignDatumDelivery with
+    id := "DR17-deliver-without-carrier-or-deposit", outputs := some [] }
+
+-- A delivery whose carrier bears another datum, and one with no carrier at all,
+-- is refused `destination` whatever the deposit, as the cage refuses it.
+#guard [foreignDatumDelivery, carrierlessDelivery].all fun sc =>
+  judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
@@ -250,6 +288,17 @@ def scenarios : List Scenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
     , request := registerActiveClaimed, lovelace := lovelace }
+    -- An active registration whose request carries a datum: the destination output
+    -- carries that very datum, inline.
+  , { id := "DR15-register-active-carrying-datum"
+    , theoremName := deliveredDatumIsRequestDatum
+    , statementSha256 := deliveredDatumIsRequestDatumDigest
+    , kind := "witness", mutates := none, requiresReachableState := false
+    , start := s0, setup := [], exit := .fold .insertActive
+    , request := { request .insertActive 43 42 556 0 55 with datum := some 7 }
+    , lovelace := lovelace }
+  , foreignDatumDelivery
+  , carrierlessDelivery
   ]
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a

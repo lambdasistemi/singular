@@ -37,6 +37,7 @@ module Singular.Registry.Types
     , requestPhase
     , OnChainRoot (..)
     , OnChainRequest (..)
+    , RequestDestination
     , OnChainTokenState (..)
     , OnChainTxOutRef (..)
 
@@ -73,6 +74,7 @@ import Singular.Registry.Wire.Redeemer
 import Singular.Registry.Wire.Request
     ( Edge
     , OnChainRequest (..)
+    , RequestDestination
     , RequestPhase (..)
     , edgeDeleteAbsent
     , edgeDeleteActive

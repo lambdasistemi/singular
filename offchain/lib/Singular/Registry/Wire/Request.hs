@@ -21,6 +21,7 @@ module Singular.Registry.Wire.Request
     , edgeWitnessTerminal
     , edgeName
     , OnChainRequest (..)
+    , RequestDestination
 
       -- * Request phase
     , RequestPhase (..)
@@ -104,6 +105,11 @@ edgeName e = case e of
     6 -> "witnessTerminal"
     _ -> "edge-" <> show e
 
+{- | Where a request's minted token goes, and the datum the receiving output
+must carry, or none (#419): what the request carries on the chain.
+-}
+type RequestDestination = (ByteString, Maybe Data)
+
 {- | On-chain request to modify a token's trie.
 Matches Aiken @types\/Request@.
 -}
@@ -125,12 +131,14 @@ data OnChainRequest = OnChainRequest
     -}
     , requestSubmittedAt :: !Integer
     -- ^ POSIX time (ms) when the request was submitted
-    , requestDestination :: !(ByteString, ByteString)
-    {- ^ Where this request's minted token goes, and the hash of the
-    inline datum the receiving output must carry (#157 request-destination-binding;
-    appended last). Encoded as a two-element list, exactly as Aiken
-    encodes a tuple. Empty datum hash means a datum-less output; for
-    edge 0 the address component is the refund address.
+    , requestDestination :: !RequestDestination
+    {- ^ Where this request's minted token goes, and the inline datum the
+    receiving output must carry, or none for a datum-less output (#157
+    request-destination-binding, appended last; #419: the request carries
+    the datum itself, so any party can build the fold from the chain).
+    Encoded as a two-element list, exactly as Aiken encodes a tuple, the
+    datum as Aiken's @Option@. For edge 0 the address component is the
+    refund address.
     -}
     }
     deriving stock (Show, Eq)
@@ -191,7 +199,7 @@ instance ToData OnChainRequest where
                 , I requestSubmittedAt
                 , List
                     [ bsToD (fst requestDestination)
-                    , bsToD (snd requestDestination)
+                    , maybe (Constr 1 []) (Constr 0 . pure) (snd requestDestination)
                     ]
                 ]
 
@@ -199,13 +207,13 @@ instance FromData OnChainRequest where
     fromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, own, k, I edge, I dep, I sub, List [da, dh]] -> do
+            [tok, own, k, I edge, I dep, I sub, List [da, dd]] -> do
                 requestToken <-
                     fromBuiltinData (mkD tok)
                 requestOwner <- bbsFromD own
                 requestKey <- bsFromD k
                 destAddress <- bsFromD da
-                destDatum <- bsFromD dh
+                destDatum <- carriedDatum dd
                 let requestEdge = edge
                     requestDeposit = dep
                     requestSubmittedAt = sub
@@ -217,19 +225,27 @@ instance UnsafeFromData OnChainRequest where
     unsafeFromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, B own, B k, I edge, I dep, I sub, List [B da, B dh]] ->
-                OnChainRequest
-                    { requestToken =
-                        unsafeFromBuiltinData (mkD tok)
-                    , requestOwner =
-                        BuiltinByteString own
-                    , requestKey = k
-                    , requestEdge = edge
-                    , requestDeposit = dep
-                    , requestSubmittedAt = sub
-                    , requestDestination = (da, dh)
-                    }
+            [tok, B own, B k, I edge, I dep, I sub, List [B da, dd]]
+                | Just datum <- carriedDatum dd ->
+                    OnChainRequest
+                        { requestToken =
+                            unsafeFromBuiltinData (mkD tok)
+                        , requestOwner =
+                            BuiltinByteString own
+                        , requestKey = k
+                        , requestEdge = edge
+                        , requestDeposit = dep
+                        , requestSubmittedAt = sub
+                        , requestDestination = (da, datum)
+                        }
         _ ->
             error
                 "unsafeFromBuiltinData:\
                 \ OnChainRequest"
+
+-- | The datum a request carries, decoded from Aiken's @Option<Data>@.
+carriedDatum :: Data -> Maybe (Maybe Data)
+carriedDatum option = case option of
+    Constr 0 [datum] -> Just (Just datum)
+    Constr 1 [] -> Just Nothing
+    _ -> Nothing

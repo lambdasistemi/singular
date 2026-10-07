@@ -100,9 +100,11 @@ genRequest =
         <*> genNonNeg
         <*> genDestination
 
--- | The destination a request names (#157 request-destination-binding).
-genDestination :: Gen (BS.ByteString, BS.ByteString)
-genDestination = (,) <$> genBS <*> genBS
+{- | The destination a request names: its address and the datum the receiving
+output must carry, or none (#419).
+-}
+genDestination :: Gen (BS.ByteString, Maybe Data)
+genDestination = (,) <$> genBS <*> oneof [pure Nothing, Just . B <$> genBS]
 
 genTokenState :: Gen OnChainTokenState
 genTokenState =
@@ -229,7 +231,7 @@ fixedRequest =
         2
         7000001
         1700000000000
-        ("dest-addr", "dest-datum-hash")
+        ("dest-addr", Just (B "dest-datum"))
 
 fixedRequestWire :: Data
 fixedRequestWire =
@@ -241,7 +243,7 @@ fixedRequestWire =
         , I 2
         , I 7000001
         , I 1700000000000
-        , List [B "dest-addr", B "dest-datum-hash"]
+        , List [B "dest-addr", Constr 0 [B "dest-datum"]]
         ]
 
 fixedState :: OnChainTokenState
@@ -405,6 +407,15 @@ spec = do
         it "encodes the seven fields in the exact Aiken order" $
             toBuiltinData fixedRequest
                 `shouldBe` BuiltinData fixedRequestWire
+        it "carries the datum it names as Some, and none as None (#419)" $
+            toBuiltinData
+                fixedRequest{requestDestination = ("dest-addr", Nothing)}
+                `shouldBe` BuiltinData
+                    ( case fixedRequestWire of
+                        Constr 0 fields ->
+                            Constr 0 (take 6 fields <> [List [B "dest-addr", Constr 1 []]])
+                        other -> other
+                    )
 
     describe "OnChainTokenState" $ do
         it "roundtrips via ToData/FromData" $

@@ -14,8 +14,8 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction, find_input,
 }
 use lib.{
-  approvalName, decodeAddress, edgeInsertActive, edgeUpdateTerminal,
-  edgeWitnessTerminal,
+  approvalName, decodeAddress, destinationDatumHash, edgeInsertActive,
+  edgeUpdateTerminal, edgeWitnessTerminal,
 }
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
 use registry/refusal.{traceFalse}
@@ -222,17 +222,17 @@ fn bookInsert(
     when bookedRequest(tx.outputs, policy_id, name) is {
       None -> traceFalse(@"app-request")
       Some(request) -> {
-        let (requestAddress, requestHash) = request.destination
+        let (requestAddress, requestDatum) = request.destination
         if request.edge != edgeInsertActive || request.requestKey != key || request.requestOwner != owner {
           traceFalse(@"app-request")
         } else if requestAddress != address {
           traceFalse(@"app-destination")
-        } else if requestHash == #"" {
-          // The request names no datum, so the fold would deliver the
+        } else if requestDatum == None {
+          // The request carries no datum, so the fold would deliver the
           // token to an output carrying none: the model's
           // `app-envelope-datum`.
           traceFalse(@"app-envelope-datum")
-        } else if requestHash != datumHash {
+        } else if destinationDatumHash(requestDatum) != datumHash {
           traceFalse(@"app-destination")
         } else if request.deposit != control.deposit {
           traceFalse(@"app-deposit")

@@ -58,7 +58,7 @@ pub type Duty {
   DeliverToken {
     policy: PolicyId,
     key: ByteArray,
-    destination: (ByteArray, ByteArray),
+    destination: (ByteArray, Option<Data>),
     floor: Int,
     count: Int,
     agreed: Bool,
@@ -106,7 +106,7 @@ pub fn dutiesOf(
   edge: Int,
   owner: VerificationKeyHash,
   key: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   floor: Int,
 ) -> List<Duty> {
   let (refund, _) = destination
@@ -192,7 +192,7 @@ fn mergeDeliver(
   existing: List<Duty>,
   policy: PolicyId,
   key: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   floor: Int,
   count: Int,
   agreed: Bool,

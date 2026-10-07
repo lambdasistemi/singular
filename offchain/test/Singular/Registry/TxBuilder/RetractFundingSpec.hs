@@ -150,7 +150,7 @@ requestOut submittedAt =
                     1
                     2_000_000
                     submittedAt
-                    ("", "")
+                    ("", Nothing)
                 )
 
 stateOut :: TxOut ConwayEra

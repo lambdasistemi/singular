@@ -188,17 +188,20 @@ bookings = describe "bookings" $ do
         insert = insertApproval Testnet applied stateIn envelope
         terminate = terminateApproval applied stateIn holdingIn "keyA" controller
     it
-        "names an insertion's destination as this script and the envelope's hash"
+        "names an insertion's destination as this script, carrying the envelope itself"
         $ insertDestination Testnet applied envelope
-            `shouldBe` (openDatumAddressBytes Testnet applied, envelopeHash envelope)
-    it "mints one approval bound to the insertion it certifies" $
-        mintedName insert
+            `shouldBe` ( openDatumAddressBytes Testnet applied
+                       , Just (envelopeToData envelope)
+                       )
+    it
+        "mints one approval bound to the insertion it certifies, by the envelope's hash"
+        $ mintedName insert
             `shouldBe` Just
                 ( approvalName
                     1
                     "keyA"
                     controller
-                    (insertDestination Testnet applied envelope)
+                    (openDatumAddressBytes Testnet applied, envelopeHash envelope)
                 )
     it
         "carries BookInsert { key, owner, address, envelope } as constructor 0"
@@ -214,7 +217,7 @@ bookings = describe "bookings" $ do
         baReferenceInputs insert `shouldBe` Set.singleton stateIn
     it "binds a termination's approval to no destination" $
         mintedName terminate
-            `shouldBe` Just (approvalName 3 "keyA" controller terminateDestination)
+            `shouldBe` Just (approvalName 3 "keyA" controller ("", ""))
     it "carries BookTerminate { key, owner, holding } as constructor 1" $
         case baRedeemer terminate of
             PLC.Constr 1 [PLC.B k, PLC.B o, PLC.Constr 0 [PLC.B tx, PLC.I ix]] -> do

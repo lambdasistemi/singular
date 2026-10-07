@@ -97,9 +97,12 @@ it is, and on chain only the terminal codec byte is admitted for it.
 ### The request: a destination, then an edge index
 
 `Request` gained one field, appended last: `destination`, a pair of the binary
-address bytes the minted token must land at and the hash of the inline datum
-that output must carry. An empty datum hash means a datum-less output. A
-request that mints nothing names no destination.
+address bytes the minted token must land at and the inline datum that output
+must carry, as an `Option`: `Some` carries the datum itself, `None` means a
+datum-less output. The request carries the datum rather than its hash (#419),
+so anyone can build the fold from the chain alone; an approval still binds the
+datum by its BLAKE2b-256 hash, empty for none. A request that mints nothing
+names no destination.
 
 Issue #183 then re-cut the request itself. Field for field, old wire beside
 new:

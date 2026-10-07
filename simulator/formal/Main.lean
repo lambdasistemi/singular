@@ -232,7 +232,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "83dd1fefbe6b00be6adcb57d84b4321b9507649b6566c79eecd9f6015551ecb4"
+  "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -356,7 +356,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "8ea765f55d3a5187b8a9abc3430b3125406c5ce6c09407322443cc268dcd1079"
+  "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -586,11 +586,11 @@ def exitRequest (e : Edge) : Request :=
 #guard obligations (.fold .insertAbsent) (exitRequest .insertAbsent) ==
   [{ recipient := .custody, atLeast := 55 }]
 #guard obligations (.fold .insertActive) (exitRequest .insertActive) ==
-  [{ recipient := .destination 99, atLeast := 55 }]
+  [{ recipient := .destination 99 none, atLeast := 55 }]
 #guard obligations (.fold .updateActive) (exitRequest .updateActive) ==
-  [{ recipient := .destination 99, atLeast := 55 }]
+  [{ recipient := .destination 99 none, atLeast := 55 }]
 #guard obligations (.fold .witnessTerminal) (exitRequest .witnessTerminal) ==
-  [{ recipient := .destination 99, atLeast := 55 }]
+  [{ recipient := .destination 99 none, atLeast := 55 }]
 #guard obligations (.fold .updateTerminal) (exitRequest .updateTerminal) ==
   [{ recipient := .owner 42, atLeast := 55 }]
 #guard obligations (.fold .deleteAbsent) (exitRequest .deleteAbsent) ==
@@ -787,7 +787,7 @@ def settleInsertAbsentOutputs : List TxOutput :=
        , (obligations (.fold .insertActive) settleInsertActiveRequest, .destination, 99, "destination")
        , (obligations .reject settleInsertActiveRequest, .owner, 42, "deposit-returned") ].all
     fun (owed, role, address, reason) =>
-      let paid := { ownerOutput address 1000 with role := role }
+      let paid := { ownerOutput address 1000 with role := role, datum := .none }
       settle owed [paid] == none &&
       settle owed [{ paid with address := some (address + 1) }] == some reason &&
       [TxRole.state, .request, .destination, .cage, .witness, .owner].all fun other =>
@@ -809,10 +809,31 @@ def settleInsertAbsentOutputs : List TxOutput :=
 -- An output counts toward one recipient: a destination output does not pay the owner.
 #guard settle (obligations .reject settleInsertActiveRequest)
   [{ ownerOutput 42 55 with role := .destination }] == some "deposit-returned"
+-- A destination is paid only by an output carrying exactly the request's datum:
+-- the value inline, or no datum when the request carries none. Another value, a
+-- datum where none is carried, none where one is, or a datum by hash, reaches no
+-- destination and is refused `destination`.
+def carrying (datum : DatumForm) (value : Option Nat) : TxOutput :=
+  { ownerOutput 99 55 with role := .destination, datum := datum, datumValue := value }
+#guard [ (none, carrying .none none, true), (none, carrying .inline (some 7), false)
+       , (none, carrying .hashed none, false)
+       , (some 7, carrying .inline (some 7), true), (some 7, carrying .inline (some 8), false)
+       , (some 7, carrying .none none, false), (some 7, carrying .hashed (some 7), false)
+       , (some 7, carrying .inline none, false) ].all
+    fun (datum, output, pays) =>
+      settle (obligations (.fold .insertActive) { settleInsertActiveRequest with datum := datum })
+        [output] == if pays then none else some "destination"
+-- The model builds the destination output carrying the request's datum, and it settles.
+#guard [none, some 0, some 7].all fun d =>
+  let r := { settleInsertActiveRequest with datum := d }
+  let outs := txOutputs (txOf s0 r 1)
+  outs.any (fun o => o.role == .destination && presentsDatum d o)
+    && settle (obligations (.fold .insertActive) r) outs == none
+
 -- The reason is the first unpaid recipient's, in the order the payments are owed.
-#guard settle [{ recipient := .owner 42, atLeast := 55 }, { recipient := .destination 99, atLeast := 55 }]
+#guard settle [{ recipient := .owner 42, atLeast := 55 }, { recipient := .destination 99 none, atLeast := 55 }]
   [] == some "deposit-returned"
-#guard settle [{ recipient := .destination 99, atLeast := 55 }, { recipient := .owner 42, atLeast := 55 }]
+#guard settle [{ recipient := .destination 99 none, atLeast := 55 }, { recipient := .owner 42, atLeast := 55 }]
   [] == some "destination"
 
 /-! ### Every exit is a model step
@@ -964,9 +985,10 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 -- The driver's operations are the nine exits: the seven edges by their own
 -- names, then reject and retract. It judges what a transaction spends, then what
 -- it pays, and answers two batch questions, neither observing a transaction;
--- the surface's protocol moved for each.
+-- the surface's protocol moved for each, and again when a request came to carry
+-- its datum.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 5
+#guard surface.protocolVersion == 6
 #guard surface.judgements == ["spend", "settle"]
 #guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
 #guard surface.batchQuestions.all fun q => !q.2.contains "tx"
@@ -1145,9 +1167,9 @@ def judgementFailures : List String :=
 #guard (txOutputs (txOfExit exitState .reject (exitStepRequest .insertActive 9) 3)).length == 2
 #guard (txOutputs (txOf exitState (exitStepRequest .insertActive 9) 3)).length ≥ 2
 
--- A saved state replays with the datum form each holding's delivery wrote (#304):
--- a holding serialised and read back is the same holding, for every form.
-#guard [DatumForm.inline, .hashed, .none].all fun d =>
+-- A saved state replays with the datum each holding's delivery wrote: a holding
+-- serialised and read back is the same holding, with a datum value or none.
+#guard [none, some 0, some 7].all fun d =>
   let h : Holding := { key := 42, kind := .active, output := 555, datum := d }
   match (fromJson? (toJson h) : Except String Holding) with
   | .ok back => back == h

@@ -310,7 +310,7 @@ test two_deposits_paid_one_deposit_refuses() {
 /// the same fold. The carrier owes the booking's deposit; the deletion's
 /// deposit is owed separately.
 fn bookAndDelete(outputs: List<Output>) -> Scenario {
-  let booking = (fx.bookerAddress, #"")
+  let booking = (fx.bookerAddress, None)
   scenario(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.oneLeaf(fx.keyB, fx.activeLeaf),
@@ -718,7 +718,7 @@ test own_two_custody_refunds_paid_by_the_larger_one_refuses() {
 /// address: the custody refund and the token carrier land at one address.
 /// The carrier owes the booking's deposit; the refund is owed apart.
 fn updateOwnAbsent(outputs: List<Output>) -> Scenario {
-  let booking = (fx.inserterAddress, #"")
+  let booking = (fx.inserterAddress, None)
   scenario(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),

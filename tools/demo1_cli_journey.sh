@@ -546,11 +546,9 @@ run insert success -- registry insert --key "$key" --payload "$work/payload-inse
 booked insert
 booking_only insert "$before" "$files_before"
 [ "$(field insert .requester)" = "$alicekey" ] || fail "the booking's requester is not alice's key"
-# The envelope the fold will deliver is kept under the hash the request names.
-stored="$reg/preimages/$(field insert .envelopeHash).json"
-[ -f "$stored" ] || fail "the booking kept no envelope under its hash"
-jq -e --slurpfile i "$receipts/insert.json" '. == $i[0].envelope' "$stored" >/dev/null \
-  || fail "the kept envelope is not the one inserted"
+# The request carries the envelope the fold will deliver: the booking keeps
+# nothing of it in the registry directory.
+[ ! -e "$reg/preimages" ] || fail "the booking kept an envelope in the registry directory"
 run inspect-pending success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-pending .leaf)" = unknown ] || fail "inspect after a booking alone does not read the key unknown to the registry"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" --slurpfile b "$receipts/insert.json" '
@@ -657,21 +655,7 @@ holds_envelope bob-insert .envelope "$bobkey" "$bkey" "$work/payload-insert.json
 booked bob-insert
 booking_only bob-insert "$before" "$files_before"
 [ "$(field bob-insert .requester)" = "$bobkey" ] || fail "the booking's requester is not bob's key"
-# The fold refuses, before it builds anything, an insertion whose envelope it
-# cannot deliver: none kept under the request's hash, or another envelope
-# under that name. Each leaves the journal as it was; the kept envelope is
-# then put back.
-bstored="$reg/preimages/$(field bob-insert .envelopeHash).json"
-[ -f "$bstored" ] || fail "bob's booking kept no envelope under its hash"
-mv "$bstored" "$work/bob-envelope.aside"
-refused fold-no-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("no envelope is stored")' "$receipts/fold-no-envelope.json" >/dev/null \
-  || fail "the fold without an envelope does not say so: $(field fold-no-envelope .reason)"
-cp "$stored" "$bstored"
-refused fold-other-envelope client-refusal -- registry fold "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.reason | contains("another envelope")' "$receipts/fold-other-envelope.json" >/dev/null \
-  || fail "the fold with another envelope does not say so: $(field fold-other-envelope .reason)"
-mv "$work/bob-envelope.aside" "$bstored"
+[ ! -e "$reg/preimages" ] || fail "bob's booking kept an envelope in the registry directory"
 # A funding output the folder's wallet does not hold is refused by name too.
 refused fold-bad-funding client-refusal -- registry fold --fund-input "$(printf '%064d' 0)#0" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
@@ -1301,6 +1285,70 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # Pre-migration sidecar callers are retired. A compiled subject mutation,
 # rather than an old mirror binary against a sidecar-free registry, supplies
 # the lineage source refusal control in the owner evidence bundle.
+
+# ------------------------------------------------------------------
+# 7. two actors (#419): bob folds alice's insertion from the chain alone
+# ------------------------------------------------------------------
+# Alice books an insertion from her own registry directory. Bob folds it
+# from a directory of his own holding only her registry.json: no trie, no
+# journal, nothing of her booking; the trie is rebuilt from chain history
+# and the envelope is read from the request on the chain. Alice's directory
+# is unreadable while bob runs, and every file access of bob's process is
+# traced: one under alice's directory fails the run.
+two="$work/two-actors"
+two_alice="$two/alice"
+two_bob="$two/bob"
+mkdir -p "$two"
+trap 'chmod -R u+rwx "$two_alice" 2>/dev/null || true; kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+run two-preview success -- registry create --process-time 90000 --retract-time 30000 --preview \
+  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+run two-create success -- registry create --process-time 90000 --retract-time 30000 \
+  --seed "$(field two-preview .seed)" --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+two_key=keyT
+run two-insert success -- registry insert --key "$two_key" --payload "$work/payload-insert.json" \
+  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+[ "$(field two-insert .requester)" = "$alicekey" ] || fail "the two-actor booking's requester is not alice's key"
+mkdir -p "$two_bob"
+cp "$two_alice/registry.json" "$two_bob/"
+[ "$(ls -A "$two_bob")" = registry.json ] || fail "bob's directory holds more than alice's registry.json"
+# touches_alice TRACE: the traced process named a path under alice's directory.
+touches_alice() { grep -qF "$two_alice" "$1"; }
+# The detector, shown able to fire: a deliberate open under alice's
+# directory, traced the same way, is reported.
+strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice/registry.json" >/dev/null 2>&1 || true
+touches_alice "$two/control.strace" || fail "control: a deliberate open under alice's directory was not detected"
+say "two actors: the access detector reports a deliberate open under alice's directory"
+traced="$work/traced-singular"
+printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' "$two/bob-fold.strace" "$singular" >"$traced"
+# DEMO1_TWO_ACTOR_DELIBERATE_OPEN=1 is the run's own failing control: bob's
+# traced process opens alice's registry.json before it folds, so the whole
+# journey must fail at the access check below.
+if [ "${DEMO1_TWO_ACTOR_DELIBERATE_OPEN:-}" = 1 ]; then
+  printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c '"'"'cat "%s" >/dev/null 2>&1; exec "%s" "$@"'"'"' singular "$@"\n' \
+    "$two/bob-fold.strace" "$two_alice/registry.json" "$singular" >"$traced"
+  say "two actors: the deliberate open control is on; bob's process opens alice's registry.json"
+fi
+chmod +x "$traced"
+real_singular="$singular"
+chmod 000 "$two_alice"
+! ls "$two_alice" >/dev/null 2>&1 || fail "alice's directory is readable to the run"
+singular="$traced"
+run two-fold success -- registry fold --registry "$two_bob" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+singular="$real_singular"
+chmod u+rwx "$two_alice"
+[ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
+! touches_alice "$two/bob-fold.strace" || fail "bob's fold accessed alice's directory: $(grep -F "$two_alice" "$two/bob-fold.strace" | head -n 3)"
+jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --arg bob "$bobkey" '
+    .request == $b[0].request and .folder == $bob and .edge == "insertActive"
+    and .key == $k and .envelope == $b[0].envelope and (.liveOutput | test("#"))' \
+  "$receipts/two-fold.json" >/dev/null \
+  || fail "bob's fold does not deliver alice's envelope at her key"
+run two-inspect success -- registry inspect --key "$two_key" --registry "$two_bob" --blueprint "$blueprint" "${node[@]}"
+jq -e --slurpfile b "$receipts/two-insert.json" --slurpfile f "$receipts/two-fold.json" '
+    .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
+    and .root == $f[0].root' "$receipts/two-inspect.json" >/dev/null \
+  || fail "the key bob folded is not active under alice's envelope at her destination"
+say "two actors: bob folded alice's insertion from registry.json alone; her envelope sits at her destination"
 
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)

@@ -1422,7 +1422,7 @@ decoyRequest =
         , requestEdge = edgeInsertActive
         , requestDeposit = 0
         , requestSubmittedAt = 0
-        , requestDestination = (BS.empty, BS.empty)
+        , requestDestination = (BS.empty, Nothing)
         }
 
 -- | Edit a transaction's redeemers; the body, and so the identifier, is unchanged.

@@ -424,36 +424,51 @@ fn credentialOf(isKey: Bool, hash: ByteArray) -> Credential {
 }
 
 /// Does this output sit at the destination the request named, carrying
-/// the inline datum it named (#157 request-destination-binding)? Address equality is over the
-/// whole address, payment and stake credential alike; datum equality is
-/// over the BLAKE2b-256 of the serialised inline datum, with an empty
-/// hash meaning the output must carry no datum at all.
+/// the inline datum the request carries (#157 request-destination-binding, #419)? Address
+/// equality is over the whole address, payment and stake credential
+/// alike; the output carries exactly the request's datum inline, or no
+/// datum at all when the request carries none.
 ///
 /// Total: an undecodable destination matches nothing, so a request that
 /// names nonsense cannot be folded rather than folding anywhere.
 pub fn destinationMatches(
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   out: Output,
 ) -> Bool {
-  let (address, datumHash) = destination
+  let (address, expected) = destination
   when decodeAddress(address) is {
-    Some(expected) ->
-      expected == out.address && datumMatches(datumHash, out.datum)
+    Some(at) -> at == out.address && datumMatches(expected, out.datum)
     None -> False
   }
 }
 
-/// The datum half of `destinationMatches`, split out so the custody and
-/// record checks can reuse it.
-pub fn datumMatches(datumHash: ByteArray, datum: Datum) -> Bool {
-  if datumHash == #"" {
-    datum == NoDatum
-  } else {
-    when datum is {
-      InlineDatum(inline) -> blake2b_256(cbor.serialise(inline)) == datumHash
-      _ -> False
-    }
+/// The datum half of `destinationMatches`: exactly the carried datum
+/// inline, or no datum for none. A datum presented by hash is never it.
+pub fn datumMatches(expected: Option<Data>, datum: Datum) -> Bool {
+  when expected is {
+    None -> datum == NoDatum
+    Some(carried) -> datum == InlineDatum(carried)
   }
+}
+
+/// The hash an approval binds for the datum a request carries: the
+/// BLAKE2b-256 of its serialisation, empty for none — the bytes the
+/// request named before it carried the datum, so an approval's name is
+/// unchanged for the same tuple (#419).
+pub fn destinationDatumHash(datum: Option<Data>) -> ByteArray {
+  when datum is {
+    None -> #""
+    Some(carried) -> blake2b_256(cbor.serialise(carried))
+  }
+}
+
+/// A request's destination as `approvalName` binds it: its address and
+/// the hash of the datum it carries.
+pub fn approvalDestination(
+  destination: (ByteArray, Option<Data>),
+) -> (ByteArray, ByteArray) {
+  let (address, datum) = destination
+  (address, destinationDatumHash(datum))
 }
 
 /// Does an output pay this destination address at all, whatever it

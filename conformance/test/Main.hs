@@ -33,6 +33,7 @@ import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.RunReplay qualified as RunReplay
 import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
+import Conformance.Support.Withhold qualified as Withhold
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, hspec)
 import Test.Tags (Area (..), tagged)
@@ -102,6 +103,9 @@ suite = do
         describe "Appendix — how we check the evidence" CliControls.spec
     describe (tagged "Conformance.Support.CliProof" [Conformance, Cli]) $
         describe "Appendix — how we check the evidence" CliProof.spec
+    describe
+        (tagged "Conformance.Support.Withhold" [Conformance, Cli, History])
+        $ describe "Appendix — how we check the evidence" Withhold.spec
     describe
         ( tagged
             "Conformance.Support.FoldHistory"

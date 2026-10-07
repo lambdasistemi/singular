@@ -321,6 +321,7 @@ ownerOutputObservation owner approvalOf assets stateTokens reference reading = d
             , "custodyDatum" .= Null
             , "lovelace" .= readingLovelace reading
             , "reference" .= reference
+            , "datumValue" .= Null
             ]
         )
 

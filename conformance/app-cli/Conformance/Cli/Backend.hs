@@ -298,6 +298,7 @@ import Conformance.Cli.Controls
     , validateControls
     )
 import Conformance.Cli.FoldHistory (publicFoldTrie)
+import Conformance.Cli.Withhold (Withholding (..), withWithholding)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -1529,14 +1530,30 @@ provoke env p target key r = do
                 _ -> fail "the saved configuration is not a JSON object"
             (BL.writeFile config (Aeson.encode changed) >> plain args)
                 `finally` BS.writeFile config saved
-        WithoutProof ->
-            pure
-                r
-                    { rcOutcome = "client-error"
-                    , rcReason =
-                        Just
-                            "inspect never reads saved proof material; it rebuilds a root-checked trie from public history, so this control has no missing-proof witness"
-                    }
+        WithoutHistory -> do
+            args <- commandArgs env Inspect target key r
+            reg <- openRegistry env target
+            let policy = hex (scriptHashBytes (cfgScriptHash (regCfg reg)))
+                -- inspect run through a forwarder withholding the history
+                -- of the asset named, its receipt carrying the count
+                through name tag =
+                    withWithholding (optProviderUrl o) (policy, hex name) $ \w -> do
+                        from <- journalLines journal
+                        (status, printed, file) <-
+                            singular env r (label <> tag) (providerTo (withholdingUrl w) args)
+                        done <- finishFrom from status printed file id
+                        withheld <- withheldReads w
+                        pure done{rcWithheldReads = Just withheld}
+            -- The composition control, kept beside the receipts for the
+            -- runner: the same inspect, its forwarder withholding another
+            -- asset's history, never reaches the registry's history read.
+            control <- through (flipLast (tokenBytes reg)) "-another-asset"
+            BL.writeFile
+                ( envEvidence env
+                    </> printf "step-%03d-%s-another-asset.receipt.json" (rcStep r) label
+                )
+                (encodePretty control <> "\n")
+            through (tokenBytes reg) ""
         WithoutNode -> do
             args <- commandArgs env Inspect target key r
             plain (providerTo "http://127.0.0.1:1/api/v1" args)
@@ -2002,14 +2019,6 @@ foldWith env target selection tweak byStranger r = do
                 pure
                 answer
         live <- Cage.withLatest prov (`Cage.outputsAt` applicationAddr reg)
-        let envelopes =
-                [ envelopeOfRun
-                    env
-                    reg
-                    (addrKeyHashBytes home)
-                    (BC.unpack (requestKey q))
-                | (_, q) <- chosen
-                ]
         ctx0 <-
             Cage.withLatest
                 prov
@@ -2018,7 +2027,7 @@ foldWith env target selection tweak byStranger r = do
             either
                 fail
                 pure
-                (withApplication (applied reg) Nothing envelopes live ctx0)
+                (withApplication (applied reg) Nothing live ctx0)
         pp <- Cage.withLatest prov Cage.parameters
         owedDuties <-
             either
@@ -2480,7 +2489,7 @@ craftBooking env c target key r = do
             (address, datumHash) = insertDestination Testnet (applied reg) e
             dest = case c of
                 BookingOtherDestination -> (flipLast address, datumHash)
-                BookingNoDatum -> (address, BS.empty)
+                BookingNoDatum -> (address, Nothing)
                 _ -> (address, datumHash)
             deposit =
                 ctlDeposit (envControl e)

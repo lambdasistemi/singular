@@ -48,7 +48,7 @@ fn request_datum() {
       requestValue: MUpdate(#"01", #"02"),
       tip: 1000000,
       submitted_at: 0,
-      destination: (#"", #""),
+      destination: (#"", None),
     },
   )
 }
@@ -284,7 +284,7 @@ fn request_datum_with(value) {
       requestValue: value,
       tip: 1000000,
       submitted_at: 0,
-      destination: (#"", #""),
+      destination: (#"", None),
     },
   )
 }
@@ -321,7 +321,7 @@ test custody_foreign_token_refuses() fail {
         requestValue: MUpdate(#"01", #"02"),
         tip: 1000000,
         submitted_at: 0,
-        destination: (#"", #""),
+        destination: (#"", None),
       },
     )
   retirement_custody.retirement_custody.spend(
@@ -455,7 +455,7 @@ test custody_wrong_spelling_refuses() fail {
         requestValue: MUpdate(#"01", #"02"),
         tip: 1000000,
         submitted_at: 0,
-        destination: (#"", #""),
+        destination: (#"", None),
       },
     )
   retirement_custody.retirement_custody.spend(

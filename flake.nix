@@ -199,6 +199,9 @@
               # its own development node with pgrep and pkill
               procps
               util-linux
+              # the two-actor run traces every file access of the folding
+              # process, so one under the booker's directory fails it
+              strace
             ];
             text = ''
               export VERIFY_RELEASE_JOURNEY=${./tools/demo1_cli_journey.sh}
@@ -250,6 +253,31 @@
               }
             );
           };
+          # #419: the two-actor access check shown failing a complete Demo 1
+          # run — Bob's fold process opens Alice's registry.json and the run
+          # must fail exactly there: `nix run --quiet .#demo1-two-actor-control`.
+          demo1-two-actor-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-two-actor-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                ];
+                text = ''
+                  bash ${./tools/demo1_two_actor_control.test.sh} ${./tools/demo1_two_actor_control.sh}
+                  DEMO1_CLI_CHECK=${./tools/demo1_cli_check.sh} \
+                    DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} \
+                    bash ${./tools/demo1_two_actor_control.sh} "$PWD"
+                '';
+              }
+            );
+          };
           # #299: the ordinary CLI's refusal controls, judged from their
           # receipts: `nix run --quiet .#demo1-cli-controls`.
           demo1-cli-controls = {
@@ -260,13 +288,22 @@
                 runtimeInputs = with pkgs; [
                   bash
                   coreutils
+                  diffutils
                   findutils
+                  gawk
                   gnugrep
                   jq
                   procps
                   nix
                 ];
-                text = ''DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} bash ${./tools/demo1_cli_controls_check.sh} "$PWD"'';
+                text = ''
+                  bash ${./tools/demo1_cli_controls_ran.test.sh} ${./tools/demo1_cli_controls_ran.sh}
+                  bash ${./tools/demo1_cli_controls_composition.test.sh} ${./tools/demo1_cli_controls_composition.sh}
+                  DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} \
+                    DEMO1_CONTROLS_RAN=${./tools/demo1_cli_controls_ran.sh} \
+                    DEMO1_CONTROLS_COMPOSITION=${./tools/demo1_cli_controls_composition.sh} \
+                    bash ${./tools/demo1_cli_controls_check.sh} "$PWD"
+                '';
               }
             );
           };

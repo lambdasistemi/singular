@@ -50,7 +50,7 @@ def additiveFloorsHold (ps : List Payment) (outs : List TxOutput) : Bool :=
   (ps.map (·.recipient)).all fun r => decide (owedTo r ps ≤ receivedBy r outs)
 
 def recipientJson : Recipient → Json
-  | .destination a => Json.mkObj [("destination", toJson a)]
+  | .destination a d => Json.mkObj [("destination", toJson a), ("datum", datumJson d)]
   | .custody => Json.str "custody"
   | .owner k => Json.mkObj [("owner", toJson k)]
   | .bound k r => Json.mkObj [("owner", toJson k), ("boundReference", toJson r)]

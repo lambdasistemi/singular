@@ -56,7 +56,6 @@ module Singular.Registry.TxBuilder.Edges
     , edgeDeposit
     , edgeDestinationOf
     , edgeRecordDatum
-    , edgeRecordDatumHash
 
       -- * Folding
     , registryContextFor
@@ -65,7 +64,6 @@ module Singular.Registry.TxBuilder.Edges
 import Control.Monad (unless, when)
 import Data.Aeson ((.=))
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (sortOn)
@@ -76,7 +74,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
@@ -108,7 +105,7 @@ import Cardano.Ledger.Api.Tx.Wits
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (PParams, Script, extractHash, hashScript)
+import Cardano.Ledger.Core (PParams, Script, hashScript)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
@@ -119,7 +116,6 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
@@ -140,7 +136,10 @@ import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
     )
-import Singular.Registry.TxBuilder.Internal.Edges (approvalName)
+import Singular.Registry.TxBuilder.Internal.Edges
+    ( approvalDestination
+    , approvalName
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrKeyHashBytes
     , addrWitnessKeyHash
@@ -411,36 +410,30 @@ publishCageRefs cfg codes prov submit payerAddr tokenId =
             <> map (witnessScriptOf cfg codes) [0, 1, 2]
         )
 
-{- | The record datum a booking's destination binds. The cage checks only
-that the receiving output carries a datum hashing to what the approval
-bound — naming's own validators do not run at fold time — so one datum
-produced on both sides is enough.
+{- | The record datum a booking's destination carries. The cage checks only
+that the receiving output carries the datum the request carries — naming's
+own validators do not run at fold time — so one datum is enough.
 -}
 edgeRecordDatum :: PLC.Data
 edgeRecordDatum = PLC.B "singular-record"
 
--- | The hash of 'edgeRecordDatum'.
-edgeRecordDatumHash :: ByteString
-edgeRecordDatumHash =
-    hashToBytes
-        (extractHash (hashData (Data edgeRecordDatum :: Data ConwayEra)))
-
 {- | Where an edge delivers (#157 request-destination-binding). An absence names the address
 its deposit comes back to and no datum; an activation names the naming
-application's own address and the record datum it will carry.
+application's own address and carries the record datum the delivered
+output will hold.
 -}
 edgeDestinationOf
     :: CageConfig
     -> NamingCodes
     -> Addr
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
 edgeDestinationOf cfg codes payerAddr edge =
     let appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network cfg) (ScriptHashObj appHash) StakeRefNull
     in  if edge == edgeInsertActive || edge == edgeUpdateActive
-            then (serialiseAddr appAddr, edgeRecordDatumHash)
-            else (serialiseAddr payerAddr, BS.empty)
+            then (serialiseAddr appAddr, Just edgeRecordDatum)
+            else (serialiseAddr payerAddr, Nothing)
 
 {- | The deposit a booking rides with, over and above the tip. The fold
 returns it to the destination the request named, or locks it in the
@@ -620,7 +613,7 @@ bookEdgeTo
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> IO TxIn
 bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest = do
     signed <-
@@ -634,7 +627,13 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest = do
             edge
             dest
             edgeDeposit
-            (bookingApproval codes edge key (addrKeyHashBytes payerAddr) dest)
+            ( bookingApproval
+                codes
+                edge
+                key
+                (addrKeyHashBytes payerAddr)
+                (approvalDestination dest)
+            )
     pure (TxIn (txIdTx signed) (TxIx 0))
 
 {- | Book an edge with the certification and deposit the caller's
@@ -652,7 +651,7 @@ bookEdgeWith
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> Integer
     -- ^ The deposit, over and above the tip
     -> Maybe BookingApproval
@@ -674,7 +673,7 @@ bookEdgeTx
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> Integer
     -- ^ The deposit, over and above the tip
     -> Maybe BookingApproval
@@ -753,7 +752,7 @@ requestOutput
     -> Addr
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> Integer
     -> Maybe BookingApproval
     -> Integer
@@ -797,7 +796,7 @@ bookEdgeMeasured
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> Integer
     -- ^ The deposit, over and above the tip
     -> BookingApproval
@@ -835,7 +834,7 @@ measuredBody
     -> TokenId
     -> ByteString
     -> Edge
-    -> (ByteString, ByteString)
+    -> (ByteString, Maybe PLC.Data)
     -> Integer
     -> BookingApproval
     -> [(TxIn, TxOut ConwayEra)]
@@ -921,6 +920,5 @@ registryContextFor cfg codes v refs = do
                 Map.fromList [(k, witnessScriptOf cfg codes k) | k <- [0, 1, 2]]
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
-            , rcDatums = [(edgeRecordDatumHash, edgeRecordDatum)]
             , rcRefUtxos = refs
             }

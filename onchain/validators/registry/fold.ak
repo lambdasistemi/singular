@@ -51,9 +51,10 @@ use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of}
 use cardano/transaction.{InlineDatum, Input}
 use lib.{
-  approvalName, deltaOf, edgeDeleteAbsent, edgeDeleteActive, edgeInsertAbsent,
-  edgeInsertActive, edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal,
-  kindAbsent, kindActive, leafAbsent, leafActive, leafTerminal,
+  approvalDestination, approvalName, deltaOf, edgeDeleteAbsent, edgeDeleteActive,
+  edgeInsertAbsent, edgeInsertActive, edgeUpdateActive, edgeUpdateTerminal,
+  edgeWitnessTerminal, kindAbsent, kindActive, leafAbsent, leafActive,
+  leafTerminal,
 }
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
 use registry/trie.{readFault, terminalEdgeRefusal, terminalFault}
@@ -115,7 +116,7 @@ fn admitted(
         edge,
         request.requestKey,
         request.requestOwner,
-        request.destination,
+        approvalDestination(request.destination),
       ) {
         halt(acc, @"approval-binding")
       } else {
@@ -251,7 +252,7 @@ fn applyEdge(
   edge: Int,
   owner: VerificationKeyHash,
   key: ByteArray,
-  destination: (ByteArray, ByteArray),
+  destination: (ByteArray, Option<Data>),
   floor: Int,
   proof: mpf.Proof,
 ) -> Fold {

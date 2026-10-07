@@ -253,3 +253,9 @@ copy journal-cut
 head -n "$kept" "$work/$journal" >"$copies/journal-cut/$journal"
 expect_command journal-cut "the journal has $kept lines"
 say "process control: the cut journal fails the killed terminate's claim"
+
+# The withheld-history witness rests on a withholding that reached inspect's
+# history read; its composition control runs on its own copy of the run.
+copy withheld-elsewhere
+bash "${DEMO1_CONTROLS_COMPOSITION:-$(dirname "$0")/demo1_cli_controls_composition.sh}" \
+  "$work" "$controls" "$copies/withheld-elsewhere"
