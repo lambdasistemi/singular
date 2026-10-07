@@ -346,7 +346,7 @@ requestOutput actor edge =
                     edge
                     2000000
                     1000
-                    ("", "")
+                    ("", Nothing)
                 )
 
 stateOutput :: Root -> TxOut ConwayEra
