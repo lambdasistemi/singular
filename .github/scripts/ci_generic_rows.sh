@@ -255,14 +255,20 @@ open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title
   exit 1
 }
 e="${CONFORMANCE_RECEIPTS}/receipt-register-active-key.json"
+# The assertion program is held in one variable and run twice: once against
+# the receipt, and once against a control receipt whose untampered step books
+# a fresh request — its own input and its own submission time — which it must
+# refuse (#396 A-008: the public story promises the same booked request for
+# the tampered attempts and their control).
 # jq expands its own --arg variables inside this program.
 # shellcheck disable=SC2016
-nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+assert_register='
   def txid: type == "string" and test("^[0-9a-f]{64}$");
   def complete: (.compared | length) == 9 and (.unobserved | type) == "array"
     and (.perturbation.refused > 0);
-  def booking: del(.submittedAt);
+  def requestinput: type == "string" and test("^[0-9a-f]{64}#[0-9]+$");
   ([.steps[] | select(.tamper == "other-address") | .request][0]) as $tampered |
+  ([.steps[] | select(.tamper == "other-address") | .requestInput][0]) as $tamperedInput |
   .row == "register-active-key" and .outcome == "accepted"
   and .verdict == "agrees-with-model" and .venue == "node-submit"
   and (.steps | length) == 8
@@ -291,17 +297,31 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == "short-by-one" and .model.outcome == "refused"
-          and .model.reason == "deposit-returned" and (.request | booking) == ($tampered | booking)
+          and .model.reason == "deposit-returned" and .request == $tampered
+          and .requestInput == $tamperedInput
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == null and .model.outcome == "accepted"
-          and .chain.outcome == "accepted" and (.request | booking) == ($tampered | booking))
-  and ([.steps[3,4,5].request.submittedAt] as $t
-    | all($t[]; type == "number" and . > 0) and $t == ($t | sort) and ($t | unique | length) == 3)
-' "$e" >/dev/null || {
+          and .chain.outcome == "accepted" and .request == $tampered
+          and .requestInput == $tamperedInput)
+  and all(.steps[3,4,5]; (.requestInput | requestinput))
+  and ([.steps[3,4,5].requestInput] | unique | length) == 1
+  and ([.steps[3,4,5].request] | unique | length) == 1
+  and all(.steps[3,4,5]; (.request.submittedAt | type) == "number" and .request.submittedAt > 0)
+'
+nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" "$assert_register" "$e" >/dev/null || {
   echo 'FAIL: register-active-key step evidence missing or incomplete'
   exit 1
 }
+fresh_booking="$(mktemp "$RUNNER_TEMP/register-fresh-booking.XXXXXX.json")"
+nix run --quiet nixpkgs#jq -- '
+  .steps[5].requestInput |= sub("#[0-9]+$"; "#4242")
+  | .steps[5].request.submittedAt |= . + 1
+' "$e" >"$fresh_booking"
+if nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" "$assert_register" "$fresh_booking" >/dev/null 2>&1; then
+  echo 'FAIL: register-active-key accepted a fresh booking for the untampered control'
+  exit 1
+fi
 # 10. reject-before-deadline-consumer-requirement (#320): the consumer's R9_reject_needs_rejectable forbids
 #     a reject inside the processing window; Singular's Lean admits
 #     it and the chain accepts it. By operator ruling 2026-10-01 the

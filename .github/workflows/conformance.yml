@@ -286,13 +286,20 @@ jobs:
           f="$receipts/receipt-retire-active-key.json"
           test -f "$f" || { echo 'FAIL: missing retire-active-key receipt'; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          # The assertion program is held in one variable and run twice: once
+          # against the receipt, and once against a control receipt whose
+          # untampered step books a fresh request — its own input and its own
+          # submission time — which it must refuse (#396 A-008: the public
+          # story promises the same booked request for the tampered attempts
+          # and their control).
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
+          assert_retire='
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
+            def requestinput: type == "string" and test("^[0-9a-f]{64}#[0-9]+$");
             .row == "retire-active-key"
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
@@ -306,9 +313,10 @@ jobs:
             and .steps[8].model.reason == "deposit-returned"
             and .steps[9].model.reason == "deposit-returned"
             and all(.steps[8,9]; (.chain.txid | txid) and (.chain.refusal.hashes | index($state) != null))
-            and ([.steps[8,9,10].request | del(.submittedAt)] | unique | length) == 1
-            and ([.steps[8,9,10].request.submittedAt] as $t
-              | all($t[]; type == "number" and . > 0) and $t == ($t | sort) and ($t | unique | length) == 3)
+            and all(.steps[8,9,10]; (.requestInput | requestinput))
+            and ([.steps[8,9,10].requestInput] | unique | length) == 1
+            and ([.steps[8,9,10].request] | unique | length) == 1
+            and all(.steps[8,9,10]; (.request.submittedAt | type) == "number" and .request.submittedAt > 0)
             and .steps[10].registry == .steps[0].registry
             and .steps[7].registry == .steps[0].registry
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
@@ -325,7 +333,17 @@ jobs:
             and .steps[5].registry == .steps[6].registry
             and .steps[0].registry != .steps[4].registry
             and (.transactions | length) == 7
-          ' "$f" > /dev/null || { echo 'FAIL: retire-active-key retirement evidence moved'; exit 1; }
+          '
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$f" > /dev/null || { echo 'FAIL: retire-active-key retirement evidence moved'; exit 1; }
+          fresh_booking="$(mktemp "$RUNNER_TEMP/retire-fresh-booking.XXXXXX.json")"
+          nix run --quiet nixpkgs#jq -- '
+            .steps[10].requestInput |= sub("#[0-9]+$"; "#4242")
+            | .steps[10].request.submittedAt |= . + 1
+          ' "$f" > "$fresh_booking"
+          if nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" "$assert_retire" "$fresh_booking" > /dev/null 2>&1; then
+            echo 'FAIL: retire-active-key accepted a fresh booking for the untampered control'
+            exit 1
+          fi
           bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: retire-active-key refused steps lack the traced replay of their reason'; exit 1; }
           # #326 R9: the dedicated rows' receipts are kept together as the
           # conformance-story-receipts artifact, beside the generic session's.

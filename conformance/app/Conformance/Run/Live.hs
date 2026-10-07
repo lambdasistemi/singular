@@ -893,6 +893,14 @@ submitEdge env state cage exit alteration placement request = do
                                         (transactionPurposeHashes signed visible)
                                         (T.pack explanation)
                                 }
+                    -- A refused fold leaves its booked request pending at the
+                    -- cage, so the story retains it: the next instruction for
+                    -- the same registry, key, edge and wallet — the next
+                    -- tampered attempt, the untampered control — spends that
+                    -- same booked request. A reject and a retraction keep
+                    -- their own retention rules.
+                    when (exit == Live.Fold) $
+                        modifyIORef' (livePendingRequests state) (Map.insert pendingKey named)
                     pure
                         ( LiveStep
                             cage
@@ -3508,12 +3516,17 @@ compareStep env state step observation = do
         maybe (failWith "step registry was not allocated") pure
             . Map.lookup registry
             =<< readIORef (liveRegistryIds state)
+    -- The step's record carries the model request it acted on and the
+    -- output reference that booked request sat at (txid#ix): the identity
+    -- the same-request promise of a tampered attempt and its untampered
+    -- control is checked against.
     let record =
             object $
                 [ "registry" .= registryId
                 , "edge" .= Live.edgeName (Live.requestEdge (lsRequest step))
                 , "exit" .= exitNamed
                 , "request" .= lsModelRequest step
+                , "requestInput" .= fmap txInToText (lsRequestIn step)
                 , "tamper" .= fmap Live.tamperName (lsTamper step)
                 , "model" .= model
                 , "chain" .= chain
