@@ -39,8 +39,9 @@ whole derivation from a state token.
 
 - **The resolver.** It applies the identity checks and named refusals of the [spec](spec.md).
 - **Expected script hashes.** It derives the six expected hashes from the release and the token.
-- **Reference search.** It finds references through the three sources, applies the local hash
-  check, and picks deterministically.
+- **Reference search.** It queries the provider, then reads the actor's wallet only for missing
+  needed roles, applies the local hash check, and picks deterministically. No needed roles means
+  no discovery reads.
 - **Ownership.** It replaces resolution by saved output reference, which is deleted from
   `Singular/Registry/Deployment/Attach.hs`. The `Deployment` manifest stays only for the
   `offchain/deployment` and `offchain/journey` tools.
@@ -56,7 +57,7 @@ whole derivation from a state token.
   used during `create`, and the refusal to create over an existing journal or pending identity.
 - **`Live`, `Attached`, `Inspect`, `Preview`.** Build their view from the resolver instead of the
   saved identity.
-- **`Command`.** Adds `--state-token` (with `SINGULAR_STATE_TOKEN`) and `--reference-hint`. In
+- **`Command`.** Adds `--state-token` (with `SINGULAR_STATE_TOKEN`). In
   slice 2 it also adds `--publish-references` and the two reference commands. In slice 3 it adds
   `describe`.
 - **`Create`.**

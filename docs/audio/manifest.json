@@ -142841,17 +142841,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-02": {
-   "audio_sha256": "9bb706141ca8f3f3361d68026e25fa2492628bc931f532a4fa52c2bf5356f0b5",
+   "audio_sha256": "364cb98faacbe32804bd3e29e135244bdcaf03a9b91ff58b47c145d1041dd261",
    "characters": 1872,
    "cost": 0.0011606400000000001,
-   "duration": 130.35,
+   "duration": 130.15,
    "index": 2,
-   "key": "3f1ffdc77b96da24ac3e978b3b8ec4a8f893ab0fcc9c471aefe63d17eea82ddc",
+   "key": "06626f8a4366508dbb8d89494ceef3ebeee1cfe5134bd830158486b02a40cdb4",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 76 modules in three kinds: 58 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 76 modules in three kinds: 58 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
    "words": [
     {
      "end": 0.325,
@@ -143019,1483 +143019,1483 @@
      "text": "That"
     },
     {
-     "end": 12.762,
+     "end": 12.788,
      "start": 12.4,
      "text": "complete"
     },
     {
-     "end": 13.262,
-     "start": 12.762,
+     "end": 13.288,
+     "start": 12.788,
      "text": "extent"
     },
     {
-     "end": 13.45,
-     "start": 13.262,
+     "end": 13.475,
+     "start": 13.288,
      "text": "is"
     },
     {
-     "end": 14.15,
-     "start": 13.45,
-     "text": "75"
+     "end": 14.175,
+     "start": 13.475,
+     "text": "76"
     },
     {
-     "end": 14.6,
-     "start": 14.15,
+     "end": 14.625,
+     "start": 14.175,
      "text": "modules"
     },
     {
-     "end": 14.75,
-     "start": 14.6,
+     "end": 14.775,
+     "start": 14.625,
      "text": "in"
     },
     {
-     "end": 14.975,
-     "start": 14.75,
+     "end": 15.0,
+     "start": 14.775,
      "text": "three"
     },
     {
-     "end": 15.925,
-     "start": 14.975,
+     "end": 15.95,
+     "start": 15.0,
      "text": "kinds"
     },
     {
-     "end": 16.125,
-     "start": 15.925,
+     "end": 16.15,
+     "start": 15.95,
      "text": ":"
     },
     {
-     "end": 17.013,
-     "start": 16.325,
-     "text": "57"
+     "end": 16.875,
+     "start": 16.35,
+     "text": "58"
     },
     {
-     "end": 17.7,
-     "start": 17.013,
+     "end": 17.55,
+     "start": 16.875,
      "text": "explicitly"
     },
     {
-     "end": 18.3,
-     "start": 17.7,
+     "end": 18.125,
+     "start": 17.55,
      "text": "exposed"
     },
     {
-     "end": 18.913,
-     "start": 18.3,
+     "end": 18.737,
+     "start": 18.125,
      "text": "modules"
     },
     {
-     "end": 19.1,
-     "start": 18.913,
+     "end": 18.925,
+     "start": 18.737,
      "text": "and"
     },
     {
-     "end": 19.538,
-     "start": 19.1,
+     "end": 19.337,
+     "start": 18.925,
      "text": "five"
     },
     {
-     "end": 20.25,
-     "start": 19.538,
+     "end": 20.05,
+     "start": 19.337,
      "text": "re-exported"
     },
     {
-     "end": 20.862,
-     "start": 20.25,
+     "end": 20.688,
+     "start": 20.05,
      "text": "modules"
     },
     {
-     "end": 21.0,
-     "start": 20.862,
+     "end": 20.825,
+     "start": 20.688,
      "text": "are"
     },
     {
-     "end": 21.138,
-     "start": 21.0,
+     "end": 20.962,
+     "start": 20.825,
      "text": "what"
     },
     {
-     "end": 21.2,
-     "start": 21.138,
+     "end": 21.025,
+     "start": 20.962,
      "text": "a"
     },
     {
-     "end": 21.575,
-     "start": 21.2,
+     "end": 21.4,
+     "start": 21.025,
      "text": "caller"
     },
     {
-     "end": 22.775,
-     "start": 21.575,
+     "end": 22.575,
+     "start": 21.4,
      "text": "imports"
     },
     {
-     "end": 22.975,
-     "start": 22.775,
+     "end": 22.775,
+     "start": 22.575,
      "text": ";"
     },
     {
-     "end": 23.288,
-     "start": 23.175,
+     "end": 23.087,
+     "start": 22.975,
      "text": "the"
     },
     {
-     "end": 23.562,
-     "start": 23.288,
+     "end": 23.362,
+     "start": 23.087,
      "text": "two"
     },
     {
-     "end": 23.825,
-     "start": 23.562,
+     "end": 23.625,
+     "start": 23.362,
      "text": "trie"
     },
     {
-     "end": 24.513,
-     "start": 23.825,
+     "end": 24.312,
+     "start": 23.625,
      "text": "capability"
     },
     {
-     "end": 24.975,
-     "start": 24.513,
+     "end": 24.775,
+     "start": 24.312,
      "text": "owners"
     },
     {
-     "end": 25.388,
-     "start": 24.975,
+     "end": 25.188,
+     "start": 24.775,
      "text": "behind"
     },
     {
-     "end": 25.487,
-     "start": 25.388,
+     "end": 25.288,
+     "start": 25.188,
      "text": "the"
     },
     {
-     "end": 26.125,
-     "start": 25.487,
+     "end": 25.925,
+     "start": 25.288,
      "text": "TrieState"
     },
     {
-     "end": 26.725,
-     "start": 26.125,
+     "end": 26.525,
+     "start": 25.925,
      "text": "facade"
     },
     {
-     "end": 26.8,
-     "start": 26.725,
+     "end": 26.6,
+     "start": 26.525,
      "text": "("
     },
     {
-     "end": 27.375,
-     "start": 26.8,
+     "end": 27.175,
+     "start": 26.6,
      "text": "Singular"
     },
     {
-     "end": 27.475,
-     "start": 27.375,
+     "end": 27.275,
+     "start": 27.175,
      "text": "."
     },
     {
-     "end": 28.075,
-     "start": 27.475,
+     "end": 27.875,
+     "start": 27.275,
      "text": "Registry"
     },
     {
-     "end": 28.15,
-     "start": 28.075,
+     "end": 27.95,
+     "start": 27.875,
      "text": "."
     },
     {
-     "end": 28.775,
-     "start": 28.15,
+     "end": 28.575,
+     "start": 27.95,
      "text": "TrieState"
     },
     {
-     "end": 28.85,
-     "start": 28.775,
+     "end": 28.65,
+     "start": 28.575,
      "text": "."
     },
     {
-     "end": 29.087,
-     "start": 28.85,
+     "end": 28.888,
+     "start": 28.65,
      "text": "Core"
     },
     {
-     "end": 29.2,
-     "start": 29.087,
+     "end": 29.0,
+     "start": 28.888,
      "text": "and"
     },
     {
-     "end": 30.25,
-     "start": 29.2,
+     "end": 30.05,
+     "start": 29.0,
      "text": ".Types"
     },
     {
-     "end": 30.425,
-     "start": 30.25,
+     "end": 30.225,
+     "start": 30.05,
      "text": ")"
     },
     {
-     "end": 30.475,
-     "start": 30.425,
+     "end": 30.275,
+     "start": 30.225,
      "text": ","
     },
     {
-     "end": 30.788,
-     "start": 30.675,
+     "end": 30.587,
+     "start": 30.475,
      "text": "the"
     },
     {
-     "end": 31.087,
-     "start": 30.788,
+     "end": 30.888,
+     "start": 30.587,
      "text": "three"
     },
     {
-     "end": 31.462,
-     "start": 31.087,
+     "end": 31.263,
+     "start": 30.888,
      "text": "fold"
     },
     {
-     "end": 31.875,
-     "start": 31.462,
+     "end": 31.675,
+     "start": 31.263,
      "text": "owners"
     },
     {
-     "end": 32.263,
-     "start": 31.875,
+     "end": 32.062,
+     "start": 31.675,
      "text": "behind"
     },
     {
-     "end": 32.375,
-     "start": 32.263,
+     "end": 32.175,
+     "start": 32.062,
      "text": "the"
     },
     {
-     "end": 32.825,
-     "start": 32.375,
+     "end": 32.625,
+     "start": 32.175,
      "text": "Update"
     },
     {
-     "end": 33.425,
-     "start": 32.825,
+     "end": 33.225,
+     "start": 32.625,
      "text": "facade"
     },
     {
-     "end": 33.513,
-     "start": 33.425,
+     "end": 33.312,
+     "start": 33.225,
      "text": "—"
     },
     {
-     "end": 34.05,
-     "start": 33.513,
+     "end": 33.85,
+     "start": 33.312,
      "text": "Singular"
     },
     {
-     "end": 34.15,
-     "start": 34.05,
+     "end": 33.95,
+     "start": 33.85,
      "text": "."
     },
     {
-     "end": 34.8,
-     "start": 34.15,
+     "end": 34.6,
+     "start": 33.95,
      "text": "Registry"
     },
     {
-     "end": 34.9,
-     "start": 34.8,
+     "end": 34.7,
+     "start": 34.6,
      "text": "."
     },
     {
-     "end": 35.65,
-     "start": 34.9,
+     "end": 35.45,
+     "start": 34.7,
      "text": "TxBuilder"
     },
     {
-     "end": 35.7,
-     "start": 35.65,
+     "end": 35.5,
+     "start": 35.45,
      "text": "."
     },
     {
-     "end": 36.075,
-     "start": 35.7,
+     "end": 35.875,
+     "start": 35.5,
      "text": "Update"
     },
     {
-     "end": 36.15,
-     "start": 36.075,
+     "end": 35.95,
+     "start": 35.875,
      "text": "."
     },
     {
-     "end": 37.1,
-     "start": 36.15,
+     "end": 36.9,
+     "start": 35.95,
      "text": "Build"
     },
     {
-     "end": 37.325,
-     "start": 37.1,
+     "end": 37.125,
+     "start": 36.9,
      "text": ","
     },
     {
-     "end": 38.225,
-     "start": 37.525,
+     "end": 38.025,
+     "start": 37.325,
      "text": ".Context"
     },
     {
-     "end": 38.375,
-     "start": 38.225,
+     "end": 38.175,
+     "start": 38.025,
      "text": "and"
     },
     {
-     "end": 38.95,
-     "start": 38.375,
+     "end": 38.75,
+     "start": 38.175,
      "text": ".Duties"
     },
     {
-     "end": 39.013,
-     "start": 38.95,
+     "end": 38.812,
+     "start": 38.75,
      "text": "—"
     },
     {
-     "end": 39.138,
-     "start": 39.013,
+     "end": 38.938,
+     "start": 38.812,
      "text": "the"
     },
     {
-     "end": 39.5,
-     "start": 39.138,
+     "end": 39.3,
+     "start": 38.938,
      "text": "five"
     },
     {
-     "end": 39.888,
-     "start": 39.5,
+     "end": 39.688,
+     "start": 39.3,
      "text": "wire"
     },
     {
-     "end": 40.275,
-     "start": 39.888,
+     "end": 40.075,
+     "start": 39.688,
      "text": "owners"
     },
     {
-     "end": 40.662,
-     "start": 40.275,
+     "end": 40.463,
+     "start": 40.075,
      "text": "behind"
     },
     {
-     "end": 40.75,
-     "start": 40.662,
+     "end": 40.55,
+     "start": 40.463,
      "text": "the"
     },
     {
-     "end": 41.1,
-     "start": 40.75,
+     "end": 40.9,
+     "start": 40.55,
      "text": "Types"
     },
     {
-     "end": 41.7,
-     "start": 41.1,
+     "end": 41.5,
+     "start": 40.9,
      "text": "facade"
     },
     {
-     "end": 41.775,
-     "start": 41.7,
+     "end": 41.575,
+     "start": 41.5,
      "text": "—"
     },
     {
-     "end": 42.25,
-     "start": 41.775,
+     "end": 42.05,
+     "start": 41.575,
      "text": "Singular"
     },
     {
-     "end": 42.325,
-     "start": 42.25,
+     "end": 42.125,
+     "start": 42.05,
      "text": "."
     },
     {
-     "end": 42.925,
-     "start": 42.325,
+     "end": 42.725,
+     "start": 42.125,
      "text": "Registry"
     },
     {
-     "end": 43.025,
-     "start": 42.925,
+     "end": 42.825,
+     "start": 42.725,
      "text": "."
     },
     {
-     "end": 43.35,
-     "start": 43.025,
+     "end": 43.15,
+     "start": 42.825,
      "text": "Wire"
     },
     {
-     "end": 43.425,
-     "start": 43.35,
+     "end": 43.225,
+     "start": 43.15,
      "text": "."
     },
     {
-     "end": 44.525,
-     "start": 43.425,
+     "end": 44.325,
+     "start": 43.225,
      "text": "Primitive"
     },
     {
-     "end": 44.75,
-     "start": 44.525,
+     "end": 44.55,
+     "start": 44.325,
      "text": ","
     },
     {
-     "end": 45.3,
-     "start": 44.925,
+     "end": 45.1,
+     "start": 44.725,
      "text": ".Request"
     },
     {
-     "end": 45.35,
-     "start": 45.3,
+     "end": 45.15,
+     "start": 45.1,
      "text": ","
     },
     {
-     "end": 46.025,
-     "start": 45.35,
+     "end": 45.825,
+     "start": 45.15,
      "text": ".State"
     },
     {
-     "end": 46.225,
-     "start": 46.025,
+     "end": 46.025,
+     "start": 45.825,
      "text": ","
     },
     {
-     "end": 46.775,
-     "start": 46.425,
+     "end": 46.575,
+     "start": 46.225,
      "text": ".Proof"
     },
     {
-     "end": 46.9,
-     "start": 46.775,
+     "end": 46.7,
+     "start": 46.575,
      "text": "and"
     },
     {
-     "end": 47.525,
-     "start": 46.9,
+     "end": 47.325,
+     "start": 46.7,
      "text": ".Redeemer"
     },
     {
-     "end": 47.612,
-     "start": 47.525,
+     "end": 47.412,
+     "start": 47.325,
      "text": "—"
     },
     {
-     "end": 47.737,
-     "start": 47.612,
+     "end": 47.537,
+     "start": 47.412,
      "text": "and"
     },
     {
-     "end": 47.862,
-     "start": 47.737,
+     "end": 47.662,
+     "start": 47.537,
      "text": "the"
     },
     {
-     "end": 48.1,
-     "start": 47.862,
+     "end": 47.9,
+     "start": 47.662,
      "text": "three"
     },
     {
-     "end": 48.688,
-     "start": 48.1,
+     "end": 48.487,
+     "start": 47.9,
      "text": "deployment"
     },
     {
-     "end": 49.125,
-     "start": 48.688,
+     "end": 48.925,
+     "start": 48.487,
      "text": "owners"
     },
     {
-     "end": 49.537,
-     "start": 49.125,
+     "end": 49.338,
+     "start": 48.925,
      "text": "behind"
     },
     {
-     "end": 49.625,
-     "start": 49.537,
+     "end": 49.425,
+     "start": 49.338,
      "text": "the"
     },
     {
-     "end": 50.225,
-     "start": 49.625,
+     "end": 50.025,
+     "start": 49.425,
      "text": "Deployment"
     },
     {
-     "end": 50.838,
-     "start": 50.225,
+     "end": 50.638,
+     "start": 50.025,
      "text": "facade"
     },
     {
-     "end": 50.938,
-     "start": 50.838,
+     "end": 50.737,
+     "start": 50.638,
      "text": "—"
     },
     {
-     "end": 51.525,
-     "start": 50.938,
+     "end": 51.325,
+     "start": 50.737,
      "text": "Singular"
     },
     {
-     "end": 51.625,
-     "start": 51.525,
+     "end": 51.425,
+     "start": 51.325,
      "text": "."
     },
     {
-     "end": 52.225,
-     "start": 51.625,
+     "end": 52.025,
+     "start": 51.425,
      "text": "Registry"
     },
     {
-     "end": 52.3,
-     "start": 52.225,
+     "end": 52.1,
+     "start": 52.025,
      "text": "."
     },
     {
-     "end": 52.9,
-     "start": 52.3,
+     "end": 52.7,
+     "start": 52.1,
      "text": "Deployment"
     },
     {
-     "end": 53.0,
-     "start": 52.9,
+     "end": 52.8,
+     "start": 52.7,
      "text": "."
     },
     {
-     "end": 54.3,
-     "start": 53.0,
+     "end": 54.1,
+     "start": 52.8,
      "text": "Manifest"
     },
     {
-     "end": 54.525,
-     "start": 54.3,
+     "end": 54.325,
+     "start": 54.1,
      "text": ","
     },
     {
-     "end": 55.3,
-     "start": 54.8,
+     "end": 55.1,
+     "start": 54.6,
      "text": ".Mirror"
     },
     {
-     "end": 55.475,
-     "start": 55.3,
+     "end": 55.275,
+     "start": 55.1,
      "text": "and"
     },
     {
-     "end": 55.55,
-     "start": 55.475,
+     "end": 55.35,
+     "start": 55.275,
      "text": "."
     },
     {
-     "end": 56.175,
-     "start": 55.55,
+     "end": 55.975,
+     "start": 55.35,
      "text": "Attach"
     },
     {
-     "end": 56.263,
-     "start": 56.175,
+     "end": 56.062,
+     "start": 55.975,
      "text": "—"
     },
     {
-     "end": 56.438,
-     "start": 56.263,
+     "end": 56.237,
+     "start": 56.062,
      "text": "are"
     },
     {
-     "end": 57.35,
-     "start": 56.438,
+     "end": 57.15,
+     "start": 56.237,
      "text": "package-internal"
     },
     {
-     "end": 58.2,
-     "start": 57.35,
+     "end": 58.0,
+     "start": 57.15,
      "text": "other-modules"
     },
     {
-     "end": 58.388,
-     "start": 58.2,
+     "end": 58.188,
+     "start": 58.0,
      "text": "with"
     },
     {
-     "end": 59.013,
-     "start": 58.388,
+     "end": 58.812,
+     "start": 58.188,
      "text": "generated"
     },
     {
-     "end": 59.475,
-     "start": 59.013,
+     "end": 59.275,
+     "start": 58.812,
      "text": "pages"
     },
     {
-     "end": 59.75,
-     "start": 59.475,
+     "end": 59.55,
+     "start": 59.275,
      "text": "here"
     },
     {
-     "end": 59.875,
-     "start": 59.75,
+     "end": 59.675,
+     "start": 59.55,
      "text": "for"
     },
     {
-     "end": 59.975,
-     "start": 59.875,
+     "end": 59.775,
+     "start": 59.675,
      "text": "the"
     },
     {
-     "end": 60.638,
-     "start": 59.975,
+     "end": 60.438,
+     "start": 59.775,
      "text": "contributor"
     },
     {
-     "end": 61.05,
-     "start": 60.638,
+     "end": 60.85,
+     "start": 60.438,
      "text": "reading"
     },
     {
-     "end": 61.15,
-     "start": 61.05,
+     "end": 60.95,
+     "start": 60.85,
      "text": "the"
     },
     {
-     "end": 61.725,
-     "start": 61.15,
+     "end": 61.525,
+     "start": 60.95,
      "text": "facades'"
+    },
+    {
+     "end": 63.2,
+     "start": 61.525,
+     "text": "implementations"
     },
     {
      "end": 63.4,
-     "start": 61.725,
-     "text": "implementations"
-    },
-    {
-     "end": 63.6,
-     "start": 63.4,
+     "start": 63.2,
      "text": ","
     },
     {
-     "end": 63.888,
-     "start": 63.775,
+     "end": 63.688,
+     "start": 63.575,
      "text": "but"
     },
     {
-     "end": 64.05,
-     "start": 63.888,
+     "end": 63.85,
+     "start": 63.688,
      "text": "no"
     },
     {
-     "end": 64.338,
-     "start": 64.05,
+     "end": 64.137,
+     "start": 63.85,
      "text": "caller"
     },
     {
-     "end": 64.625,
-     "start": 64.338,
+     "end": 64.425,
+     "start": 64.137,
      "text": "import"
     },
     {
-     "end": 65.375,
-     "start": 64.625,
+     "end": 65.175,
+     "start": 64.425,
      "text": "path"
     },
     {
-     "end": 65.6,
-     "start": 65.375,
+     "end": 65.4,
+     "start": 65.175,
      "text": ":"
     },
     {
-     "end": 65.875,
-     "start": 65.8,
+     "end": 65.675,
+     "start": 65.6,
      "text": "a"
     },
     {
-     "end": 66.25,
-     "start": 65.875,
+     "end": 66.05,
+     "start": 65.675,
      "text": "caller"
     },
     {
-     "end": 66.825,
-     "start": 66.25,
+     "end": 66.625,
+     "start": 66.05,
      "text": "compiles"
     },
     {
-     "end": 67.162,
-     "start": 66.825,
+     "end": 66.963,
+     "start": 66.625,
      "text": "against"
     },
     {
-     "end": 67.25,
-     "start": 67.162,
+     "end": 67.05,
+     "start": 66.963,
      "text": "the"
     },
     {
-     "end": 67.75,
-     "start": 67.25,
+     "end": 67.55,
+     "start": 67.05,
      "text": "facades'"
     },
     {
-     "end": 68.375,
-     "start": 67.75,
+     "end": 68.175,
+     "start": 67.55,
      "text": "exports"
     },
     {
-     "end": 68.45,
-     "start": 68.375,
+     "end": 68.25,
+     "start": 68.175,
      "text": ","
     },
     {
-     "end": 68.662,
-     "start": 68.45,
+     "end": 68.463,
+     "start": 68.25,
      "text": "not"
     },
     {
-     "end": 68.988,
-     "start": 68.662,
+     "end": 68.787,
+     "start": 68.463,
      "text": "against"
     },
     {
-     "end": 69.2,
-     "start": 68.988,
+     "end": 69.0,
+     "start": 68.787,
      "text": "these"
     },
     {
-     "end": 70.3,
-     "start": 69.2,
+     "end": 70.1,
+     "start": 69.0,
      "text": "modules"
     },
     {
-     "end": 70.5,
-     "start": 70.3,
+     "end": 70.3,
+     "start": 70.1,
      "text": "."
     },
     {
-     "end": 71.125,
-     "start": 70.725,
+     "end": 70.925,
+     "start": 70.525,
      "text": "Singular"
     },
     {
-     "end": 71.175,
-     "start": 71.125,
+     "end": 70.975,
+     "start": 70.925,
      "text": "."
     },
     {
-     "end": 71.625,
-     "start": 71.175,
+     "end": 71.425,
+     "start": 70.975,
      "text": "Registry"
     },
     {
-     "end": 71.7,
-     "start": 71.625,
+     "end": 71.5,
+     "start": 71.425,
      "text": "."
     },
     {
-     "end": 72.1,
-     "start": 71.7,
+     "end": 71.9,
+     "start": 71.5,
      "text": "Ledger"
     },
     {
-     "end": 72.213,
-     "start": 72.1,
+     "end": 72.012,
+     "start": 71.9,
      "text": ","
     },
     {
-     "end": 72.7,
-     "start": 72.213,
+     "end": 72.5,
+     "start": 72.012,
      "text": "Singular"
     },
     {
-     "end": 72.75,
-     "start": 72.7,
+     "end": 72.55,
+     "start": 72.5,
      "text": "."
     },
     {
-     "end": 73.225,
-     "start": 72.75,
+     "end": 73.025,
+     "start": 72.55,
      "text": "Registry"
     },
     {
-     "end": 73.3,
-     "start": 73.225,
+     "end": 73.1,
+     "start": 73.025,
      "text": "."
     },
     {
-     "end": 74.5,
-     "start": 73.3,
+     "end": 74.3,
+     "start": 73.1,
      "text": "LedgerProvider"
     },
     {
-     "end": 74.725,
-     "start": 74.5,
+     "end": 74.525,
+     "start": 74.3,
      "text": ","
     },
     {
-     "end": 75.25,
-     "start": 74.925,
+     "end": 75.05,
+     "start": 74.725,
      "text": "Singular"
     },
     {
-     "end": 75.3,
-     "start": 75.25,
+     "end": 75.1,
+     "start": 75.05,
      "text": "."
     },
     {
-     "end": 75.75,
-     "start": 75.3,
+     "end": 75.55,
+     "start": 75.1,
      "text": "Registry"
     },
     {
-     "end": 75.825,
-     "start": 75.75,
+     "end": 75.625,
+     "start": 75.55,
      "text": "."
     },
     {
-     "end": 76.725,
-     "start": 75.825,
+     "end": 76.525,
+     "start": 75.625,
      "text": "Evidence"
     },
     {
-     "end": 76.925,
-     "start": 76.725,
+     "end": 76.725,
+     "start": 76.525,
      "text": ","
     },
     {
-     "end": 77.6,
-     "start": 77.15,
+     "end": 77.4,
+     "start": 76.95,
      "text": "Singular"
     },
     {
-     "end": 77.675,
-     "start": 77.6,
+     "end": 77.475,
+     "start": 77.4,
      "text": "."
     },
     {
-     "end": 78.2,
-     "start": 77.675,
+     "end": 78.0,
+     "start": 77.475,
      "text": "Registry"
     },
     {
-     "end": 78.25,
-     "start": 78.2,
+     "end": 78.05,
+     "start": 78.0,
      "text": "."
     },
     {
-     "end": 78.838,
-     "start": 78.25,
+     "end": 78.637,
+     "start": 78.05,
      "text": "Provider"
     },
     {
-     "end": 79.012,
-     "start": 78.838,
+     "end": 78.812,
+     "start": 78.637,
      "text": "and"
     },
     {
-     "end": 79.5,
-     "start": 79.012,
+     "end": 79.3,
+     "start": 78.812,
      "text": "Singular"
     },
     {
-     "end": 79.55,
-     "start": 79.5,
+     "end": 79.35,
+     "start": 79.3,
      "text": "."
     },
     {
-     "end": 80.15,
-     "start": 79.55,
+     "end": 79.95,
+     "start": 79.35,
      "text": "Registry"
     },
     {
-     "end": 80.275,
-     "start": 80.15,
+     "end": 80.075,
+     "start": 79.95,
      "text": "."
     },
     {
-     "end": 80.65,
-     "start": 80.275,
+     "end": 80.45,
+     "start": 80.075,
      "text": "Signing"
     },
     {
-     "end": 80.762,
-     "start": 80.65,
+     "end": 80.562,
+     "start": 80.45,
      "text": "are"
     },
     {
-     "end": 80.85,
-     "start": 80.762,
+     "end": 80.65,
+     "start": 80.562,
      "text": "the"
     },
     {
-     "end": 82.15,
-     "start": 80.85,
+     "end": 81.95,
+     "start": 80.65,
      "text": "re-exports"
     },
     {
-     "end": 82.35,
-     "start": 82.15,
+     "end": 82.15,
+     "start": 81.95,
      "text": ":"
     },
     {
-     "end": 82.713,
-     "start": 82.575,
+     "end": 82.512,
+     "start": 82.375,
      "text": "their"
     },
     {
-     "end": 83.65,
-     "start": 82.713,
+     "end": 83.45,
+     "start": 82.512,
      "text": "implementations"
     },
     {
-     "end": 83.812,
-     "start": 83.65,
+     "end": 83.613,
+     "start": 83.45,
      "text": "are"
     },
     {
-     "end": 84.2,
-     "start": 83.812,
+     "end": 84.0,
+     "start": 83.613,
      "text": "owned"
     },
     {
-     "end": 84.375,
-     "start": 84.2,
+     "end": 84.175,
+     "start": 84.0,
      "text": "by"
     },
     {
-     "end": 84.488,
-     "start": 84.375,
+     "end": 84.287,
+     "start": 84.175,
      "text": "the"
     },
     {
-     "end": 84.9,
-     "start": 84.488,
+     "end": 84.7,
+     "start": 84.287,
      "text": "public"
     },
     {
-     "end": 85.775,
-     "start": 84.9,
+     "end": 85.575,
+     "start": 84.7,
      "text": "local-services"
     },
     {
-     "end": 86.463,
-     "start": 85.775,
+     "end": 86.262,
+     "start": 85.575,
      "text": "component"
     },
     {
-     "end": 86.55,
-     "start": 86.463,
+     "end": 86.35,
+     "start": 86.262,
      "text": "("
     },
     {
-     "end": 89.1,
-     "start": 86.55,
+     "end": 88.9,
+     "start": 86.35,
      "text": "offchain/local-services/"
     },
     {
-     "end": 89.2,
-     "start": 89.1,
+     "end": 89.0,
+     "start": 88.9,
      "text": ")"
     },
     {
-     "end": 89.312,
-     "start": 89.2,
+     "end": 89.113,
+     "start": 89.0,
      "text": "and"
     },
     {
-     "end": 89.4,
-     "start": 89.312,
+     "end": 89.2,
+     "start": 89.113,
      "text": "the"
     },
     {
-     "end": 89.7,
-     "start": 89.4,
+     "end": 89.5,
+     "start": 89.2,
      "text": "main"
     },
     {
-     "end": 90.275,
-     "start": 89.7,
+     "end": 90.075,
+     "start": 89.5,
      "text": "library"
     },
     {
-     "end": 90.925,
-     "start": 90.275,
+     "end": 90.725,
+     "start": 90.075,
      "text": "exposes"
     },
     {
-     "end": 91.137,
-     "start": 90.925,
+     "end": 90.938,
+     "start": 90.725,
      "text": "their"
     },
     {
-     "end": 91.625,
-     "start": 91.137,
+     "end": 91.425,
+     "start": 90.938,
      "text": "stable"
     },
     {
-     "end": 92.1,
-     "start": 91.625,
+     "end": 91.9,
+     "start": 91.425,
      "text": "import"
     },
     {
-     "end": 93.325,
-     "start": 92.1,
+     "end": 93.125,
+     "start": 91.9,
      "text": "paths"
     },
     {
-     "end": 93.575,
-     "start": 93.325,
+     "end": 93.375,
+     "start": 93.125,
      "text": "."
     },
     {
-     "end": 93.875,
-     "start": 93.775,
+     "end": 93.675,
+     "start": 93.575,
      "text": "The"
     },
     {
-     "end": 94.375,
-     "start": 93.875,
+     "end": 94.175,
+     "start": 93.675,
      "text": "generic"
     },
     {
-     "end": 94.9,
-     "start": 94.375,
+     "end": 94.7,
+     "start": 94.175,
      "text": "provider"
     },
     {
-     "end": 95.55,
-     "start": 94.9,
+     "end": 95.35,
+     "start": 94.7,
      "text": "interface"
     },
     {
-     "end": 95.688,
-     "start": 95.55,
+     "end": 95.488,
+     "start": 95.35,
      "text": "and"
     },
     {
-     "end": 96.238,
-     "start": 95.688,
+     "end": 96.037,
+     "start": 95.488,
      "text": "evidence"
     },
     {
-     "end": 96.662,
-     "start": 96.238,
+     "end": 96.463,
+     "start": 96.037,
      "text": "types"
     },
     {
-     "end": 96.838,
-     "start": 96.662,
+     "end": 96.637,
+     "start": 96.463,
      "text": "let"
     },
     {
-     "end": 96.938,
-     "start": 96.838,
+     "end": 96.738,
+     "start": 96.637,
      "text": "a"
     },
     {
-     "end": 97.325,
-     "start": 96.938,
+     "end": 97.125,
+     "start": 96.738,
      "text": "caller"
     },
     {
-     "end": 97.7,
-     "start": 97.325,
+     "end": 97.5,
+     "start": 97.125,
      "text": "supply"
     },
     {
-     "end": 98.525,
-     "start": 97.7,
+     "end": 98.325,
+     "start": 97.5,
      "text": "capabilities"
     },
     {
-     "end": 98.875,
-     "start": 98.525,
+     "end": 98.675,
+     "start": 98.325,
      "text": "without"
     },
     {
-     "end": 99.425,
-     "start": 98.875,
+     "end": 99.225,
+     "start": 98.675,
      "text": "selecting"
     },
     {
-     "end": 99.537,
-     "start": 99.425,
+     "end": 99.338,
+     "start": 99.225,
      "text": "a"
     },
     {
-     "end": 99.9,
-     "start": 99.537,
+     "end": 99.7,
+     "start": 99.338,
      "text": "node"
     },
     {
-     "end": 101.1,
-     "start": 99.9,
+     "end": 100.9,
+     "start": 99.7,
      "text": "runtime"
     },
     {
-     "end": 101.325,
-     "start": 101.1,
+     "end": 101.125,
+     "start": 100.9,
      "text": ";"
     },
     {
-     "end": 101.575,
-     "start": 101.5,
+     "end": 101.375,
+     "start": 101.3,
      "text": "the"
     },
     {
-     "end": 101.975,
-     "start": 101.575,
+     "end": 101.775,
+     "start": 101.375,
      "text": "Koios"
     },
     {
-     "end": 102.6,
-     "start": 101.975,
+     "end": 102.4,
+     "start": 101.775,
      "text": "constructor"
     },
     {
-     "end": 103.137,
-     "start": 102.6,
+     "end": 102.938,
+     "start": 102.4,
      "text": "supplies"
     },
     {
-     "end": 103.9,
-     "start": 103.137,
+     "end": 103.7,
+     "start": 102.938,
      "text": "unbound"
     },
     {
-     "end": 104.0,
-     "start": 103.9,
+     "end": 103.8,
+     "start": 103.7,
      "text": ","
     },
     {
-     "end": 104.787,
-     "start": 104.0,
+     "end": 104.588,
+     "start": 103.8,
      "text": "unverified"
     },
     {
-     "end": 105.662,
-     "start": 104.787,
+     "end": 105.463,
+     "start": 104.588,
      "text": "HTTP"
     },
     {
-     "end": 106.125,
-     "start": 105.662,
+     "end": 105.925,
+     "start": 105.463,
      "text": "facts"
     },
     {
-     "end": 106.325,
-     "start": 106.125,
+     "end": 106.125,
+     "start": 105.925,
      "text": "through"
     },
     {
-     "end": 106.562,
-     "start": 106.325,
+     "end": 106.363,
+     "start": 106.125,
      "text": "that"
     },
     {
-     "end": 107.7,
-     "start": 106.562,
+     "end": 107.5,
+     "start": 106.363,
      "text": "interface"
     },
     {
-     "end": 107.9,
-     "start": 107.7,
+     "end": 107.7,
+     "start": 107.5,
      "text": "."
     },
     {
-     "end": 108.238,
-     "start": 108.125,
+     "end": 108.037,
+     "start": 107.925,
      "text": "The"
     },
     {
-     "end": 108.688,
-     "start": 108.238,
+     "end": 108.488,
+     "start": 108.037,
      "text": "private"
     },
     {
-     "end": 109.05,
-     "start": 108.688,
+     "end": 108.85,
+     "start": 108.488,
      "text": "node"
     },
     {
-     "end": 109.525,
-     "start": 109.05,
+     "end": 109.325,
+     "start": 108.85,
      "text": "runtime"
     },
     {
-     "end": 110.062,
-     "start": 109.525,
+     "end": 109.863,
+     "start": 109.325,
      "text": "owners"
     },
     {
-     "end": 110.238,
-     "start": 110.062,
+     "end": 110.037,
+     "start": 109.863,
      "text": "are"
     },
     {
-     "end": 110.9,
-     "start": 110.238,
+     "end": 110.7,
+     "start": 110.037,
      "text": "deliberately"
     },
     {
-     "end": 111.162,
-     "start": 110.9,
+     "end": 110.963,
+     "start": 110.7,
      "text": "not"
     },
     {
-     "end": 111.463,
-     "start": 111.162,
+     "end": 111.262,
+     "start": 110.963,
      "text": "part"
     },
     {
-     "end": 111.55,
-     "start": 111.463,
+     "end": 111.35,
+     "start": 111.262,
      "text": "of"
     },
     {
-     "end": 111.787,
-     "start": 111.55,
+     "end": 111.588,
+     "start": 111.35,
      "text": "this"
     },
     {
-     "end": 112.425,
-     "start": 111.787,
+     "end": 112.225,
+     "start": 111.588,
      "text": "reference"
     },
     {
-     "end": 112.5,
-     "start": 112.425,
+     "end": 112.3,
+     "start": 112.225,
      "text": "—"
     },
     {
-     "end": 112.65,
-     "start": 112.5,
+     "end": 112.45,
+     "start": 112.3,
      "text": "they"
     },
     {
-     "end": 112.8,
-     "start": 112.65,
+     "end": 112.6,
+     "start": 112.45,
      "text": "are"
     },
     {
-     "end": 113.025,
-     "start": 112.8,
+     "end": 112.825,
+     "start": 112.6,
      "text": "not"
     },
     {
-     "end": 113.675,
-     "start": 113.025,
+     "end": 113.475,
+     "start": 112.825,
      "text": "importable"
     },
     {
-     "end": 113.838,
-     "start": 113.675,
+     "end": 113.637,
+     "start": 113.475,
      "text": "from"
     },
     {
-     "end": 113.925,
-     "start": 113.838,
+     "end": 113.725,
+     "start": 113.637,
      "text": "the"
     },
     {
-     "end": 114.325,
-     "start": 113.925,
+     "end": 114.125,
+     "start": 113.725,
      "text": "public"
     },
     {
-     "end": 115.075,
-     "start": 114.325,
+     "end": 114.875,
+     "start": 114.125,
      "text": "library"
     },
     {
-     "end": 115.162,
-     "start": 115.075,
+     "end": 114.963,
+     "start": 114.875,
      "text": "—"
     },
     {
-     "end": 115.3,
-     "start": 115.162,
+     "end": 115.1,
+     "start": 114.963,
      "text": "and"
     },
     {
-     "end": 115.463,
-     "start": 115.3,
+     "end": 115.262,
+     "start": 115.1,
      "text": "are"
     },
     {
-     "end": 116.15,
-     "start": 115.463,
+     "end": 115.95,
+     "start": 115.262,
      "text": "documented"
     },
     {
-     "end": 116.338,
-     "start": 116.15,
+     "end": 116.137,
+     "start": 115.95,
      "text": "with"
     },
     {
-     "end": 116.725,
-     "start": 116.338,
+     "end": 116.525,
+     "start": 116.137,
      "text": "source"
     },
     {
-     "end": 117.1,
-     "start": 116.725,
+     "end": 116.9,
+     "start": 116.525,
      "text": "links"
     },
     {
-     "end": 117.262,
-     "start": 117.1,
+     "end": 117.062,
+     "start": 116.9,
      "text": "in"
     },
     {
-     "end": 117.625,
-     "start": 117.262,
+     "end": 117.425,
+     "start": 117.062,
      "text": "Node"
     },
     {
-     "end": 118.025,
-     "start": 117.625,
+     "end": 117.825,
+     "start": 117.425,
      "text": "module"
     },
     {
-     "end": 119.35,
-     "start": 118.025,
+     "end": 119.15,
+     "start": 117.825,
      "text": "ownership"
     },
     {
-     "end": 119.6,
-     "start": 119.35,
+     "end": 119.4,
+     "start": 119.15,
      "text": "."
     },
     {
-     "end": 119.925,
-     "start": 119.8,
+     "end": 119.725,
+     "start": 119.6,
      "text": "The"
     },
     {
-     "end": 120.325,
-     "start": 119.925,
+     "end": 120.125,
+     "start": 119.725,
      "text": "extent"
     },
     {
-     "end": 120.787,
-     "start": 120.325,
+     "end": 120.588,
+     "start": 120.125,
      "text": "below"
     },
     {
-     "end": 120.95,
-     "start": 120.787,
+     "end": 120.75,
+     "start": 120.588,
      "text": "is"
     },
     {
-     "end": 121.05,
-     "start": 120.95,
+     "end": 120.85,
+     "start": 120.75,
      "text": "the"
     },
     {
-     "end": 121.613,
-     "start": 121.05,
+     "end": 121.412,
+     "start": 120.85,
      "text": "complete"
     },
     {
-     "end": 122.275,
-     "start": 121.613,
+     "end": 122.075,
+     "start": 121.412,
      "text": "documented"
     },
     {
-     "end": 122.662,
-     "start": 122.275,
+     "end": 122.463,
+     "start": 122.075,
      "text": "module"
     },
     {
-     "end": 123.325,
-     "start": 122.662,
+     "end": 123.125,
+     "start": 122.463,
      "text": "surface"
     },
     {
-     "end": 123.4,
-     "start": 123.325,
+     "end": 123.2,
+     "start": 123.125,
      "text": "—"
     },
     {
-     "end": 124.15,
-     "start": 123.4,
+     "end": 123.95,
+     "start": 123.2,
      "text": "exposed"
     },
     {
-     "end": 124.238,
-     "start": 124.15,
+     "end": 124.037,
+     "start": 123.95,
      "text": ","
     },
     {
-     "end": 124.975,
-     "start": 124.238,
+     "end": 124.775,
+     "start": 124.037,
      "text": "re-exported"
     },
     {
-     "end": 125.1,
-     "start": 124.975,
+     "end": 124.9,
+     "start": 124.775,
      "text": "and"
     },
     {
-     "end": 125.95,
-     "start": 125.1,
+     "end": 125.75,
+     "start": 124.9,
      "text": "package-internal"
     },
     {
-     "end": 126.975,
-     "start": 125.95,
+     "end": 126.775,
+     "start": 125.75,
      "text": "alike"
     },
     {
-     "end": 127.2,
-     "start": 126.975,
+     "end": 127.0,
+     "start": 126.775,
      "text": ";"
     },
     {
-     "end": 127.45,
-     "start": 127.375,
+     "end": 127.25,
+     "start": 127.175,
      "text": "the"
     },
     {
-     "end": 127.675,
-     "start": 127.45,
+     "end": 127.475,
+     "start": 127.25,
      "text": "site"
     },
     {
-     "end": 127.925,
-     "start": 127.675,
+     "end": 127.725,
+     "start": 127.475,
      "text": "check"
     },
     {
-     "end": 128.238,
-     "start": 127.925,
+     "end": 128.038,
+     "start": 127.725,
      "text": "fails"
     },
     {
-     "end": 128.6,
-     "start": 128.238,
+     "end": 128.4,
+     "start": 128.038,
      "text": "until"
     },
     {
-     "end": 128.75,
-     "start": 128.6,
+     "end": 128.55,
+     "start": 128.4,
      "text": "it"
     },
     {
-     "end": 128.863,
-     "start": 128.75,
+     "end": 128.663,
+     "start": 128.55,
      "text": "and"
     },
     {
-     "end": 129.05,
-     "start": 128.863,
+     "end": 128.85,
+     "start": 128.663,
      "text": "this"
     },
     {
-     "end": 129.275,
-     "start": 129.05,
+     "end": 129.075,
+     "start": 128.85,
      "text": "list"
     },
     {
-     "end": 130.125,
-     "start": 129.275,
+     "end": 129.925,
+     "start": 129.075,
      "text": "agree"
     },
     {
-     "end": 130.35,
-     "start": 130.125,
+     "end": 130.15,
+     "start": 129.925,
      "text": "."
     }
    ]
@@ -275101,6 +275101,2026 @@
     {
      "end": 10.75,
      "start": 10.55,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/naming-the-registry-by-its-state-token-00": {
+   "audio_sha256": "bbde99b62d7514f0c073b916d3c2a07913722fa4641b500f00d1a8a918c6424e",
+   "characters": 39,
+   "cost": 2.418e-05,
+   "duration": 2.65,
+   "index": 0,
+   "key": "d1e9afd8c8585249fdba473ed24be69d28fd810dae896824d5e8f51aeb931ec7",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "naming-the-registry-by-its-state-token",
+   "sent_text": "Naming the registry by its state token.",
+   "text": "Naming the registry by its state token.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.2,
+     "text": "Naming"
+    },
+    {
+     "end": 0.55,
+     "start": 0.463,
+     "text": "the"
+    },
+    {
+     "end": 1.05,
+     "start": 0.55,
+     "text": "registry"
+    },
+    {
+     "end": 1.188,
+     "start": 1.05,
+     "text": "by"
+    },
+    {
+     "end": 1.288,
+     "start": 1.188,
+     "text": "its"
+    },
+    {
+     "end": 1.575,
+     "start": 1.288,
+     "text": "state"
+    },
+    {
+     "end": 2.45,
+     "start": 1.575,
+     "text": "token"
+    },
+    {
+     "end": 2.65,
+     "start": 2.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/naming-the-registry-by-its-state-token-01": {
+   "audio_sha256": "0ceb64dbebb1891c2636cb02a869b53f7695c2dd6d4696296b209ec82ba11426",
+   "characters": 322,
+   "cost": 0.00019964000000000003,
+   "duration": 21.275,
+   "index": 1,
+   "key": "778b7689303fbf232d118d315974cb03ecf78375b6ffc3d7240bc8682ddef09c",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "naming-the-registry-by-its-state-token",
+   "sent_text": "As Carol, the creator, I run create from an empty directory. Its receipt names the registry's state token, the policy and the name in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "text": "As Carol, the creator, I run create from an empty directory. Its receipt names the registry's state token, the policy and the name in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.175,
+     "text": "As"
+    },
+    {
+     "end": 0.725,
+     "start": 0.363,
+     "text": "Carol"
+    },
+    {
+     "end": 0.762,
+     "start": 0.725,
+     "text": ","
+    },
+    {
+     "end": 0.85,
+     "start": 0.762,
+     "text": "the"
+    },
+    {
+     "end": 1.4,
+     "start": 0.85,
+     "text": "creator"
+    },
+    {
+     "end": 1.475,
+     "start": 1.4,
+     "text": ","
+    },
+    {
+     "end": 1.638,
+     "start": 1.475,
+     "text": "I"
+    },
+    {
+     "end": 1.913,
+     "start": 1.638,
+     "text": "run"
+    },
+    {
+     "end": 2.35,
+     "start": 1.913,
+     "text": "create"
+    },
+    {
+     "end": 2.487,
+     "start": 2.35,
+     "text": "from"
+    },
+    {
+     "end": 2.575,
+     "start": 2.487,
+     "text": "an"
+    },
+    {
+     "end": 2.875,
+     "start": 2.575,
+     "text": "empty"
+    },
+    {
+     "end": 3.95,
+     "start": 2.875,
+     "text": "directory"
+    },
+    {
+     "end": 4.15,
+     "start": 3.95,
+     "text": "."
+    },
+    {
+     "end": 4.5,
+     "start": 4.325,
+     "text": "Its"
+    },
+    {
+     "end": 4.9,
+     "start": 4.5,
+     "text": "receipt"
+    },
+    {
+     "end": 5.188,
+     "start": 4.9,
+     "text": "names"
+    },
+    {
+     "end": 5.275,
+     "start": 5.188,
+     "text": "the"
+    },
+    {
+     "end": 5.825,
+     "start": 5.275,
+     "text": "registry's"
+    },
+    {
+     "end": 6.15,
+     "start": 5.825,
+     "text": "state"
+    },
+    {
+     "end": 6.65,
+     "start": 6.15,
+     "text": "token"
+    },
+    {
+     "end": 6.75,
+     "start": 6.65,
+     "text": ","
+    },
+    {
+     "end": 6.85,
+     "start": 6.75,
+     "text": "the"
+    },
+    {
+     "end": 7.425,
+     "start": 6.85,
+     "text": "policy"
+    },
+    {
+     "end": 7.537,
+     "start": 7.425,
+     "text": "and"
+    },
+    {
+     "end": 7.625,
+     "start": 7.537,
+     "text": "the"
+    },
+    {
+     "end": 7.863,
+     "start": 7.625,
+     "text": "name"
+    },
+    {
+     "end": 7.95,
+     "start": 7.863,
+     "text": "in"
+    },
+    {
+     "end": 8.825,
+     "start": 7.95,
+     "text": "hex"
+    },
+    {
+     "end": 9.025,
+     "start": 8.825,
+     "text": "."
+    },
+    {
+     "end": 9.325,
+     "start": 9.2,
+     "text": "I"
+    },
+    {
+     "end": 9.725,
+     "start": 9.325,
+     "text": "publish"
+    },
+    {
+     "end": 10.05,
+     "start": 9.725,
+     "text": "nothing"
+    },
+    {
+     "end": 10.413,
+     "start": 10.05,
+     "text": "else"
+    },
+    {
+     "end": 10.55,
+     "start": 10.413,
+     "text": "and"
+    },
+    {
+     "end": 10.8,
+     "start": 10.55,
+     "text": "keep"
+    },
+    {
+     "end": 10.988,
+     "start": 10.8,
+     "text": "no"
+    },
+    {
+     "end": 11.325,
+     "start": 10.988,
+     "text": "file"
+    },
+    {
+     "end": 11.613,
+     "start": 11.325,
+     "text": "anyone"
+    },
+    {
+     "end": 11.85,
+     "start": 11.613,
+     "text": "else"
+    },
+    {
+     "end": 12.75,
+     "start": 11.85,
+     "text": "needs"
+    },
+    {
+     "end": 12.95,
+     "start": 12.75,
+     "text": ":"
+    },
+    {
+     "end": 13.5,
+     "start": 13.175,
+     "text": "create"
+    },
+    {
+     "end": 13.863,
+     "start": 13.5,
+     "text": "writes"
+    },
+    {
+     "end": 14.175,
+     "start": 13.863,
+     "text": "no"
+    },
+    {
+     "end": 14.762,
+     "start": 14.175,
+     "text": "identity"
+    },
+    {
+     "end": 15.275,
+     "start": 14.762,
+     "text": "file"
+    },
+    {
+     "end": 15.375,
+     "start": 15.275,
+     "text": ","
+    },
+    {
+     "end": 15.488,
+     "start": 15.375,
+     "text": "and"
+    },
+    {
+     "end": 15.587,
+     "start": 15.488,
+     "text": "the"
+    },
+    {
+     "end": 16.013,
+     "start": 15.587,
+     "text": "pending"
+    },
+    {
+     "end": 16.575,
+     "start": 16.013,
+     "text": "identity"
+    },
+    {
+     "end": 16.7,
+     "start": 16.575,
+     "text": "it"
+    },
+    {
+     "end": 17.3,
+     "start": 16.7,
+     "text": "records"
+    },
+    {
+     "end": 17.675,
+     "start": 17.3,
+     "text": "before"
+    },
+    {
+     "end": 17.888,
+     "start": 17.675,
+     "text": "its"
+    },
+    {
+     "end": 18.175,
+     "start": 17.888,
+     "text": "first"
+    },
+    {
+     "end": 18.75,
+     "start": 18.175,
+     "text": "submission"
+    },
+    {
+     "end": 18.9,
+     "start": 18.75,
+     "text": "is"
+    },
+    {
+     "end": 19.475,
+     "start": 18.9,
+     "text": "removed"
+    },
+    {
+     "end": 19.712,
+     "start": 19.475,
+     "text": "once"
+    },
+    {
+     "end": 19.85,
+     "start": 19.712,
+     "text": "it"
+    },
+    {
+     "end": 21.075,
+     "start": 19.85,
+     "text": "finishes"
+    },
+    {
+     "end": 21.275,
+     "start": 21.075,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/naming-the-registry-by-its-state-token-02": {
+   "audio_sha256": "2403dfb4bc2f434e8ed53e77b13cd0891f22914e790b88bd8657612a286e2e32",
+   "characters": 555,
+   "cost": 0.0003441,
+   "duration": 36.775,
+   "index": 2,
+   "key": "72f4910566f4e725ddc553781e60b44a187ac8087d6374fd6c7a5eedfc5dce19",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "naming-the-registry-by-its-state-token",
+   "sent_text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything. It refuses by name, in order: a token of another release, a token the provider has no record of, a supply other than one, a minting transaction that spends no matching seed, no state output holding the token, a datum policy that differs from the one the release derives, and a provider on another network.",
+   "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything. It refuses by name, in order: a token of another release, a token the provider has no record of, a supply other than one, a minting transaction that spends no matching seed, no state output holding the token, a datum policy that differs from the one the release derives, and a provider on another network.",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.8,
+     "start": 0.438,
+     "text": "Bob"
+    },
+    {
+     "end": 0.85,
+     "start": 0.8,
+     "text": ","
+    },
+    {
+     "end": 1.0,
+     "start": 0.85,
+     "text": "I"
+    },
+    {
+     "end": 1.325,
+     "start": 1.0,
+     "text": "start"
+    },
+    {
+     "end": 1.462,
+     "start": 1.325,
+     "text": "from"
+    },
+    {
+     "end": 1.587,
+     "start": 1.462,
+     "text": "an"
+    },
+    {
+     "end": 1.95,
+     "start": 1.587,
+     "text": "empty"
+    },
+    {
+     "end": 2.575,
+     "start": 1.95,
+     "text": "directory"
+    },
+    {
+     "end": 2.725,
+     "start": 2.575,
+     "text": "with"
+    },
+    {
+     "end": 2.825,
+     "start": 2.725,
+     "text": "the"
+    },
+    {
+     "end": 3.325,
+     "start": 2.825,
+     "text": "release"
+    },
+    {
+     "end": 3.375,
+     "start": 3.325,
+     "text": ","
+    },
+    {
+     "end": 3.588,
+     "start": 3.375,
+     "text": "my"
+    },
+    {
+     "end": 4.05,
+     "start": 3.588,
+     "text": "wallet"
+    },
+    {
+     "end": 4.162,
+     "start": 4.05,
+     "text": "and"
+    },
+    {
+     "end": 4.262,
+     "start": 4.162,
+     "text": "a"
+    },
+    {
+     "end": 4.775,
+     "start": 4.262,
+     "text": "Koios"
+    },
+    {
+     "end": 5.475,
+     "start": 4.775,
+     "text": "URL"
+    },
+    {
+     "end": 5.575,
+     "start": 5.475,
+     "text": ","
+    },
+    {
+     "end": 5.7,
+     "start": 5.575,
+     "text": "and"
+    },
+    {
+     "end": 5.938,
+     "start": 5.7,
+     "text": "give"
+    },
+    {
+     "end": 6.275,
+     "start": 5.938,
+     "text": "every"
+    },
+    {
+     "end": 6.713,
+     "start": 6.275,
+     "text": "command"
+    },
+    {
+     "end": 6.8,
+     "start": 6.713,
+     "text": "the"
+    },
+    {
+     "end": 7.125,
+     "start": 6.8,
+     "text": "state"
+    },
+    {
+     "end": 8.275,
+     "start": 7.125,
+     "text": "token"
+    },
+    {
+     "end": 8.525,
+     "start": 8.275,
+     "text": "."
+    },
+    {
+     "end": 8.8,
+     "start": 8.725,
+     "text": "The"
+    },
+    {
+     "end": 9.3,
+     "start": 8.8,
+     "text": "command"
+    },
+    {
+     "end": 9.825,
+     "start": 9.3,
+     "text": "derives"
+    },
+    {
+     "end": 9.95,
+     "start": 9.825,
+     "text": "the"
+    },
+    {
+     "end": 10.55,
+     "start": 9.95,
+     "text": "registry"
+    },
+    {
+     "end": 10.712,
+     "start": 10.55,
+     "text": "from"
+    },
+    {
+     "end": 10.837,
+     "start": 10.712,
+     "text": "the"
+    },
+    {
+     "end": 11.375,
+     "start": 10.837,
+     "text": "token"
+    },
+    {
+     "end": 11.488,
+     "start": 11.375,
+     "text": "and"
+    },
+    {
+     "end": 11.575,
+     "start": 11.488,
+     "text": "the"
+    },
+    {
+     "end": 12.288,
+     "start": 11.575,
+     "text": "blueprint"
+    },
+    {
+     "end": 12.438,
+     "start": 12.288,
+     "text": "and"
+    },
+    {
+     "end": 12.75,
+     "start": 12.438,
+     "text": "checks"
+    },
+    {
+     "end": 12.875,
+     "start": 12.75,
+     "text": "it"
+    },
+    {
+     "end": 13.238,
+     "start": 12.875,
+     "text": "against"
+    },
+    {
+     "end": 13.363,
+     "start": 13.238,
+     "text": "the"
+    },
+    {
+     "end": 13.75,
+     "start": 13.363,
+     "text": "chain"
+    },
+    {
+     "end": 14.087,
+     "start": 13.75,
+     "text": "before"
+    },
+    {
+     "end": 14.2,
+     "start": 14.087,
+     "text": "it"
+    },
+    {
+     "end": 14.525,
+     "start": 14.2,
+     "text": "builds"
+    },
+    {
+     "end": 15.675,
+     "start": 14.525,
+     "text": "anything"
+    },
+    {
+     "end": 15.9,
+     "start": 15.675,
+     "text": "."
+    },
+    {
+     "end": 16.163,
+     "start": 16.075,
+     "text": "It"
+    },
+    {
+     "end": 16.65,
+     "start": 16.163,
+     "text": "refuses"
+    },
+    {
+     "end": 16.825,
+     "start": 16.65,
+     "text": "by"
+    },
+    {
+     "end": 17.05,
+     "start": 16.825,
+     "text": "name"
+    },
+    {
+     "end": 17.087,
+     "start": 17.05,
+     "text": ","
+    },
+    {
+     "end": 17.175,
+     "start": 17.087,
+     "text": "in"
+    },
+    {
+     "end": 17.925,
+     "start": 17.175,
+     "text": "order"
+    },
+    {
+     "end": 18.15,
+     "start": 17.925,
+     "text": ":"
+    },
+    {
+     "end": 18.438,
+     "start": 18.35,
+     "text": "a"
+    },
+    {
+     "end": 18.875,
+     "start": 18.438,
+     "text": "token"
+    },
+    {
+     "end": 18.962,
+     "start": 18.875,
+     "text": "of"
+    },
+    {
+     "end": 19.3,
+     "start": 18.962,
+     "text": "another"
+    },
+    {
+     "end": 19.85,
+     "start": 19.3,
+     "text": "release"
+    },
+    {
+     "end": 19.925,
+     "start": 19.85,
+     "text": ","
+    },
+    {
+     "end": 20.025,
+     "start": 19.925,
+     "text": "a"
+    },
+    {
+     "end": 20.362,
+     "start": 20.025,
+     "text": "token"
+    },
+    {
+     "end": 20.45,
+     "start": 20.362,
+     "text": "the"
+    },
+    {
+     "end": 20.95,
+     "start": 20.45,
+     "text": "provider"
+    },
+    {
+     "end": 21.163,
+     "start": 20.95,
+     "text": "has"
+    },
+    {
+     "end": 21.4,
+     "start": 21.163,
+     "text": "no"
+    },
+    {
+     "end": 21.812,
+     "start": 21.4,
+     "text": "record"
+    },
+    {
+     "end": 22.5,
+     "start": 21.812,
+     "text": "of"
+    },
+    {
+     "end": 22.7,
+     "start": 22.5,
+     "text": ","
+    },
+    {
+     "end": 22.975,
+     "start": 22.9,
+     "text": "a"
+    },
+    {
+     "end": 23.45,
+     "start": 22.975,
+     "text": "supply"
+    },
+    {
+     "end": 23.725,
+     "start": 23.45,
+     "text": "other"
+    },
+    {
+     "end": 23.9,
+     "start": 23.725,
+     "text": "than"
+    },
+    {
+     "end": 24.275,
+     "start": 23.9,
+     "text": "one"
+    },
+    {
+     "end": 24.375,
+     "start": 24.275,
+     "text": ","
+    },
+    {
+     "end": 24.487,
+     "start": 24.375,
+     "text": "a"
+    },
+    {
+     "end": 24.875,
+     "start": 24.487,
+     "text": "minting"
+    },
+    {
+     "end": 25.6,
+     "start": 24.875,
+     "text": "transaction"
+    },
+    {
+     "end": 25.75,
+     "start": 25.6,
+     "text": "that"
+    },
+    {
+     "end": 26.138,
+     "start": 25.75,
+     "text": "spends"
+    },
+    {
+     "end": 26.375,
+     "start": 26.138,
+     "text": "no"
+    },
+    {
+     "end": 26.812,
+     "start": 26.375,
+     "text": "matching"
+    },
+    {
+     "end": 27.725,
+     "start": 26.812,
+     "text": "seed"
+    },
+    {
+     "end": 27.95,
+     "start": 27.725,
+     "text": ","
+    },
+    {
+     "end": 28.325,
+     "start": 28.15,
+     "text": "no"
+    },
+    {
+     "end": 28.6,
+     "start": 28.325,
+     "text": "state"
+    },
+    {
+     "end": 28.95,
+     "start": 28.6,
+     "text": "output"
+    },
+    {
+     "end": 29.237,
+     "start": 28.95,
+     "text": "holding"
+    },
+    {
+     "end": 29.325,
+     "start": 29.237,
+     "text": "the"
+    },
+    {
+     "end": 30.225,
+     "start": 29.325,
+     "text": "token"
+    },
+    {
+     "end": 30.425,
+     "start": 30.225,
+     "text": ","
+    },
+    {
+     "end": 30.7,
+     "start": 30.625,
+     "text": "a"
+    },
+    {
+     "end": 31.075,
+     "start": 30.7,
+     "text": "datum"
+    },
+    {
+     "end": 31.65,
+     "start": 31.075,
+     "text": "policy"
+    },
+    {
+     "end": 31.8,
+     "start": 31.65,
+     "text": "that"
+    },
+    {
+     "end": 32.15,
+     "start": 31.8,
+     "text": "differs"
+    },
+    {
+     "end": 32.287,
+     "start": 32.15,
+     "text": "from"
+    },
+    {
+     "end": 32.375,
+     "start": 32.287,
+     "text": "the"
+    },
+    {
+     "end": 32.65,
+     "start": 32.375,
+     "text": "one"
+    },
+    {
+     "end": 32.75,
+     "start": 32.65,
+     "text": "the"
+    },
+    {
+     "end": 33.125,
+     "start": 32.75,
+     "text": "release"
+    },
+    {
+     "end": 34.175,
+     "start": 33.125,
+     "text": "derives"
+    },
+    {
+     "end": 34.375,
+     "start": 34.175,
+     "text": ","
+    },
+    {
+     "end": 34.638,
+     "start": 34.55,
+     "text": "and"
+    },
+    {
+     "end": 34.7,
+     "start": 34.638,
+     "text": "a"
+    },
+    {
+     "end": 35.225,
+     "start": 34.7,
+     "text": "provider"
+    },
+    {
+     "end": 35.362,
+     "start": 35.225,
+     "text": "on"
+    },
+    {
+     "end": 35.7,
+     "start": 35.362,
+     "text": "another"
+    },
+    {
+     "end": 36.575,
+     "start": 35.7,
+     "text": "network"
+    },
+    {
+     "end": 36.775,
+     "start": 36.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/naming-the-registry-by-its-state-token-03": {
+   "audio_sha256": "6a50101ddfc7d52c806bde49abaf22ff99f1799181e5dbf0e2652274db19e357",
+   "characters": 646,
+   "cost": 0.00040052,
+   "duration": 41.125,
+   "index": 3,
+   "key": "f82bd7741bfac35b351c979118a123317d31be45f4394a5951a05f04869a5ab6",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "naming-the-registry-by-its-state-token",
+   "sent_text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider first, then your own wallet, which is read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one, the command refuses with reference missing, naming the role, the hash and the publish-references command as the remedy. An empty provider answer means only that this provider found none.",
+   "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider first, then your own wallet, which is read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one, the command refuses with reference missing, naming the role, the hash and the publish-references command as the remedy. An empty provider answer means only that this provider found none.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.2,
+     "text": "Each"
+    },
+    {
+     "end": 0.875,
+     "start": 0.4,
+     "text": "command"
+    },
+    {
+     "end": 1.075,
+     "start": 0.875,
+     "text": "then"
+    },
+    {
+     "end": 1.288,
+     "start": 1.075,
+     "text": "looks"
+    },
+    {
+     "end": 1.487,
+     "start": 1.288,
+     "text": "up"
+    },
+    {
+     "end": 1.825,
+     "start": 1.487,
+     "text": "only"
+    },
+    {
+     "end": 1.95,
+     "start": 1.825,
+     "text": "the"
+    },
+    {
+     "end": 2.412,
+     "start": 1.95,
+     "text": "reference"
+    },
+    {
+     "end": 2.825,
+     "start": 2.412,
+     "text": "scripts"
+    },
+    {
+     "end": 3.037,
+     "start": 2.825,
+     "text": "its"
+    },
+    {
+     "end": 3.3,
+     "start": 3.037,
+     "text": "own"
+    },
+    {
+     "end": 4.037,
+     "start": 3.3,
+     "text": "transactions"
+    },
+    {
+     "end": 4.375,
+     "start": 4.037,
+     "text": "run"
+    },
+    {
+     "end": 4.425,
+     "start": 4.375,
+     "text": ","
+    },
+    {
+     "end": 4.6,
+     "start": 4.425,
+     "text": "by"
+    },
+    {
+     "end": 5.575,
+     "start": 4.6,
+     "text": "hash"
+    },
+    {
+     "end": 5.8,
+     "start": 5.575,
+     "text": ":"
+    },
+    {
+     "end": 6.05,
+     "start": 5.975,
+     "text": "the"
+    },
+    {
+     "end": 6.537,
+     "start": 6.05,
+     "text": "provider"
+    },
+    {
+     "end": 6.9,
+     "start": 6.537,
+     "text": "first"
+    },
+    {
+     "end": 6.95,
+     "start": 6.9,
+     "text": ","
+    },
+    {
+     "end": 7.088,
+     "start": 6.95,
+     "text": "then"
+    },
+    {
+     "end": 7.2,
+     "start": 7.088,
+     "text": "your"
+    },
+    {
+     "end": 7.4,
+     "start": 7.2,
+     "text": "own"
+    },
+    {
+     "end": 8.2,
+     "start": 7.4,
+     "text": "wallet"
+    },
+    {
+     "end": 8.4,
+     "start": 8.2,
+     "text": ","
+    },
+    {
+     "end": 8.75,
+     "start": 8.575,
+     "text": "which"
+    },
+    {
+     "end": 8.913,
+     "start": 8.75,
+     "text": "is"
+    },
+    {
+     "end": 9.212,
+     "start": 8.913,
+     "text": "read"
+    },
+    {
+     "end": 9.538,
+     "start": 9.212,
+     "text": "only"
+    },
+    {
+     "end": 9.663,
+     "start": 9.538,
+     "text": "when"
+    },
+    {
+     "end": 9.75,
+     "start": 9.663,
+     "text": "the"
+    },
+    {
+     "end": 10.25,
+     "start": 9.75,
+     "text": "provider"
+    },
+    {
+     "end": 10.475,
+     "start": 10.25,
+     "text": "has"
+    },
+    {
+     "end": 10.75,
+     "start": 10.475,
+     "text": "none"
+    },
+    {
+     "end": 10.875,
+     "start": 10.75,
+     "text": "for"
+    },
+    {
+     "end": 11.125,
+     "start": 10.875,
+     "text": "some"
+    },
+    {
+     "end": 12.05,
+     "start": 11.125,
+     "text": "script"
+    },
+    {
+     "end": 12.25,
+     "start": 12.05,
+     "text": ","
+    },
+    {
+     "end": 12.8,
+     "start": 12.45,
+     "text": "taking"
+    },
+    {
+     "end": 12.938,
+     "start": 12.8,
+     "text": "the"
+    },
+    {
+     "end": 13.375,
+     "start": 12.938,
+     "text": "lowest"
+    },
+    {
+     "end": 13.825,
+     "start": 13.375,
+     "text": "output"
+    },
+    {
+     "end": 14.325,
+     "start": 13.825,
+     "text": "reference"
+    },
+    {
+     "end": 14.587,
+     "start": 14.325,
+     "text": "among"
+    },
+    {
+     "end": 14.7,
+     "start": 14.587,
+     "text": "the"
+    },
+    {
+     "end": 15.2,
+     "start": 14.7,
+     "text": "outputs"
+    },
+    {
+     "end": 15.375,
+     "start": 15.2,
+     "text": "that"
+    },
+    {
+     "end": 15.7,
+     "start": 15.375,
+     "text": "carry"
+    },
+    {
+     "end": 15.825,
+     "start": 15.7,
+     "text": "the"
+    },
+    {
+     "end": 16.1,
+     "start": 15.825,
+     "text": "right"
+    },
+    {
+     "end": 17.1,
+     "start": 16.1,
+     "text": "script"
+    },
+    {
+     "end": 17.3,
+     "start": 17.1,
+     "text": "."
+    },
+    {
+     "end": 17.575,
+     "start": 17.5,
+     "text": "A"
+    },
+    {
+     "end": 17.987,
+     "start": 17.575,
+     "text": "command"
+    },
+    {
+     "end": 18.125,
+     "start": 17.987,
+     "text": "that"
+    },
+    {
+     "end": 18.45,
+     "start": 18.125,
+     "text": "runs"
+    },
+    {
+     "end": 18.65,
+     "start": 18.45,
+     "text": "no"
+    },
+    {
+     "end": 19.075,
+     "start": 18.65,
+     "text": "reference"
+    },
+    {
+     "end": 19.525,
+     "start": 19.075,
+     "text": "script"
+    },
+    {
+     "end": 19.6,
+     "start": 19.525,
+     "text": ","
+    },
+    {
+     "end": 19.825,
+     "start": 19.6,
+     "text": "such"
+    },
+    {
+     "end": 19.975,
+     "start": 19.825,
+     "text": "as"
+    },
+    {
+     "end": 20.5,
+     "start": 19.975,
+     "text": "inspect"
+    },
+    {
+     "end": 20.55,
+     "start": 20.5,
+     "text": ","
+    },
+    {
+     "end": 20.763,
+     "start": 20.55,
+     "text": "looks"
+    },
+    {
+     "end": 20.95,
+     "start": 20.763,
+     "text": "up"
+    },
+    {
+     "end": 21.775,
+     "start": 20.95,
+     "text": "none"
+    },
+    {
+     "end": 21.975,
+     "start": 21.775,
+     "text": "."
+    },
+    {
+     "end": 22.275,
+     "start": 22.175,
+     "text": "The"
+    },
+    {
+     "end": 22.625,
+     "start": 22.275,
+     "text": "hash"
+    },
+    {
+     "end": 22.775,
+     "start": 22.625,
+     "text": "is"
+    },
+    {
+     "end": 23.35,
+     "start": 22.775,
+     "text": "computed"
+    },
+    {
+     "end": 23.487,
+     "start": 23.35,
+     "text": "from"
+    },
+    {
+     "end": 23.587,
+     "start": 23.487,
+     "text": "the"
+    },
+    {
+     "end": 24.013,
+     "start": 23.587,
+     "text": "script"
+    },
+    {
+     "end": 24.337,
+     "start": 24.013,
+     "text": "each"
+    },
+    {
+     "end": 24.8,
+     "start": 24.337,
+     "text": "output"
+    },
+    {
+     "end": 25.375,
+     "start": 24.8,
+     "text": "carries"
+    },
+    {
+     "end": 25.487,
+     "start": 25.375,
+     "text": ","
+    },
+    {
+     "end": 25.775,
+     "start": 25.487,
+     "text": "never"
+    },
+    {
+     "end": 26.15,
+     "start": 25.775,
+     "text": "taken"
+    },
+    {
+     "end": 26.288,
+     "start": 26.15,
+     "text": "from"
+    },
+    {
+     "end": 26.375,
+     "start": 26.288,
+     "text": "the"
+    },
+    {
+     "end": 27.425,
+     "start": 26.375,
+     "text": "provider"
+    },
+    {
+     "end": 27.65,
+     "start": 27.425,
+     "text": "."
+    },
+    {
+     "end": 27.95,
+     "start": 27.825,
+     "text": "When"
+    },
+    {
+     "end": 28.275,
+     "start": 27.95,
+     "text": "neither"
+    },
+    {
+     "end": 28.538,
+     "start": 28.275,
+     "text": "has"
+    },
+    {
+     "end": 28.85,
+     "start": 28.538,
+     "text": "one"
+    },
+    {
+     "end": 28.9,
+     "start": 28.85,
+     "text": ","
+    },
+    {
+     "end": 29.0,
+     "start": 28.9,
+     "text": "the"
+    },
+    {
+     "end": 29.4,
+     "start": 29.0,
+     "text": "command"
+    },
+    {
+     "end": 30.025,
+     "start": 29.4,
+     "text": "refuses"
+    },
+    {
+     "end": 30.2,
+     "start": 30.025,
+     "text": "with"
+    },
+    {
+     "end": 30.675,
+     "start": 30.2,
+     "text": "reference"
+    },
+    {
+     "end": 31.225,
+     "start": 30.675,
+     "text": "missing"
+    },
+    {
+     "end": 31.325,
+     "start": 31.225,
+     "text": ","
+    },
+    {
+     "end": 31.663,
+     "start": 31.325,
+     "text": "naming"
+    },
+    {
+     "end": 31.75,
+     "start": 31.663,
+     "text": "the"
+    },
+    {
+     "end": 32.675,
+     "start": 31.75,
+     "text": "role"
+    },
+    {
+     "end": 32.875,
+     "start": 32.675,
+     "text": ","
+    },
+    {
+     "end": 33.162,
+     "start": 33.05,
+     "text": "the"
+    },
+    {
+     "end": 33.513,
+     "start": 33.162,
+     "text": "hash"
+    },
+    {
+     "end": 33.612,
+     "start": 33.513,
+     "text": "and"
+    },
+    {
+     "end": 33.7,
+     "start": 33.612,
+     "text": "the"
+    },
+    {
+     "end": 34.688,
+     "start": 33.7,
+     "text": "publish-references"
+    },
+    {
+     "end": 35.213,
+     "start": 34.688,
+     "text": "command"
+    },
+    {
+     "end": 35.362,
+     "start": 35.213,
+     "text": "as"
+    },
+    {
+     "end": 35.45,
+     "start": 35.362,
+     "text": "the"
+    },
+    {
+     "end": 36.375,
+     "start": 35.45,
+     "text": "remedy"
+    },
+    {
+     "end": 36.575,
+     "start": 36.375,
+     "text": "."
+    },
+    {
+     "end": 36.912,
+     "start": 36.775,
+     "text": "An"
+    },
+    {
+     "end": 37.25,
+     "start": 36.912,
+     "text": "empty"
+    },
+    {
+     "end": 37.75,
+     "start": 37.25,
+     "text": "provider"
+    },
+    {
+     "end": 38.287,
+     "start": 37.75,
+     "text": "answer"
+    },
+    {
+     "end": 38.588,
+     "start": 38.287,
+     "text": "means"
+    },
+    {
+     "end": 38.95,
+     "start": 38.588,
+     "text": "only"
+    },
+    {
+     "end": 39.1,
+     "start": 38.95,
+     "text": "that"
+    },
+    {
+     "end": 39.3,
+     "start": 39.1,
+     "text": "this"
+    },
+    {
+     "end": 39.8,
+     "start": 39.3,
+     "text": "provider"
+    },
+    {
+     "end": 40.075,
+     "start": 39.8,
+     "text": "found"
+    },
+    {
+     "end": 40.925,
+     "start": 40.075,
+     "text": "none"
+    },
+    {
+     "end": 41.125,
+     "start": 40.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/naming-the-registry-by-its-state-token-04": {
+   "audio_sha256": "f433fd454ff9e041a79c2320b113f074217908df0f1f2f2a60fcd30f355e5424",
+   "characters": 407,
+   "cost": 0.00025234,
+   "duration": 27.6,
+   "index": 4,
+   "key": "97089903f2d1874df715f30f18641b1a7daaa67d8ed8f3778c3bde6ddb841feb",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "naming-the-registry-by-its-state-token",
+   "sent_text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here, and stays operable with the release that made it.",
+   "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here, and stays operable with the release that made it.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.812,
+     "start": 0.25,
+     "text": "provider's"
+    },
+    {
+     "end": 1.312,
+     "start": 0.812,
+     "text": "answers"
+    },
+    {
+     "end": 1.475,
+     "start": 1.312,
+     "text": "are"
+    },
+    {
+     "end": 2.425,
+     "start": 1.475,
+     "text": "unverified"
+    },
+    {
+     "end": 2.5,
+     "start": 2.425,
+     "text": ","
+    },
+    {
+     "end": 2.612,
+     "start": 2.5,
+     "text": "and"
+    },
+    {
+     "end": 2.7,
+     "start": 2.612,
+     "text": "the"
+    },
+    {
+     "end": 3.125,
+     "start": 2.7,
+     "text": "token"
+    },
+    {
+     "end": 3.275,
+     "start": 3.125,
+     "text": "is"
+    },
+    {
+     "end": 3.537,
+     "start": 3.275,
+     "text": "not"
+    },
+    {
+     "end": 3.875,
+     "start": 3.537,
+     "text": "signed"
+    },
+    {
+     "end": 4.075,
+     "start": 3.875,
+     "text": "by"
+    },
+    {
+     "end": 5.1,
+     "start": 4.075,
+     "text": "anyone"
+    },
+    {
+     "end": 5.3,
+     "start": 5.1,
+     "text": ":"
+    },
+    {
+     "end": 5.588,
+     "start": 5.5,
+     "text": "a"
+    },
+    {
+     "end": 6.1,
+     "start": 5.588,
+     "text": "genuine"
+    },
+    {
+     "end": 6.725,
+     "start": 6.1,
+     "text": "registry"
+    },
+    {
+     "end": 6.812,
+     "start": 6.725,
+     "text": "of"
+    },
+    {
+     "end": 6.938,
+     "start": 6.812,
+     "text": "the"
+    },
+    {
+     "end": 7.275,
+     "start": 6.938,
+     "text": "same"
+    },
+    {
+     "end": 7.863,
+     "start": 7.275,
+     "text": "release"
+    },
+    {
+     "end": 8.125,
+     "start": 7.863,
+     "text": "made"
+    },
+    {
+     "end": 8.312,
+     "start": 8.125,
+     "text": "by"
+    },
+    {
+     "end": 8.637,
+     "start": 8.312,
+     "text": "someone"
+    },
+    {
+     "end": 8.887,
+     "start": 8.637,
+     "text": "else"
+    },
+    {
+     "end": 9.462,
+     "start": 8.887,
+     "text": "passes"
+    },
+    {
+     "end": 9.788,
+     "start": 9.462,
+     "text": "every"
+    },
+    {
+     "end": 10.65,
+     "start": 9.788,
+     "text": "check"
+    },
+    {
+     "end": 10.85,
+     "start": 10.65,
+     "text": "."
+    },
+    {
+     "end": 11.125,
+     "start": 11.025,
+     "text": "The"
+    },
+    {
+     "end": 11.45,
+     "start": 11.125,
+     "text": "ledger"
+    },
+    {
+     "end": 12.175,
+     "start": 11.45,
+     "text": "revalidates"
+    },
+    {
+     "end": 12.525,
+     "start": 12.175,
+     "text": "every"
+    },
+    {
+     "end": 13.0,
+     "start": 12.525,
+     "text": "reference"
+    },
+    {
+     "end": 13.4,
+     "start": 13.0,
+     "text": "input"
+    },
+    {
+     "end": 13.488,
+     "start": 13.4,
+     "text": "of"
+    },
+    {
+     "end": 13.575,
+     "start": 13.488,
+     "text": "a"
+    },
+    {
+     "end": 14.35,
+     "start": 13.575,
+     "text": "write"
+    },
+    {
+     "end": 14.55,
+     "start": 14.35,
+     "text": ","
+    },
+    {
+     "end": 14.9,
+     "start": 14.75,
+     "text": "so"
+    },
+    {
+     "end": 15.012,
+     "start": 14.9,
+     "text": "a"
+    },
+    {
+     "end": 15.488,
+     "start": 15.012,
+     "text": "stale"
+    },
+    {
+     "end": 15.663,
+     "start": 15.488,
+     "text": "or"
+    },
+    {
+     "end": 16.013,
+     "start": 15.663,
+     "text": "wrong"
+    },
+    {
+     "end": 16.475,
+     "start": 16.013,
+     "text": "carrier"
+    },
+    {
+     "end": 16.688,
+     "start": 16.475,
+     "text": "can"
+    },
+    {
+     "end": 17.013,
+     "start": 16.688,
+     "text": "fail"
+    },
+    {
+     "end": 17.075,
+     "start": 17.013,
+     "text": "a"
+    },
+    {
+     "end": 17.788,
+     "start": 17.075,
+     "text": "submission"
+    },
+    {
+     "end": 17.95,
+     "start": 17.788,
+     "text": "but"
+    },
+    {
+     "end": 18.275,
+     "start": 17.95,
+     "text": "never"
+    },
+    {
+     "end": 18.525,
+     "start": 18.275,
+     "text": "run"
+    },
+    {
+     "end": 18.938,
+     "start": 18.525,
+     "text": "another"
+    },
+    {
+     "end": 19.95,
+     "start": 18.938,
+     "text": "script"
+    },
+    {
+     "end": 20.15,
+     "start": 19.95,
+     "text": "."
+    },
+    {
+     "end": 20.45,
+     "start": 20.375,
+     "text": "A"
+    },
+    {
+     "end": 20.95,
+     "start": 20.45,
+     "text": "registry"
+    },
+    {
+     "end": 21.2,
+     "start": 20.95,
+     "text": "made"
+    },
+    {
+     "end": 21.425,
+     "start": 21.2,
+     "text": "by"
+    },
+    {
+     "end": 21.587,
+     "start": 21.425,
+     "text": "an"
+    },
+    {
+     "end": 22.05,
+     "start": 21.587,
+     "text": "earlier"
+    },
+    {
+     "end": 22.562,
+     "start": 22.05,
+     "text": "release"
+    },
+    {
+     "end": 22.725,
+     "start": 22.562,
+     "text": "is"
+    },
+    {
+     "end": 23.375,
+     "start": 22.725,
+     "text": "refused"
+    },
+    {
+     "end": 23.575,
+     "start": 23.375,
+     "text": "by"
+    },
+    {
+     "end": 23.9,
+     "start": 23.575,
+     "text": "name"
+    },
+    {
+     "end": 24.35,
+     "start": 23.9,
+     "text": "here"
+    },
+    {
+     "end": 24.45,
+     "start": 24.35,
+     "text": ","
+    },
+    {
+     "end": 24.587,
+     "start": 24.45,
+     "text": "and"
+    },
+    {
+     "end": 24.987,
+     "start": 24.587,
+     "text": "stays"
+    },
+    {
+     "end": 25.55,
+     "start": 24.987,
+     "text": "operable"
+    },
+    {
+     "end": 25.7,
+     "start": 25.55,
+     "text": "with"
+    },
+    {
+     "end": 25.8,
+     "start": 25.7,
+     "text": "the"
+    },
+    {
+     "end": 26.225,
+     "start": 25.8,
+     "text": "release"
+    },
+    {
+     "end": 26.4,
+     "start": 26.225,
+     "text": "that"
+    },
+    {
+     "end": 26.625,
+     "start": 26.4,
+     "text": "made"
+    },
+    {
+     "end": 27.375,
+     "start": 26.625,
+     "text": "it"
+    },
+    {
+     "end": 27.6,
+     "start": 27.375,
      "text": "."
     }
    ]

@@ -4371,8 +4371,8 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "9bb706141ca8"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 76 modules in three kinds: 58 explicitly exposed modules and five re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence, Singular.Registry.Provider and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The private node runtime owners are deliberately not part of this reference — they are not importable from the public library — and are documented with source links in Node module ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "364cb98faacb"
    },
    {
     "index": 3,
@@ -8316,6 +8316,43 @@
     "pause_ms": 400,
     "text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
     "v": "a274ed318615"
+   }
+  ],
+  "naming-the-registry-by-its-state-token": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-00",
+    "pause_ms": 500,
+    "text": "Naming the registry by its state token.",
+    "v": "bbde99b62d75"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-01",
+    "pause_ms": 400,
+    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names the registry's state token, the policy and the name in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+    "v": "0ceb64dbebb1"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-02",
+    "pause_ms": 400,
+    "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything. It refuses by name, in order: a token of another release, a token the provider has no record of, a supply other than one, a minting transaction that spends no matching seed, no state output holding the token, a datum policy that differs from the one the release derives, and a provider on another network.",
+    "v": "2403dfb4bc2f"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-03",
+    "pause_ms": 400,
+    "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider first, then your own wallet, which is read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one, the command refuses with reference missing, naming the role, the hash and the publish-references command as the remedy. An empty provider answer means only that this provider found none.",
+    "v": "6a50101ddfc7"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-04",
+    "pause_ms": 400,
+    "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here, and stays operable with the release that made it.",
+    "v": "f433fd454ff9"
    }
   ],
   "reading-through-an-index": [

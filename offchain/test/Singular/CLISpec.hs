@@ -198,7 +198,6 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         , createProcessTime = 600_000
                         , createRetractTime = 300_000
-                        , createHints = []
                         }
                 )
     describe "registry creation windows" $ do

@@ -25,7 +25,6 @@ no coherent chain snapshot and carries no verification witness.
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--registry DIR` | all eight | Your own working directory: the journal of your submissions, their saved bodies and, while `create` runs, its pending identity. It names no registry and holds nothing anyone else needs: an empty directory is a valid start for any command. |
 | `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
-| `--reference-hint TXID#IX` | all eight | An output that may carry one of the registry's reference scripts, repeatable. A hint is never trusted: it is used only if the script it carries hashes to the one the command needs, after the provider's own search finds none; one that is not used is warned of once. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
@@ -82,12 +81,14 @@ before it builds anything, refusing by name, in this order:
 | `network-mismatch` | the provider's network is not the release's |
 
 Each command then looks up only the reference scripts its own transactions
-run, by hash: the provider's answer first, then the hints given with
-`--reference-hint`, then the wallet's own outputs, taking the lowest output
-reference among the outputs that carry the right script. The hash is computed
-from the script each output carries, never taken from the provider. When no
-source has one the command refuses
-`reference-missing ROLE HASH: not found by this provider, hints or wallet`.
+run, by hash: the provider's answer first, then your own wallet's outputs,
+which are read only when the provider has none for some script, taking the
+lowest output reference among the outputs that carry the right script. A
+command that runs no reference script, such as `inspect`, looks up none.
+The hash is computed from the script each output carries, never taken from
+the provider. When neither has one the command refuses
+`reference-missing ROLE HASH: not found by this provider or wallet`, naming
+`singular registry publish-references` as the remedy.
 An empty provider answer means only that this provider found none.
 
 The provider's answers are unverified, and the token is not signed by anyone:
