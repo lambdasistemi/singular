@@ -342,16 +342,25 @@ parseEnterpriseAddress magic text = do
                 "--wallet-address must be an enterprise address: a payment key hash and no stake part"
 
 {- | Whether the wallet funds every reference publication a create makes,
-each from its largest ada-only output with its change returned, as
-'Singular.Registry.TxBuilder.Edges.publishRefScriptTx' funds it: the
-publications before the boot leave the seed alone, those after it go
-without the seed the boot spent. Checked before anything is submitted;
-the first publication the publisher would refuse is named.
+with the boot between them, as the real transactions spend it. Each
+publication funds from the largest ada-only output with its change
+returned, as 'Singular.Registry.TxBuilder.Edges.publishRefScriptTx' funds
+it; the publications before the boot leave the seed alone. The boot spends
+the seed and the largest ada-only output beside it, as
+'Singular.Registry.TxBuilder.Boot.bootTokenFrom' does, and returns what is
+left of them after its cost as change, which the publications after it may
+spend. Checked before anything is submitted; the first publication the
+publisher would refuse is named, or @boot@ when the boot itself is not
+funded.
 -}
 publicationFunding
     :: PParams ConwayEra
     -> TxIn
     -- ^ The seed
+    -> Integer
+    {- ^ The most the boot takes from its inputs
+    ('Singular.Registry.TxBuilder.Boot.bootCostBound')
+    -}
     -> [(Text, Script ConwayEra)]
     -- ^ Published before the boot, by role
     -> [(Text, Script ConwayEra)]
@@ -359,11 +368,34 @@ publicationFunding
     -> [(TxIn, TxOut ConwayEra)]
     -- ^ The wallet
     -> Either IdentityError ()
-publicationFunding pp seed before after wallet = do
+publicationFunding pp seed bootCost before after wallet = do
     left <- publishing before [(Left i, o) | (i, o) <- wallet]
-    _ <- publishing after (filter ((/= Left seed) . fst) left)
+    booted <- booting left
+    _ <- publishing after booted
     pure ()
   where
+    -- The boot spends the seed and the largest ada-only output beside it,
+    -- and returns what is left after its cost as change.
+    booting held = case [o | (k, o) <- held, k == Left seed] of
+        [] -> Left (PublicationUnfunded "boot" (bootCost + minimumChange) 0)
+        seedOut : _ ->
+            let funds =
+                    take 1 $
+                        sortOn
+                            (Down . (^. coinTxOutL) . snd)
+                            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o]
+                spent = Left seed : map fst funds
+                inCoin =
+                    sum [c | o <- seedOut : map snd funds, let Coin c = o ^. coinTxOutL]
+                change = inCoin - bootCost
+            in  if change > minimumChange
+                    then
+                        Right
+                            ( [u | u@(k, _) <- held, k `notElem` spent]
+                                <> [(Right (length held), seedOut & coinTxOutL .~ Coin change)]
+                            )
+                    else
+                        Left (PublicationUnfunded "boot" (bootCost + minimumChange) inCoin)
     publishing scripts held = foldl (\acc s -> acc >>= publishOne s) (Right held) scripts
     -- One publication from the largest ada-only output that is not the
     -- seed; its change, a fresh output, joins the wallet.
