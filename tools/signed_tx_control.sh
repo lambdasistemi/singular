@@ -21,12 +21,10 @@ fixtures="$root/offchain/signed-tx-control"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-for source in "$signing"; do
-  [ -f "$source" ] || {
-    echo "SETUP-FAIL: no $source" >&2
-    exit 2
-  }
-done
+[ -f "$signing" ] || {
+  echo "SETUP-FAIL: no $signing" >&2
+  exit 2
+}
 
 declare -A module=(
   [signing]=Singular.Registry.Signing
@@ -82,72 +80,71 @@ exports_of() {
 }
 
 status=0
-for scope in signing; do
-  if ! compile "$scope" real BySigning; then
-    cat "$scratch/$scope-real-BySigning.log" >&2
-    echo "SETUP-FAIL: $scope signing does not compile; refusals would say nothing" >&2
-    exit 2
-  fi
-  echo "control $scope signing: compiles against the real module"
-  for forgery in ByConstructor ByCoercion ByRecord; do
-    if compile "$scope" real "$forgery"; then
-      echo "FAIL signed-tx-control: $scope $forgery compiles without signing" >&2
-      status=1
-    elif grep -qE "${refusal[$forgery]}" "$scratch/$scope-real-$forgery.log"; then
-      echo "refused $scope $forgery: $(grep -m1 -oE "${refusal[$forgery]}" "$scratch/$scope-real-$forgery.log")"
-    else
-      cat "$scratch/$scope-real-$forgery.log" >&2
-      echo "FAIL signed-tx-control: $scope $forgery refused for a different reason" >&2
-      status=1
-    fi
-    if compile "$scope" broken "$forgery"; then
-      echo "control $scope $forgery: compiles once the constructor is exported"
-    else
-      cat "$scratch/$scope-broken-$forgery.log" >&2
-      echo "FAIL signed-tx-control: $scope $forgery does not compile even with the constructor exported; its refusal proves nothing" >&2
-      status=1
-    fi
-  done
-
-  [ -f "${allow[$scope]}" ] || {
-    echo "SETUP-FAIL: no allowlist for $scope" >&2
-    exit 2
-  }
-  real_exports="$(exports_of "$scope" real)" || exit 2
-  grep -qx signTx <<<"$real_exports" || {
-    echo "SETUP-FAIL: signTx absent from $scope exports: $real_exports" >&2
-    exit 2
-  }
-  expected="$(grep -vE '^(#|$)' "${allow[$scope]}" | sort -u)"
-  extra="$(comm -23 <(printf '%s\n' "$real_exports") <(printf '%s\n' "$expected"))"
-  stale="$(comm -13 <(printf '%s\n' "$real_exports") <(printf '%s\n' "$expected"))"
-  if [ -n "$extra" ] || [ -n "$stale" ]; then
-    echo "FAIL signed-tx-control: $scope export mismatch: extra=[$extra] stale=[$stale]" >&2
+scope=signing
+if ! compile "$scope" real BySigning; then
+  cat "$scratch/$scope-real-BySigning.log" >&2
+  echo "SETUP-FAIL: $scope signing does not compile; refusals would say nothing" >&2
+  exit 2
+fi
+echo "control $scope signing: compiles against the real module"
+for forgery in ByConstructor ByCoercion ByRecord; do
+  if compile "$scope" real "$forgery"; then
+    echo "FAIL signed-tx-control: $scope $forgery compiles without signing" >&2
     status=1
+  elif grep -qE "${refusal[$forgery]}" "$scratch/$scope-real-$forgery.log"; then
+    echo "refused $scope $forgery: $(grep -m1 -oE "${refusal[$forgery]}" "$scratch/$scope-real-$forgery.log")"
   else
-    echo "exports $scope: $(tr '\n' ' ' <<<"$real_exports")— exact allowlist"
+    cat "$scratch/$scope-real-$forgery.log" >&2
+    echo "FAIL signed-tx-control: $scope $forgery refused for a different reason" >&2
+    status=1
   fi
-
-  # The defining module owns its constructor. Each planted export must
-  # compile, then fail the frozen export comparison by its own name.
-  tree="planted-$scope"
-  prepare_tree "$tree"
-  target="$scratch/$tree/Singular/Registry/Signing.hs"
-  awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" >"$target"
-  printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' >>"$target"
-  grep -q '^    , forge$' "$target" || {
-    echo "SETUP-FAIL: $scope planted export did not apply" >&2
-    exit 2
-  }
-  planted_exports="$(exports_of "$scope" "$tree")" || exit 2
-  planted="$(comm -23 <(printf '%s\n' "$planted_exports") <(printf '%s\n' "$expected"))"
-  if [ "$planted" = forge ]; then
-    echo "control $scope planted-export: refused by name: $planted"
+  if compile "$scope" broken "$forgery"; then
+    echo "control $scope $forgery: compiles once the constructor is exported"
   else
-    echo "FAIL signed-tx-control: $scope planted export not refused by name (got: '$planted')" >&2
+    cat "$scratch/$scope-broken-$forgery.log" >&2
+    echo "FAIL signed-tx-control: $scope $forgery does not compile even with the constructor exported; its refusal proves nothing" >&2
     status=1
   fi
 done
+
+[ -f "${allow[$scope]}" ] || {
+  echo "SETUP-FAIL: no allowlist for $scope" >&2
+  exit 2
+}
+real_exports="$(exports_of "$scope" real)" || exit 2
+grep -qx signTx <<<"$real_exports" || {
+  echo "SETUP-FAIL: signTx absent from $scope exports: $real_exports" >&2
+  exit 2
+}
+expected="$(grep -vE '^(#|$)' "${allow[$scope]}" | sort -u)"
+extra="$(comm -23 <(printf '%s\n' "$real_exports") <(printf '%s\n' "$expected"))"
+stale="$(comm -13 <(printf '%s\n' "$real_exports") <(printf '%s\n' "$expected"))"
+if [ -n "$extra" ] || [ -n "$stale" ]; then
+  echo "FAIL signed-tx-control: $scope export mismatch: extra=[$extra] stale=[$stale]" >&2
+  status=1
+else
+  echo "exports $scope: $(tr '\n' ' ' <<<"$real_exports")— exact allowlist"
+fi
+
+# The defining module owns its constructor. Each planted export must
+# compile, then fail the frozen export comparison by its own name.
+tree="planted-$scope"
+prepare_tree "$tree"
+target="$scratch/$tree/Singular/Registry/Signing.hs"
+awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" >"$target"
+printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' >>"$target"
+grep -q '^    , forge$' "$target" || {
+  echo "SETUP-FAIL: $scope planted export did not apply" >&2
+  exit 2
+}
+planted_exports="$(exports_of "$scope" "$tree")" || exit 2
+planted="$(comm -23 <(printf '%s\n' "$planted_exports") <(printf '%s\n' "$expected"))"
+if [ "$planted" = forge ]; then
+  echo "control $scope planted-export: refused by name: $planted"
+else
+  echo "FAIL signed-tx-control: $scope planted export not refused by name (got: '$planted')" >&2
+  status=1
+fi
 
 [ "$status" -eq 0 ] || exit 1
 echo "PASS signed-tx-control: a SignedTx is constructible only through signTx"
