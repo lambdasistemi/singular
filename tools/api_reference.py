@@ -34,34 +34,6 @@ from typing import NamedTuple
 
 MANIFEST_NAME = "manifest.json"
 STANZA_HEADERS = ("library", "common")
-# Stable anchors in the rendered Node ownership guide (docs/offchain-node-
-# ownership.md) for the package-private node owners. Existence of each
-# rendered anchor is verified against the built site at manifest time, so
-# a drifting heading id fails the build instead of publishing a dead link.
-PRIVATE_OWNER_GUIDE_ANCHORS = {
-    "Singular.Registry.Node.Options": "options-owner",
-    "Singular.Registry.Node.Wallet": "wallet-owner",
-    "Singular.Registry.Node.Indexer": "indexer-owner",
-    "Singular.Registry.Node.IndexGate": "index-gate-owner",
-    "Singular.Registry.Node.IndexerView": "indexer-view-owner",
-    "Singular.Registry.Node.Session": "session-owner",
-    "Singular.Registry.Node.Confirmation": "confirmation-owner",
-    "Singular.Registry.Node.Funding": "funding-owner",
-    "Singular.Registry.Node.Wait": "wait-owner",
-    "Singular.Registry.Node.View": "view-owner",
-    "Singular.Registry.Node.RawView": "raw-view-owner",
-    "Singular.Registry.Node.Memory": "memory-owner",
-    "Singular.Registry.Node.Submit": "submit-owner",
-}
-# The guide's owner source links name the default branch, like every other
-# repository source link on the site: the documentation check resolves a
-# main-branch link against the candidate tree offline, where a link pinned
-# to another revision can only be reported as unverifiable. The owner's
-# source digest is recorded in the manifest beside it.
-PRIVATE_OWNER_PERMALINK_URL = (
-    "https://github.com/lambdasistemi/singular/blob/main"
-    "/offchain/node-internal/Singular/Registry/Node/{owner}.hs"
-)
 
 
 class ReferenceLibrary(NamedTuple):
@@ -69,9 +41,8 @@ class ReferenceLibrary(NamedTuple):
 
     ``sublibrary`` names the sublibrary that owns the
     implementations behind the public facade's re-exports, when there is
-    one; the re-export and private-owner provenance machinery runs only
-    for libraries that declare it. ``guide_anchors`` and ``permalink_url``
-    carry that machinery's data.
+    one; the re-export provenance machinery runs only for libraries that
+    declare it.
     """
 
     name: str
@@ -80,10 +51,7 @@ class ReferenceLibrary(NamedTuple):
     api_dir: tuple[str, ...]
     index_page: str
     sublibrary: str | None = None
-    guide_anchors: dict[str, str] | None = None
-    permalink_url: str | None = None
     autolinks: tuple[str, ...] = ()
-    private_sublibrary: str | None = None
 
 
 OFFCHAIN = ReferenceLibrary(
@@ -93,9 +61,6 @@ OFFCHAIN = ReferenceLibrary(
     api_dir=("api", "offchain"),
     index_page="docs/offchain-api-reference",
     sublibrary="local-services",
-    private_sublibrary="node-internal",
-    guide_anchors=PRIVATE_OWNER_GUIDE_ANCHORS,
-    permalink_url=PRIVATE_OWNER_PERMALINK_URL,
     # Prose autolinks Haddock emitted into the generated pages whose target
     # pages do not exist: the "one" multiplicity word, the blueprint
     # "schema" reference and the HEX encoding name.
@@ -340,7 +305,6 @@ def transform_tree(
     extent: list[str],
     dep_modules: set[str],
     library_root: Path,
-    private_owners: dict[str, dict] | None = None,
     enumerated_autolinks: tuple[str, ...] = (),
 ) -> dict:
     """Repair same-library links, neutralize proven dependency links, and
@@ -418,7 +382,6 @@ def transform_tree(
         "external_assets": 0,
         "library_repairs": [],
         "instance_method": 0,
-        "private_owner": {m: 0 for m in (private_owners or {})},
     }
 
     def instance_details_intervals(page_text: str) -> list[tuple[int, int]]:
@@ -555,22 +518,6 @@ def transform_tree(
             )
         target_rel = (Path(page_name).parent / path).as_posix()
         named = re.sub(r"\.html$", "", path.rsplit("/", 1)[-1]).replace("-", ".")
-        if named in (private_owners or {}):
-            # A generated link naming a package-private owner. Only the
-            # plain module-page shape may name one; anything else — a
-            # source-page path, a nested directory, an alias, or any
-            # fragment, which the guide's owner anchor cannot preserve
-            # the meaning of — is an unexpected shape and fails loudly
-            # rather than being repaired or neutralized. The visible
-            # label is preserved and the destination becomes the owner's
-            # checked guide anchor.
-            if target_rel != module_page_name(named) or frag:
-                raise SystemExit(
-                    f"api_reference: unexpected private-owner link shape in "
-                    f"{page_name}: {href}"
-                )
-            stats["private_owner"][named] += 1
-            return original.replace(href, private_owners[named]["href"], 1)
         target = api_root / target_rel
         if target.exists():
             if frag and frag not in page_ids.get(target_rel, ()):
@@ -634,130 +581,6 @@ def transform_tree(
     return stats
 
 
-def _private_owner_links(
-    library: ReferenceLibrary,
-    site: Path,
-    db_records: list[dict],
-    reexported: list[str],
-    library_root: Path,
-) -> dict[str, dict]:
-    """Package-private owners of a library that declares a sublibrary.
-
-    Modules of the one candidate-owned sublibrary the public library does
-    not re-export. Each must have exactly one candidate-owned record and no
-    other owner, a rendered guide anchor, and a real source file whose
-    digest the manifest records, all verified here — the guide destination is checked,
-    never assumed. Each expected permalink is bound to its own rendered
-    owner entry: the span between this owner's anchor and the next rendered
-    owner anchor must carry exactly that owner's source link — no other
-    owner's URL — so a swapped or duplicated link is refused even though
-    every URL occurs somewhere on the page. Anchors are ordered by their
-    rendered position, so the guide's authored entry order is free.
-    """
-    candidate_lib = library.name
-    candidate_sublib = library.private_sublibrary or library.sublibrary
-
-    def is_candidate_sublib(record: dict) -> bool:
-        return record["package"] == candidate_lib and record["lib"] == candidate_sublib
-
-    sublib_records = [r for r in db_records if is_candidate_sublib(r)]
-    if len(sublib_records) != 1:
-        raise SystemExit(
-            "api_reference: expected exactly one candidate-owned "
-            f"{candidate_lib}/{candidate_sublib} package-db record, found "
-            f"{len(sublib_records)}"
-        )
-    private_modules = sorted(set(sublib_records[0]["modules"]) - set(reexported))
-    private_owners: dict[str, dict] = {}
-    guide_page_rel = "docs/offchain-node-ownership/index.html"
-    guide_page = site / guide_page_rel
-    guide_text = ""
-    if private_modules:
-        if not guide_page.is_file():
-            raise SystemExit(
-                f"api_reference: rendered owner guide page missing for private "
-                f"owners: {guide_page}"
-            )
-        guide_text = guide_page.read_text(errors="replace")
-    for module in private_modules:
-        anchor = (library.guide_anchors or {}).get(module)
-        if anchor is None:
-            raise SystemExit(
-                f"api_reference: no guide anchor mapping for private owner {module}"
-            )
-        owners = [r for r in db_records if module in r["modules"]]
-        same = [r for r in owners if is_candidate_sublib(r)]
-        others = [r for r in owners if not is_candidate_sublib(r)]
-        if len(same) != 1 or others:
-            raise SystemExit(
-                f"api_reference: private owner {module} requires exactly one "
-                f"candidate-owned {candidate_lib}/{candidate_sublib} record and "
-                f"no other owner; owners: "
-                f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
-            )
-        if f'id="{anchor}"' not in guide_text:
-            raise SystemExit(
-                f"api_reference: rendered guide anchor missing for private "
-                f"owner {module}: #{anchor} on {guide_page_rel}"
-            )
-        owner = module.rsplit(".", 1)[-1]
-        expected_url = (library.permalink_url or "").format(owner=owner)
-        private_owners[module] = {
-            "href": "../../" + guide_page_rel + "#" + anchor,
-            "anchor": anchor,
-            "source": None,
-            "source_sha256": None,
-            "permalink": expected_url,
-        }
-    located = []
-    for module in private_modules:
-        anchor = private_owners[module]["anchor"]
-        anchor_token = f'id="{anchor}"'
-        occurrences = guide_text.count(anchor_token)
-        if occurrences < 1:
-            raise SystemExit(
-                f"api_reference: rendered guide anchor missing for private "
-                f"owner {module}: #{anchor} on {guide_page_rel}"
-            )
-        if occurrences > 1:
-            raise SystemExit(
-                f"api_reference: ambiguous rendered guide anchor for private "
-                f"owner {module}: #{anchor} occurs {occurrences} times on "
-                f"{guide_page_rel}"
-            )
-        located.append(
-            (
-                guide_text.find(anchor_token),
-                module,
-                anchor,
-                private_owners[module]["permalink"],
-            )
-        )
-    located.sort()
-    for i, (pos, module, anchor, url) in enumerate(located):
-        end = located[i + 1][0] if i + 1 < len(located) else len(guide_text)
-        entry = guide_text[pos:end]
-        url_token = f'href="{url}"'
-        if entry.count(url_token) != 1:
-            raise SystemExit(
-                f"api_reference: owner permalink missing, wrong or duplicated "
-                f"for private owner {module}: expected exactly one {url} "
-                f"bound to entry #{anchor} on {guide_page_rel}"
-            )
-        for _, other_module, _, other_url in located:
-            if other_module != module and f'href="{other_url}"' in entry:
-                raise SystemExit(
-                    f"api_reference: ambiguous owner entry #{anchor} on "
-                    f"{guide_page_rel}: another owner's permalink is bound to "
-                    f"{module}'s entry"
-                )
-        source = module_source(library, library_root, module)
-        digest = sha256_file(source)
-        private_owners[module]["source"] = source.relative_to(library_root).as_posix()
-        private_owners[module]["source_sha256"] = digest
-    return private_owners
-
-
 def copy_reference(
     library: ReferenceLibrary,
     site: Path,
@@ -769,12 +592,11 @@ def copy_reference(
     """Copy one library's generated tree into the site and build the manifest.
 
     When the public library re-exports modules whose implementations live
-    in a package-private sublibrary, those re-exports' generated pages come
+    in a sublibrary, those re-exports' generated pages come
     from the sublibrary's own Haddock tree: ``reexport_haddock_out``. Only
     the re-exported modules' page pairs are taken from it — nothing else —
     and each must exist there; a missing page fails the build rather than
-    publishing a silent gap. The private owners that are not re-exported
-    never enter the public reference. Both mechanisms run only for a
+    publishing a silent gap. The re-export machinery runs only for a
     library that declares a sublibrary; the Conformance library has none,
     so its manifest is the plain extent-and-digest binding.
     """
@@ -879,13 +701,6 @@ def copy_reference(
             # extent are positively owned but their pages are not shipped.
             dep_modules |= set(record["modules"]) - set(modules)
             continue
-        if (
-            library.private_sublibrary is not None
-            and record["package"] == candidate_lib
-            and record["lib"] == library.private_sublibrary
-        ):
-            # Private owner links keep the existing guide/provenance checks.
-            continue
         dep_modules |= record["modules"]
     overlap = sorted(set(modules) & dep_modules)
     if overlap:
@@ -893,13 +708,8 @@ def copy_reference(
             f"api_reference: package db claims library modules as dependencies: {overlap[:5]}"
         )
 
-    private_owners: dict[str, dict] = {}
-    if library.sublibrary is not None:
-        private_owners = _private_owner_links(
-            library, site, db_records, reexported, library_root
-        )
     transform = transform_tree(
-        api_root, modules, dep_modules, library_root, private_owners, library.autolinks
+        api_root, modules, dep_modules, library_root, library.autolinks
     )
     for record in records:
         record["module_page_sha256"] = sha256_file(api_root / record["module_page"])
@@ -921,17 +731,6 @@ def copy_reference(
             "autolink": transform["autolink"],
             "external_assets": transform["external_assets"],
             "library_repairs": transform["library_repairs"],
-        },
-        "private_owner_links": {
-            module: {
-                "guide_page": "docs/offchain-node-ownership/index.html",
-                "anchor": info["anchor"],
-                "source": info["source"],
-                "source_sha256": info["source_sha256"],
-                "permalink": info["permalink"],
-                "rewrites": transform["private_owner"][module],
-            }
-            for module, info in private_owners.items()
         },
     }
     (api_root / MANIFEST_NAME).write_text(

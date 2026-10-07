@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # A SignedTx is obtained only by signing (#326 R4).
 #
-# Check its defining generic Signing module and the retained Submit facade.
+# Check the defining generic Signing module.
 # GHC must accept signing and refuse constructor, coercion and record forgeries
 # because the constructor is hidden. The identical forgeries must compile when
-# the defining module and facade export the constructor in scratch copies.
-# Both export lists stay frozen; a planted forging export must be refused by
+# the defining module exports the constructor in a scratch copy.
+# Its export list stays frozen; a planted forging export must be refused by
 # name. An allowlisted export changed to forge remains a review obligation.
 #
 # Usage: tools/signed_tx_control.sh REPO-ROOT -- GHC-FLAGS...
@@ -16,13 +16,12 @@ root=$1
 shift
 [ "${1:-}" = "--" ] && shift
 ghc_flags=("$@")
-submit="$root/offchain/node-internal/Singular/Registry/Node/Submit.hs"
 signing="$root/offchain/local-services/Singular/Registry/Signing.hs"
 fixtures="$root/offchain/signed-tx-control"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-for source in "$submit" "$signing"; do
+for source in "$signing"; do
   [ -f "$source" ] || {
     echo "SETUP-FAIL: no $source" >&2
     exit 2
@@ -31,11 +30,9 @@ done
 
 declare -A module=(
   [signing]=Singular.Registry.Signing
-  [submit]=Singular.Registry.Node.Submit
 )
 declare -A allow=(
   [signing]="$root/tools/signing-exports.allow"
-  [submit]="$root/tools/signed-tx-exports.allow"
 )
 declare -A refusal=(
   [ByConstructor]='term-level use of the type constructor .SignedTx.'
@@ -45,47 +42,21 @@ declare -A refusal=(
 
 prepare_tree() {
   local tree=$1
-  mkdir -p "$scratch/$tree/Singular/Registry/Node"
+  mkdir -p "$scratch/$tree/Singular/Registry"
   cp "$signing" "$scratch/$tree/Singular/Registry/Signing.hs"
-  cp "$submit" "$scratch/$tree/Singular/Registry/Node/Submit.hs"
-  chmod u+w "$scratch/$tree/Singular/Registry/Signing.hs" "$scratch/$tree/Singular/Registry/Node/Submit.hs"
+  chmod u+w "$scratch/$tree/Singular/Registry/Signing.hs"
 }
 prepare_tree real
 prepare_tree broken
 sed 's/^    ( SignedTx$/    ( SignedTx (..)/' "$signing" \
   >"$scratch/broken/Singular/Registry/Signing.hs"
-sed 's/^      SignedTx$/      SignedTx (..)/' "$submit" \
-  >"$scratch/broken/Singular/Registry/Node/Submit.hs"
-for pair in signing submit; do
-  if [ "$pair" = signing ]; then
-    source=$signing
-    target="$scratch/broken/Singular/Registry/Signing.hs"
-  else
-    source=$submit
-    target="$scratch/broken/Singular/Registry/Node/Submit.hs"
-  fi
-  if cmp -s "$source" "$target"; then
-    echo "SETUP-FAIL: the $pair constructor export did not apply" >&2
-    exit 2
-  fi
-done
-# The facade can re-export only the constructor the defining module exports.
-sed -i 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
-  "$scratch/broken/Singular/Registry/Node/Submit.hs"
-
-# Preserve the original fixtures byte-for-byte for Submit. Their imports alone
-# move in the generic copies; expressions and acceptance/refusal expectations
-# are identical at both boundaries.
-for scope in signing submit; do
-  mkdir -p "$scratch/fixtures-$scope"
-  for fixture in BySigning ByConstructor ByCoercion ByRecord; do
-    if [ "$scope" = signing ]; then
-      sed 's/Singular.Registry.Node.Submit/Singular.Registry.Signing/g' \
-        "$fixtures/$fixture.hs" >"$scratch/fixtures-$scope/$fixture.hs"
-    else
-      cp "$fixtures/$fixture.hs" "$scratch/fixtures-$scope/$fixture.hs"
-    fi
-  done
+if cmp -s "$signing" "$scratch/broken/Singular/Registry/Signing.hs"; then
+  echo "SETUP-FAIL: the Signing constructor export did not apply" >&2
+  exit 2
+fi
+mkdir -p "$scratch/fixtures-signing"
+for fixture in BySigning ByConstructor ByCoercion ByRecord; do
+  cp "$fixtures/$fixture.hs" "$scratch/fixtures-signing/$fixture.hs"
 done
 
 compile() {
@@ -111,7 +82,7 @@ exports_of() {
 }
 
 status=0
-for scope in signing submit; do
+for scope in signing; do
   if ! compile "$scope" real BySigning; then
     cat "$scratch/$scope-real-BySigning.log" >&2
     echo "SETUP-FAIL: $scope signing does not compile; refusals would say nothing" >&2
@@ -157,21 +128,12 @@ for scope in signing submit; do
     echo "exports $scope: $(tr '\n' ' ' <<<"$real_exports")— exact allowlist"
   fi
 
-  # Each planted forge must compile, then fail the frozen export comparison by
-  # its own name. The facade needs the defining constructor and ConwayTx import.
+  # The defining module owns its constructor. Each planted export must
+  # compile, then fail the frozen export comparison by its own name.
   tree="planted-$scope"
   prepare_tree "$tree"
-  if [ "$scope" = signing ]; then
-    target="$scratch/$tree/Singular/Registry/Signing.hs"
-    awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" >"$target"
-  else
-    target="$scratch/$tree/Singular/Registry/Node/Submit.hs"
-    cp "$scratch/broken/Singular/Registry/Signing.hs" "$scratch/$tree/Singular/Registry/Signing.hs"
-    awk '{ print } /^      SignedTx$/ { print "    , forge" }' "$submit" \
-      | sed 's/import Singular.Registry.Signing (SignedTx, /import Singular.Registry.Signing (SignedTx (..), /' \
-        >"$target"
-    sed -i '/^import Singular.Registry.Signing /a import Cardano.Tx.Ledger (ConwayTx)' "$target"
-  fi
+  target="$scratch/$tree/Singular/Registry/Signing.hs"
+  awk '{ print } /^    \( SignedTx$/ { print "    , forge" }' "$signing" >"$target"
   printf '\nforge :: ConwayTx -> SignedTx\nforge = SignedTx\n' >>"$target"
   grep -q '^    , forge$' "$target" || {
     echo "SETUP-FAIL: $scope planted export did not apply" >&2

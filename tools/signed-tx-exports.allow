@@ -1,9 +1,0 @@
-# The names Singular.Registry.Node.Submit exports (tools/signed_tx_control.sh).
-# A new export is added here in the same diff, where review sees it.
-SignedTx
-signTx
-signedTx
-SignedSubmitter
-signedSubmitter
-submitSigned
-SubmitResult

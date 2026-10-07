@@ -8,7 +8,7 @@ mean the stated action completed; source already on main is not marked tested.
 
 - [x] Preserve the prior branch and dirty work, then reset `feat/383-provider-closure` to main `6efe1f119a2332484e690b4c128c4bc5fd4d689b`. Owner: orchestrator. Backup and stash are recorded in `plan.md`.
 - [x] Replace stale planning status in `specs/383-provider-interfaces/plan.md` and add this executable task list. Owner: orchestrator.
-- [ ] Record the clean-main `nix develop --quiet -c just ci` result before claiming any candidate regression. Owner: orchestrator; external runtime log `/tmp/e371-383-main-baseline.log`.
+- [x] Record the initial `nix develop --quiet -c just ci` result. Owner: orchestrator. Model, application, simulator and browser checks passed; docs failed on the decisions-to-plan anchor removed during cleanup. Planning changed during this run, so it is not clean-main full-CI evidence. Log: `/tmp/e371-383-main-baseline.log`; GLM owns the link repair.
 
 ## Run every command through the provider
 

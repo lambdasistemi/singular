@@ -46,7 +46,7 @@ nav:
   - Builder and blueprint modules: docs/offchain-builder-blueprint.md
   - Who owns a registry fold: docs/offchain-fold-responsibilities.md
   - Who owns the registry wire: docs/offchain-wire-types.md
-  - Node module ownership: docs/offchain-node-ownership.md
+  - Runtime service ownership: docs/offchain-node-ownership.md
   - Deployment record ownership: docs/offchain-deployment-owners.md
   - Registry command owners: docs/offchain-command-entrypoints.md
   - The Koios client: docs/offchain-koios-client.md

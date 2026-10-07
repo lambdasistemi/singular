@@ -181,7 +181,7 @@
       "pause": 500
     },
     {
-      "text": "The former --backend node / --backend indexer comparison is retired. Ordinary commands use the Koios path only. They do not create an in-memory chain index or accept an ordinary node socket. Private generated nodes and independent LSQ probes remain test harness components in this integration slice; their remaining package closure is a published follow-up gap.",
+      "text": "The former --backend node / --backend indexer comparison is retired. Ordinary commands use the Koios path only. They do not create an in-memory chain index or accept an ordinary node socket: the production node read adapter and the in-memory indexer are removed with the provider migration, and no registry command names a node backend. Private generated nodes and independent LSQ probes remain test harness components behind the private facade; none of them ships with the terminal.",
       "pause": 400
     },
     {
@@ -209,6 +209,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "6b37f806f6d0f21fb86a90c2d4dace53b4ea85d22eb98178da5af58a44413207"
+    "sha256": "717347d3b1d17000d347e6bf4c5c30d695d6602c0ef29be63f06731b7ca14d42"
   }
 }

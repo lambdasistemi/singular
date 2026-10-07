@@ -32,7 +32,8 @@ fresh() {
   mkdir -p "$scratch/t/offchain/nix"
   cp "$repo/offchain/nix/component-inventory.nix" "$scratch/t/offchain/nix/"
   cp "$repo/offchain/singular-registry.cabal" "$scratch/t/offchain/"
-  cp -r "$repo/offchain/node-internal" "$scratch/t/offchain/"
+  mkdir -p "$scratch/t/offchain/private-facade/Singular/Registry/Private"
+  cp "$repo/offchain/private-facade/Singular/Registry/Private/RawFacts.hs" "$scratch/t/offchain/private-facade/Singular/Registry/Private/"
 }
 
 # retire NAME DIR: declare a component with sources under offchain/DIR in
@@ -122,11 +123,11 @@ own_test own-test-of-fixture offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs
   offchain/e2e-test/Singular/Registry/E2E/Fixture.hs \
   "is an own test of 'offchain/e2e-test/Singular/Registry/E2E/Fixture.hs', which is not a backend session or adapter module"
 own_test own-test-of-facade offchain/journey/Journey/Chain.hs \
-  offchain/lib/Singular/Registry/Node.hs \
-  "is an own test of 'offchain/lib/Singular/Registry/Node.hs', which is not a backend session or adapter module"
+  offchain/lib/Singular/Registry/Capabilities.hs \
+  "is an own test of 'offchain/lib/Singular/Registry/Capabilities.hs', which is not a backend session or adapter module"
 own_test own-test-unlinked offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs \
-  offchain/node-internal/Singular/Registry/Node/Session.hs \
-  "names nothing Singular.Registry.Node.Session defines, the backend module it claims to test"
+  offchain/private-facade/Singular/Registry/Private/RawFacts.hs \
+  "names nothing Singular.Registry.Private.RawFacts defines, the backend module it claims to test"
 
 fresh
 printf 'offchain/cli/Main.hs:\n' >>"$scratch/t/tools/node-confinement.allow"

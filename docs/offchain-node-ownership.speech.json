@@ -1,11 +1,15 @@
 {
-  "node-module-ownership": [
+  "runtime-service-ownership": [
     {
-      "text": "Node module ownership.",
+      "text": "Runtime service ownership.",
       "pause": 500
     },
     {
-      "text": "A contributor changing how the registry's off-chain runner talks to a cardano node — a new mode, a different wallet, a longer confirmation window, a change to what a runner may leave behind when it fails — wants one obvious owner per concern, so the change is reviewed in one place and process state can never quietly exist twice. This page maps the node runtime to its owners: what each module is responsible for, where common changes land, the lifetimes a runner's process state keeps, and what the checks establish about the split.",
+      "text": "A contributor changing how the registry's off-chain commands obtain their ledger facts — a different wallet, a longer confirmation window, a new provider transport, a change to what a command reports about its reads — wants one obvious owner per concern, so the change is reviewed in one place and a fact or a wait can never quietly exist twice. This page maps the provider-era runtime to its owners: what each module is responsible for, where common changes land, and what the checks establish about the split.",
+      "pause": 400
+    },
+    {
+      "text": "The node runtime this page once mapped is retired. The package-private node-internal library — its read adapter, in-memory chain, session runner and indexer — no longer exists, and with it the public Singular.Registry.Node facade: no shipped command opens a node, holds a socket or keeps a chain index. That retirement is the provider migration's own record, with its operator rulings, in the provider ticket's decisions; this page describes what replaced it.",
       "pause": 400
     }
   ],
@@ -15,72 +19,12 @@
       "pause": 500
     },
     {
-      "text": "The node runtime owners live in the package-private node-internal library. Ledger and Provider have public ownership in local-services, which also owns fixed local evaluation and validated time conversion. The public module Singular.Registry.Node is a facade: it owns nothing, keeps the original exports, and adds the five wait names and guardNodeConnection for existing-connection composition. Every original caller — the focused node tests, the journey runner, the end-to-end suite, the shipped commands — keeps compiling against it unchanged.",
+      "text": "The runtime's owners are three public components. local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
       "pause": 400
     },
     {
-      "text": "The dependency direction is acyclic and downward: options and the wait owner depend on nothing local, wallet reads options, the indexer and the funding check read wallet and options, the session brackets the indexer and the funding check, and confirmation reads the session and the indexer — all three wait under the wait owner's bound — never the other way. The runtime owners read Ledger and Provider from public local-services; the main library re-exports both under their original import paths, so a module that imported Singular.Registry.Ledger before the split still does.",
+      "text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
       "pause": 400
-    },
-    {
-      "text": "The three chain owners sit behind one read interface and one write capability, and the singular command line reaches them through a single composition module of its own. Its commands are handed the read interface, the signed-only write and the confirmation wait; only the composition module, the public facade and the journey's lifecycle funding may name the node backend, which a source check over the off-chain command and library sources enforces in CI.",
-      "pause": 400
-    },
-    {
-      "text": "Each owner is package-private — not importable from the public library — so it has no page in the generated API reference: the reference documents the main library, and the site does not publish the private owners' pages. Each owner's implementation is one source file, linked below on the default branch, and the generated public pages that re-export an owner's names link to its entry here:",
-      "pause": 400
-    },
-    {
-      "text": "Options — mode flags, environment precedence and the shared named-diagnostic helper — source.",
-      "pause": 300
-    },
-    {
-      "text": "Wallet — keys, addresses and the funding identity — source.",
-      "pause": 300
-    },
-    {
-      "text": "Indexer — the chain follower, the funding sweep, the indexer adapter on a followed devnet, the node-read guard and the address-read counter — source.",
-      "pause": 300
-    },
-    {
-      "text": "IndexGate — the gate the follower writes the index through, the index's applied point, and holding the index for one view — source.",
-      "pause": 300
-    },
-    {
-      "text": "IndexerView — the indexer adapter: address reads from the index and node reads at one chain point, and its named refusals — source.",
-      "pause": 300
-    },
-    {
-      "text": "Funding — the pre-run funding floor and its refusal diagnostic — source.",
-      "pause": 300
-    },
-    {
-      "text": "Session — the connection lifecycle and the bracketed runner session — source.",
-      "pause": 300
-    },
-    {
-      "text": "Confirmation — confirmation waits, deadlines and windows — source.",
-      "pause": 300
-    },
-    {
-      "text": "Wait — the wait stages, the named wait failure, the whole-wait bound, the bounded submitter and the wait-aware catch — source.",
-      "pause": 300
-    },
-    {
-      "text": "View — the node adapter: one read view per acquired LocalStateQuery state — source.",
-      "pause": 300
-    },
-    {
-      "text": "RawView — raw reads through one held LocalStateQuery channel; adapters supply facts for fixed common computations — source.",
-      "pause": 300
-    },
-    {
-      "text": "Memory — the deterministic in-memory chain behind the same read interface — source.",
-      "pause": 300
-    },
-    {
-      "text": "Submit — the write capability, which takes signed transactions only — source.",
-      "pause": 300
     }
   ],
   "where-common-changes-land": [
@@ -89,108 +33,64 @@
       "pause": 500
     },
     {
-      "text": "A mode flag, an environment variable or their precedence changes: Node.Options; the facade re-exports the result unchanged.",
+      "text": "A provider transport, its HTTP behaviour or the terminal composition: koios-http — Terminal, Provider.Koios.Http — with ProviderSettings parsing what the operator supplies.",
       "pause": 300
     },
     {
-      "text": "Wallet derivation, key handling or the funding identity changes: Node.Wallet. Key secrecy rules live there and nowhere else.",
+      "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
       "pause": 300
     },
     {
-      "text": "Connection setup, socket handling or the session bracket changes: Node.Session.",
+      "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation, NetworkTime or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
       "pause": 300
     },
     {
-      "text": "Following a chain, the genesis funding sweep, indexed reads or the node-read guard changes: Node.Indexer.",
+      "text": "A bounded wait, its failure or the submission bound: Wait, whose failure identity WaitTypes fixes. The common submission and confirmation bounds live here; a transport's per-request bound remains its adapter's concern, never an await of the chain.",
       "pause": 300
     },
     {
-      "text": "What a run must hold before it starts, or the refusal diagnostic when it cannot pay: Node.Funding.",
+      "text": "Confirmation of a submitted transaction: Confirmation, under the common bounded polling — never a provider-owned await.",
       "pause": 300
     },
     {
-      "text": "A confirmation wait, deadline or window rule changes: Node.Confirmation.",
+      "text": "The pre-run funding floor or its diagnostic: Funding.",
       "pause": 300
     },
     {
-      "text": "What a bounded wait is, how its failure reads, the submission bound, or which failures a classifier must let through: Node.Wait. No other module adds a timeout of its own.",
+      "text": "Wallet loading, key handling or signing: Wallet and Signing. Key bytes are never logged.",
       "pause": 300
     },
     {
-      "text": "How a view is acquired from a node, its chain point, or the origin and lost-connection refusals: Node.View; the same behaviour over the in-memory chain: Node.Memory.",
+      "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace and TraceRender.",
       "pause": 300
     },
     {
-      "text": "What may be sent to the node: Node.Submit.",
-      "pause": 300
-    },
-    {
-      "text": "What the node runtime reports about its reads and waits: typed events into the tracer its caller hands it. Node.View, Node.Session, Node.IndexerView, Node.Indexer and Node.Confirmation take one; none reads an environment variable or decides whether to log. The event types and the provider boundary's tracing live in local-services (Singular.Registry.Trace, Singular.Registry.ProviderTrace), and the SINGULAR_LOG lines they stand for in Singular.Registry.TraceRender.",
-      "pause": 300
-    },
-    {
-      "text": "How the singular commands reach a node, or which settings they read: Singular.CLI.Node, the one command-line module allowed to name the backend; a new module that needs to name it is added to tools/node-confinement.allow with its reason, or the check fails.",
-      "pause": 300
-    },
-    {
-      "text": "A shared named failure the runner prints: the diagnostic helper in Node.Options, the one cross-owner utility, at the graph's root.",
+      "text": "How a command reaches its capabilities, or what its journal records: Singular.CLI.Session beside the terminal composition.",
       "pause": 300
     }
   ],
-  "process-state-and-its-lifetimes": [
+  "what-the-checks-establish": [
     {
-      "text": "Process state and its lifetimes.",
+      "text": "What the checks establish.",
       "pause": 500
     },
     {
-      "text": "The runner keeps six pieces of process state. Each is created once per process, owned by exactly one module, and installed and removed at the same points as before the split. The nesting is what a contributor must hold: the follower is the outer bracket and the open session the inner one, and the funding-read guard is set only on the devnet.",
+      "text": "A source check confines every backend name: a module outside the confinement allow list that names a node backend fails the build, and each allow-list entry carries its reason. The commands never hold that list. Submission is signed bytes only, every wait runs under the common bound, and the development network's own machinery — the private Koios-shaped facade, its raw-facts recorder and the generated devnet — is test infrastructure that never ships with the terminal.",
       "pause": 400
     },
     {
-      "text": "On the devnet the follower bracket wraps the node client and the whole session; externally the node client is outermost and the follower wraps only the session. In both modes the session prepares before the open session is installed — protocol parameters first, then (devnet only) the one node address read that sweeps the funding wallet and sets the guard, then the funding-floor check when a floor is given, then the announcement — and the body runs inside the open-session bracket. When the body returns or throws, the brackets unwind from the inside out and the open session is removed first. What clears next depends on the mode: on the devnet the node client is cancelled, then the follower and guard clear together before the devnet itself is torn down; externally the follower clears and then the node client is cancelled. A later action never sees a torn-down runner.",
-      "pause": 400
-    },
-    {
-      "text": "Because these live in the private library and nothing duplicates them, the facade, the cleanup brackets and the cage test observers share one compiled instance: a test that installs a session and a runner reader that answers from it are talking about the same memory. The focused cleanup suite proves each bracket both installs (the positive halves) and removes (after normal and exceptional bodies) its state through the public readers, and that the funding-read guard refuses node reads while set and lets them through again after the body fails.",
+      "text": "What is deliberately not claimed here: the live Koios HTTP transport's production behaviour — its retries, rate limits and public URLs — is outside the provider ticket's scope and belongs to the Koios client ticket, #389, whose implementation main already carries in Provider.Koios.Http and Provider.Koios.Client. This page records who owns what; it accepts and verifies nothing of that transport's production behaviour.",
       "pause": 400
     }
   ],
-  "the-independent-evidence-boundary": [
+  "decisions-this-ownership-records": [
     {
-      "text": "The independent evidence boundary.",
+      "text": "Decisions this ownership records.",
       "pause": 500
-    },
-    {
-      "text": "On the devnet, the funding wallet's genesis outputs exist in the ledger's initial state, not in any block, so the indexer cannot see them. The follower therefore performs one node address read — the funding wallet — moves everything the indexer does not know into one block-carried output, and from then on address reads are answered by the indexer while node address reads are refused. That refusal is what keeps a run's evidence independent of a single filtered view. This split changes none of it: the guard, the counter and the sweep live in Node.Indexer, behavior-identical to before.",
-      "pause": 400
-    },
-    {
-      "text": "What is deliberately not claimed here: the external-node mode has no executable public-network coverage in this work, and remains unverified there, exactly as before the split.",
-      "pause": 400
-    }
-  ],
-  "facade-callers-and-the-private-boundary": [
-    {
-      "text": "Facade, callers and the private boundary.",
-      "pause": 500
-    },
-    {
-      "text": "The split left the facade's export list unchanged, token for token; the bounded waits then added five names, which the facade re-exports from Node.Wait: WaitStage (..), WaitFailure (..), submissionBound, boundedSubmitter and tryOutcome. Modules that imported Singular.Registry.Ledger or Singular.Registry.Provider keep their import paths through the public library's re-exports. The runtime owners themselves are not importable from the main library: they live in the package's private internal library. By Cabal's own rule a named library without public visibility can be depended on only by components of this same package. The main library's facade and each test or tool importing private seams bind to the same compiled instance — one build, one memory, no second copy. Nothing outside the package can name the private library. A downstream runner uses guardNodeConnection to compose its existing connection and common services without importing raw adapter types; the original facade imports remain valid.",
-      "pause": 400
-    }
-  ],
-  "decisions-this-split-recorded": [
-    {
-      "text": "Decisions this split recorded.",
-      "pause": 500
-    },
-    {
-      "text": "The split is behavior-preserving by construction and by receipt. Five moved call sites now name the extracted helpers — the session installs the open session through withOpenSession, followChain brackets the follower and the guard through withFollowing (clearing the follower before the guard), confirmOutputZero and followedProvider read the follower through currentFollower, and followedProvider sets the guard through markFundingIndexed — each helper's body equal to the inline code it replaced; indexFunding reads the wallet through its accessors instead of a record pattern, equivalent for the devnet wallet it loads. Every other moved declaration's body is equal to its base apart from whitespace. At candidate revision 7b4adf3 the repository's exact-head checks passed — the full cage suite, the devnet end-to-end paths and the bounded journey — and the focused cleanup brackets' installation, exceptional-exit removal and guard controls are bound to the same code by metered receipts. The external-node mode keeps its limit: nothing here claims public-network behavior, before or after the split.",
-      "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "3b310dd7517eba8f35e2cb58f4faac764413f117c79270de0edca7a563502033"
+    "sha256": "eeeac333a980ed94aa90b5b6f2cd8522858b928bfaedffbe6b479364f0ba62f2"
   }
 }
