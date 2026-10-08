@@ -466,12 +466,15 @@ insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/inser
 
 # ------------------------------------------------------------------
 # The registry
+# Recovery needs a fold that reaches its hold point. Allow time for booking
+# and building on shared runners plus the CLI's unchanged 30-second signing
+# margin; the former 45-second window left only 15 seconds for that work.
 # ------------------------------------------------------------------
-run preview registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
-run create registry create --process-time 45000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
-jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
-  || setup_fail "the recovery registry did not read back the short CI windows"
+run create registry create --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
+  || setup_fail "the recovery registry did not read back the CI recovery windows"
 outcome_is create success || setup_fail "create did not succeed"
 token="$(field create .token)"
 # Every later command names the registry by the state token create printed.
@@ -528,7 +531,7 @@ signers_of() {
     decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
     "$(prepared_of "$1" | jq -r .journalBody)")
 }
-run bob-preview registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
+run bob-preview registry create --process-time 120000 --retract-time 15000 --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -1189,11 +1192,11 @@ if part rollback; then
   reg="$work/registry-rolled-back"
   journal="$reg/journal.jsonl"
   common=(--registry "$reg" --blueprint "$blueprint")
-  run preview-rb registry create --process-time 45000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+  run preview-rb registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
-  run create-rb registry create --process-time 45000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
-  jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
-    || setup_fail "the rollback registry did not read back the short CI windows"
+  run create-rb registry create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+  jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
+    || setup_fail "the rollback registry did not read back the CI recovery windows"
   outcome_is create-rb success || setup_fail "the second create did not succeed"
   state_token="$(field create-rb .stateToken)"
   [[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the second create printed no state token"
