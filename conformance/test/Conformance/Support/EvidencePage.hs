@@ -9,7 +9,6 @@ read back by its rendered text.
 -}
 module Conformance.Support.EvidencePage (spec) where
 
-import Conformance.RowNames (historicalRowNames)
 import Control.Monad (forM_)
 import Data.Aeson (Value (..), decode)
 import Data.Aeson.Key qualified as Key
@@ -380,7 +379,7 @@ tableIds page =
     , isName (T.strip c)
     ]
   where
-    isName c = c `elem` map snd historicalRowNames
+    isName c = T.any (== '-') c && T.all (\x -> isAlphaNum x || x == '-') c
 
 rowLine :: Row -> Text -> Text
 rowLine r page =

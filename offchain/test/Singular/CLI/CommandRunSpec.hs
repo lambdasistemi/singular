@@ -164,15 +164,16 @@ spec :: Spec
 spec = handlerRows >> setupRecut >> readbackRows >> permanentRecognition
 
 permanentRecognition :: Spec
-permanentRecognition = describe "Permanent contract recognition" $
-    it
-        "refuses a caller supplied blueprint whose script identities are unknown" $
-        withRig $ \rig -> do
-            loaded <- loadRelease (rigBlueprint rig)
-            case loaded of
-                Left _ -> pure ()
-                Right _ ->
-                    expectationFailure "unknown scripts were recognized as permanent M1"
+permanentRecognition = describe "Permanent contract recognition"
+    $ it
+        "refuses a caller supplied blueprint whose script identities are unknown"
+    $ withRig
+    $ \rig -> do
+        loaded <- loadRelease (rigBlueprint rig)
+        case loaded of
+            Left _ -> pure ()
+            Right _ ->
+                expectationFailure "unknown scripts were recognized as permanent M1"
 
 handlerRows :: Spec
 handlerRows = describe

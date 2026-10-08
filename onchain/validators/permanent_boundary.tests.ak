@@ -375,7 +375,7 @@ test export_request_and_mint_routes() {
           ],
           redeemers: [Pair(Spend(fx.stateRef), modify)],
         }
-      expect [pending, .._] = others
+      expect [pending, ..] = others
       expect InlineDatum(datum) = pending.output.datum
       expect requestDatum: types.CageDatum = datum
       let contribute: Data = Contribute(fx.stateRef)

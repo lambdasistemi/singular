@@ -38,7 +38,7 @@ def git(repo, *args):
 
 
 def build_sufficient_content(tree):
-    """Write the five-obligation synthetic content (statements, manifests,
+    """Write the six-obligation synthetic content (statements, manifests,
     sufficient record, real extractor bytes) into tree, replacing any
     existing lean/ tree. Returns the record path. Shared by the unit
     fixtures and the publication full-clone fixture."""
@@ -56,7 +56,7 @@ def build_sufficient_content(tree):
     shutil.copy(REPO_ROOT / "tools/check_model.py", tree / "tools/check_model.py")
     export_manifests(tree)
     obligations = build_inventory(tree).obligations
-    assert len(obligations) == 5
+    assert len(obligations) == 6
     paths = ["lean/Singular/Statements.lean"]
     candidate = candidate_digest(tree, paths)
 

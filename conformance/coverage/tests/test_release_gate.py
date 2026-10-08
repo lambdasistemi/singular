@@ -274,7 +274,7 @@ class ReleaseGateTest(unittest.TestCase):
             (mini / rel).write_text(text)
         export_manifests(mini)
         obligations = build_inventory(mini).obligations
-        self.assertEqual(len(obligations), 5)
+        self.assertEqual(len(obligations), 6)
         self.assertEqual(
             [o for o in obligations if o.classification == "unclassified"],
             [],

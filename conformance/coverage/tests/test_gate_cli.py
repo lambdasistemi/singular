@@ -32,8 +32,8 @@ class GateCliTest(unittest.TestCase):
         rc = self.gate("inventory", "--report", str(report))
         self.assertEqual(rc, 0)
         payload = json.loads(report.read_text())
-        self.assertEqual(payload["inventory"]["total"], 10)
-        self.assertEqual(payload["inventory"]["manifestBound"], 5)
+        self.assertEqual(payload["inventory"]["total"], 11)
+        self.assertEqual(payload["inventory"]["manifestBound"], 6)
         self.assertEqual(payload["inventory"]["unclassified"], 5)
 
     def test_ratchet_passes_when_nothing_changed(self):
