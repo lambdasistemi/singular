@@ -70,7 +70,7 @@ usage =
         , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --underfunded-skey FILE --work DIR"
         , "  cli-controls attach --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
         , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --stranger-skey FILE"
-        , "      --registry DIR --key LABEL --work DIR"
+        , "      --state-dir DIR --key LABEL --work DIR"
         , "      --collateral-allowance LOVELACE [--max-outlay LOVELACE]"
         , "  cli-controls render RECEIPTS_DIR"
         , "  cli-controls render --attach-key LABEL RECEIPTS_DIR"

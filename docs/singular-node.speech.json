@@ -69,7 +69,7 @@
       "pause": 400
     },
     {
-      "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
+      "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
       "pause": 400
     },
     {
@@ -231,6 +231,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "c9f0f95dee5fb02f849589fb77d926133eca593aafb380d1bfe9eaf10d854671"
+    "sha256": "c7fc29a6e91b1f34e5b808dac582008a5600d0603751d55ea37d7342fc43d054"
   }
 }

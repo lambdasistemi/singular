@@ -170,7 +170,7 @@ import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 runCreate :: Env -> CreateArgs -> IO Value
 runCreate env a = do
-    let dir = createRegistry a
+    let dir = createStateDir a
     refuseExisting dir
         >>= either (failWith ClientRefusal . renderIdentityError) pure
     rel <-
@@ -201,7 +201,7 @@ runCreate env a = do
 createWith
     :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
 createWith env a rel ws = do
-    let dir = createRegistry a
+    let dir = createStateDir a
     -- A preview writes nothing: no lock, no directory, no journal.
     let session = if createPreview a then withSession else withWrite
     session env dir "create" ws $ \wc -> do

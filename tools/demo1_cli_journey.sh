@@ -128,7 +128,7 @@ done
   || setup_fail "the genesis-only source never printed usable provider/time settings"
 printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
 status=0
-"$singular" registry create --process-time 120000 --retract-time 30000 --preview --registry "$work/genesis-indexer" --blueprint "$blueprint" \
+"$singular" registry create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/genesis-indexer" --blueprint "$blueprint" \
   --koios-url "$bare_provider" --network-time "$bare_time" --network-magic "$bare_magic" \
   --wallet-skey "$work/genesis.skey" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
 [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
@@ -192,7 +192,7 @@ fi
 say "one private development source at $provider_url"
 
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
-common=(--registry "$reg" --blueprint "$blueprint")
+common=(--state-dir "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 bob=(--wallet-skey "$work/bob.skey")
 
@@ -591,7 +591,7 @@ say "help names the eight commands; a signing key on inspect is refused"
 run preview success -- registry create --process-time 120000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 [ ! -e "$reg" ] || fail "preview created the target $reg"
 seed="$(field preview .seed)"
-run bob-preview success -- registry create --process-time 120000 --retract-time 30000 --preview --registry "$work/bob-preview" \
+run bob-preview success -- registry create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -600,7 +600,7 @@ bob_addr="$(field bob-preview .wallet)"
 
 # The same preview for a public address alone: no key, no write, and the
 # identity it names is the one the key-holding preview named.
-run preview-public success -- registry create --process-time 120000 --retract-time 30000 --preview --registry "$work/public-preview" \
+run preview-public success -- registry create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" \
   --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
 [ ! -e "$work/public-preview" ] || fail "a public preview created its target"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
@@ -614,7 +614,7 @@ for preview_receipt in preview bob-preview preview-public; do
     || fail "$preview_receipt lacks its Unbound session and Unverified facts"
 done
 status=0
-"$singular" registry create --process-time 120000 --retract-time 30000 --preview --registry "$work/public-preview" --blueprint "$blueprint" \
+"$singular" registry create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" --blueprint "$blueprint" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
@@ -649,7 +649,7 @@ empty_actor="$work/empty-actor"
 mkdir -p "$empty_actor"
 [ -z "$(ls -A "$empty_actor")" ] || setup_fail "the second actor's directory is not empty at start"
 run empty-actor-inspect success -- registry inspect --key keyEmpty --state-token "$state_token" \
-  --registry "$empty_actor" --blueprint "$blueprint" "${node[@]}"
+  --state-dir "$empty_actor" --blueprint "$blueprint" "${node[@]}"
 [ "$(field empty-actor-inspect .leaf)" = unknown ] \
   || fail "an actor starting from an empty directory did not read the registry from its state token"
 say "an actor with an empty directory read the registry from its state token alone"
@@ -660,9 +660,9 @@ common+=(--state-token "$state_token")
 # This registry exercises absent flags and never books a timed request.
 # The rest of the journey keeps its explicit development-network windows.
 run create-defaults success -- registry create --seed "$(field bob-preview .seed)" \
-  --registry "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+  --state-dir "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 run inspect-defaults success -- registry inspect --key default-window-key \
-  --registry "$work/default-registry" --blueprint "$blueprint" \
+  --state-dir "$work/default-registry" --blueprint "$blueprint" \
   --state-token "$(field create-defaults .stateToken)" "${node[@]}"
 for name in create-defaults inspect-defaults; do
   jq -e '.processTime == 600000 and .retractTime == 300000' "$receipts/$name.json" >/dev/null \
@@ -686,7 +686,7 @@ mkdir -p "$bob_actor"
 [ -z "$(ls -A "$bob_actor")" ] || setup_fail "bob's directory is not empty at start"
 payload "$work/payload-empty.json"
 run empty-actor-insert success -- registry insert --fold --key keyEmpty --payload "$work/payload-empty.json" \
-  --registry "$bob_actor" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" "${bob[@]}"
+  --state-dir "$bob_actor" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" "${bob[@]}"
 [ ! -e "$bob_actor/registry.json" ] || fail "a command wrote a registry.json in bob's directory"
 reader="$work/empty-reader"
 mkdir -p "$reader"
@@ -694,7 +694,7 @@ mkdir -p "$reader"
 # identity file there changes nothing.
 printf '{"confDeployment":{"depCageToken":"00"}}\n' >"$reader/registry.json"
 run empty-reader-inspect success -- registry inspect --key keyEmpty --state-token "$state_token" \
-  --registry "$reader" --blueprint "$blueprint" "${node[@]}"
+  --state-dir "$reader" --blueprint "$blueprint" "${node[@]}"
 [ "$(field empty-reader-inspect .leaf)" = active ] \
   || fail "an insertion booked and folded from an empty directory is not active for another empty reader"
 say "bob booked and folded from an empty directory on the state token; another empty directory reads it"
@@ -724,13 +724,13 @@ two_bob="$two/bob"
 mkdir -p "$two"
 trap release_work EXIT
 run two-preview success -- registry create --process-time 120000 --retract-time 30000 --preview \
-  --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  --state-dir "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 run two-create success -- registry create --process-time 120000 --retract-time 30000 \
-  --seed "$(field two-preview .seed)" --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  --seed "$(field two-preview .seed)" --state-dir "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 two_token="$(field two-create .stateToken)"
 two_key=keyT
 run two-insert success -- registry insert --key "$two_key" --payload "$work/payload-insert.json" \
-  --registry "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
+  --state-dir "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
 [ "$(field two-insert .requester)" = "$alicekey" ] || fail "the two-actor booking's requester is not alice's key"
 mkdir -p "$two_bob"
 [ -z "$(ls -A "$two_bob")" ] || setup_fail "bob's two-actor directory is not empty at start"
@@ -757,7 +757,7 @@ real_singular="$singular"
 chmod 000 "$two_alice"
 ! ls "$two_alice" >/dev/null 2>&1 || fail "alice's directory is readable to the run"
 singular="$traced"
-run two-fold success -- registry fold --registry "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
+run two-fold success -- registry fold --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
 singular="$real_singular"
 chmod u+rwx "$two_alice"
 [ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
@@ -767,7 +767,7 @@ jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --
     and .key == $k and .envelope == $b[0].envelope and (.liveOutput | test("#"))' \
   "$receipts/two-fold.json" >/dev/null \
   || fail "bob's fold does not deliver alice's envelope at her key"
-run two-inspect success -- registry inspect --key "$two_key" --registry "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
+run two-inspect success -- registry inspect --key "$two_key" --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
 jq -e --slurpfile b "$receipts/two-insert.json" --slurpfile f "$receipts/two-fold.json" '
     .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
     and .root == $f[0].root' "$receipts/two-inspect.json" >/dev/null \
@@ -787,10 +787,10 @@ say "two actors: bob folded alice's insertion from the state token alone; her en
 two_dave="$work/underfunded-actor"
 dave=(--wallet-skey "$work/dave.skey")
 run dave-preview success -- registry create --process-time 120000 --retract-time 30000 --preview \
-  --registry "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
+  --state-dir "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 dave_seed="$(field dave-preview .seed)"
 run dave-create client-refusal -- registry create --process-time 120000 --retract-time 30000 \
-  --seed "$dave_seed" --registry "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
+  --seed "$dave_seed" --state-dir "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 jq -e '.reason | startswith("publication-unfunded")' "$receipts/dave-create.json" >/dev/null \
   || fail "dave's underfunded create was refused for another reason: $(jq -r .reason "$receipts/dave-create.json")"
 say "an underfunded create refuses before boot: $(jq -r .reason "$receipts/dave-create.json")"
@@ -839,7 +839,7 @@ for control in "--trace loud" "--trace-to stdout" "--trace-to file:" "--trace-fo
     || fail "insert $control: the tracing control is not read"
 done
 stderr_of insert-without-token registry insert --key "$key" --payload "$work/payload-insert.json" \
-  --registry "$reg" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 grep -q -- '--state-token' "$receipts/insert-without-token.err" \
   || fail "insert-without-token: the refusal does not name the state token"
 refused insert-payload-not-data client-refusal -- registry insert --key "$key" \
@@ -860,7 +860,7 @@ cmp -s <(jq -S . "$receipts/insert-payload-not-data.json") \
   || fail "insert with standard error closed: another receipt than with it open"
 unminted="$state.$(printf '%064d' 0)"
 refused insert-unknown-registry client-refusal -- registry insert --key "$key" \
-  --payload "$work/payload-insert.json" --registry "$work/no-such-registry" --blueprint "$blueprint" \
+  --payload "$work/payload-insert.json" --state-dir "$work/no-such-registry" --blueprint "$blueprint" \
   --state-token "$unminted" "${node[@]}" "${alice[@]}"
 jq -e '.reason | startswith("state-token-not-found")' "$receipts/insert-unknown-registry.json" >/dev/null \
   || fail "insert-unknown-registry: the refusal is not state-token-not-found"
@@ -1074,7 +1074,7 @@ rm "$reg/registry.mirror.json" "$reg/state.json"
 # script, refused by name before the provider is asked anything.
 foreign="$(printf '%s' "$state" | tr 0123456789abcdef 123456789abcdef0).$token"
 refused insert-foreign-release client-refusal -- registry insert --key keyC \
-  --payload "$work/payload-insert.json" --registry "$reg" --blueprint "$blueprint" \
+  --payload "$work/payload-insert.json" --state-dir "$reg" --blueprint "$blueprint" \
   --state-token "$foreign" "${node[@]}" "${alice[@]}"
 jq -e '.reason | startswith("state-token-foreign-release")' "$receipts/insert-foreign-release.json" >/dev/null \
   || fail "insert-foreign-release: the refusal is not state-token-foreign-release"
@@ -1230,12 +1230,12 @@ say "create race: the late create was refused RegistryExists; the first registry
 # A create killed after its first accepted submission: a new create is
 # refused, and inspect reads the incomplete create from its journal.
 inter="$work/interrupted"
-run preview-inter success -- registry create --process-time 120000 --retract-time 30000 --preview --registry "$inter" \
+run preview-inter success -- registry create --process-time 120000 --retract-time 30000 --preview --state-dir "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 seed_i="$(field preview-inter .seed)"
 rm -f "$work/create.go" "$work/create.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
-  "$singular" registry create --process-time 120000 --retract-time 30000 --seed "$seed_i" --registry "$inter" --blueprint "$blueprint" \
+  "$singular" registry create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" --blueprint "$blueprint" \
   "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
 victim=$!
 for _ in $(seq 1 1200); do
@@ -1251,11 +1251,11 @@ inter_token="$(field preview-inter .stateToken)"
 first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
 first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
-run create-after-kill client-refusal -- registry create --process-time 120000 --retract-time 30000 --seed "$seed_i" --registry "$inter" \
+run create-after-kill client-refusal -- registry create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
   --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
-  run inspect-interrupted partial -- registry inspect --key-hex 00 --registry "$inter" \
+  run inspect-interrupted partial -- registry inspect --key-hex 00 --state-dir "$inter" \
     --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}"
   jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
   sleep 2
@@ -1265,7 +1265,7 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
 [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
   "$inter/journal.jsonl" >/dev/null || fail "the killed create's accepted submission was never observed"
-run inspect-interrupted-other-token client-refusal -- registry inspect --key-hex 00 --registry "$inter" \
+run inspect-interrupted-other-token client-refusal -- registry inspect --key-hex 00 --state-dir "$inter" \
   --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
 jq -e '.reason | startswith("state-token mismatch")' "$receipts/inspect-interrupted-other-token.json" >/dev/null \
   || fail "an interrupted create was read under another registry's token"
@@ -1637,7 +1637,7 @@ for fault in missing-create missing-change broken-before wrong-after undecodable
       jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
       ;;
   esac
-  run "trie-local-$fault" success -- registry inspect --key keyG --registry "$copy" \
+  run "trie-local-$fault" success -- registry inspect --key keyG --state-dir "$copy" \
     --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
   jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
     '.leaf == $correct[0].leaf and .root == $correct[0].root' "$receipts/trie-local-$fault.json" >/dev/null \

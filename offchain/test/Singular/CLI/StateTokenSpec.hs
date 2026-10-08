@@ -109,7 +109,7 @@ wallet :: [String]
 wallet = ["--wallet-skey", "/keys/payment.skey"]
 
 dirAndRelease :: [String]
-dirAndRelease = ["--registry", "/srv/actor", "--blueprint", "/srv/plutus.json"]
+dirAndRelease = ["--state-dir", "/srv/actor", "--blueprint", "/srv/plutus.json"]
 
 -- | The token as a person copies it from the registry's page.
 spelled :: LP.Asset -> String

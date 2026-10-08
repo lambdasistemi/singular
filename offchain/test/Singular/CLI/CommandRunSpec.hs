@@ -1235,7 +1235,7 @@ runAtTxIn answer rig =
 commandLine :: Rig -> FilePath -> [String] -> [String]
 commandLine rig registry args =
     args
-        <> [ "--registry"
+        <> [ "--state-dir"
            , rigDir rig </> registry
            , "--blueprint"
            , rigBlueprint rig

@@ -260226,17 +260226,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-02": {
-   "audio_sha256": "11a63c9659ca6ccd93c70e9da98ae46009a749c515c8bb5cc1d24000af624c6b",
-   "characters": 391,
-   "cost": 0.00024242,
-   "duration": 25.75,
+   "audio_sha256": "98125801ac141fe33fa2d2c6604e40abc9d4cde8bda67130dc4b11ba19f8bedb",
+   "characters": 388,
+   "cost": 0.00024056000000000001,
+   "duration": 25.4,
    "index": 2,
-   "key": "349af79161384219f8ffedffa1d261aecbe5ee3acdccf03221f229ffa8a04206",
+   "key": "86bd6519f8aa6c8e0c6b6de5ea9c91a85c5dbdf5be79f34fb1a129830ddf0159",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
-   "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
+   "sent_text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
+   "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
    "words": [
     {
      "end": 0.675,
@@ -260584,48 +260584,48 @@
      "text": "booking"
     },
     {
-     "end": 22.775,
+     "end": 22.725,
      "start": 22.475,
      "text": "wrote"
     },
     {
-     "end": 22.925,
-     "start": 22.775,
+     "end": 22.875,
+     "start": 22.725,
      "text": "to"
     },
     {
-     "end": 23.138,
-     "start": 22.925,
+     "end": 23.05,
+     "start": 22.875,
      "text": "its"
     },
     {
-     "end": 23.4,
-     "start": 23.138,
+     "end": 23.3,
+     "start": 23.05,
      "text": "own"
     },
     {
-     "end": 23.9,
-     "start": 23.4,
-     "text": "registry"
+     "end": 23.6,
+     "start": 23.3,
+     "text": "state"
     },
     {
-     "end": 24.487,
-     "start": 23.9,
+     "end": 24.175,
+     "start": 23.6,
      "text": "directory"
     },
     {
-     "end": 24.65,
-     "start": 24.487,
+     "end": 24.325,
+     "start": 24.175,
      "text": "is"
     },
     {
-     "end": 25.525,
-     "start": 24.65,
+     "end": 25.175,
+     "start": 24.325,
      "text": "needed"
     },
     {
-     "end": 25.75,
-     "start": 25.525,
+     "end": 25.4,
+     "start": 25.175,
      "text": "."
     }
    ]

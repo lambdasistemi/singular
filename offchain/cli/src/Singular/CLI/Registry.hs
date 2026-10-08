@@ -229,7 +229,7 @@ renderIdentityError = \case
             <> " is the only ada-only output the wallet holds; the registry's first publication is paid from another one while the seed stays unspent, so fund the wallet with a second ada-only output first"
     RegistryExists dir ->
         dir
-            <> " already holds a registry or its journal; create never \
+            <> " already holds your state or its journal; create never \
                \overwrites one"
     PublicationUnfunded role needed largest ->
         "publication-unfunded "

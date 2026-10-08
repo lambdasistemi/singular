@@ -148,7 +148,7 @@ import Singular.Registry.Types
 
 runInspect :: Env -> InspectArgs -> IO Value
 runInspect env a = do
-    let dir = inspectRegistry a
+    let dir = inspectStateDir a
         Key key = inspectKey a
         settings = inspectProvider a
         requested = accessToken (inspectAccess a)

@@ -41,7 +41,7 @@ sequenceDiagram
 | Claim | Evidence | Chain |
 | --- | --- | --- |
 | A booking's fee and units are measured, and its collateral is stated | accounting checks against the public preprod parameters; the ordinary journey on a development node | development node |
-| A preview signs, submits and writes nothing | the registry directory is byte for byte the same afterwards | development node |
+| A preview signs, submits and writes nothing | your state directory is byte for byte the same afterwards | development node |
 | **Pending, not established:** the four refusals, each beside its accepting control, on one existing registry, twice with fresh keys, and the same key read from two indexers before its termination | no completed gate supports it yet. The attach gate failed at an earlier commit (its receipt is kept) and an earlier run of it held three of thirty-one cases; a take's verdict is computed from retained receipts, so the claim holds only when a completed gate's receipts at the submitted commit say so | development node, pending |
 | An indexer readback compares output, datum bytes and hash, and lag | a local indexer answering in the public services' shapes; each alteration fails for its own reason; the credential appears nowhere but the indexer's log | local indexer |
 

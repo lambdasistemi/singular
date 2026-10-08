@@ -3270,7 +3270,7 @@ check req rs = case (req, rs) of
                | not
                     ( maybe
                         False
-                        ( "already holds a registry or its journal; create never overwrites one"
+                        ( "already holds your state or its journal; create never overwrites one"
                             `T.isSuffixOf`
                         )
                         (rcReason r)

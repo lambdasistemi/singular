@@ -144,7 +144,7 @@ the registry's state and outputs as that view holds them; its units are
 measured, its fee and collateral balanced and its outlay judged against the
 approved allowance under that view's parameters, before anything is signed.
 An insertion's envelope travels in its request, so nothing of it is kept in
-the registry directory.
+your state directory.
 -}
 book
     :: Attached
@@ -249,7 +249,7 @@ runInsert env a = case entryMode a of
         payload <- readInsertPayload a
         attached
             env
-            (entryRegistry a)
+            (entryStateDir a)
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Insert a))
@@ -310,7 +310,7 @@ runUpdate env a = case entryMode a of
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
         attached
             env
-            (entryRegistry a)
+            (entryStateDir a)
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Update a))
@@ -393,7 +393,7 @@ runTerminate env a = case entryMode a of
         let Key key = entryKey a
         attached
             env
-            (entryRegistry a)
+            (entryStateDir a)
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Terminate a))

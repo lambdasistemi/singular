@@ -255,13 +255,13 @@ data Plan = Plan
 
 {- | @singular registry fold@: fold the one pending request, signed and funded
 by this wallet, and journal it. Whoever booked the request, and whatever
-wallet, the registry directory they share says what the fold needs.
+wallet, your state directory says what the fold needs.
 -}
 runFold :: Env -> FoldArgs -> IO Value
 runFold env a =
     attached
         env
-        (foldRegistry a)
+        (foldStateDir a)
         (foldBlueprint a)
         (foldAccess a)
         (neededRoles (Fold a))

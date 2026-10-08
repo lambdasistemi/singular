@@ -93,18 +93,18 @@ expect wrong-command 1 '^documented, not in --help: the settings table gives --k
 
 # A documented invocation uses a flag its command does not print.
 fresh
-printf '\n```sh\nsingular registry inspect --registry ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
+printf '\n```sh\nsingular registry inspect --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect invocation-unknown 1 'docs/cli-recovery.md:[0-9]+: singular registry inspect --made-up-flag'
 
 # The release archive's run page, invoking the binary through a variable
 # and through a path: an unknown flag there fails, by page and line.
 fresh
-printf '\n```sh\n"$singular" registry update --registry reg --run-page-flag 1\n```\n' \
+printf '\n```sh\n"$singular" registry update --state-dir reg --run-page-flag 1\n```\n' \
   >>"$scratch/t/onchain-release/DEMO1.md"
 expect run-page-variable 1 'onchain-release/DEMO1.md:[0-9]+: singular registry update --run-page-flag'
 
 fresh
-printf '\n```sh\n./bin/singular registry terminate --registry reg \\\n  --path-form-flag 1\n```\n' \
+printf '\n```sh\n./bin/singular registry terminate --state-dir reg \\\n  --path-form-flag 1\n```\n' \
   >>"$scratch/t/onchain-release/DEMO1.md"
 expect run-page-path 1 'onchain-release/DEMO1.md:[0-9]+: singular registry terminate --path-form-flag'
 

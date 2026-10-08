@@ -7446,8 +7446,8 @@
     "index": 2,
     "name": "docs-singular-node/booking-and-folding-02",
     "pause_ms": 400,
-    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own registry directory is needed.",
-    "v": "11a63c9659ca"
+    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
+    "v": "98125801ac14"
    },
    {
     "index": 3,

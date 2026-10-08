@@ -141,7 +141,7 @@ reg = createReg <> ["--state-token", T.unpack tokenSpelling]
 
 -- | A create names no state token: it makes one.
 createReg :: [String]
-createReg = ["--registry", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+createReg = ["--state-dir", "/srv/reg", "--blueprint", "/srv/plutus.json"]
 
 -- | The state token as a person copies it from the registry's page.
 tokenSpelling :: T.Text
@@ -190,7 +190,7 @@ commandLine = describe "the command line" $ do
             `shouldBe` Right
                 ( Create
                     CreateArgs
-                        { createRegistry = "/srv/reg"
+                        { createStateDir = "/srv/reg"
                         , createBlueprint = "/srv/plutus.json"
                         , createMode = Submit writeSettings
                         , createSeed = Just seedText
@@ -286,7 +286,7 @@ commandLine = describe "the command line" $ do
             `shouldBe` Right
                 ( Insert
                     EntryArgs
-                        { entryRegistry = "/srv/reg"
+                        { entryStateDir = "/srv/reg"
                         , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
@@ -496,12 +496,52 @@ commandLine = describe "the command line" $ do
     it "refuses a write with no provider configuration" $
         parseCommand (["registry", "insert", "--key", "key"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
-    it "names a missing registry directory" $
+    it "names a missing state directory" $
         parseCommand
             ( ["registry", "inspect", "--key", "key", "--blueprint", "b"]
                 <> provider
             )
-            `shouldBe` Left (MissingFlag "--registry")
+            `shouldBe` Left (MissingFlag "--state-dir")
+    it "refuses --registry with its rename to --state-dir" $ do
+        parseCommand
+            ( [ "registry"
+              , "inspect"
+              , "--key"
+              , "key"
+              , "--blueprint"
+              , "b"
+              , "--registry"
+              , "/srv/reg"
+              ]
+                <> provider
+            )
+            `shouldBe` Left (BadValue "--registry" "was renamed to --state-dir")
+        parseCommand
+            ( [ "registry"
+              , "inspect"
+              , "--key"
+              , "key"
+              , "--blueprint"
+              , "b"
+              , "--registry=/srv/reg"
+              ]
+                <> provider
+            )
+            `shouldBe` Left (BadValue "--registry" "was renamed to --state-dir")
+        parseCommand
+            ( [ "registry"
+              , "inspect"
+              , "--key"
+              , "key"
+              , "--blueprint"
+              , "b"
+              , "--state-dir"
+              , "/srv/reg"
+              ]
+                <> provider
+                <> ["--state-token", T.unpack tokenSpelling]
+            )
+            `shouldSatisfy` either (const False) (const True)
     it
         "reads sole-provider settings over the full nonempty command extent"
         $ do
@@ -718,7 +758,7 @@ creatorChecks = describe "a creator's seed and directory" $ do
                 seedChecks False seed [(other, plain)]
                     `shouldSatisfy` isLeftWith isNotInWallet
     it
-        "refuses to create over a directory that already holds a registry or a journal"
+        "refuses to create over a directory that already holds your state or a journal"
         $ withTempDir
         $ \dir -> do
             refuseExisting (dir </> "fresh") `shouldReturn` Right ()
@@ -726,7 +766,7 @@ creatorChecks = describe "a creator's seed and directory" $ do
             createDirectoryIfMissing True used
             BS.writeFile (journalPath used) ""
             refuseExisting used `shouldReturn` Left (RegistryExists used)
-    it "ignores retired trie files when admitting a registry directory" $
+    it "ignores retired trie files when admitting a state directory" $
         withTempDir $ \dir -> do
             let used = dir </> "retired-files"
             createDirectoryIfMissing True used
@@ -1207,7 +1247,7 @@ previewRows = describe "--preview" $ do
             `shouldBe` Right
                 ( Insert
                     EntryArgs
-                        { entryRegistry = "/srv/reg"
+                        { entryStateDir = "/srv/reg"
                         , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode =
@@ -1424,7 +1464,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             `shouldBe` Right
                 ( Fold
                     FoldArgs
-                        { foldRegistry = "/srv/reg"
+                        { foldStateDir = "/srv/reg"
                         , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
@@ -1449,7 +1489,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             `shouldBe` Right
                 ( Fold
                     FoldArgs
-                        { foldRegistry = "/srv/reg"
+                        { foldStateDir = "/srv/reg"
                         , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
@@ -1532,7 +1572,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 `shouldSatisfy` refusesNaming "--request" "registry fold"
     it "describes fold and --fold in its usage" $ do
         usage
-            `shouldSatisfy` isInfixOf "singular registry fold --registry DIR"
+            `shouldSatisfy` isInfixOf "singular registry fold --state-dir DIR"
         usage `shouldSatisfy` isInfixOf "--request TXID#IX"
         usage `shouldSatisfy` isInfixOf "[--fold]"
   where
@@ -1566,7 +1606,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             `shouldBe` Right
                 ( Reject
                     RejectArgs
-                        { rejectRegistry = "/srv/reg"
+                        { rejectStateDir = "/srv/reg"
                         , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
@@ -1588,7 +1628,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             `shouldBe` Right
                 ( Reject
                     RejectArgs
-                        { rejectRegistry = "/srv/reg"
+                        { rejectStateDir = "/srv/reg"
                         , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
@@ -1622,7 +1662,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             reject [flag, "616c696365"] `shouldSatisfy` refusesBadValue flag
     it "describes reject in its usage" $ do
         usage
-            `shouldSatisfy` isInfixOf "singular registry reject --registry DIR"
+            `shouldSatisfy` isInfixOf "singular registry reject --state-dir DIR"
         usage `shouldSatisfy` isInfixOf "past both its windows"
 
 reclaimCommandRows :: Spec
@@ -1639,7 +1679,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
             Right (Reclaim a) -> do
                 reclaimRequest a
                     `shouldBe` either error id (parseOutRef (T.pack (replicate 64 'a' <> "#0")))
-                reclaimRegistry a `shouldBe` "/srv/reg"
+                reclaimStateDir a `shouldBe` "/srv/reg"
                 reclaimBlueprint a `shouldBe` "/srv/plutus.json"
                 reclaimWrite a
                     `shouldBe` WriteSettings
