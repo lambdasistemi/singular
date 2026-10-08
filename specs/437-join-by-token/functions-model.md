@@ -3,7 +3,7 @@
 This file lists only new or changed signatures. The names are proposals for the commit owner. A
 signature change goes back to the ticket owner as a challenge. Types refer to the
 [data model](data-model.md).
-PR1 binds main `21f1d8560be008a8b2045e583fc384f10809260e`, Lean tree
+PR1 binds main `23964e667fa278b2027d0c05169c0f5e0e9233cb`, Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. Signatures below concern
 token-only existing commands; PR2 retains its separately versioned unfinished interfaces.
 
@@ -70,3 +70,10 @@ narrowed fund inputs, deterministic page renderers with tagged release-archive e
 independently derived report action identity. Their previous interface versions are preserved
 outside the PR1 cut and remain authoritative for that follow-up. A planning signature, helper
 check or generated URL is not evidence of those outcomes.
+
+Under the 2026-10-08 E371 order these deferred interfaces are the next required serial phases.
+Before each phase the owner versions the accepted PR2 signature rows against current main,
+including its wallet-functions-model.md, transactionBlock/BlockPoint, checkedScript and
+publication/retirement, ReleaseInfo/describeRegistry and the two deterministic renderers. The
+preserved source is refs/archive/437/pr2-wip-20261007 (ee3fdf4f2d7a06638e88393c250c407288444f7c),
+not an instruction to apply a stash or reuse old evidence.

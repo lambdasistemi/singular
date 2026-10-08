@@ -2,7 +2,7 @@
 
 These are the new or changed records. Module placement is in the
 [modules model](modules-model.md).
-PR1 base `21f1d8560be008a8b2045e583fc384f10809260e` carries Lean tree
+PR1 base `23964e667fa278b2027d0c05169c0f5e0e9233cb` carries Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. The #419 request datum
 value, held/witness datum and public fold representation are inherited without a model change.
 
@@ -93,7 +93,16 @@ whose datums carry the value they name, preserving #419's removal of private pre
 ## Deferred PR2 records
 
 The closed wallet-output funding view, required-token selection, narrowed fund inputs, registry
-page/release-archive records and independently derived report action identity are not delivered
-by PR1. Their accepted A-009/A-011/A-012/A-013 bindings and preserved plans remain requirements
+page/release-archive records and independently derived report action identity remain required
+by the full issue and are not delivered by PR1. Their accepted A-009/A-011/A-012/A-013 bindings and preserved plans remain requirements
 for the same open issue. Retirement records retain their reason/history without carrying an old
 receipt or product state into another row.
+
+The next funding phase versions opaque WalletOutputs and its named protocol selectors against
+current main; no raw wallet list reaches builders. Page facts include ReleaseInfo from adjacent
+version.txt, blueprint digest and computed ConformanceLocation; an unverified BlockPoint for the
+last state transaction is distinct from a missing anchor or failed read. The page carries identity,
+rules, public replay, provider-found references, archive-claimed release facts and computed links,
+with deterministic human and machine representations. These are required records, not observed
+product facts. Exact fields/refusals and callable interfaces are adapted from the retained PR2
+model before implementation; no private preimages or caller reference hints may reappear.

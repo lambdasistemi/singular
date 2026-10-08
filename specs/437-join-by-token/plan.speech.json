@@ -5,78 +5,96 @@
       "pause": 500
     },
     {
-      "text": "Read the spec for the requirements. The design was ruled in two rounds on 2026-10-06: - the identity, the page, existing registries and the Lean impact were accepted as proposed; - references became a convenience found by hash, with no on-chain lock. The provider query takes the shape decided by the Lockness epic owner (lockness#39).",
-      "pause": 400
-    },
-    {
-      "text": "The operator's 2026-10-07 rulings remove caller-supplied reference hints and retire the public saved-selector promise. Code, tests, help and these documents change in the same implementation slice. Historical receipts keep their original scope; revised discovery needs its own controls.",
+      "text": "As Bob, I want to join with the state token, restore references when Carol leaves, and read a registry page whose claims are backed by the release and public receipts. The spec states those requirements; the tasks names their serial implementation boundaries.",
       "pause": 400
     }
   ],
-  "strategy": [
+  "status": [
     {
-      "text": "Strategy.",
+      "text": "Status.",
       "pause": 500
     },
     {
-      "text": "The operator's 2026-10-07 cut makes PR1 the token-only command and connected Bob journey. PR2 follows on the same open issue for the wallet, page, report action identity and new reference features. The archived earlier plans and working/index snapshot preserve that unfinished work.",
-      "pause": 400
-    },
-    {
-      "text": "The registry's identity moves from a file to a derivation. One library module resolves a state token into everything a command needs and refuses by name when the chain disagrees with the release. References are found by script hash, through a new provider query. The saved identity (registry.json) and its checks are deleted in the same slice that stops reading them.",
-      "pause": 400
-    },
-    {
-      "text": "No Lean, validator or blueprint change. The off-chain resolver is an admission check outside the law, like checkPins today.",
-      "pause": 400
-    }
-  ],
-  "vertical-slices": [
-    {
-      "text": "Vertical slices.",
-      "pause": 500
-    },
-    {
-      "text": "The existing GLM commit owner and persistent mute auditor continue; no extra seat is needed. The owner may push a coherent draft after final static preflight while the fresh exact-range audit and exact-head hosted CI run in parallel. Merge requires both plus the actual Bob story and its deliberate-open discrimination. Historical source approvals are not approvals of the new range.",
-      "pause": 400
-    }
-  ],
-  "live-boundaries-and-evidence": [
-    {
-      "text": "Live boundaries and evidence.",
-      "pause": 500
-    },
-    {
-      "text": "Local final-head static preflight runs root lint, conformance HLint, conformance format checking and offchain lint, each with its exact hosted command and actual exit recorded. Focused checks retain the frozen carriers. Full devnet, Demo1, conformance and recovery campaigns run hosted. Public conformance state is computed from receipts; no planning checkbox or local green closes an uncovered product requirement.",
-      "pause": 400
-    },
-    {
-      "text": "There are no preprod writes and no new registry.",
-      "pause": 400
-    }
-  ],
-  "coordination": [
-    {
-      "text": "Coordination.",
-      "pause": 500
-    },
-    {
-      "text": "#381 separate actors (draft PR #433) consumes this path: no identity record and no join command. Its two-actor journey uses --state-token.",
+      "text": "Completed preparation: existing source and remote head preserved; the authorized rebase completed26/26 at7d000f8a153613ce779936e7a3705087c9197a32; all prior rulings, PR2 work and review findings retained. This records preparation, not acceptance.",
       "pause": 300
     },
     {
-      "text": "#419 is inherited at the exact base. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0 bind carried request datum values, public fold construction and carrier settlement. Preserve its public-history controls and removed private preimage dependency. PR1 changes no Lean, validator, blueprint or script identity relative to that base.",
+      "text": "Current: current-base planning publication, then GLM repairs Trace/build/deployment consumers before the next Muse phase repairs public Bob and refusal composition. Connected evidence follows these repairs.",
       "pause": 300
+    },
+    {
+      "text": "Blockers: missing public fold sentence, saved-identity binding, refusal receipt composition, provider-failure narration and old-head hosted failures. New-head results are not yet observed.",
+      "pause": 300
+    }
+  ],
+  "accepted-design": [
+    {
+      "text": "Accepted design.",
+      "pause": 500
+    },
+    {
+      "text": "Identity is the token plus the release. There is no saved identity, join command, caller-supplied reference hint or forever lock. Anyone can rebuild and publish checked reference scripts to outputs they control, and spend them back. Search tries the provider before the actor wallet, reading only missing needed roles and hashing exact candidate scripts locally. Empty provider answers establish only provider absence. The accepted rulings of 2026-10-06 and 2026-10-07 remain authoritative: permissionless republishing, saved-selector retirement, archive-bound page facts, shared state carrier retirement, a closed funding interface and independently checked report action identity.",
+      "pause": 400
+    }
+  ],
+  "ownership-and-serial-order": [
+    {
+      "text": "Ownership and serial order.",
+      "pause": 500
+    },
+    {
+      "text": "Feature epic #371 owns #437; Demo #301 and issue #381 consumes its delivered path. The approved working team is retained Sol delivery owner, native Muse muse-spark-1.3-contributor and native GLM glm-5.3, serially, with no auditor or extra seat. One implementation writer owns the worktree at a time. Sol owns planning, rebase/integration, command receipts and PR bodies. E371 owns merge and product acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Muse first resolves named rebase conflicts and preserves current-main consumers. After clean integration, its terminal handback and planning publication, GLM reproduces and repairs create read-failure narration and the stale build/deployment consumers. The next bounded Muse phase repairs public Bob fold/inspect binding and underfunded receipt admission and assertions. The parent changes writers only after a durable handoff, clean source boundary and owned-job inspection. Later bounded Muse/GLM phases deliver references, protected funding and page/report work. Idle symmetry launches are not part of the plan.",
+      "pause": 400
+    }
+  ],
+  "model-and-evidence-binding": [
+    {
+      "text": "Model and evidence binding.",
+      "pause": 500
+    },
+    {
+      "text": "Current base is 23964e667fa278b2027d0c05169c0f5e0e9233cb; Lean tree is 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, constitution 1.13.0, blob 79724aeb3dcdb44dbb7618eb98b11d9cec93ae85. No Lean, validator or blueprint change. Preserve #383 session/provider composition, #389 Koios behavior, #419 carried datum/public fold and carrier/history controls, and #416 typed failures and trace attribution. The modules model owns placement; the data model and functions model own records and call surfaces.",
+      "pause": 400
+    },
+    {
+      "text": "Historical gate14 and the immutable blocked review keep their original head/range; no receipt or approval is relabelled after rebase. The four findings are repair obligations, not a new audit. Any genuine Lean or bound-consumer ambiguity holds the affected story and goes to E371 with a concrete user story; routine representation corrections proceed under the existing authorization.",
+      "pause": 400
+    },
+    {
+      "text": "Meaningful RED runs execute the subject and fail for the missing behavior; compile/setup failures are recorded separately. Focused checks establish only their selected cases. Connected claims require actual local devnet or exact-head hosted transactions and receipt-derived public clauses, including a deliberate Alice-file open and small-wallet refusal with no submission or file changes and the original seed still unspent. Every instruction must execute/render over discovered extent.",
+      "pause": 400
+    },
+    {
+      "text": "Run the actual local CI recipes and four hosted static commands at coherent heads, retaining raw logs, actual producer exits, commands, CWD, head and tree. Then push with the preserved remote head as an explicit force-with-lease after rebase, and track required exact-head hosted jobs. Green static checks or historical 45-success/4-failure/9-skipped totals cannot accept the product. No GitHub comments. Keep the owned PR body and evidence limits current. No public-chain writes, signing or private wallet material; local devnet and public reads are authorized.",
+      "pause": 400
+    }
+  ],
+  "completion": [
+    {
+      "text": "Completion.",
+      "pause": 500
+    },
+    {
+      "text": "PR1 may be delivered first but does not close #437. All remaining reference, full closed-funding, page/archive and report-identity requirements stay actionable; no cut turns them into non-goals. Only E371 can accept or merge the result after current evidence and unmet rows are assessed. Planning checkboxes never supply product evidence. Runtime journals and immutable handoffs retain exact command receipts; speech is generated canonically from changed pages.",
+      "pause": 400
     }
   ],
   "ceilings": [
     {
       "text": "Ceilings.",
       "pause": 500
+    },
+    {
+      "text": "Spec: 200 lines; plan: 120; each model: 150; tasks: 80; compiled worker brief: 300.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a7e9280faef79327fdbbb6e76881903c4ffed62f4efb9818dbd5092adf634ae3"
+    "sha256": "20e043a1e0ccd9cf718bb997b61847b6e62febdb8f39f8f0e7c4106bba33dd1d"
   }
 }
