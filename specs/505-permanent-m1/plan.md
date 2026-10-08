@@ -3,8 +3,19 @@
 As a registry participant, I register a key and terminate it permanently, while
 every caller is unable to use the other five registry transitions on this
 instance. I can still update an application's payload without moving the
-  registry, fold permissionlessly, reject a pending request and retract an
+registry, fold permissionlessly, reject a pending request and retract an
 eligible request with the original timing and refund obligations.
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    Unregistered --> Active: Register the key
+    Active --> Terminal: Terminate permanently
+```
+
+Registration creates an active leaf. Permanent termination changes that leaf
+to terminal and consumes its active token. Updating the application's payload
+leaves the registry leaf unchanged. The other five registry edges are refused.
 
 Authority: the operator's 8 October 2026 bounded permanent contract ruling,
 issues #505/#506, and the carve-505 brief. Base model and implementation:
@@ -18,7 +29,7 @@ Preservation is recorded in `specs/504-m2-preservation`; its refs stay untouched
    checks every updating request before approval or trie execution. Keep the
    broader state validator and its evidence separate. Bind bounded witnesses
    to the bounded state hash, and select both explicitly in ordinary CLI creation
-  and recognition. Do not introduce mutable admission configuration.
+   and recognition. Do not introduce mutable admission configuration.
 3. Exercise allowed lifecycle controls and independently constructed excluded,
    unknown and mixed requests at the validator boundary. Check a deliberately
    broader contract against the boundary checker to demonstrate detection.

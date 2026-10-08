@@ -1,0 +1,32 @@
+{
+  "permanent-registration-and-termination-candidate-evidence": [
+    {
+      "text": "Permanent registration and termination: candidate evidence.",
+      "pause": 500
+    },
+    {
+      "text": "As a participant, I create a new registry, register a key and terminate it permanently. The fixed contract refuses every other registry edge. The ordinary CLI selects the known new scripts and refuses unknown supplied code. Old registries are abandoned, with no migration or compatibility recognition.",
+      "pause": 400
+    },
+    {
+      "text": "The broader model remains bound to base 464ed8674de626470396cc871f3af85a1d489477. The new law is Singular.M1, source SHA-256 e94c1bbc502514a7be7083f56a52b595bd435050cbc868b61fe44a1fe7301a93. Its audited statement manifest and driver corpus carry all source and declaration digests; the broader generic corpus and driver remain byte-identical. Naming and lifecycle corpus envelopes are refreshed for the wider source inventory; their behavior is unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "New state: 807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa. New unapplied witness: 4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1. All four fixed scripts, compiler identity, parameter counts and byte digests are recorded in onchain/permanent-contract.json. The original broader state and witness identities are unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Reproduce the component boundary from a clean checkout:",
+      "pause": 400
+    },
+    {
+      "text": "The first check retains raw evaluated programs, context arguments, exits, output and controlled-fault replay. The committed component and transport reports are under evidence/. They establish their named boundary only. Existing timing and protected-rejection discrepancies are not counted as passing behavior; folding an update outside its processing window remains affected acceptance held where the model and validator differ. KERI integration and broader uncovered requirements remain visible. Protected rejection follows this carve through",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "RESULTS.md",
+    "sha256": "ab48b1428f6ba62bf65a1662b391d7df863efde3d45e541f93be28b00857c355"
+  }
+}
