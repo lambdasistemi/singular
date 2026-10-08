@@ -74,7 +74,8 @@ spec = describe "a wallet's named selections" $ do
         fundingOutputs w `shouldSatisfy` all (fundable . snd)
         fundable carrierOut `shouldBe` False
         fundable tokenOut `shouldBe` False
-    it "narrows funding to the chosen plain output, and refuses any other choice" $ do
+    it
+        "narrows funding to the chosen plain output, and refuses any other choice" $ do
         w <- acquire
         fmap
             (map fst . fundingOutputs)
@@ -93,7 +94,8 @@ spec = describe "a wallet's named selections" $ do
                     `shouldBe` [carrierIn]
                 map fst (burnCandidates burnAsset narrowed)
                     `shouldBe` [holderIn, twiceIn]
-    it "a narrowed session funds every later read from the chosen output, its other reads unchanged" $ do
+    it
+        "a narrowed session funds every later read from the chosen output, its other reads unchanged" $ do
         Right narrowed <- narrowFunding payer plainIn serving
         w <- acquireFrom narrowed
         map fst (fundingOutputs w) `shouldBe` [plainIn]
@@ -102,7 +104,8 @@ spec = describe "a wallet's named selections" $ do
         map fst <$> outputsAt narrowed elsewhere `shouldReturn` [elsewhereIn]
         w' <- acquireFrom narrowed
         map fst (fundingOutputs w') `shouldBe` [plainIn]
-    it "a narrowing refuses an absent or ineligible choice as the input, a failed read as the read" $ do
+    it
+        "a narrowing refuses an absent or ineligible choice as the input, a failed read as the read" $ do
         absent <-
             narrowFunding payer (refOf (T.replicate 64 "f" <> "#0")) serving
         ineligible <- narrowFunding payer carrierIn serving
@@ -111,7 +114,8 @@ spec = describe "a wallet's named selections" $ do
         either describeRefusal (const "narrowed") ineligible
             `shouldBe` "input"
         either describeRefusal (const "narrowed") failed `shouldBe` "read"
-    it "takes create's seed only when it is plain, reserving it from funding" $ do
+    it
+        "takes create's seed only when it is plain, reserving it from funding" $ do
         w <- acquire
         fmap
             (\(u, v) -> (fst u, map fst (fundingOutputs v)))
@@ -133,7 +137,8 @@ spec = describe "a wallet's named selections" $ do
             (hashScript (mkRequestScript cfg otherToken))
             w
             `shouldBe` []
-    it "offers a burn the outputs holding its asset, never another key's or policy's" $ do
+    it
+        "offers a burn the outputs holding its asset, never another key's or policy's" $ do
         w <- acquire
         map fst (burnCandidates burnAsset w)
             `shouldBe` [holderIn, twiceIn]

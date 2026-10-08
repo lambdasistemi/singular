@@ -34,7 +34,12 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID)
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Foldable (toList)
@@ -55,14 +60,25 @@ import Singular.Registry.StateToken
     , referenceScripts
     , renderReferenceRefusal
     )
-import Singular.Registry.StateTokenFixture (refOf, release, token, tokenOf)
-import Singular.Registry.StubSession (stubSession, withParameters, withTime)
+import Singular.Registry.StateTokenFixture
+    ( refOf
+    , release
+    , token
+    , tokenOf
+    )
+import Singular.Registry.StubSession
+    ( stubSession
+    , withParameters
+    , withTime
+    )
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
-import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes, policyIdFromPin)
+import Singular.Registry.TxBuilder.Internal
+    ( addrFromKeyHashBytes
+    , policyIdFromPin
+    )
 import Singular.Registry.WalletOutputs (WalletOutputs, walletOutputs)
-
 
 spec :: Spec
 spec = do
@@ -98,7 +114,10 @@ publicationScripts = describe "checked reference scripts" $ do
                        , RoleWitnessTerminal
                        , RoleApplication
                        ]
-        Map.intersectionWith (==) (hashScript <$> scripts) (expectedReferences release token)
+        Map.intersectionWith
+            (==)
+            (hashScript <$> scripts)
+            (expectedReferences release token)
             `shouldBe` Map.fromList [(r, True) | r <- [minBound .. maxBound]]
     it "checks each role successfully" $ do
         let expected = expectedReferences release token
@@ -109,7 +128,10 @@ publicationScripts = describe "checked reference scripts" $ do
                        | r <- [minBound .. maxBound]
                        , let s = referenceScripts release token Map.! r
                        ]
-        [ hashScript s | Right s <- [checkedScript release token r | r <- [minBound .. maxBound]] ]
+        [ hashScript s
+          | Right s <-
+                [checkedScript release token r | r <- [minBound .. maxBound]]
+          ]
             `shouldBe` Map.elems expected
     it "refuses a mismatching role by name before building anything" $ do
         -- The comparison discriminates: scripts built for another registry
@@ -117,7 +139,10 @@ publicationScripts = describe "checked reference scripts" $ do
         -- foreign script supplied for the role would be refused with both
         -- hashes named. Same-release derivation agrees by the tests above.
         let expected = expectedReferences release token
-            other = referenceScripts release (tokenOf (refOf (T.replicate 64 "9" <> "#0")))
+            other =
+                referenceScripts
+                    release
+                    (tokenOf (refOf (T.replicate 64 "9" <> "#0")))
         Map.intersectionWith
             (/=)
             (hashScript <$> other)
@@ -137,18 +162,26 @@ publicationScripts = describe "checked reference scripts" $ do
 
 publicationDiscovery :: Spec
 publicationDiscovery = describe "missing-reference discovery" $ do
-        it "finds every role from the provider without consulting the wallet" $ do
-            found <- missingReferences providerHit (Just walletAddr) wanted allRoles
-            found `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
-        it "falls back to the wallet only for roles the provider misses" $ do
-            found <- missingReferences providerMiss (Just walletAddr) wanted allRoles
-            found `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
-        it "reports missing roles without refusing when neither source has them" $ do
-            found <- missingReferences providerMiss (Just walletAddr) wanted bothRoles
-            found `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.singleton RoleRequest)
-        it "refuses a failed provider read instead of reading it as empty" $ do
-            failed <- missingReferences providerFailed (Just walletAddr) wanted allRoles
-            failed `shouldSatisfy` isUnreadable
+    it "finds every role from the provider without consulting the wallet" $ do
+        found <-
+            missingReferences providerHit (Just walletAddr) wanted allRoles
+        found
+            `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
+    it "falls back to the wallet only for roles the provider misses" $ do
+        found <-
+            missingReferences providerMiss (Just walletAddr) wanted allRoles
+        found
+            `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
+    it
+        "reports missing roles without refusing when neither source has them" $ do
+        found <-
+            missingReferences providerMiss (Just walletAddr) wanted bothRoles
+        found
+            `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.singleton RoleRequest)
+    it "refuses a failed provider read instead of reading it as empty" $ do
+        failed <-
+            missingReferences providerFailed (Just walletAddr) wanted allRoles
+        failed `shouldSatisfy` isUnreadable
   where
     wanted = expectedReferences release token
     allRoles = Set.singleton RoleState
@@ -172,7 +205,7 @@ carrier =
     ( refOf (T.replicate 64 "c" <> "#0")
     , mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty)
         & referenceScriptTxOutL
-        .~ SJust carrierScript
+            .~ SJust carrierScript
     )
 
 carrierHash :: ScriptHash
@@ -223,7 +256,10 @@ script49 :: Script ConwayEra
 script49 = carrierScript
 
 session49 :: Session NoWitness IO
-session49 = withTime (pure syntheticTime) (withParameters preprodParams stubSession)
+session49 =
+    withTime
+        (pure syntheticTime)
+        (withParameters preprodParams stubSession)
 
 serveList :: [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
 serveList utxos =
@@ -235,7 +271,8 @@ serveList utxos =
 
 acquireList :: [(TxIn, TxOut ConwayEra)] -> IO WalletOutputs
 acquireList utxos =
-    either (fail . show) pure =<< walletOutputs (serveList utxos) walletAddr
+    either (fail . show) pure
+        =<< walletOutputs (serveList utxos) walletAddr
 
 payerAddr :: Addr
 payerAddr = walletAddr
@@ -244,13 +281,17 @@ fullWallet :: IO WalletOutputs
 fullWallet =
     acquireList
         [ (smallIn, mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty))
-        , (largeIn, mkBasicTxOut walletAddr (MaryValue (Coin 100_000_000) mempty))
+        ,
+            ( largeIn
+            , mkBasicTxOut walletAddr (MaryValue (Coin 100_000_000) mempty)
+            )
         ]
 
 smallWallet :: IO WalletOutputs
 smallWallet =
     acquireList
-        [(smallIn, mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty))]
+        [ (smallIn, mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty))
+        ]
 
 protectedWallet :: IO WalletOutputs
 protectedWallet =
@@ -267,7 +308,7 @@ protectedCarrierOut :: TxOut ConwayEra
 protectedCarrierOut =
     mkBasicTxOut walletAddr (MaryValue (Coin 300_000_000) mempty)
         & referenceScriptTxOutL
-        .~ SJust carrierScript
+            .~ SJust carrierScript
 
 protectedTokenOut :: TxOut ConwayEra
 protectedTokenOut =
@@ -275,7 +316,9 @@ protectedTokenOut =
         walletAddr
         ( MaryValue
             (Coin 800_000_000)
-            (MultiAsset (Map.singleton tokenPolicy (Map.singleton (AssetName "approval") 1)))
+            ( MultiAsset
+                (Map.singleton tokenPolicy (Map.singleton (AssetName "approval") 1))
+            )
         )
 
 tokenPolicy :: PolicyID

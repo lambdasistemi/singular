@@ -76,7 +76,13 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx
+    ( bodyTxL
+    , estimateMinFeeTx
+    , mkBasicTx
+    , txIdTx
+    , witsTxL
+    )
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , collateralReturnTxBodyL
@@ -137,7 +143,6 @@ import Singular.Registry.Trace
     , ReadEvent (..)
     , timedTrace
     )
-import Singular.Registry.WalletOutputs (WalletOutputs, fundingOutputs)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
@@ -176,6 +181,7 @@ import Singular.Registry.Types
     , edgeUpdateActive
     , edgeWitnessTerminal
     )
+import Singular.Registry.WalletOutputs (WalletOutputs, fundingOutputs)
 
 {- | Sign a built transaction with the payer's key, submit it, and wait
 for it. The caller owns its own signing key and its own confirmation
@@ -366,11 +372,13 @@ publishReferencesTx session payerAddr wallet scripts = do
                 pp
                 ( mkBasicTxOut payerAddr (MaryValue (Coin 0) mempty)
                     & referenceScriptTxOutL
-                    .~ SJust script
+                        .~ SJust script
                 )
             | script <- scripts
             ]
-    case mapMaybe (\n -> settleTo pp payerAddr (take n funds) published) [1 .. length funds] of
+    case mapMaybe
+        (\n -> settleTo pp payerAddr (take n funds) published)
+        [1 .. length funds] of
         tx : _ -> pure (tx, published)
         [] ->
             error

@@ -49,8 +49,8 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
@@ -99,17 +99,21 @@ fundable out =
                 SJust _ -> False
            )
 
--- | The smallest fundable output covering this amount, if the wallet
--- has one. A publication takes the output that covers it whenever one
--- exists instead of stranding on outputs too small.
-coveringFunding :: Integer -> WalletOutputs -> Maybe (TxIn, TxOut ConwayEra)
+{- | The smallest fundable output covering this amount, if the wallet
+has one. A publication takes the output that covers it whenever one
+exists instead of stranding on outputs too small.
+-}
+coveringFunding
+    :: Integer -> WalletOutputs -> Maybe (TxIn, TxOut ConwayEra)
 coveringFunding needed w = covering needed (fundingOutputs w)
 
--- | The smallest output covering this amount from fundable candidates,
--- if one covers. Shared publication selection: callers pass only the
--- outputs they may spend (never the seed, never carriers). Covering is
--- strict, as the change it leaves must stay above the minimum.
-covering :: Integer -> [(k, TxOut ConwayEra)] -> Maybe (k, TxOut ConwayEra)
+{- | The smallest output covering this amount from fundable candidates,
+if one covers. Shared publication selection: callers pass only the
+outputs they may spend (never the seed, never carriers). Covering is
+strict, as the change it leaves must stay above the minimum.
+-}
+covering
+    :: Integer -> [(k, TxOut ConwayEra)] -> Maybe (k, TxOut ConwayEra)
 covering needed outs =
     case [ u
          | u@(_, out) <- sortOn (coinOf . snd) outs

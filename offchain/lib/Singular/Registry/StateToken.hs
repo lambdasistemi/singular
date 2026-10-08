@@ -51,11 +51,11 @@ module Singular.Registry.StateToken
 
 import Control.Monad (forM_, when)
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
-import Data.Either (partitionEithers)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
+import Data.Either (partitionEithers)
 import Data.List (minimumBy)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -252,7 +252,8 @@ token alone: the same derivations 'expectedReferences' hashes, as
 scripts. Economics never enter a script: windows and fees live in the
 configuration built around them, not in the code.
 -}
-referenceScripts :: Release -> Asset -> Map ReferenceRole (Script ConwayEra)
+referenceScripts
+    :: Release -> Asset -> Map ReferenceRole (Script ConwayEra)
 referenceScripts release (_, AssetName name) =
     Map.fromList
         [ (RoleState, stateScript)
@@ -266,7 +267,11 @@ referenceScripts release (_, AssetName name) =
     stateHash = computeScriptHash (releaseState release)
     stateScript = scriptFromBytes "reference-state" (releaseState release)
     registryId = scriptHashBytes stateHash <> SBS.fromShort name
-    codes = applicationCodes OpenDatumApplication registryId (releaseCodes release)
+    codes =
+        applicationCodes
+            OpenDatumApplication
+            registryId
+            (releaseCodes release)
     requestScript =
         scriptFromBytes
             "reference-request"
@@ -288,7 +293,10 @@ referenceScripts release (_, AssetName name) =
 role hash before anything is built, signed or written.
 -}
 checkedScript
-    :: Release -> Asset -> ReferenceRole -> Either ReferenceRefusal (Script ConwayEra)
+    :: Release
+    -> Asset
+    -> ReferenceRole
+    -> Either ReferenceRefusal (Script ConwayEra)
 checkedScript release token role =
     let script = referenceScripts release token Map.! role
         expected = expectedReferences release token Map.! role
@@ -507,7 +515,8 @@ findReferences
     -> m
         (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra)))
 findReferences session walletAt expected needed = runExceptT $ do
-    (found, missing) <- ExceptT (searchReferences session walletAt expected needed)
+    (found, missing) <-
+        ExceptT (searchReferences session walletAt expected needed)
     case missing of
         [] -> pure found
         (role, hash) : _ -> throwError (ReferenceMissing role hash)
@@ -531,7 +540,8 @@ missingReferences
             (Map ReferenceRole (TxIn, TxOut ConwayEra), Set ReferenceRole)
         )
 missingReferences session walletAt expected needed =
-    (fmap . fmap) (\(found, missing) -> (found, Set.fromList (map fst missing)))
+    (fmap . fmap)
+        (\(found, missing) -> (found, Set.fromList (map fst missing)))
         (searchReferences session walletAt expected needed)
 
 searchReferences
@@ -543,7 +553,9 @@ searchReferences
     -> m
         ( Either
             ReferenceRefusal
-            (Map ReferenceRole (TxIn, TxOut ConwayEra), [(ReferenceRole, ScriptHash)])
+            ( Map ReferenceRole (TxIn, TxOut ConwayEra)
+            , [(ReferenceRole, ScriptHash)]
+            )
         )
 searchReferences session walletAt expected needed = runExceptT $ do
     let wanted =
