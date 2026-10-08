@@ -131,6 +131,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                                     , tipObservation = unused
                                     , outputs = const unused
                                     , scriptRegistered = const unused
+                                    , mintRecord = const unused
                                     , history = \_ _ -> unused
                                     }
                         (Right <$> action session) `finally` writeIORef open False

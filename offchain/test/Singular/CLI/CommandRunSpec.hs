@@ -116,7 +116,11 @@ import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
-import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
+import Singular.Registry.Evidence
+    ( Evidenced (..)
+    , NoWitness
+    , unverifiedVerifier
+    )
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
@@ -154,7 +158,7 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = handlerRows >> setupRecut
+spec = handlerRows >> setupRecut >> readbackRows
 
 handlerRows :: Spec
 handlerRows = describe
@@ -456,6 +460,90 @@ setupRecut = describe "(#416) tracing setup re-cut"
                     `shouldBe` (name, map (const True) (writtenStamps plain))
         writtenStamps plain `shouldBe` map (const True) (writtenStamps plain)
 
+{- | The reference read-back of a create (#437): a provider that cannot
+answer it is a provider failure, attributed by the typed failure the
+client holds — never a completed read step claiming the output absent —
+while a read that established the output missing stays the distinct
+not-live refusal it always was.
+-}
+readbackRows :: Spec
+readbackRows =
+    describe
+        "a create's reference read-back the provider cannot answer (#437)"
+        $ do
+            let referenceSteps r =
+                    [ f
+                    | Trace _ (How (Fetched f)) <- runEvents r
+                    , fetchWhat f == ["reference scripts"]
+                    ]
+                reasonOf r = textAt "reason" (runReceipt r)
+            it
+                "attributes the failed read as the typed provider failure, never a completed absence"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    failed <-
+                        runAtTxIn
+                            (Left (Cage.BackendReadFailure "the exchange died"))
+                            rig
+                            "create-read-failed"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt failed) `shouldBe` Just "partial"
+                    reasonOf failed
+                        `shouldSatisfy` maybe False (T.isInfixOf "BackendReadFailure")
+                    reasonOf failed
+                        `shouldSatisfy` maybe False (not . T.isInfixOf "is not live")
+                    case reverse (referenceSteps failed) of
+                        (step : _) -> case fetchEnd step of
+                            FailedWith _ -> pure ()
+                            Done -> expectationFailure "the failed read-back ends Done"
+                        [] ->
+                            expectationFailure "the create never read its references back"
+            it
+                "keeps a read the provider refused — a missing output — a failed read, not an absence"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    refused <-
+                        runAtTxIn
+                            (Left (Cage.MissingOutput (fundOutput 1)))
+                            rig
+                            "create-read-refused"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt refused) `shouldBe` Just "partial"
+                    reasonOf refused
+                        `shouldSatisfy` maybe False (T.isInfixOf "MissingOutput")
+                    reasonOf refused
+                        `shouldSatisfy` maybe False (not . T.isInfixOf "is not live")
+                    case reverse (referenceSteps refused) of
+                        (step : _) -> case fetchEnd step of
+                            FailedWith _ -> pure ()
+                            Done ->
+                                expectationFailure
+                                    "a refused read ends the step Done"
+                        [] ->
+                            expectationFailure "the create never read its references back"
+            it "keeps a successful empty answer the distinct not-live refusal" $
+                withRig $ \rig -> do
+                    seed <- fundSeed rig
+                    empty <-
+                        runAtTxIn
+                            (Right (Evidenced [] Nothing))
+                            rig
+                            "create-read-empty"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt empty) `shouldBe` Just "partial"
+                    reasonOf empty
+                        `shouldSatisfy` maybe False (T.isInfixOf "is not live")
+                    case reverse (referenceSteps empty) of
+                        (step : _) -> case fetchEnd step of
+                            Done -> pure ()
+                            FailedWith _ ->
+                                expectationFailure
+                                    "a successful empty read ends the step failed"
+                        [] ->
+                            expectationFailure "the create never read its references back"
+
 -- | What two packaged writes left: each run, the registry's files and its journal.
 data Written = Written
     { writtenRuns :: [(String, ExitCode, BS.ByteString, BS.ByteString)]
@@ -734,6 +822,38 @@ capabilities rig =
         , capTrace = pure []
         }
 
+{- | The rig's capabilities with every exact-input read answered by this —
+a refused read as a typed failure, or a successful empty answer — every
+other read served by the chain as it stands: a provider that cannot
+make one read, or one that answers nothing there, not one that is down.
+-}
+atTxInCapabilities
+    :: Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs)
+    -> Rig
+    -> Capabilities NoWitness IO
+atTxInCapabilities answer rig =
+    (capabilities rig)
+        { capReads =
+            let (network, provider) = rawChainProvider (rigChain rig)
+                answering =
+                    provider
+                        { Cage.acquire =
+                            \requested action ->
+                                Cage.acquire provider requested (answeringReads action)
+                        }
+            in  ( network
+                , observeProvider unverifiedVerifier (\_ -> pure ()) answering
+                )
+        }
+  where
+    answeringReads action session =
+        action
+            session
+                { Cage.outputs = \query -> case query of
+                    Cage.AtTxIn _ -> pure answer
+                    _ -> Cage.outputs session query
+                }
+
 -- ---------------------------------------------------------
 -- The lifecycle
 -- ---------------------------------------------------------
@@ -938,14 +1058,20 @@ run rig = runAt rig "registry"
 
 -- | The same, against the registry in this directory of the rig.
 runAt :: Rig -> FilePath -> String -> [String] -> IO Run
-runAt rig registry label args = do
+runAt rig = runVia rig (envOf rig)
+
+{- | The same, over an environment of the caller's: the packaged one, or
+one whose provider cannot answer a read.
+-}
+runVia :: Rig -> Env -> FilePath -> String -> [String] -> IO Run
+runVia rig env registry label args = do
     writeIORef (rigEvents rig) []
     command <-
         either
             (fail . show)
             pure
             (parseCommand (commandLine rig registry args))
-    (code, out, _) <- captured (runCommand (envOf rig) command)
+    (code, out, _) <- captured (runCommand env command)
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))
@@ -965,6 +1091,27 @@ runAt rig registry label args = do
                     | ("--key", k) <- zip args (drop 1 args)
                     ]
             }
+
+{- | A command line through the same dispatch and receipt plumbing, over
+a provider that answers every exact-input read with this: a refused
+read as a typed failure, or a successful empty answer — the read-back
+a create must make of a reference it just published.
+-}
+runAtTxIn
+    :: Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs)
+    -> Rig
+    -> String
+    -> [String]
+    -> IO Run
+runAtTxIn answer rig =
+    runVia
+        rig
+        ( (envOf rig)
+            { envReads = \_ k -> k (atTxInCapabilities answer rig)
+            , envWrites = \_ _ k -> k (atTxInCapabilities answer rig)
+            }
+        )
+        "registry"
 
 -- | A command line over the rig, as the packaged command is given it.
 commandLine :: Rig -> FilePath -> [String] -> [String]

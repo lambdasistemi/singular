@@ -39,6 +39,8 @@ import Control.Monad (unless, when)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.List (minimumBy)
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 
@@ -69,7 +71,9 @@ import Singular.Registry.Ledger
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
-    ( findReferences
+    ( ReferenceRefusal (..)
+    , carriesReference
+    , findReferences
     , parseRole
     , renderReferenceRefusal
     )
@@ -257,8 +261,10 @@ verifyDeployment view dep parts = do
 
 {- | A live carrier of each script the manifest records, found by its hash
 wherever it sits ("Singular.Registry.StateToken"): the recorded output
-reference is not read. Each is returned beside its manifest entry, in
-manifest order.
+reference is not read. The registry roles go through the reference
+search; the deployment family's custody script, which no registry
+transaction runs, is found by the same rule on its own. Each is
+returned beside its manifest entry, in manifest order.
 -}
 referencesByHash
     :: Cage.Session Cage.NoWitness IO
@@ -266,22 +272,34 @@ referencesByHash
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
 referencesByHash view dep = do
     recorded <- mapM roleOf (depReferenceScripts dep)
-    let expected = Map.fromList [(role, hash) | (_, role, hash) <- recorded]
+    let expected = Map.fromList [(role, hash) | (_, Just role, hash) <- recorded]
     found <-
         findReferences view Nothing expected (Map.keysSet expected)
             >>= either (die . T.unpack . renderReferenceRefusal) pure
-    pure [(r, found Map.! role) | (r, role, _) <- recorded]
+    let carrier (r, Just role, _) = pure (r, found Map.! role)
+        carrier (r, Nothing, hash) = do
+            carried <- custodyCarrier view hash
+            pure (r, carried)
+    mapM carrier recorded
   where
+    {- The manifest's role vocabulary. A registry role goes to the
+    reference search, spelled as receipts spell it; the custody script
+    the deployment publishes beside them is looked up by its hash alone.
+    Anything else the manifest records is unknown, refused by name: the
+    closed set is what keeps the producer's vocabulary and this
+    consumer's one set.
+    -}
     roleOf r = do
         role <-
-            maybe
-                ( die
-                    ( "the deployment records an unknown reference role "
-                        <> T.unpack (refRole r)
-                    )
-                )
-                pure
-                (parseRole (refRole r))
+            if refRole r == custodyRole
+                then pure Nothing
+                else case parseRole (refRole r) of
+                    Just registryRole -> pure (Just registryRole)
+                    Nothing ->
+                        die
+                            ( "the deployment records an unknown reference role "
+                                <> T.unpack (refRole r)
+                            )
         hash <-
             maybe
                 ( die
@@ -293,6 +311,34 @@ referencesByHash view dep = do
                 pure
                 (decodeScriptHash (refHash r))
         pure (r, role, hash)
+
+-- | The manifest's own name for the custody script it publishes.
+custodyRole :: Text
+custodyRole = "custody"
+
+{- | A live carrier of the custody script, by its hash wherever it sits:
+the rule the reference search applies to registry roles, with no wallet
+to fall back on — a run attached to a deployment spends the publication
+its manifest names.
+-}
+custodyCarrier
+    :: Cage.Session Cage.NoWitness IO
+    -> ScriptHash
+    -> IO (TxIn, TxOut ConwayEra)
+custodyCarrier view hash = do
+    answer <-
+        Cage.outputs view (Cage.CarryingReferenceScript hash)
+            >>= either
+                (die . T.unpack . renderReferenceRefusal . ReferenceUnreadable)
+                (pure . Cage.value)
+    case filter (carriesReference hash . snd) answer of
+        [] ->
+            die
+                ( "the deployment's custody script 0x"
+                    <> hex (scriptHashBytes hash)
+                    <> " has no live carrier this provider reports"
+                )
+        carriers -> pure (minimumBy (comparing fst) carriers)
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo

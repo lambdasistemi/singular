@@ -254,6 +254,36 @@ spec = do
             attach prov manifest parts
                 `shouldThrow` refusalContaining "reference-missing request"
 
+        it
+            "attaches the deployment's own manifest: the registry roles it records beside the custody script"
+            $ do
+                let serves =
+                        Map.insert
+                            refAddr3
+                            [witnessActiveUtxo, applicationUtxo, custodyUtxo]
+                            agreeingServes
+                (_, prov) <- providerServing serves
+                attached <- attach prov deploymentManifest parts
+                attRefUtxos attached
+                    `shouldBe` [ refUtxo1
+                               , refUtxo2
+                               , witnessActiveUtxo
+                               , applicationUtxo
+                               , custodyUtxo
+                               ]
+
+        it "refuses a manifest that records a role nobody knows, by name" $ do
+            (_, prov) <- providerServing agreeingServes
+            attach
+                prov
+                manifest
+                    { depReferenceScripts =
+                        [refScriptOf "registry" refAddr1 refIn1 stateProgram]
+                    }
+                parts
+                `shouldThrow` refusalContaining
+                    "the deployment records an unknown reference role registry"
+
         it "refuses a seed whose derived token contradicts the manifest" $ do
             (_, prov) <- providerServing agreeingServes
             attach prov manifest{depCageToken = T.pack (replicate 64 '0')} parts
@@ -355,6 +385,7 @@ stateProgram
     , absentProgram
     , terminalProgram
     , consumerProgram
+    , custodyProgram
     , otherProgram
         :: SBS.ShortByteString
 stateProgram = lambdas 1
@@ -364,6 +395,7 @@ activeProgram = lambdas 4
 absentProgram = lambdas 5
 terminalProgram = lambdas 6
 consumerProgram = lambdas 7
+custodyProgram = lambdas 9
 otherProgram = lambdas 8
 
 toHex :: ByteString -> String
@@ -374,12 +406,23 @@ outRefOf c ix =
     either (error . ("DeploymentSpec fixture: " <>)) id $
         parseOutRef (T.pack (replicate 64 c <> "#" <> show ix))
 
-seedIn, stateIn, highIxIn, refIn1, refIn2 :: TxIn
+seedIn
+    , stateIn
+    , highIxIn
+    , refIn1
+    , refIn2
+    , refIn3
+    , refIn4
+    , refIn5
+        :: TxIn
 seedIn = outRefOf '1' 0
 stateIn = outRefOf '9' 7
 highIxIn = outRefOf '0' 65_535
 refIn1 = outRefOf 'a' 0
 refIn2 = outRefOf 'b' 3
+refIn3 = outRefOf 'c' 1
+refIn4 = outRefOf 'd' 2
+refIn5 = outRefOf 'e' 4
 
 secondSeedIn :: TxIn
 secondSeedIn = outRefOf '2' 0
@@ -405,9 +448,10 @@ applicationHex =
 activeHex = T.pack (toHex (SBS.fromShort activeProgram))
 otherStateHex = T.pack (toHex (scriptHashBytes (computeScriptHash otherProgram)))
 
-refAddr1, refAddr2, stateAddr :: Addr
+refAddr1, refAddr2, refAddr3, stateAddr :: Addr
 refAddr1 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5b)
 refAddr2 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5c)
+refAddr3 = addrFromKeyHashBytes Testnet (BS.replicate 28 0x5d)
 stateAddr = cageAddrFromCfg fixtureCfg Testnet
 
 refScriptOf
@@ -445,6 +489,23 @@ manifest =
         , depBootstrapTxs =
             [ T.pack (toHex (BS.replicate 32 1))
             , T.pack (toHex (BS.replicate 32 2))
+            ]
+        }
+
+{- | The manifest the deployment tool itself writes: the registry roles
+it publishes in the receipt vocabulary, with its own custody script
+recorded beside them. The producer's vocabulary and the consumer's
+must stay one set; the unknown-role refusal is what holds them there.
+-}
+deploymentManifest :: Deployment
+deploymentManifest =
+    manifest
+        { depReferenceScripts =
+            [ refScriptOf "state" refAddr1 refIn1 stateProgram
+            , refScriptOf "request" refAddr2 refIn2 requestProgram
+            , refScriptOf "witness-active" refAddr3 refIn3 activeProgram
+            , refScriptOf "application" refAddr3 refIn5 applicationProgram
+            , refScriptOf "custody" refAddr3 refIn4 custodyProgram
             ]
         }
 
@@ -655,6 +716,14 @@ tokenAsset =
 refUtxo1, refUtxo2 :: (TxIn, TxOut ConwayEra)
 refUtxo1 = (refIn1, publishedAt refAddr1 stateProgram 5_000_000)
 refUtxo2 = (refIn2, publishedAt refAddr2 requestProgram 6_000_000)
+
+witnessActiveUtxo
+    , applicationUtxo
+    , custodyUtxo
+        :: (TxIn, TxOut ConwayEra)
+witnessActiveUtxo = (refIn3, publishedAt refAddr3 activeProgram 7_000_000)
+applicationUtxo = (refIn5, publishedAt refAddr3 applicationProgram 9_000_000)
+custodyUtxo = (refIn4, publishedAt refAddr3 custodyProgram 8_000_000)
 
 publishedAt
     :: Addr -> SBS.ShortByteString -> Integer -> TxOut ConwayEra
