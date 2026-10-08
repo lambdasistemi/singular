@@ -25,6 +25,7 @@ import Singular.CLI.Command
     , EntryArgs (..)
     , FoldArgs (..)
     , InspectArgs (..)
+    , PublishArgs (..)
     , ReclaimArgs (..)
     , RejectArgs (..)
     , usage
@@ -35,6 +36,7 @@ import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Reclaim (runReclaim)
+import Singular.CLI.References (runPublishReferences)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..))
 
@@ -57,5 +59,11 @@ runCommand env = \case
         finish (envTracer env) "reject" (rejectReceipt a) (runReject env a)
     Reclaim a ->
         finish (envTracer env) "reclaim" (reclaimReceipt a) (runReclaim env a)
+    PublishReferences a ->
+        finish
+            (envTracer env)
+            "publish-references"
+            (publishReceipt a)
+            (runPublishReferences env a)
     Inspect a ->
         finish (envTracer env) "inspect" (inspectReceipt a) (runInspect env a)

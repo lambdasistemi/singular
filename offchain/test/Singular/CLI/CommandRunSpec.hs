@@ -420,6 +420,7 @@ constructorOf = \case
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
+    PublishReferences _ -> "PublishReferences"
     Inspect _ -> "Inspect"
 
 -- ---------------------------------------------------------

@@ -632,9 +632,13 @@ commandLine = describe "the command line" $ do
         Fold args -> writeProvider (foldWrite args)
         Reject args -> writeProvider (rejectWrite args)
         Reclaim args -> writeProvider (reclaimWrite args)
+        PublishReferences args -> publishSettings args
         Inspect args -> inspectProvider args
         other -> error ("provider settings were not exercised: " <> show other)
     entrySettings args = case entryMode args of
+        Submit settings -> writeProvider settings
+        Preview settings _ -> settings
+    publishSettings args = case publishMode args of
         Submit settings -> writeProvider settings
         Preview settings _ -> settings
     preview = previewRows
@@ -646,6 +650,7 @@ commandLine = describe "the command line" $ do
                 ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
             , writeWalletKey = "/keys/payment.skey"
             , writeConfirmTimeout = Nothing
+            , writePublishReferences = False
             }
     isUnknown = \case UnknownCommand _ -> True; _ -> False
     refusedWith needle = \case
@@ -1459,6 +1464,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                     ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
                 , writeWalletKey = "/keys/payment.skey"
                 , writeConfirmTimeout = Nothing
+                , writePublishReferences = False
                 }
     it
         "reads a fold with its registry, provider and wallet and nothing else"
@@ -1601,6 +1607,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                     ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
                 , writeWalletKey = "/keys/payment.skey"
                 , writeConfirmTimeout = Nothing
+                , writePublishReferences = False
                 }
     it
         "reads a reject with its registry, provider and wallet and nothing else"
@@ -1688,6 +1695,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
                         (ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing)
                         "/keys/payment.skey"
                         Nothing
+                        False
                 reclaimFund a `shouldBe` Nothing
                 reclaimMaxOutlay a `shouldBe` Nothing
                 reclaimReceipt a `shouldBe` Nothing

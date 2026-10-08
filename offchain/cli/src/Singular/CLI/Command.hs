@@ -38,6 +38,7 @@ module Singular.CLI.Command
     , FoldArgs (..)
     , InspectArgs (..)
     , ProviderSettings (..)
+    , PublishArgs (..)
     , RejectArgs (..)
     , ReclaimArgs (..)
     , WriteSettings (..)
@@ -98,6 +99,7 @@ import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
+    , parseRole
     , parseStateToken
     )
 
@@ -115,6 +117,11 @@ data WriteSettings = WriteSettings
     The bound holds even when the node is lost after accepting the
     submission. On expiry the command stops with the submission
     journalled, never resubmitting.
+    -}
+    , writePublishReferences :: Bool
+    {- ^ @--publish-references@: restore exactly the missing reference
+    roles this command's transaction runs before building it. Opt-in
+    only; without it a missing carrier is refused by name.
     -}
     }
     deriving stock (Eq, Show)
@@ -235,6 +242,29 @@ data ReclaimArgs = ReclaimArgs
     }
     deriving stock (Eq, Show)
 
+-- | @registry publish-references@: publish the registry's missing
+-- reference scripts to the payer's own wallet.
+data PublishArgs = PublishArgs
+    { publishStateDir :: FilePath
+    , publishAccess :: RegistryAccess
+    , publishBlueprint :: FilePath
+    , publishMode :: EntryMode
+    {- ^ Submit with the caller's key, or read for a public address
+    with @--preview@: preview reports and writes nothing.
+    -}
+    , publishPreview :: Bool
+    , publishRoles :: [ReferenceRole]
+    {- ^ @--role ROLE@, repeatable: only these missing roles are
+    published. Empty publishes every missing role.
+    -}
+    , publishFund :: Maybe TxIn
+    -- ^ @--fund-input@: the wallet output that funds the publication
+    , publishMaxOutlay :: Maybe Integer
+    -- ^ @--max-outlay@: lovelace the publication may put out; past it nothing is signed
+    , publishReceipt :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectStateDir :: FilePath
@@ -263,6 +293,7 @@ data Command
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
+    | PublishReferences PublishArgs
     | Inspect InspectArgs
     deriving stock (Eq, Show, Generic)
 
@@ -309,24 +340,33 @@ parseWith environment args = do
                     refuseSpendingFlags "create" flags
                         >> refuseRequest flags
                         >> refuseFold flags
+                        >> refuseRoles flags
+                        >> refusePublishReferences "create" flags
                         >> (Create <$> createArgs flags)
                 ["registry", "insert"] ->
-                    refuseRequest flags >> (Insert <$> insertArgs environment flags)
+                    refuseRequest flags >> refuseRoles flags >> (Insert <$> insertArgs environment flags)
                 ["registry", "update"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
+                        >> refuseRoles flags
                         >> (Update <$> entryArgs False (Just "--payload") environment flags)
                 ["registry", "terminate"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
+                        >> refuseRoles flags
                         >> (Terminate <$> entryArgs True Nothing environment flags)
-                ["registry", "fold"] -> Fold <$> foldArgs environment flags
-                ["registry", "reject"] -> Reject <$> rejectArgs environment flags
-                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs environment flags
+                ["registry", "fold"] -> refuseRoles flags >> (Fold <$> foldArgs environment flags)
+                ["registry", "reject"] -> refuseRoles flags >> (Reject <$> rejectArgs environment flags)
+                ["registry", "reclaim"] -> refuseRoles flags >> (Reclaim <$> reclaimArgs environment flags)
+                ["registry", "publish-references"] ->
+                    refusePublishReferences "publish-references" flags
+                        >> (PublishReferences <$> publishArgs environment flags)
                 ["registry", "inspect"] ->
                     refuseSpendingFlags "inspect" flags
                         >> refuseRequest flags
                         >> refuseFold flags
+                        >> refuseRoles flags
+                        >> refusePublishReferences "inspect" flags
                         >> (Inspect <$> inspectArgs environment flags)
                 _ -> Left (UnknownCommand words')
   where
@@ -434,6 +474,18 @@ parseWith environment args = do
                 ( BadValue
                     "--deposit"
                     "is a registry insert flag: only insert sets a deposit"
+                )
+    refuseRoles flags =
+        when (isJust (lookup "--role" flags)) $
+            Left
+                ( BadValue
+                    "--role"
+                    "is a registry publish-references flag: only publication selects roles"
+                )
+    refusePublishReferences command flags =
+        when (isJust (lookup "--publish-references" flags)) $
+            Left
+                ( UnsupportedFlag "--publish-references" command
                 )
     entryArgs books document env flags = do
         dir <- required "--state-dir" flags
@@ -570,6 +622,51 @@ parseWith environment args = do
                 , reclaimMaxOutlay = outlay
                 , reclaimReceipt = optional "--receipt" flags
                 }
+    publishArgs env flags = do
+        dir <- required "--state-dir" flags
+        bp <- required "--blueprint" flags
+        forM_
+            (map fst keyFlags <> ["--deposit", "--payload", "--request", "--fold"])
+            $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is not accepted by registry publish-references: it publishes the missing scripts, whose roles the caller selects"
+                        )
+        when (isJust (lookup "--wallet-address" flags)) $ do
+            unless (isJust (lookup "--preview" flags)) $ Left addressNeedsPreview
+            when (isJust (lookup "--wallet-skey" flags)) $ Left PreviewTakesNoKey
+        let preview = isJust (lookup "--preview" flags)
+        mode <-
+            if preview && isJust (lookup "--wallet-address" flags)
+                then previewMode flags
+                else Submit <$> writeSettings flags
+        roles <- traverse parseRoleArg [r | ("--role", Just r) <- flags]
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        access <- registryAccess env flags
+        pure
+            PublishArgs
+                { publishStateDir = dir
+                , publishAccess = access
+                , publishBlueprint = bp
+                , publishMode = mode
+                , publishPreview = preview
+                , publishRoles = roles
+                , publishFund = fund
+                , publishMaxOutlay = outlay
+                , publishReceipt = optional "--receipt" flags
+                }
+      where
+        parseRoleArg name = case parseRole (T.pack name) of
+            Just role -> Right role
+            Nothing ->
+                Left
+                    ( BadValue
+                        "--role"
+                        "names a reference role: state, request, witness-absent, witness-active, witness-terminal or application"
+                    )
     registryAccess env flags = do
         tokenStr <- case optional "--state-token" flags of
             Just s -> Right s
@@ -674,6 +771,7 @@ parseWith environment args = do
                 { writeProvider = settings
                 , writeWalletKey = skey
                 , writeConfirmTimeout = confirmationTimeout
+                , writePublishReferences = isJust (lookup "--publish-references" flags)
                 }
     -- --key is the text of the key and --key-hex its base16: one of the two,
     -- read by the library, so no command keeps a decoder of its own.
@@ -920,6 +1018,10 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry publish-references --state-dir DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--role ROLE] [--fund-input TXID#IX] [--max-outlay LOVELACE] [--preview]"
         , "  singular registry inspect --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
@@ -962,7 +1064,7 @@ usage =
         , "and when its retract window closes. Each owner is refunded the request's value"
         , "less the tip in the one output designated for it; the wallet that runs it keeps"
         , "the tip, and the registry's root does not move."
-        , "insert, update, terminate, fold, reclaim and reject fund and collateralise from the funding"
+        , "insert, update, terminate, fold, reclaim, reject and publish-references fund and collateralise from the funding"
         , "input named, and hold to the maximum outlay stated: a booking, update, reclaim, reject or"
         , "fold past it is not signed, and a combined insert or terminate whose fold,"
         , "built after its booking confirms, costs more than the booking left of it stops"
@@ -995,6 +1097,7 @@ neededRoles = \case
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty
+    PublishReferences _ -> Set.empty
     Inspect _ -> Set.empty
     Help -> Set.empty
   where

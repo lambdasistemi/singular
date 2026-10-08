@@ -26,7 +26,7 @@ registry: no identity file is written, and the pending identity recorded
 for an interrupted create is removed once it finishes. A directory that
 holds a journal or a pending create is refused before a node is contacted.
 -}
-module Singular.CLI.Create (runCreate) where
+module Singular.CLI.Create (observeReference, runCreate) where
 
 import Control.Exception (throwIO)
 import Data.Aeson (Value, toJSON)

@@ -910,6 +910,7 @@ test-suite cage-tests
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
     Singular.CLI.RecoverySpec
+    Singular.CLI.References
     Singular.CLI.Registry
     Singular.CLI.Reject
     Singular.CLI.RejectRules
@@ -1300,6 +1301,7 @@ executable singular
     Singular.CLI.ReclaimRules
     Singular.CLI.Reconcile
     Singular.CLI.Recovery
+    Singular.CLI.References
     Singular.CLI.Registry
     Singular.CLI.Reject
     Singular.CLI.RejectRules
