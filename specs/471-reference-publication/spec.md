@@ -1,0 +1,93 @@
+# Publish missing references without spending the carriers
+
+Issue [#471](https://github.com/lambdasistemi/singular/issues/471), child of #437 under E371.
+Depends on #501. Work starts from its frozen `26af5ae7ea881b433f2f317f10e09ddab7a45cae`
+candidate; starting work does not accept that dependency. Lean tree
+`16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0, is unchanged.
+The parent [spec](../437-join-by-token/spec.md) and settled October 6–7 rulings remain binding.
+
+## Carol publishes, Bob uses the output
+
+As Carol, I explicitly publish the missing scripts of a registry from its state token and the
+bound release. I choose the network, provider and wallet. The command is
+`singular registry publish-references --state-token …`, with repeatable `--role ROLE`.
+Without role selection it considers all six roles, publishing only those actually missing.
+It does not create a registry, mint a registry token or change the existing registry state.
+
+Scripts are rebuilt from the release blueprint and any token-specific parameters. Their actual
+hashes must match the expected role hashes before building, signing or submitting. A mismatch
+refuses `reference-script-mismatch <role>`. Independent release fixtures and altered-script
+controls must establish the comparison; two helpers agreeing are insufficient.
+
+Discovery queries the provider first, then Carol's wallet only for still-missing needed roles.
+Candidates are admitted by locally hashing their actual script bytes. Provider read failure is
+distinct from an empty answer. A complete provider answer avoids the wallet read; no needed roles
+avoids discovery entirely. Within the first successful source, the lowest output reference wins.
+No reference-hint input or second discovery implementation is introduced.
+
+Each published script lives in a minimum-ADA output controlled by Carol. The destination, role,
+script hash, transaction ID and output reference are explicit in the receipt. Carol can spend
+these convenience outputs later; no forever-lock or publication-provenance promise is inferred.
+Confirmation reads the actual live output back and checks its script bytes/hash.
+
+As Bob, starting with only the state token, release and my own actor directory, I discover
+Carol's output and use it in a real fold. No Carol files, saved registry identity or preimages
+are inputs. The connected proof begins with a missing-reference refusal, performs explicit
+publication/restoration, then folds successfully using the confirmed output.
+
+## Preview and recovery
+
+Read-only preview reports destination, script hash, actual required output ADA and fee. A
+process-level control proves it does not sign, submit or write registry state. Insufficient funds
+names the shortfall and submits nothing. Publication is not disguised registry creation.
+
+Submission timeout and interrupted confirmation retain transaction identity. Retry reconciles
+the existing submission through the command recovery path without blindly submitting again.
+Current locking, receipt, typed trace and read-failure contracts remain required. No recovery or
+confirmation policy is invented by the package migration.
+
+Ordinary dependent commands retain missing-reference refusal by default. Explicit opt-in
+`--publish-references` restores exactly their missing needed roles, reads them back and continues.
+Demo 2 #472 keeps its separate no-automatic-publication policy.
+
+## One ordinary funding boundary
+
+As Alice, with a 300 ADA script carrier, a large token holding and a 20 ADA plain output, I fund
+an ordinary write from permitted plain funding. Bob can still find the script carrier afterward.
+One opaque wallet-output interface and one funding projection enforce this for every existing
+write and publication. Named state/request/burn inputs remain distinct from ordinary funding.
+The complete interface is in [wallet-functions-model.md](wallet-functions-model.md).
+
+Shipped builders and the CLI cannot unwrap wallet outputs, construct or update raw sessions,
+perform unrestricted output queries, access raw history or acquire those capabilities through
+provider internals. A legal-use compiler control and planted forbidden accesses use the actual
+production component dependencies. Setup failure cannot stand in for deliberate opacity.
+
+All ordinary raw selectors and duplicate predicates migrate in one coherent change, including
+the largest-output request selector. A selected `--fund-input` must be fundable; its restriction
+persists through later acquisitions without hiding reference/protocol observations.
+Create's fundable seed retains its identity, reservation and existing refusal order.
+Existing reclaim also retains the named request and permitted funding separation.
+
+Reproduce [#479](https://github.com/lambdasistemi/singular/issues/479): smaller ADA outputs must
+not cause refusal while a larger permitted output covers actual publication minimum ADA, fees
+and change. Protected carriers and token holdings cannot solve that shortage by being spent.
+Reuse #439 discovery rather than adding another provider implementation.
+
+## Preservation and delivery
+
+Keep #383 session/provider composition, #389 Koios evidence, #419 public fold/carried datum and
+#416 tracing. Preserve exact-output confirmation, address-wide recovery/refund observations,
+inspect receipt fields and distinctions between missing, spent, altered and failed reads.
+The abstract Lean model does not establish physical reference placement or lifetime; publication
+must preserve registry state, token identity, custody and authorization through actual receipts.
+
+Ship help, preview, recovery and the command through the existing offchain flake and release
+archive. Publish receipt-derived conformance sentences and uncovered requirements, with harness
+evidence in a marked appendix. Required local and exact-head hosted checks remain acceptance
+conditions. E371 owns acceptance and merge; no extra auditor or worker is commissioned.
+
+New retirement command and its complete retire/restore journey belong to #502. Page/archive/report
+action-identity work belongs to #503. No public-network transaction, release publication, private
+wallet material, validator change or Lean change is authorized. Genuine model or consumer
+ambiguity holds the affected story and is escalated with a concrete user story and evidence.
