@@ -61,6 +61,40 @@ setup_fail() {
 }
 say() { echo "journey: $*"; }
 
+# Stop the node before touching the tree. The caller still reads receipts
+# and harness markers in $work, so the directory stays; the node chain is
+# what fills the disk. DEMO1_KEEP_SCRATCH=1 keeps the chain and names $work.
+# shellcheck disable=SC2329 # the EXIT traps below invoke this
+release_work() {
+  local code=$?
+  local _wait
+  trap - EXIT
+  [ -n "${bare_pid:-}" ] && kill "$bare_pid" 2>/dev/null || true
+  [ -n "${devnet_pid:-}" ] && kill "$devnet_pid" 2>/dev/null || true
+  if [ -n "${work:-}" ]; then
+    if command -v pkill >/dev/null 2>&1; then
+      pkill -f "cardano-node run --config $work/" >/dev/null 2>&1 || true
+    fi
+    for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+      if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config $work/" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
+      echo "kept scratch: $work" >&2
+    else
+      chmod -R u+rwx "$work" 2>/dev/null || true
+      rm -rf "$work/cardano-e2e" || true
+      if [ -e "$work/cardano-e2e" ]; then
+        echo "scratch remains: $work/cardano-e2e" >&2
+        code=1
+      fi
+    fi
+  fi
+  exit "$code"
+}
+
 hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
@@ -77,7 +111,7 @@ export TMPDIR="$work"
 # node/genesis/epoch/slot/time parameters are the normal fixture's.
 "$devnet" --genesis-only --evidence-dir "$work/genesis-source" >"$work/bare.out" 2>"$work/bare.err" &
 bare_pid=$!
-trap 'kill "$bare_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+trap release_work EXIT
 bare_provider=""
 bare_time=""
 bare_magic=""
@@ -136,7 +170,7 @@ grep -q '^devnet: --fund expects FILE:N:LOVELACE' "$bad_fund" \
 say "the devnet refuses a malformed per-wallet funding group by name"
 # The node is the devnet runner's child: reap both, so no node of this
 # run outlives it holding the development network's ports.
-trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+trap release_work EXIT
 sock=""
 provider_url=""
 time_directory=""
@@ -686,7 +720,7 @@ two="$work/two-actors"
 two_alice="$two/alice"
 two_bob="$two/bob"
 mkdir -p "$two"
-trap 'chmod -R u+rwx "$two_alice" 2>/dev/null || true; kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+trap release_work EXIT
 run two-preview success -- registry create --process-time 60000 --retract-time 30000 --preview \
   --registry "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 run two-create success -- registry create --process-time 60000 --retract-time 30000 \

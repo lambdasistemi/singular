@@ -259,7 +259,10 @@
                   # script falls back to nix develop
                   python3
                 ];
-                text = ''CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"'';
+                text = ''
+                  bash ${./tools/cli_recovery_receipt_cap.test.sh} ${./tools/cli_recovery_controls.sh}
+                  CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                '';
               }
             );
           };
@@ -287,6 +290,7 @@
                 ];
                 text = ''
                   [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
+                  bash ${./tools/cli_recovery_receipt_cap.test.sh} ${./tools/cli_recovery_controls.sh}
                   CLI_RECOVERY_PARTS="$1" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
                 '';
               }
@@ -377,8 +381,17 @@
                   gnused
                   jq
                   nix
+                  # the check stops a node that outlives the journey
+                  procps
                 ];
-                text = ''DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/demo1_cli_check.sh} "$PWD"'';
+                text = ''
+                  bash ${./tools/demo1_scratch_removal.test.sh} \
+                    ${./tools/demo1_two_actor_control.sh} \
+                    ${./tools/demo1_cli_controls_check.sh} \
+                    ${./tools/demo1_cli_check.sh} \
+                    ${./tools/demo1_cli_attach_check.sh}
+                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/demo1_cli_check.sh} "$PWD"
+                '';
               }
             );
           };
@@ -397,8 +410,15 @@
                   gnused
                   jq
                   nix
+                  # the packaged check stops a node that outlives the journey
+                  procps
                 ];
                 text = ''
+                  bash ${./tools/demo1_scratch_removal.test.sh} \
+                    ${./tools/demo1_two_actor_control.sh} \
+                    ${./tools/demo1_cli_controls_check.sh} \
+                    ${./tools/demo1_cli_check.sh} \
+                    ${./tools/demo1_cli_attach_check.sh}
                   bash ${./tools/demo1_two_actor_control.test.sh} ${./tools/demo1_two_actor_control.sh}
                   DEMO1_CLI_CHECK=${./tools/demo1_cli_check.sh} \
                     DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} \
@@ -426,6 +446,11 @@
                   nix
                 ];
                 text = ''
+                  bash ${./tools/demo1_scratch_removal.test.sh} \
+                    ${./tools/demo1_two_actor_control.sh} \
+                    ${./tools/demo1_cli_controls_check.sh} \
+                    ${./tools/demo1_cli_check.sh} \
+                    ${./tools/demo1_cli_attach_check.sh}
                   bash ${./tools/demo1_cli_controls_ran.test.sh} ${./tools/demo1_cli_controls_ran.sh}
                   bash ${./tools/demo1_cli_controls_composition.test.sh} ${./tools/demo1_cli_controls_composition.sh}
                   DEMO1_CONTROLS=${./tools/demo1_cli_controls.sh} \

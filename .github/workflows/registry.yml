@@ -862,7 +862,7 @@ jobs:
       # refuses with its receipt naming the missing live key, and the
       # verdict table fails (the recorded defective run, 15 unmet clauses).
       - name: Run the selected cross-wallet case
-        run: nix run --quiet .#cli-recovery-cross-wallet-part -- '${{ matrix.part }}'
+        run: DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-cross-wallet-part -- '${{ matrix.part }}'
       # #451 re-cut R1: collect through the packaged collector app — explicit
       # runtime tools, no ambient runner PATH — then always retain the
       # bundle. Producer identity is this candidate, run and part; derived
@@ -885,6 +885,9 @@ jobs:
             '${{ github.event.pull_request.head.sha || github.sha }}' '${{ github.run_id }}' "$CROSS_PART"
           safe="${CROSS_PART//:/-}"
           echo "ARTIFACT_NAME=cli-recovery-cross-wallet-${{ github.event.pull_request.head.sha || github.sha }}-run${{ github.run_id }}-$safe" >> "$GITHUB_ENV"
+          # The case kept its scratch so this step could copy it. A reused
+          # runner would otherwise retain the node database.
+          rm -rf "$RUNNER_TEMP"/cli-recovery.*
       - name: Retain the case's recorded evidence
         if: always()
         uses: actions/upload-artifact@v7

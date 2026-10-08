@@ -69,12 +69,45 @@ od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
 # fund the boot. The story's underfunded create uses this wallet.
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/underfunded.skey"
 
+# Stop the node before touching the tree. The caller still reads receipts
+# in $work, so the directory stays; the node chain is what fills the disk.
+# DEMO1_KEEP_SCRATCH=1 keeps the chain and names $work.
+# shellcheck disable=SC2329 # the EXIT trap below invokes this
+release_work() {
+  local code=$?
+  local _wait
+  trap - EXIT
+  [ -n "${devnet_pid:-}" ] && kill "$devnet_pid" 2>/dev/null || true
+  if [ -n "${work:-}" ]; then
+    if command -v pkill >/dev/null 2>&1; then
+      pkill -f "cardano-node run --config $work/" >/dev/null 2>&1 || true
+    fi
+    for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+      if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config $work/" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
+      echo "kept scratch: $work" >&2
+    else
+      chmod -R u+rwx "$work" 2>/dev/null || true
+      rm -rf "$work/cardano-e2e" || true
+      if [ -e "$work/cardano-e2e" ]; then
+        echo "scratch remains: $work/cardano-e2e" >&2
+        code=1
+      fi
+    fi
+  fi
+  exit "$code"
+}
+
 export TMPDIR="$work"
 "$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 40 --fund-lovelace 2000000000 \
   --fund "$work/underfunded.skey:1:5000000" --fund "$work/underfunded.skey:24:4000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
-trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
+trap release_work EXIT
 sock=""
 provider_url=""
 time_directory=""
