@@ -200416,17 +200416,17 @@
    ]
   },
   "docs-onchain-api-reference/what-it-leaves-out-01": {
-   "audio_sha256": "56495706cab4bfe76944e753a7494a8b7c28289b509e2f4cd24af47cd5e14ed3",
-   "characters": 497,
-   "cost": 0.00030814,
-   "duration": 33.975,
+   "audio_sha256": "b09f103243812878f50b2bc8765451643477bf3546165c915354d0bc43cd9d90",
+   "characters": 523,
+   "cost": 0.00032426000000000004,
+   "duration": 35.675,
    "index": 1,
-   "key": "57de5690ac947fa6e6c1dee3bb1382b214c96286a97918f49966232bcef4cede",
+   "key": "b03abb83c82d66ffc7e3c9ee917391cbe416bcef39ee0ce597c4e3e02f0522ce",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-it-leaves-out",
-   "sent_text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
-   "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+   "sent_text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and five modules declare nothing public — the open approval policy, open_datum and permanent_open_datum validators, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+   "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and five modules declare nothing public — the open approval policy, open_datum and permanent_open_datum validators, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
    "words": [
     {
      "end": 0.275,
@@ -200534,308 +200534,318 @@
      "text": "and"
     },
     {
-     "end": 7.65,
+     "end": 7.75,
      "start": 7.387,
-     "text": "four"
+     "text": "five"
     },
     {
-     "end": 8.15,
-     "start": 7.65,
+     "end": 8.2,
+     "start": 7.75,
      "text": "modules"
     },
     {
-     "end": 8.525,
-     "start": 8.15,
+     "end": 8.575,
+     "start": 8.2,
      "text": "declare"
     },
     {
-     "end": 8.875,
-     "start": 8.525,
+     "end": 8.925,
+     "start": 8.575,
      "text": "nothing"
     },
     {
-     "end": 9.425,
-     "start": 8.875,
+     "end": 9.475,
+     "start": 8.925,
      "text": "public"
     },
     {
-     "end": 9.488,
-     "start": 9.425,
+     "end": 9.538,
+     "start": 9.475,
      "text": "—"
     },
     {
-     "end": 9.637,
-     "start": 9.488,
+     "end": 9.688,
+     "start": 9.538,
      "text": "the"
     },
     {
-     "end": 9.975,
-     "start": 9.637,
+     "end": 10.025,
+     "start": 9.688,
      "text": "open"
     },
     {
-     "end": 10.425,
-     "start": 9.975,
+     "end": 10.475,
+     "start": 10.025,
      "text": "approval"
     },
     {
-     "end": 11.475,
-     "start": 10.425,
+     "end": 11.525,
+     "start": 10.475,
      "text": "policy"
     },
     {
-     "end": 11.675,
-     "start": 11.475,
+     "end": 11.725,
+     "start": 11.525,
      "text": ","
     },
     {
-     "end": 12.425,
-     "start": 11.85,
+     "end": 12.688,
+     "start": 11.9,
      "text": "open_datum"
     },
     {
-     "end": 13.45,
-     "start": 12.425,
-     "text": "validator"
-    },
-    {
-     "end": 13.65,
-     "start": 13.45,
-     "text": ","
-    },
-    {
-     "end": 14.275,
-     "start": 13.85,
-     "text": "staking"
-    },
-    {
-     "end": 14.9,
-     "start": 14.275,
-     "text": "validator"
-    },
-    {
-     "end": 15.025,
-     "start": 14.9,
+     "end": 12.825,
+     "start": 12.688,
      "text": "and"
     },
     {
-     "end": 15.775,
-     "start": 15.025,
-     "text": "cage_vectors"
+     "end": 13.925,
+     "start": 12.825,
+     "text": "permanent_open_datum"
     },
     {
-     "end": 16.3,
-     "start": 15.775,
-     "text": "table"
-    },
-    {
-     "end": 16.375,
-     "start": 16.3,
-     "text": "—"
-    },
-    {
-     "end": 16.513,
-     "start": 16.375,
-     "text": "so"
-    },
-    {
-     "end": 16.688,
-     "start": 16.513,
-     "text": "their"
-    },
-    {
-     "end": 17.2,
-     "start": 16.688,
-     "text": "sources"
-    },
-    {
-     "end": 17.325,
-     "start": 17.2,
-     "text": "are"
-    },
-    {
-     "end": 17.525,
-     "start": 17.325,
-     "text": "their"
-    },
-    {
-     "end": 18.6,
-     "start": 17.525,
-     "text": "reference"
-    },
-    {
-     "end": 18.8,
-     "start": 18.6,
-     "text": "."
-    },
-    {
-     "end": 19.125,
-     "start": 19.025,
-     "text": "The"
-    },
-    {
-     "end": 19.525,
-     "start": 19.125,
-     "text": "naming"
-    },
-    {
-     "end": 20.312,
-     "start": 19.525,
-     "text": "application's"
-    },
-    {
-     "end": 21.025,
-     "start": 20.312,
+     "end": 15.15,
+     "start": 13.925,
      "text": "validators"
     },
     {
-     "end": 21.275,
-     "start": 21.025,
-     "text": "under"
+     "end": 15.35,
+     "start": 15.15,
+     "text": ","
     },
     {
-     "end": 22.638,
-     "start": 21.275,
-     "text": "naming-onchain/"
+     "end": 15.975,
+     "start": 15.55,
+     "text": "staking"
     },
     {
-     "end": 22.775,
-     "start": 22.638,
-     "text": "are"
+     "end": 16.6,
+     "start": 15.975,
+     "text": "validator"
     },
     {
-     "end": 22.9,
-     "start": 22.775,
-     "text": "a"
-    },
-    {
-     "end": 23.35,
-     "start": 22.9,
-     "text": "separate"
-    },
-    {
-     "end": 23.725,
-     "start": 23.35,
-     "text": "Aiken"
-    },
-    {
-     "end": 24.438,
-     "start": 23.725,
-     "text": "project"
-    },
-    {
-     "end": 24.575,
-     "start": 24.438,
+     "end": 16.725,
+     "start": 16.6,
      "text": "and"
     },
     {
-     "end": 24.812,
-     "start": 24.575,
-     "text": "have"
+     "end": 17.475,
+     "start": 16.725,
+     "text": "cage_vectors"
     },
     {
-     "end": 25.1,
-     "start": 24.812,
-     "text": "no"
+     "end": 18.0,
+     "start": 17.475,
+     "text": "table"
     },
     {
-     "end": 25.725,
-     "start": 25.1,
-     "text": "generated"
+     "end": 18.075,
+     "start": 18.0,
+     "text": "—"
     },
     {
-     "end": 26.2,
-     "start": 25.725,
+     "end": 18.212,
+     "start": 18.075,
+     "text": "so"
+    },
+    {
+     "end": 18.388,
+     "start": 18.212,
+     "text": "their"
+    },
+    {
+     "end": 18.9,
+     "start": 18.388,
+     "text": "sources"
+    },
+    {
+     "end": 19.025,
+     "start": 18.9,
+     "text": "are"
+    },
+    {
+     "end": 19.225,
+     "start": 19.025,
+     "text": "their"
+    },
+    {
+     "end": 20.3,
+     "start": 19.225,
      "text": "reference"
     },
     {
-     "end": 26.375,
-     "start": 26.2,
-     "text": "on"
-    },
-    {
-     "end": 26.562,
-     "start": 26.375,
-     "text": "this"
-    },
-    {
-     "end": 27.575,
-     "start": 26.562,
-     "text": "site"
-    },
-    {
-     "end": 27.8,
-     "start": 27.575,
+     "end": 20.5,
+     "start": 20.3,
      "text": "."
     },
     {
-     "end": 28.45,
-     "start": 28.025,
+     "end": 20.825,
+     "start": 20.725,
+     "text": "The"
+    },
+    {
+     "end": 21.225,
+     "start": 20.825,
+     "text": "naming"
+    },
+    {
+     "end": 22.013,
+     "start": 21.225,
+     "text": "application's"
+    },
+    {
+     "end": 22.725,
+     "start": 22.013,
+     "text": "validators"
+    },
+    {
+     "end": 22.975,
+     "start": 22.725,
+     "text": "under"
+    },
+    {
+     "end": 24.337,
+     "start": 22.975,
+     "text": "naming-onchain/"
+    },
+    {
+     "end": 24.475,
+     "start": 24.337,
+     "text": "are"
+    },
+    {
+     "end": 24.6,
+     "start": 24.475,
+     "text": "a"
+    },
+    {
+     "end": 25.05,
+     "start": 24.6,
+     "text": "separate"
+    },
+    {
+     "end": 25.425,
+     "start": 25.05,
+     "text": "Aiken"
+    },
+    {
+     "end": 26.138,
+     "start": 25.425,
+     "text": "project"
+    },
+    {
+     "end": 26.275,
+     "start": 26.138,
+     "text": "and"
+    },
+    {
+     "end": 26.513,
+     "start": 26.275,
+     "text": "have"
+    },
+    {
+     "end": 26.8,
+     "start": 26.513,
+     "text": "no"
+    },
+    {
+     "end": 27.425,
+     "start": 26.8,
+     "text": "generated"
+    },
+    {
+     "end": 27.9,
+     "start": 27.425,
+     "text": "reference"
+    },
+    {
+     "end": 28.075,
+     "start": 27.9,
+     "text": "on"
+    },
+    {
+     "end": 28.263,
+     "start": 28.075,
+     "text": "this"
+    },
+    {
+     "end": 29.275,
+     "start": 28.263,
+     "text": "site"
+    },
+    {
+     "end": 29.5,
+     "start": 29.275,
+     "text": "."
+    },
+    {
+     "end": 30.15,
+     "start": 29.725,
      "text": "Members"
     },
     {
-     "end": 28.65,
-     "start": 28.45,
+     "end": 30.35,
+     "start": 30.15,
      "text": "that"
     },
     {
-     "end": 29.05,
-     "start": 28.65,
+     "end": 30.75,
+     "start": 30.35,
      "text": "belong"
     },
     {
-     "end": 29.188,
-     "start": 29.05,
+     "end": 30.888,
+     "start": 30.75,
      "text": "to"
     },
     {
-     "end": 29.8,
-     "start": 29.188,
+     "end": 31.5,
+     "start": 30.888,
      "text": "Aiken's"
     },
     {
-     "end": 30.3,
-     "start": 29.8,
+     "end": 32.0,
+     "start": 31.5,
      "text": "standard"
     },
     {
-     "end": 30.825,
-     "start": 30.3,
+     "end": 32.525,
+     "start": 32.0,
      "text": "library"
     },
     {
-     "end": 31.163,
-     "start": 30.825,
+     "end": 32.862,
+     "start": 32.525,
      "text": "link"
     },
     {
-     "end": 31.325,
-     "start": 31.163,
+     "end": 33.025,
+     "start": 32.862,
      "text": "to"
     },
     {
-     "end": 31.538,
-     "start": 31.325,
+     "end": 33.237,
+     "start": 33.025,
      "text": "its"
     },
     {
-     "end": 31.862,
-     "start": 31.538,
+     "end": 33.562,
+     "start": 33.237,
      "text": "own"
     },
     {
-     "end": 32.325,
-     "start": 31.862,
+     "end": 34.025,
+     "start": 33.562,
      "text": "published"
     },
     {
-     "end": 33.775,
-     "start": 32.325,
+     "end": 35.475,
+     "start": 34.025,
      "text": "documentation"
     },
     {
-     "end": 33.975,
-     "start": 33.775,
+     "end": 35.675,
+     "start": 35.475,
      "text": "."
     }
    ]
@@ -202321,11 +202331,421 @@
    ]
   },
   "docs-onchain-api-reference/what-this-reference-contains-13": {
-   "audio_sha256": "25e63342e2845e9e349395a180106434cd169cd6b4677f444d3dc0e61cbc72d6",
+   "audio_sha256": "6dc586589605bfa5afc3ccc5daa7fe9be834c785ce3a1357319de7709c204efa",
+   "characters": 80,
+   "cost": 4.96e-05,
+   "duration": 5.425,
+   "index": 13,
+   "key": "b3685e8acdfceb9e1286c39229cb6e1aa7e56b36feb0a65b20db557860de01d1",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "what-this-reference-contains",
+   "sent_text": "The permanent registration-and-termination contract uses separate fixed scripts:",
+   "text": "The permanent registration-and-termination contract uses separate fixed scripts:",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.825,
+     "start": 0.287,
+     "text": "permanent"
+    },
+    {
+     "end": 2.35,
+     "start": 0.825,
+     "text": "registration-and-termination"
+    },
+    {
+     "end": 2.987,
+     "start": 2.35,
+     "text": "contract"
+    },
+    {
+     "end": 3.412,
+     "start": 2.987,
+     "text": "uses"
+    },
+    {
+     "end": 3.862,
+     "start": 3.412,
+     "text": "separate"
+    },
+    {
+     "end": 4.15,
+     "start": 3.862,
+     "text": "fixed"
+    },
+    {
+     "end": 5.225,
+     "start": 4.15,
+     "text": "scripts"
+    },
+    {
+     "end": 5.425,
+     "start": 5.225,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-14": {
+   "audio_sha256": "30da17b61cf5d994e53dccaef190c4d011d2a9af2b5d3c5a8e0b7cfe15668465",
+   "characters": 79,
+   "cost": 4.898e-05,
+   "duration": 4.975,
+   "index": 14,
+   "key": "262dd570436fa609d1a1bf053d878039fee54740287c47989015612cd822eab8",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "permanent_state — the state validator for the two admitted registry transitions",
+   "text": "permanent_state — the state validator for the two admitted registry transitions",
+   "words": [
+    {
+     "end": 0.988,
+     "start": 0.2,
+     "text": "permanent_state"
+    },
+    {
+     "end": 1.038,
+     "start": 0.988,
+     "text": "—"
+    },
+    {
+     "end": 1.125,
+     "start": 1.038,
+     "text": "the"
+    },
+    {
+     "end": 1.45,
+     "start": 1.125,
+     "text": "state"
+    },
+    {
+     "end": 2.075,
+     "start": 1.45,
+     "text": "validator"
+    },
+    {
+     "end": 2.188,
+     "start": 2.075,
+     "text": "for"
+    },
+    {
+     "end": 2.325,
+     "start": 2.188,
+     "text": "the"
+    },
+    {
+     "end": 2.65,
+     "start": 2.325,
+     "text": "two"
+    },
+    {
+     "end": 3.125,
+     "start": 2.65,
+     "text": "admitted"
+    },
+    {
+     "end": 3.6,
+     "start": 3.125,
+     "text": "registry"
+    },
+    {
+     "end": 4.975,
+     "start": 3.6,
+     "text": "transitions"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-15": {
+   "audio_sha256": "0cdc01218bc503eb65e1795c8fcb9a2c45f7620e9bb4f4da7d6d835bbfe60b81",
+   "characters": 69,
+   "cost": 4.278000000000001e-05,
+   "duration": 4.2,
+   "index": 15,
+   "key": "e44f38b417f5550e3329b74255fffcc94c7197203b52302342455b340222092b",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "permanent_witness — the witness policy pinned to that state validator",
+   "text": "permanent_witness — the witness policy pinned to that state validator",
+   "words": [
+    {
+     "end": 1.062,
+     "start": 0.175,
+     "text": "permanent_witness"
+    },
+    {
+     "end": 1.112,
+     "start": 1.062,
+     "text": "—"
+    },
+    {
+     "end": 1.2,
+     "start": 1.112,
+     "text": "the"
+    },
+    {
+     "end": 1.55,
+     "start": 1.2,
+     "text": "witness"
+    },
+    {
+     "end": 2.088,
+     "start": 1.55,
+     "text": "policy"
+    },
+    {
+     "end": 2.45,
+     "start": 2.088,
+     "text": "pinned"
+    },
+    {
+     "end": 2.55,
+     "start": 2.45,
+     "text": "to"
+    },
+    {
+     "end": 2.825,
+     "start": 2.55,
+     "text": "that"
+    },
+    {
+     "end": 3.15,
+     "start": 2.825,
+     "text": "state"
+    },
+    {
+     "end": 4.2,
+     "start": 3.15,
+     "text": "validator"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-16": {
+   "audio_sha256": "a8dc14db7278bed67e3246a509b8390ab673e5c80ee9152c58e2328301b1f841",
+   "characters": 84,
+   "cost": 5.208e-05,
+   "duration": 5.95,
+   "index": 16,
+   "key": "c6a36b25bad1b174e83eaae99b8ffcb59e607aa22f4d2edbc2eed6af282c86ab",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "registry/permanent — refusing excluded and malformed request actions before approval",
+   "text": "registry/permanent — refusing excluded and malformed request actions before approval",
+   "words": [
+    {
+     "end": 1.325,
+     "start": 0.225,
+     "text": "registry/permanent"
+    },
+    {
+     "end": 1.4,
+     "start": 1.325,
+     "text": "—"
+    },
+    {
+     "end": 1.975,
+     "start": 1.4,
+     "text": "refusing"
+    },
+    {
+     "end": 2.65,
+     "start": 1.975,
+     "text": "excluded"
+    },
+    {
+     "end": 2.775,
+     "start": 2.65,
+     "text": "and"
+    },
+    {
+     "end": 3.45,
+     "start": 2.775,
+     "text": "malformed"
+    },
+    {
+     "end": 3.9,
+     "start": 3.45,
+     "text": "request"
+    },
+    {
+     "end": 4.425,
+     "start": 3.9,
+     "text": "actions"
+    },
+    {
+     "end": 4.825,
+     "start": 4.425,
+     "text": "before"
+    },
+    {
+     "end": 5.95,
+     "start": 4.825,
+     "text": "approval"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-17": {
+   "audio_sha256": "dd2f523f28d30f05dacb8d5e14dbfecc37f6852be16915260bccdd7a266828d2",
+   "characters": 78,
+   "cost": 4.836e-05,
+   "duration": 4.6,
+   "index": 17,
+   "key": "9e21b48a345214a9df86624dc58e2aa93a4aad2f524f4fe8af2ba74e30a981f9",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "registry/permanent_fold — the fixed registration and termination trie dispatch",
+   "text": "registry/permanent_fold — the fixed registration and termination trie dispatch",
+   "words": [
+    {
+     "end": 0.675,
+     "start": 0.2,
+     "text": "registry"
+    },
+    {
+     "end": 1.2,
+     "start": 0.675,
+     "text": "permanent"
+    },
+    {
+     "end": 1.65,
+     "start": 1.2,
+     "text": "fold"
+    },
+    {
+     "end": 1.712,
+     "start": 1.65,
+     "text": "—"
+    },
+    {
+     "end": 1.837,
+     "start": 1.712,
+     "text": "the"
+    },
+    {
+     "end": 2.15,
+     "start": 1.837,
+     "text": "fixed"
+    },
+    {
+     "end": 2.875,
+     "start": 2.15,
+     "text": "registration"
+    },
+    {
+     "end": 3.0,
+     "start": 2.875,
+     "text": "and"
+    },
+    {
+     "end": 3.675,
+     "start": 3.0,
+     "text": "termination"
+    },
+    {
+     "end": 3.975,
+     "start": 3.675,
+     "text": "trie"
+    },
+    {
+     "end": 4.6,
+     "start": 3.975,
+     "text": "dispatch"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-18": {
+   "audio_sha256": "d715c8aa198894addd244ee9b74e1da558a12a65ed902d1886acc2c6da02bf5c",
+   "characters": 93,
+   "cost": 5.766e-05,
+   "duration": 6.65,
+   "index": 18,
+   "key": "82681d20860d0ad0ab715b342058ae8df06fb82dbdefdc23c4673a9c45b0fec8",
+   "page": "docs/onchain-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "registry/permanent_modify — immutable pins, continuation, duties and settlement for that fold",
+   "text": "registry/permanent_modify — immutable pins, continuation, duties and settlement for that fold",
+   "words": [
+    {
+     "end": 1.875,
+     "start": 0.225,
+     "text": "registry/permanent_modify"
+    },
+    {
+     "end": 1.95,
+     "start": 1.875,
+     "text": "—"
+    },
+    {
+     "end": 2.537,
+     "start": 1.95,
+     "text": "immutable"
+    },
+    {
+     "end": 3.05,
+     "start": 2.537,
+     "text": "pins"
+    },
+    {
+     "end": 3.125,
+     "start": 3.05,
+     "text": ","
+    },
+    {
+     "end": 4.0,
+     "start": 3.125,
+     "text": "continuation"
+    },
+    {
+     "end": 4.088,
+     "start": 4.0,
+     "text": ","
+    },
+    {
+     "end": 4.575,
+     "start": 4.088,
+     "text": "duties"
+    },
+    {
+     "end": 4.713,
+     "start": 4.575,
+     "text": "and"
+    },
+    {
+     "end": 5.2,
+     "start": 4.713,
+     "text": "settlement"
+    },
+    {
+     "end": 5.325,
+     "start": 5.2,
+     "text": "for"
+    },
+    {
+     "end": 5.613,
+     "start": 5.325,
+     "text": "that"
+    },
+    {
+     "end": 6.65,
+     "start": 5.613,
+     "text": "fold"
+    }
+   ]
+  },
+  "docs-onchain-api-reference/what-this-reference-contains-19": {
+   "audio_sha256": "2cb9ae51d5c26a432aaa745a701ac672f149f23b28e1db513d1c45228d93196a",
    "characters": 48,
    "cost": 2.9760000000000003e-05,
    "duration": 3.425,
-   "index": 13,
+   "index": 19,
    "key": "a724ed02839ef461ba0751839143515a5434aec017ef8be352dcaa37ccd16b76",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -202365,12 +202785,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-14": {
-   "audio_sha256": "e7e7094ab20dd532420ff5fbc5f47f92d5b9cc49503b247510b49aa57b18515c",
+  "docs-onchain-api-reference/what-this-reference-contains-20": {
+   "audio_sha256": "f5a40a1e8d3aece9cb76e9e7cb75063b799af4b559ae854a7f1485da91bec159",
    "characters": 101,
    "cost": 6.262000000000001e-05,
    "duration": 7.1,
-   "index": 14,
+   "index": 20,
    "key": "da72c1c0fb6bd2465c65f34082bde3fceeaaedbb3d73e7c114fe254493e15ce5",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202445,12 +202865,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-15": {
-   "audio_sha256": "6fb50f594aa542ef7d5f029e97d1ef221a19c508d3f4bf591394fd532644e76e",
+  "docs-onchain-api-reference/what-this-reference-contains-21": {
+   "audio_sha256": "97719838a4074235e31c0ab2bc651369c20d520c86214470fb06cd0da0a1b47b",
    "characters": 47,
    "cost": 2.914e-05,
    "duration": 3.3,
-   "index": 15,
+   "index": 21,
    "key": "d5660e4865ebcb19645f33757678a4248d8d778f9518cb483ebf17467812942b",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -202500,12 +202920,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-16": {
-   "audio_sha256": "4d9ff9c2a0f78f864e182182740dd0db17956f91925fa6736241e610e3f5a3ef",
+  "docs-onchain-api-reference/what-this-reference-contains-22": {
+   "audio_sha256": "46a77e5423e1e2b5d1aae9cd5d765ce062109c6ef96f3a0d0c5ef6c212cab51a",
    "characters": 69,
    "cost": 4.278000000000001e-05,
    "duration": 4.45,
-   "index": 16,
+   "index": 22,
    "key": "043b81b32301bcf8ab173e7ff836501a0f26b8c0b63b1a8071e56eab471e2e77",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202585,12 +203005,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-17": {
-   "audio_sha256": "f79ee4d4d17e8c5d0c65e799343934eb409e34bbb685be19cda8d3fa2b312472",
+  "docs-onchain-api-reference/what-this-reference-contains-23": {
+   "audio_sha256": "e0bca54e0707bbf6fda3131589596b45f0afb01b07494cdb40c852f1de2b9219",
    "characters": 45,
    "cost": 2.79e-05,
    "duration": 2.675,
-   "index": 17,
+   "index": 23,
    "key": "ade5235e83a7b3048d062a90a3ac8273bce11cf90a589823c9f23e88c5a64b89",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202645,12 +203065,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-18": {
-   "audio_sha256": "07a3906f5a648c91ed2e5175072b0a2a096995bed4874604354cd1528c17b1ea",
+  "docs-onchain-api-reference/what-this-reference-contains-24": {
+   "audio_sha256": "db4c8078f66ffaaac131aeb7783e60440348e4992803cb8c6c3fa0382ad03bb3",
    "characters": 56,
    "cost": 3.472e-05,
    "duration": 3.25,
-   "index": 18,
+   "index": 24,
    "key": "bad7ec4ade9a10d7be94d8beec5ec129a369fcbc2e46488cb96706fd6c062067",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202710,12 +203130,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-19": {
-   "audio_sha256": "98ef973d216829436a1dca69c1cde82005319757bab7af5046ff8b92d0d691b1",
+  "docs-onchain-api-reference/what-this-reference-contains-25": {
+   "audio_sha256": "f931d7ae3374a562d363b87fda74ef035aa36e6eaa0d3ec42d626ddae4e703f2",
    "characters": 58,
    "cost": 3.596e-05,
    "duration": 3.9,
-   "index": 19,
+   "index": 25,
    "key": "dbc253ea743ae935a5f9ab4c9e6a2346414434651612964adb9d985c9d83ff80",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202770,12 +203190,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-20": {
-   "audio_sha256": "d9d8589e1cfb0fd24c5ed1d70097a4e6669766bfd79ab73d3aa4729eb02335d4",
+  "docs-onchain-api-reference/what-this-reference-contains-26": {
+   "audio_sha256": "b515425f2330be759cda0de69c6fe6888eaa4e0364ed178ba5b3447983110ccd",
    "characters": 57,
    "cost": 3.5340000000000004e-05,
    "duration": 3.35,
-   "index": 20,
+   "index": 26,
    "key": "f4943086c7e49ed675e251a3ff62757340b57354f515f319f87a4b2a89de67a5",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202835,12 +203255,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-21": {
-   "audio_sha256": "f50a05287189b63c67e9f515b6604b36660a9688efdbd0c0368b91bfc950da8c",
+  "docs-onchain-api-reference/what-this-reference-contains-27": {
+   "audio_sha256": "2f2e94091f03d3b28d625a5875d07b0504f25b9483b260f11bb501900bebdfd8",
    "characters": 50,
    "cost": 3.1e-05,
    "duration": 3.05,
-   "index": 21,
+   "index": 27,
    "key": "729dfbe56ca9c46e5589d932a50a22be96dcbdc90acd13deb8de6d661c764904",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202895,12 +203315,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-22": {
-   "audio_sha256": "8a9160a9473bd91c5ed5c9793ebbd2e22f4ff8c05fc98816d850d2430eb35dde",
+  "docs-onchain-api-reference/what-this-reference-contains-28": {
+   "audio_sha256": "943025251e2da1633dd45094b7c3c7e6763a9b4f9875af49951a91ef0dc974fd",
    "characters": 66,
    "cost": 4.092e-05,
    "duration": 4.475,
-   "index": 22,
+   "index": 28,
    "key": "c029518ecfb24c8e468e5549c31b81aa43df76739b216188c0be6e3f070a71be",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -202975,12 +203395,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-23": {
-   "audio_sha256": "584cc2b4ff211d2e6d4405f0aabb9c13ac2def3254025fd29bdc34bc5d8080a5",
+  "docs-onchain-api-reference/what-this-reference-contains-29": {
+   "audio_sha256": "202eb0c0afad56cb90c3bd20978a8d7bb6625aee12bcbbe8b72ed1fa89a70c2a",
    "characters": 13,
    "cost": 8.06e-06,
    "duration": 1.275,
-   "index": 23,
+   "index": 29,
    "key": "19587bcb008039bef8b09771de48bda212c64ebe7183b819b35385c1cde0706f",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -202995,12 +203415,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-24": {
-   "audio_sha256": "c749488297a27ed26f37406981f127e81a8bfe0a0f371c5c8113f8a40d452eae",
+  "docs-onchain-api-reference/what-this-reference-contains-30": {
+   "audio_sha256": "0c267b2175a9c4b54aca4672c370c9a1438fbffb626ab911749c7f308760dbb7",
    "characters": 17,
    "cost": 1.054e-05,
    "duration": 1.575,
-   "index": 24,
+   "index": 30,
    "key": "f006d1d819c4336531745a7647abc0a598119d070268187c0993309c5b2fcd40",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,

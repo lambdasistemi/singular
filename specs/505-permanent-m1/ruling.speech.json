@@ -9,25 +9,15 @@
       "pause": 400
     },
     {
-      "text": "The operator's 8 October 2026 ruling selects insertActive and updateTerminal for M1. witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive are excluded. Application payload updates and KERI close/reopen are application operations. The admission set of a deployed script remains fixed; no mutable configuration can enable another registry edge.",
+      "text": "The operator's 8 October 2026 ruling selects insertActive and updateTerminal for the first milestone. witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive are excluded. Application payload updates and KERI close/reopen are application operations. The admission set of a deployed script remains fixed; no mutable configuration can enable another registry edge.",
       "pause": 400
     },
     {
-      "text": "The later ruling delivered as NOTE-001-old-registries-abandoned explicitly supersedes the earlier old-instance compatibility requirement: registries made by earlier releases, including old Demo1 registries, are abandoned by the new release. There is no migration or old deployed recognition path. The new CLI refuses wrong or unknown script identities. Preserved broader source, artifacts and remote history remain evidence for their own contracts, not restricted M1.",
+      "text": "The later ruling delivered as NOTE-001-old-registries-abandoned explicitly supersedes the earlier old-instance compatibility requirement: registries made by earlier releases, including old Demo1 registries, are abandoned by the new release. There is no migration or old deployed recognition path. The new CLI refuses wrong or unknown script identities. Preserved broader source, artifacts and remote history remain evidence for their own contracts, not the restricted first milestone.",
       "pause": 400
     },
     {
-      "text": "M1's finish line is KERI feature support, for which the open-datum application is sufficient. The later NOTE-002 corrects the milestone ordering: #498 protected rejection IS an M1 closing condition, landing AFTER #505 through",
-      "pause": 400
-    }
-  ],
-  "495-with-its-own-identity-change-this-carve-does-not-close-m1-and-must-not": [
-    {
-      "text": "495 with its own identity change. This carve does not close M1 and must not.",
-      "pause": 500
-    },
-    {
-      "text": "include #495 or PR508. Protected deposit is outside this carve's closing conditions. Current valid model behavior, deposits and refunds must still be preserved. The parent reports the eventual #505 merge to release #495.",
+      "text": "The first milestone's finish line is KERI feature support, for which the open-datum application is sufficient. The later NOTE-002 corrects the milestone ordering: #498 protected rejection is a first-milestone closing condition, landing after #505 through #495 with its own identity change. This carve does not close that milestone and must not include #495 or PR508. Protected deposit is outside this carve's closing conditions. Current valid model behavior, deposits and refunds must still be preserved. The parent reports the eventual #505 merge to release #495.",
       "pause": 400
     },
     {
@@ -37,6 +27,6 @@
   ],
   "_source": {
     "file": "ruling.md",
-    "sha256": "acfd70e337bc4a4324b52ffbf3f70864f887be0d8e3da8b36df8e7ee77e6345b"
+    "sha256": "db85b85a1803d8ce49031ab1e0bb09c00f477e312999d58130a289b1629b7b26"
   }
 }

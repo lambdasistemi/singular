@@ -5822,8 +5822,8 @@
     "index": 1,
     "name": "docs-onchain-api-reference/what-it-leaves-out-01",
     "pause_ms": 400,
-    "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
-    "v": "56495706cab4"
+    "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and five modules declare nothing public — the open approval policy, open_datum and permanent_open_datum validators, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+    "v": "b09f10324381"
    },
    {
     "index": 2,
@@ -5929,85 +5929,127 @@
     "index": 13,
     "name": "docs-onchain-api-reference/what-this-reference-contains-13",
     "pause_ms": 400,
-    "text": "The open-datum application's protected envelope:",
-    "v": "25e63342e284"
+    "text": "The permanent registration-and-termination contract uses separate fixed scripts:",
+    "v": "6dc586589605"
    },
    {
     "index": 14,
     "name": "docs-onchain-api-reference/what-this-reference-contains-14",
     "pause_ms": 300,
-    "text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
-    "v": "e7e7094ab20d"
+    "text": "permanent_state — the state validator for the two admitted registry transitions",
+    "v": "30da17b61cf5"
    },
    {
     "index": 15,
     "name": "docs-onchain-api-reference/what-this-reference-contains-15",
-    "pause_ms": 400,
-    "text": "The shared vocabulary and the other validators:",
-    "v": "6fb50f594aa5"
+    "pause_ms": 300,
+    "text": "permanent_witness — the witness policy pinned to that state validator",
+    "v": "0cdc01218bc5"
    },
    {
     "index": 16,
     "name": "docs-onchain-api-reference/what-this-reference-contains-16",
     "pause_ms": 300,
-    "text": "lib — the edge table, the approval name and the named refusal reasons",
-    "v": "4d9ff9c2a0f7"
+    "text": "registry/permanent — refusing excluded and malformed request actions before approval",
+    "v": "a8dc14db7278"
    },
    {
     "index": 17,
     "name": "docs-onchain-api-reference/what-this-reference-contains-17",
     "pause_ms": 300,
-    "text": "types — the datum, redeemer and request types",
-    "v": "f79ee4d4d17e"
+    "text": "registry/permanent_fold — the fixed registration and termination trie dispatch",
+    "v": "dd2f523f28d3"
    },
    {
     "index": 18,
     "name": "docs-onchain-api-reference/what-this-reference-contains-18",
     "pause_ms": 300,
-    "text": "shared — reading state from inputs and the phase windows",
-    "v": "07a3906f5a64"
+    "text": "registry/permanent_modify — immutable pins, continuation, duties and settlement for that fold",
+    "v": "d715c8aa1988"
    },
    {
     "index": 19,
     "name": "docs-onchain-api-reference/what-this-reference-contains-19",
-    "pause_ms": 300,
-    "text": "request — the request validator and its retraction refusal",
-    "v": "98ef973d2168"
+    "pause_ms": 400,
+    "text": "The open-datum application's protected envelope:",
+    "v": "2cb9ae51d5c2"
    },
    {
     "index": 20,
     "name": "docs-onchain-api-reference/what-this-reference-contains-20",
     "pause_ms": 300,
-    "text": "witness — the witness validator and its pinned state hash",
-    "v": "d9d8589e1cfb"
+    "text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
+    "v": "f5a40a1e8d3a"
    },
    {
     "index": 21,
     "name": "docs-onchain-api-reference/what-this-reference-contains-21",
-    "pause_ms": 300,
-    "text": "cage — the phase predicates the property tests use",
-    "v": "f50a05287189"
+    "pause_ms": 400,
+    "text": "The shared vocabulary and the other validators:",
+    "v": "97719838a407"
    },
    {
     "index": 22,
     "name": "docs-onchain-api-reference/what-this-reference-contains-22",
-    "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "8a9160a9473b"
+    "pause_ms": 300,
+    "text": "lib — the edge table, the approval name and the named refusal reasons",
+    "v": "46a77e5423e1"
    },
    {
     "index": 23,
     "name": "docs-onchain-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "584cc2b4ff21"
+    "text": "types — the datum, redeemer and request types",
+    "v": "e0bca54e0707"
    },
    {
     "index": 24,
     "name": "docs-onchain-api-reference/what-this-reference-contains-24",
     "pause_ms": 300,
+    "text": "shared — reading state from inputs and the phase windows",
+    "v": "db4c8078f66f"
+   },
+   {
+    "index": 25,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-25",
+    "pause_ms": 300,
+    "text": "request — the request validator and its retraction refusal",
+    "v": "f931d7ae3374"
+   },
+   {
+    "index": 26,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-26",
+    "pause_ms": 300,
+    "text": "witness — the witness validator and its pinned state hash",
+    "v": "b515425f2330"
+   },
+   {
+    "index": 27,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-27",
+    "pause_ms": 300,
+    "text": "cage — the phase predicates the property tests use",
+    "v": "2f2e94091f03"
+   },
+   {
+    "index": 28,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-28",
+    "pause_ms": 400,
+    "text": "Test support, documented because it is public to the test modules:",
+    "v": "943025251e2d"
+   },
+   {
+    "index": 29,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-29",
+    "pause_ms": 300,
+    "text": "cage_fixtures",
+    "v": "202eb0c0afad"
+   },
+   {
+    "index": 30,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-30",
+    "pause_ms": 300,
     "text": "registry_fixtures",
-    "v": "c749488297a2"
+    "v": "0c267b2175a9"
    }
   ]
  },
