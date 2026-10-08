@@ -297,6 +297,9 @@ test-suite conformance-tests
   other-modules:
     Conformance.Cli.Admission
     Conformance.Cli.Attach
+    Conformance.Cli.Backend
+    Conformance.Cli.ManagedStateSpec
+    Conformance.Cli.Node
     Conformance.Cli.FoldHistory
     Conformance.Cli.Proof
     Conformance.Cli.Withhold
@@ -355,6 +358,8 @@ test-suite conformance-tests
 
   build-depends:
     , aeson                             >=2.1     && <2.3
+    , aeson-pretty
+    , async
     , base                              >=4.14    && <5
     , base16-bytestring
     , bytestring                        >=0.11    && <0.13

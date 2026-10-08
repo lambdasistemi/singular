@@ -38,6 +38,8 @@ work="$6"
   exit 2
 }
 mkdir -p "$work"
+# shellcheck source=tools/managed_state.sh
+source "$(dirname "$0")/managed_state.sh"
 
 setup_fail() {
   echo "attach: SETUP: $*" >&2
@@ -229,9 +231,9 @@ part() {
 tamper="$here/demo1_readback_tamper.sh"
 if part takes; then
   take one demo1-take-one
-  before="$(wc -l <"$registry/journal.jsonl")"
+  before="$(journal_lines_root "$registry")"
   take two demo1-take-two
-  [ "$(wc -l <"$registry/journal.jsonl")" -gt "$before" ] || fail_control "the second take wrote nothing to the registry"
+  [ "$(journal_lines_root "$registry")" -gt "$before" ] || fail_control "the second take wrote nothing to the registry"
   say "the registry created once served two takes with two fresh keys"
 
   # The verdict rests on the retained bytes: on copies of the first take's
@@ -318,7 +320,7 @@ attach_with() { # NAME KEY [extra options]
     "${node_args[@]}" --state-dir "$registry" --state-token "$state_token" --key "$key" --work "$work/$name" "$@" \
     >"$work/$name.md" 2>"$work/$name.err"
 }
-journal_lines() { wc -l <"$registry/journal.jsonl"; }
+journal_lines() { journal_lines_root "$registry"; }
 expect_refused_before_writing() { # NAME WORDS
   [ "$status" -ne 0 ] || fail_control "$1: the take ran"
   grep -qF -- "$2" "$work/$1.err" || fail_control "$1: the refusal does not say why ($2)"

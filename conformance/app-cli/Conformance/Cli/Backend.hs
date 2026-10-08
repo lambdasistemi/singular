@@ -24,7 +24,15 @@ command resolves it: the run's own registries by the token their create's
 seed derives, a take's by the token it is given. Nothing is read from your
 state directory but the journal.
 -}
-module Conformance.Cli.Backend (runControls, runAttach) where
+module Conformance.Cli.Backend
+    ( runControls
+    , runAttach
+    , managedPartition
+    , walletPartition
+    , commandJournal
+    , primaryJournal
+    , primaryLock
+    ) where
 
 import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
@@ -38,7 +46,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (filterM, forM_, unless, void, when)
+import Control.Monad (forM, forM_, unless, void, when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
@@ -72,14 +80,21 @@ import PlutusCore.Data qualified as PLC
 import System.Directory
     ( copyFile
     , createDirectoryIfMissing
+    , doesDirectoryExist
     , doesFileExist
     , doesPathExist
     , getPermissions
+    , listDirectory
     , readable
     )
 import System.Environment (getEnvironment)
 import System.Exit (ExitCode (..))
-import System.FilePath (makeRelative, takeDirectory, (</>))
+import System.FilePath
+    ( makeRelative
+    , takeDirectory
+    , takeFileName
+    , (</>)
+    )
 import System.IO
     ( IOMode (..)
     , SeekMode (..)
@@ -822,6 +837,73 @@ targetDir env (Target t) = case optStateDir (envOptions env) of
 attached :: Env -> Bool
 attached = isJust . optStateDir . envOptions
 
+{- | The managed partition for one identity: the state root, the network, the
+complete state token and the writing wallet's payment identity. This mirrors
+'Singular.CLI.ManagedState.managedDir' with the same production primitives
+('loadWallet', 'addrKeyHashBytes', 'scriptHashBytes'); the CLI unit rows pin
+that layout. An explicit @--state-dir@ selects only the root.
+-}
+managedPartition
+    :: FilePath -> Int -> Cage.Asset -> ByteString -> FilePath
+managedPartition root magic token walletHash =
+    root
+        </> ("net-" <> show magic)
+        </> (policyHex <> "-" <> nameHex)
+        </> "wallets"
+        </> BC.unpack (B16.encode walletHash)
+  where
+    (PolicyID policy, AssetName name) = token
+    policyHex = BC.unpack (B16.encode (scriptHashBytes policy))
+    nameHex = BC.unpack (B16.encode (SBS.fromShort name))
+
+{- | A wallet's stable payment identity for partitioning: the same signing
+key resolves the same partition from any key-file path.
+-}
+walletPartition :: Int -> FilePath -> IO ByteString
+walletPartition magic keyfile =
+    addrKeyHashBytes . walletAddr
+        <$> loadWallet (fromIntegral magic) keyfile
+
+{- | The journal the command journals to: the actor root, the registry token
+and the wallet the command signs with. A fold signs with the second wallet;
+everything else with the primary one. Inspect carries no key: it resolves
+the actor's primary partition, which a stateless read leaves unmoved.
+-}
+commandJournal :: Env -> Command -> Target -> Target -> IO FilePath
+commandJournal env Fold actor registry = do
+    token <- targetToken env registry
+    let o = envOptions env
+    walletHash <- walletPartition (optMagic o) (optStranger o)
+    pure
+        ( managedPartition (targetDir env actor) (optMagic o) token walletHash
+            </> "journal.jsonl"
+        )
+commandJournal env _ actor registry = primaryJournal env actor registry
+
+{- | The primary wallet's journal for one actor and registry: what every
+non-fold command journals to, and what a lock guards.
+-}
+primaryJournal :: Env -> Target -> Target -> IO FilePath
+primaryJournal env actor registry = do
+    token <- targetToken env registry
+    let o = envOptions env
+    walletHash <- walletPartition (optMagic o) (optWalletKey o)
+    pure
+        ( managedPartition (targetDir env actor) (optMagic o) token walletHash
+            </> "journal.jsonl"
+        )
+
+-- | The lock guarding the primary wallet's writes for one actor and registry.
+primaryLock :: Env -> Target -> Target -> IO FilePath
+primaryLock env actor registry = do
+    token <- targetToken env registry
+    let o = envOptions env
+    walletHash <- walletPartition (optMagic o) (optWalletKey o)
+    pure
+        ( managedPartition (targetDir env actor) (optMagic o) token walletHash
+            </> ".lock"
+        )
+
 -- | The explicit payload a take writes for its key: a constructor over the key and a number.
 attachedPayload :: String -> Int -> PLC.Data
 attachedPayload key n = PLC.Constr 0 [PLC.B (keyBytes key), PLC.I (toInteger n)]
@@ -1317,7 +1399,7 @@ runCommandIn
     :: Env -> Command -> Target -> Target -> String -> Receipt -> IO Receipt
 runCommandIn env c actor registry key r = do
     args <- commandArgsFor env c actor registry key r
-    let journal = targetDir env actor </> "journal.jsonl"
+    journal <- commandJournal env c actor registry
     before <- journalLines journal
     (status, printed, file) <- singular env r (commandName c) args
     when
@@ -1536,10 +1618,10 @@ provoke env p target key r = do
     let o = envOptions env
         work = optWork o
         dir = targetDir env target
-        journal = dir </> "journal.jsonl"
         hold = envEvidence env </> printf "step-%03d-hold" (rcStep r)
         seedFile = backendDir env target </> "seed"
         label = provocationName p
+    journal <- primaryJournal env target target
     createDirectoryIfMissing True (backendDir env target)
     before <- journalLines journal
     let finishFrom from status printed file extra = do
@@ -1585,9 +1667,11 @@ provoke env p target key r = do
     case p of
         WhileLocked -> do
             args <- commandArgs env Insert target key r
+            lock <- primaryLock env target target
+            createDirectoryIfMissing True (takeDirectory lock)
             bracket
                 ( openFd
-                    (dir </> ".lock")
+                    lock
                     ReadWrite
                     defaultFileFlags{creat = Just 0o644}
                 )
@@ -1643,7 +1727,6 @@ provoke env p target key r = do
             seed <- readFile seedFile
             plain (createArgs dir (optWalletKey o) seed)
         LateCreate -> do
-            let late = optStranger o
             first <-
                 previewSeed
                     env
@@ -1652,11 +1735,10 @@ provoke env p target key r = do
                     (optWalletKey o)
                     (work </> "probe-first")
                     Nothing
-            seedLate <-
-                previewSeed env r "preview-late" late (work </> "probe-late") Nothing
-            when (first == seedLate) $ fail "the two creates name the same seed"
+            -- The double boot races one seed with one wallet: different
+            -- seeds boot different registries in different partitions.
             writeFile seedFile first
-            let lateArgs = createArgs dir late seedLate
+            let lateArgs = createArgs dir (optWalletKey o) first
                 firstArgs = createArgs dir (optWalletKey o) first
             (late', out) <-
                 spawnSingular
@@ -1676,25 +1758,21 @@ provoke env p target key r = do
                 $ fail "the first create did not complete"
             copies <-
                 snapshot (envEvidence env </> printf "step-%03d-before" (rcStep r))
-            _ <-
-                previewSeed
-                    env
-                    r
-                    "seed-late-held"
-                    late
-                    (work </> "probe-held")
-                    (Just seedLate)
+            -- The hold itself is the race argument: the late create reached
+            -- its hold after validating the live seed and before the first
+            -- create consumed it. The winner spends the raced seed, so a
+            -- preview of it must no longer succeed.
             lockedBefore <- journalLines journal
             writeFile hold ""
             status <- waitForProcess late'
             printed <-
                 Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
             filesAfter <- digests dir
-            (_, _, probe) <-
+            (spentStatus, spentPrinted, probe) <-
                 singular
                     env
                     r
-                    "seed-late-after"
+                    "seed-spent-after"
                     $ [ "registry"
                       , "create"
                       , "--preview"
@@ -1709,11 +1787,16 @@ provoke env p target key r = do
                       , "--network-magic"
                       , show (optMagic o)
                       , "--wallet-skey"
-                      , late
+                      , optWalletKey o
                       , "--seed"
-                      , seedLate
+                      , first
                       ]
                         <> developmentWindows
+            when
+                ( spentStatus == ExitSuccess
+                    && printedField "outcome" spentPrinted == Just (String "success")
+                )
+                $ fail "the raced seed is still live after the winning boot"
             finishFrom lockedBefore status printed (T.pack ("evidence" </> out)) $ \pe ->
                 pe
                     { peFilesBefore = copies
@@ -1730,11 +1813,24 @@ provoke env p target key r = do
             createDirectoryIfMissing True poorDir
             seedPoor <-
                 previewSeed env r "preview-poor" poor (work </> "probe-poor") Nothing
+            -- The token this seed would boot: derived as the command
+            -- derives it, since no registry (and no seed file) exists yet.
+            poorToken <- do
+                release <- runRelease env
+                seedIn <- either fail pure (parseOutRef (T.pack seedPoor))
+                pure
+                    ( PolicyID (computeScriptHash (releaseState release))
+                    , AssetName (SBS.toShort (deriveAssetName (txInToRef seedIn)))
+                    )
+            poorHash <- walletPartition (optMagic o) poor
+            let poorJournal =
+                    managedPartition poorDir (optMagic o) poorToken poorHash
+                        </> "journal.jsonl"
             copiesBefore <- digests poorDir
-            beforeCount <- journalLines (poorDir </> "journal.jsonl")
+            beforeCount <- journalLines poorJournal
             (status, printed, file) <-
                 singular env r label (createArgs poorDir poor seedPoor)
-            afterLines <- journalLines' (poorDir </> "journal.jsonl")
+            afterLines <- journalLines' poorJournal
             let gainedPoor = drop beforeCount afterLines
             (submissions, resolved) <- journalledSubmissions env (pure gainedPoor)
             filesAfter <- digests poorDir
@@ -1774,7 +1870,7 @@ provoke env p target key r = do
                             ( ProcessEvidence
                                 { peJournal =
                                     T.pack
-                                        (makeRelative work (poorDir </> "journal.jsonl"))
+                                        (makeRelative work poorJournal)
                                 , peJournalBefore = beforeCount
                                 , peJournalAfter = length afterLines
                                 , peLastEvent = maybe "" lastEventOf (lastMaybe afterLines)
@@ -1834,21 +1930,40 @@ provoke env p target key r = do
                 <> developmentWindows
     snapshot copyDir = do
         createDirectoryIfMissing True copyDir
-        forM_ savedFiles $ \f -> do
-            exists <- doesFileExist (targetDir env target </> f)
-            when exists $ copyFile (targetDir env target </> f) (copyDir </> f)
+        found <- managedFiles (targetDir env target)
+        forM_ found $ \rel -> do
+            let dst = copyDir </> rel
+            createDirectoryIfMissing True (takeDirectory dst)
+            copyFile (targetDir env target </> rel) dst
         digests copyDir
     digests d = do
-        existing <- filterM (doesFileExist . (d </>)) savedFiles
+        found <- managedFiles d
         mapM
-            ( \f -> do
-                bytes <- BS.readFile (d </> f)
+            ( \rel -> do
+                bytes <- BS.readFile (d </> rel)
                 pure
-                    ( T.pack (makeRelative (optWork (envOptions env)) (d </> f))
+                    ( T.pack (makeRelative (optWork (envOptions env)) (d </> rel))
                     , hex (sha256 bytes)
                     )
             )
-            existing
+            found
+    -- Managed state files, by basename, wherever identity partitions hold
+    -- them; relative paths stay stable across roots.
+    managedFiles d = do
+        allFiles <- listFilesRecursive d
+        pure
+            [makeRelative d f | f <- allFiles, takeFileName f `elem` savedFiles]
+    listFilesRecursive d = do
+        there <- doesDirectoryExist d
+        if not there
+            then pure []
+            else do
+                entries <- listDirectory d
+                fmap concat $
+                    forM entries $ \e -> do
+                        let fp = d </> e
+                        sub <- doesDirectoryExist fp
+                        if sub then listFilesRecursive fp else pure [fp]
     savedFiles =
         [ "registry.pending.json"
         , "journal.jsonl"

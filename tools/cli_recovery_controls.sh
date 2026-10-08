@@ -122,6 +122,10 @@ export SINGULAR_HARNESS_TRIE_TRACE="$work/direct-processes.trie.jsonl"
 : >"$SINGULAR_HARNESS_TRIE_TRACE"
 : >"$work/trie-command-invocations"
 reg="$work/registry"
+# shellcheck source=tools/managed_state.sh
+source "$(dirname "$0")/managed_state.sh"
+# The journal under test, reassigned per phase and writer: journals live in
+# managed identity partitions, never directly at the configured root.
 journal="$reg/journal.jsonl"
 verdicts="$work/verdicts.md"
 
@@ -415,11 +419,11 @@ with open(os.path.join(registry, ".lock"), "a") as lock:
     print(root)
 PY
 root_now() { python3 "$work/read-root.py" "$singular" "$reg" "$blueprint" --state-token "$state_token" "${node[@]}"; }
-trie_files_absent() { [ ! -e "$reg/state.json" ] && [ ! -e "$reg/registry.mirror.json" ]; }
+trie_files_absent() { [ -z "$(managed_find "$reg" state.json)" ] && [ -z "$(managed_find "$reg" registry.mirror.json)" ]; }
 snap() {
   if [ -f "$journal" ]; then cp "$journal" "$snaps/$1.jsonl"; else : >"$snaps/$1.jsonl"; fi
   root_now >"$snaps/$1.root"
-  find "$reg/submissions" -type f -exec sha256sum {} + 2>/dev/null | sort >"$snaps/$1.bodies" || true
+  find "$(dirname "$journal")/submissions" -type f -exec sha256sum {} + 2>/dev/null | sort >"$snaps/$1.bodies" || true
 }
 journal_same() { cmp -s "$snaps/$1.jsonl" "$journal"; }
 # The journal at snapshot NAME is a byte prefix of the journal now, and
@@ -481,6 +485,9 @@ token="$(field create .token)"
 state_token="$(field create .stateToken)"
 [[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "create printed no state token"
 common+=(--state-token "$state_token")
+# The recovery writer's journal: alice's managed partition under this root.
+alicekey="$(field create .walletKeyHash)"
+journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{bytes:"616c696365"}}]}' >"$work/insert-payload.json"
 jq -n '{int: 42}' >"$work/payload.json"
 say "registry $token created"
@@ -626,10 +633,11 @@ if part accepting; then
   done
   preview_copy="$work/preview-incomplete"
   cp -a "$reg" "$preview_copy"
+  preview_rel="$(realpath --relative-to="$reg" "$journal")"
   boot_ids="$(jq -sc '[.[] | select(.journalStep == "boot") | .journalTxId] | unique' "$journal")"
   jq -c --argjson ids "$boot_ids" 'select(.journalTxId as $id | $ids | index($id) | not)' \
-    "$preview_copy/journal.jsonl" >"$work/preview-incomplete-journal"
-  mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
+    "$preview_copy/$preview_rel" >"$work/preview-incomplete-journal"
+  mv "$work/preview-incomplete-journal" "$preview_copy/$preview_rel"
   preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
   run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
     --state-dir "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
@@ -846,10 +854,14 @@ if [ "$cross_any" -eq 1 ]; then
       cross_prereq=$((cross_prereq + 1))
     fi
     control="another wallet's fold at ${cross_case#cross-wallet:}"
+    journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     snap "$cross-before"
     run "$cross-book" registry insert --key-hex "$key" --payload "$work/insert-payload.json" \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     snap "$cross-booked"
+    # Bob's folds journal to his own partition under the same root and token.
+    journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+    snap "$cross-bob-before"
     reached=0
     export SINGULAR_HARNESS_HOLD_STEP=fold
     if [[ "$cross_case" == *:lost-answer ]]; then
@@ -865,8 +877,11 @@ if [ "$cross_any" -eq 1 ]; then
         "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
     fi
     unset SINGULAR_HARNESS_HOLD_STEP
-    cross_fold="$(fold_since "$cross-booked")"
+    # The fold's offset is measured in its own writer's journal.
+    cross_fold="$(fold_since "$cross-bob-before")"
     snap "$cross-held"
+    # Alice's updates journal to her partition again.
+    journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     refusals_clean=0
     for i in $(seq 1 40); do
       snap "$cross-try-$i"
@@ -1190,7 +1205,6 @@ if part rollback; then
   done
 
   reg="$work/registry-rolled-back"
-  journal="$reg/journal.jsonl"
   common=(--state-dir "$reg" --blueprint "$blueprint")
   run preview-rb registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
@@ -1201,6 +1215,8 @@ if part rollback; then
   state_token="$(field create-rb .stateToken)"
   [[ "$state_token" =~ ^[0-9a-f]{56}\.[0-9a-f]{64}$ ]] || setup_fail "the second create printed no state token"
   common+=(--state-token "$state_token")
+  alicekey="$(field create-rb .walletKeyHash)"
+  journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
   insert_of 6c00
   run insert-rb0 "${args[@]}"
   outcome_is insert-rb0 success || setup_fail "the insert before the snapshot did not succeed"

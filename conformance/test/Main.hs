@@ -1,6 +1,7 @@
 -- | Read the promises first; machinery checks are the appendix.
 module Main (main) where
 
+import Conformance.Cli.ManagedStateSpec qualified as ManagedStateSpec
 import Conformance.Story.Usage qualified as Usage
 import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.CliAdmission qualified as CliAdmission
@@ -51,6 +52,8 @@ main = do
 
 suite :: Spec
 suite = do
+    describe (tagged "Conformance.Cli.ManagedState" [Conformance]) $
+        describe "Appendix — how we check the evidence" ManagedStateSpec.spec
     describe (tagged "Conformance.Support.Receipt" [Conformance]) $
         describe "Appendix — how we check the evidence" Receipt.spec
     describe (tagged "Conformance.Support.ReceiptBound" [Conformance]) $
