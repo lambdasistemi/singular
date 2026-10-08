@@ -65,6 +65,19 @@ expect red 1 1 "not holding: $broken"
 expect red 1 1 "not holding: $saved"
 grep -qF "$case_row" "$scratch/red.out" && fail "red: a row of the approved-cases table was named as a clause"
 
+retired_hold='| `R299-05` | the same insert is accepted | holds |'
+retired_broken='| `fold_inversion` | the same fold is accepted | does not hold: the outcome is "client-error" |'
+verdicts retired-hold "$retired_hold" "" "1 of 3 clauses hold; 0 do not; 0 are uncovered; 2 are retired."
+expect retired-hold 0 0 "clauses judged: 1 of 3 clauses hold"
+verdicts retired-red "$retired_hold" "$retired_broken" "" "1 of 4 clauses hold; 1 do not; 0 are uncovered; 2 are retired."
+expect retired-red 1 1 "not holding: $retired_broken"
+retired_row1='| `INV299-IDENTITY` | an insert with the saved application selector changed is refused before submitting | Retired: a registry is joined from its state token alone; there is no saved selector file to change. |'
+retired_row2='| `INV299-IDENTITY` | the same insert, with the selector restored, is accepted | Retired: a registry is joined from its state token alone; there is no saved selector file to change. |'
+verdicts all-retired "$retired_row1" "$retired_row2" "0 of 2 clauses hold; 0 do not; 0 are uncovered; 2 are retired."
+expect all-retired 0 1 "judges no active clause"
+verdicts inconsistent-total "$retired_hold" "" "1 of 1 clauses hold; 0 do not; 0 are uncovered; 2 are retired."
+expect inconsistent-total 0 1 "counters disagree"
+
 verdicts no-summary "$held"
 expect no-summary 0 1 "no clause summary"
 verdicts zero "0 of 0 clauses hold; 0 do not; 0 are uncovered."

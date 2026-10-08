@@ -157,9 +157,11 @@ import Conformance.Refusal
 -- ---------------------------------------------------------
 
 {- | The ordinary commands, as a person runs them. An update names which
-of the story's payloads it writes.
+of the story's payloads it writes. A fold folds the registry's pending
+request: the request names its key and edge, so the command takes no key,
+payload, deposit or fold flag of its own.
 -}
-data Command = Create | Insert | Update Int | Terminate | Inspect
+data Command = Create | Insert | Update Int | Terminate | Inspect | Fold
     deriving stock (Eq, Show)
 
 commandName :: Command -> String
@@ -169,6 +171,7 @@ commandName c = case c of
     Update _ -> "update"
     Terminate -> "terminate"
     Inspect -> "inspect"
+    Fold -> "fold"
 
 {- | A transaction built by hand against a key's live holding at the
 application, and submitted without local evaluation so the node judges
@@ -422,6 +425,12 @@ data Requirement
       succeeded and read the same registry
       -}
       TokenOnlyReading
+    | {- | A booking, an ordinary token-only fold of that booking and an
+      inspect after it: the booking was accepted, the fold succeeded on
+      the booking's own request, and the key reads Active under the
+      fold's envelope and root
+      -}
+      FoldConsumed
     | {- | A provoked @inspect@: its outcome is the class its condition
       names, and it printed no leaf
       -}
@@ -735,12 +744,12 @@ authenticated =
         "INV299-AUTHENTICATED"
         "f35b175f8df8140f9a947178c375c1627864d4fa91fd39cc14234ee95b17b2aa"
 
--- | The saved identity binds every write; a substitution refuses.
+-- | The state token, release, network and selected key bind every write and read.
 identityBinds :: Theorem ClientObligation
 identityBinds =
     obligationRow
         "INV299-IDENTITY"
-        "344952d2e47e5daf254552a9c20e3e8fc094ddb0887865b067c46574f7eb1ab4"
+        "4ca4b7b81ec111c58ea1d066d60cd89adbd7ad8b7c363710ec58b9531c3ac982"
 
 -- | An unavailable read never prints confirmed status.
 readOnly :: Theorem ClientObligation
@@ -1725,6 +1734,16 @@ processStory = do
                     theirs <- action (RunByToken reader target Inspect heldKey)
                     pure [mine, theirs]
                 )
+        _ <-
+            clause
+                "a second actor, starting from an empty directory with only the state token, folds Alice's pending request and reads it Active"
+                (requirement identityBinds FoldConsumed)
+                ( do
+                    booking <- action (Book target freshKey)
+                    folded <- action (RunByToken reader target Fold freshKey)
+                    seen <- action (RunByToken reader target Inspect freshKey)
+                    pure [booking, folded, seen]
+                )
         -- Retired by operator ruling: no command reads a saved selector. The
         -- second key is still inserted, for the clauses below that use it.
         _ <-
@@ -2545,6 +2564,13 @@ same what a b = case (a, b) of
     (_, Nothing) -> [what <> ": the second receipt does not carry it"]
     _ -> [what <> " differs"]
 
+{- | An actor identity usable for comparison: present text, never an
+absent or wrongly typed value a distinct-wallet claim could skip.
+-}
+usableIdentity :: Maybe Aeson.Value -> Maybe Text
+usableIdentity (Just (Aeson.String t)) = Just t
+usableIdentity _ = Nothing
+
 -- | Fail unless a receipt value is present and equals the one expected.
 is :: String -> Aeson.Value -> Maybe Aeson.Value -> [String]
 is what expected v =
@@ -2934,6 +2960,51 @@ check req rs = case (req, rs) of
                 "the key's leaf"
                 (at [field "leaf"] mine)
                 (at [field "leaf"] theirs)
+    (FoldConsumed, [booking, folded, seen]) ->
+        [ "the booking's outcome is "
+            <> show (rcOutcome booking)
+            <> ", not accepted"
+        | rcOutcome booking /= "accepted"
+        ]
+            <> submitted booking
+            <> succeeded "the token-only fold" folded
+            <> same
+                "the folded request"
+                (Aeson.String . (<> "#0") <$> rcTxId booking)
+                (at [field "request"] folded)
+            <> [ "the fold is of another key"
+               | rcKey booking /= rcKey folded
+               ]
+            <> succeeded "the token-only inspect" seen
+            <> [ "the inspect is of another key"
+               | rcKey folded /= rcKey seen
+               ]
+            <> is "the key's leaf" "active" (at [field "leaf"] seen)
+            <> same
+                "the holding's inline envelope"
+                (at [field "envelope"] folded)
+                (at [field "applicationOutput", field "envelope"] seen)
+            <> same
+                "the registry's root"
+                (at [field "root"] folded)
+                (at [field "root"] seen)
+            <> [ "the fold names no usable folder"
+               | isNothing (usableIdentity (at [field "folder"] folded))
+               ]
+            <> [ "the inspect names no usable holding controller"
+               | isNothing
+                    ( usableIdentity
+                        (at [field "applicationOutput", field "controller"] seen)
+                    )
+               ]
+            <> [ "the token-only fold was funded by the booking controller's own wallet"
+               | Just f <- [usableIdentity (at [field "folder"] folded)]
+               , Just c <-
+                    [ usableIdentity
+                        (at [field "applicationOutput", field "controller"] seen)
+                    ]
+               , f == c
+               ]
     (SameRegistry, [c, i]) ->
         succeeded "the create" c
             <> succeeded "the insert" i
@@ -3233,9 +3304,11 @@ check req rs = case (req, rs) of
             <> withProcess
                 r
                 ( \p ->
-                    [ "the refused create wrote to its directory"
-                    | byName (peFilesBefore p) /= byName (peFilesAfter p)
-                    ]
+                    journalStill p
+                        <> nothingSubmitted r p
+                        <> [ "the refused create wrote to its directory"
+                           | byName (peFilesBefore p) /= byName (peFilesAfter p)
+                           ]
                         <> [ "the underfunded wallet's seed was not probed afterwards"
                            | isNothing (peSeedProbe p)
                            ]

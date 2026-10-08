@@ -1,10 +1,17 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | The refusal controls are judged from receipts, and only from receipts.
 module Conformance.Support.CliControls (spec) where
 
-import Conformance.Cli.Admission (admit, sha256Hex)
+import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, mkBasicTxBody)
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Tx.Ledger (ConwayTx)
+import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
 import Conformance.Cli.Controls
     ( Account (..)
     , ClauseResult (..)
@@ -18,12 +25,14 @@ import Conformance.Cli.Controls
     , ProcessEvidence (..)
     , Provocation (..)
     , Receipt (..)
+    , Requirement (..)
     , Stated (..)
     , Story
     , Submission (..)
     , Target (..)
     , actionsOf
     , attribution
+    , check
     , commandName
     , controlsStory
     , craftedName
@@ -72,7 +81,10 @@ import Data.Aeson
     )
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Char (isDigit, ord)
 import Data.Either (isLeft)
@@ -80,7 +92,13 @@ import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import System.Directory (createDirectoryIfMissing, removeFile)
+import Lens.Micro ((&), (.~))
+import Singular.Registry.Ledger (ConwayEra)
+import System.Directory
+    ( createDirectoryIfMissing
+    , doesFileExist
+    , removeFile
+    )
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -335,6 +353,116 @@ alter act target f =
 clauseStatuses :: String -> [ClauseResult] -> [ClauseStatus]
 clauseStatuses phrase results = [crStatus r | r <- results, phrase `isInfixOf` crTitle r]
 
+-- | A transaction the underfunded controls retain, by fee.
+underfundedTxOf :: Integer -> ConwayTx
+underfundedTxOf fee = mkBasicTx (mkBasicTxBody & feeTxBodyL .~ Coin fee)
+
+underfundedBodyBytes :: ConwayTx -> ByteString
+underfundedBodyBytes = B16.encode . serialize' (eraProtVerHigh @ConwayEra)
+
+underfundedReason :: T.Text
+underfundedReason =
+    "publication-unfunded boot: the boot needs more than the seed and its beside output hold; nothing was submitted"
+
+underfundedPrinted :: Value
+underfundedPrinted =
+    object
+        [ "outcome" .= ("client-refusal" :: String)
+        , "reason" .= underfundedReason
+        ]
+
+{- | An underfunded-create refusal that kept a submission: journal, body,
+printed refusal, probe and snapshots consistent, so admission passes
+while the no-submission requirement must still refuse it.
+-}
+plantedUnderfundedIn :: FilePath -> IO Receipt
+plantedUnderfundedIn work = do
+    createDirectoryIfMissing True (work </> "targets/poor")
+    createDirectoryIfMissing True (work </> "evidence")
+    let tx = underfundedTxOf 21
+        txid = txIdHexOf tx
+        bytes = underfundedBodyBytes tx
+        bodyFile = "evidence/body.cbor.hex"
+        bodyText = T.pack bodyFile
+        journal = "targets/poor/journal.jsonl"
+        line event =
+            "{\"journalStep\":\"boot\",\"journalEvent\":\""
+                <> TE.encodeUtf8 event
+                <> "\",\"journalTxId\":\""
+                <> TE.encodeUtf8 txid
+                <> "\",\"journalBody\":\""
+                <> TE.encodeUtf8 bodyText
+                <> "\"}"
+    BS.writeFile (work </> bodyFile) bytes
+    BS.writeFile
+        (work </> journal)
+        (BC.unlines [line "prepared", line "submitted"])
+    BS.writeFile
+        (work </> "evidence/printed.json")
+        (BL.toStrict (encode underfundedPrinted))
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    pure
+        (emptyReceipt 3 "provoke create-underfunded" "poor" "k")
+            { rcOutcome = "client-refusal"
+            , rcReason = Just underfundedReason
+            , rcEvidence = ["evidence/printed.json"]
+            , rcCommand = Just underfundedPrinted
+            , rcSubmissions = [Submission "boot" txid bodyText (sha256Hex bytes)]
+            , rcResolved = []
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = T.pack journal
+                        , peJournalBefore = 0
+                        , peJournalAfter = 2
+                        , peLastEvent = "boot/submitted"
+                        , peSubmitted = [txid]
+                        , peExit = 1
+                        , peWaited = Nothing
+                        , peFilesBefore = []
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
+{- | A genuine underfunded-create refusal: no journal file, an empty span,
+no submission and no body, with the printed refusal and probe kept.
+-}
+absentUnderfundedIn :: FilePath -> IO Receipt
+absentUnderfundedIn work = do
+    createDirectoryIfMissing True (work </> "evidence")
+    BS.writeFile
+        (work </> "evidence/printed.json")
+        (BL.toStrict (encode underfundedPrinted))
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    pure
+        (emptyReceipt 3 "provoke create-underfunded" "poor" "k")
+            { rcOutcome = "client-refusal"
+            , rcReason = Just underfundedReason
+            , rcEvidence = ["evidence/printed.json"]
+            , rcCommand = Just underfundedPrinted
+            , rcSubmissions = []
+            , rcResolved = []
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = "targets/poor/journal.jsonl"
+                        , peJournalBefore = 0
+                        , peJournalAfter = 0
+                        , peLastEvent = ""
+                        , peSubmitted = []
+                        , peExit = 1
+                        , peWaited = Nothing
+                        , peFilesBefore = []
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
 spec :: Spec
 spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ do
     it
@@ -381,7 +509,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 100
+            length (outline controlsStory) `shouldBe` 101
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -397,12 +525,67 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         $ do
             rs <- honestReceipts controlsStory
             let results = judge rs controlsStory
-            length results `shouldBe` 100
+            length results `shouldBe` 101
             [crStatus r | r <- results, not (retiredTitle (crTitle r))]
-                `shouldBe` replicate 98 Held
+                `shouldBe` replicate 99 Held
             [crStatus r | r <- results, retiredTitle (crTitle r)]
                 `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` True
+    it
+        "tells Bob's ordinary token-only fold in the public description language"
+        $ do
+            actionsOf controlsStory `shouldSatisfy` elem "run fold by token"
+            rs <- honestReceipts controlsStory
+            let results = judge rs controlsStory
+            clauseStatuses "folds Alice's pending request" results
+                `shouldBe` [Held]
+            let report = renderControls results controlsStory
+            report `shouldSatisfy` isInfixOf "singular registry fold"
+    it
+        "does not hold a token-only fold of another request, or one its inspect contradicts"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                otherRequest =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setField "request" "b9#0") (rcCommand r)})
+                        rs
+                otherEnvelope =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setField "envelope" "00") (rcCommand r)})
+                        rs
+                noController =
+                    alter
+                        "run inspect by token"
+                        "reader"
+                        dropHoldingController
+                        rs
+                numberFolder =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setNumber "folder" 42) (rcCommand r)})
+                        rs
+            titled
+                "folds Alice's pending request"
+                (judge otherRequest controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge otherEnvelope controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge noController controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge numberFolder controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
     it
         "judges a retired promise retired from no receipt, whatever the receipts say"
         $ do
@@ -440,7 +623,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 100
+            length results `shouldBe` 101
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
             [crStatus r | r <- drop 3 results, not (retiredTitle (crTitle r))]
                 `shouldSatisfy` all isUncovered
@@ -640,7 +823,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
             `shouldSatisfy` isInfixOf
-                "0 of 100 clauses hold; 0 do not; 98 are uncovered; 2 are retired."
+                "0 of 101 clauses hold; 0 do not; 99 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -761,6 +944,99 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 (\r -> r{rcReason = Just "the wallet does not hold the seed"})
                 "is refused because the registry exists"
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+    it
+        "does not hold an underfunded create that moved its journal or submitted anything"
+        $ do
+            rs <- honestReceipts controlsStory
+            u <- case [r | r <- rs, rcAction r == "provoke create-underfunded"] of
+                [one] -> pure one
+                found ->
+                    fail
+                        ("expected one underfunded create, found " <> show (length found))
+            let moved =
+                    u
+                        { rcProcess =
+                            (\p -> p{peJournalAfter = peJournalAfter p + 1}) <$> rcProcess u
+                        }
+            check CreateUnderfunded [moved]
+                `shouldSatisfy` any ("journal moved" `isInfixOf`)
+            let planted =
+                    u
+                        { rcSubmissions = [Submission "boot" "b9" "evidence/b9.cbor.hex" "00"]
+                        , rcProcess = (\p -> p{peSubmitted = ["b9"]}) <$> rcProcess u
+                        }
+            check CreateUnderfunded [planted]
+                `shouldSatisfy` any ("submitted 1" `isInfixOf`)
+    it
+        "admits a consistently retained submission set that the underfunded check still rejects"
+        $ withSystemTempDirectory "underfunded"
+        $ \work -> do
+            r <- plantedUnderfundedIn work
+            admitted <- admit work r
+            rcAdmission admitted `shouldBe` Just []
+            let refused = check CreateUnderfunded [admitted]
+            refused `shouldSatisfy` (not . null)
+            refused
+                `shouldSatisfy` all (\m -> "journal" `isInfixOf` m || "submitted" `isInfixOf` m)
+    it
+        "admits and holds a genuine absent-journal refusal with its seed probe"
+        $ withSystemTempDirectory "underfunded"
+        $ \work -> do
+            r <- absentUnderfundedIn work
+            admitted <- admit work r
+            rcAdmission admitted `shouldBe` Just []
+            check CreateUnderfunded [admitted] `shouldBe` []
+    it
+        "judges the underfunded clause on the admitted receipts, rejecting only the nonempty one"
+        $ withSystemTempDirectory "underfunded-bad"
+        $ \badWork ->
+            withSystemTempDirectory "underfunded-good" $ \goodWork -> do
+                rs <- honestReceipts controlsStory
+                one <- case [r | r <- rs, rcAction r == "provoke create-underfunded"] of
+                    [u] -> pure u
+                    found ->
+                        fail
+                            ("expected one underfunded create, found " <> show (length found))
+                planted <- admit badWork =<< plantedUnderfundedIn badWork
+                rcAdmission planted `shouldBe` Just []
+                absent <- admit goodWork =<< absentUnderfundedIn goodWork
+                rcAdmission absent `shouldBe` Just []
+                doesFileExist (goodWork </> "targets/poor/journal.jsonl")
+                    >>= (`shouldBe` False)
+                let graft evidence onto =
+                        onto
+                            { rcOutcome = rcOutcome evidence
+                            , rcReason = rcReason evidence
+                            , rcCommand = rcCommand evidence
+                            , rcEvidence = rcEvidence evidence
+                            , rcSubmissions = rcSubmissions evidence
+                            , rcResolved = rcResolved evidence
+                            , rcProcess = rcProcess evidence
+                            , rcAdmission = rcAdmission evidence
+                            }
+                    titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                    fundClause = "a create from a wallet that cannot fund every publication"
+                    badResults =
+                        judge
+                            (map (\r -> if r == one then graft planted r else r) rs)
+                            controlsStory
+                titled fundClause badResults
+                    `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+                [ms | NotHeld ms <- titled fundClause badResults]
+                    `shouldSatisfy` ( \mss ->
+                                        not (null mss)
+                                            && all
+                                                (all (\m -> "journal" `isInfixOf` m || "submitted" `isInfixOf` m))
+                                                mss
+                                    )
+                let rendered = renderControls badResults controlsStory
+                rendered
+                    `shouldSatisfy` isInfixOf "does not hold: the registry's journal moved"
+                let goodResults =
+                        judge
+                            (map (\r -> if r == one then graft absent r else r) rs)
+                            controlsStory
+                titled fundClause goodResults `shouldBe` [Held]
     it
         "binds each client obligation to its row of the CLI's specification"
         $ do
@@ -1525,6 +1801,23 @@ commandReceipt c k updates terminal = case c of
             , "deposit" .= (2_000_000 :: Int)
             , "released" .= ("t#1" :: String)
             ]
+    -- An ordinary fold of the honest booking: the request the booking
+    -- left at its output 0, folded whole by the story's second wallet,
+    -- the key Active under its envelope at the fold's root. The folder
+    -- is never the booking controller: a fold reusing Alice's wallet
+    -- cannot discharge this clause.
+    Fold ->
+        object
+            [ "outcome" .= ("success" :: String)
+            , "request" .= ("b1#0" :: String)
+            , "key" .= hexOf k
+            , "edge" .= ("insertActive" :: String)
+            , "folder" .= ("b0" :: String)
+            , "fold" .= ("f1" :: String)
+            , "liveOutput" .= ("i#1" :: String)
+            , "envelope" .= envelope "p0"
+            , "root" .= ("r1" :: String)
+            ]
     Inspect
         | terminal ->
             object
@@ -1603,6 +1896,26 @@ setField :: T.Text -> T.Text -> Value -> Value
 setField name value v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v
+
+-- | Set one field of a command receipt to a number.
+setNumber :: T.Text -> Int -> Value -> Value
+setNumber name n v = case v of
+    Object o -> Object (KeyMap.insert (Key.fromText name) (toJSON n) o)
+    _ -> v
+
+-- | Remove the holding controller from an inspect receipt's command.
+dropHoldingController :: Receipt -> Receipt
+dropHoldingController r = r{rcCommand = fmap strip (rcCommand r)}
+  where
+    strip (Object o) =
+        Object
+            ( KeyMap.mapWithKey
+                (\k v -> if k == "applicationOutput" then dropC v else v)
+                o
+            )
+    strip v = v
+    dropC (Object o) = Object (KeyMap.filterWithKey (\k _ -> k /= "controller") o)
+    dropC v = v
 
 -- | A terminal inspect that observed the killed fold from public history.
 withObserved :: Bool -> Value -> Value

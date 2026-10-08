@@ -1424,6 +1424,21 @@ commandArgsFor env c actor registry key r = do
                     <> outlay
                     <> ["--fold"]
                 )
+        -- An ordinary fold names no key, payload, deposit or fold flag:
+        -- the pending request names its own key and edge, as
+        -- 'Singular.CLI.Command.foldArgs' refuses each of those flags.
+        -- It is Bob's fold, from the story's second funded wallet: the
+        -- booking controller's key never funds or signs it, so the
+        -- fold's folder differs from that controller by construction.
+        Fold -> do
+            common <- named
+            pure
+                ( ["registry", "fold"]
+                    <> common
+                    <> node
+                    <> ["--wallet-skey", optStranger o, "--confirm-timeout", "120"]
+                    <> outlay
+                )
         Update n -> do
             common <- named
             let path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)

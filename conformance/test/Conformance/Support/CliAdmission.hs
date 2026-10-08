@@ -25,7 +25,13 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
-import System.Directory (createDirectoryIfMissing, removeFile)
+import System.Directory
+    ( createDirectoryIfMissing
+    , emptyPermissions
+    , getPermissions
+    , removeFile
+    , setPermissions
+    )
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
@@ -433,6 +439,53 @@ processIn work = do
                         }
             }
 
+{- | An underfunded create as the backend records it when the refusal
+writes nothing: no journal file, an empty span, no submission and no
+body, with the printed refusal and the unspent-seed probe kept.
+-}
+absentJournalIn :: FilePath -> IO Receipt
+absentJournalIn work = do
+    createDirectoryIfMissing True (work </> "evidence")
+    let printed =
+            object
+                [ "outcome" .= ("client-refusal" :: Text)
+                , "reason"
+                    .= ( "publication-unfunded boot: the boot needs more than the seed and its beside output hold; nothing was submitted"
+                            :: Text
+                       )
+                ]
+    BS.writeFile
+        (work </> "evidence/printed.json")
+        (BL.toStrict (Aeson.encode printed))
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    pure
+        (emptyReceipt 3 "provoke create-underfunded" "t" "k")
+            { rcOutcome = "client-refusal"
+            , rcReason =
+                Just
+                    "publication-unfunded boot: the boot needs more than the seed and its beside output hold; nothing was submitted"
+            , rcEvidence = ["evidence/printed.json"]
+            , rcCommand = Just printed
+            , rcSubmissions = []
+            , rcResolved = []
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = "targets/t/journal.jsonl"
+                        , peJournalBefore = 0
+                        , peJournalAfter = 0
+                        , peLastEvent = ""
+                        , peSubmitted = []
+                        , peExit = 1
+                        , peWaited = Nothing
+                        , peFilesBefore = []
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
 processSpec :: Spec
 processSpec = describe
     "A provoked command counts only on what its process left, read back"
@@ -442,6 +495,77 @@ processSpec = describe
                 r <- processIn work
                 a <- admit work r
                 problems a `shouldBe` []
+        it "admits a genuinely absent journal as the empty span it claims" $
+            withSystemTempDirectory "admission" $ \work -> do
+                r <- absentJournalIn work
+                a <- admit work r
+                problems a `shouldBe` []
+        it
+            "refuses an absent journal claimed with a span, event or submission"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- absentJournalIn work
+                let with f = r{rcProcess = f <$> rcProcess r}
+                moved <- admit work (with (\p -> p{peJournalAfter = 9}))
+                moved `shouldSatisfy` mentions "is missing"
+                claimed <-
+                    admit work (with (\p -> p{peLastEvent = "create/submitted"}))
+                claimed `shouldSatisfy` mentions "is missing"
+                submitted <- admit work (with (\p -> p{peSubmitted = ["aa"]}))
+                submitted `shouldSatisfy` mentions "is missing"
+        it
+            "refuses a malformed journal line even when the claimed span agrees"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- absentJournalIn work
+                createDirectoryIfMissing True (work </> "targets/t")
+                BS.writeFile
+                    (work </> "targets/t/journal.jsonl")
+                    "not a journal line\n"
+                let with f = r{rcProcess = f <$> rcProcess r}
+                malformed <- admit work (with (\p -> p{peJournalAfter = 1}))
+                malformed `shouldSatisfy` mentions "is not a journal record"
+        it
+            "refuses an empty or wrong-shaped journal object with agreeing metadata"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- absentJournalIn work
+                createDirectoryIfMissing True (work </> "targets/t")
+                let with f = r{rcProcess = f <$> rcProcess r}
+                    write shape = do
+                        BS.writeFile (work </> "targets/t/journal.jsonl") shape
+                        admit work (with (\p -> p{peJournalAfter = 1}))
+                empty <- write "{}\n"
+                empty `shouldSatisfy` mentions "is not a journal record"
+                untyped <-
+                    write
+                        "{\"journalStep\":42,\"journalEvent\":\"submitted\",\"journalTxId\":\"aa\"}\n"
+                untyped `shouldSatisfy` mentions "is not a journal record"
+                nameless <- write "{\"journalStep\":\"boot\"}\n"
+                nameless `shouldSatisfy` mentions "is not a journal record"
+        it "refuses an unreadable or corrupt journal" $
+            withSystemTempDirectory "admission" $ \work -> do
+                r <- processIn work
+                let journal = work </> "targets/t/journal.jsonl"
+                perms <- getPermissions journal
+                setPermissions journal emptyPermissions
+                unreadable <- admit work r
+                unreadable `shouldSatisfy` mentions "could not be read"
+                setPermissions journal perms
+                BS.writeFile journal "not a journal line\n"
+                let with f = r{rcProcess = f <$> rcProcess r}
+                    garbage =
+                        with
+                            ( \p ->
+                                p
+                                    { peJournalBefore = 0
+                                    , peJournalAfter = 1
+                                    , peLastEvent = "fold/submitted"
+                                    , peSubmitted = []
+                                    }
+                            )
+                corrupt <- admit work garbage
+                corrupt `shouldSatisfy` mentions "last line when the command stopped"
         it
             "reports a recorded journal line, submission or file the run's files contradict"
             $ withSystemTempDirectory "admission"

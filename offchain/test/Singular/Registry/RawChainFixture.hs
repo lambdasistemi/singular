@@ -181,6 +181,7 @@ rawChainProvider chain =
                                                 fact (TipObservation slot header (fromIntegral (unSlotNo slot)) 0)
                                             , networkTime = fact (csNetworkTime captured)
                                             , scriptRegistered = \script -> fact (Set.member script (csRegistered captured))
+                                            , mintRecord = fact . findMint recorded
                                             , history = \asset _ ->
                                                 pure (Right (streamOf (filter (touches asset) recorded)))
                                             }
@@ -227,6 +228,47 @@ touches (policy, name) block =
             False
             ((/= 0) . Map.findWithDefault 0 name)
             (Map.lookup policy assets)
+
+{- | The mint record of an asset the fixture's history minted, with its
+current total supply: Nothing for an asset no recorded transaction ever
+minted, as a provider that does not know it answers. The minting
+transaction is the latest one that minted it; its inputs are that
+transaction's own, as the resolver reads the seed from them.
+-}
+findMint :: [HistoryBlock] -> Asset -> Maybe MintRecord
+findMint blocks asset = case minted of
+    [] -> Nothing
+    _ ->
+        Just
+            MintRecord
+                { mintTransaction = txIdTx mintTx
+                , mintSpentInputs = Set.toList (mintTx ^. bodyTxL . inputsTxBodyL)
+                , mintSupply = supply
+                }
+  where
+    minted =
+        [ tx
+        | block <- blocks
+        , record <- NE.toList (blockTransactions block)
+        , let tx = historicalTx record
+        , asset `elem` [a | (a, q) <- mintedOf tx, q > 0]
+        ]
+    supply =
+        sum
+            [ q
+            | block <- blocks
+            , record <- NE.toList (blockTransactions block)
+            , (a, q) <- mintedOf (historicalTx record)
+            , a == asset
+            ]
+    mintTx = last minted
+    mintedOf :: ConwayTx -> [(Asset, Integer)]
+    mintedOf tx = case tx ^. bodyTxL . mintTxBodyL of
+        MultiAsset assets ->
+            [ ((policy, name), q)
+            | (policy, named) <- Map.toList assets
+            , (name, q) <- Map.toList named
+            ]
 
 streamOf :: [HistoryBlock] -> HistoryStream IO
 streamOf = \case

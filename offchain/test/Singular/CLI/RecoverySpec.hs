@@ -28,9 +28,14 @@ Provider provenance of the recorded core: every chain read it makes
 comes from the recorded preprod Koios fixture set
 @test/fixtures/koios/preprod@ — raw status, headers and body recorded
 read-only from @https://preprod.koios.rest/api/v1@ by the @koios-http@
-recorder on 4 October 2026, replayed through the recorded transport
+recorder, replayed through the recorded transport
 ("Singular.Provider.Koios.Recorded") and the shipping Koios provider
 constructor. No node runs and no block is waited for in either group.
+Most answers were recorded on 4 October 2026; the @address_utxos@ pages
+for the candidate address the October set did not cover were recorded
+with the same recorder on 8 October 2026. The set is therefore not one
+simultaneous ledger snapshot: each answer replays its own moment, and
+nothing here claims recovery behavior beyond those answer streams.
 
 Provider provenance of the synthetic supplement: a stub session over
 the repository's own fixture facilities serves a booted registry and
@@ -62,8 +67,8 @@ none is supplied by the provider.
 What the recorded core establishes: client recovery over recorded
 answers for a create interrupted before its registry was saved. It
 does not establish ledger acceptance of any transaction here, chain
-finality, a node rollback, or a connected registry lifecycle; the
-recorded snapshot is a replay of one moment, not a ledger. Saved-registry
+finality, a node rollback, or a connected registry lifecycle; each
+answer replays only its own moment, not the ledger. Saved-registry
 reconciliation on recorded chain answers is not exercised anywhere in
 this module and remains uncovered: the recorded fixture set holds no
 booted registry, and the saved-registry 'Singular.CLI.Reconcile.reconcile'

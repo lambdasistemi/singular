@@ -40,6 +40,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 import System.FilePath ((</>))
+import System.IO.Error (isDoesNotExistError)
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
@@ -303,7 +304,13 @@ admitCommand work r = do
                     <> [txid | (_, txid) <- observedOnly, txid `elem` references]
             submits =
                 rcAction r
-                    `elem` ["run create", "run insert", "run update", "run terminate"]
+                    `elem` [ "run create"
+                           , "run insert"
+                           , "run update"
+                           , "run terminate"
+                           , "run fold"
+                           , "run fold by token"
+                           ]
         in  [ "the journal prepared "
                 <> listed [(s, t) | (s, t, _) <- prepared]
                 <> " while the command ran, but the receipt records the submissions "
@@ -496,14 +503,36 @@ admitProcess work r = do
                                ]
 
     process p = do
-        journal <- readRetained (peJournal p)
+        journal <- try (BS.readFile (work </> T.unpack (peJournal p)))
         files <- mapM digestProblem (peFilesBefore p <> peFilesAfter p)
         probe <- maybe (pure []) probeProblems (peSeedProbe p)
         pure
-            ( either pure (journalProblems p . BC.lines) journal
+            ( either (absentJournal p) (journalProblems p . BC.lines) journal
                 <> concat files
                 <> probe
             )
+
+    -- A journal the command never wrote is the empty span it claims, but
+    -- only then: no claimed span, no last event, no submission and no kept
+    -- body. Any other absence, and any journal the run cannot read, stays
+    -- a problem.
+    absentJournal :: ProcessEvidence -> IOException -> [Text]
+    absentJournal p e
+        | isDoesNotExistError e
+        , peJournalBefore p == 0
+        , peJournalAfter p == 0
+        , T.null (peLastEvent p)
+        , null (peSubmitted p)
+        , null (rcSubmissions r) =
+            []
+        | isDoesNotExistError e =
+            ["the retained " <> peJournal p <> " is missing"]
+        | otherwise =
+            [ "the retained "
+                <> peJournal p
+                <> " could not be read: "
+                <> T.pack (show e)
+            ]
 
     journalProblems p ls =
         let before = peJournalBefore p
@@ -536,6 +565,12 @@ admitProcess work r = do
                         <> [ "the journal's prepared bodies while the command ran are not the kept ones"
                            | prepared /= map suTxId (rcSubmissions r)
                            ]
+                        <> [ "the journal's line "
+                                <> T.pack (show n)
+                                <> " while the command ran is not a journal record"
+                           | (n, l) <- zip [before + 1 ..] delta
+                           , not (isJournalRecord l)
+                           ]
 
     digestProblem (file, digest) = do
         bytes <- readRetained file
@@ -567,6 +602,21 @@ lastEventOf l = case Aeson.decodeStrict l of
         , Just (Aeson.String e) <- KeyMap.lookup "journalEvent" o ->
             s <> "/" <> e
     _ -> ""
+
+{- | Whether a journal line is a journal record: an object carrying the
+three fields the verdict reads — the step, the event and the
+transaction — as text, as the producer's 'JournalEntry' writes them.
+Anything else in the claimed span is corruption, even when the
+comparisons that skip undecodable lines would agree.
+-}
+isJournalRecord :: ByteString -> Bool
+isJournalRecord l = case Aeson.decodeStrict l of
+    Just (Aeson.Object o) -> all isTextField ["journalStep", "journalEvent", "journalTxId"]
+      where
+        isTextField k = case KeyMap.lookup k o of
+            Just (Aeson.String _) -> True
+            _ -> False
+    _ -> False
 
 -- | The transactions a journal slice records as submitted, in order.
 submittedIn :: [ByteString] -> [Text]

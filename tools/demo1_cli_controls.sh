@@ -63,13 +63,15 @@ first_receipt() {
 }
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
-# Two 4 ada outputs: enough to hold a seed beside another output, not enough
-# to fund every publication. The story's underfunded create uses this wallet.
+# One 5 ada output beside twenty-four 4 ada outputs: 101 ada in all, so
+# the write session's 100 ada funding floor and its 5 ada collateral
+# input pass, while the seed and the largest output beside it cannot
+# fund the boot. The story's underfunded create uses this wallet.
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/underfunded.skey"
 
 export TMPDIR="$work"
 "$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" --fund-outputs 40 --fund-lovelace 2000000000 \
-  --fund "$work/underfunded.skey:2:4000000" \
+  --fund "$work/underfunded.skey:1:5000000" --fund "$work/underfunded.skey:24:4000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 trap 'kill "$devnet_pid" 2>/dev/null || true; pkill -f "cardano-node run --config $work/" 2>/dev/null || true' EXIT
@@ -94,12 +96,14 @@ fi
 say "one private development source at $provider_url"
 
 status=0
+run_start=$SECONDS
 "$controls" run \
   --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
   --koios-url "$provider_url" --network-time "$time_directory" --node-socket "$sock" --network-magic "$network_magic" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" --underfunded-skey "$work/underfunded.skey" \
   --work "$work" >"$work/controls.md" 2> >(tee "$work/controls.err" >&2) || status=$?
 tail -1 "$work/controls.md"
 say "verdict section at $work/controls.md (exit $status)"
+say "story run took $((SECONDS - run_start))s wall"
 [ "$status" -eq 0 ] || exit "$status"
 
 # The verdicts must rest on the retained bytes. On copies of this run's
@@ -124,9 +128,12 @@ copy() {
   jq -r '.submissions[]?.bodyFile' "$work"/receipts/*.json | while read -r kept; do
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
   done
-  # the journals and saved files provoked commands' receipts read back
+  # the journals and saved files provoked commands' receipts read back;
+  # a journal the command never wrote is legitimately absent and stays
+  # absent in the copy, where admission reads the same empty span
   jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/receipts/*.json \
     | sort -u | while read -r kept; do
+    [ -e "$work/$kept" ] || continue
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
   done
 }
@@ -257,6 +264,27 @@ copy journal-cut
 head -n "$kept" "$work/$journal" >"$copies/journal-cut/$journal"
 expect_command journal-cut "the journal has $kept lines"
 say "process control: the cut journal fails the killed terminate's claim"
+
+# The underfunded create wrote no journal: its absence stays absent in the
+# copy, and the honest copy still holds its clause. Moving that claimed
+# span must fail the clause naming the move.
+underfunded="$(first_receipt "provoke create-underfunded")"
+[ -n "$underfunded" ] || fail_control "no receipt of the underfunded create"
+ujournal="$(jq -r .process.journal "$underfunded")"
+[ ! -e "$work/$ujournal" ] || fail_control "the refused create wrote a journal: $ujournal"
+line_with "$copies/honest.md" "cannot fund every publication" "holds" \
+  || fail_control "the honest copy does not hold the underfunded clause"
+say "absence control: the underfunded clause holds with no journal"
+copy journal-moved
+jq '.process.journalAfter += 1' "$underfunded" >"$copies/journal-moved/receipts/$(basename "$underfunded")"
+expect_command journal-moved "the registry's journal moved"
+say "absence control: the moved span fails the underfunded clause"
+
+# The generated tamper copies served their renders: remove the variant
+# directories, keeping the original run, every render, the input hashes
+# and any failure evidence (a failure exits before this runs).
+find "${copies:?}" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+say "artifact copies cleaned; renders and hashes retained"
 
 # The withheld-history witness rests on a withholding that reached inspect's
 # history read; its composition control runs on its own copy of the run.
