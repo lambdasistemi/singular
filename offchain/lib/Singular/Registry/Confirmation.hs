@@ -71,6 +71,8 @@ data PollObservation = OutputVisible | WindowOpen | WindowClosed
 {- | Output zero must be visible under its exact transaction reference.
 The finite upper bound is validated before its uncapped two-minute margin;
 an unbounded body keeps the existing five-minute wall-clock window.
+Retry after one second, then back off to the original five-second interval
+so a slow or missing transaction does not multiply provider traffic.
 -}
 confirmTransaction
     :: forall m w
@@ -87,14 +89,14 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
         case windowResult of
             Left failure -> pure (Left failure)
             Right (deadline, bound) -> do
-                result <- boundedConfirmation runtime tid bound (poll deadline)
+                result <- boundedConfirmation runtime tid bound (poll deadline 1)
                 pure $ case result of
                     Left failure -> Left (ConfirmationWaitFailure failure)
                     Right outcome -> outcome
   where
     tid = txIdTx tx
     wanted = TxIn tid (TxIx 0)
-    poll deadline = do
+    poll deadline delay = do
         observed <- readScope provider network $ \session -> do
             exact <- outputs session (AtTxIn wanted)
             case exact of
@@ -119,7 +121,8 @@ confirmTransaction runtime provider network tx = case toList (tx ^. bodyTxL . ou
         case observed of
             Left failure -> pure (Right (Left failure))
             Right WindowClosed -> pure (Left deadline)
-            Right WindowOpen -> pausePolling runtime 5 >> poll deadline
+            Right WindowOpen ->
+                pausePolling runtime delay >> poll deadline (min 5 (delay * 2))
             Right OutputVisible -> pure (Right (Right ()))
 
 {- | Derive the same bounded window used by 'confirmTransaction'. A private

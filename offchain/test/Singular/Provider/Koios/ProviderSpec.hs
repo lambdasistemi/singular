@@ -971,7 +971,7 @@ spec = describe "Koios ledger provider constructor" $ do
                         (Network 42)
                         (pure (Right source))
                         (pollingClient target visibleAt (timeSystemStartMs manifest))
-            forM_ [Just (base + 10000), Nothing] $ \visibleAt -> do
+            forM_ [Just (base + 300), Just (base + 10000), Nothing] $ \visibleAt -> do
                 let action =
                         Confirmation.confirmTransaction
                             (pollingRuntime base)
@@ -982,7 +982,10 @@ spec = describe "Koios ledger provider constructor" $ do
                 persist
                     ( if isNothing visibleAt
                         then "pure-poll-expired"
-                        else "pure-poll-visible"
+                        else
+                            if visibleAt == Just (base + 300)
+                                then "pure-poll-fast"
+                                else "pure-poll-visible"
                     )
                     ( object
                         [ "result" .= show result
@@ -994,12 +997,22 @@ spec = describe "Koios ledger provider constructor" $ do
                 bounds `shouldBe` [30, 310]
                 Set.null (openSessions state) `shouldBe` True
                 case (visibleAt, result) of
-                    (Just wantedAt, Right ()) -> now `shouldBe` wantedAt
+                    (Just wantedAt, Right ()) -> do
+                        now `shouldSatisfy` (>= wantedAt)
+                        if wantedAt == base + 300
+                            then now `shouldBe` base + 1000
+                            else now `shouldSatisfy` (< wantedAt + 5000)
                     (Nothing, Left (Confirmation.ConfirmationWaitFailure failure)) -> do
                         waitStage failure `shouldBe` SessionConfirmationWait
                         waitTxId failure `shouldBe` keyOf target
                         waitClosedAt failure `shouldBe` Just (base + 300000)
                         waitBound failure `shouldBe` 310
+                        length
+                            [ ()
+                            | RawExchange _ request _ <- providerEvents state
+                            , Client.rawCall request == Wire.CallTxInfo
+                            ]
+                            `shouldSatisfy` (<= 64)
                     _ ->
                         expectationFailure
                             "bounded output visibility produced another outcome"
@@ -1008,6 +1021,49 @@ spec = describe "Koios ledger provider constructor" $ do
                   | RawExchange _ request _ <- providerEvents state
                   ]
                     `shouldSatisfy` notElem Wire.CallTxStatus
+
+    it
+        "preserves confirmation read failures without polling them as missing outputs"
+        $ do
+            (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
+            let source = TimeSource manifest genesis eras
+                base = timeSystemStartMs manifest + 1000
+                (target, _, _) = dependentPair True
+                reference = TxIn (keyOf target) (TxIx 0)
+                original =
+                    koiosProvider
+                        pollProviderRuntime
+                        (Network 42)
+                        (pure (Right source))
+                        (pollingClient target Nothing (timeSystemStartMs manifest))
+            forM_
+                [ BackendReadFailure "provider unavailable"
+                , ConflictingOutput reference
+                , MissingOutput (TxIn (keyOf target) (TxIx 1))
+                , ReleasedSession (SessionId "released")
+                ]
+                $ \failure -> do
+                    let provider =
+                            original
+                                { acquire = \point action ->
+                                    acquire original point $ \session ->
+                                        action session{outputs = const (pure (Left failure))}
+                                }
+                        (result, (_, now, _)) =
+                            runState
+                                ( Confirmation.confirmTransaction
+                                    (pollingRuntime base)
+                                    provider
+                                    (Network 42)
+                                    target
+                                )
+                                (initialProviderState, base, [])
+                    case result of
+                        Left (Confirmation.ConfirmationReadFailure actual) -> actual `shouldBe` failure
+                        _ ->
+                            expectationFailure
+                                "confirmation changed a provider failure into another outcome"
+                    now `shouldBe` base
 
     it "retains the validated upper-bound start and uncapped margin" $ do
         (manifest, genesis, eras, _) <- loadNetworkFixture "devnet"
@@ -1046,7 +1102,9 @@ spec = describe "Koios ledger provider constructor" $ do
                 waitClosedAt failure
                     `shouldBe` Just (timeSystemStartMs manifest + 160000)
                 waitBound failure `shouldBe` 169
-                now `shouldBe` base + 160000
+                let deadline = timeSystemStartMs manifest + 160000
+                now `shouldSatisfy` (>= deadline)
+                now `shouldSatisfy` (< deadline + 5000)
             _ ->
                 expectationFailure
                     "the finite validity window did not end at its validated deadline"

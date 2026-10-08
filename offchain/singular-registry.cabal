@@ -231,6 +231,7 @@ library local-services
 -- Read-only capture plus explicit private generated-fixture confirmation smoke.
 executable local-services-record
   import:           warnings
+  ghc-options:      -threaded
   default-language: GHC2021
   hs-source-dirs:   test/local-services-record private-facade
   main-is:          Main.hs

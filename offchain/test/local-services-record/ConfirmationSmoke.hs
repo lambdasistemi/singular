@@ -34,7 +34,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Serialise (deserialiseOrFail)
 import Control.Concurrent.Async (concurrently, link, withAsync)
 import Control.Exception (try)
-import Control.Monad (unless)
+import Control.Monad (forM, unless)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
@@ -130,9 +130,13 @@ confirmationSmoke output genesisDirectory =
                     selected <- window finite >>= either (fail . show) pure
                     unless (fst selected == finiteDeadline) $
                         fail "ConfirmationSmokeFiniteDeadlineMismatch"
+                    finiteStarted <- getPOSIXTime
                     landedFinite <- sendAndConfirm caps wallet finite
+                    finiteFinished <- getPOSIXTime
                     unbounded <- payment caps wallet SNothing
+                    unboundedStarted <- getPOSIXTime
                     landedUnbounded <- sendAndConfirm caps wallet unbounded
+                    unboundedFinished <- getPOSIXTime
                     -- Parent NOTE-030 opens the pinned final era. The former
                     -- raw-history-end refusal is retired, not counted as passed.
                     beyondRecorded <-
@@ -152,16 +156,42 @@ confirmationSmoke output genesisDirectory =
                         Left (ConfirmationAcquireFailure (Cage.WrongNetwork actual requested))
                             | actual == network && requested == Cage.Network 999 -> pure ()
                         _ -> fail "ConfirmationSmokeWrongNetworkWindowDidNotRefuse"
+                    samples <- forM [1 :: Int .. 10] $ \sample -> do
+                        tx <- payment caps wallet SNothing
+                        firstEvent <- length <$> capTrace caps
+                        started <- getPOSIXTime
+                        landed <- sendAndConfirm caps wallet tx
+                        finished <- getPOSIXTime
+                        lastEvent <- length <$> capTrace caps
+                        pure $
+                            object
+                                [ "sample" .= sample
+                                , "transaction" .= show (txIdTx landed)
+                                , "seconds" .= (realToFrac (finished - started) :: Double)
+                                , "firstEvent" .= firstEvent
+                                , "lastEvent" .= lastEvent
+                                ]
+                    LBS.writeFile
+                        (output </> "confirmation-latency.json")
+                        (encode samples)
+                    capTrace caps
+                        >>= LBS.writeFile (output </> "provider-trace.json") . encode
                     let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
                         missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
                     (finiteFailure, unboundedFailure) <-
                         concurrently
                             (expectTimeout caps missingFinite (Just finiteDeadline) initialEnd)
                             (expectTimeout caps missingUnbounded Nothing initialEnd)
+                    trace <- capTrace caps
+                    LBS.writeFile (output </> "provider-trace.json") (encode trace)
                     LBS.writeFile (output </> "confirmation-smoke.json") $
                         encode $
                             object
                                 [ "networkMagic" .= (42 :: Int)
+                                , "finiteSubmitConfirmSeconds"
+                                    .= (realToFrac (finiteFinished - finiteStarted) :: Double)
+                                , "unboundedSubmitConfirmSeconds"
+                                    .= (realToFrac (unboundedFinished - unboundedStarted) :: Double)
                                 , "initialPoint" .= show (Node.ledgerChainPoint point)
                                 , "initialHorizonSlot" .= horizonSlot
                                 , "initialHorizonEndMs" .= initialEnd
