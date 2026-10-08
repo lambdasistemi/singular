@@ -924,6 +924,14 @@ lifecycle rig = do
     -- Every command after a create names its registry by the state token
     -- that create printed: there is no saved registry to attach to.
     t1 <- tokenOf create
+    -- Publication runs where the registry is born: whatever references
+    -- the create left missing, this publishes; what it found present it
+    -- leaves alone. Either way the command runs and its receipt agrees.
+    publish <-
+        run
+            rig
+            "publish the missing references"
+            (["registry", "publish-references"] <> tokenArgs t1)
     insert <-
         run
             rig
@@ -1081,6 +1089,7 @@ lifecycle rig = do
             )
     pure
         [ create
+        , publish
         , insert
         , fold1
         , inspect

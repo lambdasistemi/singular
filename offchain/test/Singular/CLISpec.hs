@@ -89,6 +89,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider (ReadFailure (..))
+import Singular.Registry.StateToken (ReferenceRole (..))
 import Singular.Registry.StateTokenFixture (token)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
@@ -163,7 +164,7 @@ commandLine = describe "the command line" $ do
         parseCommand ["--help"] `shouldBe` Right Help
         parseCommand ["registry", "--help"] `shouldBe` Right Help
         parseCommand [] `shouldBe` Right Help
-    it "names the eight commands and only them in its usage" $ do
+    it "names the nine commands and only them in its usage" $ do
         forM5
             [ "create"
             , "insert"
@@ -172,6 +173,7 @@ commandLine = describe "the command line" $ do
             , "fold"
             , "reject"
             , "reclaim"
+            , "publish-references"
             , "inspect"
             ]
             $ \c ->
@@ -485,6 +487,7 @@ commandLine = describe "the command line" $ do
     foldRows
     rejectRows
     reclaimCommandRows
+    publishCommandRows
     outputsAtRows
     preview
     it "refuses a write against mainnet" $
@@ -1737,6 +1740,119 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
             ]
         $ \(flag, extra) ->
             reclaim (named <> extra) `shouldSatisfy` bad flag
+
+-- ---------------------------------------------------------
+-- Publishing a registry's missing reference scripts
+-- ---------------------------------------------------------
+
+publishCommandRows :: Spec
+publishCommandRows = describe "publishing the missing reference scripts" $ do
+    let publish extra =
+            parseCommand
+                (["registry", "publish-references"] <> reg <> provider <> wallet <> extra)
+        bad flag = \case
+            Left (BadValue name _) -> name == flag
+            _ -> False
+        payerHash = BS.replicate 28 0x5a
+        textOf net h = bech32Address (addrFromKeyHashBytes net h)
+        previewNode magic =
+            [ "--koios-url"
+            , "http://127.0.0.1:8080/api/v1"
+            , "--network-magic"
+            , magic
+            ]
+        previewPublish extra =
+            parseCommand
+                (["registry", "publish-references"] <> reg <> extra)
+        submitSettings =
+            WriteSettings
+                { writeProvider =
+                    ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
+                , writeWalletKey = "/keys/payment.skey"
+                , writeConfirmTimeout = Nothing
+                , writePublishReferences = False
+                }
+    it "reads a bare publish with this command's wallet and every missing role" $
+        case publish [] of
+            Right (PublishReferences a) -> do
+                publishRegistry a `shouldBe` "/srv/reg"
+                publishAccess a `shouldBe` access
+                publishBlueprint a `shouldBe` "/srv/plutus.json"
+                publishMode a `shouldBe` Submit submitSettings
+                publishPreview a `shouldBe` False
+                publishRoles a `shouldBe` []
+                publishFund a `shouldBe` Nothing
+                publishMaxOutlay a `shouldBe` Nothing
+                publishReceipt a `shouldBe` Nothing
+            other -> expectationFailure ("expected publish-references, got " <> show other)
+    it "reads selected roles with funding, outlay and receipt" $
+        publish
+            [ "--role"
+            , "state"
+            , "--role"
+            , "request"
+            , "--fund-input"
+            , replicate 64 'c' <> "#1"
+            , "--max-outlay"
+            , "3000000"
+            , "--receipt"
+            , "/r.json"
+            ]
+            `shouldSatisfy` \case
+                Right (PublishReferences a) ->
+                    publishRoles a == [RoleState, RoleRequest]
+                        && publishFund a
+                            == Just
+                                (either error id (parseOutRef (T.pack (replicate 64 'c' <> "#1"))))
+                        && publishMaxOutlay a == Just 3_000_000
+                        && publishReceipt a == Just "/r.json"
+                _ -> False
+    it "refuses an unknown role by name" $
+        publish ["--role", "familiar"] `shouldSatisfy` bad "--role"
+    it "refuses other commands' flags by name"
+        $ forM_
+            [ ("--key", ["--key", "key"])
+            , ("--key-hex", ["--key-hex", "616c696365"])
+            , ("--deposit", ["--deposit", "2000000"])
+            , ("--payload", ["--payload", "/p.json"])
+            , ("--request", ["--request", replicate 64 'a' <> "#0"])
+            , ("--fold", ["--fold"])
+            ]
+        $ \(flag, extra) ->
+            publish extra `shouldSatisfy` bad flag
+    it "reads a preview as a provider and a public address, with no key" $
+        previewPublish
+            (previewNode "1" <> ["--preview", "--wallet-address", textOf Testnet payerHash])
+            `shouldBe` Right
+                ( PublishReferences
+                    PublishArgs
+                        { publishRegistry = "/srv/reg"
+                        , publishAccess = access
+                        , publishBlueprint = "/srv/plutus.json"
+                        , publishMode =
+                            Preview
+                                (ProviderSettings "http://127.0.0.1:8080/api/v1" 1 Nothing Nothing)
+                                (textOf Testnet payerHash)
+                        , publishPreview = True
+                        , publishRoles = []
+                        , publishFund = Nothing
+                        , publishMaxOutlay = Nothing
+                        , publishReceipt = Nothing
+                        }
+                )
+    it "refuses a signing key beside a publish preview" $
+        previewPublish
+            ( previewNode "1"
+                <> ["--preview", "--wallet-address", textOf Testnet payerHash]
+                <> wallet
+            )
+            `shouldBe` Left PreviewTakesNoKey
+    it "refuses a wallet address without a preview" $
+        previewPublish
+            (previewNode "1" <> ["--wallet-address", textOf Testnet payerHash])
+            `shouldSatisfy` \case
+                Left e -> "preview" `isInfixOf` renderCLIError e
+                _ -> False
 
 -- ---------------------------------------------------------
 -- Reading another address's outputs from the node

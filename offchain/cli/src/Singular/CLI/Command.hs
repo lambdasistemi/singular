@@ -895,6 +895,10 @@ tokens = go [] []
                                             else Left (BadValue name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
+        -- @--role@ is the repeatable flag: every occurrence accumulates;
+        -- 'tokens' reverses the whole list at the end, so consing here
+        -- yields command-line order. All other flags keep first value.
+        | name == "--role" = (name, Just v) : fs
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
     switches = ["--help", "-h", "--preview", "--fold"]
@@ -923,6 +927,7 @@ valuedFlags =
     , "--deposit"
     , "--payload"
     , "--request"
+    , "--role"
     , "--state-token"
     ]
 
