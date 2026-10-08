@@ -1,5 +1,8 @@
 # The fixed two-edge contract and its current scope
 
+As a reviewer, I need to distinguish a new permanent registry from an earlier
+deployment and understand which behavior this candidate establishes.
+
 The operator's 8 October 2026 ruling selects `insertActive` and
 `updateTerminal` for M1. `witnessTerminal`, `insertAbsent`, `updateActive`,
 `deleteAbsent` and `deleteActive` are excluded. Application payload updates and

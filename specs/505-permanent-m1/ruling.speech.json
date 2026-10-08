@@ -1,0 +1,42 @@
+{
+  "the-fixed-two-edge-contract-and-its-current-scope": [
+    {
+      "text": "The fixed two-edge contract and its current scope.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I need to distinguish a new permanent registry from an earlier deployment and understand which behavior this candidate establishes.",
+      "pause": 400
+    },
+    {
+      "text": "The operator's 8 October 2026 ruling selects insertActive and updateTerminal for M1. witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive are excluded. Application payload updates and KERI close/reopen are application operations. The admission set of a deployed script remains fixed; no mutable configuration can enable another registry edge.",
+      "pause": 400
+    },
+    {
+      "text": "The later ruling delivered as NOTE-001-old-registries-abandoned explicitly supersedes the earlier old-instance compatibility requirement: registries made by earlier releases, including old Demo1 registries, are abandoned by the new release. There is no migration or old deployed recognition path. The new CLI refuses wrong or unknown script identities. Preserved broader source, artifacts and remote history remain evidence for their own contracts, not restricted M1.",
+      "pause": 400
+    },
+    {
+      "text": "M1's finish line is KERI feature support, for which the open-datum application is sufficient. The later NOTE-002 corrects the milestone ordering: #498 protected rejection IS an M1 closing condition, landing AFTER #505 through",
+      "pause": 400
+    }
+  ],
+  "495-with-its-own-identity-change-this-carve-does-not-close-m1-and-must-not": [
+    {
+      "text": "495 with its own identity change. This carve does not close M1 and must not.",
+      "pause": 500
+    },
+    {
+      "text": "include #495 or PR508. Protected deposit is outside this carve's closing conditions. Current valid model behavior, deposits and refunds must still be preserved. The parent reports the eventual #505 merge to release #495.",
+      "pause": 400
+    },
+    {
+      "text": "Sources read in full: the bounded permanent contract answer A-20261008-keri-bounded-permanent-contract.md, the carve-505 brief, NOTE-001-old-registries-abandoned.md, and the parent ruling NOTE-M1-20261008-old-registries-abandoned.md, including its addendum. The subsequent NOTE-002-protected-rejection-after-carve.md and parent NOTE-M1-20261008-correction-498-is-m1.md were also read in full. These are operator scope decisions, not evidence of KERI integration, ledger acceptance, merge or release. The parent owns acceptance and publication.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "ruling.md",
+    "sha256": "acfd70e337bc4a4324b52ffbf3f70864f887be0d8e3da8b36df8e7ee77e6345b"
+  }
+}
