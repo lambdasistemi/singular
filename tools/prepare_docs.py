@@ -31,6 +31,13 @@ stage.mkdir()
 for directory in ("docs", "specs"):
     shutil.copytree(root / directory, stage / directory)
 
+# MkDocs renders a directory README at directory/index.html. The reader looks
+# beside that directory for its companion, just as for an ordinary page.
+for readme in stage.rglob("README.md"):
+    speech = readme.with_suffix(".speech.json")
+    if speech.exists():
+        shutil.copyfile(speech, readme.parent.with_suffix(".speech.json"))
+
 
 def restage_lean_hrefs(stage: Path) -> int:
     """Point staged evidence hrefs at the shipped model/ copy.

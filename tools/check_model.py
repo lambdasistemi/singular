@@ -331,9 +331,12 @@ def check_retraction(s, retraction):
     elif owner not in witness["signatories"]:
         expected = retraction["owner"]
     elif not (
-        s["request"]["submittedAt"] + s["start"]["config"]["processTime"] <= witness["validFrom"]
-        and witness["validTo"] <= s["request"]["submittedAt"]
-        + s["start"]["config"]["processTime"] + s["start"]["config"]["retractTime"]
+        s["request"]["submittedAt"] + s["start"]["config"]["processTime"]
+        <= witness["validFrom"]
+        and witness["validTo"]
+        <= s["request"]["submittedAt"]
+        + s["start"]["config"]["processTime"]
+        + s["start"]["config"]["retractTime"]
     ):
         expected = retraction["window"]
     else:
@@ -406,7 +409,14 @@ def driver_surface(corpus):
 
 
 def check_driver_scenarios(
-    corpus, generic_names, statement_digests, vocabulary, exits, retraction, transitions, leaf_bytes
+    corpus,
+    generic_names,
+    statement_digests,
+    vocabulary,
+    exits,
+    retraction,
+    transitions,
+    leaf_bytes,
 ):
     """R01-R03 over every scenario the driver executed.
 
@@ -513,8 +523,13 @@ def check_driver_scenarios(
 
         if s["operation"] == "reject":
             state = s["setup"][-1]["state"] if s["setup"] else s["start"]
-            reason = rejection_reason(state, s["request"], s.get("rejection"), transitions, leaf_bytes)
-            assert (outcome, s["reason"]) == ("refused" if reason else "accepted", reason), sid
+            reason = rejection_reason(
+                state, s["request"], s.get("rejection"), transitions, leaf_bytes
+            )
+            assert (outcome, s["reason"]) == (
+                "refused" if reason else "accepted",
+                reason,
+            ), sid
 
         # A retraction is admitted before it is paid; no other exit reads a witness.
         if s["operation"] == "retract":
@@ -1013,10 +1028,12 @@ def rejection_reason(state, request, witness, transitions, leaf_bytes):
     if witness is None:
         return "reject-evidence-missing"
     evidence = witness["evidence"]
-    if (evidence["registryId"] != state["config"]["registryId"]
-            or request["registryId"] != state["config"]["registryId"]
-            or evidence["registry"] != state["config"]
-            or state["config"]["root"] != root_of(state["trie"], leaf_bytes)):
+    if (
+        evidence["registryId"] != state["config"]["registryId"]
+        or request["registryId"] != state["config"]["registryId"]
+        or evidence["registry"] != state["config"]
+        or state["config"]["root"] != root_of(state["trie"], leaf_bytes)
+    ):
         return "reject-registry-mismatch"
     if evidence["request"] != request:
         return "reject-request-mismatch"
@@ -1024,8 +1041,11 @@ def rejection_reason(state, request, witness, transitions, leaf_bytes):
         return "reject-invalid-interval"
     reason = evidence["reason"]
     if reason == "expired":
-        deadline = (request["submittedAt"] + state["config"]["processTime"]
-                    + state["config"]["retractTime"])
+        deadline = (
+            request["submittedAt"]
+            + state["config"]["processTime"]
+            + state["config"]["retractTime"]
+        )
         return None if witness["validFrom"] >= deadline else "reject-not-expired"
     assert set(reason) == {"mismatch"}, "unknown rejection evidence"
     leaf = reason["mismatch"]["leaf"]
@@ -1038,10 +1058,14 @@ def rejection_reason(state, request, witness, transitions, leaf_bytes):
 def check_process_batch(row, transitions, deltas, leaf_bytes):
     """Recompute intermediate states and reject evidence; never trust final state."""
     from copy import deepcopy
+
     state = deepcopy(row["setup"][-1]["state"] if row["setup"] else row["start"])
     lo, hi = row["validFrom"], row["validTo"]
-    reason = "empty-process-batch" if not row["requests"] else (
-        "reject-invalid-interval" if lo >= hi else None)
+    reason = (
+        "empty-process-batch"
+        if not row["requests"]
+        else ("reject-invalid-interval" if lo >= hi else None)
+    )
     minted, claimed, paid = [], [], []
     for item in row["requests"]:
         if reason:
@@ -1050,33 +1074,50 @@ def check_process_batch(row, transitions, deltas, leaf_bytes):
         key = request["key"]
         if exit == "reject":
             e = item.get("evidence")
-            reason = rejection_reason(state, request, None if e is None else
-                {"evidence": e, "validFrom": lo, "validTo": hi}, transitions, leaf_bytes)
+            reason = rejection_reason(
+                state,
+                request,
+                None if e is None else {"evidence": e, "validFrom": lo, "validTo": hi},
+                transitions,
+                leaf_bytes,
+            )
             if reason:
                 break
             paid.append({"address": request["owner"], "value": request["deposit"]})
             continue
         assert exit == request["edge"]
         before = leaf_at(state, key)
-        assert (exit, before) in transitions, "mixed corpus fold precondition is not reached"
+        assert (exit, before) in transitions, (
+            "mixed corpus fold precondition is not reached"
+        )
         # These rows exercise legal folds; invalid-rejection cases are independently
         # derived above. Check the required inputs rather than assuming their presence.
         if exit != "witnessTerminal":
             ap = request["approval"]
             assert ap and ap["policy"] == state["config"]["applicationPolicy"]
             assert (ap["edge"], ap["key"], ap["owner"], ap["destination"]) == (
-                exit, key, request["owner"], 0 if exit == "insertAbsent" else request["output"])
+                exit,
+                key,
+                request["owner"],
+                0 if exit == "insertAbsent" else request["output"],
+            )
         custody = next((c for c in state["custody"] if c["key"] == key), None)
         if exit in ("updateActive", "deleteAbsent"):
             assert custody is not None
         if exit in ("updateTerminal", "deleteActive"):
             assert any(h["key"] == key and h["kind"] == "active" for h in state["held"])
-        recipient = (0 if exit == "insertAbsent" else request["output"]
-                     if exit in ("insertActive", "updateActive", "witnessTerminal")
-                     else request["owner"])
+        recipient = (
+            0
+            if exit == "insertAbsent"
+            else request["output"]
+            if exit in ("insertActive", "updateActive", "witnessTerminal")
+            else request["owner"]
+        )
         paid.append({"address": recipient, "value": request["deposit"]})
         if exit in ("updateActive", "deleteAbsent"):
-            paid.append({"address": custody["refundAddress"], "value": custody["value"]})
+            paid.append(
+                {"address": custody["refundAddress"], "value": custody["value"]}
+            )
             state["custody"] = [c for c in state["custody"] if c["key"] != key]
         if exit != "witnessTerminal":
             state["trie"] = [x for x in state["trie"] if x["key"] != key]
@@ -1085,27 +1126,53 @@ def check_process_batch(row, transitions, deltas, leaf_bytes):
                 state["trie"].insert(0, {"key": key, "leaf": after})
             state["config"]["root"] = root_of(state["trie"], leaf_bytes)
         if exit == "insertAbsent":
-            state["custody"].insert(0, {"key": key, "refundAddress": request["refundAddress"],
-                                        "value": request["deposit"]})
+            state["custody"].insert(
+                0,
+                {
+                    "key": key,
+                    "refundAddress": request["refundAddress"],
+                    "value": request["deposit"],
+                },
+            )
         if exit in ("updateTerminal", "deleteActive"):
-            state["held"] = [h for h in state["held"] if not (h["key"] == key and h["kind"] == "active")]
+            state["held"] = [
+                h
+                for h in state["held"]
+                if not (h["key"] == key and h["kind"] == "active")
+            ]
         if exit in ("insertActive", "updateActive", "witnessTerminal"):
-            state["held"].insert(0, {"key": key, "kind": "terminal" if exit == "witnessTerminal" else "active",
-                                     "output": request["output"], "datum": request["datum"]})
+            state["held"].insert(
+                0,
+                {
+                    "key": key,
+                    "kind": "terminal" if exit == "witnessTerminal" else "active",
+                    "output": request["output"],
+                    "datum": request["datum"],
+                },
+            )
         minted.extend((kind, key, qty) for kind, qty in deltas[exit])
         claimed.extend((c["kind"], key, c["quantity"]) for c in request["claimed"])
     if reason is None and asset_sums(minted) != asset_sums(claimed):
         reason = "net-mint-mismatch"
-    assert (row["outcome"], row["reason"]) == ("refused" if reason else "accepted", reason), row["id"]
+    assert (row["outcome"], row["reason"]) == (
+        "refused" if reason else "accepted",
+        reason,
+    ), row["id"]
     if reason is None:
         obs = row["observations"]
         assert obs["state"] == state, row["id"] + ": intermediate effects lost"
         assert obs["config"] == state["config"] and obs["custody"] == state["custody"]
-        assert obs["held"] == [{k: h[k] for k in ("key", "kind", "output")} for h in state["held"]]
+        assert obs["held"] == [
+            {k: h[k] for k in ("key", "kind", "output")} for h in state["held"]
+        ]
         assert obs["root"] == state["config"]["root"] and obs["paid"] == paid
-        assert asset_sums((m["kind"], m["key"], m["quantity"]) for m in obs["mint"]) == asset_sums(minted)
-        assert obs["leaf"] == [{"key": k, "leaf": leaf_at(state, k)}
-                                for k in distinct_keys([i["request"] for i in row["requests"]])]
+        assert asset_sums(
+            (m["kind"], m["key"], m["quantity"]) for m in obs["mint"]
+        ) == asset_sums(minted)
+        assert obs["leaf"] == [
+            {"key": k, "leaf": leaf_at(state, k)}
+            for k in distinct_keys([i["request"] for i in row["requests"]])
+        ]
 
 
 def check_batch_rows(
@@ -1248,12 +1315,34 @@ def check_batch_rows(
             supported = bool(items) and all(i["exit"] == "reject" for i in items)
             if supported:
                 ws = row.get("rejections", [])
-                reason = "reject-evidence-missing" if len(ws) != len(items) else next(
-                    (why for i, w in zip(items, ws)
-                     if (why := rejection_reason(before, i["request"], w, transitions, leaf_bytes))), None)
-                if len(ws) == len(items) and len({(w["validFrom"], w["validTo"]) for w in ws if w is not None}) > 1:
+                reason = (
+                    "reject-evidence-missing"
+                    if len(ws) != len(items)
+                    else next(
+                        (
+                            why
+                            for i, w in zip(items, ws)
+                            if (
+                                why := rejection_reason(
+                                    before, i["request"], w, transitions, leaf_bytes
+                                )
+                            )
+                        ),
+                        None,
+                    )
+                )
+                if (
+                    len(ws) == len(items)
+                    and len(
+                        {(w["validFrom"], w["validTo"]) for w in ws if w is not None}
+                    )
+                    > 1
+                ):
                     reason = "reject-batch-interval-mismatch"
-                assert (outcome, row["reason"]) == ("refused" if reason else "accepted", reason), rid
+                assert (outcome, row["reason"]) == (
+                    "refused" if reason else "accepted",
+                    reason,
+                ), rid
             else:
                 assert outcome == "unsupported", rid
             derived += 1
@@ -1399,7 +1488,11 @@ def check_batch_controls(corpus, refusals):
     shared = ("config", "custody", "held", "mint", "root", "state")
     pairs = 0
     for row in rows:
-        if row["question"] == "processBatch" or len(row["requests"]) != 1 or row["outcome"] == "unsupported":
+        if (
+            row["question"] == "processBatch"
+            or len(row["requests"]) != 1
+            or row["outcome"] == "unsupported"
+        ):
             continue
         if row["question"] == "foldBatch":
             operation = row["requests"][0]["edge"]
@@ -1759,7 +1852,9 @@ def main():
         statement_digests,
         model_refusal_vocabulary(root),
         model_exits(root),
-        model_retraction(root), transitions, leaf_bytes,
+        model_retraction(root),
+        transitions,
+        leaf_bytes,
     )
     leaf_bytes, deltas = model_constants(root)
     transitions = model_transitions(root)

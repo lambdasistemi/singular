@@ -25,7 +25,9 @@
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -55,7 +57,9 @@
         "assetName": 1604014105,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "key-exists"
      }
@@ -89,7 +93,9 @@
       "assetName": 3021472884,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -114,7 +120,9 @@
       "assetName": 84686170,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -144,7 +152,9 @@
         "assetName": 2709712832,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "accept"
      }
@@ -178,7 +188,9 @@
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -203,7 +215,9 @@
       "assetName": 2958227895,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -220,7 +234,9 @@
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -237,7 +253,9 @@
      "output": 701,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -267,7 +285,9 @@
         "assetName": 1831697717,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "terminal-immutable"
      }
@@ -293,7 +313,9 @@
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "read-unknown"
    },
@@ -318,7 +340,9 @@
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -335,7 +359,9 @@
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "read-active"
    },
@@ -360,7 +386,9 @@
       "assetName": 2502960376,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "key-unknown"
    }
@@ -390,7 +418,9 @@
         "assetName": 2502960376,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "approval-mismatch"
      }
@@ -420,7 +450,9 @@
         "assetName": 2958227895,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "no-approval"
      }
@@ -442,7 +474,9 @@
        "output": 555,
        "datum": null,
        "approval": null,
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "no-approval"
      }
@@ -476,7 +510,9 @@
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -501,7 +537,9 @@
       "assetName": 1831697717,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -526,7 +564,9 @@
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }

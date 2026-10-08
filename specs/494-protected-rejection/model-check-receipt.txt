@@ -1,4 +1,4 @@
-provenance: check_model.py sha256=c61d31342f946d7836edddbe08755e886fa0715e966e4f0317b6d8c8314d8fa3
+provenance: check_model.py sha256=f9894ac0cff694cd299be52e7d010eaa5d6a19d7052df54fff48bf41089956b5
 model-check: 58/58 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
 naming-check: 7/7 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
 lifecycle-check: 9/9 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']

@@ -13,8 +13,13 @@ TRANSPORT = "conformance/lean/DriverTransport.lean"
 
 
 def execute(question):
-    return subprocess.run(["lake", "env", "lean", "--run", TRANSPORT], cwd=ROOT,
-                          input=json.dumps(question), capture_output=True, text=True)
+    return subprocess.run(
+        ["lake", "env", "lean", "--run", TRANSPORT],
+        cwd=ROOT,
+        input=json.dumps(question),
+        capture_output=True,
+        text=True,
+    )
 
 
 def answer(question):
@@ -34,20 +39,30 @@ def run():
                 question["inputs"] = []
         observed = answer(question)
         for key in ("outcome", "reason", "observations", "premise", "settle"):
-            assert observed.get(key) == row.get(key), (row["id"], key, observed.get(key), row.get(key))
+            assert observed.get(key) == row.get(key), (
+                row["id"],
+                key,
+                observed.get(key),
+                row.get(key),
+            )
         count += 1
         if count % 20 == 0:
             print(f"replayed {count} rows", flush=True)
-    refused = next(row for row in corpus["scenarios"] if row["id"] == "PR-live-compatible")
+    refused = next(
+        row for row in corpus["scenarios"] if row["id"] == "PR-live-compatible"
+    )
     question = {**refused, "exit": "reject", "setup": [], "inputs": [], "outputs": []}
     result = answer(question)
     assert result["reason"] == "reject-compatible" and "settle" not in result
-    expired = next(row for row in corpus["scenarios"] if row["id"] == "PR-expiry-boundary")
+    expired = next(
+        row for row in corpus["scenarios"] if row["id"] == "PR-expiry-boundary"
+    )
     expiry_question = {**expired, "exit": "reject", "setup": []}
     assert answer(expiry_question)["outcome"] == "accepted"
     metadata_controls = 0
     for path in [
-        ("request", "submittedAt"), ("request", "registryId"),
+        ("request", "submittedAt"),
+        ("request", "registryId"),
         ("start", "config", "registryId"),
         ("rejection", "evidence", "registryId"),
         ("rejection", "evidence", "registry", "registryId"),
@@ -65,22 +80,42 @@ def run():
                 obj[path[-1]] = None
             bad = execute(q)
             assert bad.returncode != 0, (path, mode, bad.stdout)
-            assert ("unknown field" in bad.stderr or "expected" in bad.stderr
-                    or "not found" in bad.stderr), (path, mode, bad.stderr)
+            assert (
+                "unknown field" in bad.stderr
+                or "expected" in bad.stderr
+                or "not found" in bad.stderr
+            ), (path, mode, bad.stderr)
             metadata_controls += 1
-    fold = next(row for row in corpus["scenarios"] if row["id"] == "DR14-register-active-claimed")
-    wrong_exit = {**fold, "exit": fold["operation"], "setup": [],
-                  "rejection": expired["rejection"]}
+    fold = next(
+        row
+        for row in corpus["scenarios"]
+        if row["id"] == "DR14-register-active-claimed"
+    )
+    wrong_exit = {
+        **fold,
+        "exit": fold["operation"],
+        "setup": [],
+        "rejection": expired["rejection"],
+    }
     bad = execute(wrong_exit)
     assert bad.returncode != 0 and "only a rejection question carries" in bad.stderr
-    receipt = {"rowsReplayed": count, "admissionBeforeSettlement": True,
-               "requiredMetadataControls": metadata_controls, "rejectWitnessOnFoldRefused": True,
-               "sha256": {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
-                          for p in [TRANSPORT, "lean/driver-corpus.json"]}}
+    receipt = {
+        "rowsReplayed": count,
+        "admissionBeforeSettlement": True,
+        "requiredMetadataControls": metadata_controls,
+        "rejectWitnessOnFoldRefused": True,
+        "sha256": {
+            p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+            for p in [TRANSPORT, "lean/driver-corpus.json"]
+        },
+    }
     (ROOT / "specs/494-protected-rejection/transport-receipt.json").write_text(
-        json.dumps(receipt, indent=2) + "\n")
-    print(f"PASS: {count} rows; admission precedes settlement; "
-          f"{metadata_controls} required-metadata controls; wrong-exit witness refused")
+        json.dumps(receipt, indent=2) + "\n"
+    )
+    print(
+        f"PASS: {count} rows; admission precedes settlement; "
+        f"{metadata_controls} required-metadata controls; wrong-exit witness refused"
+    )
 
 
 if __name__ == "__main__":

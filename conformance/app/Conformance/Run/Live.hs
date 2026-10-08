@@ -592,6 +592,7 @@ submitEdge env state cage exit alteration placement request = do
         wallet = Live.requestWallet request
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
     noteRequest (genesisAddr env) state cage registry request
     refs <- storyReferences env cage key edge
@@ -629,6 +630,7 @@ submitEdge env state cage exit alteration placement request = do
                         (genesisAddr env)
                         ids
                         cfg
+                        registryIdentity
                         exit
                         request
                         cgDeposit
@@ -673,6 +675,7 @@ submitEdge env state cage exit alteration placement request = do
                     (genesisAddr env)
                     ids
                     cfg
+                    registryIdentity
                     exit
                     request
                     deposit
@@ -947,6 +950,7 @@ submitBatch env state cage exit placement alteration requests = do
     let cfg = rcCfg cage
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
         pendingKeyOf request =
             ( registry
@@ -988,6 +992,7 @@ submitBatch env state cage exit placement alteration requests = do
                 owner
                 ids
                 cfg
+                registryIdentity
                 exit
                 request
                 deposit
@@ -2127,14 +2132,16 @@ editOutputs elsewhere other transaction edits = do
 
 {- | The request as the model reads it: its edge, key, owner, destination and
 approval as identities, its deposit, and its tip, what it holds beyond the
-deposit (on chain the processing tip, `held − deposit`). A retraction also names
-the output reference the request sits at, the one its return is bound to; no
-other exit reads it.
+deposit (on chain the processing tip, `held − deposit`). Booked requests also
+carry their datum's submission time, allocated registry identity and output
+reference. Retraction admission reads the booked time; its refund binds the
+reference. No time is invented for a refused booking with no request output.
 -}
 storyModelRequest
     :: Addr
     -> LiveIdentities
     -> CageConfig
+    -> Integer
     -> Live.Exit
     -> Live.EdgeRequest Addr
     -> Integer
@@ -2149,6 +2156,7 @@ storyModelRequestBy
     :: Addr
     -> LiveIdentities
     -> CageConfig
+    -> Integer
     -> Live.Exit
     -> Live.EdgeRequest Addr
     -> Integer
@@ -2156,7 +2164,7 @@ storyModelRequestBy
     -> Maybe Integer
     -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra)
     -> IO Value
-storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut = do
+storyModelRequestBy booker ids cfg registryIdentity _exit request deposit tip reference requestOut = do
     let wallet = Live.requestWallet request
         key = TE.encodeUtf8 (T.pack (Live.requestKey request))
     modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
@@ -2212,8 +2220,10 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
             , "approval" .= approval
             , "tip" .= tip
             , "datum" .= datum
+            , "registryId" .= registryIdentity
             ]
-                <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
+                <> ["reference" .= bound | Just bound <- [reference]]
+                <> [ "submittedAt" .= snd (requestDatumOf out) | Right out <- [requestOut]
                    ]
 
 {- | Observation only looks up identities allocated while acting. The
@@ -2284,7 +2294,16 @@ observeAcceptedStep env state step transaction = do
                     [(identifier, name) | (identifier, _, name) <- translated]
                 )
     (application, active, absent, terminal) <- observePins ids cfg
-    let config = abstractConfig after application active absent terminal root
+    registryIdentity <- modelRegistryIdentity state cage
+    let config =
+            abstractConfig
+                after
+                registryIdentity
+                application
+                active
+                absent
+                terminal
+                root
         activeBytes = SBS.fromShort (cfgActivePolicy cfg)
         terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
     holdings <-
@@ -3289,6 +3308,14 @@ askModel _env state step judged = do
     LeanOracle.expectedObservation evaluator [] asked
         >>= either failWith pure
 
+-- | The registry identity allocated while entering this concrete registry.
+modelRegistryIdentity :: LiveState -> RowCage -> IO Integer
+modelRegistryIdentity state cage = do
+    tid <- cageTid cage
+    maybe (failWith "model registry identity was not allocated") pure
+        . Map.lookup (show tid)
+        =<< readIORef (liveRegistryIds state)
+
 {- | Where every model question about a registry starts: the empty registry the
 chain held when the story first acted on it, under its pins, and the setup trace
 of the folds since compared or submitted in a batch the chain accepted.
@@ -3297,6 +3324,7 @@ modelStart
     :: LiveState -> RowCage -> IO (OnChainTokenState, Value, [Value])
 modelStart state cage = do
     tid <- cageTid cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
     start <-
         maybe (failWith "model question has no chain-read start") pure
@@ -3312,6 +3340,7 @@ modelStart state cage = do
             [ "config"
                 .= abstractConfig
                     start
+                    registryIdentity
                     application
                     active
                     absent
@@ -3904,11 +3933,13 @@ abstractConfig
     -> Integer
     -> Integer
     -> Integer
+    -> Integer
     -> [Word8]
     -> Value
-abstractConfig state application active absent terminal root =
+abstractConfig state registryIdentity application active absent terminal root =
     object
         [ "root" .= root
+        , "registryId" .= registryIdentity
         , "maxFee" .= stateMaxFee state
         , "processTime" .= stateProcessTime state
         , "retractTime" .= stateRetractTime state

@@ -66,6 +66,9 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
+        # Protected rejection (#494) adds twelve manifest-bound statements:
+        # six admission/effect statements and six expiry/composition statements.
+        # The re-examined population is 138 = 79 + 59; helper count is unchanged.
         # Public fold inputs (#419) replace the statement that a delivered
         # output carries the datum form its request named with three: a
         # delivered output carries exactly the request's datum, a fold is built
@@ -83,9 +86,9 @@ class RealInventoryTest(unittest.TestCase):
         # statements before #419 and 46 after; naming, lifecycle and wire retain
         # 7, 9 and 5.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 67)
+        self.assertEqual(inv.manifest_bound, 79)
         self.assertEqual(inv.unclassified, 59)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 126)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 138)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

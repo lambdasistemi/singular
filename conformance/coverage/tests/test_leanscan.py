@@ -109,7 +109,11 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree: 126 = 67 manifest-bound + 59 unclassified.
+    """The frozen tree: 138 = 79 manifest-bound + 59 unclassified.
+
+    Protected rejection (#494) adds twelve registry statements: six admission
+    and effect statements plus six expiry/composition statements. It changes no
+    helper population. Its predecessor was 126 = 67 + 59.
 
     The registry's 46 statements include the three of public fold inputs
     (#419) — a delivered output carries exactly the request's datum, a fold is
@@ -138,11 +142,11 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            126,
+            138,
             "base population drifted; the denominator must be re-examined",
         )
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 67)
+        self.assertEqual(len(statements), 79)
 
     def test_attributed_count_at_base(self):
         # The fourth is the @[simp] on trieGet_erase_eq.

@@ -108,11 +108,13 @@ its former unguarded admission. That run establishes model behavior only.
   Their protocol-6 comparisons cannot claim the new protection. The transport
   and formal source mirror are updated; this does not establish simulator UI
   behavior or live conformance. No live coverage row is promoted.
-  This also affects previously working live **retraction** comparisons: the
-  current `Conformance.Run.Live` request encoder omits `submittedAt` and
-  `registryId`, carrying the time only in the legacy witness. Its retraction
-  questions now fail decoding. Those comparisons, including the outside-window
-  cases, remain held until the encoder supplies the booked request metadata.
+  The compatibility follow-up supplies booked `submittedAt`, allocated
+  `registryId` and request references in `Conformance.Run.Live`, and carries
+  rejection evidence and batch bounds through the offline replay harness.
+  The Haskell build and replay pass; fresh hosted live results are still needed.
+  The required early-rejection story expects a compatible request to be rejected
+  inside its protected windows, contradicting this model. That acceptance stays
+  held pending on-chain implementation; the story is not weakened or suppressed.
   Historical retraction receipts do not certify this protocol-7 revision.
 - #361 remains open: Lean refunds are summed by owner, whereas the validator
   also constrains a refund output position. Correspondence for affected refunds

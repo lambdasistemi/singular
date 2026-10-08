@@ -13,6 +13,8 @@ export const request = (edge, key, opts = {}) => ({
   deposit: opts.deposit ?? 0,
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
+  submittedAt: opts.submittedAt ?? 0,
+  registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
   approval: null,

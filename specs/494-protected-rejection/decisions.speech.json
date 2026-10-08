@@ -1,0 +1,124 @@
+{
+  "protected-rejection-decisions-required-before-changing-lean": [
+    {
+      "text": "Protected rejection: decisions required before changing Lean.",
+      "pause": 500
+    },
+    {
+      "text": "Owner: current assistant, working solo under the operator's 2026-10-07 instruction. Scope: #494 under #498. No workers or audit seats commissioned.",
+      "pause": 400
+    }
+  ],
+  "requester-story-and-reproduced-behavior": [
+    {
+      "text": "Requester story and reproduced behavior.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester with an approved insertion for an unknown key, I want a permissionless processor unable to cancel it and collect its tip without an allowed rejection condition, so that paying for processing does not enable arbitrary cancellation.",
+      "pause": 400
+    },
+    {
+      "text": "Model revision: 6efe1f119a2332484e690b4c128c4bc5fd4d689b. HistoricalCounterexample.lean constructs an empty registry and an approved insertActive for key 5, owner 42, destination 99, deposit 2,000,000 and tip 1,000,000. Its finite interval [10001,10002) follows submission at 10000 and precedes the processing boundary at 11000.",
+      "pause": 400
+    },
+    {
+      "text": "The executable calls the real refusal, admittedExitStep, admittedTxOfExit and exitRefusal. The insertion folds to Active. The same request can instead be rejected with no signers, unchanged registry state, no mint, a deposit-only owner refund, and no admission/spending/settlement refusal. Its modeled inputs exceed modeled outputs by the tip.",
+      "pause": 400
+    },
+    {
+      "text": "Verified with Lean 4.25.0:",
+      "pause": 400
+    },
+    {
+      "text": "Both commands exited 0. The counterexample printed REPRODUCED. This is executable model evidence, not a protection proof or a ledger attack. The model has no fold-time admission here; the interval locates the story but is ignored for rejection. Fees and routing of the surplus to a processor are not modeled by this check. No compiled validator or live transaction was run. The initial registry is empty; no active state was seeded to pretend that a registration journey occurred. The fold branch actually executes insertion.",
+      "pause": 400
+    }
+  ],
+  "operator-decisions": [
+    {
+      "text": "Operator decisions.",
+      "pause": 500
+    }
+  ],
+  "ruling-r1-current-lifecycle-incompatibility-permits-rejection": [
+    {
+      "text": "Ruling R1 — current lifecycle incompatibility permits rejection.",
+      "pause": 500
+    },
+    {
+      "text": "The operator answered \"reject\" to the concrete Alice/Bob story below. Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible. The question explicitly included the processor taking the tip; this ruling does not change existing refund amounts or resolve #361. It does not select the state used in mixed batches, an expiry boundary, or additional non-trie reasons. Implementation and protection evidence remain due.",
+      "pause": 400
+    }
+  ],
+  "ruling-r2-expiry-follows-both-windows": [
+    {
+      "text": "Ruling R2 — expiry follows both windows.",
+      "pause": 500
+    },
+    {
+      "text": "The operator answered \"yes\" to expiry-only rejection after both the processing and owner's reclaim windows end, preserving the opportunity to reclaim the deposit and tip. The expiry threshold is therefore submission time plus processing duration plus reclaim duration (11500 in the example below). An expiry-only rejection must not execute before that threshold; its whole validity interval must be at or after it. This does not delay the separately authorized mismatch rejection of R1. Refund amounts remain unchanged.",
+      "pause": 400
+    }
+  ],
+  "ruling-r3-a-batch-includes-the-effects-of-its-preceding-actions": [
+    {
+      "text": "Ruling R3 — a batch includes the effects of its preceding actions.",
+      "pause": 500
+    },
+    {
+      "text": "On 2026-10-08 the operator answered \"yes, the batching work should be closed on its effects\" to the case of two insertions targeting the same initially unknown key: fold the first, then reject the second against the updated state. Each action is judged against the state left by preceding actions in the same ordered batch. Rejection evidence binds that intermediate registry state/root, not necessarily the transaction's initial root. An earlier successful action may create the lifecycle mismatch authorizing a later rejection under R1. A rejection preserves that intermediate state, so later actions see all earlier successful transitions. This is a required mixed-batch model property, not a claim that batch implementation or acceptance is complete.",
+      "pause": 400
+    }
+  ],
+  "scope-confirmation-after-r3": [
+    {
+      "text": "Scope confirmation after R3.",
+      "pause": 500
+    },
+    {
+      "text": "The operator required proof of rejectability, assigned malformed/address-pollution research to separate #500, and then directed this assistant to proceed with Lean. This slice implements the two positively authorized grounds (lifecycle mismatch and expiry). No additional non-trie reason is authorized. Operational failures and missing/invalid proof do not permit rejection. Model implementation is now released to proceed solo; no dependent implementation or acceptance is implied.",
+      "pause": 400
+    }
+  ],
+  "decision-status": [
+    {
+      "text": "Decision status.",
+      "pause": 500
+    },
+    {
+      "text": "Temporary incompatibility. Alice is Active; Bob requests insertion for Alice's key. The insertion cannot fold now, but deletion could later make it possible. Does authenticated current incompatibility suffice for immediate rejection, or must potentially eligible requests remain pending? Resolved by R1: immediate rejection is permitted.",
+      "pause": 300
+    },
+    {
+      "text": "Expiry. With submission 10000, processing duration 1000 and reclaim duration 500, may expiry-only rejection begin at 11000, at 11500, or never? Rejection at 11000 competes with the owner's modeled reclaim window. Resolved by R2: at or after 11500, following both windows. The transaction must not admit execution before that boundary.",
+      "pause": 300
+    },
+    {
+      "text": "Admissible reasons. Initially admit only authenticated lifecycle mismatch, or also specific non-trie reasons? A missing processor-supplied input, provider failure or invalid proof cannot establish impossibility. Any additional reason needs an independently verifiable predicate. Current scope: R1/R2 only; pollution is research #500.",
+      "pause": 300
+    },
+    {
+      "text": "Mixed-action state. Two insertions target an initially unknown key. After the first folds, the second mismatches. Must rejection evidence bind the transaction's initial registry state or the intermediate state? The latter allows a processor's ordering to create a rejection opportunity. Resolved by R3: use the intermediate state, including earlier effects.",
+      "pause": 300
+    },
+    {
+      "text": "The admission rulings above authorize model implementation. Affected on-chain acceptance remains held until correspondence is established. Existing refund obligations are unchanged; #361's unresolved refund policy is not decided here. The next step is to record the rulings, define the admission truth table and implement/prove that contract in Lean before dependent layers.",
+      "pause": 400
+    }
+  ],
+  "review-follow-up-authorized-on-2026-10-08": [
+    {
+      "text": "Review follow-up authorized on 2026-10-08.",
+      "pause": 500
+    },
+    {
+      "text": "After commissioning Opus review, the operator directed work to proceed on the merge blockers. F1 demonstrated that the new rejection timestamp and the legacy retraction witness timestamp could describe different windows for one request. The correction implements the existing R2 guarantee: both admissions use the booked Request.submittedAt. The legacy witness field remains serialized but is ignored for admission. No new rejection ground or refund rule is introduced. The retraction admission characterization and refusal theorem now quantify over the request's booked time; expiry/reclaim separation and batch-prefix protection are proved explicitly. All-reject batches share the mixed action engine. Missing protected-exit JSON metadata and evidence attached to another exit fail decoding. These are model/transport changes, not live implementation acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "62cc117a059158cf18576013de5c9bff26b754b070ff7d5811b9276923826312"
+  }
+}

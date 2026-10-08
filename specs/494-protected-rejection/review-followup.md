@@ -25,9 +25,16 @@ Claude Opus 5.5 found no remaining model-only blocker and marked F1, F3, F4, F5
 and F7 resolved, F6 addressed within its declared bounds, and F2 an explicit
 integration limit. This was again source review, not independent gate execution.
 
-Its additional N1 disclosure is recorded here and in the README: the existing
+Its additional N1 disclosure at the reviewed candidate was: the existing
 live retraction encoder supplies booking time only in the witness and omits
 `Request.submittedAt` and `registryId`. Those questions now fail decoding;
 previously working live retraction comparisons, including outside-window cases,
 are held until encoder migration. Historical receipts are not evidence for the
 new model revision. No consumer migration or live acceptance is claimed.
+
+The subsequent, operator-authorized compatibility repair supplies the booked
+timestamp and allocated identities in the live encoder, forwards protocol-7
+fields in offline replay, updates inventory counts, and refreshes simulator
+metadata and theorem narration. This follow-up was not part of the Opus review.
+Local compilation and replay do not establish live acceptance. Required early
+rejection still conflicts with the model; see [compatibility.md](compatibility.md).
