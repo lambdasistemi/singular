@@ -379,7 +379,10 @@ tableIds page =
     , isName (T.strip c)
     ]
   where
-    isName c = T.any (== '-') c && T.all (\x -> isAlphaNum x || x == '-') c
+    isName c =
+        T.any isAlphaNum c
+            && T.any (== '-') c
+            && T.all (\x -> isAlphaNum x || x == '-') c
 
 rowLine :: Row -> Text -> Text
 rowLine r page =

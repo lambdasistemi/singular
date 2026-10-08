@@ -385,7 +385,7 @@
                   procps
                 ];
                 text = ''
-                  bash ${./tools/demo1_scratch_removal.test.sh} \
+                  env -u DEMO1_KEEP_SCRATCH bash ${./tools/demo1_scratch_removal.test.sh} \
                     ${./tools/demo1_two_actor_control.sh} \
                     ${./tools/demo1_cli_controls_check.sh} \
                     ${./tools/demo1_cli_check.sh} \
@@ -488,7 +488,7 @@
                   python3
                   xxd
                 ];
-                text = ''bash ${./tools/demo1_readback_check.sh} ${./tools/demo1_readback.sh}'';
+                text = "bash ${./tools/demo1_readback_check.sh} ${./tools/demo1_readback.sh}";
               }
             );
           };
