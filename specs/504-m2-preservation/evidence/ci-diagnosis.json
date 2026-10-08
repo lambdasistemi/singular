@@ -44,5 +44,10 @@
       "classification": "Interrupted setup/execution; no behavioral RED"
     }
   ],
-  "authority": "No hosted rerun, model rerun, workflow or runtime behavior edit; permanent prior refs stay frozen"
+  "authority": "No hosted rerun, model rerun, workflow or runtime behavior edit; permanent prior refs stay frozen",
+  "additionalRenderedRequirement": {
+    "observedAt": "9f8f4fd100846f238021274101a07b67955ded59",
+    "cause": "Missing speech for newly rendered recovery and original-evidence pages, revealed after resolving first broken link",
+    "fix": "Extract all new speech companions with pinned mkdocs-speech; name recovery.md so its rendered companion stays inside owned directory; no navigation/audio changes"
+  }
 }

@@ -27,7 +27,7 @@ No other expensive check was run and no hosted check was rerun.
 
 This evidence is permanently retained separately at
 `preserve/m2-evidence/4301c45d-ci-docs`; the broad ref remains frozen.
-To retrieve it after the README's fresh fetch, run:
+To retrieve it after the recovery page's fresh fetch, run:
 
 `git checkout --detach origin/preserve/m2-evidence/4301c45d-ci-docs`
 
@@ -41,7 +41,7 @@ handback/PR because a commit cannot contain its own creation receipt.
 [retention-ledger.json](retention-ledger.json) records the exact permanent refs,
 owner and cleanup policy for epic507/M1 to consume before independent acceptance.
 
-Remaining limits are consolidated in the README: unclassified histories and
+Remaining limits are consolidated in the recovery page: unclassified histories and
 raw owner receipts need original-owner disposition; dirty work stays excluded;
 #179/#211 and delete-edge outcomes remain unmet; PR508 stays unmerged and held;
 no hosting enforcement is established. No existing release tag/artifact moved.

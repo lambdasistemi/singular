@@ -1,0 +1,6 @@
+evaluation warning: 'system' has been renamed to/replaced by 'stdenv.hostPlatform.system'
+Traceback (most recent call last):
+  File "/nix/store/8jif8vf36si5risbbmy6ncqqls3drvjh-source/tools/check_site.py", line 243, in <module>
+    assert speech.exists(), f"missing speech: {speech}"
+           ~~~~~~~~~~~~~^^
+AssertionError: missing speech: /nix/store/pia9h1hnqrl5zdcrmappnybvrd8g4yr9-singular-docs-0.9.0/specs/504-m2-preservation.speech.json
