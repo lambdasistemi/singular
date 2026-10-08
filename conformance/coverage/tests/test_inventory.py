@@ -83,11 +83,11 @@ class RealInventoryTest(unittest.TestCase):
         # statements before #419 and 46 after; naming, lifecycle and wire retain
         # 7, 9 and 5.
         # The permanent M1 surface adds ten audited statements; all previous
-        # declarations remain: 136 = 77 manifest-bound + 59 unclassified.
+        # declarations remain: 121 = 67 manifest-bound + 54 unclassified.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 77)
-        self.assertEqual(inv.unclassified, 59)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 136)
+        self.assertEqual(inv.manifest_bound, 67)
+        self.assertEqual(inv.unclassified, 54)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 121)
         self.assertEqual(
             len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
             10,
