@@ -1285,7 +1285,6 @@ preview_ok terminate-preview booking
 [ "$(tree_hash)" = "$tree_before" ] || fail "a terminate preview changed the registry directory"
 # The process is held by the marked harness point right after the node's
 # acceptance of its fold is journalled, and killed there.
-before="$(journal_lines "$reg")"
 rm -f "$work/fold.go" "$work/fold.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/fold.go" SINGULAR_HARNESS_HOLD_STEP=fold \
   "$singular" registry terminate --fold --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}" \
@@ -1303,44 +1302,54 @@ wait "$victim" 2>/dev/null || true
   || fail "the killed process did not stop at its accepted fold"
 say "terminate killed after the node accepted its fold"
 fold_tx="$(tail -n 1 "$alice_journal" | jq -r .journalTxId)"
-# The next ordinary write — bob's update of his own key — reconciles the
-# killed fold from chain evidence and proceeds. While the fold is not yet
-# on chain it is refused before submitting anything, naming the fold and
-# its case; it is then run again.
+# Recovery belongs to the owning wallet: only alice's public-address inspect
+# reconciles her journal, where the killed fold is journalled. Bob's later
+# write never touches her journal; it proceeds independently. While the fold
+# is not yet on chain the inspect is refused before reading anything new,
+# naming the fold and its case; it is then run again.
+first_recovery=""
 for _ in $(seq 1 60); do
-  before="$(journal_lines "$reg")"
   status=0
-  "$singular" registry update --key "$bkey" --payload "$work/payload.json" \
-    "${common[@]}" "${node[@]}" "${bob[@]}" \
-    >"$receipts/write-after-kill.json" 2>"$receipts/write-after-kill.err" || status=$?
-  got="$(jq -r .outcome "$receipts/write-after-kill.json")"
+  "$singular" registry inspect --key "$key" "${common[@]}" "${node[@]}" \
+    --wallet-address "$alice_addr" \
+    >"$receipts/recover-alice-inspect.json" 2>"$receipts/recover-alice-inspect.err" || status=$?
+  got="$(jq -r .outcome "$receipts/recover-alice-inspect.json")"
+  [ -n "$first_recovery" ] || first_recovery="$got/$status"
   [ "$got/$status" = success/0 ] && break
-  [ "$got/$status" = partial/15 ] || fail "write-after-kill: outcome $got (exit $status)"
-  [ "$(journal_lines "$reg")" = "$before" ] || fail "write-after-kill: a refused write moved the journal"
-  [ "$(field write-after-kill .unresolved.tx)" = "$fold_tx" ] \
-    || fail "write-after-kill: the refusal does not name the killed fold"
-  [ "$(field write-after-kill .unresolved.case)" = acknowledged ] \
-    || fail "write-after-kill: the refusal does not name the fold's case acknowledged"
+  [ "$got/$status" = partial/15 ] || fail "recover-alice-inspect: outcome $got (exit $status)"
+  [ "$(field recover-alice-inspect .unresolved.tx)" = "$fold_tx" ] \
+    || fail "recover-alice-inspect: the refusal does not name the killed fold"
+  [ "$(field recover-alice-inspect .unresolved.case)" = acknowledged ] \
+    || fail "recover-alice-inspect: the refusal does not name the fold's case acknowledged"
   sleep 2
 done
-[ "$(field write-after-kill .outcome)" = success ] || fail "the write after the kill never reconciled the fold"
-jq -e --arg t "$fold_tx" '.reconciled.observed | index($t)' "$receipts/write-after-kill.json" >/dev/null \
-  || fail "the write after the kill did not observe the killed fold"
-say "write-after-kill: success, reconciling the killed fold"
+[ "$(field recover-alice-inspect .outcome)" = success ] \
+  || fail "alice's inspect never recovered the killed fold"
+[ "$first_recovery" = success/0 ] \
+  || [ "$first_recovery" = partial/15 ] \
+  || fail "alice's first recovery attempt was neither partial nor success: $first_recovery"
+say "recover-alice-inspect: success, reconciling alice's killed fold in her own journal (first attempt $first_recovery)"
+# Bob's subsequent write proceeds independently on chain state that includes
+# the fold. It must neither touch alice's journal nor claim her fold.
+alice_kept="$(journal_count "$alice_journal")"
+run bob-independent-update success -- registry update --key "$bkey" --payload "$work/payload.json" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+[ "$(journal_count "$alice_journal")" = "$alice_kept" ] \
+  || fail "bob's write touched alice's journal"
+[ "$(jq -r --arg t "$fold_tx" '.reconciled.observed // [] | index($t)' "$receipts/bob-independent-update.json")" = null ] \
+  || fail "bob's write claimed alice's fold as its own recovery"
 # Alice's key reads Terminal: the killed terminate's fold is on chain.
 run inspect-3 success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-3 .leaf)" = terminal ] || fail "the killed fold did not leave the key terminal"
 jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail "the holding is still live"
-# Public replay serves the included fold; journal observation is appended
-# exactly once across the reconciling command and subsequent inspect.
-# The killed fold was alice's; its observation may live in the reconciling
-# writer's partition, so both counts span every journal under the root.
-mapfile -t kill_journals < <(managed_find "$reg" journal.jsonl)
-[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "${kill_journals[@]}")" = 1 ] \
-  || fail "the killed fold was not observed exactly once"
-[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "${kill_journals[@]}")" = 1 ] \
+# Public replay serves the included fold; alice's journal observes it exactly
+# once and prepared it exactly once: no duplicate submission, no cross-wallet
+# reconciliation.
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "$alice_journal")" = 1 ] \
+  || fail "the killed fold was not observed exactly once in its owning journal"
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$alice_journal")" = 1 ] \
   || fail "the killed fold was prepared more than once"
-say "the next write reconciled the killed fold from the chain once; inspect reads it terminal"
+say "alice's inspect recovered the killed fold from the chain once; inspect reads it terminal"
 
 # ------------------------------------------------------------------
 # 6. terminate bob normally; a write works again
