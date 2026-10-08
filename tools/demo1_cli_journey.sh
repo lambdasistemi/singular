@@ -1447,11 +1447,19 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
 [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
   "$inter_journal" >/dev/null || fail "the killed create's accepted submission was never observed"
-run inspect-interrupted-other-token client-refusal -- registry inspect --key-hex 00 --state-dir "$inter" \
+# Registries cannot leak into each other: under partitioned state an inspect
+# under another token reads that registry alone and never sees the
+# interrupted partition. The interrupted pending identity stays intact.
+inter_kept="$(journal_count "$inter_journal")"
+run inspect-interrupted-other-token success -- registry inspect --key-hex 00 --state-dir "$inter" \
   --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
   --wallet-address "$alice_addr"
-jq -e '.reason | startswith("state-token mismatch")' "$receipts/inspect-interrupted-other-token.json" >/dev/null \
-  || fail "an interrupted create was read under another registry's token"
+[ "$(field inspect-interrupted-other-token .leaf)" = unknown ] \
+  || fail "another token's readback showed a leaf for an absent key"
+[ -f "$inter_pending" ] \
+  || fail "another token's read disturbed the interrupted pending identity"
+[ "$(journal_count "$inter_journal")" = "$inter_kept" ] \
+  || fail "another token's read moved the interrupted journal"
 say "an interrupted create is refused a second boot and read back from its journal"
 
 # A request nobody folds: alice books one more insertion and leaves it. The
