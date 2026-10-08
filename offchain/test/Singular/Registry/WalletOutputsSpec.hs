@@ -75,16 +75,17 @@ spec = describe "a wallet's named selections" $ do
         fundable carrierOut `shouldBe` False
         fundable tokenOut `shouldBe` False
     it
-        "narrows funding to the chosen plain output, and refuses any other choice" $ do
-        w <- acquire
-        fmap
-            (map fst . fundingOutputs)
-            (chosenFunding plainIn w)
-            `shouldBe` Right [plainIn]
-        [ either (const True) (const False) (chosenFunding i w)
-          | i <- [carrierIn, tokenIn, refOf (T.replicate 64 "f" <> "#0")]
-          ]
-            `shouldBe` [True, True, True]
+        "narrows funding to the chosen plain output, and refuses any other choice"
+        $ do
+            w <- acquire
+            fmap
+                (map fst . fundingOutputs)
+                (chosenFunding plainIn w)
+                `shouldBe` Right [plainIn]
+            [ either (const True) (const False) (chosenFunding i w)
+              | i <- [carrierIn, tokenIn, refOf (T.replicate 64 "f" <> "#0")]
+              ]
+                `shouldBe` [True, True, True]
     it "keeps carriers and burn candidates when funding is narrowed" $ do
         w <- acquire
         case chosenFunding plainIn w of
@@ -95,40 +96,43 @@ spec = describe "a wallet's named selections" $ do
                 map fst (burnCandidates burnAsset narrowed)
                     `shouldBe` [holderIn, twiceIn]
     it
-        "a narrowed session funds every later read from the chosen output, its other reads unchanged" $ do
-        Right narrowed <- narrowFunding payer plainIn serving
-        w <- acquireFrom narrowed
-        map fst (fundingOutputs w) `shouldBe` [plainIn]
-        map fst (carriersOf (hashScript script) w) `shouldBe` [carrierIn]
-        map fst <$> outputsAt narrowed payer `shouldReturn` map fst wallet
-        map fst <$> outputsAt narrowed elsewhere `shouldReturn` [elsewhereIn]
-        w' <- acquireFrom narrowed
-        map fst (fundingOutputs w') `shouldBe` [plainIn]
+        "a narrowed session funds every later read from the chosen output, its other reads unchanged"
+        $ do
+            Right narrowed <- narrowFunding payer plainIn serving
+            w <- acquireFrom narrowed
+            map fst (fundingOutputs w) `shouldBe` [plainIn]
+            map fst (carriersOf (hashScript script) w) `shouldBe` [carrierIn]
+            map fst <$> outputsAt narrowed payer `shouldReturn` map fst wallet
+            map fst <$> outputsAt narrowed elsewhere `shouldReturn` [elsewhereIn]
+            w' <- acquireFrom narrowed
+            map fst (fundingOutputs w') `shouldBe` [plainIn]
     it
-        "a narrowing refuses an absent or ineligible choice as the input, a failed read as the read" $ do
-        absent <-
-            narrowFunding payer (refOf (T.replicate 64 "f" <> "#0")) serving
-        ineligible <- narrowFunding payer carrierIn serving
-        failed <- narrowFunding payer plainIn unreadable
-        either describeRefusal (const "narrowed") absent `shouldBe` "input"
-        either describeRefusal (const "narrowed") ineligible
-            `shouldBe` "input"
-        either describeRefusal (const "narrowed") failed `shouldBe` "read"
+        "a narrowing refuses an absent or ineligible choice as the input, a failed read as the read"
+        $ do
+            absent <-
+                narrowFunding payer (refOf (T.replicate 64 "f" <> "#0")) serving
+            ineligible <- narrowFunding payer carrierIn serving
+            failed <- narrowFunding payer plainIn unreadable
+            either describeRefusal (const "narrowed") absent `shouldBe` "input"
+            either describeRefusal (const "narrowed") ineligible
+                `shouldBe` "input"
+            either describeRefusal (const "narrowed") failed `shouldBe` "read"
     it
-        "takes create's seed only when it is plain, reserving it from funding" $ do
-        w <- acquire
-        fmap
-            (\(u, v) -> (fst u, map fst (fundingOutputs v)))
-            (seedOf plainIn w)
-            `shouldBe` Right (plainIn, [])
-        fmap (fst . fst) (seedOf carrierIn w)
-            `shouldBe` Left SeedNotFundable
-        fmap (fst . fst) (seedOf tokenIn w)
-            `shouldBe` Left SeedNotFundable
-        fmap
-            (fst . fst)
-            (seedOf (refOf (T.replicate 64 "f" <> "#0")) w)
-            `shouldBe` Left SeedAbsent
+        "takes create's seed only when it is plain, reserving it from funding"
+        $ do
+            w <- acquire
+            fmap
+                (\(u, v) -> (fst u, map fst (fundingOutputs v)))
+                (seedOf plainIn w)
+                `shouldBe` Right (plainIn, [])
+            fmap (fst . fst) (seedOf carrierIn w)
+                `shouldBe` Left SeedNotFundable
+            fmap (fst . fst) (seedOf tokenIn w)
+                `shouldBe` Left SeedNotFundable
+            fmap
+                (fst . fst)
+                (seedOf (refOf (T.replicate 64 "f" <> "#0")) w)
+                `shouldBe` Left SeedAbsent
     it "finds a script's carriers by the hash of the script each carries" $ do
         w <- acquire
         map fst (carriersOf (hashScript script) w)
@@ -138,10 +142,11 @@ spec = describe "a wallet's named selections" $ do
             w
             `shouldBe` []
     it
-        "offers a burn the outputs holding its asset, never another key's or policy's" $ do
-        w <- acquire
-        map fst (burnCandidates burnAsset w)
-            `shouldBe` [holderIn, twiceIn]
+        "offers a burn the outputs holding its asset, never another key's or policy's"
+        $ do
+            w <- acquire
+            map fst (burnCandidates burnAsset w)
+                `shouldBe` [holderIn, twiceIn]
     it "covers an amount from the smallest sufficient plain output" $ do
         w <- acquire
         fmap fst (coveringFunding 15_000_000 w) `shouldBe` Just plainIn

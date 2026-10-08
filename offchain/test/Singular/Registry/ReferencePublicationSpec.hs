@@ -173,11 +173,12 @@ publicationDiscovery = describe "missing-reference discovery" $ do
         found
             `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
     it
-        "reports missing roles without refusing when neither source has them" $ do
-        found <-
-            missingReferences providerMiss (Just walletAddr) wanted bothRoles
-        found
-            `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.singleton RoleRequest)
+        "reports missing roles without refusing when neither source has them"
+        $ do
+            found <-
+                missingReferences providerMiss (Just walletAddr) wanted bothRoles
+            found
+                `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.singleton RoleRequest)
     it "refuses a failed provider read instead of reading it as empty" $ do
         failed <-
             missingReferences providerFailed (Just walletAddr) wanted allRoles
