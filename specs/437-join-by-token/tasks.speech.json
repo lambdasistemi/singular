@@ -45,6 +45,10 @@
       "pause": 500
     },
     {
+      "text": "E371 accepted #501 at 26af5ae7; PR476 merged as b3e6db96 on 2026-10-08. This records that child disposition; individual unstamped obligations and later slices remain visible.",
+      "pause": 400
+    },
+    {
       "text": "[ ] T007 [US1] Reproduce provider read-back failure misreported as not-live/Done in offchain/cli/src/Singular/CLI/Create.hs through its real Session/Trace path; repair typed attribution and prove successful-empty versus failed-read discrimination.",
       "pause": 300
     },
@@ -201,6 +205,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "e1971fb5735cfd3e4f5fd087ae9aee9e06bc4bd7c1c5d38f8a14f6cdbddfe9b0"
+    "sha256": "9cfcc25fd4bf0296316dd1d7ef20bc61a27fcfa63a575c90aee84c5a3e004e38"
   }
 }

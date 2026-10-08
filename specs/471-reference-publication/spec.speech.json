@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue #471, child of #437 under E371. Depends on #501. Work starts from its frozen 26af5ae7ea881b433f2f317f10e09ddab7a45cae candidate; starting work does not accept that dependency. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, constitution 1.13.0, is unchanged. The parent spec and settled October 6–7 rulings remain binding.",
+      "text": "Issue #471, child of #437 under E371. Depends on #501. Work starts from its frozen 26af5ae7ea881b433f2f317f10e09ddab7a45cae candidate; starting work does not accept that dependency. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, constitution 1.13.0, is unchanged. E371 subsequently accepted #501; PR476 merged as b3e6db96957c53a1ce7bf749ec6b0adcb48349d3. The #471 branch now inherits that accepted main; its own implementation remains unaccepted. The parent spec and settled October 6–7 rulings remain binding.",
       "pause": 400
     }
   ],
@@ -105,6 +105,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "51daf25e431ce13a468a5a3594cab5590a571796986b70f78e518bf76d5d247a"
+    "sha256": "f6800081a6bcbffb8f12a606fead9744e641e2104a67c8ac7feb91a82eaee739"
   }
 }

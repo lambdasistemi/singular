@@ -4,6 +4,8 @@ Issue [#471](https://github.com/lambdasistemi/singular/issues/471), child of #43
 Depends on #501. Work starts from its frozen `26af5ae7ea881b433f2f317f10e09ddab7a45cae`
 candidate; starting work does not accept that dependency. Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0, is unchanged.
+E371 subsequently accepted #501; PR476 merged as `b3e6db96957c53a1ce7bf749ec6b0adcb48349d3`.
+The #471 branch now inherits that accepted main; its own implementation remains unaccepted.
 The parent [spec](../437-join-by-token/spec.md) and settled October 6–7 rulings remain binding.
 
 ## Carol publishes, Bob uses the output

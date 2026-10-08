@@ -4,12 +4,13 @@
 
 Start `26af5ae7ea881b433f2f317f10e09ddab7a45cae`, tree
 `c5a4417c2ea2687978ac9308ca054e2b841d897b`, from #501 / PR476.
-Last integrated main `7aef00bbb255a6aeb7161c8cc21df77527ef9c2a`; Lean tree
+Current integrated main `b3e6db96957c53a1ce7bf749ec6b0adcb48349d3`; Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0.
 Worktree `/code/singular-issue-471`, branch `feat/471-publish-references`.
-The operator's `start 471` starts this branch while #501 finishes acceptance. Its frozen branch
-stays unchanged; #471 acceptance remains dependent on #501. A stacked draft targets the #501
-branch until its merge, then the delivery owner rebases and retargets to main.
+The operator's `start 471` began this branch while #501 finished acceptance. E371 accepted #501
+at `26af5ae7` and PR476 merged into the main revision above at 2026-10-08 13:21 UTC.
+After the writer's first RED proof and clean handback, the delivery owner rebased onto that main.
+Draft PR516 now targets main. This does not accept any #471 behavior.
 
 Retain serial Sol delivery owner, native Muse and native GLM. Muse owns the first implementation
 phase; only one writer acts at a time. No new seat, auditor, draft tool or delegation. Sol owns

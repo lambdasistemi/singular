@@ -17,6 +17,9 @@ PR476 closes #501 only. Later children do not delay its delivery.
 
 ## Token-only connected actor journey (#501)
 
+E371 accepted #501 at `26af5ae7`; PR476 merged as `b3e6db96` on 2026-10-08.
+This records that child disposition; individual unstamped obligations and later slices remain visible.
+
 - [ ] T007 [US1] Reproduce provider read-back failure misreported as not-live/Done in offchain/cli/src/Singular/CLI/Create.hs through its real Session/Trace path; repair typed attribution and prove successful-empty versus failed-read discrimination.
 - [ ] T008 [US1] Say, execute and render Bob's ordinary token-only fold in conformance/lib/Conformance/Cli/Controls.hs and conformance/app-cli/Conformance/Cli/Backend.hs; control total interpretation over discovered instruction extent.
 - [ ] T009 [US1] Align the existing identity obligation in specs/299-singular-cli/spec.md and its exact conformance binding with token-only reads/writes; regenerate speech, preserve saved-selector retirement/history and separate evidence.
