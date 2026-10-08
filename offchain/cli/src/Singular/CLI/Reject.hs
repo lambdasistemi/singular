@@ -59,12 +59,16 @@ import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
     , RejectArgs (..)
+    , WriteSettings (..)
     , neededRoles
     )
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.FoldRules (fundedView)
 import Singular.CLI.Live
+import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -134,10 +138,17 @@ data Rejected = Rejected
 and funded by this wallet, and journal it.
 -}
 runReject :: Env -> RejectArgs -> IO Value
-runReject env a =
+runReject env a = do
+    let ws = rejectWrite a
+    dir <-
+        resolveWalletDir
+            (rejectStateDir a)
+            (providerMagic (writeProvider ws))
+            (accessToken (rejectAccess a))
+            (writeWalletKey ws)
     attached
         env
-        (rejectStateDir a)
+        dir
         (rejectBlueprint a)
         (rejectAccess a)
         (neededRoles (Reject a))

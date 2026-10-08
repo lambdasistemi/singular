@@ -190,7 +190,7 @@ commandLine = describe "the command line" $ do
             `shouldBe` Right
                 ( Create
                     CreateArgs
-                        { createStateDir = "/srv/reg"
+                        { createStateDir = Just "/srv/reg"
                         , createBlueprint = "/srv/plutus.json"
                         , createMode = Submit writeSettings
                         , createSeed = Just seedText
@@ -286,7 +286,7 @@ commandLine = describe "the command line" $ do
             `shouldBe` Right
                 ( Insert
                     EntryArgs
-                        { entryStateDir = "/srv/reg"
+                        { entryStateDir = Just "/srv/reg"
                         , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
@@ -496,12 +496,12 @@ commandLine = describe "the command line" $ do
     it "refuses a write with no provider configuration" $
         parseCommand (["registry", "insert", "--key", "key"] <> reg)
             `shouldSatisfy` isLeftWith isUnsafe
-    it "names a missing state directory" $
+    it "names a missing state token when no directory is given" $
         parseCommand
             ( ["registry", "inspect", "--key", "key", "--blueprint", "b"]
                 <> provider
             )
-            `shouldBe` Left (MissingFlag "--state-dir")
+            `shouldBe` Left (MissingFlag "--state-token")
     it "refuses --registry with its rename to --state-dir" $ do
         parseCommand
             ( [ "registry"
@@ -1247,7 +1247,7 @@ previewRows = describe "--preview" $ do
             `shouldBe` Right
                 ( Insert
                     EntryArgs
-                        { entryStateDir = "/srv/reg"
+                        { entryStateDir = Just "/srv/reg"
                         , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode =
@@ -1464,7 +1464,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             `shouldBe` Right
                 ( Fold
                     FoldArgs
-                        { foldStateDir = "/srv/reg"
+                        { foldStateDir = Just "/srv/reg"
                         , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
@@ -1489,7 +1489,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             `shouldBe` Right
                 ( Fold
                     FoldArgs
-                        { foldStateDir = "/srv/reg"
+                        { foldStateDir = Just "/srv/reg"
                         , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
@@ -1572,7 +1572,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 `shouldSatisfy` refusesNaming "--request" "registry fold"
     it "describes fold and --fold in its usage" $ do
         usage
-            `shouldSatisfy` isInfixOf "singular registry fold --state-dir DIR"
+            `shouldSatisfy` isInfixOf "singular registry fold [--state-dir ROOT]"
         usage `shouldSatisfy` isInfixOf "--request TXID#IX"
         usage `shouldSatisfy` isInfixOf "[--fold]"
   where
@@ -1606,7 +1606,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             `shouldBe` Right
                 ( Reject
                     RejectArgs
-                        { rejectStateDir = "/srv/reg"
+                        { rejectStateDir = Just "/srv/reg"
                         , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
@@ -1628,7 +1628,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             `shouldBe` Right
                 ( Reject
                     RejectArgs
-                        { rejectStateDir = "/srv/reg"
+                        { rejectStateDir = Just "/srv/reg"
                         , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
@@ -1662,7 +1662,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
             reject [flag, "616c696365"] `shouldSatisfy` refusesBadValue flag
     it "describes reject in its usage" $ do
         usage
-            `shouldSatisfy` isInfixOf "singular registry reject --state-dir DIR"
+            `shouldSatisfy` isInfixOf "singular registry reject [--state-dir ROOT]"
         usage `shouldSatisfy` isInfixOf "past both its windows"
 
 reclaimCommandRows :: Spec
@@ -1679,7 +1679,7 @@ reclaimCommandRows = describe "reclaiming the requester's pending request" $ do
             Right (Reclaim a) -> do
                 reclaimRequest a
                     `shouldBe` either error id (parseOutRef (T.pack (replicate 64 'a' <> "#0")))
-                reclaimStateDir a `shouldBe` "/srv/reg"
+                reclaimStateDir a `shouldBe` Just "/srv/reg"
                 reclaimBlueprint a `shouldBe` "/srv/plutus.json"
                 reclaimWrite a
                     `shouldBe` WriteSettings

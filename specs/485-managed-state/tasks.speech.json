@@ -1,0 +1,60 @@
+{
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Tasks close only when source-bound evidence exists. Story, model binding, requirements and limits are in spec.md; execution order and ownership in plan.md.",
+      "pause": 400
+    },
+    {
+      "text": "[x] T001 Verify base, constitution/Lean binding and actual baseline; record failures. Base 1015f3a3 and Lean tree 16ee2d4a verified; docs-check failed on the missing speech companion. This records a baseline failure, not a passing full gate.",
+      "pause": 300
+    },
+    {
+      "text": "[x] T002 Reproduce current directory requirement and add meaningful resolver/identity controls. RED commit 81f8964e executed 11 cases with 6 missing-behavior failures. The subsequent focused suite executed 121 cases with 0 failures, including parser and pure identity-partition controls. Connected behavior remains T007/T008 below.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T003 Implement managed state resolution and optional parser arguments across commands.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T004 Bind create state after seed selection without weakening recovery or concurrency.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T005 Preserve inspection/preview behavior and journal reconciliation under managed paths.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T006 Update help, examples and production demo/recovery consumers to default managed state.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T007 Execute isolated fresh Bob inspect/book/fold/readback and creator-access negative control.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T008 Execute managed-path interruption recovery and identity/lock separation controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T009 Run focused and required gates; bind receipts, raw exits and candidate hashes.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T010 Freeze candidate, obtain GLM independent review and resolve findings.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T011 Integrate current main, pass exact-head hosted checks, merge and close #485 on full evidence.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "1ba91b4e29104438648c7049b1be8eb1444e8d69a93642721480d048a2ee0312"
+  }
+}

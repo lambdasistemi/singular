@@ -80,6 +80,12 @@ import Singular.CLI.Command
     , RegistryAccess (..)
     )
 import Singular.CLI.Live
+import Singular.CLI.ManagedState
+    ( addressPartition
+    , managedDir
+    , resolveStateRoot
+    , statelessDir
+    )
 import Singular.CLI.Proof
     ( AuthError (RootMismatch)
     , Leaf (..)
@@ -147,23 +153,46 @@ import Singular.Registry.Types
 
 runInspect :: Env -> InspectArgs -> IO Value
 runInspect env a = do
-    let dir = inspectStateDir a
-        Key key = inspectKey a
+    let Key key = inspectKey a
         settings = inspectProvider a
         requested = accessToken (inspectAccess a)
+        magic = providerMagic settings
     release <-
         envLoadRelease env (inspectBlueprint a)
             >>= either (failWith ClientRefusal) pure
-    pending <- doesFileExist (pendingPath dir)
-    if pending
-        then do
-            identity <- readPending dir
-            either
-                (failWith ClientRefusal . T.unpack)
-                pure
-                (pendingToken release identity >>= (`checkPendingToken` requested))
-            inspectIncompleteCreate env dir settings identity
-        else inspectSaved env dir key settings release a
+    root <- resolveStateRoot (inspectStateDir a)
+    case inspectWalletAddress a of
+        -- The caller's wallet partition: the same journal a write signed
+        -- by that wallet reconciles, with the same lock-or-skip semantics.
+        Just text -> do
+            caller <-
+                either
+                    (failWith ClientRefusal)
+                    pure
+                    (parseEnterpriseAddress magic text)
+            let dir = managedDir root magic requested (addressPartition caller)
+            pending <- doesFileExist (pendingPath dir)
+            if pending
+                then do
+                    identity <- readPending dir
+                    either
+                        (failWith ClientRefusal . T.unpack)
+                        pure
+                        (pendingToken release identity >>= (`checkPendingToken` requested))
+                    inspectIncompleteCreate env dir settings identity
+                else inspectSaved env dir (Just dir) key settings release a
+        -- A stateless public read: no wallet journal is reconciled, no
+        -- wallet partition is scanned, no pending identity is looked up and
+        -- no directory or lock is created.
+        Nothing ->
+            inspectSaved
+                env
+                (statelessDir root magic requested)
+                Nothing
+                key
+                settings
+                release
+                a
 
 -- | The pending identity an interrupted create recorded.
 readPending :: FilePath -> IO Value
@@ -283,12 +312,15 @@ inlineDatum o = case o ^. datumTxOutL of
 inspectSaved
     :: Env
     -> FilePath
+    -- ^ The path 'Saved' carries; a stateless sentinel is never touched on disk
+    -> Maybe FilePath
+    -- ^ The wallet journal to reconcile, or nothing for a stateless read
     -> ByteString
     -> ProviderSettings
     -> Release
     -> InspectArgs
     -> IO Value
-inspectSaved env dir key settings release a = do
+inspectSaved env savedPath mJournal key settings release a = do
     let magic = providerMagic settings
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below.
@@ -304,9 +336,11 @@ inspectSaved env dir key settings release a = do
         try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             -- An inspect runs no transaction: it looks up no reference.
             saved <-
-                resolveSaved dir release (inspectAccess a) Set.empty Nothing v
+                resolveSaved savedPath release (inspectAccess a) Set.empty Nothing v
             point <- Cage.tip v
-            reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
+            reconciled <- case mJournal of
+                Just dir -> reconcileLocked dir (reconcile "inspect" dir saved v)
+                Nothing -> pure Nothing
             live <- attachLive v saved
             state <- case extractCageDatum (snd (liveState live)) of
                 Just (StateDatum found) -> pure found
@@ -342,7 +376,9 @@ inspectSaved env dir key settings release a = do
             scope <- sessionReceipt caps v
             let holdings = holdingsFor saved key outs
                 keyOutput = liveOutputFor saved key outs
-            entries <- readJournal dir
+            entries <- case mJournal of
+                Just dir -> readJournal dir
+                Nothing -> pure []
             let pending = unresolved entries
             let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
                 -- what the read found, reported once its read step closes
@@ -417,7 +453,14 @@ inspectSaved env dir key settings release a = do
                                )
                            ]
                         <> listed
-                        <> reconciledFields reconciled
+                        <> case mJournal of
+                            Just _ -> reconciledFields reconciled
+                            Nothing ->
+                                [
+                                    ( "reconciliation"
+                                    , toJSON ("stateless public read: no wallet journal checked" :: Text)
+                                    )
+                                ]
                 agrees = \case
                     Active -> length holdings == 1
                     _ -> null holdings

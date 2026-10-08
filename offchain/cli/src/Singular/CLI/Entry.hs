@@ -72,6 +72,9 @@ import Singular.CLI.Command
     , EntryArgs (..)
     , EntryMode (..)
     , Key (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
+    , WriteSettings (..)
     , neededRoles
     )
 import Singular.CLI.Fold
@@ -85,6 +88,7 @@ import Singular.CLI.Fold
     , foldPending
     )
 import Singular.CLI.Live
+import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay
     ( bookingOutlay
     , updateOutlay
@@ -237,6 +241,18 @@ foldAfter at a booking =
             , fsAllowance = entryMaxOutlay a
             }
 
+{- | The managed journal for an entry write: resolved from the state root
+override, the provider network, the registry token and the caller's
+wallet, before any lock or journal use.
+-}
+managedEntryDir :: EntryArgs -> WriteSettings -> IO FilePath
+managedEntryDir a ws =
+    resolveWalletDir
+        (entryStateDir a)
+        (providerMagic (writeProvider ws))
+        (accessToken (entryAccess a))
+        (writeWalletKey ws)
+
 -- ---------------------------------------------------------
 -- insert
 -- ---------------------------------------------------------
@@ -247,9 +263,10 @@ runInsert env a = case entryMode a of
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
+        dir <- managedEntryDir a ws
         attached
             env
-            (entryStateDir a)
+            dir
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Insert a))
@@ -308,9 +325,10 @@ runUpdate env a = case entryMode a of
                 (entryDocument a)
         payload <-
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
+        dir <- managedEntryDir a ws
         attached
             env
-            (entryStateDir a)
+            dir
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Update a))
@@ -391,9 +409,10 @@ runTerminate env a = case entryMode a of
     Preview node addr -> runPreview env KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
+        dir <- managedEntryDir a ws
         attached
             env
-            (entryStateDir a)
+            dir
             (entryBlueprint a)
             (entryAccess a)
             (neededRoles (Terminate a))

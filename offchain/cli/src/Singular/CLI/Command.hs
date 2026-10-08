@@ -129,7 +129,8 @@ newtype RegistryAccess = RegistryAccess
 
 -- | @registry create@.
 data CreateArgs = CreateArgs
-    { createStateDir :: FilePath
+    { createStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , createBlueprint :: FilePath
     , createMode :: EntryMode
     {- ^ Submit with the caller's key, or (with @--preview@ only) read for a
@@ -158,7 +159,8 @@ data EntryMode
 
 -- | @registry insert@, @registry update@ and @registry terminate@.
 data EntryArgs = EntryArgs
-    { entryStateDir :: FilePath
+    { entryStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , entryAccess :: RegistryAccess
     , entryBlueprint :: FilePath
     , entryMode :: EntryMode
@@ -188,7 +190,8 @@ data EntryArgs = EntryArgs
 
 -- | @registry fold@: the registry's pending request, folded by this wallet.
 data FoldArgs = FoldArgs
-    { foldStateDir :: FilePath
+    { foldStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , foldAccess :: RegistryAccess
     , foldBlueprint :: FilePath
     , foldWrite :: WriteSettings
@@ -206,7 +209,8 @@ data FoldArgs = FoldArgs
 
 -- | @registry reject@: every pending request, rejected by this wallet.
 data RejectArgs = RejectArgs
-    { rejectStateDir :: FilePath
+    { rejectStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , rejectAccess :: RegistryAccess
     , rejectBlueprint :: FilePath
     , rejectWrite :: WriteSettings
@@ -220,7 +224,8 @@ data RejectArgs = RejectArgs
 
 -- | @registry reclaim@: take back this wallet's own pending request.
 data ReclaimArgs = ReclaimArgs
-    { reclaimStateDir :: FilePath
+    { reclaimStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , reclaimAccess :: RegistryAccess
     , reclaimBlueprint :: FilePath
     , reclaimWrite :: WriteSettings
@@ -237,7 +242,8 @@ data ReclaimArgs = ReclaimArgs
 
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
-    { inspectStateDir :: FilePath
+    { inspectStateDir :: Maybe FilePath
+    -- ^ Optional state root override; absent, the managed default root applies
     , inspectAccess :: RegistryAccess
     {- ^ The registry, by its state token: required on every command but
     create.
@@ -248,6 +254,11 @@ data InspectArgs = InspectArgs
     , inspectOutputsAt :: Maybe String
     {- ^ @--outputs-at@: a public address whose outputs the receipt also lists, read
     from the node apart from any write
+    -}
+    , inspectWalletAddress :: Maybe String
+    {- ^ @--wallet-address@: the caller's public address, locating the managed
+    partition whose journal this inspect reconciles. Absent, the inspect is a
+    stateless chain read that reconciles no wallet journal. Never a signing key.
     -}
     , inspectReceipt :: Maybe FilePath
     }
@@ -385,7 +396,7 @@ parseWith environment args = do
             windowFrom "--process-time" (reProcessTime economics) flags
         retracting <-
             windowFrom "--retract-time" (reRetractTime economics) flags
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
             publicPreview = preview && isJust (lookup "--wallet-address" flags)
@@ -436,7 +447,7 @@ parseWith environment args = do
                     "is a registry insert flag: only insert sets a deposit"
                 )
     entryArgs books document env flags = do
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         unless books (refuseFold flags)
@@ -475,7 +486,7 @@ parseWith environment args = do
                 , entryFold = isJust (lookup "--fold" flags)
                 }
     foldArgs env flags = do
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
@@ -509,7 +520,7 @@ parseWith environment args = do
                 , foldReceipt = optional "--receipt" flags
                 }
     rejectArgs env flags = do
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             ( ["--request"]
@@ -540,7 +551,7 @@ parseWith environment args = do
                 , rejectReceipt = optional "--receipt" flags
                 }
     reclaimArgs env flags = do
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
@@ -596,7 +607,7 @@ parseWith environment args = do
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
-        dir <- required "--state-dir" flags
+        let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         settings <- providerSettings flags
@@ -609,6 +620,7 @@ parseWith environment args = do
                 , inspectProvider = settings
                 , inspectKey = key
                 , inspectOutputsAt = optional "--outputs-at" flags
+                , inspectWalletAddress = optional "--wallet-address" flags
                 , inspectReceipt = optional "--receipt" flags
                 }
     -- A preview reads a node and names a public address; it holds no key,
@@ -616,7 +628,7 @@ parseWith environment args = do
     addressNeedsPreview =
         BadValue
             "--wallet-address"
-            "names a caller for --preview only; a write signs with --wallet-skey"
+            "names a caller for --preview and registry inspect only; a write signs with --wallet-skey"
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
@@ -873,61 +885,70 @@ usage :: String
 usage =
     unlines
         [ "usage:"
-        , "  singular registry create --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "  singular registry create --preview --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "  singular registry insert --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry insert --preview --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry insert --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --preview --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry update --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry terminate --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry terminate --preview --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry terminate --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry fold --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reclaim --state-dir DIR --blueprint PLUTUS_JSON --request TXID#IX"
+        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reject --state-dir DIR --blueprint PLUTUS_JSON"
+        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry inspect --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
+        , "      [--wallet-address ADDR]"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
-        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry: the"
-        , "directory holds only the actor's own journal and submissions. A command finds"
+        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
+        , "No command takes a per-registry directory. Each command keeps its own"
+        , "journal and submissions under a managed state directory it resolves itself:"
+        , "the platform per-user state location (XDG_STATE_HOME, falling back to"
+        , "$HOME/.local/state, namespace singular), partitioned by network, complete"
+        , "state token and the caller's stable wallet payment identity. The same"
+        , "identity reuses its journal and lock across invocations and key-file"
+        , "relocation; different wallets and tokens never share one. A configured"
+        , "root overrides only the default root, with the same partitioning."
+        , "A command finds"
         , "the reference scripts its transactions run by hash, from the provider and then"
         , "its own wallet."
         , "create takes positive integer windows in milliseconds. Its processing window"
@@ -976,7 +997,10 @@ usage =
         , "inspect also lists the registry's pending requests with what each actually locks,"
         , "and the outputs at a public address it is given: reads apart from any write."
         , "Each command prints one JSON receipt on standard output. inspect reads"
-        , "only: it takes no signing key and submits nothing."
+        , "only: it takes no signing key and submits nothing. Given a wallet address"
+        , "it reconciles that caller's managed journal, as a write would; without one"
+        , "it is a stateless chain read that checks no wallet journal and creates"
+        , "no state."
         ]
 
 {- | The reference roles a command's transactions run, and so the only

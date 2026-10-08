@@ -41,6 +41,14 @@ model conflict with a concrete story; no new behavioral ruling is authorized.
 5. Inspect/preview with no prior state still succeeds without loading creator
    metadata. Do not require a signing key for reads. Preview stays free of
    submission and unnecessary persistent state creation.
+   Inspect accepts an optional public `--wallet-address`: when supplied it
+   selects the same partition as that wallet's writes and preserves locked
+   journal reconciliation and incomplete-create inspection. Without it,
+   inspect is a stateless public-chain read: no wallet-journal or pending-file
+   lookup, no cross-wallet scan, and no local state or lock creation. It must
+   not claim to have reconciled a wallet journal it never checked. Recovery
+   examples and controls supply the public address when they require inspect
+   to reconcile an interrupted write. There is no persistent reader partition.
 6. Creation also needs no user-managed directory. Bind its managed journal
    to the state token derived from the selected seed and creator wallet
    before its first submission. Preserve create recovery/concurrency fences;
@@ -61,6 +69,9 @@ model conflict with a concrete story; no new behavioral ruling is authorized.
 - A real held/killed accepted write resumes using the managed journal without
   duplicate submission. Concurrent same-identity writer is refused; unrelated
   identities do not share that lock. Existing refusal classes stay intact.
+  Public-address inspect participates in the recovery proof; address-free
+  inspect has a control proving it neither scans wallet files nor creates
+  local state.
 - Required repository gates, focused tests, exact-head hosted checks and GLM
   independent review. Unexecuted rows remain uncovered, not passed.
 

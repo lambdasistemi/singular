@@ -46,7 +46,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (nub, sort)
+import Data.List (nub, partition, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust, isNothing, listToMaybe)
 import Data.Proxy (Proxy (..))
@@ -74,7 +74,7 @@ import System.Directory
     , removePathForcibly
     )
 import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
+import System.FilePath (takeFileName, (</>))
 import System.IO
     ( IOMode (..)
     , hClose
@@ -661,15 +661,27 @@ packagedWrites at flags = do
         pure (name, code, out, err)
     registryFiles registry = do
         names <- sort <$> listDirectoryRecursive registry
+        -- The journal lives under the managed identity partition, never
+        -- directly at the configured root: locate it instead of assuming it.
+        let (journals, others) = partition ((== "journal.jsonl") . takeFileName) names
+        journalRel <- case journals of
+            [found] -> pure found
+            _ ->
+                fail
+                    ( "expected exactly one managed journal under "
+                        <> registry
+                        <> ", found "
+                        <> show (length journals)
+                    )
         files <-
             mapM
                 (\p -> (,) (registry </> p) <$> BS.readFile (registry </> p))
-                (filter (/= "journal.jsonl") names)
+                others
         journal <-
             mapM
                 (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
                 . BC.lines
-                =<< BS.readFile (registry </> "journal.jsonl")
+                =<< BS.readFile (registry </> journalRel)
         pure (files, journal)
     unstamped = \case
         Aeson.Object o -> Aeson.Object (KeyMap.delete journalStamp o)

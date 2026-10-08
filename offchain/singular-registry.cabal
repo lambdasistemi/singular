@@ -895,6 +895,7 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.ManagedState
     Singular.CLI.ManagedStateSpec
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
@@ -1287,6 +1288,7 @@ executable singular
     Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.ManagedState
     Singular.CLI.Outlay
     Singular.CLI.Permanent
     Singular.CLI.Plan
