@@ -239,6 +239,14 @@ createWith env a rel ws = do
             refuseExisting dir
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
             withWrite env dir "create" ws $ \wc -> do
+                -- The existence check again, now under the target's lock: a
+                -- create that passed it before another create finished
+                -- must not boot a second registry over the first. It runs
+                -- before the seed is revalidated, so a concurrent double
+                -- boot of one seed is refused for the existing state,
+                -- not for the seed the winner just spent.
+                refuseExisting dir
+                    >>= either (failWith ClientRefusal . renderIdentityError) pure
                 let addrUnder = walletAddr (wcWallet wc)
                 (freshUtxos, _) <-
                     readStep
@@ -256,11 +264,6 @@ createWith env a rel ws = do
                         (failWith ClientRefusal . renderIdentityError)
                         pure
                         (seedChecks True seedIn freshUtxos)
-                -- The existence check again, now under the target's lock: a
-                -- create that passed it before another create finished
-                -- must not boot a second registry over the first.
-                refuseExisting dir
-                    >>= either (failWith ClientRefusal . renderIdentityError) pure
                 -- The state reference, found by its hash wherever it sits,
                 -- and the funding of every publication still to make, all
                 -- decided before anything is written or submitted.

@@ -48,6 +48,8 @@ mkdir -p "$work"
 receipts="$work/receipts"
 mkdir -p "$receipts"
 reg="$work/registry"
+# shellcheck source=tools/managed_state.sh
+source "$(dirname "$0")/managed_state.sh"
 : >"$work/trie-command-invocations"
 : >"$work/trace-command-invocations"
 
@@ -380,7 +382,7 @@ run() {
   fi
   say "$name: $class"
 }
-journal_lines() { if [ -f "$1/journal.jsonl" ]; then wc -l <"$1/journal.jsonl"; else echo 0; fi; }
+journal_lines() { journal_lines_root "$1"; }
 # refused NAME CLASS -- ARGS: a refusal against the actual target; its
 # journal must not move.
 refused() {
@@ -449,8 +451,10 @@ trie_extent() {
 # local_files: what a booking must leave alone in the actor's directory —
 # no identity file and no retired trie files are ever written there.
 local_files() {
-  [ ! -e "$reg/registry.mirror.json" ] && [ ! -e "$reg/state.json" ] || fail "a command created retired trie files"
-  [ ! -e "$reg/registry.json" ] || fail "a command wrote a registry.json"
+  [ -z "$(managed_find "$reg" registry.mirror.json)" ] && [ -z "$(managed_find "$reg" state.json)" ] \
+    || fail "a command created retired trie files"
+  [ -z "$(managed_find "$reg" registry.json)" ] \
+    || fail "a command wrote a registry.json"
   echo "no identity file"
 }
 # booked NAME: a booking-only receipt names its pending request (the
@@ -464,17 +468,19 @@ booked() {
       and (has("fold") | not) and (has("root") | not)' "$receipts/$1.json" >/dev/null \
     || fail "$1: the booking's receipt does not name its pending request, requester and fold deadline, or it claims a fold"
 }
-# booking_only NAME: since journal line BEFORE the command left exactly the
-# booking's four phases and the mirror and state it started with.
+# booking_only NAME JOURNAL BEFORE FILES: since journal line BEFORE the command
+# left exactly the booking's four phases and the mirror and state it started with.
 booking_only() {
-  local name="$1" before="$2" files="$3"
+  local name="$1" journal="$2" before="$3" files="$4"
   [ "$(local_files)" = "$files" ] || fail "$name: a booking altered identity or created retired trie files"
-  [ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
-    || fail "$name: the booking left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
-  tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+  [ "$((($(journal_count "$journal")) - before))" -eq 4 ] \
+    || fail "$name: the booking left $((($(journal_count "$journal")) - before)) journal lines, expected its four phases"
+  tail -n +"$((before + 1))" "$journal" \
     | jq -s -e '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["book"]) and (map(.journalTxId) | unique | length == 1)' >/dev/null \
     || fail "$name: the journal lines the booking left are not one booking's prepared, submitted, confirmed and observed"
 }
+# journal_count FILE: lines in a journal that may not exist yet.
+journal_count() { if [ -f "$1" ]; then wc -l <"$1" | tr -d ' '; else echo 0; fi; }
 # The body is built in one actual acquisition. Latest Koios reads are
 # Unbound; a latest observed tip is separate from snapshot binding.
 prepared_scopes() {
@@ -552,8 +558,8 @@ def tx_outputs: decode | .[0] | mapget(1) | map(out_of);
 # the hex of a signed transaction's body alone: the bytes whose hash is its id
 def body_span: tobytes as $b | (if $b[0] == 132 then dec($b; 1) else error("not a four-element transaction") end) as [$v, $q] | $b[1:$q] | bytehex;
 JQ
-# tx_outputs_of TXID: the outputs of the signed transaction the registry directory's journal saved.
-tx_outputs_of() { jq -R -c "$(cat "$work/cbor.jq") tx_outputs" "$reg/submissions/$1.cbor.hex"; }
+# tx_outputs_of TXID: the outputs of the signed transaction the managed journal saved.
+tx_outputs_of() { jq -R -c "$(cat "$work/cbor.jq") tx_outputs" "$(managed_body "$reg" "$1")"; }
 
 # payload FILE: the nested payload every insert of this journey carries.
 payload() {
@@ -644,6 +650,10 @@ say "registry $token booted from $seed"
 # and an actor whose directory is empty runs a command on the token alone.
 state_token="$(field create .stateToken)"
 [ "$state_token" = "$state.$token" ] || fail "create did not print the state token $state.$token"
+# Managed partitions for this journey's main-registry writers, derived from
+# the token and wallet identities the receipts name; the commands create them.
+alice_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+bob_main_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
 [ ! -e "$reg/registry.json" ] || fail "create wrote a registry.json"
 empty_actor="$work/empty-actor"
 mkdir -p "$empty_actor"
@@ -700,6 +710,145 @@ run empty-reader-inspect success -- registry inspect --key keyEmpty --state-toke
 say "bob booked and folded from an empty directory on the state token; another empty directory reads it"
 
 # ------------------------------------------------------------------
+# 1b. fresh bob on the managed default path: no directory argument (485)
+# ------------------------------------------------------------------
+# Bob is new: an isolated HOME with no state, and no --state-dir anywhere
+# in this leg. His inspect, booking, fold and readback resolve the managed
+# default root under that HOME alone. The harness asserts on the
+# CLI-managed root but never precreates a partition; explicit --state-dir
+# roots elsewhere test the override and isolation scopes, not this leg.
+bob_home="$work/bob-home"
+bob_copy="$work/bob-copy.skey"
+rm -rf "$bob_home"
+mkdir -p "$bob_home"
+cp "$work/bob.skey" "$bob_copy"
+# The expected CLI-managed root, with an explicitly cleared XDG so an
+# inherited XDG_STATE_HOME cannot override the intended HOME unexpectedly.
+bob_root="$(managed_default_root "$bob_home" "")"
+# bob_run NAME CLASS -- ARGS: run() with bob's isolated HOME and no XDG.
+bob_run() {
+  (
+    unset XDG_STATE_HOME
+    export HOME="$bob_home"
+    run "$@"
+  )
+}
+bob_key=defaultBob
+payload "$work/payload-bob-default.json"
+# 1. Inspect with no prior state succeeds and creates nothing.
+bob_run bob-default-inspect success -- registry inspect --key keyEmpty \
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+[ "$(field bob-default-inspect .leaf)" = active ] \
+  || fail "fresh bob's default-path inspect did not read the active key"
+[ -z "$(find "$bob_home" -mindepth 1)" ] \
+  || fail "a stateless inspect created state under bob's HOME"
+# The access detector, shown able to fire on this leg's paths: a deliberate
+# open under the creator's root is reported.
+[ -f "$alice_journal" ] \
+  || setup_fail "the creator's managed journal is not where the booking left it"
+strace -f -qq -e trace=%file -o "$work/bob-detector.strace" cat "$alice_journal" >/dev/null 2>&1 || true
+grep -qF "$reg/" "$work/bob-detector.strace" \
+  || fail "control: a deliberate open under the creator's root was not detected"
+# 2. Bob books with his key, traced: the booking must never open the
+# creator's directory or another actor's root.
+bob_traced="$work/traced-singular-bob"
+printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' \
+  "$work/bob-book.strace" "$singular" >"$bob_traced"
+chmod +x "$bob_traced"
+(
+  unset XDG_STATE_HOME
+  export HOME="$bob_home"
+  singular="$bob_traced"
+  run bob-default-insert success -- registry insert --key "$bob_key" \
+    --payload "$work/payload-bob-default.json" --blueprint "$blueprint" \
+    --state-token "$state_token" "${node[@]}" --wallet-skey "$work/bob.skey"
+)
+[ "$(field bob-default-insert .requester)" = "$bobkey" ] \
+  || fail "fresh bob's default-path booking names another requester"
+holds_envelope bob-default-insert .envelope "$bobkey" "$bob_key" "$work/payload-bob-default.json" \
+  || fail "fresh bob's booking carries another controller"
+[ -s "$work/bob-book.strace" ] \
+  || setup_fail "fresh bob's default-path booking left no trace of its file accesses"
+for root in "$reg/" "$bob_actor/" "$reader/"; do
+  ! grep -qF "$root" "$work/bob-book.strace" \
+    || fail "fresh bob's booking accessed another actor's directory: $(grep -F "$root" "$work/bob-book.strace" | head -n 3)"
+done
+bob_journal="$(managed_journal "$bob_root" "$state_token" "$bobkey")"
+[ -f "$bob_journal" ] \
+  || fail "fresh bob's booking left no journal under the managed default root"
+[ "$(managed_find "$bob_root" journal.jsonl | wc -l | tr -d ' ')" = 1 ] \
+  || fail "fresh bob's root holds more than his one journal"
+# 2b. Bob folds with the COPIED key: key-file relocation reuses the same
+# journal and partition, and the fold consumes exactly his booking.
+printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' \
+  "$work/bob-fold.strace" "$singular" >"$bob_traced"
+(
+  unset XDG_STATE_HOME
+  export HOME="$bob_home"
+  singular="$bob_traced"
+  run bob-default-fold success -- registry fold --request "$(field bob-default-insert .request)" \
+    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+    --wallet-skey "$bob_copy"
+)
+[ "$(field bob-default-fold .folder)" = "$bobkey" ] \
+  || fail "the copied key folded into another wallet's partition"
+jq -e --slurpfile b "$receipts/bob-default-insert.json" '
+    .request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+    and .folder == $b[0].requester and .edge == "insertActive"
+    and (.fold | test("^[0-9a-f]{64}$"))' "$receipts/bob-default-fold.json" >/dev/null \
+  || fail "fresh bob's fold does not consume his booking's request and deadline with his own key"
+bob_part="$(dirname "$bob_journal")"
+jq -R -e --slurpfile receipt "$receipts/bob-default-fold.json" \
+  "$(cat "$work/cbor.jq") decode | .[0] | mapget(3) == \$receipt[0].validUntilSlot" \
+  "$bob_part/submissions/$(field bob-default-fold .fold).cbor.hex" >/dev/null \
+  || fail "fresh bob's saved signed body's upper slot differs from the receipt and actual selection"
+jq -s -ce --arg tx "$(field bob-default-fold .fold)" '
+    [.[] | select(.journalEvent == "prepared" and .journalTxId == $tx)
+      | .journalSession.rawSources[] | select(.kind == "raw-time")] | unique
+    | if length == 1 then .[0] else error("fold has no unique raw time source") end' \
+  "$bob_journal" >"$receipts/bob-default-fold.time-source.json" \
+  || fail "fresh bob's fold has no exact pinned time source in his journal"
+[ -s "$work/bob-fold.strace" ] \
+  || setup_fail "fresh bob's default-path fold left no trace of its file accesses"
+for root in "$reg/" "$bob_actor/" "$reader/"; do
+  ! grep -qF "$root" "$work/bob-fold.strace" \
+    || fail "fresh bob's fold accessed another actor's directory: $(grep -F "$root" "$work/bob-fold.strace" | head -n 3)"
+done
+[ "$(managed_find "$bob_root" journal.jsonl | wc -l | tr -d ' ')" = 1 ] \
+  || fail "the copied key created another journal instead of reusing bob's"
+# 3. Readback binds the fold: same request consumed, delivered and observed.
+bob_run bob-default-readback success -- registry inspect --key "$bob_key" \
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+jq -e --slurpfile b "$receipts/bob-default-insert.json" --slurpfile f "$receipts/bob-default-fold.json" '
+    .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
+    and .root == $f[0].root and .applicationOutput.output == $f[0].liveOutput' \
+  "$receipts/bob-default-readback.json" >/dev/null \
+  || fail "fresh bob's default-path readback is not his folded booking, delivered and observed"
+jq -s -e --arg t "$(field bob-default-fold .fold)" \
+  '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length == 1' \
+  "$bob_journal" >/dev/null \
+  || fail "fresh bob's fold was never journalled observed in his partition"
+# 4. Negative control: the identical fold through a wrapper that opens the
+# creator's journal first must trip the same isolation predicate, while the
+# refused rerun journals nothing.
+printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c '\''cat "%s" >/dev/null 2>&1; exec "%s" "$@"'\'' singular "$@"\n' \
+  "$work/bob-evil.strace" "$alice_journal" "$singular" >"$work/traced-singular-bob-evil"
+chmod +x "$work/traced-singular-bob-evil"
+evil_before="$(wc -l <"$bob_journal" | tr -d ' ')"
+(
+  unset XDG_STATE_HOME
+  export HOME="$bob_home"
+  "$work/traced-singular-bob-evil" registry fold --request "$(field bob-default-insert .request)" \
+    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+    --wallet-skey "$bob_copy" >"$receipts/bob-default-evil.json" 2>"$receipts/bob-default-evil.err" || true
+)
+grep -qF "$reg/" "$work/bob-evil.strace" \
+  || fail "negative control did not fire: a creator-journal open by bob's process went undetected"
+[ "$(wc -l <"$bob_journal" | tr -d ' ')" = "$evil_before" ] \
+  || fail "the negative rerun moved fresh bob's journal"
+say "fresh bob inspected, booked, folded and read back with no directory argument under the managed default root; the negative control fires"
+
+# ------------------------------------------------------------------
 # 2. insert (alice), with its refusals
 # ------------------------------------------------------------------
 key=keyA
@@ -738,8 +887,11 @@ mkdir -p "$two_bob"
 touches_alice() { grep -qF "$two_alice" "$1"; }
 # The detector, shown able to fire: a deliberate open under alice's
 # directory, traced the same way, is reported. Alice's journal is her own
-# in-flight file in the token-only world; it exists because she booked.
-strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice/journal.jsonl" >/dev/null 2>&1 || true
+# in-flight file; it exists because she booked.
+two_alice_journal="$(managed_journal "$two_alice" "$two_token" "$alicekey")"
+[ -f "$two_alice_journal" ] \
+  || setup_fail "alice's managed journal is not where her booking left it"
+strace -f -qq -e trace=%file -o "$two/control.strace" cat "$two_alice_journal" >/dev/null 2>&1 || true
 touches_alice "$two/control.strace" || fail "control: a deliberate open under alice's directory was not detected"
 say "two actors: the access detector reports a deliberate open under alice's directory"
 traced="$work/traced-singular"
@@ -749,7 +901,7 @@ printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@
 # journey must fail at the access check below.
 if [ "${DEMO1_TWO_ACTOR_DELIBERATE_OPEN:-}" = 1 ]; then
   printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c '"'"'cat "%s" >/dev/null 2>&1; exec "%s" "$@"'"'"' singular "$@"\n' \
-    "$two/bob-fold.strace" "$two_alice/journal.jsonl" "$singular" >"$traced"
+    "$two/bob-fold.strace" "$two_alice_journal" "$singular" >"$traced"
   say "two actors: the deliberate open control is on; bob's process opens alice's journal"
 fi
 chmod +x "$traced"
@@ -794,8 +946,8 @@ run dave-create client-refusal -- registry create --process-time 120000 --retrac
 jq -e '.reason | startswith("publication-unfunded")' "$receipts/dave-create.json" >/dev/null \
   || fail "dave's underfunded create was refused for another reason: $(jq -r .reason "$receipts/dave-create.json")"
 say "an underfunded create refuses before boot: $(jq -r .reason "$receipts/dave-create.json")"
-[ ! -e "$two_dave/journal.jsonl" ] || fail "the refused create wrote a journal"
-[ ! -e "$two_dave/registry.pending.json" ] || fail "the refused create wrote a pending identity"
+[ -z "$(managed_find "$two_dave" journal.jsonl)" ] || fail "the refused create wrote a journal"
+[ -z "$(managed_find "$two_dave" registry.pending.json)" ] || fail "the refused create wrote a pending identity"
 probe_out="$work/dave-seed-probe.json"
 "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$dave_seed" >"$probe_out"
 jq -e --arg s "$dave_seed" 'any(.live[]; . == $s)' "$probe_out" >/dev/null \
@@ -864,7 +1016,7 @@ refused insert-unknown-registry client-refusal -- registry insert --key "$key" \
   --state-token "$unminted" "${node[@]}" "${alice[@]}"
 jq -e '.reason | startswith("state-token-not-found")' "$receipts/insert-unknown-registry.json" >/dev/null \
   || fail "insert-unknown-registry: the refusal is not state-token-not-found"
-[ ! -e "$work/no-such-registry/journal.jsonl" ] || fail "insert-unknown-registry: a refused insert journalled"
+[ -z "$(managed_find "$work/no-such-registry" journal.jsonl)" ] || fail "insert-unknown-registry: a refused insert journalled"
 [ "$(journal_lines "$reg")" = "$before_inserts" ] || fail "an insert refusal moved the target's journal"
 
 # A preview builds and measures what the insert would submit, for the public
@@ -907,11 +1059,13 @@ jq -e '.outlay.withinAllowance == false and .outlay.allowance == 1000000' \
 # The booking alone: alice's insert leaves its request pending, the mirror,
 # the public root as it was, and names the deadline.
 before="$(journal_lines "$reg")"
+insert_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+insert_before="$(journal_count "$insert_journal")"
 files_before="$(local_files)"
 run insert success -- registry insert --key "$key" --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked insert
-booking_only insert "$before" "$files_before"
+booking_only insert "$insert_journal" "$insert_before" "$files_before"
 [ "$(field insert .requester)" = "$alicekey" ] || fail "the booking's requester is not alice's key"
 # The request carries the envelope the fold will deliver: the booking keeps
 # nothing of it in the registry directory.
@@ -944,6 +1098,8 @@ jq -e '.reason | contains("retract-owner") and contains("not the request\u0027s 
 run fold success -- registry fold --request "$(field insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 fold_ok() {
+  local fold_part
+  fold_part="$(managed_partition "$reg" "$state_token" "$(field "$1" .folder)")"
   jq -e --slurpfile b "$receipts/$2.json" '
       .request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
       and .folder != $b[0].requester and .edge == "'"$3"'"
@@ -959,7 +1115,7 @@ fold_ok() {
       [.[] | select(.journalEvent == "prepared" and .journalTxId == $tx)
         | .journalSession.rawSources[] | select(.kind == "raw-time")] | unique
       | if length == 1 then .[0] else error("fold has no unique raw time source") end' \
-    "$reg/journal.jsonl" >"$receipts/$1.time-source.json" \
+    "$fold_part/journal.jsonl" >"$receipts/$1.time-source.json" \
     || fail "$1: the prepared body has no exact pinned time source"
   jq -j "$(cat "$work/cbor.jq") .genesisHex | tobytes | implode" \
     "$receipts/$1.time-source.json" >"$receipts/$1.genesis.json"
@@ -971,7 +1127,7 @@ fold_ok() {
       | ($selected | length) == 1 and ($prepared | length) == 1
       and any($prepared[0].journalSession.facts[];
         .query == "Latest block observation" and .value.slot == $selected[0].tip)' \
-    "$reg/journal.jsonl" >/dev/null \
+    "$fold_part/journal.jsonl" >/dev/null \
     || fail "$1: the selected build tip is absent from the prepared body's actual observations"
   jq -s -e --slurpfile receipt "$receipts/$1.json" --slurpfile genesis "$receipts/$1.genesis.json" '
       [.[] | select(.phase == "validityUpper")] as $selected
@@ -992,7 +1148,7 @@ fold_ok() {
     || fail "$1: the actual selection does not cap the deadline at the observed horizon with the required usable interval"
   jq -R -e --slurpfile receipt "$receipts/$1.json" \
     "$(cat "$work/cbor.jq") decode | .[0] | mapget(3) == \$receipt[0].validUntilSlot" \
-    "$reg/submissions/$(field "$1" .fold).cbor.hex" >/dev/null \
+    "$fold_part/submissions/$(field "$1" .fold).cbor.hex" >/dev/null \
     || fail "$1: the saved signed body's upper slot differs from the receipt and actual selection"
 }
 fold_ok fold insert insertActive
@@ -1014,13 +1170,15 @@ holds_envelope insert-preview .envelope "$alicekey" "$key" "$work/payload-insert
 # bob, a wallet that did not create the registry, inserts his own key.
 bkey=keyB
 before="$(journal_lines "$reg")"
+bob_insert_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+bob_insert_before="$(journal_count "$bob_insert_journal")"
 files_before="$(local_files)"
 run bob-insert success -- registry insert --key "$bkey" --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 holds_envelope bob-insert .envelope "$bobkey" "$bkey" "$work/payload-insert.json" \
   || fail "bob's insert did not book his own key hash as controller"
 booked bob-insert
-booking_only bob-insert "$before" "$files_before"
+booking_only bob-insert "$bob_insert_journal" "$bob_insert_before" "$files_before"
 [ "$(field bob-insert .requester)" = "$bobkey" ] || fail "the booking's requester is not bob's key"
 [ ! -e "$reg/preimages" ] || fail "bob's booking kept an envelope in the registry directory"
 # A funding output the folder's wallet does not hold is refused by name too.
@@ -1063,7 +1221,8 @@ jq -e --slurpfile p "$work/payload.json" '.applicationOutput.payload == $p[0]' \
 # Retired local trie files cannot influence this acquired public read.
 printf 'corrupt mirror\n' >"$reg/registry.mirror.json"
 printf 'corrupt saved root\n' >"$reg/state.json"
-run inspect-retired-files success -- registry inspect --key "$key" "${common[@]}" "${node[@]}"
+run inspect-retired-files success -- registry inspect --key "$key" "${common[@]}" "${node[@]}" \
+  --wallet-address "$alice_addr"
 jq -e --slurpfile before "$receipts/inspect-2.json" \
   '.leaf == $before[0].leaf and .root == $before[0].root' "$receipts/inspect-retired-files.json" >/dev/null \
   || fail "corrupt retired files changed the proven read"
@@ -1090,21 +1249,22 @@ rm -f "$work/lock.held" "$work/lock.pid"
 # The holding process is the exec'd sleep itself, so killing it releases
 # the lock (the open-file description dies with its last holder).
 # shellcheck disable=SC2016 # $$ and $1 belong to the holder's own shell
-flock --fcntl "$reg/.lock" bash -c 'echo $$ > "$1/lock.pid"; touch "$1/lock.held"; exec sleep 120' _ "$work" &
+alice_lock="$(managed_lock "$reg" "$state_token" "$alicekey")"
+flock --fcntl "$alice_lock" bash -c 'echo $$ > "$1/lock.pid"; touch "$1/lock.held"; exec sleep 120' _ "$work" &
 holder=$!
 for _ in $(seq 1 100); do
   [ -e "$work/lock.held" ] && break
   sleep 0.1
 done
-[ -e "$work/lock.held" ] || setup_fail "the lock holder never acquired $reg/.lock"
-if flock --fcntl --nonblock "$reg/.lock" true; then
-  setup_fail "the lock holder does not hold $reg/.lock"
+[ -e "$work/lock.held" ] || setup_fail "the lock holder never acquired $alice_lock"
+if flock --fcntl --nonblock "$alice_lock" true; then
+  setup_fail "the lock holder does not hold $alice_lock"
 fi
 refused concurrent-writer concurrent-writer -- registry insert --key keyC \
   --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 kill "$(cat "$work/lock.pid")" 2>/dev/null || true
 wait "$holder" 2>/dev/null || true
-flock --fcntl --nonblock "$reg/.lock" true || setup_fail "the lock holder did not release $reg/.lock"
+flock --fcntl --nonblock "$alice_lock" true || setup_fail "the lock holder did not release $alice_lock"
 # The combined form: --fold books and then folds in the one process, by the
 # routine `registry fold` runs, and prints both transactions.
 run insert-after-release success -- registry insert --fold --key keyC \
@@ -1139,10 +1299,10 @@ done
 [ -e "$work/fold.go.waiting" ] || setup_fail "the terminate never reached its accepted fold"
 kill -9 "$victim" 2>/dev/null || true
 wait "$victim" 2>/dev/null || true
-[ "$(tail -n 1 "$reg/journal.jsonl" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
+[ "$(tail -n 1 "$alice_journal" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
   || fail "the killed process did not stop at its accepted fold"
 say "terminate killed after the node accepted its fold"
-fold_tx="$(tail -n 1 "$reg/journal.jsonl" | jq -r .journalTxId)"
+fold_tx="$(tail -n 1 "$alice_journal" | jq -r .journalTxId)"
 # The next ordinary write — bob's update of his own key — reconciles the
 # killed fold from chain evidence and proceeds. While the fold is not yet
 # on chain it is refused before submitting anything, naming the fold and
@@ -1173,9 +1333,12 @@ run inspect-3 success -- registry inspect --key "$key" "${common[@]}" "${node[@]
 jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail "the holding is still live"
 # Public replay serves the included fold; journal observation is appended
 # exactly once across the reconciling command and subsequent inspect.
-[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "$reg/journal.jsonl")" = 1 ] \
+# The killed fold was alice's; its observation may live in the reconciling
+# writer's partition, so both counts span every journal under the root.
+mapfile -t kill_journals < <(managed_find "$reg" journal.jsonl)
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "observed")] | length' "${kill_journals[@]}")" = 1 ] \
   || fail "the killed fold was not observed exactly once"
-[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$reg/journal.jsonl")" = 1 ] \
+[ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "${kill_journals[@]}")" = 1 ] \
   || fail "the killed fold was prepared more than once"
 say "the next write reconciled the killed fold from the chain once; inspect reads it terminal"
 
@@ -1183,10 +1346,12 @@ say "the next write reconciled the killed fold from the chain once; inspect read
 # 6. terminate bob normally; a write works again
 # ------------------------------------------------------------------
 before="$(journal_lines "$reg")"
+bob_term_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+bob_term_before="$(journal_count "$bob_term_journal")"
 files_before="$(local_files)"
 run bob-terminate success -- registry terminate --key "$bkey" "${common[@]}" "${node[@]}" "${bob[@]}"
 booked bob-terminate
-booking_only bob-terminate "$before" "$files_before"
+booking_only bob-terminate "$bob_term_journal" "$bob_term_before" "$files_before"
 jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
   "$receipts/bob-terminate.json" >/dev/null \
   || fail "the termination booking does not name the live output its fold will release"
@@ -1204,8 +1369,11 @@ run inspect-4 success -- registry inspect --key "$bkey" "${common[@]}" "${node[@
 
 # Every prepared body names the actual acquisition and its consumed facts.
 # Inspect separately reports the latest tip it observed, without a snapshot promise.
-prepared_scopes "$reg" | jq -e -s 'length > 0' >/dev/null \
-  || fail "a write lacks its Unbound acquisition"
+mapfile -t scopes_journals < <(managed_find "$reg" journal.jsonl)
+for scopes_journal in "${scopes_journals[@]}"; do
+  prepared_scopes "$(dirname "$scopes_journal")" | jq -e -s 'length > 0' >/dev/null \
+    || fail "a write lacks its Unbound acquisition"
+done
 jq -e '(.observedTip | test("^[0-9]+\\.[0-9a-f]{64}$"))
   and (.sessionEvidence.binding == {kind:"Unbound"})' "$receipts/inspect-4.json" >/dev/null \
   || fail "inspect-4 lacks its actual latest observation and Unbound binding"
@@ -1214,12 +1382,12 @@ say "every write names its actual Unbound acquisition; inspect reports its separ
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
 # ------------------------------------------------------------------
-# Two creates race for one target: bob's, on his own live seed, is held
-# after its pre-lock checks while alice's completes; under the lock it must
-# re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
+# Two creates race for one seed: the same wallet's second boot is held
+# after its pre-lock checks while the first completes; under the lock it
+# must re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
 race="${DEMO1_CREATE_RACE:-$(dirname "$0")/demo1_cli_create_race.sh}"
 status=0
-bash "$race" "$singular" "$blueprint" "$provider_url" "$time_directory" "$network_magic" "$work/alice.skey" "$work/bob.skey" "$work/race" || status=$?
+bash "$race" "$singular" "$blueprint" "$provider_url" "$time_directory" "$network_magic" "$work/alice.skey" "$work/alice.skey" "$work/race" || status=$?
 case "$status" in
   0) ;;
   3) setup_fail "the create race never reached its target check" ;;
@@ -1246,9 +1414,11 @@ done
 [ -e "$work/create.go.waiting" ] || setup_fail "the create never reached an accepted submission"
 kill -9 "$victim" 2>/dev/null || true
 wait "$victim" 2>/dev/null || true
-[ -e "$inter/registry.pending.json" ] || setup_fail "the create finished before it was killed"
 inter_token="$(field preview-inter .stateToken)"
-first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter/journal.jsonl")"
+inter_journal="$(managed_journal "$inter" "$inter_token" "$alicekey")"
+inter_pending="$(managed_pending "$inter" "$inter_token" "$alicekey")"
+[ -f "$inter_pending" ] || setup_fail "the killed create left no managed pending identity"
+first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter_journal")"
 first_tx="${first_tx%%$'\n'*}"
 inter_lines="$(journal_lines "$inter")"
 run create-after-kill client-refusal -- registry create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
@@ -1256,7 +1426,8 @@ run create-after-kill client-refusal -- registry create --process-time 120000 --
 [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
 for _ in $(seq 1 60); do
   run inspect-interrupted partial -- registry inspect --key-hex 00 --state-dir "$inter" \
-    --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}"
+    --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}" \
+    --wallet-address "$alice_addr"
   jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
   sleep 2
 done
@@ -1264,9 +1435,10 @@ jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
   || fail "inspect did not read the incomplete create's identity"
 [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
 jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
-  "$inter/journal.jsonl" >/dev/null || fail "the killed create's accepted submission was never observed"
+  "$inter_journal" >/dev/null || fail "the killed create's accepted submission was never observed"
 run inspect-interrupted-other-token client-refusal -- registry inspect --key-hex 00 --state-dir "$inter" \
-  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+  --wallet-address "$alice_addr"
 jq -e '.reason | startswith("state-token mismatch")' "$receipts/inspect-interrupted-other-token.json" >/dev/null \
   || fail "an interrupted create was read under another registry's token"
 say "an interrupted create is refused a second boot and read back from its journal"
@@ -1275,11 +1447,13 @@ say "an interrupted create is refused a second boot and read back from its journ
 # registry's fold takes every pending request, so this is the journey's last
 # booking; the late fold below is its control.
 before="$(journal_lines "$reg")"
+late_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+late_before="$(journal_count "$late_journal")"
 files_before="$(local_files)"
 run late-insert success -- registry insert --key keyD --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 booked late-insert
-booking_only late-insert "$before" "$files_before"
+booking_only late-insert "$late_journal" "$late_before" "$files_before"
 
 # A fold near its request's deadline. Within the margin a fold needs to be
 # included, the client refuses it up front, by name, before it builds anything:
@@ -1370,6 +1544,7 @@ if [ "$wait_ms" -gt 0 ]; then
 fi
 root_before="$(field inspect-late .root)"
 before="$(journal_lines "$reg")"
+reject_before="$(journal_count "$bob_main_journal")"
 files_before="$(local_files)"
 refused reclaim-closed client-refusal -- registry reclaim --request "$(field late-insert .request)" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
@@ -1387,7 +1562,7 @@ run reject success -- registry reject "${common[@]}" "${node[@]}" "${bob[@]}"
 [ "$(local_files)" = "$files_before" ] || fail "a reject altered identity or created retired trie files"
 [ "$((($(journal_lines "$reg")) - before))" -eq 4 ] \
   || fail "the reject left $((($(journal_lines "$reg")) - before)) journal lines, expected its four phases"
-tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+tail -n +"$((reject_before + 1))" "$bob_main_journal" \
   | jq -s -e --arg t "$(field reject .reject)" '(map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]) and (map(.journalStep) | unique == ["reject"]) and (map(.journalTxId) | unique == [$t])' >/dev/null \
   || fail "the journal lines the reject left are not one reject's prepared, submitted, confirmed and observed"
 jq -e --slurpfile l "$receipts/late-insert.json" --arg bob "$bobkey" --arg owner "$alicekey" --arg addr "$alice_addr" --arg k "$(hexof keyD)" '
@@ -1415,34 +1590,39 @@ run inspect-refund success -- registry inspect --key keyD --outputs-at "$alice_a
 reject_tx="$(field reject .reject)"
 booking_tx="$(field late-insert .booking)"
 for t in "$reject_tx" "$booking_tx"; do
-  [ "$(jq -s --arg t "$t" '[.[] | select(.journalTxId == $t and .journalEvent == "confirmed")] | length' "$reg/journal.jsonl")" = 1 ] \
+  case "$t" in
+    "$reject_tx") j="$bob_main_journal" ;;
+    *) j="$alice_journal" ;;
+  esac
+  [ "$(jq -s --arg t "$t" '[.[] | select(.journalTxId == $t and .journalEvent == "confirmed")] | length' "$j")" = 1 ] \
     || fail "the journal does not show $t confirmed"
 done
 # body_bound TXID FILE: zero only when FILE's body hashes to TXID and its bytes to the journal's hash.
 body_bound() {
-  local id file="$2" computed saved
+  local id file="$2" computed saved journal
   computed="$(jq -R -r "$(cat "$work/cbor.jq") body_span" "$file" | tr -d '\n' | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
   saved="$(tr -d '\n' <"$file" | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
-  id="$(jq -r --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared") | .journalBodyHash' "$reg/journal.jsonl")"
+  journal="$(dirname "$(dirname "$file")")/journal.jsonl"
+  id="$(jq -r --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared") | .journalBodyHash' "$journal")"
   [ "$computed" = "$1" ] && [ -n "$id" ] && [ "$saved" = "$id" ]
 }
 for t in "$reject_tx" "$booking_tx"; do
-  body_bound "$t" "$reg/submissions/$t.cbor.hex" || fail "the saved body of $t is not the transaction it is claimed to be"
+  body_bound "$t" "$(managed_body "$reg" "$t")" || fail "the saved body of $t is not the transaction it is claimed to be"
 done
 flip() { # one hex digit changed
   local c="${1:0:1}"
   [ "$c" = 0 ] && c=1 || c=0
   printf '%s%s' "$c" "${1:1}"
 }
-body_bound "$(flip "$reject_tx")" "$reg/submissions/$reject_tx.cbor.hex" \
+body_bound "$(flip "$reject_tx")" "$(managed_body "$reg" "$reject_tx")" \
   && fail "a body passed for a transaction id that is not its own"
 # the same bytes with their last digit changed no longer match the journal's hash
 # (the id, a hash of the body alone, still does)
-body="$(cat "$reg/submissions/$reject_tx.cbor.hex")"
+body="$(cat "$(managed_body "$reg" "$reject_tx")")"
 if [ "${body: -1}" = 0 ]; then last=1; else last=0; fi
 printf "%s%s" "${body%?}" "$last" >"$work/body-tampered.hex"
 cmp_status=0
-cmp -s "$work/body-tampered.hex" "$reg/submissions/$reject_tx.cbor.hex" \
+cmp -s "$work/body-tampered.hex" "$(managed_body "$reg" "$reject_tx")" \
   || cmp_status=$?
 case "$cmp_status" in
   0) setup_fail "the tampered body equals the saved one" ;;
@@ -1538,6 +1718,7 @@ run inspect-before-reclaim success -- registry inspect --key keyF "${common[@]}"
 root_before="$(field inspect-before-reclaim .root)"
 files_before="$(local_files)"
 before="$(journal_lines "$reg")"
+reclaim_before="$(journal_count "$alice_journal")"
 deadline_ms="$(field insert-to-reclaim .foldDeadline.posixMs)"
 wait_ms=$((deadline_ms + 1 - $(date +%s%3N)))
 if [ "$wait_ms" -gt 0 ]; then
@@ -1553,7 +1734,7 @@ jq -e '.reason | contains("processing deadline") and contains("has passed")' \
 run reclaim success -- registry reclaim --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 [ "$(local_files)" = "$files_before" ] || fail "the reclaim altered identity or created retired trie files"
-tail -n +"$((before + 1))" "$reg/journal.jsonl" \
+tail -n +"$((reclaim_before + 1))" "$alice_journal" \
   | jq -s -e --arg t "$(field reclaim .retract)" '
       map(.journalEvent) == ["prepared", "submitted", "confirmed", "observed"]
       and (map(.journalStep) | unique == ["reclaim"])
@@ -1562,8 +1743,8 @@ tail -n +"$((before + 1))" "$reg/journal.jsonl" \
 run inspect-after-reclaim success -- registry inspect --key keyF --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
 retract_tx="$(field reclaim .retract)"
 booking_tx="$(field insert-to-reclaim .booking)"
-body_bound "$retract_tx" "$reg/submissions/$retract_tx.cbor.hex" || fail "the retract body is not the transaction claimed"
-body_bound "$booking_tx" "$reg/submissions/$booking_tx.cbor.hex" || fail "the reclaimed booking body is not the transaction claimed"
+body_bound "$retract_tx" "$(managed_body "$reg" "$retract_tx")" || fail "the retract body is not the transaction claimed"
+body_bound "$booking_tx" "$(managed_body "$reg" "$booking_tx")" || fail "the reclaimed booking body is not the transaction claimed"
 retract_outs="$(tx_outputs_of "$retract_tx")"
 booking_outs="$(tx_outputs_of "$booking_tx")"
 node_pending="$(jq -c --arg r "$(field insert-to-reclaim .request)" '[.pendingRequests[] | select(.request == $r)]' "$receipts/inspect-before-reclaim.json")"
@@ -1616,29 +1797,33 @@ say "the owner's reclaim: whole bound return checked independently, root unchang
 
 # Local journal roots/edges are not trie reconstruction material. Copies of
 # the settled registry with those records omitted or altered prove the same key.
-boot_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$reg/journal.jsonl")"
+boot_tx="$(jq -sr '[.[] | select(.journalEvent == "prepared" and .journalStep == "boot")] | first | .journalTxId' "$alice_journal")"
+# Tampering follows the create journal's relative path: the copy preserves
+# the managed layout, so the same relative partition is rewritten in it.
+create_rel="$(realpath --relative-to="$reg" "$alice_journal")"
 for fault in missing-create missing-change broken-before wrong-after undecodable-edge; do
   copy="$work/coverage-$fault"
   cp -a "$reg" "$copy"
   case "$fault" in
     missing-create)
-      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      jq -c --arg tx "$boot_tx" 'select(.journalTxId != $tx)' "$alice_journal" >"$copy/$create_rel"
       ;;
     missing-change)
-      jq -c 'select(.journalEdge == null)' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      jq -c 'select(.journalEdge == null)' "$alice_journal" >"$copy/$create_rel"
       ;;
     broken-before)
-      jq -c 'if .journalEvent == "prepared" then .journalRootBefore = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      jq -c 'if .journalEvent == "prepared" then .journalRootBefore = "not-hex" else . end' "$alice_journal" >"$copy/$create_rel"
       ;;
     wrong-after)
-      jq -c 'if .journalEvent == "prepared" then .journalRootAfter = "not-hex" else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      jq -c 'if .journalEvent == "prepared" then .journalRootAfter = "not-hex" else . end' "$alice_journal" >"$copy/$create_rel"
       ;;
     undecodable-edge)
-      jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$reg/journal.jsonl" >"$copy/journal.jsonl"
+      jq -c 'if .journalEvent == "prepared" then .journalEdge = 99 else . end' "$alice_journal" >"$copy/$create_rel"
       ;;
   esac
   run "trie-local-$fault" success -- registry inspect --key keyG --state-dir "$copy" \
-    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+    --wallet-address "$alice_addr"
   jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
     '.leaf == $correct[0].leaf and .root == $correct[0].root' "$receipts/trie-local-$fault.json" >/dev/null \
     || fail "altered local journal trie records changed the public read: $fault"
@@ -1665,6 +1850,7 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # ------------------------------------------------------------------
 jq -n '{int: 42}' >"$work/payload-2.json"
 before="$(journal_lines "$reg")"
+update_before="$(journal_count "$alice_journal")"
 rm -f "$work/update.go" "$work/update.go.waiting"
 SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/update.go" SINGULAR_HARNESS_HOLD_STEP=update \
   "$singular" registry update --key keyC --payload "$work/payload-2.json" --confirm-timeout 30 \
@@ -1676,7 +1862,7 @@ for _ in $(seq 1 1200); do
   sleep 0.1
 done
 [ -e "$work/update.go.waiting" ] || setup_fail "the update never reached an accepted submission"
-lost_tx="$(tail -n +"$((before + 1))" "$reg/journal.jsonl" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
+lost_tx="$(tail -n +"$((update_before + 1))" "$alice_journal" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
 lost_tx="${lost_tx%%$'\n'*}"
 kill "$devnet_pid" 2>/dev/null || true
 pkill -f "cardano-node run --config $work/" 2>/dev/null || true
@@ -1701,11 +1887,12 @@ case "$outcome/$status" in
 esac
 jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.json" >/dev/null \
   || fail "the partial receipt does not name the submitted transaction"
-[ "$(tail -n 1 "$reg/journal.jsonl" | jq -r .journalEvent)" = unconfirmed ] \
+[ "$(tail -n 1 "$alice_journal" | jq -r .journalEvent)" = unconfirmed ] \
   || fail "the journal does not keep the submitted update unresolved"
 say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
 
-jq -r '.journalEvent' "$reg/journal.jsonl" | sort | uniq -c
+mapfile -t census_journals < <(managed_find "$reg" journal.jsonl)
+for census in "${census_journals[@]}"; do jq -r '.journalEvent' "$census"; done | sort | uniq -c
 
 # Every journal the journey's writes left, wherever they wrote: each
 # prepared line names its actual Unbound acquisition.
