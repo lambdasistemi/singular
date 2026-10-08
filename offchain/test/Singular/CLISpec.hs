@@ -180,6 +180,8 @@ commandLine = describe "the command line" $ do
     it "refuses a command it does not support" $
         parseCommand ["registry", "delete"]
             `shouldSatisfy` isLeftWith isUnknown
+    it "names the publish-references command in its usage" $
+        usage `shouldSatisfy` isInfixOf "singular registry publish-references"
     it "reads a create with its seed, wallet and provider" $
         parseCommand
             ( ["registry", "create", "--seed", seedText]
