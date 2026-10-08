@@ -4,22 +4,28 @@
 
 Start `26af5ae7ea881b433f2f317f10e09ddab7a45cae`, tree
 `c5a4417c2ea2687978ac9308ca054e2b841d897b`, from #501 / PR476.
-Current integrated main `b3e6db96957c53a1ce7bf749ec6b0adcb48349d3`; Lean tree
+Current integrated main `33ed4c2202f1abff53a5f19665f92ac098381176`; Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0.
 Worktree `/code/singular-issue-471`, branch `feat/471-publish-references`.
 The operator's `start 471` began this branch while #501 finished acceptance. E371 accepted #501
-at `26af5ae7` and PR476 merged into the main revision above at 2026-10-08 13:21 UTC.
+at `26af5ae7` and PR476 merged as `b3e6db96` at 2026-10-08 13:21 UTC.
 After the writer's first RED proof and clean handback, the delivery owner rebased onto that main.
-Draft PR516 now targets main. This does not accept any #471 behavior.
+Draft PR516 targets main. After transfer to dedicated E437, the writer returned clean
+checkpoint `dc0f6a6f`; it was archived and rebased without conflicts onto current main.
+Eight commits remain, with identical main-relative patch identity. This accepts no #471 behavior.
 
 Retain serial Sol delivery owner, native Muse and native GLM. Muse owns the first implementation
-phase; only one writer acts at a time. No new seat, auditor, draft tool or delegation. Sol owns
-planning, Git integration, PR metadata and receipts; E371 owns product acceptance and merge.
+phase; only one writer acts at a time. The operator requires an independent final GLM audit;
+GLM reviews an immutable candidate and returns findings through Sol without source edits.
+No additional seat, draft tool or delegation. Sol owns planning, Git integration, PR metadata
+and receipts; E437 owns product acceptance and merge. E371 is a sibling consumer.
 
 ## Existing authority and selective reuse
 
 The parent #437 spec and tasks T018–T021/T023–T024, restoration evidence from T026 and this
-child's T034–T036 remain required. Existing-command funding migration includes reclaim;
+child's T034–T036 remain required. #520 owns create outcomes #406/#478/#479; this slice's
+shared funding controls can supply #479 evidence without duplicating that implementation.
+Existing-command funding migration includes reclaim;
 new retirement behavior and its command remain #502 work.
 
 Preserved `refs/archive/437/pr2-wip-20261007` at
@@ -52,7 +58,8 @@ contract. Do not restore general raw queries to make a migration compile.
 5. Execute the connected missing-reference → explicit restoration → successful Bob fold
    through independent actor directories and receipt-derived public clauses.
 6. Verify help/docs/speech/audio and the real release archive; freeze a coherent candidate,
-   push draft promptly and run required local and exact-head hosted checks. No optional
+   push draft promptly and run required local and exact-head hosted checks. Obtain GLM's
+   independent verdict on the final candidate and adjudicate findings before acceptance. No optional
    performance/runner rewrite, broad historical blame campaign or repeated unchanged carriers.
 
 Expected compiler negatives are boundary evidence only after legal production-package compilation
@@ -66,7 +73,7 @@ missing-funds/no-submission, script mismatch, typed failed-read and negative cap
 Full ordinary funding extent is enforced by capabilities, not a handwritten selector census.
 Connected claims need actual transactions/readbacks and detected negative controls.
 
-No task is marked accepted before E371 disposition. Pending examples and uncovered public
+No task is marked accepted before E437 disposition and adjudicated GLM audit. Pending examples and uncovered public
 requirements remain visible. PR closes #471 only; #437 stays open. No GitHub comments,
 public-chain writes or private wallet material. No current or historical model conflict is
 accepted as a pass; escalate genuine ambiguity under the constitution.

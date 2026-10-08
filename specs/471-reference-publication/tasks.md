@@ -28,7 +28,8 @@ and this child's T034–T036 stay bound by [plan.md](plan.md); this list does no
 - [ ] Verify public grammar/interpreter/renderer over discovered extent, with harness evidence confined to its appendix.
 - [ ] Ship help/docs/canonical speech/audio and invoke the command from the actual release archive.
 - [ ] Freeze coherent source, run required scoped/local CI and exact-head hosted checks, preserving pending examples and uncovered requirements.
-- [ ] Update this child's PR using the repository template and exact model/evidence/limits; retain #501 dependency and E371 acceptance/merge authority.
+- [ ] Obtain the independent GLM audit of the final immutable candidate and adjudicate its findings before acceptance.
+- [ ] Update this child's PR using the repository template and exact model/evidence/limits; retain accepted #501 dependency and E437 acceptance/merge authority.
 
 New retirement and page delivery remain in #502/#503. Every behavioral repair observes its
 meaningful failing check before success. Deliberate capability compiler negatives need a

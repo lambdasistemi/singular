@@ -95,7 +95,11 @@
       "pause": 300
     },
     {
-      "text": "[ ] Update this child's PR using the repository template and exact model/evidence/limits; retain #501 dependency and E371 acceptance/merge authority.",
+      "text": "[ ] Obtain the independent GLM audit of the final immutable candidate and adjudicate its findings before acceptance.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Update this child's PR using the repository template and exact model/evidence/limits; retain accepted #501 dependency and E437 acceptance/merge authority.",
       "pause": 300
     },
     {
@@ -105,6 +109,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ab0389b2d2f00438015605799a664135c57d02e850a540a07f167372ce24090b"
+    "sha256": "9db7b420d85b7fe1ee34ea9d76563415bbb4568d6584f84c61c9ac2b382a1fee"
   }
 }

@@ -1,11 +1,12 @@
 # Publish missing references without spending the carriers
 
-Issue [#471](https://github.com/lambdasistemi/singular/issues/471), child of #437 under E371.
+Issue [#471](https://github.com/lambdasistemi/singular/issues/471), child of dedicated epic #437.
 Depends on #501. Work starts from its frozen `26af5ae7ea881b433f2f317f10e09ddab7a45cae`
 candidate; starting work does not accept that dependency. Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0, is unchanged.
 E371 subsequently accepted #501; PR476 merged as `b3e6db96957c53a1ce7bf749ec6b0adcb48349d3`.
-The #471 branch now inherits that accepted main; its own implementation remains unaccepted.
+The #471 branch now inherits main `33ed4c2202f1abff53a5f19665f92ac098381176`;
+its own implementation remains unaccepted. E437 owns acceptance and merge; E371 is a sibling.
 The parent [spec](../437-join-by-token/spec.md) and settled October 6–7 rulings remain binding.
 
 ## Carol publishes, Bob uses the output
@@ -87,7 +88,8 @@ must preserve registry state, token identity, custody and authorization through 
 Ship help, preview, recovery and the command through the existing offchain flake and release
 archive. Publish receipt-derived conformance sentences and uncovered requirements, with harness
 evidence in a marked appendix. Required local and exact-head hosted checks remain acceptance
-conditions. E371 owns acceptance and merge; no extra auditor or worker is commissioned.
+conditions. E437 owns acceptance and merge. The operator requires an independent final GLM
+audit within the retained Sol/Muse/GLM team before acceptance; no additional writer is commissioned.
 
 New retirement command and its complete retire/restore journey belong to #502. Page/archive/report
 action-identity work belongs to #503. No public-network transaction, release publication, private
