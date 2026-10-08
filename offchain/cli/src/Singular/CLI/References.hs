@@ -16,23 +16,16 @@ signs, submits, journals and writes nothing.
 -}
 module Singular.CLI.References (runPublishReferences) where
 
-import Control.Monad (when)
-import Control.Exception (throwIO)
+import Cardano.Tx.Ledger (ConwayTx)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
-import Cardano.Tx.Ledger (ConwayTx)
-import Data.Foldable (toList)
-import Lens.Micro ((^.))
-import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Text qualified as T
+import Lens.Micro ((^.))
 
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, valueTxOutL)
-import Cardano.Ledger.BaseTypes (TxIx (..))
-import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 
@@ -42,11 +35,25 @@ import Singular.CLI.Command
     , ProviderSettings (..)
     , PublishArgs (..)
     , RegistryAccess (..)
+    , WriteSettings (..)
     )
 import Singular.CLI.Create (observeReference)
 import Singular.CLI.Live (receipt)
 import Singular.CLI.Live qualified as Live (txInText)
 import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Registry
+    ( hexT
+    , loadRelease
+    , parseEnterpriseAddress
+    )
+import Singular.CLI.Restore
+    ( Planned (..)
+    , acquireWallet
+    , locateOutputs
+    , planPublish
+    , plannedScript
+    , plannedScriptList
+    )
 import Singular.CLI.Session
     ( Env (..)
     , WriteContext (..)
@@ -57,62 +64,68 @@ import Singular.CLI.Session
     , txIdHex
     )
 import Singular.Registry.Capabilities (sessionReceipt)
-import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Addr, Coin (..), ConwayEra)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.CLI.Registry (hexT, loadRelease, parseEnterpriseAddress)
-import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
-    , Release
-    , checkedScript
-    , expectedReferences
-    , missingReferences
-    , renderReferenceRefusal
     , renderStateToken
     , roleName
     )
 import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
-import Singular.Registry.Wallet (bech32Address, walletAddr)
-import Singular.Registry.WalletOutputs
-    ( FundingViewRefusal (..)
-    , WalletOutputs
-    , narrowFunding
-    , renderFundingRefusal
-    , walletOutputs
+import Singular.Registry.Wallet
+    ( bech32Address
+    , loadWallet
+    , walletAddr
     )
 
 -- | @singular registry publish-references@: preview or publish.
 runPublishReferences :: Env -> PublishArgs -> IO Value
-runPublishReferences env a = case publishMode a of
-    Preview node addr -> runPublishPreview env a node addr
-    Submit _ -> runPublish env a
+runPublishReferences env a
+    | publishPreview a = case publishMode a of
+        Preview node addr -> runPublishPreview env a node addr
+        Submit ws -> do
+            wallet <-
+                loadWallet (providerMagic (writeProvider ws)) (writeWalletKey ws)
+            runPublishPreviewAt env a (writeProvider ws) (walletAddr wallet)
+    | otherwise = case publishMode a of
+        Submit _ -> runPublish env a
+        Preview _ _ -> error "publish-references preview takes no write session"
 
--- | Read-only preview: what submission would send, signed, submitted,
--- journalled and written nothing.
-runPublishPreview :: Env -> PublishArgs -> ProviderSettings -> String -> IO Value
+{- | Read-only preview: what submission would send, with nothing signed,
+submitted, journalled or written.
+-}
+runPublishPreview
+    :: Env -> PublishArgs -> ProviderSettings -> String -> IO Value
 runPublishPreview env a settings addrText = do
-    release <-
-        loadRelease (publishBlueprint a)
-            >>= either (failWith ClientRefusal) pure
     addr <-
         either
             (failWith ClientRefusal)
             pure
             (parseEnterpriseAddress (providerMagic settings) addrText)
+    runPublishPreviewAt env a settings addr
+
+{- | Read-only preview at a resolved payer address: what submission would
+send, with nothing signed, submitted, journalled or written.
+-}
+runPublishPreviewAt
+    :: Env -> PublishArgs -> ProviderSettings -> Addr -> IO Value
+runPublishPreviewAt env a settings payer = do
+    release <-
+        loadRelease (publishBlueprint a)
+            >>= either (failWith ClientRefusal) pure
     readOnce env settings ["wallet outputs", "reference scripts"] $ \caps v -> do
         planned <-
             planPublish
                 v
                 release
                 (accessToken (publishAccess a))
-                addr
+                payer
                 (publishRoles a)
                 Nothing
         scope <- sessionReceipt caps v
         w <- acquireWallet v planned
-        (built, refouts) <- publishReferencesTx v addr w (plannedScriptList planned)
+        (built, refouts) <-
+            publishReferencesTx v payer w (plannedScriptList planned)
         pure $
             receipt
                 "publish-references"
@@ -148,12 +161,26 @@ runPublish env a =
                         (publishRoles a)
                         (publishFund a)
             (tx, refouts) <-
-                submitBuilt wc "publish-references" (const (expecting "publish-references")) $ \v -> do
-                    w <- acquireWallet v planned
-                    publishReferencesTx v (plannedPayer planned) w (plannedScriptList planned)
+                submitBuilt
+                    wc
+                    "publish-references"
+                    (const (expecting "publish-references"))
+                    $ \v -> do
+                        w <- acquireWallet v planned
+                        publishReferencesTx
+                            v
+                            (plannedPayer planned)
+                            w
+                            (plannedScriptList planned)
             published <- locateOutputs tx refouts (plannedRoles planned)
             mapM_
-                (\(role, out) -> observeReference wc ("publish-" <> roleName role) (plannedScript planned role) out)
+                ( \(role, out) ->
+                    observeReference
+                        wc
+                        ("publish-" <> roleName role)
+                        (plannedScript planned role)
+                        out
+                )
                 published
             pure
                 ( receipt
@@ -166,99 +193,22 @@ runPublish env a =
         Submit ws -> ws
         Preview _ _ -> error "publish-references preview takes no write session"
 
--- | What publication will send: the checked scripts for the missing roles.
-data Planned = Planned
-    { plannedToken :: Asset
-    , plannedPayer :: Addr
-    , plannedRoles :: [ReferenceRole]
-    , plannedScripts :: [(ReferenceRole, Script ConwayEra)]
-    , plannedFund :: Maybe TxIn
-    }
-
--- | Resolve the token, find the missing roles among the requested ones
--- and hash-check what would be built. Refusals name their cause before
--- anything is built, signed or written.
-planPublish
-    :: Cage.Session NoWitness IO
-    -> Release
-    -> Asset
-    -> Addr
-    -> [ReferenceRole]
-    -> Maybe TxIn
-    -> IO Planned
-planPublish v release token payer requested fund = do
-    let expected = expectedReferences release token
-        wanted =
-            if null requested
-                then Map.keys expected
-                else requested
-    (_, missing) <-
-        missingReferences v (Just payer) expected (Set.fromList wanted)
-            >>= either (failWith ClientRefusal . T.unpack . renderReferenceRefusal) pure
-    let selected = [r | r <- wanted, r `Set.member` missing]
-    when (null selected) $
-        failWith ClientRefusal "no missing reference scripts to publish"
-    scripts <-
-        traverse
-            ( \role ->
-                (,) role
-                    <$> either
-                        (failWith ClientRefusal . T.unpack . renderReferenceRefusal)
-                        pure
-                        (checkedScript release token role)
-            )
-            selected
-    pure
-        Planned
-            { plannedToken = token
-            , plannedPayer = payer
-            , plannedRoles = selected
-            , plannedScripts = scripts
-            , plannedFund = fund
-            }
-
--- | The checked script for one planned role.
-plannedScript :: Planned -> ReferenceRole -> Script ConwayEra
-plannedScript planned role = case lookup role (plannedScripts planned) of
-    Just script -> script
-    Nothing -> error "publish-references planned a role it did not check"
-
--- | The scripts to publish, in role order.
-plannedScriptList :: Planned -> [Script ConwayEra]
-plannedScriptList planned = map snd (plannedScripts planned)
-
--- | The wallet publication funds from, narrowed to the chosen input.
-acquireWallet
-    :: Cage.Session NoWitness IO -> Planned -> IO WalletOutputs
-acquireWallet v planned = do
-    w0 <-
-        walletOutputs v (plannedPayer planned)
-            >>= either throwIO pure
-    case plannedFund planned of
-        Nothing -> pure w0
-        Just chosen -> do
-            narrowed <-
-                narrowFunding (plannedPayer planned) chosen v
-                    >>= either refuse pure
-            walletOutputs narrowed (plannedPayer planned) >>= either throwIO pure
-  where
-    refuse = \case
-        FundingReadFailure e -> throwIO e
-        FundingInputRefusal r -> failWith ClientRefusal (renderFundingRefusal r)
-
 -- | Preview fields: what submission would send, per missing role.
-previewFields :: Planned -> ConwayTx -> [TxOut ConwayEra] -> [(Text, Value)]
+previewFields
+    :: Planned -> ConwayTx -> [TxOut ConwayEra] -> [(Text, Value)]
 previewFields planned built refouts =
     [ ("token", toJSON (renderStateToken (plannedToken planned)))
-    , ( "publications"
-      , toJSON
+    ,
+        ( "publications"
+        , toJSON
             [ Aeson.object
                 [ "role" Aeson..= roleName role
                 , "destination" Aeson..= bech32Address (plannedPayer planned)
                 , "scriptHash" Aeson..= hexT (scriptHashBytes (hashScript script))
                 , "outputAda" Aeson..= coinOf out
                 ]
-            | (role, script, out) <- zip3 (plannedRoles planned) (plannedScriptList planned) refouts
+            | (role, script, out) <-
+                zip3 (plannedRoles planned) (plannedScriptList planned) refouts
             ]
         )
     , ("fee", toJSON (feeOf built))
@@ -269,7 +219,10 @@ previewFields planned built refouts =
 
 -- | Receipt fields: the confirmed publications with their identities.
 receiptFields
-    :: Planned -> ConwayTx -> [(ReferenceRole, (TxIn, TxOut ConwayEra))] -> [(Text, Value)]
+    :: Planned
+    -> ConwayTx
+    -> [(ReferenceRole, (TxIn, TxOut ConwayEra))]
+    -> [(Text, Value)]
 receiptFields planned tx published =
     [ ("token", toJSON (renderStateToken (plannedToken planned)))
     , ("transaction", toJSON (txIdHex tx))
@@ -279,7 +232,8 @@ receiptFields planned tx published =
             [ Aeson.object
                 [ "role" Aeson..= roleName role
                 , "destination" Aeson..= bech32Address (plannedPayer planned)
-                , "scriptHash" Aeson..= hexT (scriptHashBytes (hashScript (plannedScript planned role)))
+                , "scriptHash"
+                    Aeson..= hexT (scriptHashBytes (hashScript (plannedScript planned role)))
                 , "transaction" Aeson..= txIdHex tx
                 , "output" Aeson..= Live.txInText out
                 ]
@@ -287,14 +241,3 @@ receiptFields planned tx published =
             ]
         )
     ]
-
--- | The published outputs located in their transaction, by exact output
--- equality; a built output the transaction does not carry fails closed.
-locateOutputs
-    :: ConwayTx -> [TxOut ConwayEra] -> [ReferenceRole] -> IO [(ReferenceRole, (TxIn, TxOut ConwayEra))]
-locateOutputs tx refouts roles = do
-    let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
-        locate refout = case [ix | (ix, out) <- zip [0 ..] outs, out == refout] of
-            ix : _ -> pure (TxIn (txIdTx tx) (TxIx ix), refout)
-            [] -> failWith ClientRefusal "a published output is not in its transaction"
-    zip roles <$> traverse locate refouts

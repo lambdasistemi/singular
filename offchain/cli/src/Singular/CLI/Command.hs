@@ -242,8 +242,9 @@ data ReclaimArgs = ReclaimArgs
     }
     deriving stock (Eq, Show)
 
--- | @registry publish-references@: publish the registry's missing
--- reference scripts to the payer's own wallet.
+{- | @registry publish-references@: publish the registry's missing
+reference scripts to the payer's own wallet.
+-}
 data PublishArgs = PublishArgs
     { publishStateDir :: FilePath
     , publishAccess :: RegistryAccess
@@ -344,7 +345,9 @@ parseWith environment args = do
                         >> refusePublishReferences "create" flags
                         >> (Create <$> createArgs flags)
                 ["registry", "insert"] ->
-                    refuseRequest flags >> refuseRoles flags >> (Insert <$> insertArgs environment flags)
+                    refuseRequest flags
+                        >> refuseRoles flags
+                        >> (Insert <$> insertArgs environment flags)
                 ["registry", "update"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
@@ -485,8 +488,7 @@ parseWith environment args = do
     refusePublishReferences command flags =
         when (isJust (lookup "--publish-references" flags)) $
             Left
-                ( UnsupportedFlag "--publish-references" command
-                )
+                (UnsupportedFlag "--publish-references" command)
     entryArgs books document env flags = do
         dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
@@ -901,7 +903,7 @@ tokens = go [] []
         | name == "--role" = (name, Just v) : fs
         | isJust (lookup name fs) = fs
         | otherwise = (name, Just v) : fs
-    switches = ["--help", "-h", "--preview", "--fold"]
+    switches = ["--help", "-h", "--preview", "--fold", "--publish-references"]
 
 -- | The flags that take a value: the next token, or their @=value@ spelling.
 valuedFlags :: [String]
@@ -986,7 +988,7 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold] [--publish-references]"
         , "  singular registry insert --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
@@ -996,7 +998,7 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--publish-references]"
         , "  singular registry update --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
@@ -1005,7 +1007,7 @@ usage =
         , "  singular registry terminate --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold] [--publish-references]"
         , "  singular registry terminate --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
@@ -1014,15 +1016,15 @@ usage =
         , "  singular registry fold --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE] [--publish-references]"
         , "  singular registry reclaim --state-dir DIR --blueprint PLUTUS_JSON --request TXID#IX"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--publish-references]"
         , "  singular registry reject --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--publish-references]"
         , "  singular registry publish-references --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"

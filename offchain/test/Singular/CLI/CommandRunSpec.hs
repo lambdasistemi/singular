@@ -160,7 +160,12 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> readbackRows
+spec =
+    handlerRows
+        >> setupRecut
+        >> readbackRows
+        >> publishPreviewRows
+        >> optInRunRows
 
 handlerRows :: Spec
 handlerRows = describe
@@ -894,6 +899,122 @@ atTxInCapabilities answer rig =
                     Cage.AtTxIn _ -> pure answer
                     _ -> Cage.outputs session query
                 }
+
+-- ---------------------------------------------------------
+-- A publish preview that reports and writes nothing
+-- ---------------------------------------------------------
+
+{- | Preview on a registry whose references are all present refuses
+without writing: the create already published every role, so there is
+nothing to plan. The refusal names the empty missing set, carries no
+submission, and the actor journal gains no line. A preview that
+reports destination, hash, output ada and fee needs a registry with
+actually missing references; no rig scenario produces one yet, so that
+row stays unverified until the connected missing-reference setup lands.
+-}
+publishPreviewRows :: Spec
+publishPreviewRows =
+    describe "a publish preview that reports and writes nothing" $ do
+        it "refuses an already-complete registry with no submission" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["registry", "create", "--seed", seed]
+                t1 <- tokenOf create
+                beforePreview <- journalLines rig
+                preview <-
+                    run
+                        rig
+                        "publish preview"
+                        (["registry", "publish-references", "--preview"] <> tokenArgs t1)
+                runExit preview `shouldBe` ExitFailure 10
+                outcomeOf (runReceipt preview) `shouldBe` Just "client-refusal"
+                textAt "reason" (runReceipt preview)
+                    `shouldBe` Just "no missing reference scripts to publish"
+                submissionsOf (runReceipt preview) `shouldBe` []
+                afterPreview <- journalLines rig
+                afterPreview `shouldBe` beforePreview
+        it
+            "refuses a publish for a token no registry minted, naming the absence"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" ["registry", "create", "--seed", seed]
+                t1 <- tokenOf create
+                missing <- absentToken t1
+                beforeRefused <- journalLines rig
+                refused <-
+                    run
+                        rig
+                        "publish for an unminted token"
+                        (["registry", "publish-references"] <> tokenArgs missing)
+                runExit refused `shouldBe` ExitFailure 10
+                outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                case textAt "reason" (runReceipt refused) of
+                    Just reason -> reason `shouldSatisfy` T.isPrefixOf "state-token-not-found"
+                    Nothing -> expectationFailure "the refusal names no reason"
+                submissionsOf (runReceipt refused) `shouldBe` []
+                disagreements
+                    (runKey refused)
+                    (runReceipt refused)
+                    (runEvents refused)
+                    `shouldBe` []
+                afterRefused <- journalLines rig
+                afterRefused `shouldBe` beforeRefused
+  where
+    journalLines rig = do
+        let journal = rigDir rig </> "registry" </> "journal.jsonl"
+        exists <- doesFileExist journal
+        if exists
+            then length . BC.lines <$> BS.readFile journal
+            else pure 0
+
+-- ---------------------------------------------------------
+-- An opted-in write that finds nothing to restore
+-- ---------------------------------------------------------
+
+{- | An insert carrying @--publish-references@ on a registry whose
+references are all present restores nothing and runs as the same
+insert without the flag: both succeed, and both write the same number
+of journal lines. The flag adds no submission when no role is missing.
+-}
+optInRunRows :: Spec
+optInRunRows = describe "an opted-in write that finds nothing to restore" $ do
+    it "runs the write through with no restoration submission" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["registry", "create", "--seed", seed]
+            t1 <- tokenOf create
+            let payloadFile = rigDir rig </> "payload.json"
+                insertAs key extra = do
+                    beforeInsert <- journalLines rig
+                    r <-
+                        run
+                            rig
+                            ("insert " <> key)
+                            ( ["registry", "insert", "--key", key, "--payload", payloadFile]
+                                <> tokenArgs t1
+                                <> extra
+                            )
+                    afterInsert <- journalLines rig
+                    pure (r, afterInsert - beforeInsert)
+            (plain, plainDelta) <- insertAs "alice-1" []
+            (opted, optedDelta) <- insertAs "alice-2" ["--publish-references"]
+            runExit plain `shouldBe` ExitSuccess
+            runExit opted `shouldBe` ExitSuccess
+            outcomeOf (runReceipt opted) `shouldBe` Just "success"
+            optedDelta `shouldBe` plainDelta
+            disagreements
+                (runKey opted)
+                (runReceipt opted)
+                (runEvents opted)
+                `shouldBe` []
+  where
+    journalLines rig = do
+        let journal = rigDir rig </> "registry" </> "journal.jsonl"
+        exists <- doesFileExist journal
+        if exists
+            then length . BC.lines <$> BS.readFile journal
+            else pure 0
 
 -- ---------------------------------------------------------
 -- The lifecycle

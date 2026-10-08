@@ -21,6 +21,7 @@ module Singular.CLI.Attached
     , tokenName
     ) where
 
+import Control.Monad (when)
 import Data.Aeson (Value)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -29,6 +30,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.IORef (readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 
 import Cardano.Tx.Ledger (ConwayTx)
@@ -37,6 +39,7 @@ import Singular.CLI.Command
     ( RegistryAccess (..)
     , WriteSettings (..)
     )
+import Singular.CLI.Create (observeReference)
 import Singular.CLI.Live
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Reconcile
@@ -45,6 +48,15 @@ import Singular.CLI.Reconcile
     , refuseUnreconciled
     )
 import Singular.CLI.Registry (hexT, loadRelease)
+import Singular.CLI.Restore
+    ( Planned (..)
+    , acquireWallet
+    , locateOutputs
+    , planPublishMaybe
+    , plannedRoles
+    , plannedScript
+    , plannedScriptList
+    )
 import Singular.CLI.Session
 import Singular.CLI.Trace (Scope (..), What (..), report, within)
 import Singular.Registry.Evidence qualified as Cage
@@ -52,9 +64,11 @@ import Singular.Registry.Ledger
     ( AssetName (..)
     , TokenId (..)
     )
+import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.StateToken (ReferenceRole)
+import Singular.Registry.StateToken (ReferenceRole, Release, roleName)
+import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -129,6 +143,8 @@ attached env dir blueprint access roles ws command body = do
                     (wcTracer wc)
                     []
                     (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
+                when (writePublishReferences ws && not (Set.null roles)) $
+                    restoreMissing wc release (accessToken access) roles
                 printed <-
                     body Attached{atWrite = wc, atLive = live, atTrie = context}
                 pure $ case printed of
@@ -146,6 +162,43 @@ provider
 provider at =
     let wc = atWrite at
     in  readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
+
+{- | Explicit opt-in restoration: publish the missing subset of the
+roles this write runs, read them back and observe them, before the
+write builds. Nothing missing is an ordinary no-op: the write simply
+continues. Funding is automatic covering; the flag selects restoration,
+never a funding input.
+-}
+restoreMissing
+    :: WriteContext -> Release -> Asset -> Set ReferenceRole -> IO ()
+restoreMissing wc release token roles = do
+    let payer = walletAddr (wcWallet wc)
+    maybePlanned <-
+        Cage.withLatest
+            (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
+            $ \v ->
+                planPublishMaybe v release token payer (Set.toList roles) Nothing
+    case maybePlanned of
+        Nothing -> pure ()
+        Just planned -> do
+            (tx, refouts) <-
+                submitBuilt
+                    wc
+                    "publish-references"
+                    (const (expecting "publish-references"))
+                    $ \v -> do
+                        w <- acquireWallet v planned
+                        publishReferencesTx v payer w (plannedScriptList planned)
+            published <- locateOutputs tx refouts (plannedRoles planned)
+            mapM_
+                ( \(role, out) ->
+                    observeReference
+                        wc
+                        ("publish-" <> roleName role)
+                        (plannedScript planned role)
+                        out
+                )
+                published
 
 -- | One read operation: acquire a view and read through it.
 reading

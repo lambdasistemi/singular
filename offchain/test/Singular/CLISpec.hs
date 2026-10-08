@@ -488,6 +488,7 @@ commandLine = describe "the command line" $ do
     rejectRows
     reclaimCommandRows
     publishCommandRows
+    optInRows
     outputsAtRows
     preview
     it "refuses a write against mainnet" $
@@ -1749,7 +1750,12 @@ publishCommandRows :: Spec
 publishCommandRows = describe "publishing the missing reference scripts" $ do
     let publish extra =
             parseCommand
-                (["registry", "publish-references"] <> reg <> provider <> wallet <> extra)
+                ( ["registry", "publish-references"]
+                    <> reg
+                    <> provider
+                    <> wallet
+                    <> extra
+                )
         bad flag = \case
             Left (BadValue name _) -> name == flag
             _ -> False
@@ -1772,10 +1778,11 @@ publishCommandRows = describe "publishing the missing reference scripts" $ do
                 , writeConfirmTimeout = Nothing
                 , writePublishReferences = False
                 }
-    it "reads a bare publish with this command's wallet and every missing role" $
-        case publish [] of
+    it
+        "reads a bare publish with this command's wallet and every missing role"
+        $ case publish [] of
             Right (PublishReferences a) -> do
-                publishRegistry a `shouldBe` "/srv/reg"
+                publishStateDir a `shouldBe` "/srv/reg"
                 publishAccess a `shouldBe` access
                 publishBlueprint a `shouldBe` "/srv/plutus.json"
                 publishMode a `shouldBe` Submit submitSettings
@@ -1784,7 +1791,8 @@ publishCommandRows = describe "publishing the missing reference scripts" $ do
                 publishFund a `shouldBe` Nothing
                 publishMaxOutlay a `shouldBe` Nothing
                 publishReceipt a `shouldBe` Nothing
-            other -> expectationFailure ("expected publish-references, got " <> show other)
+            other ->
+                expectationFailure ("expected publish-references, got " <> show other)
     it "reads selected roles with funding, outlay and receipt" $
         publish
             [ "--role"
@@ -1822,11 +1830,13 @@ publishCommandRows = describe "publishing the missing reference scripts" $ do
             publish extra `shouldSatisfy` bad flag
     it "reads a preview as a provider and a public address, with no key" $
         previewPublish
-            (previewNode "1" <> ["--preview", "--wallet-address", textOf Testnet payerHash])
+            ( previewNode "1"
+                <> ["--preview", "--wallet-address", textOf Testnet payerHash]
+            )
             `shouldBe` Right
                 ( PublishReferences
                     PublishArgs
-                        { publishRegistry = "/srv/reg"
+                        { publishStateDir = "/srv/reg"
                         , publishAccess = access
                         , publishBlueprint = "/srv/plutus.json"
                         , publishMode =
@@ -1853,6 +1863,47 @@ publishCommandRows = describe "publishing the missing reference scripts" $ do
             `shouldSatisfy` \case
                 Left e -> "preview" `isInfixOf` renderCLIError e
                 _ -> False
+
+-- ---------------------------------------------------------
+-- Opting dependent writes into restoration
+-- ---------------------------------------------------------
+
+optInRows :: Spec
+optInRows = describe "opting dependent writes into restoration" $ do
+    let flagged cmd extra =
+            parseCommand
+                (["registry", cmd] <> reg <> provider <> wallet <> extra)
+        keyed = ["--key", "key", "--payload", "/p.json"]
+    it "reads --publish-references on every dependent write"
+        $ forM_
+            [ ("insert", keyed)
+            , ("update", keyed)
+            , ("terminate", ["--key", "key"])
+            , ("fold", [])
+            , ("reject", [])
+            , ("reclaim", ["--request", replicate 64 'a' <> "#0"])
+            ]
+        $ \(cmd, extra) ->
+            flagged cmd (extra <> ["--publish-references"])
+                `shouldSatisfy` either (const False) (const True)
+    it "carries the opt-in on an insert's write settings" $
+        case flagged "insert" (keyed <> ["--publish-references"]) of
+            Right (Insert e) -> case entryMode e of
+                Submit ws -> writePublishReferences ws `shouldBe` True
+                Preview _ _ -> expectationFailure "an insert with a key previews"
+            other -> expectationFailure ("expected insert, got " <> show other)
+    it
+        "still refuses the flag on create, inspect and publish-references itself"
+        $ forM_
+            [ ["registry", "create", "--seed", seedText] <> createReg
+            , ["registry", "inspect", "--key", "key"] <> reg
+            , ["registry", "publish-references"] <> reg
+            ]
+        $ \cmd ->
+            parseCommand (cmd <> provider <> wallet <> ["--publish-references"])
+                `shouldSatisfy` \case
+                    Left (UnsupportedFlag "--publish-references" _) -> True
+                    _ -> False
 
 -- ---------------------------------------------------------
 -- Reading another address's outputs from the node
