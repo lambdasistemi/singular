@@ -1,0 +1,66 @@
+{
+  "fresh-recovery-results": [
+    {
+      "text": "Fresh recovery results.",
+      "pause": 500
+    },
+    {
+      "text": "Permanent broad ref: preserve/m2-registry-extensions at 4301c45d201430fea46080999f5eb8a332a9c8a3, tree 90a40e60677b326deca23fdce3d6b488be03b5de. Its integrated source is the manifest's exact 23964e667fa278b2027d0c05169c0f5e0e9233cb baseline. The source snapshot and 22 candidate refs were fetched over HTTPS into an empty independent repository with no local object alternates.",
+      "pause": 400
+    },
+    {
+      "text": "The fresh Git receipt records exit 0; its stdout identifies all 22 exact candidate SHA/tree/ref ancestry checks and 930 baseline/broad blob comparisons. The fetch receipt records actual commands and exits; publication records the create-only atomic push with an empty expected old value for every target, including concurrent creation protection. No permanent target was advanced or overwritten.",
+      "pause": 400
+    },
+    {
+      "text": "The one fresh nix run --quiet .#model-check completed in 19.989 seconds with exit 0, at the broad commit above. Command, revision and hashes, complete stdout and stderr are retained. The recovered checkout remained clean. The checker reported 46 generic, 7 naming, 9 lifecycle and 5 wire exact identities using only the standard axioms; 38 corpus, 24 naming and 21 lifecycle rows; 17 single driver scenarios and 12 batch rows. Those are this model check's reported extent, not validator, consumer or connected ledger acceptance. No other expensive check was run and no hosted check was rerun.",
+      "pause": 400
+    },
+    {
+      "text": "This evidence is permanently retained separately at preserve/m2-evidence/4301c45d-ci-docs; the broad ref remains frozen. To retrieve it after the recovery page's fresh fetch, run:",
+      "pause": 400
+    },
+    {
+      "text": "git checkout --detach origin/preserve/m2-evidence/4301c45d-ci-docs",
+      "pause": 400
+    },
+    {
+      "text": "Then verify the original manifest snapshot with:",
+      "pause": 400
+    },
+    {
+      "text": "bash specs/504-m2-preservation/verify.sh origin/preserve/m2-registry-extensions",
+      "pause": 400
+    },
+    {
+      "text": "The current verifier additionally checks the exact manifest blob binding and each census row claimed retained/reachable. Its final receipt is in the worker handback/PR because a commit cannot contain its own creation receipt. retention-ledger.json records the exact permanent refs, owner and cleanup policy for epic507/M1 to consume before independent acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "Remaining limits are consolidated in the recovery page: unclassified histories and raw owner receipts need original-owner disposition; dirty work stays excluded;",
+      "pause": 400
+    }
+  ],
+  "179211-and-delete-edge-outcomes-remain-unmet-pr508-stays-unmerged-and-held": [
+    {
+      "text": "179/#211 and delete-edge outcomes remain unmet; PR508 stays unmerged and held;.",
+      "pause": 500
+    },
+    {
+      "text": "no hosting enforcement is established. No existing release tag/artifact moved. The evidence-ref commit adds only recovery documentation and receipts, so the model result stays bound to the unchanged permanently retained broad snapshot.",
+      "pause": 400
+    },
+    {
+      "text": "The original evidence ref preserve/m2-evidence/4301c45d-recovery remains unchanged at 5d7ddb07d0c92d5389c96948555a5add3abaccb2. The final forward record uses explicit - placeholders for empty census ref fields so its whole-candidate whitespace check passes; source/ref identities do not change. The original broad snapshot and its model execution remain unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Hosted checks on the prior final head exposed receipt filename classifications and a directory link without a rendered page. The forward repair uses .txt evidence filenames and a link to the provenance file; raw model/fetch receipt bytes and all source/ref identities remain unchanged. CI diagnosis records the actual failed jobs and Registry cancellation limits. The original Conformance workflow passed. Static checks record local inventory and preservation-helper formatting/lint exit0. No failed hosted job or model check was rerun, and no workflow or runtime source was changed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "RESULTS.md",
+    "sha256": "aedb8d57d3849bd5efdb77fb191232ac1a212c8e5fb80fdbf13099dd92f14b43"
+  }
+}

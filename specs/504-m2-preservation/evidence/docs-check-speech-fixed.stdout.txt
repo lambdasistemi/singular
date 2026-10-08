@@ -1,0 +1,34 @@
+api-reference library=singular-registry modules=73 other-modules=13 pages-verified=146
+api-links library=singular-registry resolved-library=32463 neutralized-dependency=15423 neutralized-autolink=8 neutralized-instance-method=3506 external-anchors=99
+api-reference library=conformance modules=32 other-modules=1 pages-verified=64
+api-links library=conformance resolved-library=21611 neutralized-dependency=9269 neutralized-autolink=1 neutralized-instance-method=1432 external-anchors=57
+api-reference library=aiken {"externalAnchors": 80, "localLinks": 695, "modules": 19, "sourceLinks": 228, "sourceRef": "e88599545b81902e01041b7995930d23e5898da7", "undocumented": ["cage_vectors", "open", "open_datum", "staking"]}
+{"renderedPages": 317, "localLinksAndAnchors": 18238, "speechCoverage": "PASS", "externalResources": 0, "diagramPages": 132, "diagrams": 171, "scope": "rendered documentation; model and simulator checked separately", "inventory": {"total": 27128, "checked": 27128, "pass": 27127, "fail": 0, "blocked": 1}, "inventoryFailures": [], "externalBlocked": [{"source": "specs/383-provider-interfaces/spec/index.html (constitution)", "href": "https://github.com/lambdasistemi/singular/blob/6efe1f119a2332484e690b4c128c4bc5fd4d689b/.specify/memory/constitution.md", "kind": "github-source", "result": "blocked", "evidence": "self-repo pinned ref 6efe1f119a2332484e690b4c128c4bc5fd4d689b not verifiable offline"}], "noTrailingSlashPolicy": {"authored": "enforced-in-row", "generated": "advisory (GitHub Pages 301; mkdocs out of fence)"}, "noTrailingSlashAdvisory": {"pass": 3613, "fail": 22231}, "modelArtifactBytes": {"servedModelPaths": 8, "mismatches": 0}, "servedRoutes": {}}
+aiken-reference control unmodified: accepted
+aiken-reference control other-revision: refused AIKEN_SOURCE_REF
+aiken-reference control missing-manifest: refused AIKEN_REFERENCE_MISSING
+aiken-reference control edited-source: refused AIKEN_SOURCE_STALE
+aiken-reference control edited-page: refused AIKEN_SOURCE_STALE
+aiken-reference control foreign-source-link: refused AIKEN_SOURCE_LINK
+aiken-reference control line-past-end: refused AIKEN_SOURCE_LINK
+aiken-reference control dropped-module: refused AIKEN_EXTENT_MISMATCH
+aiken-reference control cdn-script: refused AIKEN_EXTERNAL_ASSET
+aiken-reference control unlinked-guide: refused AIKEN_NAVIGABLE
+{
+  "summary": {
+    "files": 47,
+    "diagrams": 71,
+    "registers": 4,
+    "speechBound": 47
+  },
+  "violations": []
+}
+./docs/conformance-evidence.md equals its rendering from the receipts of c17309ee607368615b96f23ea4f96401467195f5
+/tmp/tmp.qtfG3V7EH4/root/docs/conformance-evidence.md equals its rendering from the receipts of c17309ee607368615b96f23ea4f96401467195f5
+control untampered: accepted
+control tampered page: refused (disagrees with the receipts it is computed from)
+control receipt verdict flipped: refused (disagrees with the receipts it is computed from)
+control receipt from another revision: refused (not the stated base)
+control receipt from a dirty tree: refused (dirty tree)
+control contract result flipped: refused (disagrees with the receipts it is computed from)
+evidence page controls: every tampering refused

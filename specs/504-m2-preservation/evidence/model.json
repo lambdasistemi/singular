@@ -1,0 +1,24 @@
+{
+  "command": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=30s",
+    "900s",
+    "nix",
+    "run",
+    "--quiet",
+    ".#model-check"
+  ],
+  "cwd": "/home/paolino/.orch-runtime/singular/m1/epic-507/preservation-504/recovery",
+  "sha": "4301c45d201430fea46080999f5eb8a332a9c8a3",
+  "tree": "90a40e60677b326deca23fdce3d6b488be03b5de",
+  "started": "2026-10-08T10:25:45.688Z",
+  "ended": "2026-10-08T10:26:05.677Z",
+  "durationSeconds": 19.989,
+  "exit": 0,
+  "signal": null,
+  "classification": "PASS model checker only",
+  "stdoutSha256": "88e1978029fd7d942ab9c8bfeb388fed8c2dc66b4292b7332b71a0057945b1cd",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "checkoutStatus": ""
+}

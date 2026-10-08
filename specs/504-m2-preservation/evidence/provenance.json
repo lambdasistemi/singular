@@ -1,0 +1,22 @@
+{
+  "records": [
+    {
+      "file": "issue396-owner-handoff.md",
+      "source": "/home/paolino/.orch-runtime/singular/epic-301/to-396/RESUME.md",
+      "extent": "Original owner claims and stop limits; no fresh behavioral run",
+      "sha256": "abc6b68c3701fb8b23d8154a214c28546cebc46501845c9a83418f7b19bdd01f"
+    },
+    {
+      "file": "issue437-source-verdict.md",
+      "source": "/home/paolino/.orch-runtime/singular/epic-301/to-437/auditor-1/handoffs/verdict-pr1-001.md",
+      "extent": "Original source-only BLOCKED at remote39575; does not certify localbb134",
+      "sha256": "8cfb52c9dd8b800bad9580c857ee83ac583a6a1331dad4799bfecec4c95b0ee7"
+    },
+    {
+      "file": "pr508.json",
+      "source": "gh pr view 508 --repo lambdasistemi/singular --json number,url,state,headRefOid,headRefName,mergedAt,statusCheckRollup",
+      "extent": "Fresh API snapshot; no acceptance",
+      "sha256": "f9cb8e8a1cd322acbbbca3ee83548ca56909bef91fa4171f0dd28733406e9375"
+    }
+  ]
+}

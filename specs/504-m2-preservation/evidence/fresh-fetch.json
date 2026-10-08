@@ -1,0 +1,51 @@
+{
+  "repo": "/home/paolino/.orch-runtime/singular/m1/epic-507/preservation-504/recovery",
+  "manifestCommit": "4301c45d201430fea46080999f5eb8a332a9c8a3",
+  "noAlternates": true,
+  "commands": [
+    {
+      "command": [
+        "git",
+        "init"
+      ],
+      "stdout": "Initialized empty Git repository in /home/paolino/.orch-runtime/singular/m1/epic-507/preservation-504/recovery/.git/\n",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "remote",
+        "add",
+        "origin",
+        "https://github.com/lambdasistemi/singular.git"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "fetch",
+        "--no-tags",
+        "origin",
+        "+refs/heads/preserve/*:refs/remotes/origin/preserve/*"
+      ],
+      "stdout": "",
+      "stderr": "From https://github.com/lambdasistemi/singular\n * [new branch]        preserve/m2-candidates/checkpoint-157-opus-final-pre-terminal-rebase-b8f45983 -> origin/preserve/m2-candidates/checkpoint-157-opus-final-pre-terminal-rebase-b8f45983\n * [new branch]        preserve/m2-candidates/checkpoint-157-opus-pre-rebase-1cea9b17 -> origin/preserve/m2-candidates/checkpoint-157-opus-pre-rebase-1cea9b17\n * [new branch]        preserve/m2-candidates/checkpoint-157-opus-pre-v4-872a9419 -> origin/preserve/m2-candidates/checkpoint-157-opus-pre-v4-872a9419\n * [new branch]        preserve/m2-candidates/checkpoint-157-opus-pre-v5-4663d2f9 -> origin/preserve/m2-candidates/checkpoint-157-opus-pre-v5-4663d2f9\n * [new branch]        preserve/m2-candidates/feat-157-cage-registry-mode-0caa84f7 -> origin/preserve/m2-candidates/feat-157-cage-registry-mode-0caa84f7\n * [new branch]        preserve/m2-candidates/feat-157-note006-nongoal-ee2d164b -> origin/preserve/m2-candidates/feat-157-note006-nongoal-ee2d164b\n * [new branch]        preserve/m2-candidates/feat-157-request-home-model-89b23713 -> origin/preserve/m2-candidates/feat-157-request-home-model-89b23713\n * [new branch]        preserve/m2-candidates/issue-158-salvage-062783a2 -> origin/preserve/m2-candidates/issue-158-salvage-062783a2\n * [new branch]        preserve/m2-candidates/issue-178-merge-86a56a42 -> origin/preserve/m2-candidates/issue-178-merge-86a56a42\n * [new branch]        preserve/m2-candidates/issue-178-pr212-c10cb3b3 -> origin/preserve/m2-candidates/issue-178-pr212-c10cb3b3\n * [new branch]        preserve/m2-candidates/issue-233-local-fd35d372 -> origin/preserve/m2-candidates/issue-233-local-fd35d372\n * [new branch]        preserve/m2-candidates/issue-233-remote-b1ead5ee -> origin/preserve/m2-candidates/issue-233-remote-b1ead5ee\n * [new branch]        preserve/m2-candidates/issue-310-application-bbce8a88 -> origin/preserve/m2-candidates/issue-310-application-bbce8a88\n * [new branch]        preserve/m2-candidates/issue-381-replay-2adc3101 -> origin/preserve/m2-candidates/issue-381-replay-2adc3101\n * [new branch]        preserve/m2-candidates/issue-396-fold-4cb4a441 -> origin/preserve/m2-candidates/issue-396-fold-4cb4a441\n * [new branch]        preserve/m2-candidates/issue-437-local-bb134add -> origin/preserve/m2-candidates/issue-437-local-bb134add\n * [new branch]        preserve/m2-candidates/issue-437-remote-39575cd1 -> origin/preserve/m2-candidates/issue-437-remote-39575cd1\n * [new branch]        preserve/m2-candidates/issue-498-pr508-a7224021 -> origin/preserve/m2-candidates/issue-498-pr508-a7224021\n * [new branch]        preserve/m2-candidates/retained-177-post-wall-34aee489-34aee489 -> origin/preserve/m2-candidates/retained-177-post-wall-34aee489-34aee489\n * [new branch]        preserve/m2-candidates/retained-177-pre-metadata-46e18a1-46e18a1c -> origin/preserve/m2-candidates/retained-177-pre-metadata-46e18a1-46e18a1c\n * [new branch]        preserve/m2-candidates/work-157-grok-request-home-810bf471 -> origin/preserve/m2-candidates/work-157-grok-request-home-810bf471\n * [new branch]        preserve/m2-candidates/work-157-opus-owner-f6b2eed8 -> origin/preserve/m2-candidates/work-157-opus-owner-f6b2eed8\n * [new branch]        preserve/m2-registry-extensions -> origin/preserve/m2-registry-extensions\n",
+      "exit": 0
+    },
+    {
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "origin/preserve/m2-registry-extensions"
+      ],
+      "stdout": "",
+      "stderr": "HEAD is now at 4301c45d docs: preserve broader registry sources and candidate lineages (#504)\n",
+      "exit": 0
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+warning: Git tree '/code/singular-issue-504' is dirty
