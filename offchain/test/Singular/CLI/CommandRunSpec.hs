@@ -114,9 +114,14 @@ import Singular.CLI.Command (Command (..), parseCommand)
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
-import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
+import Singular.Registry.Evidence
+    ( Evidenced (..)
+    , NoWitness
+    , unverifiedVerifier
+    )
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
@@ -146,6 +151,7 @@ import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
     )
+import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
 import Singular.Registry.Types
     ( edgeInsertActive
     , edgeName
@@ -154,7 +160,7 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = handlerRows >> setupRecut
+spec = handlerRows >> setupRecut >> readbackRows
 
 handlerRows :: Spec
 handlerRows = describe
@@ -300,23 +306,61 @@ handlerRows = describe
                         disagreements (runKey absent) (runReceipt absent) events `shouldBe` []
                     _ -> expectationFailure "one absent update run"
         it
+            "refuses an inspect whose token no registry minted, naming the absence"
+            $ withRig
+            $ \rig -> do
+                runs <- lifecycle rig
+                nowhere <- case [ r | r <- runs, runLabel r == "inspect a registry that does not exist"
+                                ] of
+                    [n] -> pure n
+                    found ->
+                        fail
+                            ("expected one missing-registry inspect, found " <> show (length found))
+                emptyActor <- case [ r
+                                   | r <- runs
+                                   , runLabel r == "inspect from an empty directory with the state token"
+                                   ] of
+                    [e] -> pure e
+                    found ->
+                        fail
+                            ("expected one empty-directory inspect, found " <> show (length found))
+                outcomeOf (runReceipt nowhere) `shouldBe` Just "client-refusal"
+                case textAt "reason" (runReceipt nowhere) of
+                    Just reason ->
+                        reason `shouldSatisfy` T.isPrefixOf "state-token-not-found"
+                    Nothing -> expectationFailure "the refusal names no reason"
+                disagreements
+                    (runKey nowhere)
+                    (runReceipt nowhere)
+                    (runEvents nowhere)
+                    `shouldBe` []
+                outcomeOf (runReceipt emptyActor) `shouldBe` Just "success"
+                disagreements
+                    (runKey emptyActor)
+                    (runReceipt emptyActor)
+                    (runEvents emptyActor)
+                    `shouldBe` []
+        it
             "reports a script that fails its local evaluation as refused there, from \
             \the build's own session"
             $ withRigOf failingOpenDatum pure
             $ \rig -> do
                 seed <- fundSeed rig
-                _ <- run rig "create" ["registry", "create", "--seed", seed]
+                created <- run rig "create" ["registry", "create", "--seed", seed]
+                tok <- tokenOf created
                 refused <-
                     run
                         rig
                         "insert alice-1"
-                        [ "registry"
-                        , "insert"
-                        , "--key"
-                        , "alice-1"
-                        , "--payload"
-                        , rigDir rig </> "payload.json"
-                        ]
+                        ( [ "registry"
+                          , "insert"
+                          , "--key"
+                          , "alice-1"
+                          , "--payload"
+                          , rigDir rig </> "payload.json"
+                          ]
+                            <> tokenArgs tok
+                        )
                 let events = runEvents refused
                 ( outcomeOf (runReceipt refused)
                     , [k | Trace _ (What (Refused k _)) <- events]
@@ -455,6 +499,90 @@ setupRecut = describe "(#416) tracing setup re-cut"
                 (name, writtenStamps w)
                     `shouldBe` (name, map (const True) (writtenStamps plain))
         writtenStamps plain `shouldBe` map (const True) (writtenStamps plain)
+
+{- | The reference read-back of a create (#437): a provider that cannot
+answer it is a provider failure, attributed by the typed failure the
+client holds — never a completed read step claiming the output absent —
+while a read that established the output missing stays the distinct
+not-live refusal it always was.
+-}
+readbackRows :: Spec
+readbackRows =
+    describe
+        "a create's reference read-back the provider cannot answer (#437)"
+        $ do
+            let referenceSteps r =
+                    [ f
+                    | Trace _ (How (Fetched f)) <- runEvents r
+                    , fetchWhat f == ["reference scripts"]
+                    ]
+                reasonOf r = textAt "reason" (runReceipt r)
+            it
+                "attributes the failed read as the typed provider failure, never a completed absence"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    failed <-
+                        runAtTxIn
+                            (Left (Cage.BackendReadFailure "the exchange died"))
+                            rig
+                            "create-read-failed"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt failed) `shouldBe` Just "partial"
+                    reasonOf failed
+                        `shouldSatisfy` maybe False (T.isInfixOf "BackendReadFailure")
+                    reasonOf failed
+                        `shouldSatisfy` maybe False (not . T.isInfixOf "is not live")
+                    case reverse (referenceSteps failed) of
+                        (step : _) -> case fetchEnd step of
+                            FailedWith _ -> pure ()
+                            Done -> expectationFailure "the failed read-back ends Done"
+                        [] ->
+                            expectationFailure "the create never read its references back"
+            it
+                "keeps a read the provider refused — a missing output — a failed read, not an absence"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    refused <-
+                        runAtTxIn
+                            (Left (Cage.MissingOutput (fundOutput 1)))
+                            rig
+                            "create-read-refused"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt refused) `shouldBe` Just "partial"
+                    reasonOf refused
+                        `shouldSatisfy` maybe False (T.isInfixOf "MissingOutput")
+                    reasonOf refused
+                        `shouldSatisfy` maybe False (not . T.isInfixOf "is not live")
+                    case reverse (referenceSteps refused) of
+                        (step : _) -> case fetchEnd step of
+                            FailedWith _ -> pure ()
+                            Done ->
+                                expectationFailure
+                                    "a refused read ends the step Done"
+                        [] ->
+                            expectationFailure "the create never read its references back"
+            it "keeps a successful empty answer the distinct not-live refusal" $
+                withRig $ \rig -> do
+                    seed <- fundSeed rig
+                    empty <-
+                        runAtTxIn
+                            (Right (Evidenced [] Nothing))
+                            rig
+                            "create-read-empty"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt empty) `shouldBe` Just "partial"
+                    reasonOf empty
+                        `shouldSatisfy` maybe False (T.isInfixOf "is not live")
+                    case reverse (referenceSteps empty) of
+                        (step : _) -> case fetchEnd step of
+                            Done -> pure ()
+                            FailedWith _ ->
+                                expectationFailure
+                                    "a successful empty read ends the step failed"
+                        [] ->
+                            expectationFailure "the create never read its references back"
 
 -- | What two packaged writes left: each run, the registry's files and its journal.
 data Written = Written
@@ -734,6 +862,38 @@ capabilities rig =
         , capTrace = pure []
         }
 
+{- | The rig's capabilities with every exact-input read answered by this —
+a refused read as a typed failure, or a successful empty answer — every
+other read served by the chain as it stands: a provider that cannot
+make one read, or one that answers nothing there, not one that is down.
+-}
+atTxInCapabilities
+    :: Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs)
+    -> Rig
+    -> Capabilities NoWitness IO
+atTxInCapabilities answer rig =
+    (capabilities rig)
+        { capReads =
+            let (network, provider) = rawChainProvider (rigChain rig)
+                answering =
+                    provider
+                        { Cage.acquire =
+                            \requested action ->
+                                Cage.acquire provider requested (answeringReads action)
+                        }
+            in  ( network
+                , observeProvider unverifiedVerifier (\_ -> pure ()) answering
+                )
+        }
+  where
+    answeringReads action session =
+        action
+            session
+                { Cage.outputs = \query -> case query of
+                    Cage.AtTxIn _ -> pure answer
+                    _ -> Cage.outputs session query
+                }
+
 -- ---------------------------------------------------------
 -- The lifecycle
 -- ---------------------------------------------------------
@@ -741,46 +901,76 @@ capabilities rig =
 {- | Run the commands in the order a registry's life takes them, each over the
 state the previous left, whatever outcome each reaches.
 -}
+
+{- | The state token a create printed, as a person passes it to every
+later command of that registry.
+-}
+tokenOf :: Run -> IO String
+tokenOf r = case textAt "stateToken" (runReceipt r) of
+    Just t -> pure (T.unpack t)
+    Nothing ->
+        fail
+            ("no state token in " <> runLabel r <> ": " <> show (runReceipt r))
+
+-- | A command line naming the registry by its state token.
+tokenArgs :: String -> [String]
+tokenArgs t = ["--state-token", t]
+
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do
     seed <- fundSeed rig
     create <- run rig "create" ["registry", "create", "--seed", seed]
+    -- Every command after a create names its registry by the state token
+    -- that create printed: there is no saved registry to attach to.
+    t1 <- tokenOf create
     insert <-
         run
             rig
             "insert alice-1"
-            ["registry", "insert", "--key", "alice-1", "--payload", payload]
+            ( ["registry", "insert", "--key", "alice-1", "--payload", payload]
+                <> tokenArgs t1
+            )
     fold1 <-
-        run rig "fold alice-1" (["registry", "fold"] <> requestOf insert)
+        run
+            rig
+            "fold alice-1"
+            (["registry", "fold"] <> requestOf insert <> tokenArgs t1)
     inspect <-
-        run rig "inspect alice-1" ["registry", "inspect", "--key", "alice-1"]
+        run
+            rig
+            "inspect alice-1"
+            (["registry", "inspect", "--key", "alice-1"] <> tokenArgs t1)
     update <-
         run
             rig
             "update alice-1"
-            ["registry", "update", "--key", "alice-1", "--payload", payload2]
+            ( ["registry", "update", "--key", "alice-1", "--payload", payload2]
+                <> tokenArgs t1
+            )
     terminate <-
         run
             rig
             "terminate alice-1"
-            ["registry", "terminate", "--key", "alice-1"]
+            (["registry", "terminate", "--key", "alice-1"] <> tokenArgs t1)
     fold2 <-
         run
             rig
             "fold alice-1 terminal"
-            (["registry", "fold"] <> requestOf terminate)
+            (["registry", "fold"] <> requestOf terminate <> tokenArgs t1)
     insert2 <-
         run
             rig
             "insert alice-2"
-            ["registry", "insert", "--key", "alice-2", "--payload", payload]
+            ( ["registry", "insert", "--key", "alice-2", "--payload", payload]
+                <> tokenArgs t1
+            )
     -- the chain moves past the processing deadline: the retract window opens
     jumpPast rig insert2 0
     reclaim <-
         run
             rig
             "reclaim alice-2"
-            (["registry", "reclaim"] <> requestOrAny insert2)
+            (["registry", "reclaim"] <> requestOrAny insert2 <> tokenArgs t1)
     -- a second registry whose windows close at once: its request can only be rejected
     seed2 <- fundSeed2 rig
     create2 <-
@@ -797,51 +987,77 @@ lifecycle rig = do
             , "--retract-time"
             , "1"
             ]
+    t2 <- tokenOf create2
     insert3 <-
         runAt
             rig
             "registry-2"
             "insert alice-3"
-            ["registry", "insert", "--key", "alice-3", "--payload", payload]
+            ( ["registry", "insert", "--key", "alice-3", "--payload", payload]
+                <> tokenArgs t2
+            )
     jumpPast rig insert3 2
-    reject <- runAt rig "registry-2" "reject" ["registry", "reject"]
+    reject <-
+        runAt
+            rig
+            "registry-2"
+            "reject"
+            (["registry", "reject"] <> tokenArgs t2)
     -- refusals, each where it happens
     nothingPending <-
         runAt
             rig
             "registry-2"
             "fold with nothing pending"
-            ["registry", "fold"]
+            (["registry", "fold"] <> tokenArgs t2)
     overAllowance <-
         run
             rig
             "insert over its allowance"
-            [ "registry"
-            , "insert"
-            , "--key"
-            , "alice-4"
-            , "--payload"
-            , payload
-            , "--max-outlay"
-            , "1"
-            ]
+            ( [ "registry"
+              , "insert"
+              , "--key"
+              , "alice-4"
+              , "--payload"
+              , payload
+              , "--max-outlay"
+              , "1"
+              ]
+                <> tokenArgs t1
+            )
     absent <-
         run
             rig
             "update an absent key"
-            ["registry", "update", "--key", "nobody", "--payload", payload2]
+            ( ["registry", "update", "--key", "nobody", "--payload", payload2]
+                <> tokenArgs t1
+            )
     -- refused before any transaction is built
     existing <-
         run
             rig
             "create over an existing registry"
             ["registry", "create", "--seed", seed]
+    -- A well-formed token no registry minted: this release's state
+    -- policy with the name an unused fixture seed derives. The
+    -- fixture holds no mint record for it, so its inspect is refused
+    -- by name instead of reading another registry.
+    missingToken <- absentToken t1
     missing <-
         runAt
             rig
             "no-registry"
             "inspect a registry that does not exist"
-            ["registry", "inspect", "--key", "alice-1"]
+            (["registry", "inspect", "--key", "alice-1"] <> tokenArgs missingToken)
+    emptyDir <-
+        -- An empty actor directory with a valid existing token reads that
+        -- registry: the token names it, not the directory. This success
+        -- does not replace the missing-registry refusal above.
+        runAt
+            rig
+            "empty-actor"
+            "inspect from an empty directory with the state token"
+            (["registry", "inspect", "--key", "alice-1"] <> tokenArgs t1)
     writeIORef
         (rigAnswer rig)
         (Just (Cage.SubmitRefused "the ledger said no"))
@@ -849,7 +1065,9 @@ lifecycle rig = do
         run
             rig
             "insert the ledger rejects"
-            ["registry", "insert", "--key", "alice-5", "--payload", payload]
+            ( ["registry", "insert", "--key", "alice-5", "--payload", payload]
+                <> tokenArgs t1
+            )
     writeIORef
         (rigAnswer rig)
         (Just (Cage.SubmitFailed "connection refused"))
@@ -857,7 +1075,9 @@ lifecycle rig = do
         run
             rig
             "insert the provider drops"
-            ["registry", "insert", "--key", "alice-6", "--payload", payload]
+            ( ["registry", "insert", "--key", "alice-6", "--payload", payload]
+                <> tokenArgs t1
+            )
     pure
         [ create
         , insert
@@ -876,6 +1096,7 @@ lifecycle rig = do
         , absent
         , existing
         , missing
+        , emptyDir
         , rejected
         , unanswered
         ]
@@ -932,20 +1153,43 @@ fundSeed2 rig = do
         i : _ -> pure (T.unpack (renderOutRef i))
         [] -> fail "the wallet holds nothing for a second registry"
 
+{- | A well-formed token no registry minted: this release's state policy
+with the name the unused fixture seed derives. The text keeps the
+policy the create printed and swaps in that name.
+-}
+absentToken :: String -> IO String
+absentToken printed = case T.splitOn "." (T.pack printed) of
+    [policy, _] ->
+        pure
+            ( T.unpack
+                ( policy
+                    <> "."
+                    <> TE.decodeUtf8
+                        (B16.encode (deriveAssetName (txInToRef (fundOutput 7))))
+                )
+            )
+    _ -> fail ("no policy in state token " <> printed)
+
 -- | One command line, parsed as the packaged command parses it and run in process.
 run :: Rig -> String -> [String] -> IO Run
 run rig = runAt rig "registry"
 
 -- | The same, against the registry in this directory of the rig.
 runAt :: Rig -> FilePath -> String -> [String] -> IO Run
-runAt rig registry label args = do
+runAt rig = runVia rig (envOf rig)
+
+{- | The same, over an environment of the caller's: the packaged one, or
+one whose provider cannot answer a read.
+-}
+runVia :: Rig -> Env -> FilePath -> String -> [String] -> IO Run
+runVia rig env registry label args = do
     writeIORef (rigEvents rig) []
     command <-
         either
             (fail . show)
             pure
             (parseCommand (commandLine rig registry args))
-    (code, out, _) <- captured (runCommand (envOf rig) command)
+    (code, out, _) <- captured (runCommand env command)
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))
@@ -965,6 +1209,27 @@ runAt rig registry label args = do
                     | ("--key", k) <- zip args (drop 1 args)
                     ]
             }
+
+{- | A command line through the same dispatch and receipt plumbing, over
+a provider that answers every exact-input read with this: a refused
+read as a typed failure, or a successful empty answer — the read-back
+a create must make of a reference it just published.
+-}
+runAtTxIn
+    :: Either Cage.ReadFailure (Evidenced NoWitness Cage.Outputs)
+    -> Rig
+    -> String
+    -> [String]
+    -> IO Run
+runAtTxIn answer rig =
+    runVia
+        rig
+        ( (envOf rig)
+            { envReads = \_ k -> k (atTxInCapabilities answer rig)
+            , envWrites = \_ _ k -> k (atTxInCapabilities answer rig)
+            }
+        )
+        "registry"
 
 -- | A command line over the rig, as the packaged command is given it.
 commandLine :: Rig -> FilePath -> [String] -> [String]

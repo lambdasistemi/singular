@@ -23,7 +23,7 @@ All rows below are BLOCKING unless marked ADVISORY. Client safety refusals are n
 
 | Invariant | Required truth and failure witness |
 | --- | --- |
-| saved-identity-binds-commands (INV299-IDENTITY) | Saved registry/network/seed/pins and selected key bind every write/read; tampering or identity substitution refuses before success or submission. |
+| token-identity-binds-commands (INV299-IDENTITY) | State token, release, network and selected key bind every write/read; tampering or identity substitution refuses before success or submission. |
 | authenticated-registry-read (INV299-AUTHENTICATED) | Local trie commitment agrees with freshly observed ledger commitment; altered state/proof or stale/concurrent root refuses. Local expected leaf is never a direct ledger datum. |
 | caller-wallet-and-unspent-seed | Caller wallet/network and actual unspent seed govern production builders; reserved seed survives preparatory transactions and boot consumes that exact seed. Wrong-wallet/spent seed or partial settings cannot submit. |
 | insert-delivers-active-holding | Unknown becomes Active under open approval, creates exactly the keyed active holding, preserves custody and non-root config, routes the deposit as specified; duplicate insertion refuses. |

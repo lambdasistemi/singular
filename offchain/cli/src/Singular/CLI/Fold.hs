@@ -90,7 +90,7 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.Application.OpenDatum.Release (withApplication)
 import Singular.CLI.Attached
-import Singular.CLI.Command (FoldArgs (..))
+import Singular.CLI.Command (Command (..), FoldArgs (..), neededRoles)
 import Singular.CLI.FoldRules
 import Singular.CLI.Live
 import Singular.CLI.Outlay
@@ -263,6 +263,8 @@ runFold env a =
         env
         (foldRegistry a)
         (foldBlueprint a)
+        (foldAccess a)
+        (neededRoles (Fold a))
         (foldWrite a)
         "fold"
         $ \at -> do

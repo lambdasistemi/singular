@@ -1136,6 +1136,7 @@ lineageSession blocks =
         , LP.scriptRegistered = const (pure (Left unused))
         , LP.sessionTracer = nullTracer
         , LP.sessionEvaluated = \_ -> pure ()
+        , LP.mintRecord = const (pure (Left unused))
         , LP.history = \_ range -> do
             range `shouldBe` LP.HistoryRange Nothing Nothing
             Right . stream <$> readIORef blocks

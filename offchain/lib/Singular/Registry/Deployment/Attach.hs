@@ -5,9 +5,11 @@ License     : Apache-2.0
 
 One owner for the deployment family's node decisions: the compiled
 release halves a manifest pins only by hash ('CageParts',
-'cageConfigFor'), the registry token a seed determines, the resolution
-of the recorded reference outputs and the registry's state output, and
-the two operations built on them — 'verifyDeployment', which goes on
+'cageConfigFor'), the registry token a seed
+determines, a live carrier of each recorded script found by its hash
+wherever it sits ("Singular.Registry.StateToken"; the recorded output
+reference is not read), the registry's state output, and the two
+operations built on them — 'verifyDeployment', which goes on
 to read the live state datum and refuse a mismatched active policy or
 process\/retract window, and 'attach', which returns the resolved
 outputs without those additional checks. Neither operation loads or
@@ -37,16 +39,17 @@ import Control.Monad (unless, when)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
+import Data.List (minimumBy)
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 
-import Lens.Micro ((^.))
-
-import Cardano.Ledger.Address (Addr, decodeAddrEither)
+import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Api.Tx.Out (TxOut)
+import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Hashes (ScriptHash (..))
+import Data.Map.Strict qualified as Map
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
@@ -67,6 +70,13 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.StateToken
+    ( ReferenceRefusal (..)
+    , carriesReference
+    , findReferences
+    , parseRole
+    , renderReferenceRefusal
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -199,7 +209,7 @@ verifyDeployment
 verifyDeployment view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts view dep
+    refs <- referencesByHash view dep
     (stateIn, stateOut) <- resolveStateUtxo view cfg tok
     stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
@@ -238,10 +248,10 @@ verifyDeployment view dep parts = do
             <> [ "reference script "
                     <> T.unpack (refRole r)
                     <> " live at "
-                    <> T.unpack (refOutRef r)
+                    <> T.unpack (renderOutRef carrier)
                     <> " carrying 0x"
                     <> T.unpack (refHash r)
-               | (r, _) <- refs
+               | (r, (carrier, _)) <- refs
                ]
             <> [ "registry state output "
                     <> T.unpack (renderOutRef stateIn)
@@ -249,65 +259,86 @@ verifyDeployment view dep parts = do
                ]
         )
 
-{- | The recorded reference outputs, as the node reports them, checked
-one by one against the hash the manifest pins.
+{- | A live carrier of each script the manifest records, found by its hash
+wherever it sits ("Singular.Registry.StateToken"): the recorded output
+reference is not read. The registry roles go through the reference
+search; the deployment family's custody script, which no registry
+transaction runs, is found by the same rule on its own. Each is
+returned beside its manifest entry, in manifest order.
 -}
-resolveReferenceScripts
+referencesByHash
     :: Cage.Session Cage.NoWitness IO
     -> Deployment
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
-resolveReferenceScripts view dep =
-    mapM one (depReferenceScripts dep)
+referencesByHash view dep = do
+    recorded <- mapM roleOf (depReferenceScripts dep)
+    let expected = Map.fromList [(role, hash) | (_, Just role, hash) <- recorded]
+    found <-
+        findReferences view Nothing expected (Map.keysSet expected)
+            >>= either (die . T.unpack . renderReferenceRefusal) pure
+    let carrier (r, Just role, _) = pure (r, found Map.! role)
+        carrier (r, Nothing, hash) = do
+            carried <- custodyCarrier view hash
+            pure (r, carried)
+    mapM carrier recorded
   where
-    one r = do
-        wanted <- either die pure (parseOutRef (refOutRef r))
-        addr <- addrOf r
-        utxos <- Cage.outputsAt view addr
-        case [u | u@(i, _) <- utxos, i == wanted] of
-            [] ->
-                die
+    {- The manifest's role vocabulary. A registry role goes to the
+    reference search, spelled as receipts spell it; the custody script
+    the deployment publishes beside them is looked up by its hash alone.
+    Anything else the manifest records is unknown, refused by name: the
+    closed set is what keeps the producer's vocabulary and this
+    consumer's one set.
+    -}
+    roleOf r = do
+        role <-
+            if refRole r == custodyRole
+                then pure Nothing
+                else case parseRole (refRole r) of
+                    Just registryRole -> pure (Just registryRole)
+                    Nothing ->
+                        die
+                            ( "the deployment records an unknown reference role "
+                                <> T.unpack (refRole r)
+                            )
+        hash <-
+            maybe
+                ( die
                     ( "the deployment's "
                         <> T.unpack (refRole r)
-                        <> " reference output "
-                        <> T.unpack (refOutRef r)
-                        <> " is not live at "
-                        <> T.unpack (refAddress r)
-                        <> ". A reference output that has been spent cannot \
-                           \be attached to; the deployment must be made again."
+                        <> " hash is not a script hash"
                     )
-            ((i, o) : _) -> do
-                onChain <- case o ^. referenceScriptTxOutL of
-                    SJust s -> pure (T.pack (hex (scriptHashBytes (hashScript s))))
-                    SNothing ->
-                        die
-                            ( "the deployment's "
-                                <> T.unpack (refRole r)
-                                <> " output "
-                                <> T.unpack (refOutRef r)
-                                <> " carries no reference script"
-                            )
-                if onChain == refHash r
-                    then pure (r, (i, o))
-                    else
-                        die
-                            ( "the deployment's "
-                                <> T.unpack (refRole r)
-                                <> " output "
-                                <> T.unpack (refOutRef r)
-                                <> " carries 0x"
-                                <> T.unpack onChain
-                                <> " but the manifest pins 0x"
-                                <> T.unpack (refHash r)
-                            )
-    addrOf r = case decodeAddrText (refAddressBytes r) of
-        Just a -> pure a
-        Nothing ->
-            die
-                ( "the deployment's "
-                    <> T.unpack (refRole r)
-                    <> " address is not readable: "
-                    <> T.unpack (refAddress r)
                 )
+                pure
+                (decodeScriptHash (refHash r))
+        pure (r, role, hash)
+
+-- | The manifest's own name for the custody script it publishes.
+custodyRole :: Text
+custodyRole = "custody"
+
+{- | A live carrier of the custody script, by its hash wherever it sits:
+the rule the reference search applies to registry roles, with no wallet
+to fall back on — a run attached to a deployment spends the publication
+its manifest names.
+-}
+custodyCarrier
+    :: Cage.Session Cage.NoWitness IO
+    -> ScriptHash
+    -> IO (TxIn, TxOut ConwayEra)
+custodyCarrier view hash = do
+    answer <-
+        Cage.outputs view (Cage.CarryingReferenceScript hash)
+            >>= either
+                (die . T.unpack . renderReferenceRefusal . ReferenceUnreadable)
+                (pure . Cage.value)
+    case filter (carriesReference hash . snd) answer of
+        [] ->
+            die
+                ( "the deployment's custody script 0x"
+                    <> hex (scriptHashBytes hash)
+                    <> " has no live carrier this provider reports"
+                )
+        carriers -> pure (minimumBy (comparing fst) carriers)
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo
@@ -356,7 +387,7 @@ attach
 attach view dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
-    refs <- resolveReferenceScripts view dep
+    refs <- referencesByHash view dep
     state <- resolveStateUtxo view cfg tok
     pure
         Attached
@@ -370,14 +401,8 @@ attach view dep parts = do
 -- Small helpers
 -- ---------------------------------------------------------
 
-{- | The authoritative address bytes of a recorded reference output.
-
-The bech32 spelling beside it is for the reader; this is what is
-queried, because it round-trips through the manifest exactly.
--}
-decodeAddrText :: Text -> Maybe Addr
-decodeAddrText t = case B16.decode (BC.pack (T.unpack t)) of
-    Right raw -> case decodeAddrEither raw of
-        Right a -> Just a
-        Left _ -> Nothing
+-- | A recorded script hash, from its hex.
+decodeScriptHash :: Text -> Maybe ScriptHash
+decodeScriptHash t = case B16.decode (BC.pack (T.unpack t)) of
+    Right raw -> ScriptHash <$> hashFromBytes raw
     Left _ -> Nothing

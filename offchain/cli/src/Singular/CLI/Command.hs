@@ -41,7 +41,9 @@ module Singular.CLI.Command
     , RejectArgs (..)
     , ReclaimArgs (..)
     , WriteSettings (..)
+    , RegistryAccess (..)
     , Key (..)
+    , neededRoles
 
       -- * Parsing
     , CLIError (..)
@@ -66,6 +68,8 @@ import Data.Char
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust, isNothing)
 import Data.Maybe qualified
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
@@ -90,7 +94,12 @@ import Singular.CLI.Trace
     )
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.StateToken
+    ( ReferenceRole (..)
+    , parseStateToken
+    )
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
@@ -107,6 +116,14 @@ data WriteSettings = WriteSettings
     submission. On expiry the command stops with the submission
     journalled, never resubmitting.
     -}
+    }
+    deriving stock (Eq, Show)
+
+{- | The registry a command acts on: its state token (@--state-token@, or
+@SINGULAR_STATE_TOKEN@), the only name a registry has.
+-}
+newtype RegistryAccess = RegistryAccess
+    { accessToken :: Asset
     }
     deriving stock (Eq, Show)
 
@@ -142,6 +159,7 @@ data EntryMode
 -- | @registry insert@, @registry update@ and @registry terminate@.
 data EntryArgs = EntryArgs
     { entryRegistry :: FilePath
+    , entryAccess :: RegistryAccess
     , entryBlueprint :: FilePath
     , entryMode :: EntryMode
     , entryKey :: Key
@@ -171,6 +189,7 @@ data EntryArgs = EntryArgs
 -- | @registry fold@: the registry's pending request, folded by this wallet.
 data FoldArgs = FoldArgs
     { foldRegistry :: FilePath
+    , foldAccess :: RegistryAccess
     , foldBlueprint :: FilePath
     , foldWrite :: WriteSettings
     , foldRequest :: Maybe TxIn
@@ -188,6 +207,7 @@ data FoldArgs = FoldArgs
 -- | @registry reject@: every pending request, rejected by this wallet.
 data RejectArgs = RejectArgs
     { rejectRegistry :: FilePath
+    , rejectAccess :: RegistryAccess
     , rejectBlueprint :: FilePath
     , rejectWrite :: WriteSettings
     , rejectFund :: Maybe TxIn
@@ -201,6 +221,7 @@ data RejectArgs = RejectArgs
 -- | @registry reclaim@: take back this wallet's own pending request.
 data ReclaimArgs = ReclaimArgs
     { reclaimRegistry :: FilePath
+    , reclaimAccess :: RegistryAccess
     , reclaimBlueprint :: FilePath
     , reclaimWrite :: WriteSettings
     , reclaimRequest :: TxIn
@@ -217,6 +238,10 @@ data ReclaimArgs = ReclaimArgs
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
     { inspectRegistry :: FilePath
+    , inspectAccess :: RegistryAccess
+    {- ^ The registry, by its state token: required on every command but
+    create.
+    -}
     , inspectBlueprint :: FilePath
     , inspectProvider :: ProviderSettings
     , inspectKey :: Key
@@ -268,7 +293,11 @@ keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
 
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
-parseCommand args = do
+parseCommand = parseWith []
+
+-- | Parse a command line with its environment.
+parseWith :: [(String, String)] -> [String] -> Either CLIError Command
+parseWith environment args = do
     (words', flags) <- tokens args
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
@@ -282,23 +311,23 @@ parseCommand args = do
                         >> refuseFold flags
                         >> (Create <$> createArgs flags)
                 ["registry", "insert"] ->
-                    refuseRequest flags >> (Insert <$> insertArgs flags)
+                    refuseRequest flags >> (Insert <$> insertArgs environment flags)
                 ["registry", "update"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
-                        >> (Update <$> entryArgs False (Just "--payload") flags)
+                        >> (Update <$> entryArgs False (Just "--payload") environment flags)
                 ["registry", "terminate"] ->
                     refuseRequest flags
                         >> refuseDeposit flags
-                        >> (Terminate <$> entryArgs True Nothing flags)
-                ["registry", "fold"] -> Fold <$> foldArgs flags
-                ["registry", "reject"] -> Reject <$> rejectArgs flags
-                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs flags
+                        >> (Terminate <$> entryArgs True Nothing environment flags)
+                ["registry", "fold"] -> Fold <$> foldArgs environment flags
+                ["registry", "reject"] -> Reject <$> rejectArgs environment flags
+                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs environment flags
                 ["registry", "inspect"] ->
                     refuseSpendingFlags "inspect" flags
                         >> refuseRequest flags
                         >> refuseFold flags
-                        >> (Inspect <$> inspectArgs flags)
+                        >> (Inspect <$> inspectArgs environment flags)
                 _ -> Left (UnknownCommand words')
   where
     refuseWindows words' flags =
@@ -346,6 +375,12 @@ parseCommand args = do
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
     createArgs flags = do
+        when (isJust (lookup "--state-token" flags)) $
+            Left
+                ( BadValue
+                    "--state-token"
+                    "is refused by registry create, which makes one"
+                )
         processing <-
             windowFrom "--process-time" (reProcessTime economics) flags
         retracting <-
@@ -386,8 +421,8 @@ parseCommand args = do
                 Left (BadValue name "needs a positive integer number of milliseconds")
     -- An insert is an entry command that also names the deposit its envelope
     -- protects: --deposit LOVELACE, else the minimum, read by the library.
-    insertArgs flags = do
-        parsed <- entryArgs True (Just "--payload") flags
+    insertArgs env flags = do
+        parsed <- entryArgs True (Just "--payload") env flags
         deposit <-
             first
                 DepositRefused
@@ -400,7 +435,7 @@ parseCommand args = do
                     "--deposit"
                     "is a registry insert flag: only insert sets a deposit"
                 )
-    entryArgs books document flags = do
+    entryArgs books document env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
@@ -424,9 +459,11 @@ parseCommand args = do
         doc <- traverse (`required` flags) document
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess env flags
         pure
             EntryArgs
                 { entryRegistry = dir
+                , entryAccess = access
                 , entryBlueprint = bp
                 , entryMode = mode
                 , entryKey = key
@@ -437,7 +474,7 @@ parseCommand args = do
                 , entryReceipt = optional "--receipt" flags
                 , entryFold = isJust (lookup "--fold" flags)
                 }
-    foldArgs flags = do
+    foldArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -459,9 +496,11 @@ parseCommand args = do
                 Left err -> Left (BadValue "--request" err)
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess env flags
         pure
             FoldArgs
                 { foldRegistry = dir
+                , foldAccess = access
                 , foldBlueprint = bp
                 , foldWrite = settings
                 , foldRequest = request
@@ -469,7 +508,7 @@ parseCommand args = do
                 , foldMaxOutlay = outlay
                 , foldReceipt = optional "--receipt" flags
                 }
-    rejectArgs flags = do
+    rejectArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -489,16 +528,18 @@ parseCommand args = do
         settings <- writeSettings flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess env flags
         pure
             RejectArgs
                 { rejectRegistry = dir
+                , rejectAccess = access
                 , rejectBlueprint = bp
                 , rejectWrite = settings
                 , rejectFund = fund
                 , rejectMaxOutlay = outlay
                 , rejectReceipt = optional "--receipt" flags
                 }
-    reclaimArgs flags = do
+    reclaimArgs env flags = do
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         forM_
@@ -517,9 +558,11 @@ parseCommand args = do
         request <- first (BadValue "--request") (parseOutRef (T.pack named))
         fund <- fundFrom flags
         outlay <- outlayFrom flags
+        access <- registryAccess env flags
         pure
             ReclaimArgs
                 { reclaimRegistry = dir
+                , reclaimAccess = access
                 , reclaimBlueprint = bp
                 , reclaimWrite = settings
                 , reclaimRequest = request
@@ -527,6 +570,17 @@ parseCommand args = do
                 , reclaimMaxOutlay = outlay
                 , reclaimReceipt = optional "--receipt" flags
                 }
+    registryAccess env flags = do
+        tokenStr <- case optional "--state-token" flags of
+            Just s -> Right s
+            Nothing -> case lookup "SINGULAR_STATE_TOKEN" env of
+                Just s -> Right s
+                Nothing -> Left (MissingFlag "--state-token")
+        token <-
+            first
+                (BadValue "--state-token" . T.unpack)
+                (parseStateToken (T.pack tokenStr))
+        pure RegistryAccess{accessToken = token}
     fundFrom flags = case optional "--fund-input" flags of
         Nothing -> Right Nothing
         Just s -> case parseOutRef (T.pack s) of
@@ -539,16 +593,18 @@ parseCommand args = do
             _ ->
                 Left
                     (BadValue "--max-outlay" "is not a positive number of lovelace")
-    inspectArgs flags = do
+    inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
         dir <- required "--registry" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         settings <- providerSettings flags
+        access <- registryAccess env flags
         pure
             InspectArgs
                 { inspectRegistry = dir
+                , inspectAccess = access
                 , inspectBlueprint = bp
                 , inspectProvider = settings
                 , inspectKey = key
@@ -654,7 +710,7 @@ parseCommandWithEnvironment
 parseCommandWithEnvironment environment args = do
     when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
-    parseCommand args
+    parseWith environment args
 
 {- | A whole command line: the command, and the tracing it asks for with
 @--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
@@ -766,6 +822,7 @@ valuedFlags =
     , "--deposit"
     , "--payload"
     , "--request"
+    , "--state-token"
     ]
 
 -- | One line naming the refusal.
@@ -820,40 +877,56 @@ usage =
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reclaim --registry DIR --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""
+        , "Every command but create names its registry by the state token POLICY.NAME,"
+        , "the policy and the name in hex, which create prints; when the flag is absent"
+        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry: the"
+        , "directory holds only the actor's own journal and submissions. A command finds"
+        , "the reference scripts its transactions run by hash, from the provider and then"
+        , "its own wallet."
         , "create takes positive integer windows in milliseconds. Its processing window"
         , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
         , "for the life of the registry; create and inspect report them from the state datum."
@@ -902,3 +975,24 @@ usage =
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing."
         ]
+
+{- | The reference roles a command's transactions run, and so the only
+references it looks up.
+-}
+neededRoles :: Command -> Set ReferenceRole
+neededRoles = \case
+    Create _ -> Set.singleton RoleState
+    Insert a
+        | entryFold a -> everything
+        | otherwise -> Set.singleton RoleApplication
+    Update _ -> Set.singleton RoleApplication
+    Terminate a
+        | entryFold a -> everything
+        | otherwise -> Set.singleton RoleApplication
+    Fold _ -> everything
+    Reject _ -> Set.fromList [RoleState, RoleRequest]
+    Reclaim _ -> Set.empty
+    Inspect _ -> Set.empty
+    Help -> Set.empty
+  where
+    everything = Set.fromList [minBound .. maxBound]

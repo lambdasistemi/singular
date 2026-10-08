@@ -23,6 +23,28 @@
       "pause": 400
     }
   ],
+  "naming-the-registry-by-its-state-token": [
+    {
+      "text": "Naming the registry by its state token.",
+      "pause": 500
+    },
+    {
+      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+      "pause": 400
+    },
+    {
+      "text": "As Bob, I start from an empty directory with the release, my wallet and a Koios URL, and give every command the state token. The command derives the registry from the token and the blueprint and checks it against the chain before it builds anything, refusing by name, in this order:",
+      "pause": 400
+    },
+    {
+      "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
+      "pause": 400
+    },
+    {
+      "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here and stays operable with the release that made it.",
+      "pause": 400
+    }
+  ],
   "choosing-a-registrys-windows": [
     {
       "text": "Choosing a registry's windows.",
@@ -209,6 +231,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "717347d3b1d17000d347e6bf4c5c30d695d6602c0ef29be63f06731b7ca14d42"
+    "sha256": "c9f0f95dee5fb02f849589fb77d926133eca593aafb380d1bfe9eaf10d854671"
   }
 }

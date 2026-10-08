@@ -1,0 +1,238 @@
+{
+  "a-registry-joined-from-its-state-token-stories-and-requirements": [
+    {
+      "text": "A registry joined from its state token: stories and requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Feature epic #437, child of feature epic #371. It absorbs #439 (the provider cannot find outputs by reference-script hash) and #406 (create checks publication funding one script at a time). Read the plan for the slices, the modules model, data model and functions model for the changed rows, and the tasks for the commit boundaries. PR1 base: main 23964e667fa278b2027d0c05169c0f5e0e9233cb. The operator's 2026-10-08 E371 order resumes the complete issue with serial Sol, Muse and GLM. Token-only commands and Bob's connected journey remain the first delivery boundary; all reference, funding and page requirements below remain required before issue #437 can close.",
+      "pause": 400
+    },
+    {
+      "text": "Delivery proceeds through four runnable slices: token-only join, book, fold and inspect in draft PR476, protected funding and explicit reference restoration, owned-carrier retirement and reclaim, and the release-bound registry page and action report. Each slice is delivered when its own connected evidence and required checks pass. The later slices do not delay the first; PR476 closes #501 only and leaves this feature epic open.",
+      "pause": 400
+    }
+  ],
+  "user-stories": [
+    {
+      "text": "User stories.",
+      "pause": 500
+    },
+    {
+      "text": "As Carol, a registry creator, I run create from an empty directory. It prints the state token. I publish nothing else and keep no file that anyone else needs.",
+      "pause": 400
+    },
+    {
+      "text": "As Bob, a registrant, I start in an empty directory with the release, my wallet and a Koios URL. I receive the state token and run any existing command with --state-token. It works, or it refuses by name. I copy nothing from Carol's disk.",
+      "pause": 400
+    },
+    {
+      "text": "As Bob, I book, inspect and fold using public registry inputs and my own actor context. My process receives no Alice directory or files. The hosted two-actor journey must establish the connected steps, and its deliberate-open control must reject an attempt to open any Alice file.",
+      "pause": 400
+    }
+  ],
+  "where-the-registrys-facts-come-from": [
+    {
+      "text": "Where the registry's facts come from.",
+      "pause": 500
+    },
+    {
+      "text": "The registry is the state token plus the release. The state script is the same for every registry of a release. The request, three witness and application scripts are the release's scripts applied to statePolicy ‖ tokenName. The windows and the tip are the registry's own rules, read from the datum. Reference outputs are a convenience: any unspent output whose reference script hashes to an expected hash serves, whoever made it and wherever it sits.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    }
+  ],
+  "identity-from-the-state-token": [
+    {
+      "text": "Identity from the state token.",
+      "pause": 500
+    },
+    {
+      "text": "Every command except create takes the state token. It is given as --state-token POLICY.NAME, or read from SINGULAR_STATE_TOKEN.",
+      "pause": 300
+    },
+    {
+      "text": "One resolver runs before anything is built or written. It refuses, by these names and in this order:",
+      "pause": 300
+    },
+    {
+      "text": "state-token-foreign-release: the policy is not this release's state script hash.",
+      "pause": 300
+    },
+    {
+      "text": "state-token-not-found: the provider has no record of the asset.",
+      "pause": 300
+    },
+    {
+      "text": "state-token-burned: the supply is not one.",
+      "pause": 300
+    },
+    {
+      "text": "state-token-seed-mismatch: the minting transaction spends no input whose hash is the token name.",
+      "pause": 300
+    },
+    {
+      "text": "state-output-missing: no output holds the token at the state address with a state datum.",
+      "pause": 300
+    },
+    {
+      "text": "registry-pin-mismatch <field>: one of the datum's application, active, absent or terminal policies differs from the hash derived from the release and the token.",
+      "pause": 300
+    },
+    {
+      "text": "network-mismatch: the provider's network differs from the release's addresses.",
+      "pause": 300
+    },
+    {
+      "text": "Nothing per-registry is read from disk. The actor's directory holds only the actor's own in-flight submissions: the journal, the saved submission bodies, the lock and, during create, the pending identity. registry.json is neither written nor read. There is no join command: an empty directory is a valid start.",
+      "pause": 300
+    },
+    {
+      "text": "create prints the state token and writes no identity file. Printing a usable page command follows when the registry-page slice delivers that command.",
+      "pause": 300
+    }
+  ],
+  "reference-outputs-found-by-hash": [
+    {
+      "text": "Reference outputs found by hash.",
+      "pause": 500
+    },
+    {
+      "text": "The provider answers an existence query: \"live outputs carrying reference script H\". Each answer item carries the output reference and the exact output. A Koios answer is unverified and unbound. An empty answer means \"not found by this provider\", never \"not on chain\".",
+      "pause": 300
+    },
+    {
+      "text": "The command computes each candidate's script hash itself, from the output, and never trusts a provider-supplied hash. A candidate that is spent, or whose script hash differs, is discarded.",
+      "pause": 300
+    },
+    {
+      "text": "A command looks up only the scripts its own transaction runs. The sources are tried in order: the provider query, then the actor's own wallet for roles the provider did not supply. The wallet is not consulted when the provider supplies every needed role. With no needed roles, discovery reads nothing. Within the first source supplying a role, the lowest valid output reference wins.",
+      "pause": 300
+    },
+    {
+      "text": "When no source finds a carrier, the command refuses reference-missing <role> <hash>: not found by this provider or wallet. The message names the remedy, singular registry publish-references.",
+      "pause": 300
+    },
+    {
+      "text": "create's order is unchanged. It publishes the state reference only if none is found, then boots, then publishes the request, witness and application references to the creator's wallet. The boot runs the state script from whichever reference was found. The funding for every publication is checked before the boot.",
+      "pause": 300
+    }
+  ],
+  "references-anyone-can-restore-and-retire": [
+    {
+      "text": "References anyone can restore and retire.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, when Carol spends her reference outputs, I rebuild the scripts from the release and publish them into outputs I control. There is no forever lock. Each applied script is checked against its expected hash before publication. An explicit automatic-publication flag can do the same before the requested write; a missing carrier otherwise produces the named refusal.",
+      "pause": 400
+    },
+    {
+      "text": "Retirement spends every carrier in my wallet matching a hash this registry needs. The state script is shared by every registry of the release: its retirement is labelled as shared and may remove my convenience carrier for those registries too. Applied roles for other registries are excluded. A connected journey retires carriers, observes the missing-reference refusal, restores them permissionlessly and folds successfully.",
+      "pause": 400
+    }
+  ],
+  "funding-protected-by-one-wallet-output-boundary": [
+    {
+      "text": "Funding protected by one wallet-output boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As an actor, my ordinary funding cannot consume a reference-script carrier or a token holding. Wallet outputs cross one opaque interface; only its funding projection applies the single fundable predicate. Named state-token, request and owned-reference selectors supply protocol inputs separately. Every existing ordinary selector, including largest-output request funding, moves behind that boundary; raw outputs are unavailable to downstream builders. Insert, update, terminate, create and reference publication/retirement controls present a 300 ADA script carrier, a large token holding and a 20 ADA plain output: only the plain output funds the transaction. A bypass control must fail at compilation or at the closed module-export boundary.",
+      "pause": 400
+    }
+  ],
+  "a-registry-page-bound-to-its-release": [
+    {
+      "text": "A registry page bound to its release.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I run describe and receive deterministic human and machine renderings from chain-derived facts. The page contains the token, rules, expected script hashes, provider-found references, current registry state and provider-labelled last-state-transaction block anchor. It names the application blueprint title and computed applied hash. Missing anchor data refuses by name. The page is unsigned and provider answers are unverified.",
+      "pause": 400
+    },
+    {
+      "text": "Release facts come from version.txt beside the archive blueprint, without a new release-directory flag. Missing version.txt refuses with no release label. The blueprint SHA256 and derived state hash bind the archive to the registry; a mismatch refuses. The archive assembly stages and checks version.txt against asset names/checksums. The release tag is labelled as the archive's claim. Known limits link to that tag's GitHub release and published documentation asset/page, never handwritten limits or current-main Pages. Replaying the same chain state and regenerating must produce identical bytes.",
+      "pause": 400
+    }
+  ],
+  "public-evidence-names-each-performed-action": [
+    {
+      "text": "Public evidence names each performed action.",
+      "pause": 500
+    },
+    {
+      "text": "The report renders each live and retired clause's action kind and target from its description. A separate check derives that identity independently over both current story families; clauses differing only in action identity render differently and swapping them fails. This does not reopen the accepted saved-selector retirement or transfer its receipts/state. Missing evidence remains visible. These full-issue requirements remain actionable after PR1; PR1 alone cannot close issue #437.",
+      "pause": 400
+    }
+  ],
+  "changed-public-promise": [
+    {
+      "text": "Changed public promise.",
+      "pause": 500
+    },
+    {
+      "text": "The saved-application-selector refusal promise is retired by the operator's 2026-10-07 ruling: \"Retired: a registry is joined from its state token alone; there is no saved selector file to change.\" The suite records that reason in its description language and keeps the promise's history visible. Its last receipts are not reused and its state is not carried into another row. There is no replacement row; token-only requirements, including the foreign-release refusal, retain their own evidence.",
+      "pause": 400
+    },
+    {
+      "text": "The same day's reference-search ruling removes caller-supplied reference hints and their flag, parsing, warning, search source and tests. Discovery uses the provider and then the actor's wallet. The future page's provider-found reference information remains a separate PR2 requirement.",
+      "pause": 400
+    }
+  ],
+  "existing-registries": [
+    {
+      "text": "Existing registries.",
+      "pause": 500
+    },
+    {
+      "text": "Registries made by earlier releases keep their references at their creator's wallet and their scripts from their own release. This release refuses them by name (state-token-foreign-release, or otherwise reference-missing). They stay operable with the release that made them, through their published identity record. There is no migration and no registry.json fallback.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "Missing carriers. PR1 retains the named missing-reference refusal. Its diagnostic names the planned publication command; that command and restoration journey belong to the reference-restoration slice.",
+      "pause": 300
+    },
+    {
+      "text": "Verification boundary. The resolver checks the token against Koios answers, which are unverified under the Lockness rules (lockness#39). Writes are protected by the ledger revalidating every reference input. Nothing binds \"the registry I meant\" to a token, so a genuine copycat registry of the same release passes every check.",
+      "pause": 300
+    },
+    {
+      "text": "Existence only. An empty provider answer is not proof that no carrier exists.",
+      "pause": 300
+    },
+    {
+      "text": "A carrier spent mid-flight between an actor's lookup and that actor's submission makes the submission fail on a missing input. Rerunning looks the references up again.",
+      "pause": 300
+    },
+    {
+      "text": "create is not resumable, as today. An abort after a publication leaves that output at the creator's wallet, where the creator can spend it back.",
+      "pause": 300
+    }
+  ],
+  "model-and-constitution": [
+    {
+      "text": "Model and constitution.",
+      "pause": 500
+    },
+    {
+      "text": "PR1 binds Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef and constitution 1.13.0 at the exact base above. There is no Lean change. Reference scripts, reference outputs and registry files are not modelled. Singular.Reachable.initial admits any Config, as genesis does, and the pin re-derivation is an off-chain admission check outside the law, as checkPins is today. There is no constitution amendment and no on-chain change: the blueprint and onchain/script-identity.json are unchanged. The inherited #419 model carries each request's datum value, builds folds from public inputs through Singular.buildFold, and refuses a destination with a foreign or missing carrier even at a zero floor. Token-only identity does not weaken those transaction or settlement obligations. Focused provider/resolver/funding checks establish their selected cases only. Acceptance of Bob's journey requires exact-head hosted transactions and the file-open control, with receipt-computed public state and every uncovered requirement visible.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "e2fff443a7e730810432be8489723d146a2fef712654900c8393cbdd4de822d4"
+  }
+}

@@ -23,7 +23,8 @@ no coherent chain snapshot and carries no verification witness.
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--registry DIR` | all eight | The directory that holds one registry: its identity, its mirror of the chain and its journal. `create` makes it; every later command reads it. |
+| `--registry DIR` | all eight | Your own working directory: the journal of your submissions, their saved bodies and, while `create` runs, its pending identity. It names no registry and holds nothing anyone else needs: an empty directory is a valid start for any command. |
+| `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
 | `--seed TXID#IX` or `--preview` | `create` | The output of your wallet the new registry is booted from, which fixes its identity; or, with `--preview`, the identity a seed from your wallet would give, without submitting anything. |
@@ -50,11 +51,52 @@ settings are read from the command line only; the one exception is the
 [test-harness hooks](#test-harness-hooks), which operators never set.
 
 ```sh
-singular registry insert --registry ./reg --blueprint plutus.json \
-  --key keyA --payload alice.json \
+singular registry insert --registry ./work --blueprint plutus.json \
+  --state-token "$state_token" --key keyA --payload alice.json \
   --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
 ```
+
+## Naming the registry by its state token
+
+As Carol, the creator, I run `create` from an empty directory. Its receipt
+names `stateToken`, the registry's state token as `POLICY.NAME` in hex. I
+publish nothing else and keep no file anyone else needs: `create` writes no
+identity file, and the pending identity it records before its first submission
+is removed once it finishes.
+
+As Bob, I start from an empty directory with the release, my wallet and a
+Koios URL, and give every command the state token. The command derives the
+registry from the token and the blueprint and checks it against the chain
+before it builds anything, refusing by name, in this order:
+
+| Refusal | What the chain disagrees with |
+| --- | --- |
+| `state-token-foreign-release` | the token's policy is not this release's state script |
+| `state-token-not-found` | the provider has no record of the asset |
+| `state-token-burned` | the asset's supply is not one |
+| `state-token-seed-mismatch` | the minting transaction spends no input whose derived name is the token's |
+| `state-output-missing` | no output holds the token at the state address with a state datum |
+| `registry-pin-mismatch FIELD` | one of the datum's four policies differs from the one the release derives |
+| `network-mismatch` | the provider's network is not the release's |
+
+Each command then looks up only the reference scripts its own transactions
+run, by hash: the provider's answer first, then your own wallet's outputs,
+which are read only when the provider has none for some script, taking the
+lowest output reference among the outputs that carry the right script. A
+command that runs no reference script, such as `inspect`, looks up none.
+The hash is computed from the script each output carries, never taken from
+the provider. When neither has one the command refuses
+`reference-missing ROLE HASH: not found by this provider or wallet`, naming
+`singular registry publish-references` as the remedy.
+An empty provider answer means only that this provider found none.
+
+The provider's answers are unverified, and the token is not signed by anyone:
+a genuine registry of the same release made by someone else passes every
+check. The ledger revalidates every reference input of a write, so a stale or
+wrong carrier can fail a submission but never run another script. A registry
+made by an earlier release is refused by name here and stays operable with
+the release that made it.
 
 ## Choosing a registry's windows
 

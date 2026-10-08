@@ -42,8 +42,11 @@ import Control.Exception
     )
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
+import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
@@ -61,6 +64,7 @@ import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.Application.OpenDatum.Envelope
@@ -69,11 +73,11 @@ import Singular.Application.OpenDatum.Envelope
     , dataToJson
     , envelopeToJson
     )
-import Singular.CLI.Attached (tokenName)
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
     , ProviderSettings (..)
+    , RegistryAccess (..)
     )
 import Singular.CLI.Live
 import Singular.CLI.Proof
@@ -99,13 +103,13 @@ import Singular.CLI.Reconcile
     , renderPoint
     )
 import Singular.CLI.Registry
-    ( checkNetwork
-    , configPath
+    ( Release (..)
+    , checkPendingToken
     , hexT
     , keyFields
+    , loadRelease
     , parseEnterpriseAddress
     , pendingPath
-    , renderIdentityError
     )
 import Singular.CLI.Session
     ( CommandFailure (..)
@@ -120,14 +124,19 @@ import Singular.CLI.Trace
     , report
     , within
     )
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (sessionReceipt)
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
-    ( extractCageDatum
+    ( computeScriptHash
+    , extractCageDatum
     , extractOwnerBytes
     , findRequestUtxos
     , requestAddrFromCfg
+    , txInToRef
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -142,11 +151,40 @@ runInspect env a = do
     let dir = inspectRegistry a
         Key key = inspectKey a
         settings = inspectProvider a
-    complete <- doesFileExist (configPath dir)
+        requested = accessToken (inspectAccess a)
+    release <-
+        loadRelease (inspectBlueprint a)
+            >>= either (failWith ClientRefusal) pure
     pending <- doesFileExist (pendingPath dir)
-    if not complete && pending
-        then inspectIncompleteCreate env dir settings
-        else inspectSaved env dir key settings a
+    if pending
+        then do
+            identity <- readPending dir
+            either
+                (failWith ClientRefusal . T.unpack)
+                pure
+                (pendingToken release identity >>= (`checkPendingToken` requested))
+            inspectIncompleteCreate env dir settings identity
+        else inspectSaved env dir key settings release a
+
+-- | The pending identity an interrupted create recorded.
+readPending :: FilePath -> IO Value
+readPending dir =
+    Aeson.eitherDecodeFileStrict' (pendingPath dir)
+        >>= either (failWith ClientRefusal) pure
+
+{- | The state token the pending create's seed derives under this release:
+the only token an inspect may read the pending identity with.
+-}
+pendingToken :: Release -> Value -> Either Text Asset
+pendingToken release identity = case identity of
+    Aeson.Object o
+        | Just (Aeson.String seedText) <- KeyMap.lookup "seed" o
+        , Right seed <- parseOutRef seedText ->
+            Right
+                ( PolicyID (computeScriptHash (releaseState release))
+                , AssetName (SBS.toShort (deriveAssetName (txInToRef seed)))
+                )
+    _ -> Left "the pending create records no seed"
 
 {- | Reconcile under the registry's lock, or not at all when another
 process holds it.
@@ -183,11 +221,8 @@ and the outcome is @partial@ with no leaf. Create refuses the directory;
 nothing is booted again or resubmitted.
 -}
 inspectIncompleteCreate
-    :: Env -> FilePath -> ProviderSettings -> IO Value
-inspectIncompleteCreate env dir settings = do
-    identity <-
-        Aeson.eitherDecodeFileStrict' (pendingPath dir)
-            >>= either (failWith ClientRefusal) (pure :: Value -> IO Value)
+    :: Env -> FilePath -> ProviderSettings -> Value -> IO Value
+inspectIncompleteCreate env dir settings identity = do
     reached <-
         try $ readOnce env settings ["chain tip", "journal transactions"] $ \caps v -> do
             point <- Cage.tip v
@@ -251,23 +286,26 @@ inspectSaved
     -> FilePath
     -> ByteString
     -> ProviderSettings
+    -> Release
     -> InspectArgs
     -> IO Value
-inspectSaved env dir key settings a = do
+inspectSaved env dir key settings release a = do
     let magic = providerMagic settings
-    saved <- loadSaved dir (inspectBlueprint a)
-    -- everything inspect reads and finds is inside its registry
-    let registryEnv =
+        -- The token the command named is the registry these reports sit in.
+        -- Resolution still happens in the one view below.
+        AssetName raw = snd (accessToken (inspectAccess a))
+        registryEnv =
             env
                 { envTracer =
-                    within (InRegistry (hexT (tokenName saved))) (envTracer env)
+                    within
+                        (InRegistry (hexT (SBS.fromShort raw)))
+                        (envTracer env)
                 }
-    either
-        (failWith ClientRefusal . renderIdentityError)
-        pure
-        (checkNetwork (savedConfig saved) magic)
     reached <-
         try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
+            -- An inspect runs no transaction: it looks up no reference.
+            saved <-
+                resolveSaved dir release (inspectAccess a) Set.empty Nothing v
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved

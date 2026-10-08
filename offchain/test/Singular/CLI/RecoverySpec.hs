@@ -28,9 +28,14 @@ Provider provenance of the recorded core: every chain read it makes
 comes from the recorded preprod Koios fixture set
 @test/fixtures/koios/preprod@ — raw status, headers and body recorded
 read-only from @https://preprod.koios.rest/api/v1@ by the @koios-http@
-recorder on 4 October 2026, replayed through the recorded transport
+recorder, replayed through the recorded transport
 ("Singular.Provider.Koios.Recorded") and the shipping Koios provider
 constructor. No node runs and no block is waited for in either group.
+Most answers were recorded on 4 October 2026; the @address_utxos@ pages
+for the candidate address the October set did not cover were recorded
+with the same recorder on 8 October 2026. The set is therefore not one
+simultaneous ledger snapshot: each answer replays its own moment, and
+nothing here claims recovery behavior beyond those answer streams.
 
 Provider provenance of the synthetic supplement: a stub session over
 the repository's own fixture facilities serves a booted registry and
@@ -62,8 +67,8 @@ none is supplied by the provider.
 What the recorded core establishes: client recovery over recorded
 answers for a create interrupted before its registry was saved. It
 does not establish ledger acceptance of any transaction here, chain
-finality, a node rollback, or a connected registry lifecycle; the
-recorded snapshot is a replay of one moment, not a ledger. Saved-registry
+finality, a node rollback, or a connected registry lifecycle; each
+answer replays only its own moment, not the ledger. Saved-registry
 reconciliation on recorded chain answers is not exercised anywhere in
 this module and remains uncovered: the recorded fixture set holds no
 booted registry, and the saved-registry 'Singular.CLI.Reconcile.reconcile'
@@ -182,7 +187,7 @@ import Singular.CLI.Reconcile
     , reconciledJson
     , refuseUnreconciled
     )
-import Singular.CLI.Registry (hexT, mkRegistryConfig, pinsOf)
+import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
     ( CommandFailure (..)
     , Expectation (..)
@@ -213,11 +218,9 @@ import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config
     ( CageConfig (..)
     , bootStateFromCfg
-    , defaultProcessTime
-    , defaultRetractTime
     )
-import Singular.Registry.Deployment (Deployment (..), parseOutRef)
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( Addr
     , Coin (..)
@@ -1233,30 +1236,13 @@ withSyntheticSavedRegistry publishHistory story =
                                 (ConwaySpending (AsIx 0))
                                 (Data (toPlcData (Modify [Update []])), ExUnits 0 0)
                             )
-            deployment =
-                Deployment
-                    { depRelease = "synthetic-saved-registry-supplement"
-                    , depLeanRevision = "no-ledger-admission-claim"
-                    , depNetworkMagic = 1
-                    , depSeedOutRef = T.pack (replicate 64 '7' <> "#0")
-                    , depCageToken = hexT (SBS.fromShort name)
-                    , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
-                    , depRequestHash = ""
-                    , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                    , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                    , depProcessTime = defaultProcessTime cfg
-                    , depRetractTime = defaultRetractTime cfg
-                    , depTip = 1_000
-                    , depReferenceScripts = []
-                    , depBootstrapTxs = []
-                    }
             saved =
                 Saved
                     (dir </> "registry")
-                    (mkRegistryConfig 1 (walletAddr wallet) (pinsOf cfg) deployment)
                     cfg
                     Booking.codes
                     tid
+                    []
             expectation = "active:" <> hexT (envelopeHash envelope)
             serve addr
                 | addr == cageAddrFromCfg cfg Testnet =
@@ -1264,12 +1250,26 @@ withSyntheticSavedRegistry publishHistory story =
                 | addr == applicationAddr saved = pure [(foldHoldingIn, holding)]
                 | otherwise =
                     fail "the synthetic registry serves no other address"
-            session =
-                ( withTip
+            serving =
+                withTip
                     (Cage.TipObservation (SlotNo 7) (BS.replicate 32 3) 7 0)
                     (withAddressOutputs serve stubSession)
-                )
+            session =
+                serving
                     { Cage.history = \_ _ -> Right <$> readIORef historyRef
+                    , Cage.outputs = \case
+                        -- The resolver finds the registry's state output by
+                        -- the token it holds, not by its address.
+                        Cage.HoldingAsset asset
+                            | asset == (policy, AssetName name) ->
+                                pure
+                                    ( Right
+                                        ( Evidenced
+                                            [(foldStateIn, foldStateOut)]
+                                            Nothing
+                                        )
+                                    )
+                        requested -> Cage.outputs serving requested
                     }
             provider = servingSession session
             ctx =

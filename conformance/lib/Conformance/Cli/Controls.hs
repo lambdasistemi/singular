@@ -133,7 +133,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Char (isDigit, isHexDigit, ord)
 import Data.Either (fromRight, lefts, rights)
 import Data.Int (Int64)
-import Data.List (intercalate, isInfixOf, nub)
+import Data.List (intercalate, isInfixOf, isPrefixOf, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import Data.Scientific qualified as Sci
@@ -157,9 +157,11 @@ import Conformance.Refusal
 -- ---------------------------------------------------------
 
 {- | The ordinary commands, as a person runs them. An update names which
-of the story's payloads it writes.
+of the story's payloads it writes. A fold folds the registry's pending
+request: the request names its key and edge, so the command takes no key,
+payload, deposit or fold flag of its own.
 -}
-data Command = Create | Insert | Update Int | Terminate | Inspect
+data Command = Create | Insert | Update Int | Terminate | Inspect | Fold
     deriving stock (Eq, Show)
 
 commandName :: Command -> String
@@ -169,6 +171,7 @@ commandName c = case c of
     Update _ -> "update"
     Terminate -> "terminate"
     Inspect -> "inspect"
+    Fold -> "fold"
 
 {- | A transaction built by hand against a key's live holding at the
 application, and submitted without local evaluation so the node judges
@@ -273,8 +276,6 @@ CLI's own specification; no model statement covers it.
 data Provocation
     = -- | @insert@, while another process holds the registry's lock
       WhileLocked
-    | -- | @insert@, with the saved configuration's application selector changed
-      SelectorChanged
     | -- | @inspect@, with the public history it needs withheld
       WithoutHistory
     | -- | @inspect@, against a node socket that does not exist
@@ -292,6 +293,8 @@ data Provocation
       completes
       -}
       LateCreate
+    | -- | @create@, from a wallet that cannot fund every publication
+      UnderfundedCreate
     | {- | @update@, held once the node accepted it while the node is stopped,
       then released; the last action of a story, since the node is gone
       -}
@@ -301,7 +304,6 @@ data Provocation
 provocationName :: Provocation -> String
 provocationName p = case p of
     WhileLocked -> "insert-while-locked"
-    SelectorChanged -> "insert-selector-changed"
     WithoutHistory -> "inspect-without-history"
     WithoutNode -> "inspect-without-node"
     TerminateKilled -> "terminate-killed"
@@ -309,6 +311,7 @@ provocationName p = case p of
     CreateKilled -> "create-killed"
     CreateAgain -> "create-again"
     LateCreate -> "create-late"
+    UnderfundedCreate -> "create-underfunded"
     NodeLost -> "update-node-lost"
 
 -- | A provoked command, in the description language.
@@ -316,8 +319,6 @@ provocationPhrase :: Provocation -> String
 provocationPhrase p = case p of
     WhileLocked ->
         "Run `singular registry insert` while another process holds the registry's lock"
-    SelectorChanged ->
-        "Run `singular registry insert` with the saved application selector changed"
     WithoutHistory ->
         "Run `singular registry inspect` with the public history it needs withheld"
     WithoutNode ->
@@ -331,6 +332,8 @@ provocationPhrase p = case p of
     CreateAgain -> "Run `singular registry create` again on that registry"
     LateCreate ->
         "Run `singular registry create` from another wallet with its own live seed, held before the registry's lock while a first create of the same registry completes"
+    UnderfundedCreate ->
+        "Run `singular registry create` from a wallet that cannot fund every publication"
     NodeLost ->
         "Run `singular registry update`, hold it once the node accepted it, stop the node, then release it"
 
@@ -411,6 +414,23 @@ data Requirement
       class its condition names, and the registry's journal did not move
       -}
       RefusedBeforeSubmitting
+    | {- | The create receipt of a wallet that cannot fund every
+      publication: refused before anything was submitted, with the
+      publication funding named, its directory untouched and its seed
+      still unspent
+      -}
+      CreateUnderfunded
+    | {- | An inspect by the registry's own actor and one by a second actor
+      starting from an empty directory with only the state token: both
+      succeeded and read the same registry
+      -}
+      TokenOnlyReading
+    | {- | A booking, an ordinary token-only fold of that booking and an
+      inspect after it: the booking was accepted, the fold succeeded on
+      the booking's own request, and the key reads Active under the
+      fold's envelope and root
+      -}
+      FoldConsumed
     | {- | A provoked @inspect@: its outcome is the class its condition
       names, and it printed no leaf
       -}
@@ -474,6 +494,12 @@ receipt; 'Require' is computed from receipts and leaves none.
 data CliI res where
     -- | Run one ordinary command against a registry, for a key
     Run :: Command -> Target -> String -> CliI Receipt
+    {- | Run one ordinary command from this actor's directory against the
+    registry another target created, naming it only by its state token:
+    the actor's directory starts empty and receives the token, nothing
+    else of the registry
+    -}
+    RunByToken :: Target -> Target -> Command -> String -> CliI Receipt
     {- | Book an insertion of the key through the application, as the
     ordinary insert does, and stop before its fold
     -}
@@ -505,6 +531,11 @@ data CliI res where
     -}
     ReadIndexer :: Indexer -> Target -> String -> Receipt -> CliI Receipt
     Require :: Requirement -> [Receipt] -> CliI ()
+    {- | The enclosing clause's promise is retired, for this reason. The clause
+    keeps its words as history and is judged retired, never from a receipt;
+    it leaves no receipt
+    -}
+    Retire :: String -> CliI ()
 
 type Story = Specification.Story CliI
 
@@ -713,12 +744,12 @@ authenticated =
         "INV299-AUTHENTICATED"
         "f35b175f8df8140f9a947178c375c1627864d4fa91fd39cc14234ee95b17b2aa"
 
--- | The saved identity binds every write; a substitution refuses.
+-- | The state token, release, network and selected key bind every write and read.
 identityBinds :: Theorem ClientObligation
 identityBinds =
     obligationRow
         "INV299-IDENTITY"
-        "344952d2e47e5daf254552a9c20e3e8fc094ddb0887865b067c46574f7eb1ab4"
+        "4ca4b7b81ec111c58ea1d066d60cd89adbd7ad8b7c363710ec58b9531c3ac982"
 
 -- | An unavailable read never prints confirmed status.
 readOnly :: Theorem ClientObligation
@@ -1640,7 +1671,9 @@ actionsOf = go
     blank :: CliI a -> a
     blank i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
@@ -1660,6 +1693,11 @@ forbiddenInPermanent =
         <> [ "provoke " <> T.pack (provocationName p) | p <- [minBound .. maxBound]
            ]
 
+-- | Why the saved-selector promise is retired.
+selectorRetired :: String
+selectorRetired =
+    "Retired: a registry is joined from its state token alone; there is no saved selector file to change."
+
 {- | The client's obligations under conditions of its process, each told
 under the row of the CLI's specification it bears on: a changed selector,
 withheld public history and an absent node; a terminate and a create killed
@@ -1673,6 +1711,7 @@ processStory = do
         raced = Target "raced"
         second = "second"
         third = "third"
+        reader = Target "reader"
         reading key title thm =
             premiseClause
                 thm
@@ -1688,14 +1727,37 @@ processStory = do
                 (reach False target)
         _ <-
             clause
+                "a second actor, starting from an empty directory with only the state token, reads the same registry"
+                (requirement identityBinds TokenOnlyReading)
+                ( do
+                    mine <- action (Run Inspect target heldKey)
+                    theirs <- action (RunByToken reader target Inspect heldKey)
+                    pure [mine, theirs]
+                )
+        _ <-
+            clause
+                "a second actor, starting from an empty directory with only the state token, folds Alice's pending request and reads it Active"
+                (requirement identityBinds FoldConsumed)
+                ( do
+                    booking <- action (Book target freshKey)
+                    folded <- action (RunByToken reader target Fold freshKey)
+                    seen <- action (RunByToken reader target Inspect freshKey)
+                    pure [booking, folded, seen]
+                )
+        -- Retired by operator ruling: no command reads a saved selector. The
+        -- second key is still inserted, for the clauses below that use it.
+        _ <-
+            clause
                 "an insert with the saved application selector changed is refused before submitting"
                 (requirement identityBinds RefusedBeforeSubmitting)
-                (pure <$> action (Provoke SelectorChanged target second))
+                ([] <$ action (Retire selectorRetired))
         void $
             clause
                 "the same insert, with the selector restored, is accepted"
                 (requirement identityBinds CommandSucceeded)
-                (pure <$> action (Run Insert target second))
+                ( action (Retire selectorRetired)
+                    >> (pure <$> action (Run Insert target second))
+                )
     theorem authenticated $ do
         _ <- reading heldKey "inspect reads the key Active" authenticated
         void $
@@ -1767,6 +1829,11 @@ processStory = do
                 "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
                 (requirement haltsAttributably LateCreateRefused)
                 (pure <$> action (Provoke LateCreate raced ""))
+        _ <-
+            clause
+                "a create from a wallet that cannot fund every publication is refused before it submits anything, leaving its directory untouched and its seed unspent"
+                (requirement haltsAttributably CreateUnderfunded)
+                (pure <$> action (Provoke UnderfundedCreate raced ""))
         void $
             clause
                 "an update held once the node accepted it, with the node stopped, ends within its bound naming its transaction"
@@ -2332,6 +2399,12 @@ instance FromJSON Receipt where
 identify :: CliI res -> Maybe (Text, Text, Text)
 identify i = case i of
     Run c (Target t) k -> Just ("run " <> T.pack (commandName c), T.pack t, T.pack k)
+    RunByToken (Target actor) _ c k ->
+        Just
+            ( "run " <> T.pack (commandName c) <> " by token"
+            , T.pack actor
+            , T.pack k
+            )
     Book (Target t) k -> Just ("book", T.pack t, T.pack k)
     FoldUnevaluated (Target t) k -> Just ("fold-unevaluated", T.pack t, T.pack k)
     Observe (Target t) k -> Just ("observe", T.pack t, T.pack k)
@@ -2343,6 +2416,7 @@ identify i = case i of
     ReadIndexer ix (Target t) k _ ->
         Just ("read-indexer " <> T.pack (indexerName ix), T.pack t, T.pack k)
     Require _ _ -> Nothing
+    Retire _ -> Nothing
 
 -- ---------------------------------------------------------
 -- Checks
@@ -2379,7 +2453,6 @@ outcomeIs r expected =
 expectedOutcome :: Receipt -> Text
 expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
     Just "insert-while-locked" -> "concurrent-writer"
-    Just "insert-selector-changed" -> "client-refusal"
     Just "inspect-without-history" -> "stale-state"
     Just "inspect-without-node" -> "node-unavailable"
     Just "create-again" -> "client-refusal"
@@ -2490,6 +2563,13 @@ same what a b = case (a, b) of
     (Nothing, _) -> [what <> ": the first receipt does not carry it"]
     (_, Nothing) -> [what <> ": the second receipt does not carry it"]
     _ -> [what <> " differs"]
+
+{- | An actor identity usable for comparison: present text, never an
+absent or wrongly typed value a distinct-wallet claim could skip.
+-}
+usableIdentity :: Maybe Aeson.Value -> Maybe Text
+usableIdentity (Just (Aeson.String t)) = Just t
+usableIdentity _ = Nothing
 
 -- | Fail unless a receipt value is present and equals the one expected.
 is :: String -> Aeson.Value -> Maybe Aeson.Value -> [String]
@@ -2869,6 +2949,62 @@ check req rs = case (req, rs) of
                    | (rcTarget a, rcKey a) /= (rcTarget b, rcKey b)
                    ]
         _ -> ["a readback carries no observation"]
+    (TokenOnlyReading, [mine, theirs]) ->
+        succeeded "the actor's own inspect" mine
+            <> succeeded "the second actor's inspect" theirs
+            <> same
+                "the registry's root"
+                (at [field "root"] mine)
+                (at [field "root"] theirs)
+            <> same
+                "the key's leaf"
+                (at [field "leaf"] mine)
+                (at [field "leaf"] theirs)
+    (FoldConsumed, [booking, folded, seen]) ->
+        [ "the booking's outcome is "
+            <> show (rcOutcome booking)
+            <> ", not accepted"
+        | rcOutcome booking /= "accepted"
+        ]
+            <> submitted booking
+            <> succeeded "the token-only fold" folded
+            <> same
+                "the folded request"
+                (Aeson.String . (<> "#0") <$> rcTxId booking)
+                (at [field "request"] folded)
+            <> [ "the fold is of another key"
+               | rcKey booking /= rcKey folded
+               ]
+            <> succeeded "the token-only inspect" seen
+            <> [ "the inspect is of another key"
+               | rcKey folded /= rcKey seen
+               ]
+            <> is "the key's leaf" "active" (at [field "leaf"] seen)
+            <> same
+                "the holding's inline envelope"
+                (at [field "envelope"] folded)
+                (at [field "applicationOutput", field "envelope"] seen)
+            <> same
+                "the registry's root"
+                (at [field "root"] folded)
+                (at [field "root"] seen)
+            <> [ "the fold names no usable folder"
+               | isNothing (usableIdentity (at [field "folder"] folded))
+               ]
+            <> [ "the inspect names no usable holding controller"
+               | isNothing
+                    ( usableIdentity
+                        (at [field "applicationOutput", field "controller"] seen)
+                    )
+               ]
+            <> [ "the token-only fold was funded by the booking controller's own wallet"
+               | Just f <- [usableIdentity (at [field "folder"] folded)]
+               , Just c <-
+                    [ usableIdentity
+                        (at [field "applicationOutput", field "controller"] seen)
+                    ]
+               , f == c
+               ]
     (SameRegistry, [c, i]) ->
         succeeded "the create" c
             <> succeeded "the insert" i
@@ -3154,6 +3290,30 @@ check req rs = case (req, rs) of
                            ]
                 )
             <> admitted r
+    (CreateUnderfunded, [r]) ->
+        outcomeIs r "client-refusal"
+            <> [ "the refusal is not publication funding: "
+                    <> maybe "no reason" T.unpack (rcReason r)
+               | not
+                    ( maybe
+                        False
+                        ("publication-unfunded" `T.isPrefixOf`)
+                        (rcReason r)
+                    )
+               ]
+            <> withProcess
+                r
+                ( \p ->
+                    journalStill p
+                        <> nothingSubmitted r p
+                        <> [ "the refused create wrote to its directory"
+                           | byName (peFilesBefore p) /= byName (peFilesAfter p)
+                           ]
+                        <> [ "the underfunded wallet's seed was not probed afterwards"
+                           | isNothing (peSeedProbe p)
+                           ]
+                )
+            <> admitted r
     (BoundedAfterNodeLoss, [r]) ->
         [ "the outcome is " <> show (rcOutcome r) <> ", not partial or timeout"
         | rcOutcome r `notElem` ["partial", "timeout"]
@@ -3213,6 +3373,8 @@ data ClauseStatus
     = Held
     | NotHeld [String]
     | Uncovered String
+    | -- | The promise is retired, for this reason; no receipt judges it
+      Retired String
     deriving stock (Eq, Show)
 
 data ClauseResult = ClauseResult
@@ -3222,24 +3384,33 @@ data ClauseResult = ClauseResult
     }
     deriving stock (Eq, Show)
 
--- | Every clause's verdict holds.
+-- | Every clause's verdict holds, or its promise is retired.
 held :: [ClauseResult] -> Bool
-held = all ((== Held) . crStatus)
+held = all (\r -> crStatus r == Held || isRetired (crStatus r))
+
+-- | Whether a clause's promise is retired.
+isRetired :: ClauseStatus -> Bool
+isRetired s = case s of
+    Retired _ -> True
+    _ -> False
 
 {- | Interpret the story over receipts. A receipt answers the action at its
 step exactly when it names that action, target and key; the first missing
-or misplaced receipt leaves every later clause uncovered, naming why.
+or misplaced receipt leaves every later clause uncovered, naming why, but
+a clause whose promise is retired, which reads retired from its description.
 Requirements inside a clause's body fail the clause; its check decides it.
 -}
 judge :: [Receipt] -> Story () -> [ClauseResult]
 judge receipts story =
     let byStep = Map.fromListWith (<>) [(rcStep r, [r]) | r <- receipts]
         (reached, stop) = replay byStep story
-        names = outline story
+        names = described story
         missing = drop (length reached) names
         why = fromMaybe "no receipt" stop
     in  reached
-            <> [ClauseResult s t (Uncovered why) | (s, t) <- missing]
+            <> [ ClauseResult s t (maybe (Uncovered why) Retired retired)
+               | ((s, t), retired) <- missing
+               ]
 
 type Receipts = Map.Map Int [Receipt]
 
@@ -3275,13 +3446,14 @@ replay byStep story =
         Clause title leanCheck body :>>= next ->
             let (inner, Replay n rs stop) = collect st body
             in  case (inner, stop) of
-                    (Just (obs, (bodyFailures, _)), Nothing) ->
+                    (Just (obs, (bodyFailures, _, retired)), Nothing) ->
                         let (checked, Replay n' _ stop') =
                                 collect (Replay n [] Nothing) (checkAction leanCheck obs)
                             failures =
-                                bodyFailures <> maybe [] (\(_, (fs, _)) -> fs) checked
-                            isPremise = maybe False (\(_, (_, p)) -> p) checked
+                                bodyFailures <> maybe [] (\(_, (fs, _, _)) -> fs) checked
+                            isPremise = maybe False (\(_, (_, p, _)) -> p) checked
                             status
+                                | Just why <- retired = Retired why
                                 | Just why <- stop' = Uncovered why
                                 | Just failed <- premise =
                                     Uncovered ("its premise does not hold: " <> failed)
@@ -3312,22 +3484,24 @@ replay byStep story =
     collect
         :: Replay
         -> Story a
-        -> (Maybe (a, ([String], Bool)), Replay)
-    collect st0 = walk st0 ([], False)
+        -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
+    collect st0 = walk st0 ([], False, Nothing)
       where
         walk
             :: Replay
-            -> ([String], Bool)
+            -> ([String], Bool, Maybe String)
             -> Story a
-            -> (Maybe (a, ([String], Bool)), Replay)
+            -> (Maybe (a, ([String], Bool, Maybe String)), Replay)
         walk st@(Replay _ _ (Just _)) _ _ = (Nothing, st)
-        walk st acc@(fs, p) program = case view program of
+        walk st acc@(fs, p, retired) program = case view program of
             Return a -> (Just (a, acc), st)
             Action (Require req rs) :>>= next ->
                 walk
                     st
-                    (fs <> check req rs, p || req `elem` premises)
+                    (fs <> check req rs, p || req `elem` premises, retired)
                     (next ())
+            Action (Retire why) :>>= next ->
+                walk st (fs, p, Just why) (next ())
             Action i :>>= next -> case perform st i of
                 (Just r, st') -> walk st' acc (next r)
                 (Nothing, st') -> (Nothing, st')
@@ -3337,7 +3511,9 @@ replay byStep story =
     perform :: Replay -> CliI a -> (Maybe a, Replay)
     perform st i = case i of
         Require _ _ -> (Just (), st)
+        Retire _ -> (Just (), st)
         Run{} -> answer st i
+        RunByToken{} -> answer st i
         Book{} -> answer st i
         FoldUnevaluated{} -> answer st i
         Observe{} -> answer st i
@@ -3392,9 +3568,16 @@ rows a verdict must account for, whether or not a receipt reached them.
 The story is walked with placeholder receipts; it never branches on one.
 -}
 outline :: Story () -> [(String, String)]
-outline story = snd (walk 0 story)
+outline = map fst . described
+
+{- | Every clause the story states, as 'outline' gives it, with the reason
+its promise is retired, read from the description itself: a clause whose
+body retires its promise is retired whether or not a receipt reaches it.
+-}
+described :: Story () -> [((String, String), Maybe String)]
+described story = snd (walk 0 story)
   where
-    walk :: Int -> Story a -> (Int, [(String, String)])
+    walk :: Int -> Story a -> (Int, [((String, String), Maybe String)])
     walk n program = case view program of
         Return _ -> (n, [])
         Action i :>>= next -> let (n', r) = placeholder n i in walk n' (next r)
@@ -3408,25 +3591,33 @@ outline story = snd (walk 0 story)
         :: String
         -> Int
         -> Program (Clause thm CliI) a
-        -> (Int, [(String, String)], a)
+        -> (Int, [((String, String), Maybe String)], a)
     walkClauses name n program = case view program of
         Return a -> (n, [], a)
         Clause title leanCheck body :>>= next ->
-            let (n1, obs) = run n body
+            let (n1, obs, retired) = retiring n body
                 (n2, _) = run n1 (checkAction leanCheck obs)
                 (n3, rows, a) = walkClauses name n2 (next obs)
-            in  (n3, (name, title) : rows, a)
+            in  (n3, ((name, title), retired) : rows, a)
 
     run :: Int -> Story a -> (Int, a)
-    run n program = case view program of
-        Return a -> (n, a)
-        Action i :>>= next -> let (n', r) = placeholder n i in run n' (next r)
+    run n program = let (n', a, _) = retiring n program in (n', a)
+
+    -- A clause body, with the reason it retires its promise, if it does.
+    retiring :: Int -> Story a -> (Int, a, Maybe String)
+    retiring n program = case view program of
+        Return a -> (n, a, Nothing)
+        Action (Retire why) :>>= next ->
+            let (n', a, _) = retiring n (next ()) in (n', a, Just why)
+        Action i :>>= next -> let (n', r) = placeholder n i in retiring n' (next r)
         Theorem _ _ :>>= _ -> error "outline: a statement nested inside a clause"
 
     placeholder :: Int -> CliI a -> (Int, a)
     placeholder n i = case i of
         Require _ _ -> (n, ())
+        Retire _ -> (n, ())
         Run{} -> (n + 1, emptyReceipt n "" "" "")
+        RunByToken{} -> (n + 1, emptyReceipt n "" "" "")
         Book{} -> (n + 1, emptyReceipt n "" "" "")
         FoldUnevaluated{} -> (n + 1, emptyReceipt n "" "" "")
         Observe{} -> (n + 1, emptyReceipt n "" "" "")
@@ -3551,18 +3742,21 @@ renderControls results story =
         Held -> "holds"
         NotHeld why -> "does not hold: " <> intercalate "; " why
         Uncovered why -> "uncovered: " <> why
+        Retired why -> why
     judged = results
     uncovered = length [() | ClauseResult _ _ (Uncovered _) <- judged]
     notHeld = length [() | ClauseResult _ _ (NotHeld _) <- judged]
+    retired = length [() | ClauseResult _ _ (Retired _) <- judged]
     summary =
-        show (length judged - uncovered - notHeld)
+        show (length judged - uncovered - notHeld - retired)
             <> " of "
             <> show (length judged)
             <> " clauses hold; "
             <> show notHeld
             <> " do not; "
             <> show uncovered
-            <> " are uncovered."
+            <> " are uncovered"
+            <> (if retired > 0 then "; " <> show retired <> " are retired." else ".")
     coverage cov = case cov of
         NotLive why -> "uncovered: " <> why
         ByClause stmt title ->
@@ -3573,6 +3767,7 @@ renderControls results story =
                  ] of
                 [Held] -> "covered: the clause holds"
                 [Uncovered why] -> "uncovered: " <> why
+                [Retired why] -> why
                 [NotHeld why] -> "not covered: the clause does not hold: " <> intercalate "; " why
                 _ -> "uncovered: its clause did not run"
         ByObligations rows ->
@@ -3587,16 +3782,33 @@ renderControls results story =
                     ss
                         | length ss /= length wanted ->
                             "uncovered: a clause of it did not run"
-                        | all (== Held) ss -> "covered: the clause holds"
-                        | (Uncovered why : _) <- filter (/= Held) ss -> "uncovered: " <> why
-                        | (NotHeld why : _) <- filter (/= Held) ss ->
-                            "not covered: a clause does not hold: " <> intercalate "; " why
-                        | otherwise -> "uncovered: a clause of it did not run"
+                        | otherwise ->
+                            -- The live obligations decide the case; a retired
+                            -- promise among them is named beside, never
+                            -- standing for them.
+                            let live = filter (not . isRetired) ss
+                                retirement = [why | Retired why <- ss]
+                                beside = case retirement of
+                                    why : _ -> "; " <> why
+                                    [] -> ""
+                            in  case live of
+                                    [] -> concat (take 1 retirement)
+                                    _
+                                        | all (== Held) live ->
+                                            "covered: the clause holds" <> beside
+                                        | (Uncovered why : _) <- filter (/= Held) live ->
+                                            "uncovered: " <> why <> beside
+                                        | (NotHeld why : _) <- filter (/= Held) live ->
+                                            "not covered: a clause does not hold: "
+                                                <> intercalate "; " why
+                                                <> beside
+                                        | otherwise ->
+                                            "uncovered: a clause of it did not run" <> beside
     covered =
         length
             [ ()
             | (_, _, cov) <- approvedCases
-            , coverage cov == "covered: the clause holds"
+            , "covered: the clause holds" `isPrefixOf` coverage cov
             ]
     caseSummary =
         show covered
@@ -3842,6 +4054,7 @@ steps story = snd (walk 0 story)
     say :: Int -> CliI a -> (Int, a, Maybe String)
     say n i = case i of
         Require _ _ -> (n, (), Nothing)
+        Retire why -> (n, (), Just why)
         Run c (Target t) k ->
             ( n + 1
             , emptyReceipt n "" "" ""
@@ -3853,6 +4066,24 @@ steps story = snd (walk 0 story)
                         <> "` on **"
                         <> t
                         <> "**"
+                        <> forKey k
+                        <> "."
+                    )
+                )
+            )
+        RunByToken (Target actor) (Target registry) c k ->
+            ( n + 1
+            , emptyReceipt n "" "" ""
+            , Just
+                ( numbered
+                    n
+                    ( "Run `singular registry "
+                        <> commandName c
+                        <> "` from **"
+                        <> actor
+                        <> "**, an empty directory, naming **"
+                        <> registry
+                        <> "** only by its state token"
                         <> forKey k
                         <> "."
                     )
@@ -3983,7 +4214,9 @@ tellings = go
     placeholderOf :: CliI a -> a
     placeholderOf i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""
@@ -4239,7 +4472,9 @@ shape = go
     placeholderOf :: CliI a -> a
     placeholderOf i = case i of
         Require _ _ -> ()
+        Retire _ -> ()
         Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
         Book{} -> emptyReceipt 0 "" "" ""
         FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
         Observe{} -> emptyReceipt 0 "" "" ""

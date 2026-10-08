@@ -19,9 +19,9 @@ fail() {
   exit 1
 }
 
-on="journey: two actors: the deliberate open control is on; bob's process opens alice's registry.json"
+on="journey: two actors: the deliberate open control is on; bob's process opens alice's journal"
 folded="journey: two-fold: success"
-access="journey: FAIL: bob's fold accessed alice's directory: 77 openat(AT_FDCWD, \"/w/two-actors/alice/registry.json\", O_RDONLY) = -1 EACCES"
+access="journey: FAIL: bob's fold accessed alice's directory: 77 openat(AT_FDCWD, \"/w/two-actors/alice/journal.jsonl\", O_RDONLY) = -1 EACCES"
 refused="verify-release: REFUSED command-failed: the journey exited 1; receipts in /w"
 
 # case NAME EXIT LINE...: a stand-in check printing LINE... and exiting EXIT;

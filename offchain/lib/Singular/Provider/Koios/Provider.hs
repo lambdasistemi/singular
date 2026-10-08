@@ -12,7 +12,10 @@ module Singular.Provider.Koios.Provider
     ) where
 
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
+import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Credential (Credential (ScriptHashObj))
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -20,8 +23,12 @@ import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Control.Tracer (nullTracer)
 import Data.Bifunctor (first)
 import Data.Bifunctor qualified
+import Data.Containers.ListUtils (nubOrd)
+import Data.Foldable (toList)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Lens.Micro ((^.))
@@ -166,6 +173,11 @@ koiosProvider runtime configured loadSource client =
                         . AccountAddress Ledger.Testnet
                         . AccountId
                         . ScriptHashObj
+                , mintRecord =
+                    guarded identity
+                        . fmap (fmap (`Evidenced` Nothing))
+                        . runExceptT
+                        . mintRecordOf scopedClient
                 , history = readHistory
                 }
     guarded identity action = do
@@ -225,6 +237,42 @@ queryOutputs client = \case
             , missing == key =
                 MissingOutput reference
             | otherwise = backendFailure failure
+    CarryingReferenceScript script -> do
+        -- Koios names a hash per row; it is not read. The consumer computes
+        -- each candidate's hash from the output itself.
+        listed <- fetch (Client.referenceScriptUtxos client (script :| []))
+        case NE.nonEmpty (nubOrd (map snd listed)) of
+            Nothing -> pure []
+            Just candidates -> do
+                infos <- fetch (Client.utxoInfo client candidates)
+                let unspent =
+                        Set.fromList
+                            [ Wire.utxoInfoReference i
+                            | i <- infos
+                            , not (Wire.utxoInfoSpent i)
+                            ]
+                    live = filter (`Set.member` unspent) (NE.toList candidates)
+                case NE.nonEmpty (nubOrd [key | TxIn key _ <- live]) of
+                    Nothing -> pure []
+                    Just producers -> do
+                        txs <- fetch (Client.txCbor client (NE.toList producers))
+                        let produced =
+                                Map.fromList
+                                    [ (TxIn (Wire.txCborId tx) (TxIx index), output)
+                                    | tx <- txs
+                                    , (index, output) <-
+                                        zip
+                                            [0 ..]
+                                            (toList (Wire.txCborTx tx ^. bodyTxL . outputsTxBodyL))
+                                    ]
+                        exact <-
+                            traverse
+                                ( \reference -> case Map.lookup reference produced of
+                                    Just output -> pure (reference, output)
+                                    Nothing -> throwError (MissingOutput reference)
+                                )
+                                live
+                        mergeOutputs exact
     AnyOf queries ->
         traverse (queryOutputs client) (NE.toList queries)
             >>= mergeOutputs . concat
@@ -247,3 +295,34 @@ mergeOutputs = fmap Map.toAscList . foldl step (pure Map.empty)
         case Map.lookup reference known of
             Just other | other /= output -> throwError (ConflictingOutput reference)
             _ -> pure (Map.insert reference output known)
+
+{- | The asset's mint record: its latest minting transaction and supply from
+@asset_info@, and the inputs that transaction spent from @tx_info@. No row
+is no record.
+-}
+mintRecordOf
+    :: (Monad m)
+    => Client.Koios m -> Asset -> ExceptT ReadFailure m (Maybe MintRecord)
+mintRecordOf client asset = do
+    found <-
+        ExceptT (first backendFailure <$> Client.assetInfo client asset)
+    case found of
+        Nothing -> pure Nothing
+        Just info -> do
+            let minting = Wire.assetInfoMintingTx info
+            transactions <-
+                ExceptT (first backendFailure <$> Client.txInfo client [minting])
+            case transactions of
+                [transaction] ->
+                    pure $
+                        Just
+                            MintRecord
+                                { mintTransaction = minting
+                                , mintSpentInputs = map fst (Wire.txInfoInputs transaction)
+                                , mintSupply = Wire.assetInfoSupply info
+                                }
+                _ ->
+                    throwError
+                        ( BackendReadFailure
+                            "tx_info did not answer the asset's minting transaction once"
+                        )

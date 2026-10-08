@@ -1,10 +1,17 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | The refusal controls are judged from receipts, and only from receipts.
 module Conformance.Support.CliControls (spec) where
 
-import Conformance.Cli.Admission (admit, sha256Hex)
+import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, mkBasicTxBody)
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (eraProtVerHigh)
+import Cardano.Tx.Ledger (ConwayTx)
+import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
 import Conformance.Cli.Controls
     ( Account (..)
     , ClauseResult (..)
@@ -18,12 +25,14 @@ import Conformance.Cli.Controls
     , ProcessEvidence (..)
     , Provocation (..)
     , Receipt (..)
+    , Requirement (..)
     , Stated (..)
     , Story
     , Submission (..)
     , Target (..)
     , actionsOf
     , attribution
+    , check
     , commandName
     , controlsStory
     , craftedName
@@ -56,7 +65,7 @@ import Conformance.Story.Specification
     , clauses
     , theorem
     )
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Control.Monad.Operational
     ( Program
     , ProgramViewT (Return, (:>>=))
@@ -72,15 +81,24 @@ import Data.Aeson
     )
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
-import Data.Char (ord)
+import Data.Char (isDigit, ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import System.Directory (createDirectoryIfMissing, removeFile)
+import Lens.Micro ((&), (.~))
+import Singular.Registry.Ledger (ConwayEra)
+import System.Directory
+    ( createDirectoryIfMissing
+    , doesFileExist
+    , removeFile
+    )
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
@@ -89,6 +107,7 @@ import Test.Hspec
     , it
     , pendingWith
     , shouldBe
+    , shouldNotBe
     , shouldSatisfy
     )
 import Text.Printf (printf)
@@ -131,6 +150,7 @@ honestReceipts story = do
         :: IORef Int -> IORef [String] -> IORef [Receipt] -> CliI a -> IO a
     act step inserted out i = case i of
         Require _ _ -> pure ()
+        Retire _ -> pure ()
         Run Inspect (Target "interrupted") k ->
             emit "run inspect" "interrupted" k $ \r ->
                 r
@@ -180,6 +200,18 @@ honestReceipts story = do
                 modifyIORef' inserted ("process:killed" :)
             emit ("provoke " <> T.pack (provocationName p)) t k $ \r ->
                 provoked p r
+        RunByToken (Target actor) (Target owner) c k -> do
+            before <- readIORef inserted
+            let terminal = (owner <> ":terminate") `elem` before
+            emit
+                ("run " <> T.pack (commandName c) <> " by token")
+                actor
+                k
+                $ \r ->
+                    r
+                        { rcOutcome = "success"
+                        , rcCommand = Just (commandReceipt c k 0 terminal)
+                        }
         Run c (Target t) k -> do
             before <- readIORef inserted
             let again = c == Insert && (t <> "/" <> k) `elem` before
@@ -321,6 +353,116 @@ alter act target f =
 clauseStatuses :: String -> [ClauseResult] -> [ClauseStatus]
 clauseStatuses phrase results = [crStatus r | r <- results, phrase `isInfixOf` crTitle r]
 
+-- | A transaction the underfunded controls retain, by fee.
+underfundedTxOf :: Integer -> ConwayTx
+underfundedTxOf fee = mkBasicTx (mkBasicTxBody & feeTxBodyL .~ Coin fee)
+
+underfundedBodyBytes :: ConwayTx -> ByteString
+underfundedBodyBytes = B16.encode . serialize' (eraProtVerHigh @ConwayEra)
+
+underfundedReason :: T.Text
+underfundedReason =
+    "publication-unfunded boot: the boot needs more than the seed and its beside output hold; nothing was submitted"
+
+underfundedPrinted :: Value
+underfundedPrinted =
+    object
+        [ "outcome" .= ("client-refusal" :: String)
+        , "reason" .= underfundedReason
+        ]
+
+{- | An underfunded-create refusal that kept a submission: journal, body,
+printed refusal, probe and snapshots consistent, so admission passes
+while the no-submission requirement must still refuse it.
+-}
+plantedUnderfundedIn :: FilePath -> IO Receipt
+plantedUnderfundedIn work = do
+    createDirectoryIfMissing True (work </> "targets/poor")
+    createDirectoryIfMissing True (work </> "evidence")
+    let tx = underfundedTxOf 21
+        txid = txIdHexOf tx
+        bytes = underfundedBodyBytes tx
+        bodyFile = "evidence/body.cbor.hex"
+        bodyText = T.pack bodyFile
+        journal = "targets/poor/journal.jsonl"
+        line event =
+            "{\"journalStep\":\"boot\",\"journalEvent\":\""
+                <> TE.encodeUtf8 event
+                <> "\",\"journalTxId\":\""
+                <> TE.encodeUtf8 txid
+                <> "\",\"journalBody\":\""
+                <> TE.encodeUtf8 bodyText
+                <> "\"}"
+    BS.writeFile (work </> bodyFile) bytes
+    BS.writeFile
+        (work </> journal)
+        (BC.unlines [line "prepared", line "submitted"])
+    BS.writeFile
+        (work </> "evidence/printed.json")
+        (BL.toStrict (encode underfundedPrinted))
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    pure
+        (emptyReceipt 3 "provoke create-underfunded" "poor" "k")
+            { rcOutcome = "client-refusal"
+            , rcReason = Just underfundedReason
+            , rcEvidence = ["evidence/printed.json"]
+            , rcCommand = Just underfundedPrinted
+            , rcSubmissions = [Submission "boot" txid bodyText (sha256Hex bytes)]
+            , rcResolved = []
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = T.pack journal
+                        , peJournalBefore = 0
+                        , peJournalAfter = 2
+                        , peLastEvent = "boot/submitted"
+                        , peSubmitted = [txid]
+                        , peExit = 1
+                        , peWaited = Nothing
+                        , peFilesBefore = []
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
+{- | A genuine underfunded-create refusal: no journal file, an empty span,
+no submission and no body, with the printed refusal and probe kept.
+-}
+absentUnderfundedIn :: FilePath -> IO Receipt
+absentUnderfundedIn work = do
+    createDirectoryIfMissing True (work </> "evidence")
+    BS.writeFile
+        (work </> "evidence/printed.json")
+        (BL.toStrict (encode underfundedPrinted))
+    BS.writeFile
+        (work </> "evidence/probe.json")
+        "{\"outcome\":\"success\"}"
+    pure
+        (emptyReceipt 3 "provoke create-underfunded" "poor" "k")
+            { rcOutcome = "client-refusal"
+            , rcReason = Just underfundedReason
+            , rcEvidence = ["evidence/printed.json"]
+            , rcCommand = Just underfundedPrinted
+            , rcSubmissions = []
+            , rcResolved = []
+            , rcProcess =
+                Just
+                    ProcessEvidence
+                        { peJournal = "targets/poor/journal.jsonl"
+                        , peJournalBefore = 0
+                        , peJournalAfter = 0
+                        , peLastEvent = ""
+                        , peSubmitted = []
+                        , peExit = 1
+                        , peWaited = Nothing
+                        , peFilesBefore = []
+                        , peFilesAfter = []
+                        , peSeedProbe = Just "evidence/probe.json"
+                        }
+            }
+
 spec :: Spec
 spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ do
     it
@@ -367,7 +509,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 98
+            length (outline controlsStory) `shouldBe` 101
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -378,11 +520,98 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             validateControls refusedOnly `shouldSatisfy` isLeft
             validateControls (duplicateStory >> refusedOnly)
                 `shouldSatisfy` isLeft
-    it "holds every clause on an honest run" $ do
+    it
+        "holds every clause on an honest run, but the two the operator retired"
+        $ do
+            rs <- honestReceipts controlsStory
+            let results = judge rs controlsStory
+            length results `shouldBe` 101
+            [crStatus r | r <- results, not (retiredTitle (crTitle r))]
+                `shouldBe` replicate 99 Held
+            [crStatus r | r <- results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
+            held results `shouldBe` True
+    it
+        "tells Bob's ordinary token-only fold in the public description language"
+        $ do
+            actionsOf controlsStory `shouldSatisfy` elem "run fold by token"
+            rs <- honestReceipts controlsStory
+            let results = judge rs controlsStory
+            clauseStatuses "folds Alice's pending request" results
+                `shouldBe` [Held]
+            let report = renderControls results controlsStory
+            report `shouldSatisfy` isInfixOf "singular registry fold"
+    it
+        "does not hold a token-only fold of another request, or one its inspect contradicts"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                otherRequest =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setField "request" "b9#0") (rcCommand r)})
+                        rs
+                otherEnvelope =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setField "envelope" "00") (rcCommand r)})
+                        rs
+                noController =
+                    alter
+                        "run inspect by token"
+                        "reader"
+                        dropHoldingController
+                        rs
+                numberFolder =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap (setNumber "folder" 42) (rcCommand r)})
+                        rs
+            titled
+                "folds Alice's pending request"
+                (judge otherRequest controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge otherEnvelope controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge noController controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+            titled
+                "folds Alice's pending request"
+                (judge numberFolder controlsStory)
+                `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+    it
+        "judges a retired promise retired from no receipt, whatever the receipts say"
+        $ do
+            rs <- honestReceipts controlsStory
+            let refused = map (\r -> r{rcOutcome = "ledger-refusal"}) rs
+                results = judge refused controlsStory
+            clauseStatuses "saved application selector changed" results
+                `shouldBe` [Retired selectorRetirement]
+            clauseStatuses "selector restored" results
+                `shouldBe` [Retired selectorRetirement]
+            -- the same receipts fail the clauses that are still promised
+            any isNotHeld (statuses results) `shouldBe` True
+    it "keeps a retired promise in the report, with its reason" $ do
         rs <- honestReceipts controlsStory
-        let results = judge rs controlsStory
-        statuses results `shouldBe` replicate 98 Held
-        held results `shouldBe` True
+        let report = renderControls (judge rs controlsStory) controlsStory
+        report
+            `shouldSatisfy` isInfixOf
+                ( "an insert with the saved application selector changed is refused before submitting | "
+                    <> selectorRetirement
+                )
+        report
+            `shouldSatisfy` isInfixOf
+                ( "the same insert, with the selector restored, is accepted | "
+                    <> selectorRetirement
+                )
+        report `shouldSatisfy` isInfixOf "; 2 are retired."
     it
         "leaves every clause from a missing receipt on uncovered, naming the step"
         $ do
@@ -394,10 +623,38 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 98
+            length results `shouldBe` 101
             take 3 (statuses results) `shouldBe` [Held, Held, Held]
-            drop 3 (statuses results) `shouldSatisfy` all isUncovered
+            [crStatus r | r <- drop 3 results, not (retiredTitle (crTitle r))]
+                `shouldSatisfy` all isUncovered
+            [crStatus r | r <- drop 3 results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` False
+    it
+        "keeps a retired promise retired when the receipt its clause still runs is missing"
+        $ do
+            rs <- honestReceipts controlsStory
+            let withoutInsert =
+                    filter
+                        ( \r ->
+                            not
+                                ( rcAction r == "run insert"
+                                    && rcTarget r == "process"
+                                    && rcKey r == "second"
+                                )
+                        )
+                        rs
+                results = judge withoutInsert controlsStory
+                (beforeStop, fromStop) =
+                    break
+                        (\r -> isUncovered (crStatus r) || retiredTitle (crTitle r))
+                        results
+            length rs - length withoutInsert `shouldBe` 1
+            [crStatus r | r <- results, retiredTitle (crTitle r)]
+                `shouldBe` replicate 2 (Retired selectorRetirement)
+            [crStatus r | r <- fromStop, not (retiredTitle (crTitle r))]
+                `shouldSatisfy` (\ss -> not (null ss) && all isUncovered ss)
+            map crStatus beforeStop `shouldSatisfy` all (== Held)
     it
         "holds the withheld-history clause only when the withholding reached the history read and the journal stayed still"
         $ do
@@ -565,7 +822,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
-            `shouldSatisfy` isInfixOf "0 of 98 clauses hold; 0 do not; 98 are uncovered."
+            `shouldSatisfy` isInfixOf
+                "0 of 101 clauses hold; 0 do not; 99 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -687,6 +945,99 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 "is refused because the registry exists"
                 `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
     it
+        "does not hold an underfunded create that moved its journal or submitted anything"
+        $ do
+            rs <- honestReceipts controlsStory
+            u <- case [r | r <- rs, rcAction r == "provoke create-underfunded"] of
+                [one] -> pure one
+                found ->
+                    fail
+                        ("expected one underfunded create, found " <> show (length found))
+            let moved =
+                    u
+                        { rcProcess =
+                            (\p -> p{peJournalAfter = peJournalAfter p + 1}) <$> rcProcess u
+                        }
+            check CreateUnderfunded [moved]
+                `shouldSatisfy` any ("journal moved" `isInfixOf`)
+            let planted =
+                    u
+                        { rcSubmissions = [Submission "boot" "b9" "evidence/b9.cbor.hex" "00"]
+                        , rcProcess = (\p -> p{peSubmitted = ["b9"]}) <$> rcProcess u
+                        }
+            check CreateUnderfunded [planted]
+                `shouldSatisfy` any ("submitted 1" `isInfixOf`)
+    it
+        "admits a consistently retained submission set that the underfunded check still rejects"
+        $ withSystemTempDirectory "underfunded"
+        $ \work -> do
+            r <- plantedUnderfundedIn work
+            admitted <- admit work r
+            rcAdmission admitted `shouldBe` Just []
+            let refused = check CreateUnderfunded [admitted]
+            refused `shouldSatisfy` (not . null)
+            refused
+                `shouldSatisfy` all (\m -> "journal" `isInfixOf` m || "submitted" `isInfixOf` m)
+    it
+        "admits and holds a genuine absent-journal refusal with its seed probe"
+        $ withSystemTempDirectory "underfunded"
+        $ \work -> do
+            r <- absentUnderfundedIn work
+            admitted <- admit work r
+            rcAdmission admitted `shouldBe` Just []
+            check CreateUnderfunded [admitted] `shouldBe` []
+    it
+        "judges the underfunded clause on the admitted receipts, rejecting only the nonempty one"
+        $ withSystemTempDirectory "underfunded-bad"
+        $ \badWork ->
+            withSystemTempDirectory "underfunded-good" $ \goodWork -> do
+                rs <- honestReceipts controlsStory
+                one <- case [r | r <- rs, rcAction r == "provoke create-underfunded"] of
+                    [u] -> pure u
+                    found ->
+                        fail
+                            ("expected one underfunded create, found " <> show (length found))
+                planted <- admit badWork =<< plantedUnderfundedIn badWork
+                rcAdmission planted `shouldBe` Just []
+                absent <- admit goodWork =<< absentUnderfundedIn goodWork
+                rcAdmission absent `shouldBe` Just []
+                doesFileExist (goodWork </> "targets/poor/journal.jsonl")
+                    >>= (`shouldBe` False)
+                let graft evidence onto =
+                        onto
+                            { rcOutcome = rcOutcome evidence
+                            , rcReason = rcReason evidence
+                            , rcCommand = rcCommand evidence
+                            , rcEvidence = rcEvidence evidence
+                            , rcSubmissions = rcSubmissions evidence
+                            , rcResolved = rcResolved evidence
+                            , rcProcess = rcProcess evidence
+                            , rcAdmission = rcAdmission evidence
+                            }
+                    titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                    fundClause = "a create from a wallet that cannot fund every publication"
+                    badResults =
+                        judge
+                            (map (\r -> if r == one then graft planted r else r) rs)
+                            controlsStory
+                titled fundClause badResults
+                    `shouldSatisfy` (\ss -> not (null ss) && all isNotHeld ss)
+                [ms | NotHeld ms <- titled fundClause badResults]
+                    `shouldSatisfy` ( \mss ->
+                                        not (null mss)
+                                            && all
+                                                (all (\m -> "journal" `isInfixOf` m || "submitted" `isInfixOf` m))
+                                                mss
+                                    )
+                let rendered = renderControls badResults controlsStory
+                rendered
+                    `shouldSatisfy` isInfixOf "does not hold: the registry's journal moved"
+                let goodResults =
+                        judge
+                            (map (\r -> if r == one then graft absent r else r) rs)
+                            controlsStory
+                titled fundClause goodResults `shouldBe` [Held]
+    it
         "binds each client obligation to its row of the CLI's specification"
         $ do
             found <-
@@ -787,6 +1138,13 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         full
             `shouldSatisfy` isInfixOf
                 "Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover."
+        -- the live obligations decide the mixed case; the retired promise is
+        -- named beside them, with the operator's reason
+        full
+            `shouldSatisfy` isInfixOf
+                ( "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement | covered: the clause holds; "
+                    <> selectorRetirement
+                )
         -- the indexer read belongs to a take on an existing registry: the
         -- development controls do not reach it, and say so
         full
@@ -801,6 +1159,56 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         partial
             `shouldSatisfy` isInfixOf
                 "| a release of the live holding outside any fold | `only_fold_releases` | uncovered"
+    it
+        "never lets a retired promise stand for a live obligation beside it"
+        $ do
+            rs <- honestReceipts controlsStory
+            let readOnlyBroken =
+                    alter
+                        "provoke inspect-without-node"
+                        "process"
+                        (\r -> r{rcOutcome = "success"})
+                        rs
+                rendered = renderControls (judge readOnlyBroken controlsStory) controlsStory
+                mixed =
+                    [ l
+                    | l <- lines rendered
+                    , "client obligations `INV299-AUTHENTICATED`, `INV299-IDENTITY`, `INV299-READONLY`, no model statement |"
+                        `isInfixOf` l
+                    ]
+            mixed
+                `shouldSatisfy` ( \ls ->
+                                    length ls == 1
+                                        && all (isInfixOf "| not covered: a clause does not hold: ") ls
+                                        && all (isInfixOf selectorRetirement) ls
+                                )
+    it
+        "renders, for every instruction of every story, the step it executes and the promise it retires"
+        $ forM_ [controlsStory, permanentStory "take-key"]
+        $ \story -> do
+            rs <- honestReceipts story
+            let report = lines (renderControls (judge rs story) story)
+                numbered =
+                    [ n
+                    | l <- report
+                    , (digits@(_ : _), '.' : ' ' : _) <- [span isDigit l]
+                    , n <- [read digits :: Int]
+                    ]
+                reasons = length [() | l <- report, l == selectorRetirement]
+            numbered `shouldBe` map ((+ 1) . rcStep) rs
+            reasons `shouldBe` retiresIn story
+    it
+        "fails the correspondence when a rendered step has no executed receipt"
+        $ do
+            rs <- honestReceipts controlsStory
+            let report = lines (renderControls (judge rs controlsStory) controlsStory)
+                numbered =
+                    [ n
+                    | l <- report
+                    , (digits@(_ : _), '.' : ' ' : _) <- [span isDigit l]
+                    , n <- [read digits :: Int]
+                    ]
+            numbered `shouldNotBe` map ((+ 1) . rcStep) (drop 1 rs)
     it "uncovers every claim of a telling whose termination prefix failed" $ do
         rs <- honestReceipts controlsStory
         let failedTermination =
@@ -1393,6 +1801,23 @@ commandReceipt c k updates terminal = case c of
             , "deposit" .= (2_000_000 :: Int)
             , "released" .= ("t#1" :: String)
             ]
+    -- An ordinary fold of the honest booking: the request the booking
+    -- left at its output 0, folded whole by the story's second wallet,
+    -- the key Active under its envelope at the fold's root. The folder
+    -- is never the booking controller: a fold reusing Alice's wallet
+    -- cannot discharge this clause.
+    Fold ->
+        object
+            [ "outcome" .= ("success" :: String)
+            , "request" .= ("b1#0" :: String)
+            , "key" .= hexOf k
+            , "edge" .= ("insertActive" :: String)
+            , "folder" .= ("b0" :: String)
+            , "fold" .= ("f1" :: String)
+            , "liveOutput" .= ("i#1" :: String)
+            , "envelope" .= envelope "p0"
+            , "root" .= ("r1" :: String)
+            ]
     Inspect
         | terminal ->
             object
@@ -1472,6 +1897,26 @@ setField name value v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (String value) o)
     _ -> v
 
+-- | Set one field of a command receipt to a number.
+setNumber :: T.Text -> Int -> Value -> Value
+setNumber name n v = case v of
+    Object o -> Object (KeyMap.insert (Key.fromText name) (toJSON n) o)
+    _ -> v
+
+-- | Remove the holding controller from an inspect receipt's command.
+dropHoldingController :: Receipt -> Receipt
+dropHoldingController r = r{rcCommand = fmap strip (rcCommand r)}
+  where
+    strip (Object o) =
+        Object
+            ( KeyMap.mapWithKey
+                (\k v -> if k == "applicationOutput" then dropC v else v)
+                o
+            )
+    strip v = v
+    dropC (Object o) = Object (KeyMap.filterWithKey (\k _ -> k /= "controller") o)
+    dropC v = v
+
 -- | A terminal inspect that observed the killed fold from public history.
 withObserved :: Bool -> Value -> Value
 withObserved killed v = case v of
@@ -1518,7 +1963,6 @@ provoked p r =
                 }
     in  case p of
             WhileLocked -> r{rcOutcome = "concurrent-writer", rcProcess = Just still}
-            SelectorChanged -> r{rcOutcome = "client-refusal", rcProcess = Just still}
             WithoutHistory ->
                 (noLeaf "stale-state")
                     { rcReason = Just "TrieState HistoryIncomplete"
@@ -1562,6 +2006,20 @@ provoked p r =
                                 , peSeedProbe = Just "evidence/probe.json"
                                 }
                     }
+            UnderfundedCreate ->
+                r
+                    { rcOutcome = "client-refusal"
+                    , rcReason =
+                        Just
+                            "publication-unfunded request: publishing this reference script needs an ada-only output of more than 4000000 lovelace and the largest the wallet has for it holds 4000000 lovelace; nothing was submitted"
+                    , rcProcess =
+                        Just
+                            still
+                                { peFilesBefore = []
+                                , peFilesAfter = []
+                                , peSeedProbe = Just "evidence/probe-poor.json"
+                                }
+                    }
             NodeLost ->
                 r
                     { rcOutcome = "partial"
@@ -1575,3 +2033,49 @@ provoked p r =
                                 , peWaited = Just 31
                                 }
                     }
+
+-- | The operator's reason for retiring the saved-selector promise, as ruled.
+selectorRetirement :: String
+selectorRetirement =
+    "Retired: a registry is joined from its state token alone; there is no saved selector file to change."
+
+-- | Whether a clause title is one of the retired saved-selector promise's.
+retiredTitle :: String -> Bool
+retiredTitle = isInfixOf "selector"
+
+{- | How many times a story retires a promise, read from its description by
+walking every instruction, inside clauses and their checks too.
+-}
+retiresIn :: Story a -> Int
+retiresIn program = case view program of
+    Return _ -> 0
+    Action (Retire _) :>>= next -> 1 + retiresIn (next ())
+    Action i :>>= next -> retiresIn (next (placeholderOf i))
+    Theorem _ body :>>= next -> inClauses (clauses body) next
+  where
+    inClauses :: Program (Clause thm CliI) b -> (b -> Story a) -> Int
+    inClauses p k = case view p of
+        Return b -> retiresIn (k b)
+        Clause _ c body :>>= next ->
+            let obs = resultOf body
+            in  retiresIn body
+                    + retiresIn (checkAction c obs)
+                    + inClauses (next obs) k
+    resultOf :: Story b -> b
+    resultOf story = case view story of
+        Return b -> b
+        Action i :>>= next -> resultOf (next (placeholderOf i))
+        Theorem _ _ :>>= _ -> error "retiresIn: a statement nested inside a clause"
+    placeholderOf :: CliI b -> b
+    placeholderOf i = case i of
+        Require _ _ -> ()
+        Retire _ -> ()
+        Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
+        Book{} -> emptyReceipt 0 "" "" ""
+        FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
+        Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""

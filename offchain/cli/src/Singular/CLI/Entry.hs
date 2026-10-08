@@ -6,12 +6,12 @@ Module      : Singular.CLI.Entry
 Description : @singular registry insert|update|terminate@ over an attached open-datum registry
 License     : Apache-2.0
 
-Each write attaches first ("Singular.CLI.Attached"): the saved identity
-is re-derived and checked, the network must be the saved one, the journal
-is reconciled ("Singular.CLI.Reconcile") and must then hold no
-unresolved submission, the reference outputs and the state
-output are resolved, and the public replay must commit to exactly the
-root the ledger holds. The command then calls the production builders —
+Each write attaches first ("Singular.CLI.Attached"): the registry is
+resolved from its state token and the release, with the reference outputs
+its transactions run found by hash; the journal is reconciled
+("Singular.CLI.Reconcile") and must then hold no unresolved submission;
+the state output is read, and the public replay must commit to exactly
+the root the ledger holds. The command then calls the production builders —
 it decides no validator or fold rule itself — journals every submission,
 and reads back what each made before journalling it @observed@.
 
@@ -68,9 +68,11 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.CLI.Attached
 import Singular.CLI.Command
-    ( EntryArgs (..)
+    ( Command (..)
+    , EntryArgs (..)
     , EntryMode (..)
     , Key (..)
+    , neededRoles
     )
 import Singular.CLI.Fold
     ( Deadline (..)
@@ -245,43 +247,51 @@ runInsert env a = case entryMode a of
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
-        attached env (entryRegistry a) (entryBlueprint a) ws "insert" $ \at -> do
-            let s = savedOf at
-                envelope = insertionOf s a (callerKey at) payload
-            -- The approval is decided in the booking's own view, from the
-            -- state it holds.
-            (booking, (), deadline) <-
-                book at a key $ \_ live -> do
-                    b <- planInsert live envelope
-                    pure (b, ())
-            if entryFold a
-                then do
-                    folded <- foldAfter at a booking
-                    pure $ case fdDelivery folded of
-                        Delivered liveIn seen ->
+        attached
+            env
+            (entryRegistry a)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (Insert a))
+            ws
+            "insert"
+            $ \at -> do
+                let s = savedOf at
+                    envelope = insertionOf s a (callerKey at) payload
+                -- The approval is decided in the booking's own view, from the
+                -- state it holds.
+                (booking, (), deadline) <-
+                    book at a key $ \_ live -> do
+                        b <- planInsert live envelope
+                        pure (b, ())
+                if entryFold a
+                    then do
+                        folded <- foldAfter at a booking
+                        pure $ case fdDelivery folded of
+                            Delivered liveIn seen ->
+                                receipt
+                                    "insert"
+                                    Success
+                                    ( keyFields key
+                                        <> [ ("booking", toJSON (txIdHex booking))
+                                           , ("fold", toJSON (txIdHex (fdTx folded)))
+                                           , ("liveOutput", toJSON (txInText liveIn))
+                                           , ("envelope", envelopeToJson seen)
+                                           , ("root", toJSON (hexT (fdRoot folded)))
+                                           ]
+                                    )
+                            Released{} -> receipt "insert" Success []
+                    else
+                        pure $
                             receipt
                                 "insert"
                                 Success
                                 ( keyFields key
-                                    <> [ ("booking", toJSON (txIdHex booking))
-                                       , ("fold", toJSON (txIdHex (fdTx folded)))
-                                       , ("liveOutput", toJSON (txInText liveIn))
-                                       , ("envelope", envelopeToJson seen)
-                                       , ("root", toJSON (hexT (fdRoot folded)))
+                                    <> pendingFields (callerKey at) booking deadline
+                                    <> [ ("envelope", envelopeToJson envelope)
+                                       , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
                                        ]
                                 )
-                        Released{} -> receipt "insert" Success []
-                else
-                    pure $
-                        receipt
-                            "insert"
-                            Success
-                            ( keyFields key
-                                <> pendingFields (callerKey at) booking deadline
-                                <> [ ("envelope", envelopeToJson envelope)
-                                   , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
-                                   ]
-                            )
 
 -- update
 -- ---------------------------------------------------------
@@ -298,71 +308,79 @@ runUpdate env a = case entryMode a of
                 (entryDocument a)
         payload <-
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
-        attached env (entryRegistry a) (entryBlueprint a) ws "update" $ \at -> do
-            let s = savedOf at
-                wc = atWrite at
-                addr = walletAddr (wcWallet wc)
-            rootBefore <- selectedTrieRoot (atTrie at)
-            -- The live output, its controller, the funding output, the
-            -- parameters, the script evaluation and the outlay judged against
-            -- the allowance all come from the update's one view.
-            let placed = [InKey key, InEdge Updating]
-            (signed, envelope) <-
-                submitBuiltIn
+        attached
+            env
+            (entryRegistry a)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (Update a))
+            ws
+            "update"
+            $ \at -> do
+                let s = savedOf at
+                    wc = atWrite at
+                    addr = walletAddr (wcWallet wc)
+                rootBefore <- selectedTrieRoot (atTrie at)
+                -- The live output, its controller, the funding output, the
+                -- parameters, the script evaluation and the outlay judged against
+                -- the allowance all come from the update's one view.
+                let placed = [InKey key, InEdge Updating]
+                (signed, envelope) <-
+                    submitBuiltIn
+                        wc
+                        "update"
+                        ["state", "key outputs"]
+                        ( \envelope ->
+                            Expectation
+                                (Just key)
+                                ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
+                                Nothing
+                                Nothing
+                                Nothing
+                        )
+                        ( \building v -> do
+                            live <- attachLive v s
+                            outs <- liveOutputs v s
+                            (holding, envelope) <- planUpdate live (callerKey at) key outs
+                            place building placed (EdgeStarted Updating)
+                            unsigned <-
+                                buildUpdate v live addr (entryFund a) holding payload
+                            refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
+                            pure (unsigned, envelope)
+                        )
+                after <-
+                    readingBack at "update" signed ["key outputs"] (`liveOutputs` s)
+                ((liveIn, _), seen) <-
+                    either (failWith Partial) pure (liveOutputFor s key after)
+                unless (seen == envelope{envPayload = payload}) $
+                    failWith
+                        Partial
+                        "the updated output carries another envelope than the one sent"
+                state <- readingBack at "update" signed ["state"] (`attachLive` s)
+                rootAfter <- either (failWith Partial) pure (observedRoot state)
+                when (rootAfter /= rootBefore) $
+                    failWith StaleState "the registry root moved during an update"
+                journalObserved
                     wc
                     "update"
-                    ["state", "key outputs"]
-                    ( \envelope ->
-                        Expectation
-                            (Just key)
-                            ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
-                            Nothing
-                            Nothing
-                            Nothing
+                    signed
+                    ( "key live at "
+                        <> txInText liveIn
+                        <> " with the new payload; root unchanged"
                     )
-                    ( \building v -> do
-                        live <- attachLive v s
-                        outs <- liveOutputs v s
-                        (holding, envelope) <- planUpdate live (callerKey at) key outs
-                        place building placed (EdgeStarted Updating)
-                        unsigned <-
-                            buildUpdate v live addr (entryFund a) holding payload
-                        refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
-                        pure (unsigned, envelope)
-                    )
-            after <-
-                readingBack at "update" signed ["key outputs"] (`liveOutputs` s)
-            ((liveIn, _), seen) <-
-                either (failWith Partial) pure (liveOutputFor s key after)
-            unless (seen == envelope{envPayload = payload}) $
-                failWith
-                    Partial
-                    "the updated output carries another envelope than the one sent"
-            state <- readingBack at "update" signed ["state"] (`attachLive` s)
-            rootAfter <- either (failWith Partial) pure (observedRoot state)
-            when (rootAfter /= rootBefore) $
-                failWith StaleState "the registry root moved during an update"
-            journalObserved
-                wc
-                "update"
-                signed
-                ( "key live at "
-                    <> txInText liveIn
-                    <> " with the new payload; root unchanged"
-                )
-            report (wcTracer wc) placed (Updated key (txInText liveIn))
-            report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
-            pure $
-                receipt
-                    "update"
-                    Success
-                    ( keyFields key
-                        <> [ ("update", toJSON (txIdHex signed))
-                           , ("liveOutput", toJSON (txInText liveIn))
-                           , ("payload", dataToJson (envPayload seen))
-                           , ("root", toJSON (hexT rootAfter))
-                           ]
-                    )
+                report (wcTracer wc) placed (Updated key (txInText liveIn))
+                report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
+                pure $
+                    receipt
+                        "update"
+                        Success
+                        ( keyFields key
+                            <> [ ("update", toJSON (txIdHex signed))
+                               , ("liveOutput", toJSON (txInText liveIn))
+                               , ("payload", dataToJson (envPayload seen))
+                               , ("root", toJSON (hexT rootAfter))
+                               ]
+                        )
 
 -- ---------------------------------------------------------
 -- terminate
@@ -373,41 +391,49 @@ runTerminate env a = case entryMode a of
     Preview node addr -> runPreview env KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
-        attached env (entryRegistry a) (entryBlueprint a) ws "terminate" $ \at -> do
-            let s = savedOf at
-            -- The live output the booking releases is resolved in the
-            -- booking's own view, with the state the approval binds.
-            (booking, ((liveIn, _), envelope), deadline) <-
-                book at a key $ \v live -> do
-                    outs <- liveOutputs v s
-                    (b, holding, envelope) <- planTerminate live (callerKey at) key outs
-                    pure (b, (holding, envelope))
-            let c = envControl envelope
-            if entryFold a
-                then do
-                    folded <- foldAfter at a booking
-                    pure $ case fdDelivery folded of
-                        Released released deposit ->
+        attached
+            env
+            (entryRegistry a)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (Terminate a))
+            ws
+            "terminate"
+            $ \at -> do
+                let s = savedOf at
+                -- The live output the booking releases is resolved in the
+                -- booking's own view, with the state the approval binds.
+                (booking, ((liveIn, _), envelope), deadline) <-
+                    book at a key $ \v live -> do
+                        outs <- liveOutputs v s
+                        (b, holding, envelope) <- planTerminate live (callerKey at) key outs
+                        pure (b, (holding, envelope))
+                let c = envControl envelope
+                if entryFold a
+                    then do
+                        folded <- foldAfter at a booking
+                        pure $ case fdDelivery folded of
+                            Released released deposit ->
+                                receipt
+                                    "terminate"
+                                    Success
+                                    ( keyFields key
+                                        <> [ ("booking", toJSON (txIdHex booking))
+                                           , ("fold", toJSON (txIdHex (fdTx folded)))
+                                           , ("released", toJSON (txInText released))
+                                           , ("deposit", toJSON deposit)
+                                           , ("root", toJSON (hexT (fdRoot folded)))
+                                           ]
+                                    )
+                            Delivered{} -> receipt "terminate" Success []
+                    else
+                        pure $
                             receipt
                                 "terminate"
                                 Success
                                 ( keyFields key
-                                    <> [ ("booking", toJSON (txIdHex booking))
-                                       , ("fold", toJSON (txIdHex (fdTx folded)))
-                                       , ("released", toJSON (txInText released))
-                                       , ("deposit", toJSON deposit)
-                                       , ("root", toJSON (hexT (fdRoot folded)))
+                                    <> pendingFields (callerKey at) booking deadline
+                                    <> [ ("released", toJSON (txInText liveIn))
+                                       , ("deposit", toJSON (ctlDeposit c))
                                        ]
                                 )
-                        Delivered{} -> receipt "terminate" Success []
-                else
-                    pure $
-                        receipt
-                            "terminate"
-                            Success
-                            ( keyFields key
-                                <> pendingFields (callerKey at) booking deadline
-                                <> [ ("released", toJSON (txInText liveIn))
-                                   , ("deposit", toJSON (ctlDeposit c))
-                                   ]
-                            )

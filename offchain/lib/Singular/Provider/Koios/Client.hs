@@ -71,13 +71,18 @@ module Singular.Provider.Koios.Client
     , submitTx
     , txStatus
     , accountRegistered
+    , referenceScriptUtxos
+    , utxoInfo
+    , assetInfo
     ) where
 
 import Data.Aeson (Value)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.Foldable (toList)
 import Data.List (find)
-import Data.Maybe (fromMaybe)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -88,11 +93,13 @@ import Cardano.Ledger.BaseTypes (EpochNo)
 import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (PParams, eraProtVerHigh)
+import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
 import Cardano.Ledger.TxIn (TxId, TxIn)
 
 import Singular.Provider.Koios.Wire
     ( AccountStatus (..)
+    , AssetInfo
     , AssetTx
     , Body (..)
     , Call (..)
@@ -103,29 +110,36 @@ import Singular.Provider.Koios.Wire
     , TxCbor (..)
     , TxInfo (..)
     , TxStatus (..)
+    , UtxoInfo
     , accountInfoRequest
     , addressUtxosRequest
+    , assetInfoRequest
     , assetTxsRequest
     , assetUtxosRequest
     , cliProtocolParamsRequest
     , decodeAccountStatuses
+    , decodeAssetInfos
     , decodeAssetTxs
     , decodeCliProtocolParams
     , decodeEpochParams
+    , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
     , decodeTxCbors
     , decodeTxInfos
     , decodeTxStatuses
+    , decodeUtxoInfos
     , decodeUtxos
     , epochParamsRequest
     , parseBody
+    , referenceScriptUtxosRequest
     , renderRewardAccount
     , submitTxRequest
     , tipRequest
     , txCborRequest
     , txInfoRequest
     , txStatusRequest
+    , utxoInfoRequest
     )
 import Singular.Registry.Signing (SignedTx, signedTx)
 
@@ -670,3 +684,38 @@ accountRegistered k account = do
                 | s == "registered" -> Right True
                 | s == "not registered" -> Right False
                 | otherwise -> unknown (Just s)
+
+{- | Every live output whose reference script is one of the hashes, with
+the hash Koios names for it, read page by page. An empty answer means
+not found by this provider.
+-}
+referenceScriptUtxos
+    :: (Monad m)
+    => Koios m
+    -> NonEmpty ScriptHash
+    -> m (Either ClientFailure [(ScriptHash, TxIn)])
+referenceScriptUtxos k hashes =
+    paged
+        k
+        (referenceScriptUtxosRequest (toList hashes))
+        decodeReferenceScriptUtxos
+
+-- | Whether each named output is spent, as Koios reports it.
+utxoInfo
+    :: (Monad m)
+    => Koios m
+    -> NonEmpty TxIn
+    -> m (Either ClientFailure [UtxoInfo])
+utxoInfo k references =
+    fmap snd
+        <$> single k (utxoInfoRequest (toList references)) decodeUtxoInfos
+
+-- | The asset's latest minting transaction and supply, or no row.
+assetInfo
+    :: (Monad m)
+    => Koios m
+    -> (PolicyID, AssetName)
+    -> m (Either ClientFailure (Maybe AssetInfo))
+assetInfo k asset =
+    fmap (listToMaybe . snd)
+        <$> single k (assetInfoRequest asset) decodeAssetInfos

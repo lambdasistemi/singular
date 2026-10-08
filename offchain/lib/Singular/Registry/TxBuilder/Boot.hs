@@ -15,6 +15,8 @@ without one is refused 'StateValidatorNotPublished'.
 -}
 module Singular.Registry.TxBuilder.Boot
     ( bootTokenImpl
+    , bootTokenFrom
+    , bootCostBound
     , BootRefusal (..)
     ) where
 
@@ -86,6 +88,7 @@ import Singular.Registry.Ledger
     , ConwayEra
     )
 import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -161,6 +164,34 @@ bootTokenImpl cfg view addr = do
             (throwIO StateValidatorNotPublished)
             pure
             (lookupStateRef cfg utxos)
+    bootFrom cfg pp utxos stateRef view addr
+
+{- | Build a boot-token minting transaction that resolves the state validator
+through this reference output, wherever it sits: the caller found it and
+checked the script it carries. The seed and the funding still come from the
+payer's wallet.
+-}
+bootTokenFrom
+    :: CageConfig
+    -> (TxIn, TxOut ConwayEra)
+    -> Session NoWitness IO
+    -> Addr
+    -> IO ConwayTx
+bootTokenFrom cfg stateRef view addr = do
+    pp <- parameters view
+    utxos <- outputsAt view addr
+    bootFrom cfg pp utxos stateRef view addr
+
+-- | The boot, from the parameters and the payer's outputs already read.
+bootFrom
+    :: CageConfig
+    -> PParams ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> (TxIn, TxOut ConwayEra)
+    -> Session NoWitness IO
+    -> Addr
+    -> IO ConwayTx
+bootFrom cfg pp utxos stateRef view addr = do
     -- The seed UTxO is carried in the mint redeemer. We MUST consume
     -- that exact UTxO -- any other input would fail the validator's
     -- `find_input(inputs, seed)` check. Locate it in the caller's
@@ -222,7 +253,7 @@ bootTokenImpl cfg view addr = do
                 (network cfg)
         outValue =
             MaryValue
-                (Coin 2_000_000)
+                (Coin bootStateLovelace)
                 mintMA
         txOut =
             mkBasicTxOut
@@ -285,6 +316,22 @@ bootTokenImpl cfg view addr = do
             addr
             (payForReferenceScripts pp (SBS.length (cageScriptBytes cfg)) balanced)
         )
+
+-- | The lovelace a boot locks in the state output it creates.
+bootStateLovelace :: Integer
+bootStateLovelace = 2_000_000
+
+{- | The most a boot takes from the payer's spending inputs: the lovelace its
+state output locks, and a fee allowance for one maximum-size transaction at
+the execution limit referencing this state carrier ('protocolFeeReserve').
+A create checks its publications against what the boot leaves with it,
+before anything is submitted.
+-}
+bootCostBound
+    :: PParams ConwayEra -> (TxIn, TxOut ConwayEra) -> Integer
+bootCostBound pp carrier =
+    let Coin allowance = protocolFeeReserve pp [carrier]
+    in  bootStateLovelace + allowance
 
 {- | Pay for the reference script the boot now resolves through (#177
 A-003).

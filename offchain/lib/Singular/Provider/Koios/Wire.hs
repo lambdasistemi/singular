@@ -60,6 +60,9 @@ module Singular.Provider.Koios.Wire
     , submitTxRequest
     , txStatusRequest
     , accountInfoRequest
+    , referenceScriptUtxosRequest
+    , utxoInfoRequest
+    , assetInfoRequest
 
       -- * Decoded facts
     , Tip (..)
@@ -68,6 +71,8 @@ module Singular.Provider.Koios.Wire
     , TxCbor (..)
     , TxStatus (..)
     , AccountStatus (..)
+    , UtxoInfo (..)
+    , AssetInfo (..)
 
       -- * Decoders
     , DecodeFailure (..)
@@ -82,6 +87,9 @@ module Singular.Provider.Koios.Wire
     , decodeSubmitted
     , decodeTxStatuses
     , decodeAccountStatuses
+    , decodeReferenceScriptUtxos
+    , decodeUtxoInfos
+    , decodeAssetInfos
 
       -- * Renderings
     , renderAddress
@@ -196,6 +204,7 @@ import Cardano.Ledger.BaseTypes
     , UnitInterval
     , mkVersion
     , txIxFromIntegral
+    , txIxToInt
     )
 import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
 import Cardano.Ledger.Coin (Coin (..), CompactForm (..))
@@ -258,6 +267,9 @@ data Call
     | CallSubmitTx
     | CallTxStatus
     | CallAccountInfo
+    | CallReferenceScriptUtxos
+    | CallUtxoInfo
+    | CallAssetInfo
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 -- | The Koios endpoint name of a call, as in its path.
@@ -274,6 +286,9 @@ callName = \case
     CallSubmitTx -> "submittx"
     CallTxStatus -> "tx_status"
     CallAccountInfo -> "account_info"
+    CallReferenceScriptUtxos -> "reference_script_utxos"
+    CallUtxoInfo -> "utxo_info"
+    CallAssetInfo -> "asset_info"
 
 -- | Whether a request reads or submits.
 data Access = Read | Submission
@@ -452,6 +467,51 @@ accountInfoRequest account =
         )
         Nothing
 
+{- | @reference_script_utxos@: every unspent output whose reference script
+is one of the hashes, ordered by output reference. Koios names each row's
+hash; a consumer computes it from the output instead.
+-}
+referenceScriptUtxosRequest :: [ScriptHash] -> Request 'Read
+referenceScriptUtxosRequest hashes =
+    request
+        CallReferenceScriptUtxos
+        Post
+        []
+        (JsonBody (object ["_script_hashes" .= map scriptHashHex hashes]))
+        byOutputReference
+
+-- | @utxo_info@: whether each named output is spent.
+utxoInfoRequest :: [TxIn] -> Request 'Read
+utxoInfoRequest references =
+    request
+        CallUtxoInfo
+        Post
+        []
+        ( JsonBody $
+            object
+                [ "_utxo_refs" .= map outputReferenceText references
+                , "_extended" .= False
+                ]
+        )
+        Nothing
+
+-- | @asset_info@ of one asset: its latest minting transaction and supply.
+assetInfoRequest :: (PolicyID, AssetName) -> Request 'Read
+assetInfoRequest (p, n) =
+    request
+        CallAssetInfo
+        Post
+        []
+        (JsonBody (object ["_asset_list" .= [[policyHex p, assetNameHex n]]]))
+        Nothing
+
+scriptHashHex :: ScriptHash -> Text
+scriptHashHex (ScriptHash h) = hashToTextAsHex h
+
+outputReferenceText :: TxIn -> Text
+outputReferenceText (TxIn txId ix) =
+    txIdHex txId <> "#" <> T.pack (show (txIxToInt ix))
+
 -- | The chain tip.
 data Tip = Tip
     { tipSlot :: SlotNo
@@ -514,6 +574,22 @@ data TxStatus = TxStatus
 data AccountStatus = AccountStatus
     { accountStakeAddress :: Text
     , accountStatus :: Text
+    }
+    deriving stock (Eq, Show)
+
+-- | One named output and whether Koios reports it spent.
+data UtxoInfo = UtxoInfo
+    { utxoInfoReference :: TxIn
+    , utxoInfoSpent :: Bool
+    }
+    deriving stock (Eq, Show)
+
+{- | One asset's latest minting transaction and its current total supply,
+as @asset_info@ states them.
+-}
+data AssetInfo = AssetInfo
+    { assetInfoMintingTx :: TxId
+    , assetInfoSupply :: Integer
     }
     deriving stock (Eq, Show)
 
@@ -891,6 +967,26 @@ decodeTxStatuses = runParser $ rows $ \o ->
 decodeAccountStatuses :: Value -> Either DecodeFailure [AccountStatus]
 decodeAccountStatuses = runParser $ rows $ \o ->
     AccountStatus <$> o .: "stake_address" <*> o .: "status"
+
+-- | Decode a @reference_script_utxos@ page: each row's hash and reference.
+decodeReferenceScriptUtxos
+    :: Value -> Either DecodeFailure [(ScriptHash, TxIn)]
+decodeReferenceScriptUtxos = runParser $ rows $ \o -> do
+    hash <- o .: "script_hash" >>= fmap ScriptHash . hashOf
+    reference <- txInOf o
+    pure (hash, reference)
+
+-- | Decode a @utxo_info@ answer.
+decodeUtxoInfos :: Value -> Either DecodeFailure [UtxoInfo]
+decodeUtxoInfos = runParser $ rows $ \o ->
+    UtxoInfo <$> txInOf o <*> o .: "is_spent"
+
+-- | Decode an @asset_info@ answer.
+decodeAssetInfos :: Value -> Either DecodeFailure [AssetInfo]
+decodeAssetInfos = runParser $ rows $ \o ->
+    AssetInfo
+        <$> (o .: "minting_tx_hash" >>= txIdOf)
+        <*> (o .: "total_supply" >>= integerText)
 
 -- | The bech32 rendering of a Shelley address.
 renderAddress :: Addr -> Text

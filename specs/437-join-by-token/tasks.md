@@ -1,0 +1,72 @@
+# A registry joined from its state token: tasks
+
+As Bob, I join with the token, restore missing reference scripts and read a release-bound page.
+The [plan](plan.md) orders one writer at a time under E371. Stable task keys are bookkeeping;
+checkboxes record delivered work only when bound receipts exist, never public product state.
+The four children own the rows below; T034–T036 apply to every child and the final aggregate.
+PR476 closes #501 only. Later children do not delay its delivery.
+
+## Token-only join: integration and runnable baseline (#501)
+
+- [x] T001 Preserve source/remote backups and rebase the issue branch onto main23964; record source mapping, conflicts and range/whitespace receipts in the runtime handoff.
+- [ ] T002 Correct epic, roster, base/model and full-issue requirements in specs/437-join-by-token/{spec,plan,tasks,modules-model,data-model,functions-model}.md; regenerate speech and check correspondence.
+- [x] T003 Inspect and retain PR476 failed CI/Registry logs; bind root causes and current-base reproductions in the runtime evidence ledger, not only job labels.
+- [ ] T004 [US1] Reproduce stale PhaseLog/current Trace integration in offchain/test/Singular/CLI/RecoverySpec.hs; preserve current-main trace controls and compile the affected component.
+- [ ] T005 [US1] Reproduce deployment producer/consumer reference-role disagreement in offchain/deployment-identity-check.sh and offchain/lib/Singular/Registry/Deployment/Attach.hs; fix the actual mismatch and prove the checker still rejects an unknown role.
+- [ ] T006 [US1] Reconcile current-main recovery matrix app/spec and tools/cli_recovery_controls.sh consumers; do not restore retired APIs or hide required outcomes.
+
+## Token-only connected actor journey (#501)
+
+- [ ] T007 [US1] Reproduce provider read-back failure misreported as not-live/Done in offchain/cli/src/Singular/CLI/Create.hs through its real Session/Trace path; repair typed attribution and prove successful-empty versus failed-read discrimination.
+- [ ] T008 [US1] Say, execute and render Bob's ordinary token-only fold in conformance/lib/Conformance/Cli/Controls.hs and conformance/app-cli/Conformance/Cli/Backend.hs; control total interpretation over discovered instruction extent.
+- [ ] T009 [US1] Align the existing identity obligation in specs/299-singular-cli/spec.md and its exact conformance binding with token-only reads/writes; regenerate speech, preserve saved-selector retirement/history and separate evidence.
+- [ ] T010 [US1] Reproduce and repair proper absent-journal refusal admission in conformance/app-cli/Conformance/Cli/Admission.hs through the actual verdict entrypoint; distinguish absence from unreadability/corruption.
+- [ ] T011 [US1] Require no journal advance or submission for underfunded create in Controls.hs; a consistently retained nonempty submission control must fail, while the genuine refusal and original-seed probe are admitted.
+- [ ] T012 [US1] Fix tools/demo1_cli_journey.sh small-wallet preview setup so the connected control reaches create's funding refusal; observe the failed publication role, unchanged actor files and unspent original seed.
+- [ ] T013 [US1] Repair actual tools/demo1_cli_controls.sh receipt/summary composition without dropping uncovered rows or weakening claim semantics; verify connected and refusal verdict consumers.
+- [ ] T014 [US1] Run current Koios/resolver/reference/funding and mixed-retirement/#419 controls through their required carriers; retain every identity refusal and provider-first lazy-wallet/local-hash controls in offchain/test/.
+- [ ] T015 [US1] Run connected create and Bob booking/fold/inspect with an empty Bob directory and no Alice argument/copied files via tools/demo1_cli_journey.sh; retain actual transactions and public receipt-derived clauses.
+- [ ] T016 [US1] Run tools/demo1_two_actor_control.sh with an actual deliberate Alice-file open; its classification must reject that reachable defect without counting setup failure as detection.
+- [ ] T017 [US1] Run actual local CI and all four exact static commands at the coherent PR1 head, then push PR476 and track required exact-head hosted jobs; E371 owns acceptance, issue437 stays open.
+
+## Protected funding and reference restoration (#471)
+
+- [ ] T018 [US2] Recover the preserved PR2 interface/work selectively from refs/archive/437/pr2-wip-20261007 into current model/versioned plans; no wholesale stash application or loss of main consumers.
+- [ ] T019 [US2] Add failing boundary controls for the opaque wallet-output view under offchain/test/; a planted raw accessor must fail compilation or export-extent verification.
+- [ ] T020 [US2] Implement the closed WalletOutputs/builder Session boundary and single funding projection in offchain/local-services/ and offchain/lib/Singular/Registry/ per the archived wallet-functions-model.md; delete all ordinary raw selectors/predicate copies in the same coherent change.
+- [ ] T021 [US2] Run insert/update/terminate/create/publication/retirement funding controls with a300ADA script carrier, large token holding and20ADA plain output; ordinary funding consumes only the plain output, named protocol inputs remain distinct.
+- [ ] T023 [US2] Add RED/GREEN release-script hash controls and publishReferencesTx in offchain/lib/Singular/Registry/StateToken.hs and TxBuilder/Edges.hs; checked scripts produce minimum-ada outputs owned by the payer.
+- [ ] T024 [US2] Implement token-only publish-references and explicit automatic publication in offchain/cli/src/Singular/CLI/References.hs and Command/Attached write consumers; publish only missing needed roles and read back typed results.
+The publication slice retains #471 preview/recovery/packaging criteria, reuses #439 and addresses
+#479 funding selection. Publication is explicit opt-in; Demo2 #472 retains its no-auto policy.
+
+## Owned-carrier retirement and reclaim (#502)
+
+- [ ] T022 [US2] Narrow explicit reclaim funding and preserve required token/request selection in offchain/cli/src/Singular/CLI/Reclaim.hs and builder callers through the same opaque boundary.
+- [ ] T025 [US2] Implement retire-references and ownCarriers with shared-state role reporting in StateToken.hs, References.hs and TxBuilder/Edges.hs; foreign applied roles stay excluded and carrier assets return after fees.
+- [ ] T026 [US2] Run a connected devnet retirement, reference-missing refusal, permissionless restoration and successful fold; tools/demo1_cli_journey.sh and public conformance language carry actual receipts.
+
+## Registry page and public report (#503)
+
+- [ ] T027 [US3] Version provider transactionBlock/BlockPoint reads in LedgerProvider.hs, Koios wire/client/provider and devnet facade; replay recorded shapes, named missing/read-failed anchor controls remain unverified provider evidence.
+- [ ] T028 [US3] Add RED/GREEN page-field and byte-determinism controls under offchain/test/Singular/Registry/; cover identical replay input, tag missing/unreadable, blueprint mismatch and anchor missing/unreadable.
+- [ ] T029 [US3] Implement ReleaseInfo/ConformanceLocation/Page and describeRegistry in offchain/lib/Singular/Registry/Page.hs from acquired public replay and archive version; deterministic Markdown/JSON show the same fields and no authored limits.
+- [ ] T030 [US3] Add describe --json in offchain/cli/src/Singular/CLI/Command.hs and its read-only entrypoint; no wallet/actor-file dependency; create prints the real page command after delivery.
+- [ ] T031 [US3] Stage adjacent version.txt in tools/assemble_onchain_release.py and verify version/asset/checksum agreement in the release checker; exercise describe from the actual packaged archive with tag-bound documentation asset/page links.
+- [ ] T032 [US3] Run a connected page-versus-public-replay comparison and byte-identical regeneration in the devnet journey; provider provenance and archive-claimed release tag stay explicit.
+- [ ] T033 [US3] Render action kind/target for every live/retired clause in both story families and check independently derived description identities in conformance/lib/Conformance/Cli/Controls.hs and report tests; two identities differ and a swap fails, without reopening retirement semantics.
+
+## Complete issue evidence
+
+- [ ] T034 Align help, docs and generated speech/audio with all delivered commands and public evidence; preserve unchanged clips and verify current narration/presentation.
+- [ ] T035 Run meaningful focused suites, actual root/offchain/conformance local CI and all required exact-head hosted component, docs, conformance, Demo1, attach and recovery jobs; retain actual exits and all uncovered requirements.
+- [ ] T036 Update the owned PR body using .github/pull_request_template.md with exact model/head, maps, evidence and limits; hand back to E371 for merge/acceptance and downstream #381. PR1 alone never closes437.
+
+## Dependencies and verification
+
+Serial order: integration/preparation → GLM runnable baseline/read-failure repair → Muse public
+language/binding/refusal composition → connected PR1 evidence → closed funding/references →
+owned-carrier retirement/reclaim → page/archive/action identity → complete issue evidence.
+T034–T036 run at each child boundary and at final aggregation. No parallel writer or extra audit.
+Every repair first observes a meaningful failing subject check, then a passing one. Old-head
+receipts, compilation and fixture stand-ins do not replace connected or exact-head evidence.

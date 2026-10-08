@@ -80,6 +80,7 @@ viewOf utxos =
         , tipObservation = unavailable
         , networkTime = unavailable
         , scriptRegistered = const unavailable
+        , mintRecord = const unavailable
         , history = \_ _ ->
             pure
                 ( Left

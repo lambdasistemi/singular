@@ -7,12 +7,12 @@ Module      : Singular.CLISpec
 Description : Focused rows for the packaged singular registry commands
 License     : Apache-2.0
 
-The @singular@ command is one process per registry command over a saved
-registry directory. These rows run its effect-free parts over the real
+The @singular@ command is one process per registry command, run from an
+actor's directory. These rows run its effect-free parts over the real
 modules: the command line refusals that must happen before any file,
-node or key is read; the saved identity's checks against the network,
-wallet, seed and pins a later process brings; the journal that keeps a submission a dying process
-never saw confirmed; and the local proof of a key's leaf against the
+node or key is read; the checks a creator's seed and directory must
+pass; the journal that keeps a submission a dying process never saw
+confirmed; and the local proof of a key's leaf against the
 root the ledger holds.
 
 Every compared identity is produced at run time: wallet addresses come
@@ -34,12 +34,14 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Short qualified as SBS
 import Data.Either (fromLeft)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
 import System.Directory (createDirectoryIfMissing)
 import System.Exit (ExitCode (..))
@@ -60,7 +62,7 @@ import Cardano.Ledger.Credential
     , StakeReference (..)
     )
 import Cardano.Ledger.Keys (coerceKeyRole)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..), PolicyID (..))
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
@@ -76,8 +78,7 @@ import Singular.CLI.Recovery
 import Singular.CLI.Registry
 import Singular.CLI.Session (CommandFailure (..), admitSubmissions)
 import Singular.Registry.Deployment
-    ( Deployment (..)
-    , parseOutRef
+    ( parseOutRef
     , renderOutRef
     )
 import Singular.Registry.Ledger
@@ -88,6 +89,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider (ReadFailure (..))
+import Singular.Registry.StateTokenFixture (token)
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -96,6 +98,7 @@ import Singular.Registry.TxBuilder.Internal
     , leafActive
     , leafTerminal
     , scriptFromBytes
+    , scriptHashBytes
     , walkEdge
     )
 import Singular.Registry.Types
@@ -111,7 +114,7 @@ import Singular.Registry.Wallet
 spec :: Spec
 spec = describe "singular registry commands" $ do
     commandLine
-    savedIdentity
+    creatorChecks
     journal
     localProof
     recovery
@@ -132,8 +135,27 @@ provider =
 wallet :: [String]
 wallet = ["--wallet-skey", "/keys/payment.skey"]
 
+-- | The actor directory, the release and the registry's state token.
 reg :: [String]
-reg = ["--registry", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+reg = createReg <> ["--state-token", T.unpack tokenSpelling]
+
+-- | A create names no state token: it makes one.
+createReg :: [String]
+createReg = ["--registry", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+
+-- | The state token as a person copies it from the registry's page.
+tokenSpelling :: T.Text
+tokenSpelling =
+    let (PolicyID policy, AssetName name) = token
+    in  hexText (scriptHashBytes policy)
+            <> "."
+            <> hexText (SBS.fromShort name)
+  where
+    hexText = TE.decodeUtf8 . B16.encode
+
+-- | What a command parsed with @reg@ acts on.
+access :: RegistryAccess
+access = RegistryAccess{accessToken = token}
 
 commandLine :: Spec
 commandLine = describe "the command line" $ do
@@ -161,7 +183,7 @@ commandLine = describe "the command line" $ do
     it "reads a create with its seed, wallet and provider" $
         parseCommand
             ( ["registry", "create", "--seed", seedText]
-                <> reg
+                <> createReg
                 <> provider
                 <> wallet
             )
@@ -185,7 +207,7 @@ commandLine = describe "the command line" $ do
                     parseCommand
                         ( ["registry", "create", "--seed", seedText]
                             <> ["--process-time", processing, "--retract-time", retracting]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                         )
@@ -199,7 +221,7 @@ commandLine = describe "the command line" $ do
                         )
                         ( parseCommand
                             ( ["registry", "create", "--seed", seedText]
-                                <> reg
+                                <> createReg
                                 <> provider
                                 <> wallet
                                 <> extra
@@ -239,7 +261,7 @@ commandLine = describe "the command line" $ do
                 $ \argument ->
                     parseCommand
                         ( ["registry", "create", "--seed", seedText, flag, argument]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                         )
@@ -248,7 +270,7 @@ commandLine = describe "the command line" $ do
             it ("refuses a missing " <> flag <> " value") $
                 parseCommand
                     ( ["registry", "create", "--seed", seedText]
-                        <> reg
+                        <> createReg
                         <> provider
                         <> wallet
                         <> [flag]
@@ -265,6 +287,7 @@ commandLine = describe "the command line" $ do
                 ( Insert
                     EntryArgs
                         { entryRegistry = "/srv/reg"
+                        , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode = Submit writeSettings
                         , entryKey = Key "key"
@@ -538,7 +561,7 @@ commandLine = describe "the command line" $ do
     removedFlag = "--" <> "envelope"
     commands =
         [ ["registry", "create", "--seed", seedText]
-            <> reg
+            <> createReg
             <> provider
             <> wallet
         , ["registry", "insert", "--key", "key", "--payload", "/p.json"]
@@ -619,7 +642,7 @@ seedText :: String
 seedText = replicate 64 'b' <> "#1"
 
 -- ---------------------------------------------------------
--- The saved identity
+-- A creator's seed and directory
 -- ---------------------------------------------------------
 
 keyFile :: FilePath -> Char -> IO Wallet
@@ -628,63 +651,8 @@ keyFile dir c = do
     BS.writeFile path (B16.encode (BC.replicate 32 c))
     loadWallet 42 path
 
-pins :: Pins
-pins = Pins "aa" "bb" "cc" "dd" "ee"
-
-deployment :: Deployment
-deployment =
-    Deployment
-        { depRelease = "test"
-        , depLeanRevision = "test"
-        , depNetworkMagic = 42
-        , depSeedOutRef = T.pack seedText
-        , depCageToken = "00"
-        , depStatePolicy = "aa"
-        , depRequestHash = "ff"
-        , depApplicationHash = "bb"
-        , depRepresentativePolicy = "dd"
-        , depProcessTime = 30_000
-        , depRetractTime = 30_000
-        , depTip = 1_000_000
-        , depReferenceScripts = []
-        , depBootstrapTxs = []
-        }
-
-savedIdentity :: Spec
-savedIdentity = describe "the saved identity" $ do
-    it "records the booting wallet's public address and never its key" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            writeConfig dir conf
-            back <- readConfig dir
-            back `shouldBe` conf
-            raw <- BS.readFile (configPath dir)
-            BS.isInfixOf (BC.replicate 32 'k') raw `shouldBe` False
-            BS.isInfixOf "6b6b6b6b6b6b6b6b" raw `shouldBe` False
-            confWalletAddress conf `shouldNotBe` ""
-    it "refuses another network" $ withTempDir $ \dir -> do
-        w <- keyFile dir 'k'
-        let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-        checkNetwork conf 42 `shouldBe` Right ()
-        checkNetwork conf 1 `shouldBe` Left (NetworkMismatch 42 1)
-    it "refuses a wallet other than the one it was booted from" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            other <- keyFile dir 'o'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            checkWallet conf (walletAddr w) `shouldBe` Right ()
-            checkWallet conf (walletAddr other)
-                `shouldSatisfy` isLeftWith isWallet
-    it "refuses a blueprint whose pins differ, naming the pin" $
-        withTempDir $ \dir -> do
-            w <- keyFile dir 'k'
-            let conf = mkRegistryConfig 42 (walletAddr w) pins deployment
-            checkPins conf pins `shouldBe` Right ()
-            checkPins conf pins{pinTerminal = "e0"}
-                `shouldBe` Left (PinMismatch "terminal" "ee" "e0")
-            checkPins conf pins{pinApplication = "b0"}
-                `shouldBe` Left (PinMismatch "application" "bb" "b0")
+creatorChecks :: Spec
+creatorChecks = describe "a creator's seed and directory" $ do
     it
         "refuses a seed the wallet does not hold, one that is not ada-only, or one with no funding beside it"
         $ do
@@ -766,7 +734,6 @@ savedIdentity = describe "the saved identity" $ do
             BS.writeFile (used </> "registry.mirror.json") "corrupted mirror"
             refuseExisting used `shouldReturn` Right ()
   where
-    isWallet = \case WalletMismatch _ _ -> True; _ -> False
     isNotInWallet = \case SeedNotInWallet _ -> True; _ -> False
     isNotAdaOnly = \case SeedNotAdaOnly _ -> True; _ -> False
     isNoFunding = \case NoFundingBesideSeed _ -> True; _ -> False
@@ -1241,6 +1208,7 @@ previewRows = describe "--preview" $ do
                 ( Insert
                     EntryArgs
                         { entryRegistry = "/srv/reg"
+                        , entryAccess = access
                         , entryBlueprint = "/srv/plutus.json"
                         , entryMode =
                             Preview
@@ -1307,7 +1275,7 @@ previewRows = describe "--preview" $ do
         let create extra =
                 parseCommand
                     ( ["registry", "create", "--preview"]
-                        <> reg
+                        <> createReg
                         <> previewNode "1"
                         <> extra
                     )
@@ -1345,7 +1313,7 @@ previewRows = describe "--preview" $ do
                 create extra =
                     parseCommand
                         ( ["registry", "create", "--seed", funded]
-                            <> reg
+                            <> createReg
                             <> provider
                             <> wallet
                             <> extra
@@ -1457,6 +1425,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 ( Fold
                     FoldArgs
                         { foldRegistry = "/srv/reg"
+                        , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
                         , foldRequest = Nothing
@@ -1481,6 +1450,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 ( Fold
                     FoldArgs
                         { foldRegistry = "/srv/reg"
+                        , foldAccess = access
                         , foldBlueprint = "/srv/plutus.json"
                         , foldWrite = writes
                         , foldRequest =
@@ -1597,6 +1567,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                 ( Reject
                     RejectArgs
                         { rejectRegistry = "/srv/reg"
+                        , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
                         , rejectFund = Nothing
@@ -1618,6 +1589,7 @@ rejectCommandRows = describe "rejecting the registry's expired requests" $ do
                 ( Reject
                     RejectArgs
                         { rejectRegistry = "/srv/reg"
+                        , rejectAccess = access
                         , rejectBlueprint = "/srv/plutus.json"
                         , rejectWrite = writes
                         , rejectFund =
@@ -1730,7 +1702,7 @@ outputsAtRows = describe "reading the outputs at an address with inspect" $ do
             _ -> Nothing
         others =
             [ ["registry", "create", "--seed", seedText]
-                <> reg
+                <> createReg
                 <> provider
                 <> wallet
             , ["registry", "insert", "--key", "key", "--payload", "/p.json"]

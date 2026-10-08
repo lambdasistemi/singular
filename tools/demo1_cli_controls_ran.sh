@@ -6,7 +6,8 @@
 #
 # RUN-DIR is the controls runner's work directory; STATUS is the runner's
 # exit. The verdict section RUN-DIR/controls.md must end its clause table
-# with "N of M clauses hold; X do not; U are uncovered." for some M > 0:
+# with "N of M clauses hold; X do not; U are uncovered." for some M > 0,
+# optionally followed by "; R are retired.":
 # otherwise no clause was judged and a zero STATUS is turned into 1, so a
 # run that judged nothing can never read as a pass. The summary and every
 # clause that does not hold or is uncovered are printed, so a red run names
@@ -40,7 +41,7 @@ if [ -n "${DEMO1_CONTROLS_RESULTS:-}" ]; then
   done
 fi
 
-summary_re='^([0-9]+) of ([0-9]+) clauses hold; ([0-9]+) do not; ([0-9]+) are uncovered\.$'
+summary_re='^([0-9]+) of ([0-9]+) clauses hold; ([0-9]+) do not; ([0-9]+) are uncovered(\.|; ([0-9]+) are retired\.)$'
 summary=""
 [ ! -f "$verdicts" ] || summary="$(grep -E "$summary_re" "$verdicts" | tail -n 1 || true)"
 if [ -z "$summary" ]; then
@@ -49,9 +50,23 @@ if [ -z "$summary" ]; then
   exit "$status"
 fi
 [[ $summary =~ $summary_re ]]
+held="${BASH_REMATCH[1]}"
 total="${BASH_REMATCH[2]}"
+failed="${BASH_REMATCH[3]}"
+uncovered="${BASH_REMATCH[4]}"
+retired="${BASH_REMATCH[6]:-0}"
 if [ "$total" -eq 0 ]; then
   echo "demo1-cli-controls: the clause summary counts no clause: $summary (runner exit $status)" >&2
+  [ "$status" -ne 0 ] || status=1
+  exit "$status"
+fi
+if [ "$((held + failed + uncovered))" -eq 0 ]; then
+  echo "demo1-cli-controls: the clause summary judges no active clause: $summary (runner exit $status)" >&2
+  [ "$status" -ne 0 ] || status=1
+  exit "$status"
+fi
+if [ "$((held + failed + uncovered + retired))" -ne "$total" ]; then
+  echo "demo1-cli-controls: the clause summary counters disagree: $summary (runner exit $status)" >&2
   [ "$status" -ne 0 ] || status=1
   exit "$status"
 fi

@@ -53,6 +53,10 @@
       "pause": 500
     },
     {
+      "text": "Create prints the registry's state token. Every later command names the registry by that token; the directory reg keeps only your own journal, and nothing in it names the registry.",
+      "pause": 400
+    },
+    {
       "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by singular, naming the deadline, before anything is signed. Giving insert or terminate the --fold switch books and folds in one command, with one wallet.",
       "pause": 400
     },
@@ -71,7 +75,7 @@
       "pause": 500
     },
     {
-      "text": "singular registry create prints the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. Every later command derives the pins again from this archive's blueprint and the saved seed, and refuses a registry directory whose saved pins differ.",
+      "text": "singular registry create prints the state token, the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application.",
       "pause": 300
     },
     {
@@ -167,7 +171,7 @@
       "pause": 500
     },
     {
-      "text": "The same ordinary commands use a Koios API on the requested test network. Set koios_url to that network's API base URL. Preprod uses the reviewed packaged time recording unless --network-time DIR supplies another validated recording. No ordinary command accepts a node socket or backend selector. Nothing on this page has been run there; receipts from such a run are published separately, and this page only says how to make one and what stops it.",
+      "text": "The same ordinary commands use a Koios API on the requested test network. Set koios_url to that network's API base URL. Set token to the registry's state token, as its create printed it. Preprod uses the reviewed packaged time recording unless --network-time DIR supplies another validated recording. No ordinary command accepts a node socket or backend selector. Nothing on this page has been run there; receipts from such a run are published separately, and this page only says how to make one and what stops it.",
       "pause": 400
     },
     {
@@ -187,7 +191,7 @@
       "pause": 400
     },
     {
-      "text": "The four refusals on a registry that already exists. cli-controls takes an existing registry directory and a fresh key, through the supplied Koios API, and never creates a registry or starts, stops or resets a node. This test executable also requires --node-socket for its separate independent LSQ probe; that socket is never sent to ordinary singular. Its attach behavior is a harness surface, not another provider:",
+      "text": "The four refusals on a registry that already exists. cli-controls takes an existing registry by its state token, an actor directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts, stops or resets a node. This test executable also requires --node-socket for its separate independent LSQ probe; that socket is never sent to ordinary singular. Its attach behavior is a harness surface, not another provider:",
       "pause": 400
     },
     {
@@ -231,6 +235,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "b1795bea6505d802e05f4778e396b9d14fab85270debfc2a413e36a7d4224b7a"
+    "sha256": "3890abde4c77045441fc9973e8786bba96c46b947d7f9a4e24500fa8c81d6ccf"
   }
 }

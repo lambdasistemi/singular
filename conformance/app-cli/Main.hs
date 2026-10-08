@@ -67,7 +67,7 @@ usage =
     unlines
         [ "usage:"
         , "  cli-controls run --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
-        , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --work DIR"
+        , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --underfunded-skey FILE --work DIR"
         , "  cli-controls attach --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
         , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --stranger-skey FILE"
         , "      --registry DIR --key LABEL --work DIR"

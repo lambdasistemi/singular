@@ -62,7 +62,8 @@ requestSpec = describe "read requests" $ do
         forM_ [minBound .. maxBound] $ \rc ->
             readCallName rc `shouldBe` callNameOf (readCallCall rc)
 
-    it "parses a request of every read call" $
+    it "parses a request of every read call" $ do
+        map snd samples `shouldBe` [minBound .. maxBound]
         forM_ samples $ \(text, rc) ->
             fmap readRequestCall (parseReadRequest text) `shouldBe` Right rc
 
@@ -88,6 +89,9 @@ requestSpec = describe "read requests" $ do
         CallSubmitTx -> "submittx"
         CallTxStatus -> "tx_status"
         CallAccountInfo -> "account_info"
+        CallReferenceScriptUtxos -> "reference_script_utxos"
+        CallUtxoInfo -> "utxo_info"
+        CallAssetInfo -> "asset_info"
 
 -- | One request text per read call.
 samples :: [(Text, ReadCall)]
@@ -108,6 +112,12 @@ samples =
         ( "account_info:stake_test17zy7ujlley7twgsnlqmpkue5338vgkqucz2uky864020czgktxcpl"
         , ReadAccountInfo
         )
+    ,
+        ( "reference_script_utxos:" <> policyHex <> "," <> policyHex
+        , ReadReferenceScriptUtxos
+        )
+    , ("utxo_info:" <> txHex <> "#0," <> txHex <> "#3", ReadUtxoInfo)
+    , ("asset_info:" <> policyHex <> "." <> "ab", ReadAssetInfo)
     ]
   where
     policyHex = T.replicate 56 "1"

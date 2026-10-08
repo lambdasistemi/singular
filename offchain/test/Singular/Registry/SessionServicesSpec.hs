@@ -84,6 +84,12 @@ rawSession context resolved =
                     "registration"
                     (Left (BackendReadFailure "unused fixture registration"))
                 )
+        , mintRecord =
+            const
+                ( observed
+                    "mint-record"
+                    (Left (BackendReadFailure "unused fixture mint record"))
+                )
         , history = \_ _ ->
             observed
                 "history"

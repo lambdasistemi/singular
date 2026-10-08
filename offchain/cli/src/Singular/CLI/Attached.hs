@@ -15,6 +15,7 @@ module Singular.CLI.Attached
     , attached
     , callerKey
     , provider
+    , reading
     , readingBack
     , savedOf
     , tokenName
@@ -27,12 +28,13 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (readIORef)
 import Data.Map.Strict qualified as Map
+import Data.Set (Set)
 import Data.Text (Text)
 
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
-    ( ProviderSettings (..)
+    ( RegistryAccess (..)
     , WriteSettings (..)
     )
 import Singular.CLI.Live
@@ -42,11 +44,7 @@ import Singular.CLI.Reconcile
     , reconciledJson
     , refuseUnreconciled
     )
-import Singular.CLI.Registry
-    ( checkNetwork
-    , hexT
-    , renderIdentityError
-    )
+import Singular.CLI.Registry (hexT, loadRelease)
 import Singular.CLI.Session
 import Singular.CLI.Trace (Scope (..), What (..), report, within)
 import Singular.Registry.Evidence qualified as Cage
@@ -56,6 +54,7 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.StateToken (ReferenceRole)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -66,8 +65,10 @@ data Attached = Attached
     , atTrie :: TrieContext
     }
 
-{- | Attach a write to its registry: saved identity and pins, network,
-then — from one view — reconciliation of the journal
+{- | Attach a write to its registry. From one view: the registry resolved
+from its state token and this release, with the references the write's
+transactions run ("Singular.CLI.Live.resolveSaved"), before anything is
+built; then reconciliation of the journal
 ("Singular.CLI.Reconcile"), the refusal of whatever it leaves
 unresolved, the live references and state, and the replayed root
 against the ledger's. The caller's wallet is NOT compared with the
@@ -79,27 +80,39 @@ attached
     :: Env
     -> FilePath
     -> FilePath
+    -> RegistryAccess
+    -> Set ReferenceRole
+    -- ^ The roles the write's transactions run
     -> WriteSettings
     -> Text
     -> (Attached -> IO Value)
     -> IO Value
-attached env dir blueprint ws command body = do
-    saved <- loadSaved dir blueprint
+attached env dir blueprint access roles ws command body = do
+    release <-
+        loadRelease blueprint >>= either (failWith ClientRefusal) pure
     withWrite env dir command ws $ \connected -> do
-        -- everything the write reports is inside its registry
-        let wc =
+        -- The token the command named is the registry these reports sit in.
+        -- Resolution still happens in the one view below: the name is what
+        -- was asked, and a refusal names that same token.
+        let AssetName raw = snd (accessToken access)
+            wc =
                 connected
                     { wcTracer =
-                        within (InRegistry (hexT (tokenName saved))) (wcTracer connected)
+                        within
+                            (InRegistry (hexT (SBS.fromShort raw)))
+                            (wcTracer connected)
                     }
-            ProviderSettings _ magic _ _ = writeProvider ws
-        either
-            (failWith ClientRefusal . renderIdentityError)
-            pure
-            (checkNetwork (savedConfig saved) magic)
         Cage.withLatest
             (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             $ \v -> do
+                saved <-
+                    resolveSaved
+                        dir
+                        release
+                        access
+                        roles
+                        (Just (walletAddr (wcWallet wc)))
+                        v
                 (reconciled, live) <-
                     timedRead
                         (wcTracer wc)
@@ -133,6 +146,11 @@ provider
 provider at =
     let wc = atWrite at
     in  readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc)
+
+-- | One read operation: acquire a view and read through it.
+reading
+    :: Attached -> (Cage.Session Cage.NoWitness IO -> IO a) -> IO a
+reading at = Cage.withLatest (provider at)
 
 {- | A read-back of what a confirmed transaction made: one read step, inside
 the scopes the transaction's build placed it in, so it sits with the

@@ -259,7 +259,10 @@ publishAll wallet prov caps cfg tok compiled stateIn txs = do
                 ( "application"
                 , scriptFromBytes "naming-application" (cAppBytes compiled)
                 )
-            , ("active", scriptFromBytes "active" (cActiveBytes compiled))
+            ,
+                ( "witness-active"
+                , scriptFromBytes "witness-active" (cActiveBytes compiled)
+                )
             , ("custody", scriptFromBytes "naming-custody" (cCustodyBytes compiled))
             ]
     pure (state : rest)
