@@ -108,6 +108,13 @@ spec = describe "protocol narration (#416)" $ do
 -- The controls, on every command
 -- ---------------------------------------------------------
 
+{- | A well-formed token no registry minted: the parser needs a state
+token for every command but create, and these fixtures never reach
+the provider with it.
+-}
+spelledToken :: String
+spelledToken = replicate 56 'a' <> "." <> replicate 64 'b'
+
 -- | Each of the eight commands, spelled with what it needs to parse.
 commands :: [(String, [String])]
 commands =
@@ -117,27 +124,39 @@ commands =
         , ["registry", "insert", "--key", "alice-1", "--payload", "/p.json"]
             <> base
             <> wallet
+            <> tokenFlag
         )
     ,
         ( "update"
         , ["registry", "update", "--key", "alice-1", "--payload", "/p.json"]
             <> base
             <> wallet
+            <> tokenFlag
         )
     ,
         ( "terminate"
-        , ["registry", "terminate", "--key", "alice-1"] <> base <> wallet
+        , ["registry", "terminate", "--key", "alice-1"]
+            <> base
+            <> wallet
+            <> tokenFlag
         )
-    , ("fold", ["registry", "fold"] <> base <> wallet)
-    , ("reject", ["registry", "reject"] <> base <> wallet)
+    , ("fold", ["registry", "fold"] <> base <> wallet <> tokenFlag)
+    , ("reject", ["registry", "reject"] <> base <> wallet <> tokenFlag)
     ,
         ( "reclaim"
-        , ["registry", "reclaim", "--request", seed] <> base <> wallet
+        , ["registry", "reclaim", "--request", seed]
+            <> base
+            <> wallet
+            <> tokenFlag
         )
-    , ("inspect", ["registry", "inspect", "--key", "alice-1"] <> base)
+    ,
+        ( "inspect"
+        , ["registry", "inspect", "--key", "alice-1"] <> base <> tokenFlag
+        )
     ]
   where
     seed = replicate 64 'a' <> "#0"
+    tokenFlag = ["--state-token", spelledToken]
     base =
         [ "--registry"
         , "/srv/reg"
@@ -777,6 +796,8 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , "inspect"
                     , "--key"
                     , "alice-1"
+                    , "--state-token"
+                    , spelledToken
                     , "--registry"
                     , dir </> "none"
                     , "--blueprint"
@@ -812,6 +833,8 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , "inspect"
                     , "--key"
                     , "alice-1"
+                    , "--state-token"
+                    , spelledToken
                     , "--registry"
                     , dir </> "none"
                     , "--blueprint"
@@ -947,6 +970,8 @@ setupRecut = describe "(#416) tracing setup re-cut" $ do
                     , "inspect"
                     , "--key"
                     , "alice-1"
+                    , "--state-token"
+                    , spelledToken
                     , "--registry"
                     , dir </> "none"
                     , "--blueprint"
