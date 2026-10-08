@@ -45,11 +45,13 @@ module Singular.Registry.StateToken
     , ReferenceRefusal (..)
     , carriesReference
     , findReferences
+    , missingReferences
     , renderReferenceRefusal
     ) where
 
 import Control.Monad (forM_, when)
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
+import Data.Either (partitionEithers)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -505,6 +507,45 @@ findReferences
     -> m
         (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra)))
 findReferences session walletAt expected needed = runExceptT $ do
+    (found, missing) <- ExceptT (searchReferences session walletAt expected needed)
+    case missing of
+        [] -> pure found
+        (role, hash) : _ -> throwError (ReferenceMissing role hash)
+
+{- | The shared deferred provider-first search with local candidate
+admission: found carriers with the roles still missing, without
+refusing them. Read failure stays a refusal; successful emptiness
+simply leaves roles missing.
+-}
+missingReferences
+    :: (Monad m)
+    => Session w m
+    -> Maybe Addr
+    -- ^ The actor's wallet, when the command has one
+    -> Map ReferenceRole ScriptHash
+    -> Set ReferenceRole
+    -- ^ The roles the command's transaction runs
+    -> m
+        ( Either
+            ReferenceRefusal
+            (Map ReferenceRole (TxIn, TxOut ConwayEra), Set ReferenceRole)
+        )
+missingReferences session walletAt expected needed =
+    (fmap . fmap) (\(found, missing) -> (found, Set.fromList (map fst missing)))
+        (searchReferences session walletAt expected needed)
+
+searchReferences
+    :: (Monad m)
+    => Session w m
+    -> Maybe Addr
+    -> Map ReferenceRole ScriptHash
+    -> Set ReferenceRole
+    -> m
+        ( Either
+            ReferenceRefusal
+            (Map ReferenceRole (TxIn, TxOut ConwayEra), [(ReferenceRole, ScriptHash)])
+        )
+searchReferences session walletAt expected needed = runExceptT $ do
     let wanted =
             [ (role, hash)
             | role <- Set.toAscList needed
@@ -525,12 +566,10 @@ findReferences session walletAt expected needed = runExceptT $ do
             else pure []
     let choose ((role, hash), provided) =
             case filter (not . null) [provided, carries hash wallet] of
-                found : _ -> Right (role, minimumBy (comparing fst) found)
-                [] -> Left (ReferenceMissing role hash)
-    either
-        throwError
-        (pure . Map.fromList)
-        (traverse choose (zip wanted fromProvider))
+                carriers : _ -> Right (role, minimumBy (comparing fst) carriers)
+                [] -> Left (role, hash)
+        (missing, present) = partitionEithers (map choose (zip wanted fromProvider))
+    pure (Map.fromList present, missing)
 
 -- | A provider read, its failure a reference refusal.
 readReference
