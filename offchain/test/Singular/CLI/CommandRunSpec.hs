@@ -111,6 +111,7 @@ import Data.Word (Word64)
 
 import Singular.CLI (runCommand)
 import Singular.CLI.Command (Command (..), parseCommand)
+import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
@@ -160,7 +161,18 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> readbackRows
+spec = handlerRows >> setupRecut >> readbackRows >> permanentRecognition
+
+permanentRecognition :: Spec
+permanentRecognition = describe "Permanent contract recognition" $
+    it
+        "refuses a caller supplied blueprint whose script identities are unknown" $
+        withRig $ \rig -> do
+            loaded <- loadRelease (rigBlueprint rig)
+            case loaded of
+                Left _ -> pure ()
+                Right _ ->
+                    expectationFailure "unknown scripts were recognized as permanent M1"
 
 handlerRows :: Spec
 handlerRows = describe
@@ -804,10 +816,11 @@ blueprintOf program =
             .= Aeson.object
                 ["title" .= ("synthetic" :: Text), "plutusVersion" .= ("v3" :: Text)]
         , "validators"
-            .= [ validator "state.state" 1
+            .= [ validator "permanent_state.state" 1
                , validator "request.request" 3
                , validator "open_datum.open_datum" 2
                , validator "witness.witness" 3
+               , validator "permanent_witness.witness" 3
                ]
         , "definitions" .= Aeson.object []
         ]
@@ -829,6 +842,7 @@ envOf rig =
     Env
         { envTracer = rigTracer rig
         , envSource = "fixture"
+        , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
         , envWrites = \_ _ k -> k (capabilities rig)
         }

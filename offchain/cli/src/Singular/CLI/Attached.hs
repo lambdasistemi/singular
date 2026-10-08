@@ -44,7 +44,7 @@ import Singular.CLI.Reconcile
     , reconciledJson
     , refuseUnreconciled
     )
-import Singular.CLI.Registry (hexT, loadRelease)
+import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
 import Singular.CLI.Trace (Scope (..), What (..), report, within)
 import Singular.Registry.Evidence qualified as Cage
@@ -89,7 +89,7 @@ attached
     -> IO Value
 attached env dir blueprint access roles ws command body = do
     release <-
-        loadRelease blueprint >>= either (failWith ClientRefusal) pure
+        envLoadRelease env blueprint >>= either (failWith ClientRefusal) pure
     withWrite env dir command ws $ \connected -> do
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below: the name is what

@@ -66486,17 +66486,17 @@
    ]
   },
   "docs-consumer-conformance/the-denominator-01": {
-   "audio_sha256": "52c166b4fecb864ad320f22517a4b38b2dce4c1cbb4978cd9420d6e3d1d22d87",
-   "characters": 697,
-   "cost": 0.00043214,
-   "duration": 49.15,
+   "audio_sha256": "882a05f71a40fd715fa823419b29dc1dfc752ef960752c1ce89da305278025ae",
+   "characters": 733,
+   "cost": 0.00045446,
+   "duration": 51.4,
    "index": 1,
-   "key": "8740ca8ae8dfa8156b3c86a873565c3f373c5aeb1f937b0bafa2154acbc56045",
+   "key": "fe773cbfb7dacde8d4fd4fef378beacb196237f726066523b123daaceecc5ea2",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "the-denominator",
-   "sent_text": "conformance/rows.json carries 46 rows, 45 owned: five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
-   "text": "conformance/rows.json carries 46 rows, 45 owned: five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "sent_text": "conformance/rows.json carries 47 rows, 46 owned: one permanent contract requirement, five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+   "text": "conformance/rows.json carries 47 rows, 46 owned: one permanent contract requirement, five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
    "words": [
     {
      "end": 2.275,
@@ -66509,538 +66509,563 @@
      "text": "carries"
     },
     {
-     "end": 3.275,
+     "end": 3.325,
      "start": 2.662,
+     "text": "47"
+    },
+    {
+     "end": 3.725,
+     "start": 3.325,
+     "text": "rows"
+    },
+    {
+     "end": 3.775,
+     "start": 3.725,
+     "text": ","
+    },
+    {
+     "end": 4.325,
+     "start": 3.775,
      "text": "46"
     },
     {
-     "end": 3.65,
-     "start": 3.275,
-     "text": "rows"
-    },
-    {
-     "end": 3.7,
-     "start": 3.65,
-     "text": ","
-    },
-    {
-     "end": 4.25,
-     "start": 3.7,
-     "text": "45"
-    },
-    {
-     "end": 5.1,
-     "start": 4.25,
+     "end": 5.175,
+     "start": 4.325,
      "text": "owned"
     },
     {
-     "end": 5.325,
-     "start": 5.1,
+     "end": 5.375,
+     "start": 5.175,
      "text": ":"
     },
     {
-     "end": 5.9,
-     "start": 5.525,
+     "end": 5.825,
+     "start": 5.6,
+     "text": "one"
+    },
+    {
+     "end": 6.25,
+     "start": 5.825,
+     "text": "permanent"
+    },
+    {
+     "end": 6.738,
+     "start": 6.25,
+     "text": "contract"
+    },
+    {
+     "end": 7.375,
+     "start": 6.738,
+     "text": "requirement"
+    },
+    {
+     "end": 7.488,
+     "start": 7.375,
+     "text": ","
+    },
+    {
+     "end": 7.875,
+     "start": 7.488,
      "text": "five"
     },
     {
-     "end": 6.438,
-     "start": 5.9,
+     "end": 8.363,
+     "start": 7.875,
      "text": "registry"
     },
     {
-     "end": 6.975,
-     "start": 6.438,
+     "end": 8.85,
+     "start": 8.363,
      "text": "identity"
     },
     {
-     "end": 7.775,
-     "start": 6.975,
+     "end": 10.05,
+     "start": 8.85,
      "text": "requirements"
     },
     {
-     "end": 7.863,
-     "start": 7.775,
+     "end": 10.25,
+     "start": 10.05,
      "text": ","
     },
     {
-     "end": 8.45,
-     "start": 7.863,
+     "end": 10.962,
+     "start": 10.45,
      "text": "twenty-four"
     },
     {
-     "end": 8.95,
-     "start": 8.45,
+     "end": 11.475,
+     "start": 10.962,
      "text": "registry"
     },
     {
-     "end": 9.525,
-     "start": 8.95,
+     "end": 12.05,
+     "start": 11.475,
      "text": "operation"
     },
     {
-     "end": 10.75,
-     "start": 9.525,
+     "end": 12.825,
+     "start": 12.05,
      "text": "requirements"
     },
     {
-     "end": 10.95,
-     "start": 10.75,
+     "end": 12.938,
+     "start": 12.825,
      "text": ","
     },
     {
-     "end": 11.325,
-     "start": 11.15,
+     "end": 13.212,
+     "start": 12.938,
      "text": "eight"
     },
     {
-     "end": 11.988,
-     "start": 11.325,
+     "end": 14.025,
+     "start": 13.212,
      "text": "serialization"
     },
     {
-     "end": 13.0,
-     "start": 11.988,
+     "end": 15.25,
+     "start": 14.025,
      "text": "requirements"
     },
     {
-     "end": 13.2,
-     "start": 13.0,
+     "end": 15.45,
+     "start": 15.25,
      "text": ","
     },
     {
-     "end": 13.725,
-     "start": 13.4,
+     "end": 15.975,
+     "start": 15.65,
      "text": "five"
     },
     {
-     "end": 14.275,
-     "start": 13.725,
+     "end": 16.525,
+     "start": 15.975,
      "text": "consumer"
     },
     {
-     "end": 14.85,
-     "start": 14.275,
+     "end": 17.1,
+     "start": 16.525,
      "text": "resolution"
     },
     {
-     "end": 15.637,
-     "start": 14.85,
+     "end": 17.888,
+     "start": 17.1,
      "text": "requirements"
     },
     {
-     "end": 15.825,
-     "start": 15.637,
+     "end": 18.075,
+     "start": 17.888,
      "text": "and"
     },
     {
-     "end": 16.237,
-     "start": 15.825,
+     "end": 18.487,
+     "start": 18.075,
      "text": "three"
     },
     {
-     "end": 17.112,
-     "start": 16.237,
+     "end": 19.362,
+     "start": 18.487,
      "text": "execution-limit"
     },
     {
-     "end": 18.325,
-     "start": 17.112,
+     "end": 20.575,
+     "start": 19.362,
      "text": "requirements"
     },
     {
-     "end": 18.525,
-     "start": 18.325,
+     "end": 20.775,
+     "start": 20.575,
      "text": ","
     },
     {
-     "end": 18.975,
-     "start": 18.725,
+     "end": 21.225,
+     "start": 20.975,
      "text": "plus"
     },
     {
-     "end": 19.112,
-     "start": 18.975,
+     "end": 21.362,
+     "start": 21.225,
      "text": "the"
     },
     {
-     "end": 19.638,
-     "start": 19.112,
+     "end": 21.888,
+     "start": 21.362,
      "text": "checkpoint"
     },
     {
-     "end": 19.75,
-     "start": 19.638,
+     "end": 22.0,
+     "start": 21.888,
      "text": "and"
     },
     {
-     "end": 20.175,
-     "start": 19.75,
+     "end": 22.425,
+     "start": 22.0,
      "text": "treasury"
     },
     {
-     "end": 20.862,
-     "start": 20.175,
+     "end": 23.112,
+     "start": 22.425,
      "text": "policy"
     },
     {
-     "end": 20.95,
-     "start": 20.862,
+     "end": 23.2,
+     "start": 23.112,
      "text": "("
     },
     {
-     "end": 21.425,
-     "start": 20.95,
+     "end": 23.675,
+     "start": 23.2,
      "text": "bonds"
     },
     {
-     "end": 21.513,
-     "start": 21.425,
+     "end": 23.763,
+     "start": 23.675,
      "text": ","
     },
     {
-     "end": 22.025,
-     "start": 21.513,
+     "end": 24.275,
+     "start": 23.763,
      "text": "poison"
     },
     {
-     "end": 22.062,
-     "start": 22.025,
+     "end": 24.312,
+     "start": 24.275,
      "text": ","
     },
     {
-     "end": 22.15,
-     "start": 22.062,
+     "end": 24.4,
+     "start": 24.312,
      "text": "the"
     },
     {
-     "end": 22.775,
-     "start": 22.15,
+     "end": 25.025,
+     "start": 24.4,
      "text": "juvenility"
     },
     {
-     "end": 23.1,
-     "start": 22.775,
+     "end": 25.35,
+     "start": 25.025,
      "text": "window"
     },
     {
-     "end": 24.025,
-     "start": 23.1,
+     "end": 26.275,
+     "start": 25.35,
      "text": "W"
     },
     {
-     "end": 24.325,
-     "start": 24.025,
+     "end": 26.575,
+     "start": 26.275,
      "text": ","
     },
     {
-     "end": 24.638,
-     "start": 24.525,
+     "end": 26.888,
+     "start": 26.775,
      "text": "the"
     },
     {
-     "end": 25.188,
-     "start": 24.638,
+     "end": 27.438,
+     "start": 26.888,
      "text": "signature"
     },
     {
-     "end": 25.925,
-     "start": 25.188,
+     "end": 28.175,
+     "start": 27.438,
      "text": "threshold"
     },
     {
-     "end": 25.975,
-     "start": 25.925,
+     "end": 28.225,
+     "start": 28.175,
      "text": ")"
     },
     {
-     "end": 26.5,
-     "start": 25.975,
+     "end": 28.75,
+     "start": 28.225,
      "text": "recorded"
     },
     {
-     "end": 26.65,
-     "start": 26.5,
+     "end": 28.9,
+     "start": 28.75,
      "text": "as"
     },
     {
-     "end": 26.837,
-     "start": 26.65,
+     "end": 29.087,
+     "start": 28.9,
      "text": "out"
     },
     {
-     "end": 26.938,
-     "start": 26.837,
+     "end": 29.188,
+     "start": 29.087,
      "text": "of"
     },
     {
-     "end": 27.562,
-     "start": 26.938,
+     "end": 29.812,
+     "start": 29.188,
      "text": "scope"
     },
     {
-     "end": 27.663,
-     "start": 27.562,
+     "end": 29.913,
+     "start": 29.812,
      "text": "—"
     },
     {
-     "end": 27.8,
-     "start": 27.663,
+     "end": 30.05,
+     "start": 29.913,
      "text": "it"
     },
     {
-     "end": 28.35,
-     "start": 27.8,
+     "end": 30.6,
+     "start": 30.05,
      "text": "belongs"
     },
     {
-     "end": 28.475,
-     "start": 28.35,
+     "end": 30.725,
+     "start": 30.6,
      "text": "to"
     },
     {
-     "end": 29.413,
-     "start": 28.475,
+     "end": 31.663,
+     "start": 30.725,
      "text": "cardano-keri's"
     },
     {
-     "end": 29.913,
-     "start": 29.413,
+     "end": 32.162,
+     "start": 31.663,
      "text": "checkpoint"
     },
     {
-     "end": 30.375,
-     "start": 29.913,
+     "end": 32.625,
+     "start": 32.162,
      "text": "machine"
     },
     {
-     "end": 30.5,
-     "start": 30.375,
+     "end": 32.75,
+     "start": 32.625,
      "text": "and"
     },
     {
-     "end": 31.625,
-     "start": 30.5,
+     "end": 33.875,
+     "start": 32.75,
      "text": "treasury"
     },
     {
-     "end": 31.875,
-     "start": 31.625,
+     "end": 34.125,
+     "start": 33.875,
      "text": ","
     },
     {
-     "end": 32.675,
-     "start": 32.075,
+     "end": 34.925,
+     "start": 34.325,
      "text": "explicitly"
     },
     {
-     "end": 32.925,
-     "start": 32.675,
+     "end": 35.175,
+     "start": 34.925,
      "text": "never"
     },
     {
-     "end": 33.275,
-     "start": 32.925,
+     "end": 35.525,
+     "start": 35.175,
      "text": "claimed"
     },
     {
-     "end": 33.463,
-     "start": 33.275,
+     "end": 35.713,
+     "start": 35.525,
      "text": "by"
     },
     {
-     "end": 34.4,
-     "start": 33.463,
+     "end": 36.65,
+     "start": 35.713,
      "text": "Singular"
     },
     {
-     "end": 34.6,
-     "start": 34.4,
+     "end": 36.85,
+     "start": 36.65,
      "text": "."
     },
     {
-     "end": 35.1,
-     "start": 34.825,
+     "end": 37.35,
+     "start": 37.075,
      "text": "list"
     },
     {
-     "end": 35.362,
-     "start": 35.1,
+     "end": 37.612,
+     "start": 37.35,
      "text": "prints"
     },
     {
-     "end": 35.5,
-     "start": 35.362,
+     "end": 37.75,
+     "start": 37.612,
      "text": "the"
     },
     {
-     "end": 35.725,
-     "start": 35.5,
+     "end": 37.975,
+     "start": 37.75,
      "text": "owned"
     },
     {
-     "end": 36.45,
-     "start": 35.725,
+     "end": 38.7,
+     "start": 37.975,
      "text": "denominator"
     },
     {
-     "end": 37.125,
-     "start": 36.45,
+     "end": 39.375,
+     "start": 38.7,
      "text": "separately"
     },
     {
-     "end": 37.312,
-     "start": 37.125,
+     "end": 39.562,
+     "start": 39.375,
      "text": "so"
     },
     {
-     "end": 37.4,
-     "start": 37.312,
+     "end": 39.65,
+     "start": 39.562,
      "text": "the"
     },
     {
-     "end": 37.9,
-     "start": 37.4,
+     "end": 40.15,
+     "start": 39.65,
      "text": "boundary"
     },
     {
-     "end": 38.275,
-     "start": 37.9,
+     "end": 40.525,
+     "start": 40.15,
      "text": "stays"
     },
     {
-     "end": 39.25,
-     "start": 38.275,
+     "end": 41.5,
+     "start": 40.525,
      "text": "visible"
     },
     {
-     "end": 39.45,
-     "start": 39.25,
+     "end": 41.7,
+     "start": 41.5,
      "text": "."
     },
     {
-     "end": 40.475,
-     "start": 39.675,
+     "end": 42.725,
+     "start": 41.925,
      "text": "Superseded"
     },
     {
-     "end": 40.6,
-     "start": 40.475,
+     "end": 42.85,
+     "start": 42.725,
      "text": "and"
     },
     {
-     "end": 40.875,
-     "start": 40.6,
+     "end": 43.125,
+     "start": 42.85,
      "text": "held"
     },
     {
-     "end": 41.263,
-     "start": 40.875,
+     "end": 43.513,
+     "start": 43.125,
      "text": "rows"
     },
     {
-     "end": 41.625,
-     "start": 41.263,
+     "end": 43.875,
+     "start": 43.513,
      "text": "stay"
     },
     {
-     "end": 41.713,
-     "start": 41.625,
+     "end": 43.963,
+     "start": 43.875,
      "text": "in"
     },
     {
-     "end": 41.8,
-     "start": 41.713,
+     "end": 44.05,
+     "start": 43.963,
      "text": "the"
     },
     {
-     "end": 42.675,
-     "start": 41.8,
+     "end": 44.925,
+     "start": 44.05,
      "text": "denominator"
     },
     {
-     "end": 42.85,
-     "start": 42.675,
+     "end": 45.1,
+     "start": 44.925,
      "text": "and"
     },
     {
-     "end": 43.275,
-     "start": 42.85,
+     "end": 45.525,
+     "start": 45.1,
      "text": "visible"
     },
     {
-     "end": 43.4,
-     "start": 43.275,
+     "end": 45.65,
+     "start": 45.525,
      "text": "to"
     },
     {
-     "end": 44.0,
-     "start": 43.4,
+     "end": 46.25,
+     "start": 45.65,
      "text": "completeness"
     },
     {
-     "end": 45.2,
-     "start": 44.0,
+     "end": 47.45,
+     "start": 46.25,
      "text": "accounting"
     },
     {
-     "end": 45.4,
-     "start": 45.2,
+     "end": 47.65,
+     "start": 47.45,
      "text": ":"
     },
     {
-     "end": 46.075,
-     "start": 45.6,
+     "end": 48.325,
+     "start": 47.85,
      "text": "relabelling"
     },
     {
-     "end": 46.15,
-     "start": 46.075,
+     "end": 48.4,
+     "start": 48.325,
      "text": "a"
     },
     {
-     "end": 46.375,
-     "start": 46.15,
+     "end": 48.625,
+     "start": 48.4,
      "text": "row"
     },
     {
-     "end": 46.775,
-     "start": 46.375,
+     "end": 49.025,
+     "start": 48.625,
      "text": "pays"
     },
     {
-     "end": 46.95,
-     "start": 46.775,
+     "end": 49.2,
+     "start": 49.025,
      "text": "no"
     },
     {
-     "end": 47.4,
-     "start": 46.95,
+     "end": 49.65,
+     "start": 49.2,
      "text": "coverage"
     },
     {
-     "end": 47.537,
-     "start": 47.4,
+     "end": 49.787,
+     "start": 49.65,
      "text": "and"
     },
     {
-     "end": 47.925,
-     "start": 47.537,
+     "end": 50.175,
+     "start": 49.787,
      "text": "shrinks"
     },
     {
-     "end": 48.1,
-     "start": 47.925,
+     "end": 50.35,
+     "start": 50.175,
      "text": "no"
     },
     {
-     "end": 48.95,
-     "start": 48.1,
+     "end": 51.2,
+     "start": 50.35,
      "text": "board"
     },
     {
-     "end": 49.15,
-     "start": 48.95,
+     "end": 51.4,
+     "start": 51.2,
      "text": "."
     }
    ]

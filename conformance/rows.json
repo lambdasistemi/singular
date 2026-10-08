@@ -143,16 +143,16 @@
       "state": "uncovered"
     },
     {
-      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-pin transfer asserted authority that does not exist)",
+      "expected": "superseded \u2014 observation preserved, conformance claim withdrawn (registry has no owner role; owner-pin transfer asserted authority that does not exist)",
       "group": "registry-operations",
       "id": "historical-owner-change",
-      "note": "RESOLVED-BY-RULING (2026-09-12 operator order: the registry has NO owner role whatsoever, settling the owner-pinning question — there is no premise left to be pending on). Observation retained as DEFECT EVIDENCE: the chain accepted a Modify that changed the state owner (txid in receipt). state.ak End/migration validateOwnership calls are outstanding conformance defects owned by issue #17; the former previous-owner-refused control is retired, never landed. If any independent application-policy or hook requirement hides inside this row, it gets its own Lean clause and Given/When/Then — it does not inherit the closed question. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the integration of the six-field state: valid as history, superseded as expectation — the owner-pinning gate tests authority that does not exist.",
+      "note": "RESOLVED-BY-RULING (2026-09-12 operator order: the registry has NO owner role whatsoever, settling the owner-pinning question \u2014 there is no premise left to be pending on). Observation retained as DEFECT EVIDENCE: the chain accepted a Modify that changed the state owner (txid in receipt). state.ak End/migration validateOwnership calls are outstanding conformance defects owned by issue #17; the former previous-owner-refused control is retired, never landed. If any independent application-policy or hook requirement hides inside this row, it gets its own Lean clause and Given/When/Then \u2014 it does not inherit the closed question. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the integration of the six-field state: valid as history, superseded as expectation \u2014 the owner-pinning gate tests authority that does not exist.",
       "requirement": "Owner/hook pinning: a Modify that changes the state owner.",
       "source": "cardano-keri R5_plugin_pinned",
       "state": "bound-elsewhere"
     },
     {
-      "expected": "retired — the registry interface has no stake_script hook, so nothing runs this row",
+      "expected": "retired \u2014 the registry interface has no stake_script hook, so nothing runs this row",
       "group": "registry-operations",
       "id": "retired-stake-hook-with-withdrawal",
       "note": "Retired against the settled registry interface (registry mode, no hook): the registry has no stake_script hook and the model no withdrawal, so this authority hook of the imported partition (shared.ak validateOwnership Some branch: owner signatory + withdrawal under stake_script credential) is not a Singular promise and no session runs it. History, unchanged: it never executed on a ledger; credential registration was refused (MissingScriptWitnessesUTXOW without witness; cert-purpose CekError with it).",
@@ -161,7 +161,7 @@
       "state": "uncovered"
     },
     {
-      "expected": "retired — the registry interface has no stake_script hook, so nothing runs this row",
+      "expected": "retired \u2014 the registry interface has no stake_script hook, so nothing runs this row",
       "group": "registry-operations",
       "id": "retired-stake-hook-without-withdrawal",
       "note": "Retired against the settled registry interface (registry mode, no hook): the withdrawal-absent leg of the same imported-partition hook (shared.ak validateOwnership) is not a Singular promise and no session runs it. History, unchanged: it never executed on a ledger, for the same credential-registration blocker as retired-stake-hook-with-withdrawal.",
@@ -170,7 +170,7 @@
       "state": "uncovered"
     },
     {
-      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
+      "expected": "superseded \u2014 observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
       "group": "registry-operations",
       "id": "historical-owner-signed-sweep",
       "requirement": "Sweep of a non-legitimate UTxO, owner-signed.",
@@ -185,10 +185,10 @@
       "requirement": "Sweep by a non-owner.",
       "source": "cage custody",
       "state": "uncovered",
-      "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator — issue #17 owns the repair."
+      "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator \u2014 issue #17 owns the repair."
     },
     {
-      "expected": "superseded — claim withdrawn (the registry has no termination: End is refused for every party)",
+      "expected": "superseded \u2014 claim withdrawn (the registry has no termination: End is refused for every party)",
       "group": "registry-operations",
       "id": "historical-registry-termination",
       "requirement": "End burns the state token and closes the cage.",
@@ -197,10 +197,10 @@
       "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling (commit f3a68b1b, ownerless registry per NOTE-028/A-003): the state script refuses End for every party, and the model has no termination exit. The end-to-end example this row cited was removed in that commit and nothing runs this row; no live End run exists. The compiled Aiken suite asserts the refusal (cage_end.tests.ak end_owner_signed_refuses), which is narrower evidence than a ledger run and is not counted as coverage."
     },
     {
-      "expected": "observe and report — refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); the rejected-action refund-floor control runs in the same program",
+      "expected": "observe and report \u2014 refused, with the consumer-model conflict unresolved (crossed allocation enforced by the state script); the rejected-action refund-floor control runs in the same program",
       "group": "registry-operations",
       "id": "request-value-and-refund-routing",
-      "note": "Revised in #157 for registry-mode custody: the old oracle routed processed Update value to the checkpoint/consumer hook, a routing target removed by the registry-mode design. Under the registry-mode cage the fold routes each token to where the request names and refunds to the address custody records, so a crossed allocation is REFUSED at the state script (phase-2). Consumer-model conflict retained — the consumer's value-routing theorem still routes to a checkpoint, and the chain now sides with the canonical interface. Two requests owned by two wallets with unequal deposits are rejected together after the windows: refunded crossed, then as owed; two more, the first refunded a thousand lovelace short of its floor, then as owed. Every batch is compared with the model's reject batch.",
+      "note": "Revised in #157 for registry-mode custody: the old oracle routed processed Update value to the checkpoint/consumer hook, a routing target removed by the registry-mode design. Under the registry-mode cage the fold routes each token to where the request names and refunds to the address custody records, so a crossed allocation is REFUSED at the state script (phase-2). Consumer-model conflict retained \u2014 the consumer's value-routing theorem still routes to a checkpoint, and the chain now sides with the canonical interface. Two requests owned by two wallets with unequal deposits are rejected together after the windows: refunded crossed, then as owed; two more, the first refunded a thousand lovelace short of its floor, then as owed. Every batch is compared with the model's reject batch.",
       "requirement": "Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor.",
       "source": "cardano-keri R11_contribute_value, R11_retract_value; interface gist 2fb03c2e (registry mode)",
       "state": "uncovered"
@@ -312,7 +312,7 @@
       "state": "uncovered"
     },
     {
-      "expected": "out of scope — recorded, never claimed",
+      "expected": "out of scope \u2014 recorded, never claimed",
       "group": "consumer-resolution",
       "id": "checkpoint-and-treasury-policy",
       "requirement": "Bonds, poison, the juvenility window W and the signature threshold: the checkpoint machine's and the treasury's policy, not Singular's.",
@@ -345,11 +345,11 @@
       "state": "uncovered"
     },
     {
-      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; the no-owner-signer property is recorded history, not a live gate)",
+      "expected": "superseded \u2014 observation preserved, conformance claim withdrawn (registry has no owner role; the no-owner-signer property is recorded history, not a live gate)",
       "group": "registry-operations",
       "id": "historical-permissionless-fold",
-      "note": "Expectation: accept — Singular.Statements.fold_iff (sufficiency direction) requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; no owner signer may be required. Observation history: the row FAILED against the pre-#79 candidate (owner gate refused the no-signer mutant, verdict diverges-from-lean) and ACCEPTED against the repaired candidate by execution (verdict agrees-with-model). The expectation never changed; the candidate did. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the integration of the six-field state: the accepted observation stands as history (no owner signer is required); the removed-signer fault gate tests a role that does not exist.",
-      "requirement": "Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification specified.",
+      "note": "Expectation: accept \u2014 Singular.Statements.fold_iff (sufficiency direction) requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; no owner signer may be required. Observation history: the row FAILED against the pre-#79 candidate (owner gate refused the no-signer mutant, verdict diverges-from-lean) and ACCEPTED against the repaired candidate by execution (verdict agrees-with-model). The expectation never changed; the candidate did. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the integration of the six-field state: the accepted observation stands as history (no owner signer is required); the removed-signer fault gate tests a role that does not exist.",
+      "requirement": "Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction \u2014 the regression property the independent verification specified.",
       "source": "Singular.Statements.fold_iff sufficiency direction (Lean); observation history: FAILED against the pre-#79 candidate (owner gate), ACCEPTED against the repaired candidate by execution",
       "state": "bound-elsewhere"
     },
@@ -357,7 +357,7 @@
       "expected": "accept the fold; refuse the same-key duplicate `key-exists`; refuse the two-key wrong-distribution batch `net-mint-mismatch`; both refusals carry an accepting control",
       "group": "registry-operations",
       "id": "register-active-key",
-      "note": "#173 registration and refusal requirements, executed by #184 in the generic session. The registry boots under the PARAMETERLESS open application (Lean `openPolicyParameters = []`): its admission is universal, and cross-registry separation is a NAMED NON-GOAL, not an omission. The three observations are DISTINCT fixtures: the duplicate is refused `key-exists` BEFORE any mint arithmetic runs, so it is NOT the keyed-mint witness and its receipt leg carries no mint arithmetic at all; the keyed-mint witness needs two keys whose per-kind totals AGREE and whose per-(kind,key) totals do not (`2/0` claimed against `1/1` minted), which is the exact fault `Singular.Model.assetSame` catches and a per-kind sum does not, and its leg carries both mints so the loader compares them rather than reading a phrase. Each refusal carries an accepting control bound to a fold that landed in the same run — a fresh key for the duplicate, the right distribution for the same two keys — so neither refusal can pass because the request was merely malformed. TRACE LIMIT: both refusals are observed on chain in phase 2 attributed to the state script; the ledger surfaces an EMPTY Plutus log list, so the receipt records the validator trace as absent and the NAMES `key-exists` and `net-mint-mismatch` stay asserted in the compiled Aiken suite.",
+      "note": "#173 registration and refusal requirements, executed by #184 in the generic session. The registry boots under the PARAMETERLESS open application (Lean `openPolicyParameters = []`): its admission is universal, and cross-registry separation is a NAMED NON-GOAL, not an omission. The three observations are DISTINCT fixtures: the duplicate is refused `key-exists` BEFORE any mint arithmetic runs, so it is NOT the keyed-mint witness and its receipt leg carries no mint arithmetic at all; the keyed-mint witness needs two keys whose per-kind totals AGREE and whose per-(kind,key) totals do not (`2/0` claimed against `1/1` minted), which is the exact fault `Singular.Model.assetSame` catches and a per-kind sum does not, and its leg carries both mints so the loader compares them rather than reading a phrase. Each refusal carries an accepting control bound to a fold that landed in the same run \u2014 a fresh key for the duplicate, the right distribution for the same two keys \u2014 so neither refusal can pass because the request was merely malformed. TRACE LIMIT: both refusals are observed on chain in phase 2 attributed to the state script; the ledger surfaces an EMPTY Plutus log list, so the receipt records the validator trace as absent and the NAMES `key-exists` and `net-mint-mismatch` stay asserted in the compiled Aiken suite.",
       "requirement": "One `insertActive` request folds on the open registry and places exactly one `(activePolicy, key)` token in the output at the address and inline datum the request named. A second `insertActive` at the same known key is refused `key-exists`. A two-request batch at two DISTINCT keys whose claimed mint agrees per kind but disagrees per `(kind, key)` is refused `net-mint-mismatch`.",
       "source": "Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; open application, distinct refusal fixtures and the published trace limit",
       "state": "uncovered"
@@ -388,6 +388,15 @@
       "requirement": "On a real devnet, a folder may reject a pending request before its owner's retraction deadline. A reject while the request can still be folded, and one while its owner can still retract it, are each accepted by the chain and by the model, refund the owner the deposit and leave the registry state as it was. In each window a reject refunding the owner one lovelace short or to another key is refused by the chain and by the model.",
       "source": "Singular.exitStep and Singular.exitAdmission: a reject carries no admission; Singular.obligations for a reject; Singular.Statements.admitted_exit_is_the_exit and Singular.Statements.built_transaction_settles; issue #320",
       "state": "uncovered"
+    },
+    {
+      "id": "permanent-m1-two-edge-contract",
+      "group": "permanent-contract",
+      "requirement": "A new permanent registry admits registration and permanent termination only; every caller is refused the other five registry transitions, including terminal witnessing without approval and an excluded member of a mixed batch. Its ordinary open-datum CLI journey registers a key, updates the application payload without moving the registry and terminates the key permanently.",
+      "source": "Operator bounded contract ruling of 8 October 2026; issues #505/#506; Singular.M1 and Conformance.Edge.Permanent",
+      "expected": "accept registration and termination; refuse all other registry edges",
+      "state": "uncovered",
+      "note": "No bounded live consumer-comparison receipt is attached to the existing historical book. Compiled component evidence and packaged CLI evidence are reported separately; prior broader rows remain published. #498/#495 is subsequent M1 work, so the carve alone does not close M1."
     }
   ]
 }

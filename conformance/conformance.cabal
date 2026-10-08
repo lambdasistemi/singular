@@ -1,55 +1,54 @@
-cabal-version: 3.4
-name:          conformance
-version:       0.1.0.0
-synopsis:      Singular consumer conformance rows on a real devnet
+cabal-version:      3.4
+name:               conformance
+version:            0.1.0.0
+synopsis:           Singular consumer conformance rows on a real devnet
 description:
   Row runner for epic 18 (issue #63): executes the generic registry
   operations the naming demonstration cannot reach against a real
   devnet, with attributable refusals, executing negative controls and
   measurements against the devnet protocol maxima.
-license:       Apache-2.0
-license-file:  LICENSE
-author:        Paolo Veronelli
-maintainer:    paolo.veronelli@gmail.com
-category:      Cardano
-build-type:    Simple
-extra-source-files:
-  model-revision
-extra-doc-files:
-  README.md
+
+license:            Apache-2.0
+license-file:       LICENSE
+author:             Paolo Veronelli
+maintainer:         paolo.veronelli@gmail.com
+category:           Cardano
+build-type:         Simple
+extra-source-files: model-revision
+extra-doc-files:    README.md
 data-files:
   rows.json
-  test/fixtures/node-refusals/*.txt
-  test/fixtures/live-steps/overflowed-retirement.txt
-  test/fixtures/receipts/receipt-CG02.json
-  test/fixtures/receipts/receipt-CG05.json
   test/fixtures/bad-accepted/receipt-CG02.json
-  test/fixtures/bad-refused/receipt-CG05.json
-  test/fixtures/bad-venue/receipt-CG05.json
+  test/fixtures/bad-accepted-rejected/receipt-CG02.json
+  test/fixtures/bad-blueprint-tx/receipt-CS01.json
+  test/fixtures/bad-limit/receipt-CG05.json
   test/fixtures/bad-no-rejected/receipt-CG05.json
   test/fixtures/bad-phase/receipt-CG05.json
-  test/fixtures/bad-limit/receipt-CG05.json
-  test/fixtures/bad-accepted-rejected/receipt-CG02.json
-  test/fixtures/duplicate/receipt-CG02-a.json
-  test/fixtures/duplicate/receipt-CG02-b.json
-  test/fixtures/malformed/receipt-CG02.json
-  test/fixtures/good-blueprint-check/receipt-CS01.json
-  test/fixtures/good-param-check/receipt-CS06.json
-  test/fixtures/bad-blueprint-tx/receipt-CS01.json
-  test/fixtures/partial-valid/receipt-CS03.json
-  test/fixtures/partial-success/receipt-CS03.json
-  test/fixtures/partial-incomplete/receipt-CS03.json
-  test/fixtures/partial-empty/receipt-CS03.json
-  test/fixtures/partial-nodecl/receipt-CS03.json
-  test/fixtures/partial-legacy/receipt-CS03.json
-  test/fixtures/partial-refused/receipt-CS03.json
-  test/fixtures/derivation-valid/receipt-CA04.json
-  test/fixtures/derivation-venue/receipt-CA04.json
+  test/fixtures/bad-refused/receipt-CG05.json
+  test/fixtures/bad-venue/receipt-CG05.json
+  test/fixtures/derivation-bareprefix/receipt-CA04.json
   test/fixtures/derivation-incomplete/receipt-CA04.json
+  test/fixtures/derivation-legacyvenue/receipt-CA04.json
   test/fixtures/derivation-mislabelled/receipt-CA04.json
   test/fixtures/derivation-missingsource/receipt-CA04.json
-  test/fixtures/derivation-bareprefix/receipt-CA04.json
-  test/fixtures/derivation-legacyvenue/receipt-CA04.json
+  test/fixtures/derivation-valid/receipt-CA04.json
+  test/fixtures/derivation-venue/receipt-CA04.json
+  test/fixtures/duplicate/receipt-CG02-a.json
+  test/fixtures/duplicate/receipt-CG02-b.json
+  test/fixtures/good-blueprint-check/receipt-CS01.json
+  test/fixtures/good-param-check/receipt-CS06.json
+  test/fixtures/live-steps/overflowed-retirement.txt
+  test/fixtures/malformed/receipt-CG02.json
+  test/fixtures/node-refusals/*.txt
+  test/fixtures/partial-empty/receipt-CS03.json
+  test/fixtures/partial-incomplete/receipt-CS03.json
+  test/fixtures/partial-legacy/receipt-CS03.json
+  test/fixtures/partial-nodecl/receipt-CS03.json
+  test/fixtures/partial-refused/receipt-CS03.json
+  test/fixtures/partial-success/receipt-CS03.json
+  test/fixtures/partial-valid/receipt-CS03.json
+  test/fixtures/receipts/receipt-CG02.json
+  test/fixtures/receipts/receipt-CG05.json
 
 common warnings
   ghc-options:
@@ -58,8 +57,7 @@ common warnings
     -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
     -Wredundant-constraints
 
-  default-language: GHC2021
-
+  default-language:   GHC2021
   default-extensions:
     BlockArguments
     DerivingStrategies
@@ -69,159 +67,161 @@ common warnings
     StrictData
 
 library
-  import:           warnings
-  hs-source-dirs:   lib
+  import:          warnings
+  hs-source-dirs:  lib
   exposed-modules:
+    Conformance.Authenticate
     Conformance.Book
     Conformance.Cli.Controls
-    Conformance.Compare.Registration
     Conformance.Compare.Perturbation
-    Conformance.Authenticate
-    Conformance.Receipt
-    Conformance.NodeRejection
-    Conformance.PurposeUnits
-    Conformance.Refusal
-    Conformance.EvidencePage
-    Conformance.Rows
-    Conformance.RowNames
-    Conformance.Story.Binding
-    Conformance.Story.Live
-    Conformance.Story.Specification
-    Conformance.Story.Identity
-    Conformance.Lean.Registration
-    Conformance.Lean.Retirement
-    Conformance.Lean.Oracle
+    Conformance.Compare.Registration
     Conformance.Edge.EarlyReject
     Conformance.Edge.Exit
     Conformance.Edge.Occupied
+    Conformance.Edge.Permanent
     Conformance.Edge.Programs
     Conformance.Edge.Register
     Conformance.Edge.Retire
     Conformance.Edge.RetractionWindow
     Conformance.Edge.Sequence
+    Conformance.EvidencePage
     Conformance.Extent
     Conformance.Fold.KeyedMint
+    Conformance.Lean.Oracle
+    Conformance.Lean.Registration
+    Conformance.Lean.Retirement
+    Conformance.NodeRejection
     Conformance.Observe.Payments
+    Conformance.PurposeUnits
+    Conformance.Receipt
+    Conformance.Refusal
     Conformance.Replay
-  other-modules:
-    Conformance.Evidence.Asset
+    Conformance.RowNames
+    Conformance.Rows
+    Conformance.Story.Binding
+    Conformance.Story.Identity
+    Conformance.Story.Live
+    Conformance.Story.Specification
+
+  other-modules:   Conformance.Evidence.Asset
   build-depends:
-    , aeson >=2.1 && <2.3
-    , base >=4.14 && <5
-    , bytestring >=0.11 && <0.13
-    , containers >=0.6 && <0.8
-    , directory >=1.3 && <1.4
-    , filepath >=1.4 && <1.6
-    , operational >=0.2.4.2 && <0.3
-    , process >=1.6 && <1.7
-    , scientific >=0.3 && <0.4
-    , template-haskell >=2.18 && <2.25
-    , text >=2.0 && <2.2
-    , vector >=0.13 && <0.14
+    , aeson             >=2.1     && <2.3
+    , base              >=4.14    && <5
+    , bytestring        >=0.11    && <0.13
+    , containers        >=0.6     && <0.8
     , crypton
+    , directory         >=1.3     && <1.4
+    , filepath          >=1.4     && <1.6
+    , operational       >=0.2.4.2 && <0.3
+    , process           >=1.6     && <1.7
+    , scientific        >=0.3     && <0.4
+    , template-haskell  >=2.18    && <2.25
+    , text              >=2.0     && <2.2
+    , vector            >=0.13    && <0.14
 
 common live-runner
-  hs-source-dirs:   app ../offchain/private-facade
+  hs-source-dirs: app ../offchain/private-facade
   other-modules:
+    Conformance.BlueprintEncoding
+    Conformance.FoldFixture
+    Conformance.ForkKeys
+    Conformance.Mirror
+    Conformance.Run
+    Conformance.Run.Actor
+    Conformance.Run.Book
+    Conformance.Run.Cage
+    Conformance.Run.CaRows
+    Conformance.Run.CgRows
+    Conformance.Run.Control
+    Conformance.Run.CsRows
+    Conformance.Run.Environment
+    Conformance.Run.Fold
+    Conformance.Run.ForkProbe
+    Conformance.Run.Live
+    Conformance.Run.Manifest
+    Conformance.Run.Node
+    Conformance.Run.Observe
+    Conformance.Run.Receipts
+    Conformance.Run.Replay
+    Conformance.Run.Retraction
+    Conformance.Run.Step
+    Conformance.Run.Submit
+    Conformance.Run.Units
+    Conformance.Run.Wallet
+    Conformance.ScriptParameters
+    Paths_conformance
     Singular.Registry.Private.Archive
     Singular.Registry.Private.EpochParameters
     Singular.Registry.Private.Facade
     Singular.Registry.Private.Source
     Singular.Registry.Private.TimePublication
-    Conformance.BlueprintEncoding
-    Conformance.ScriptParameters
-    Conformance.ForkKeys
-    Conformance.Mirror
-    Conformance.Run
-    Conformance.FoldFixture
-    Conformance.Run.ForkProbe
-    Conformance.Run.CgRows
-    Conformance.Run.CsRows
-    Conformance.Run.CaRows
-    Conformance.Run.Live
-    Conformance.Run.Retraction
-    Conformance.Run.Step
-    Conformance.Run.Replay
-    Conformance.Run.Receipts
-    Conformance.Run.Fold
-    Conformance.Run.Book
-    Conformance.Run.Units
-    Conformance.Run.Cage
-    Conformance.Run.Wallet
-    Conformance.Run.Submit
-    Conformance.Run.Node
-    Conformance.Run.Environment
-    Conformance.Run.Actor
-    Conformance.Run.Observe
-    Conformance.Run.Manifest
-    Conformance.Run.Control
-    Paths_conformance
+
   build-depends:
-    , chain-follower
-    , contra-tracer
-    , crypton
-    , http-types
-    , memory
-    , wai
-    , warp
-    , case-insensitive
-    , ouroboros-consensus:cardano
-    , ouroboros-consensus:protocol
-    , ouroboros-network:api
-    , cardano-ledger-byron
-    , cardano-ledger-read
-    , singular-registry:koios-http
-    , cardano-slotting
-    , ouroboros-consensus
-    , plutus-ledger-api
-    , serialise
-    , transformers
-    , aeson >=2.1 && <2.3
+    , aeson                             >=2.1     && <2.3
     , async
-    , base >=4.14 && <5
+    , base                              >=4.14    && <5
     , base16-bytestring
-    , bytestring >=0.11 && <0.13
+    , bytestring                        >=0.11    && <0.13
     , cardano-crypto-class
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
+    , cardano-ledger-byron
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , singular-registry
-    , singular-registry:local-services
+    , cardano-ledger-read
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
+    , case-insensitive
+    , chain-follower
     , conformance
-    , containers >=0.6 && <0.8
-    , directory >=1.3 && <1.4
-    , filepath >=1.4 && <1.6
-    , operational >=0.2.4.2 && <0.3
+    , containers                        >=0.6     && <0.8
+    , contra-tracer
+    , crypton
+    , directory                         >=1.3     && <1.4
+    , filepath                          >=1.4     && <1.6
+    , http-types
+    , memory
     , microlens
     , mts:mpf-write
+    , operational                       >=0.2.4.2 && <0.3
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
+    , ouroboros-network:api
     , plutus-core
+    , plutus-ledger-api
     , plutus-tx
-    , process >=1.6 && <1.7
-    , text >=2.0 && <2.2
+    , process                           >=1.6     && <1.7
+    , serialise
+    , singular-registry
+    , singular-registry:koios-http
+    , singular-registry:local-services
+    , text                              >=2.0     && <2.2
     , time
+    , transformers
     , unix
-    , vector >=0.13 && <0.14
+    , vector                            >=0.13    && <0.14
+    , wai
+    , warp
 
-  ghc-options:      -threaded -with-rtsopts=-N
+  ghc-options:    -threaded -with-rtsopts=-N
 
 executable conformance
-  import: warnings, live-runner
+  import:         warnings, live-runner
   hs-source-dirs: app-default
-  main-is: Main.hs
+  main-is:        Main.hs
 
 -- #299: the ordinary CLI's refusal controls, run against a node and
 -- judged from their receipts.
 executable cli-controls
-  import:           warnings
-  hs-source-dirs:   app-cli
-  main-is:          Main.hs
+  import:         warnings
+  hs-source-dirs: app-cli
+  main-is:        Main.hs
   other-modules:
     Conformance.Cli.Admission
     Conformance.Cli.Attach
@@ -230,53 +230,55 @@ executable cli-controls
     Conformance.Cli.Node
     Conformance.Cli.Proof
     Conformance.Cli.Withhold
+
   build-depends:
-    , aeson >=2.1 && <2.3
-    , case-insensitive
-    , http-types
-    , wai
-    , warp
+    , aeson                             >=2.1     && <2.3
     , aeson-pretty
     , async
-    , base >=4.14 && <5
+    , base                              >=4.14    && <5
     , base16-bytestring
-    , bytestring >=0.11 && <0.13
+    , bytestring                        >=0.11    && <0.13
     , cardano-crypto-class
     , cardano-ledger-api
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-tx-tools:tx-build
+    , case-insensitive
     , conformance
-    , containers >=0.6 && <0.8
-    , directory >=1.3 && <1.4
-    , filepath >=1.4 && <1.6
+    , containers                        >=0.6     && <0.8
+    , directory                         >=1.3     && <1.4
+    , filepath                          >=1.4     && <1.6
+    , http-types
     , microlens
     , mts:mpf-write
-    , operational >=0.2.4.2 && <0.3
+    , operational                       >=0.2.4.2 && <0.3
     , plutus-core
-    , process >=1.6 && <1.7
+    , process                           >=1.6     && <1.7
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
-    , text >=2.0 && <2.2
+    , singular-registry:local-services
+    , text                              >=2.0     && <2.2
     , time
     , unix
-  ghc-options:      -threaded -with-rtsopts=-N
+    , wai
+    , warp
+
+  ghc-options:    -threaded -with-rtsopts=-N
 
 executable fold-budget-regression
-  import: warnings, live-runner
+  import:         warnings, live-runner
   hs-source-dirs: test/fold-budget
-  main-is: BudgetMain.hs
+  main-is:        BudgetMain.hs
 
 -- #287: the extent check CI runs over the receipts of every live run.
 executable conformance-extent
-  import:           warnings
-  hs-source-dirs:   test/extent
-  main-is:          ExtentMain.hs
+  import:         warnings
+  hs-source-dirs: test/extent
+  main-is:        ExtentMain.hs
   build-depends:
-    , aeson >=2.1 && <2.3
-    , base >=4.14 && <5
+    , aeson        >=2.1  && <2.3
+    , base         >=4.14 && <5
     , conformance
     , containers
     , directory
@@ -284,115 +286,118 @@ executable conformance-extent
     , text
 
 test-suite conformance-tests
-  import:           warnings
-  type:             exitcode-stdio-1.0
-  hs-source-dirs:   test app app-default app-cli ../offchain/test-tags
-  main-is:          Main.hs
+  import:         warnings
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test app app-default app-cli ../offchain/test-tags
+  main-is:        Main.hs
+
   -- the history-withholding forwarder runs warp, whose timer manager needs
   -- the threaded runtime
-  ghc-options:      -threaded
+  ghc-options:    -threaded
   other-modules:
-    Test.Tags
-    Conformance.Mirror
-    Conformance.FoldFixture
-    Conformance.Run.Control
-    Conformance.Run.Environment
-    Conformance.Run.Actor
-    Conformance.Run.Manifest
-    Conformance.Run.Observe
-    Conformance.Run.Cage
-    Conformance.Run.Wallet
-    Conformance.Run.Submit
-    Conformance.Run.Book
-    Conformance.Run.Units
-    Conformance.Run.Fold
-    Conformance.Run.Live
-    Conformance.Run.Retraction
-    Conformance.Run.Step
-    Conformance.Run.Replay
-    Conformance.Support.Replay
-    Conformance.Support.RunReplay
-    Conformance.Support.Extent
-    Conformance.Support.Retraction
-    Conformance.Support.Step
-    Conformance.Support.ObservedTx
-    Conformance.Fixture.Receipt
-    Conformance.Fixture.NodeRejection
-    Conformance.Story.Usage
-    Conformance.Support.Authenticate
-    Conformance.Support.Fixture
-    Conformance.Support.HeldView
-    Conformance.Support.RegistrationComparison
-    Conformance.Support.Payments
-    Conformance.Support.Oracle
-    Conformance.Support.DriverTransport
-    Conformance.Support.FixtureChild
-    Conformance.Support.Binding
-    Conformance.Support.CliControls
-    Conformance.Support.CliProof
-    Conformance.Support.FoldHistory
-    Conformance.Support.CliAdmission
-    Conformance.Support.CliAttach
     Conformance.Cli.Admission
     Conformance.Cli.Attach
-    Conformance.Cli.Proof
     Conformance.Cli.FoldHistory
+    Conformance.Cli.Proof
     Conformance.Cli.Withhold
-    Conformance.Support.Withhold
+    Conformance.Fixture.NodeRejection
+    Conformance.Fixture.Receipt
+    Conformance.FoldFixture
+    Conformance.Mirror
+    Conformance.Run.Actor
+    Conformance.Run.Book
+    Conformance.Run.Cage
+    Conformance.Run.Control
+    Conformance.Run.Environment
+    Conformance.Run.Fold
+    Conformance.Run.Live
+    Conformance.Run.Manifest
+    Conformance.Run.Observe
+    Conformance.Run.Replay
+    Conformance.Run.Retraction
+    Conformance.Run.Step
+    Conformance.Run.Submit
+    Conformance.Run.Units
+    Conformance.Run.Wallet
+    Conformance.Story.Usage
+    Conformance.Support.Authenticate
+    Conformance.Support.Binding
+    Conformance.Support.CliAdmission
+    Conformance.Support.CliAttach
+    Conformance.Support.CliControls
+    Conformance.Support.CliProof
+    Conformance.Support.DriverTransport
+    Conformance.Support.EvidencePage
+    Conformance.Support.Extent
+    Conformance.Support.Fixture
+    Conformance.Support.FixtureChild
+    Conformance.Support.FoldHistory
+    Conformance.Support.HeldView
+    Conformance.Support.Identity
+    Conformance.Support.ObservedTx
+    Conformance.Support.Oracle
+    Conformance.Support.Payments
+    Conformance.Support.Programs
+    Conformance.Support.PurposeUnits
     Conformance.Support.Receipt
     Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
-    Conformance.Support.EvidencePage
+    Conformance.Support.RegistrationComparison
+    Conformance.Support.Replay
+    Conformance.Support.Retraction
     Conformance.Support.Rows
-    Conformance.Support.Programs
-    Conformance.Support.Identity
+    Conformance.Support.RunReplay
     Conformance.Support.Specification
-    Conformance.Support.PurposeUnits
+    Conformance.Support.Step
+    Conformance.Support.Withhold
     Paths_conformance
+    Test.Tags
+
   build-depends:
-    , aeson >=2.1 && <2.3
-    , case-insensitive
-    , http-types
-    , wai
-    , warp
-    , base >=4.14 && <5
+    , aeson                             >=2.1     && <2.3
+    , base                              >=4.14    && <5
     , base16-bytestring
-    , bytestring >=0.11 && <0.13
+    , bytestring                        >=0.11    && <0.13
     , cardano-crypto-class
-    , cardano-ledger-binary
-    , cardano-node-clients
-    , cardano-node-clients:devnet
-    , conformance
-    , mts:mpf-write
-    , plutus-core
-    , plutus-tx
-    , time
-    , unix
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-babbage
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
+    , case-insensitive
+    , conformance
+    , containers                        >=0.6     && <0.8
+    , directory                         >=1.3     && <1.4
+    , filepath                          >=1.4     && <1.6
+    , hspec                             >=2.7     && <2.12
+    , http-types
     , microlens
-    , singular-registry
-    , singular-registry:local-services
-    , singular-registry:koios-http
-    , validation-selective
-    , ouroboros-consensus:{ouroboros-consensus, cardano}
+    , mts:mpf-write
+    , operational                       >=0.2.4.2 && <0.3
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , plutus-core
     , plutus-ledger-api
-    , cardano-slotting
+    , plutus-tx
+    , process                           >=1.6     && <1.7
     , serialise
-    , transformers
+    , singular-registry
+    , singular-registry:koios-http
+    , singular-registry:local-services
     , strict-sop-core
-    , containers >=0.6 && <0.8
-    , directory >=1.3 && <1.4
-    , filepath >=1.4 && <1.6
-    , hspec >=2.7 && <2.12
-    , operational >=0.2.4.2 && <0.3
-    , process >=1.6 && <1.7
-    , temporary >=1.3 && <1.4
-    , text >=2.0 && <2.2
-    , vector >=0.13 && <0.14
+    , temporary                         >=1.3     && <1.4
+    , text                              >=2.0     && <2.2
+    , time
+    , transformers
+    , unix
+    , validation-selective
+    , vector                            >=0.13    && <0.14
+    , wai
+    , warp

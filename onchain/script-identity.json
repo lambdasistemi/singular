@@ -31,6 +31,31 @@
       "parameters": 1
     },
     {
+      "title": "permanent_state.state.mint",
+      "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+      "parameters": 0
+    },
+    {
+      "title": "permanent_state.state.spend",
+      "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+      "parameters": 0
+    },
+    {
+      "title": "permanent_state.state.else",
+      "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+      "parameters": 0
+    },
+    {
+      "title": "permanent_witness.witness.mint",
+      "hash": "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1",
+      "parameters": 2
+    },
+    {
+      "title": "permanent_witness.witness.else",
+      "hash": "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1",
+      "parameters": 2
+    },
+    {
       "title": "request.request.spend",
       "hash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
       "parameters": 2
