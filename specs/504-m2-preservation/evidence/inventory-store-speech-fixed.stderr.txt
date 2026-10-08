@@ -1,0 +1,1 @@
+error (ignored): SQLite database '/home/paolino/.cache/nix/eval-cache-v6/211f204900b128139e12a8f274097639ad7ae17ef4ad2a3976b8301196c3b77a.sqlite' is busy

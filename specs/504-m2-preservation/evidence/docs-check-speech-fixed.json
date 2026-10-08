@@ -1,0 +1,22 @@
+{
+  "command": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=10s",
+    "300s",
+    "nix",
+    "run",
+    "--quiet",
+    ".#docs-check"
+  ],
+  "cwd": "/code/singular-issue-504",
+  "sha": "e88599545b81902e01041b7995930d23e5898da7",
+  "tree": "8c36f274c27a251f55b2052c356bb14663f8ef34",
+  "started": "2026-10-08T11:47:55.949Z",
+  "ended": "2026-10-08T11:49:02.739Z",
+  "durationSeconds": 66.79,
+  "exit": 0,
+  "signal": null,
+  "stdoutSha256": "d0fd06921075118fe11d9344bb5349b14b4de382cd80ea95d4256bd5a2a17d89",
+  "stderrSha256": "60b469e791ed40ab6fd556236b3dc3ee3c16fec90ba9fc8aa972f8e6bd98707c"
+}

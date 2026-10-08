@@ -1,0 +1,21 @@
+test-tags: conformance-tests: 30 spec calls, 30 wrappers
+test-tags: excluded conformance/coverage/evaluation/spike.cabal:cleanup-control (not Hspec)
+test-tags: record-value-tests: 0 spec calls, 1 wrappers
+test-tags: cage-tests: 48 spec calls, 48 wrappers
+test-tags: contract-tests: 5 spec calls, 5 wrappers
+test-tags: e2e-tests: 11 spec calls, 11 wrappers
+code inventory: 2751 files discovered and mapped (627 code, 2124 non-code) under /nix/store/22pbs4mdqqb8ghrphn3wknfqv42hia7k-source
+discovery context: git-free source — ignore rules inert; every present file is repository source
+families: aiken 56, css 2, haskell 372, html 6, javascript 16, just 4, lean 52, nix 19, python 42, shell 54, workflow-yaml 4
+lint policies over code files: enforced 627  (pending rows would be debt, not coverage)
+format policies over code files: enforced 627
+generated code rows: onchain/validators/cage_vectors.ak, simulator/formal/Audit.lean, simulator/formal/Driver.lean, simulator/formal/DriverMain.lean, simulator/formal/Lemmas.lean, simulator/formal/LifecycleMain.lean, simulator/formal/Main.lean, simulator/formal/Model.lean, simulator/formal/Naming.lean, simulator/formal/NamingAudit.lean, simulator/formal/NamingLemmas.lean, simulator/formal/NamingLifecycle.lean, simulator/formal/NamingLifecycleAudit.lean, simulator/formal/NamingLifecycleStatements.lean, simulator/formal/NamingMain.lean, simulator/formal/NamingStatements.lean, simulator/formal/NamingWire.lean, simulator/formal/NamingWireAudit.lean, simulator/formal/NamingWireStatements.lean, simulator/formal/Singular.lean, simulator/formal/Statements.lean, simulator/index.html
+non-code classes: aiken-manifests 2, biome-config 1, cabal-manifests 5, contract-results 2, diff-patch-inputs 5, formatter-config 1, gitignore-files 4, json-data 225, key-material 6, lake-lock 1, lake-manifest-toml 1, lean-model-export 9, lean-mutation-evidence 1, lean-toolchain-pin 1, license-texts 2, local-services-cbor-recordings 9, lock-files 8, log-artifacts 15, markdown 348, mkdocs-config 1, model-revision 1, narration-clips 1132, node-confinement-allowlist 1, release-config 2, script-identity 2, signed-tx-exports-allowlist 1, simulator-corpus-copy 1, simulator-identity 1, simulator-mirror-json 4, site-icon 1, speech-companion 308, text-artifacts 21, tsv-artifacts 2
+haskell extents reported independently: hlint 264 offchain / 108 conformance files; fourmolu house-config 264 offchain / 108 conformance files; no exclusions
+inventory: PASS — every discovered file is mapped
+test-tags controls: conformance-tests: removed and unknown-tag mutations rejected (30 each)
+test-tags: excluded conformance/coverage/evaluation/spike.cabal:cleanup-control (not Hspec)
+test-tags controls: record-value-tests: removed and unknown-tag mutations rejected (1 each)
+test-tags controls: cage-tests: removed and unknown-tag mutations rejected (48 each)
+test-tags controls: contract-tests: removed and unknown-tag mutations rejected (5 each)
+test-tags controls: e2e-tests: removed and unknown-tag mutations rejected (11 each)

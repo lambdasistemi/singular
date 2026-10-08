@@ -2,7 +2,13 @@
 21ed6a94894819763e6f5c001dec2862b0a5c9407bfe9dd6f1a25e801c75ddfd  specs/504-m2-preservation/evidence/ci-diagnosis.json
 5eb8a788208bacf3b66cf392f0166d3012ec8e2eaf43979e25ff953ed7b0d034  specs/504-m2-preservation/evidence/docs-check-initial.json
 f896ced86055112b4adcf749c169a091eca1a5c45fa8d7a0291af16829a15ed5  specs/504-m2-preservation/evidence/docs-check-initial.stderr.txt
+edea35bbe71c594f4b63c64b767f7ca7153bf1d55b7f5630c384f5556825b54b  specs/504-m2-preservation/evidence/docs-check-speech-fixed.json
+60b469e791ed40ab6fd556236b3dc3ee3c16fec90ba9fc8aa972f8e6bd98707c  specs/504-m2-preservation/evidence/docs-check-speech-fixed.stderr.txt
+d0fd06921075118fe11d9344bb5349b14b4de382cd80ea95d4256bd5a2a17d89  specs/504-m2-preservation/evidence/docs-check-speech-fixed.stdout.txt
 5dcf71feea09bef70f483f22ead575728766db5a15f9a82f307beba4e7491e79  specs/504-m2-preservation/evidence/fresh-fetch.json
+f8928c4fe9e22b61f1b28db5406e7bbcf81ae0f585de824187436e99fe9739a2  specs/504-m2-preservation/evidence/inventory-store-speech-fixed.json
+37d6b0808e24278778a21ceaae654200470975ab3749a1a27f2760b582feb5b8  specs/504-m2-preservation/evidence/inventory-store-speech-fixed.stderr.txt
+8e353672ca79c5d8ea26c4a8e9129dca943a184e7e404b709be0eae656732d1d  specs/504-m2-preservation/evidence/inventory-store-speech-fixed.stdout.txt
 df9661e180e15cc016699dd9a09c6f3933c93a4e21489a1dda5b9c74ec66635b  specs/504-m2-preservation/evidence/inventory-store.json
 2f652c6869da9b6f05052ab469a59d7794f81160682ba87568364f7a90cd9984  specs/504-m2-preservation/evidence/inventory-store.stderr.txt
 2e212686aa226118aa49dff6349aafd71af456f1a27155e0be76384d3ea68d2b  specs/504-m2-preservation/evidence/inventory-store.stdout.txt
