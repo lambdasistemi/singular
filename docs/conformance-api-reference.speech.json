@@ -55,6 +55,10 @@
       "pause": 300
     },
     {
+      "text": "Conformance.Edge.Permanent — source",
+      "pause": 300
+    },
+    {
       "text": "Conformance.Edge.Programs — source",
       "pause": 300
     },
@@ -189,6 +193,6 @@
   ],
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "0e98328eca3247616a944ca2243c39b7dfdf0815c4f9f47d6d1052441a1c2881"
+    "sha256": "b194f036d22b32982dbabb1c772ff667a2c97140417242e5a4702c30eaadd769"
   }
 }

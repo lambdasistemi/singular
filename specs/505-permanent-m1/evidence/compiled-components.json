@@ -4,7 +4,7 @@
     "name": "Aiken",
     "version": "v1.1.21+unknown"
   },
-  "blueprintSha256": "a2f4be27a5c8eb27409c5b5460bad3121bdfc5ac3bcdc97fc125dd59d4d83804",
+  "blueprintSha256": "a4497c6b11c20c3e0a36ec8f34861dfd8e85fdfd3be84a16795a978ff3ec958f",
   "rows": [
     {
       "validator": "state.state.spend",
@@ -543,6 +543,94 @@
       "exit": 1,
       "accepted": false,
       "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.mint",
+      "scriptHash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
+      "edge": null,
+      "case": "application-0",
+      "contextSha256": "a8413b2394c62a7d5c489d46dc0a0ed33258d2f8c4c02cda5d3795d6de1a7417",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.mint",
+      "scriptHash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
+      "edge": null,
+      "case": "application-1",
+      "contextSha256": "491d01703f98dd4e263efce095354abd822e5357138f80442e7ff6a44c046edc",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.spend",
+      "scriptHash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
+      "edge": null,
+      "case": "application-2",
+      "contextSha256": "6feed8fcca164efd7b974f75f040cfe1dad5d1bf931a1381637e3ea5de3da796",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.spend",
+      "scriptHash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
+      "edge": null,
+      "case": "application-3",
+      "contextSha256": "5c1a0b25e7d391f11e9bd1d7c150942a93d40397d0397244b21c416ea640084d",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "permanent_open_datum.open_datum.mint",
+      "scriptHash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "edge": null,
+      "case": "application-0",
+      "contextSha256": "a8413b2394c62a7d5c489d46dc0a0ed33258d2f8c4c02cda5d3795d6de1a7417",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "permanent_open_datum.open_datum.mint",
+      "scriptHash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "edge": null,
+      "case": "application-1",
+      "contextSha256": "491d01703f98dd4e263efce095354abd822e5357138f80442e7ff6a44c046edc",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "permanent_open_datum.open_datum.spend",
+      "scriptHash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "edge": null,
+      "case": "application-2",
+      "contextSha256": "6feed8fcca164efd7b974f75f040cfe1dad5d1bf931a1381637e3ea5de3da796",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "permanent_open_datum.open_datum.spend",
+      "scriptHash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "edge": null,
+      "case": "application-3",
+      "contextSha256": "5c1a0b25e7d391f11e9bd1d7c150942a93d40397d0397244b21c416ea640084d",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
       "boundaryFaultDetected": false
     }
   ],

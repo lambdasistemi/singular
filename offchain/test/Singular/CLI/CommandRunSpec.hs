@@ -805,7 +805,7 @@ insertion's booking, which mints under it, fails its local evaluation.
 -}
 failingOpenDatum :: Aeson.Value
 failingOpenDatum = blueprintOf $ \title arity ->
-    if title == "open_datum.open_datum"
+    if title == "permanent_open_datum.open_datum"
         then errorProgram arity
         else unitProgram arity
 
@@ -819,7 +819,7 @@ blueprintOf program =
         , "validators"
             .= [ validator "permanent_state.state" 1
                , validator "request.request" 3
-               , validator "open_datum.open_datum" 2
+               , validator "permanent_open_datum.open_datum" 2
                , validator "witness.witness" 3
                , validator "permanent_witness.witness" 3
                ]

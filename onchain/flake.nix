@@ -404,13 +404,15 @@
           buildPhase = ''
             ${aikenPrelude}
             aiken check -m 'permanent_boundary.{..}' --seed 505 > contexts.json
+            aiken check -m 'permanent_open_datum.{..}' --seed 505 > application-contexts.json
             python3 ${../tools/m1_boundary.py} \
               --blueprint ${plutus-blueprint} --contexts contexts.json \
+              --application-contexts application-contexts.json \
               --aiken ${pkgs.aiken}/bin/aiken --receipts-dir receipts
           '';
           installPhase = ''
             mkdir -p "$out"
-            cp -r receipts contexts.json "$out/"
+            cp -r receipts contexts.json application-contexts.json "$out/"
           '';
         };
         scriptIdentityChecks = { inherit script-identity reference-publication-size permanent-boundary; };

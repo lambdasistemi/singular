@@ -44946,11 +44946,61 @@
    ]
   },
   "docs-conformance-api-reference/what-this-reference-contains-11": {
-   "audio_sha256": "b361121fb4a80119aaa2cc2fdad744038026117ac304f395832c6a108a92f28c",
+   "audio_sha256": "0e9ae17fd2c3a26218125627e0896311f3cf868f5bbc0b2ee92044fec254f166",
+   "characters": 35,
+   "cost": 2.17e-05,
+   "duration": 2.1,
+   "index": 11,
+   "key": "67dcec6e04e30b50907af3c79afe1efed86db3fc9e32cb4499baac04f84e6828",
+   "page": "docs/conformance-api-reference.md",
+   "pause_ms": 300,
+   "section": "what-this-reference-contains",
+   "sent_text": "Conformance.Edge.Permanent — source",
+   "text": "Conformance.Edge.Permanent — source",
+   "words": [
+    {
+     "end": 0.75,
+     "start": 0.175,
+     "text": "Conformance"
+    },
+    {
+     "end": 0.8,
+     "start": 0.75,
+     "text": "."
+    },
+    {
+     "end": 0.95,
+     "start": 0.8,
+     "text": "Edge"
+    },
+    {
+     "end": 1.0,
+     "start": 0.95,
+     "text": "."
+    },
+    {
+     "end": 1.388,
+     "start": 1.0,
+     "text": "Permanent"
+    },
+    {
+     "end": 1.45,
+     "start": 1.388,
+     "text": "—"
+    },
+    {
+     "end": 2.1,
+     "start": 1.45,
+     "text": "source"
+    }
+   ]
+  },
+  "docs-conformance-api-reference/what-this-reference-contains-12": {
+   "audio_sha256": "fc05bfc1a0b7b409de4e085c920230c1a0065bfaf97663c5141e94818a6b7af8",
    "characters": 34,
    "cost": 2.108e-05,
    "duration": 2.125,
-   "index": 11,
+   "index": 12,
    "key": "f5d3d15fa5862301c603bdd69cfd732dd9b5fa4a14fd555e7baf8910907f8f38",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -44995,12 +45045,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-12": {
-   "audio_sha256": "d74a95d9640c0671eba3d978b073a92ad1b47295ebde1e735beaf31372da6708",
+  "docs-conformance-api-reference/what-this-reference-contains-13": {
+   "audio_sha256": "3acc1a8fd99acf4fa9def7f490a778b71de6e2c2094e17adf6f0aa02b4ddae4c",
    "characters": 34,
    "cost": 2.108e-05,
    "duration": 2.15,
-   "index": 12,
+   "index": 13,
    "key": "513c56fe0dea41c52edda2a13075b62196599b4bbd2dfee98def0af764dac584",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45045,12 +45095,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-13": {
-   "audio_sha256": "8848d9b6c19a1286e6fc6dde1237ddfe731d31c4ed5fcda3dbb844d8097502db",
+  "docs-conformance-api-reference/what-this-reference-contains-14": {
+   "audio_sha256": "78398f92d8495fa1ea88f42d13d74c1405534a33df50e8073b7f935f25ad01d5",
    "characters": 32,
    "cost": 1.984e-05,
    "duration": 2.05,
-   "index": 13,
+   "index": 14,
    "key": "02f49e88c0b9fc865f16691a1d8f4d81168a7f312036aa88d972afdd55a4fb06",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45095,12 +45145,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-14": {
-   "audio_sha256": "940b2e1abb06e3af442381d1d1de49b1e036f7769c853c8b4053286c39c23556",
+  "docs-conformance-api-reference/what-this-reference-contains-15": {
+   "audio_sha256": "a65c8aa5edd0b11388d373a612b81308e4657ccfb180028e660aaf1006c3bdd4",
    "characters": 42,
    "cost": 2.604e-05,
    "duration": 2.425,
-   "index": 14,
+   "index": 15,
    "key": "74492a3317ae190d10be37bc32d61ff144bd9250cc185004a2be3ea0fd2f172b",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45145,12 +45195,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-15": {
-   "audio_sha256": "f54558292a09a9c4ace58f319c182abcab86939606eff2929fb350dcdcf9a008",
+  "docs-conformance-api-reference/what-this-reference-contains-16": {
+   "audio_sha256": "e71e12c5d05201f24d8c3e178e2f2eebf2ad2f7d7fbca1864ae6063136d3b2df",
    "characters": 34,
    "cost": 2.108e-05,
    "duration": 2.125,
-   "index": 15,
+   "index": 16,
    "key": "d59710a4f4566bc4b29d2da351460a6b73b3ccf2983c6bf625bb703ee9a29147",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45195,12 +45245,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-16": {
-   "audio_sha256": "7af4d3c96d2fa9ae2d98f20a7893058a30218d233ae29173c0a0bafa10a14ca7",
+  "docs-conformance-api-reference/what-this-reference-contains-17": {
+   "audio_sha256": "5c58ef761f5ddcc82247f861402419e67b73f60aecf88f44571206b9c650e361",
    "characters": 35,
    "cost": 2.17e-05,
    "duration": 2.4,
-   "index": 16,
+   "index": 17,
    "key": "bfcf26fbe3c9761a26626a9d2d7792001867a4af17e694bf8b27bf52fdf162d9",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45245,12 +45295,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-17": {
-   "audio_sha256": "16af18e3702fb553b66b2daef558c19bbd82acf2211c730d6bdc4a2dfc7374c8",
+  "docs-conformance-api-reference/what-this-reference-contains-18": {
+   "audio_sha256": "edcbb3bedc76c1e05ab6fd25e1f4c5bf5ad782c10fb4c8d288ad3ec10965c0f5",
    "characters": 33,
    "cost": 2.046e-05,
    "duration": 2.2,
-   "index": 17,
+   "index": 18,
    "key": "5ce166441abc63087c224adecd3436fe93d12364eb46da69e1290bfc4b45a80e",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45285,12 +45335,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-18": {
-   "audio_sha256": "f589a45ff1c2c87331dc202a9571c10790356f0145ec5e1ddb64ee85bce1dd3d",
+  "docs-conformance-api-reference/what-this-reference-contains-19": {
+   "audio_sha256": "09d8dc06baaed94cf3a3baf7ac76269e2fced0acc6812ee5e758ab8baaaa41ff",
    "characters": 27,
    "cost": 1.6740000000000002e-05,
    "duration": 1.875,
-   "index": 18,
+   "index": 19,
    "key": "23f86d1f8e3629fc04e7021e5110912d25ea9bc066570c07ddddcf9398d9aec4",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45325,12 +45375,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-19": {
-   "audio_sha256": "3e6f406ef69f090d9e32b245ccfdae5c3d9a9b8a431cfd1e228c645bfd447012",
+  "docs-conformance-api-reference/what-this-reference-contains-20": {
+   "audio_sha256": "5bc680bed8aa7078ddc3e55295a4387b5e3c090b177cf72da9bcd37ca8b4f3be",
    "characters": 35,
    "cost": 2.17e-05,
    "duration": 2.275,
-   "index": 19,
+   "index": 20,
    "key": "37b03adfc975406d1df6cd9262690374f951d95323f569d8cb2805366eb43d3e",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45375,12 +45425,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-20": {
-   "audio_sha256": "e3e4de1bfbf04b50b978089bd418011b19a379e83c323eb426f9dba63d8b1fc5",
+  "docs-conformance-api-reference/what-this-reference-contains-21": {
+   "audio_sha256": "907fb07dbf6ff79ab54f9119a5d8b5a53c1b778b87ebed2a24be5aa40c80e385",
    "characters": 32,
    "cost": 1.984e-05,
    "duration": 2.15,
-   "index": 20,
+   "index": 21,
    "key": "9df76fd0608f9e05fd5521dc8e4054f8e111c92b0c45f0f25080dfb288d2153d",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45425,12 +45475,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-21": {
-   "audio_sha256": "77882f1e4605f48d28e82c0c55e27d680ce7cba76bb404f1fdae6422e4360975",
+  "docs-conformance-api-reference/what-this-reference-contains-22": {
+   "audio_sha256": "3eadb51f858e73c7e47f00e2c0f8fa16b2ddf5028652db91ba063ccf45c82b78",
    "characters": 38,
    "cost": 2.356e-05,
    "duration": 2.325,
-   "index": 21,
+   "index": 22,
    "key": "50979cab72396ce2e7b68987eb548050a51e0587ecfb001b9b405a8f015d10d5",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45475,12 +45525,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-22": {
-   "audio_sha256": "b4d3f0762809be279b5286b93fe21a563681b87844572fe7f1c69bb22c295aa4",
+  "docs-conformance-api-reference/what-this-reference-contains-23": {
+   "audio_sha256": "2e3f6d85ee2392b8a884adf69957eef2460d018ccf3d7833a7bb3eefd0778239",
    "characters": 36,
    "cost": 2.232e-05,
    "duration": 2.075,
-   "index": 22,
+   "index": 23,
    "key": "090acfce7daf7cfadccc4ae00534f0852a27f0d69b62798f9b2314bc4e61a8bb",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45525,12 +45575,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-23": {
-   "audio_sha256": "22739e32fcf69a829e2f0134a396191183dffea2215ec1559b5ba7bc01fb3f34",
+  "docs-conformance-api-reference/what-this-reference-contains-24": {
+   "audio_sha256": "e05ab593e87f1d3bc7e7ed62f04e51b5fdf341b8f76f5f6d3f19787ceb5c5983",
    "characters": 34,
    "cost": 2.108e-05,
    "duration": 2.125,
-   "index": 23,
+   "index": 24,
    "key": "2da40aa04308608e356ab8d82a7a84a02f59a44a76c4257539465a657272da16",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45565,12 +45615,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-24": {
-   "audio_sha256": "f0769fd3b46d34891a8a0b0fdecf759cd0f16ca09b5451c354cf2e29b68821cf",
+  "docs-conformance-api-reference/what-this-reference-contains-25": {
+   "audio_sha256": "3b58b0d55f9534d1fc2ac236b4054cd10adf9c7abcc9c7bb0b4f0bd550ea1026",
    "characters": 37,
    "cost": 2.294e-05,
    "duration": 2.125,
-   "index": 24,
+   "index": 25,
    "key": "da1e729809ad30f21f9c1a2f29fae3872a2db7801e03edcfcfa73b6aa83734b5",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45615,12 +45665,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-25": {
-   "audio_sha256": "f9f41b44cea2f1c3fb3d4b452f114f0179f173851c46389b2bc0c05e6ef91240",
+  "docs-conformance-api-reference/what-this-reference-contains-26": {
+   "audio_sha256": "7b13820d13def9dfad21e2652a749356003fb8a5bc6ea59e1698c4026002a195",
    "characters": 33,
    "cost": 2.046e-05,
    "duration": 2.05,
-   "index": 25,
+   "index": 26,
    "key": "181ff473432c94150ee988feb317c6706c64c47318266a57826e11516e241675",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45655,12 +45705,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-26": {
-   "audio_sha256": "46151cd07b4e9984d992852cfd2f475b45ac682d7f49d154d6e34edce112e8d7",
+  "docs-conformance-api-reference/what-this-reference-contains-27": {
+   "audio_sha256": "889d24bc3d0b11d275908cc7839d7e55e8a81526d1256946addb7dbc942d34f4",
    "characters": 28,
    "cost": 1.736e-05,
    "duration": 1.775,
-   "index": 26,
+   "index": 27,
    "key": "32215186b0098285fd4d2c322665c54421eda5c5553ba5ce61071bcda6b0967e",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45695,12 +45745,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-27": {
-   "audio_sha256": "1b3c5033a447faa85ff57361d8de8499896cc3cbc223d4d40d5024ca8c587e84",
+  "docs-conformance-api-reference/what-this-reference-contains-28": {
+   "audio_sha256": "b768235dce13772caddf9aa6cecd5a6c52b3380c6f25460deba138486172fa63",
    "characters": 28,
    "cost": 1.736e-05,
    "duration": 2.0,
-   "index": 27,
+   "index": 28,
    "key": "23b5e7a35687396e8aa3431ef70c60718ed4eb03a044107a0fccbf7a33e3abf4",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45735,12 +45785,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-28": {
-   "audio_sha256": "998e3d4a84f50fd8b55dc8a22569a1dd6c3376fd3113865ababc42ae689bba64",
+  "docs-conformance-api-reference/what-this-reference-contains-29": {
+   "audio_sha256": "5205379367bfc4bd88c3232b2603adaef52ff82a9cbbb6adba734f723daac985",
    "characters": 27,
    "cost": 1.6740000000000002e-05,
    "duration": 1.875,
-   "index": 28,
+   "index": 29,
    "key": "e3609c59661836ec87cdfa315ff1cb96af7ea328788d834b2ed9d0cc355f99fa",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45775,12 +45825,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-29": {
-   "audio_sha256": "b99a8cb74fc3e81a5ce82a33ab8abc5892b51e7caf2c844cb47a46dbab94a386",
+  "docs-conformance-api-reference/what-this-reference-contains-30": {
+   "audio_sha256": "9b178ab633caf319699119bd903d3e6f2b4a1c4122cc7bdc3f0359f8e9b7975e",
    "characters": 101,
    "cost": 6.262000000000001e-05,
    "duration": 6.5,
-   "index": 29,
+   "index": 30,
    "key": "ba67914dc036c4297c46e0fa4916ce1e0dc61de0160953c2b55280d097505f51",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45860,12 +45910,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-30": {
-   "audio_sha256": "7861bdfc2f16ef227f8af8d9bf2cd0b296a81b9bb4ee2e563fe8ab3c909adbba",
+  "docs-conformance-api-reference/what-this-reference-contains-31": {
+   "audio_sha256": "8f53a7b6774672224cb36c89d6efb6716767b4611c601debc81c5712eaced9c6",
    "characters": 25,
    "cost": 1.55e-05,
    "duration": 1.625,
-   "index": 30,
+   "index": 31,
    "key": "a723801b658fa0cedbcec2e6caf590a73680f4689676b0f013786b9e72058ca1",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45900,12 +45950,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-31": {
-   "audio_sha256": "a91acdeebcc5011e54dc39cf0b60d59d02192a7c5d497c9fe189f57973d0c567",
+  "docs-conformance-api-reference/what-this-reference-contains-32": {
+   "audio_sha256": "b6bf6241e6c774fb4377a9bc01390598632150cd966ef5a74a06f1c6efa0e084",
    "characters": 34,
    "cost": 2.108e-05,
    "duration": 2.025,
-   "index": 31,
+   "index": 32,
    "key": "c03da8ad0e7de9d8f16423db523ab56bf21cf7690070f50897a2560d52093b8b",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -45950,12 +46000,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-32": {
-   "audio_sha256": "167332df7de5fae6e170afc74cc3afcc1f46995ea07f617cb9e71ceea67b9a49",
+  "docs-conformance-api-reference/what-this-reference-contains-33": {
+   "audio_sha256": "02fd51e57e6f1245a48765cd3ae0f7fd4a7762a052dd7e13a7255a92346f7711",
    "characters": 35,
    "cost": 2.17e-05,
    "duration": 2.325,
-   "index": 32,
+   "index": 33,
    "key": "821e8109decd2673f1a784f7a5b2a49a712ec16ddde2cf31b60692e903ebf31d",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -46000,12 +46050,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-33": {
-   "audio_sha256": "b4f54cc53f52cea3a9ce6fa3eda84786220bbe95801b419651b433a6ed89ed68",
+  "docs-conformance-api-reference/what-this-reference-contains-34": {
+   "audio_sha256": "834642061d8fed1031bced5b62cc7a15a02a96a20322c49ed5542ab8349ce63a",
    "characters": 31,
    "cost": 1.9220000000000002e-05,
    "duration": 2.05,
-   "index": 33,
+   "index": 34,
    "key": "365ebffa6f63f9074e706ad45d47adba998254006bd1914fa96f008e1cc9785f",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,
@@ -46050,12 +46100,12 @@
     }
    ]
   },
-  "docs-conformance-api-reference/what-this-reference-contains-34": {
-   "audio_sha256": "39f2b547203d0ee5e324dc1744cce13bdd4db1dbabb9e473f28c79c49bd326a2",
+  "docs-conformance-api-reference/what-this-reference-contains-35": {
+   "audio_sha256": "0d6007a0f99f15d8bba1cc9ffd1a951f60f4cc7d3cf7e8d2b70d54aa75cd372a",
    "characters": 40,
    "cost": 2.48e-05,
    "duration": 2.65,
-   "index": 34,
+   "index": 35,
    "key": "735d63dc6262f949c24fafab037523c3fa7c1b32e4aa6a6b31a3db55e780aca3",
    "page": "docs/conformance-api-reference.md",
    "pause_ms": 300,

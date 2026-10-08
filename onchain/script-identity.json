@@ -31,6 +31,21 @@
       "parameters": 1
     },
     {
+      "title": "permanent_open_datum.open_datum.mint",
+      "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "parameters": 1
+    },
+    {
+      "title": "permanent_open_datum.open_datum.spend",
+      "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "parameters": 1
+    },
+    {
+      "title": "permanent_open_datum.open_datum.else",
+      "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "parameters": 1
+    },
+    {
       "title": "permanent_state.state.mint",
       "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
       "parameters": 0

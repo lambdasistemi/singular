@@ -51,6 +51,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="module">Conformance.Edge.Occupied</a> — <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="module">Conformance.Edge.Permanent</a> — <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="module">Conformance.Edge.Programs</a> — <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>
