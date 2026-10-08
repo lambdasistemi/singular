@@ -34,6 +34,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -43,6 +45,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             163,
@@ -83,6 +86,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               221,
@@ -143,6 +147,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -152,6 +158,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -181,6 +188,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -233,6 +241,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -242,6 +252,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -282,6 +293,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -334,6 +346,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -343,6 +357,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -384,6 +399,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -429,6 +445,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -438,6 +456,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -478,6 +497,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -518,6 +538,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -527,6 +549,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -568,6 +591,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -600,6 +624,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -609,6 +635,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -643,6 +670,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -695,6 +723,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -704,6 +734,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -762,6 +793,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -771,6 +804,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -829,6 +863,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -838,6 +874,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -889,6 +926,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -898,6 +937,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -949,6 +989,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -958,6 +1000,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1015,6 +1058,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1024,6 +1069,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1070,6 +1116,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1079,6 +1127,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1137,6 +1186,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1146,6 +1197,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1197,6 +1249,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1206,6 +1260,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1252,6 +1307,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1261,6 +1318,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1318,6 +1376,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1327,6 +1387,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1378,6 +1439,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1387,6 +1450,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1433,6 +1497,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1442,6 +1508,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1500,6 +1567,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1509,6 +1578,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1560,6 +1630,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1569,6 +1641,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1615,6 +1688,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1624,6 +1699,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1681,6 +1757,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1690,6 +1768,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1741,6 +1820,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1750,6 +1831,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1808,6 +1890,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1817,6 +1901,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -1874,6 +1959,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1883,6 +1970,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1921,6 +2009,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1930,6 +2020,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -1976,6 +2067,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -1985,6 +2078,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -2031,6 +2125,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2040,6 +2136,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -2078,6 +2175,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2087,6 +2186,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2121,6 +2221,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2165,6 +2266,8 @@
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2174,6 +2277,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -2220,6 +2324,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2229,6 +2335,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2280,6 +2387,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2289,6 +2398,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2340,6 +2450,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2349,6 +2461,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2389,6 +2502,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2441,6 +2555,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2450,6 +2566,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2490,6 +2607,7 @@
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -2530,6 +2648,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2539,6 +2659,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2590,6 +2711,8 @@
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2599,6 +2722,7 @@
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2693,7 +2817,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+  "corpusSourceSha256": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2809,6 +2933,7 @@
     "applicationPolicy": 7,
     "maxFee": 1,
     "processTime": 2,
+    "registryId": 0,
     "retractTime": 3,
     "root": [
       203,
@@ -2822,20 +2947,20 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
-  "payloadSha256": "4bf3fe8346d9947b3744bf67b3b36b241967188b50647c7e7f475edd33bec2e5",
+  "modelSha256": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
+  "payloadSha256": "f1a890e99852efd50e705fdcdc77092914652341b997b39f25a7088e913078ed",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+    "lean/Main.lean": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
-    "lean/Singular/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
-    "lean/Singular/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+    "lean/Singular/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "lean/Singular/Lemmas.lean": "17144597fc2b0e429976a9932abf61de147162a23a0b658b43dcb00a69408fe0",
+    "lean/Singular/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
+    "lean/Singular/Statements.lean": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049"
   },
-  "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa",
-  "theoremManifestSha256": "a1d45185a64b6e839bae677f252093a2c11cbad113c6b99ec00fa252ed00c11d",
+  "statementsSha256": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049",
+  "theoremManifestSha256": "f6b2f0c073e4aaa48da73ec763947f56fe5dce7faf750fc2a3d31e764d6f6a48",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -2916,6 +3041,7 @@
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,
@@ -3008,6 +3134,8 @@
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "rootMatchesTrie": true,
@@ -3057,6 +3185,7 @@
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,
@@ -3233,6 +3362,7 @@
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,

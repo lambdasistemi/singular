@@ -1,0 +1,75 @@
+{
+  "lean": "Lean (version 4.25.0, commit v4.25.0, Release)",
+  "sources": {
+    "lean/Singular/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
+    "lean/Singular/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "lean/DriverMain.lean": "7a26ccce7be79ae6bc76790d565ebc9d9de537c69ed8073bd83c4441d8b49840"
+  },
+  "runs": [
+    {
+      "name": "baseline",
+      "exit": 0,
+      "guardFailures": []
+    },
+    {
+      "name": "missing-evidence",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:300:0: error: Expression"
+      ]
+    },
+    {
+      "name": "compatible-request",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:296:0: error: Expression",
+        "DriverMain.lean:300:0: error: Expression",
+        "DriverMain.lean:534:0: error: Expression"
+      ]
+    },
+    {
+      "name": "reclaim-window",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:300:0: error: Expression"
+      ]
+    },
+    {
+      "name": "intermediate-state",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:534:0: error: Expression"
+      ]
+    },
+    {
+      "name": "registry-binding",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:300:0: error: Expression",
+        "DriverMain.lean:534:0: error: Expression"
+      ]
+    },
+    {
+      "name": "request-registry-binding",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:300:0: error: Expression"
+      ]
+    },
+    {
+      "name": "booked-retraction-time",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:529:0: error: Expression",
+        "DriverMain.lean:531:0: error: Expression"
+      ]
+    },
+    {
+      "name": "mixed-mint-claim",
+      "exit": 1,
+      "guardFailures": [
+        "DriverMain.lean:534:0: error: Expression"
+      ]
+    }
+  ]
+}

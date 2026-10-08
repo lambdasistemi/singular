@@ -148,7 +148,8 @@ def batchObservations : List String :=
 `foldBatch`, answered by `Singular.foldBatch`, and `rejectBatch`, a batch of
 rejects judged by `Singular.settle` over their concatenated obligations. -/
 def declaredBatchQuestions : List (String × List String) :=
-  [("foldBatch", batchObservations), ("rejectBatch", batchObservations)]
+  [("foldBatch", batchObservations), ("rejectBatch", batchObservations),
+   ("processBatch", batchObservations)]
 
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where
@@ -162,7 +163,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 6
+  , protocolVersion := 7
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable
@@ -209,6 +210,15 @@ def consistentB (s : RegistryState) : Bool :=
 
 def premiseDeclaration : String := "Singular.Driver.consistentB"
 
+instance : ToJson RejectEvidence where
+  toJson e := Json.mkObj [("registry", toJson e.registry), ("registryId", toJson e.registryId),
+    ("request", toJson e.request),
+    ("reason", toJson e.reason)]
+
+instance : ToJson RejectWitness where
+  toJson w := Json.mkObj [("evidence", toJson w.evidence),
+    ("validFrom", toJson w.validFrom), ("validTo", toJson w.validTo)]
+
 /-! ## Scenarios and results -/
 
 /-- D02: one scenario. `setup` is a trace of requests that must each be accepted
@@ -231,6 +241,7 @@ structure Scenario where
   request : Request
   lovelace : Nat
   witness : Option RetractWitness := none
+  rejection : Option RejectWitness := none
   /-- The outputs of a transaction a caller observed for this exit, judged by
   `judgeSurface`; none when the scenario judges nothing. -/
   outputs : Option (List TxOutput) := none
@@ -295,8 +306,8 @@ def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json 
 
 /-- The witness a scenario's exit is admitted under. A retraction is admitted
 under the scenario's own, and a retraction that carries none has nothing to be
-admitted under. A fold and a reject have no admission (`Singular.exitAdmission`
-reads no witness for them), so they are taken under an empty one they ignore. -/
+admitted under. Folds and rejects ignore this retraction witness. Rejects separately require
+`Scenario.rejection`; an empty retraction witness grants no rejection authority. -/
 def admissionWitness (sc : Scenario) : Option RetractWitness :=
   match sc.exit with
   | .retract => sc.witness
@@ -313,8 +324,8 @@ model does not admit.
 The exit is taken through admission: `Singular.admittedExitStep` and
 `Singular.admittedTxOfExit`, so a retraction is accepted only when
 `Singular.retractAdmission` admits it under its witness, and is otherwise refused
-with the admission's reason; a fold and a reject are exactly `Singular.exitStep`
-and `Singular.txOfExit`. A retraction with no witness is `unsupported`: the case
+with the admission's reason. Rejects pass their separate evidence through
+`rejectAdmission`; missing evidence is a model refusal. Folds retain `step`. A retraction with no witness is `unsupported`: the case
 was not described, and reading it as the owner's absent signature would dress a
 missing input up as the model's refusal. -/
 def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
@@ -331,12 +342,12 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
       (steps, { outcome := .unsupported, reason := some "retraction-without-witness"
               , premiseChecked := true, observations := none })
     | some witness =>
-    match admittedExitStep s sc.exit sc.request witness with
+    match admittedExitStep s sc.exit sc.request witness sc.rejection with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
               , premiseChecked := true, observations := none })
     | .ok res =>
-      match admittedTxOfExit s sc.exit sc.request witness sc.lovelace with
+      match admittedTxOfExit s sc.exit sc.request witness sc.lovelace sc.rejection with
       | .error why =>
         (steps, { outcome := .unsupported, reason := some ("transaction-unbuildable: " ++ why)
                 , premiseChecked := true, observations := none })
@@ -389,6 +400,7 @@ def scenarioJson (sc : Scenario) : Json :=
     , ("start", toJson sc.start)
     , ("request", toJson sc.request)
     , ("lovelace", toJson sc.lovelace) ]
+    ++ (match sc.rejection with | none => [] | some w => [("rejection", toJson w)])
     ++ (match sc.witness with | none => [] | some w => [("witness", toJson w)])
     ++
     [ ("setup", Json.arr ((steps.map setupStepJson).toArray))
@@ -424,10 +436,12 @@ answered. -/
 inductive BatchQuestion where
   | foldBatch (requests : List Request)
   | rejectBatch (requests : List (Exit × Request))
+  | processBatch (validFrom validTo : Nat) (actions : List ProcessAction)
 
 def batchQuestionName : BatchQuestion → String
   | .foldBatch _ => "foldBatch"
   | .rejectBatch _ => "rejectBatch"
+  | .processBatch _ _ _ => "processBatch"
 
 /-- The distinct keys of a batch, in the order its requests first name them. -/
 def batchKeys (requests : List Request) : List Key :=
@@ -447,15 +461,22 @@ def batchRejects (batch : List (Exit × Request)) : Option (List Request) :=
   if batch.isEmpty then none
   else batch.mapM fun (exit, request) => if exit == .reject then some request else none
 
-/-- A batch of rejects as the model steps it: each request through
-`Singular.exitStep` with `Exit.reject`, from the state the previous left, the
-results combined as `Singular.foldActions` combines a batch's. -/
-def rejectBatchStep (s : RegistryState) (requests : List Request) : Except String Result :=
-  requests.foldlM
-    (fun acc request => do
-      let t ← exitStep acc.state .reject request
-      pure (combineResults acc t))
-    (emptyResult s)
+def rejectBatchIntervals (witnesses : List (Option RejectWitness)) : List (Nat × Nat) :=
+  witnesses.filterMap fun w => w.map fun w => (w.validFrom, w.validTo)
+
+def rejectBatchActions (requests : List Request) (witnesses : List (Option RejectWitness)) :
+    List ProcessAction :=
+  (requests.zip witnesses).map fun (r, w) => .reject r (w.map (·.evidence))
+
+/-- All-reject batches use the same ordered admission engine as mixed batches.
+The length and interval checks preserve the caller's one witness per request. -/
+def rejectBatchStep (s : RegistryState) (requests : List Request)
+    (witnesses : List (Option RejectWitness) := []) : Except String Result := do
+  if requests.length != witnesses.length then throw "reject-evidence-missing"
+  let intervals := rejectBatchIntervals witnesses
+  if intervals.eraseDups.length > 1 then throw "reject-batch-interval-mismatch"
+  let (lo, hi) := intervals.headD (0, 0)
+  processActions s lo hi (rejectBatchActions requests witnesses)
 
 /-- What a batch of rejects owes: the concatenated obligations of its requests. -/
 def rejectBatchPayments (requests : List Request) : List Payment :=
@@ -503,7 +524,8 @@ def runFoldBatch (start : RegistryState) (setup batch : List Request) :
 trace reaches, with the premise checked, a non-empty batch of rejects is stepped
 by `rejectBatchStep` and answered with the declared batch boundary; an empty
 batch, and one naming a fold or a retract, is `unsupported`. -/
-def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List (Exit × Request)) :
+def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List (Exit × Request))
+    (witnesses : List (Option RejectWitness) := []) :
     List SetupStep × DriverResult :=
   match reachBatchStart start setup with
   | (steps, .error result) => (steps, result)
@@ -515,13 +537,28 @@ def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List 
                                 else "reject-batch-names-another-exit")
               , premiseChecked := true, observations := none })
     | some requests =>
-      match rejectBatchStep s requests with
+      match rejectBatchStep s requests witnesses with
       | .error why =>
         (steps, { outcome := .refused, reason := some why
                 , premiseChecked := true, observations := none })
       | .ok res =>
         (steps, { outcome := .accepted, reason := none, premiseChecked := true
                 , observations := some (batchObservationsJson s.config (batchKeys requests) res) })
+
+/-- Execute mixed actions through the model, with no driver-side rejection policy. -/
+def runProcessBatch (start : RegistryState) (setup : List Request)
+    (validFrom validTo : Nat) (actions : List ProcessAction) : List SetupStep × DriverResult :=
+  match reachBatchStart start setup with
+  | (steps, .error result) => (steps, result)
+  | (steps, .ok s) =>
+    match Singular.processBatch s validFrom validTo actions with
+    | .error why =>
+      (steps, { outcome := .refused, reason := some why
+              , premiseChecked := true, observations := none })
+    | .ok result =>
+      (steps, { outcome := .accepted, reason := none, premiseChecked := true
+              , observations := some (batchObservationsJson s.config
+                  (batchKeys (actions.map ProcessAction.request)) result) })
 
 /-- D04: one batch scenario. Like a scenario it is bound to a theorem, reaches its
 starting state by a setup trace, and, for a batch of rejects, may carry the
@@ -536,6 +573,7 @@ structure BatchScenario where
   start : RegistryState
   setup : List Request
   question : BatchQuestion
+  rejections : List (Option RejectWitness) := []
   outputs : Option (List TxOutput) := none
 
 /-- One executed batch scenario, serialized as the corpus row the checker reads.
@@ -550,7 +588,7 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
       let (steps, folded, result) := runFoldBatch sc.start sc.setup batch
       (steps, some folded, result, Json.arr (batch.map toJson).toArray, none)
     | .rejectBatch batch =>
-      let (steps, result) := runRejectBatch sc.start sc.setup batch
+      let (steps, result) := runRejectBatch sc.start sc.setup batch sc.rejections
       let settled : Option Json :=
         match sc.outputs, result.outcome, batchRejects batch with
         | some outputs, .accepted, some rejects =>
@@ -562,6 +600,18 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
         Json.arr (batch.map fun (p : Exit × Request) =>
           Json.mkObj [("exit", toJson (exitName p.1)), ("request", toJson p.2)]).toArray,
         settled)
+    | .processBatch validFrom validTo actions =>
+      let (steps, result) := runProcessBatch sc.start sc.setup validFrom validTo actions
+      let settled := match sc.outputs, result.outcome with
+        | some outputs, .accepted => some (toJson (settle
+            (actions.flatMap fun a => obligations a.exit a.request) outputs))
+        | _, _ => none
+      (steps, none, result, Json.arr (actions.map fun a => Json.mkObj
+        ([ ("exit", toJson (exitName a.exit)), ("request", toJson a.request) ] ++
+         match a with
+         | .fold _ => []
+         | .reject _ e => [("evidence", match e with | none => Json.null | some e => toJson e)] )).toArray,
+         settled)
   Json.mkObj <|
     [ ("id", toJson sc.id)
     , ("theorem", toJson sc.theoremName)
@@ -571,8 +621,12 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
     , ("question", toJson (batchQuestionName sc.question))
     , ("requiresReachableState", toJson sc.requiresReachableState)
     , ("start", toJson sc.start)
+    , ("rejections", toJson sc.rejections)
     , ("requests", requests)
     , ("setup", Json.arr ((steps.map setupStepJson).toArray)) ]
+    ++ (match sc.question with
+        | .processBatch lo hi _ => [("validFrom", toJson lo), ("validTo", toJson hi)]
+        | _ => [])
     ++ (match folded with
         | none => []
         | some f => [("folded", Json.arr ((f.map setupStepJson).toArray))])

@@ -1101,10 +1101,10 @@ theorem retractableEdge_iff (e : Edge) :
 
 /-- The phase-2 check is its two bounds: the lower one included, the upper one
 reached and not passed. -/
-theorem inPhase2_iff (c : Config) (w : RetractWitness) :
-    inPhase2 c w = true ↔
-      (w.submittedAt + c.processTime ≤ w.validFrom ∧
-        w.validTo ≤ w.submittedAt + c.processTime + c.retractTime) := by
+theorem inPhase2_iff (c : Config) (r : Request) (w : RetractWitness) :
+    inPhase2 c r w = true ↔
+      (r.submittedAt + c.processTime ≤ w.validFrom ∧
+        w.validTo ≤ r.submittedAt + c.processTime + c.retractTime) := by
   simp [inPhase2]
 
 /-! ### Keyed mint sums

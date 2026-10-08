@@ -1,0 +1,124 @@
+# Protected rejection model candidate (#494)
+
+This candidate implements the operator's admission rulings from
+[decisions.md](decisions.md). It is solo model work, not independent acceptance
+of validators, builders, a release or live-chain protection.
+
+A processor may reject a request when it supplies verified lifecycle mismatch
+at the current processing state, or proves that both the processing and reclaim
+windows have ended. A compatible request before expiry is protected regardless
+of the processor's chosen evidence. Missing approval, missing inputs, provider
+failure and malformed proof are not additional rejection grounds. Address
+pollution remains research #500.
+
+## Model and evidence contract
+
+`Request.submittedAt` is the booked submission time. `Request.registryId` and
+`Config.registryId` identify the registry's state token abstractly; consumers
+must allocate identities consistently for the complete state-token identity,
+not just its policy or root. The latter is metadata beside the eight datum
+fields, not a proposed ninth field in the on-chain datum.
+
+`RejectEvidence` carries the registry identity, full configuration (including
+root), full request and either `mismatch leaf` or `expired`. `RejectWitness`
+adds the actual transaction's finite `[validFrom, validTo)` interval. Admission
+checks identities, the root against the logical map, the whole request and a
+nonempty interval. Mismatch additionally checks the leaf against the actual
+lookup and requires the existing seven-edge transition table to have no result.
+Expiry requires `validFrom >= submittedAt + processTime + retractTime`.
+Retraction uses that same `Request.submittedAt`. The legacy timestamp field in
+`RetractWitness` remains on the wire but cannot shift admission's window.
+`expiry_after_reclaim` proves that admitted expiry begins at or after the
+excluded upper bound of every admitted retraction of the same booked request.
+
+The evidence is a verified logical read. A concrete verifier must establish its
+correspondence with authenticated chain data; the Lean model neither parses nor
+verifies Merkle proof bytes. A negative result from a concrete verifier must
+never be translated into a valid mismatch witness.
+
+`admittedExitStep`, `admittedTxOfExit` and `exitRefusal` enforce admission before
+effects, construction or settlement. `exitStep` and `txOfExit` remain the
+lower-level effect definitions, as for retraction; their existence is not
+permission to bypass admission. An admitted reject preserves the whole state,
+mints nothing, owes the owner the deposit and requires no signer. Existing tip
+and settlement definitions are unchanged.
+
+`processBatch` executes ordered folds and evidenced rejects under one validity
+interval. Each action receives the preceding action's state. A reject preserves
+that intermediate state for later actions. The first refusal aborts the result;
+fold mint claims must match the combined keyed deltas. Retraction is a separate
+owner operation. `rejectBatch` also requires supplied evidence and one common
+validity interval across its requests. Both batch forms use `processActions`.
+The prefix decomposition and admission theorems prove that each accepted
+rejection passed admission at its actual intermediate state. Batch protection
+lifts the single-request theorem to every position after an arbitrary successful
+prefix.
+
+## Runnable verification
+
+Use the repository's Lean 4.25.0 toolchain, Python 3 and C compiler on PATH:
+
+```sh
+lake build
+python3 tools/check_model.py
+python3 specs/494-protected-rejection/check_transport.py
+python3 specs/494-protected-rejection/check_mutations.py
+bash specs/494-protected-rejection/reproduce-historical.sh
+node simulator/mirror-check.mjs
+```
+
+The driver corpus contains all 28 edge/lifecycle-state pairs, with nonempty
+states reached by actual setup transitions. Controls cover missing evidence,
+wrong registry identity/configuration/root, wrong request reference, forged
+leaf, compatible requests, expiry immediately before and at the boundary,
+empty/reversed intervals, altered submission time and operational lack of
+approval. Mixed cases include fold/reject, fold/reject/fold, stale roots,
+reversed actions and protection of a compatible request. An all-reject batch
+with inconsistent intervals is refused.
+
+The theorem audit checks compiled axioms, including the universal protection
+theorem and exact admission characterization. The Python model gate derives rejection decisions and mixed effects separately
+from Lean execution, using transition tables parsed from the same model. Its
+mixed-fold checks assume legal fold inputs; they are not a general fold-refusal
+oracle. JSON replay exercises the real
+transport entry point. Mutation checks alter definitions in temporary copies:
+accept missing evidence, reject compatible requests, remove the reclaim window,
+reset the batch state, remove registry or request-registry binding, restore the
+unbound retraction timestamp, or remove mixed mint-claim checking. A setup error is not counted
+as a detected defect. Receipts bind the tested source hashes.
+
+Historical reproduction loads Model.lean from immutable base
+`6efe1f119a2332484e690b4c128c4bc5fd4d689b`, so the repaired model need not retain
+its former unguarded admission. That run establishes model behavior only.
+
+## Compatibility and remaining limits
+
+- Driver protocol is 7. Single rejects carry `rejection`; all-reject batches
+  carry `rejections`; mixed `processBatch` carries action evidence and common
+  validity bounds. No driver path synthesizes proof from a failed fold.
+- Request submission time and registry identity are new serialized fields.
+  Older fold fixtures retain zero defaults. Protected-exit JSON requests must
+  explicitly carry booking time and registry identity; rejection evidence and
+  registry configurations must explicitly carry their identities. Missing or
+  null metadata fails decoding, while explicit zero remains a valid abstract
+  value. Consumers remain responsible for authenticating those supplied values.
+  Retraction retains its witness API but admission uses only the booked request
+  timestamp. Rejection evidence on a fold/retraction question fails decoding.
+- Existing on-chain validators and production builders are not updated here.
+  Their protocol-6 comparisons cannot claim the new protection. The transport
+  and formal source mirror are updated; this does not establish simulator UI
+  behavior or live conformance. No live coverage row is promoted.
+  This also affects previously working live **retraction** comparisons: the
+  current `Conformance.Run.Live` request encoder omits `submittedAt` and
+  `registryId`, carrying the time only in the legacy witness. Its retraction
+  questions now fail decoding. Those comparisons, including the outside-window
+  cases, remain held until the encoder supplies the booked request metadata.
+  Historical retraction receipts do not certify this protocol-7 revision.
+- #361 remains open: Lean refunds are summed by owner, whereas the validator
+  also constrains a refund output position. Correspondence for affected refunds
+  remains held; this change does not choose a new refund rule.
+- Mixed batches expose logical effects, not a complete transaction. Fold-time
+  admission is unchanged; ledger input uniqueness, concrete Merkle proof
+  verification, fees, execution budgets and transaction construction need their
+  own implementation evidence. No source fix protects an existing deployed
+  registry until compatible scripts and an explicit rollout exist.

@@ -50,6 +50,8 @@ def toRequest (j : Json) : Except String Request := do
   -- that names neither describes a request holding its deposit alone, at reference 0.
   let tip ← optionalNat j "tip"
   let reference ← optionalNat j "reference"
+  let submittedAt ← optionalNat j "submittedAt"
+  let registryId ← optionalNat j "registryId"
   -- The datum the request carries for its delivered output, as the identity the
   -- caller allocated for it while booking: a caller that says nothing describes a
   -- booking carrying none.
@@ -71,7 +73,7 @@ def toRequest (j : Json) : Except String Request := do
     | .ok _ => throw "claimed is not an array"
   let base : Request :=
     { edge, key, owner, refundAddress, deposit, output, approval := none, claimed, tip
-    , reference, datum }
+    , reference, datum, submittedAt, registryId }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none
@@ -85,6 +87,38 @@ def toRequest (j : Json) : Except String Request := do
         , signatures := [] })
     | .ok a => do let v ← fromJson? a; pure (some v)
   pure { base with approval }
+
+/-- Protected exits require explicit booked metadata; zero remains a valid
+allocated identity/time, but absence or null is not silently read as zero. -/
+def requireRequestMetadata (j : Json) : Except String Unit := do
+  let _submittedAt : Nat ← j.getObjVal? "submittedAt" >>= fromJson?
+  let _registryId : Nat ← j.getObjVal? "registryId" >>= fromJson?
+  pure ()
+
+def requireRegistryMetadata (j : Json) : Except String Unit := do
+  let _registryId : Nat ← j.getObjVal? "registryId" >>= fromJson?
+  pure ()
+
+/-- Rejection evidence is supplied by the caller; decoding never creates it. -/
+def toRejectEvidence (j : Json) : Except String RejectEvidence := do
+  requireRegistryMetadata (← j.getObjVal? "registry")
+  requireRequestMetadata (← j.getObjVal? "request")
+  let registry ← (j.getObjVal? "registry") >>= fromJson?
+  let request ← (j.getObjVal? "request") >>= toRequest
+  let reason ← (j.getObjVal? "reason") >>= fromJson?
+  let registryId ← j.getObjVal? "registryId" >>= fromJson?
+  pure { registry, registryId, request, reason }
+
+def toRejectWitness (j : Json) : Except String RejectWitness := do
+  let evidence ← (j.getObjVal? "evidence") >>= toRejectEvidence
+  let validFrom ← (j.getObjVal? "validFrom") >>= fromJson?
+  let validTo ← (j.getObjVal? "validTo") >>= fromJson?
+  pure { evidence, validFrom, validTo }
+
+def optionalRejectWitness (j : Json) : Except String (Option RejectWitness) :=
+  match j with
+  | .null => pure none
+  | _ => some <$> toRejectWitness j
 
 /-- A leaf as the corpus spells it, so a caller can describe a starting trie. -/
 def toLeaf (j : Json) : Except String Leaf :=
@@ -157,12 +191,20 @@ def toScenario (j : Json) : Except String Scenario := do
   let statementSha256 ← (j.getObjVal? "statementSha256") >>= fromJson?
   let id ← (j.getObjVal? "id") >>= fromJson?
   let exit ← toExit j request
+  if exit == .reject || exit == .retract then
+    requireRequestMetadata (← j.getObjVal? "request")
+  if exit == .reject then
+    requireRegistryMetadata (← (← j.getObjVal? "start").getObjVal? "config")
   let witness ← toWitness j exit
+  let rejection ← match j.getObjVal? "rejection", exit with
+    | .error _, _ => pure none
+    | .ok j, .reject => optionalRejectWitness j
+    | .ok _, _ => throw "only a rejection question carries rejection evidence"
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, exit, request, lovelace, witness }
+    , start, setup, exit, request, lovelace, witness, rejection }
 
 /-- One input a caller observed, as the driver's judgement reads it: the state
 tokens it holds. `spend` reads nothing else of an input, so nothing else is taken
@@ -219,21 +261,46 @@ def toBatchScenario (j : Json) (question : String) : Except String BatchScenario
     | .error _ => pure none
     | .ok (Json.arr observed) => some <$> observed.toList.mapM toOutput
     | .ok _ => throw "outputs is not an array"
+  let rejections ← match j.getObjVal? "rejections" with
+    | .error _ => pure []
+    | .ok (.arr ws) => ws.toList.mapM optionalRejectWitness
+    | .ok _ => throw "rejections is not an array"
   let batch ← match question with
     | "foldBatch" => do
       if outputs.isSome then throw "a fold batch question judges no outputs"
       BatchQuestion.foldBatch <$> items.mapM toRequest
-    | "rejectBatch" =>
+    | "rejectBatch" => do
+      requireRegistryMetadata (← (← j.getObjVal? "start").getObjVal? "config")
       BatchQuestion.rejectBatch <$> items.mapM fun (item : Json) => do
+        requireRequestMetadata (← item.getObjVal? "request")
         let request ← (item.getObjVal? "request") >>= toRequest
         let exit ← toExit item request
         pure (exit, request)
+    | "processBatch" => do
+      let lo ← (j.getObjVal? "validFrom") >>= fromJson?
+      let hi ← (j.getObjVal? "validTo") >>= fromJson?
+      let actions ← items.mapM fun item => do
+        let request ← (item.getObjVal? "request") >>= toRequest
+        let exit ← toExit item request
+        match exit with
+        | .fold edge =>
+          if edge != request.edge then throw "exit-edge-mismatch"
+          pure (ProcessAction.fold request)
+        | .reject =>
+          requireRegistryMetadata (← (← j.getObjVal? "start").getObjVal? "config")
+          requireRequestMetadata (← item.getObjVal? "request")
+          let evidence ← match item.getObjVal? "evidence" with
+            | .error _ | .ok .null => pure none
+            | .ok e => some <$> toRejectEvidence e
+          pure (.reject request evidence)
+        | .retract => throw "a processor batch cannot retract"
+      pure (.processBatch lo hi actions)
     | other => throw s!"no declared batch question is named {other}"
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, question := batch, outputs }
+    , start, setup, question := batch, outputs, rejections }
 
 /-- Evaluate, and answer with the row the driver produces. A question carrying the
 inputs and outputs of a transaction the caller observed is also answered with the
@@ -245,6 +312,9 @@ def answer (j : Json) : Except String Json := do
     return batchScenarioJson (← toBatchScenario j question)
   let scenario ← toScenario j
   let row := scenarioJson scenario
+  -- Admission failure is terminal: payment observations cannot turn a refused
+  -- rejection into a settlement-only answer.
+  if (runSurface scenario).2.outcome != .accepted then return row
   match j.getObjVal? "outputs" with
   | .error _ => pure row
   | .ok (Json.arr observed) => do

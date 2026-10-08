@@ -1,0 +1,14 @@
+provenance: check_model.py sha256=c61d31342f946d7836edddbe08755e886fa0715e966e4f0317b6d8c8314d8fa3
+model-check: 58/58 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
+naming-check: 7/7 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
+lifecycle-check: 9/9 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
+wire-check: 5/5 exact identities PROVED from ['Classical.choice', 'Quot.sound', 'propext']
+reachability: every module under lean/Singular is reachable from the library root
+driver: 63 scenarios (34 accepted, 29 refused) over 9 declared operations and 9 declared observations
+judged: 2 single scenarios carry observed outputs and their judgement
+derived: 225 observations re-derived from the model rather than trusted (roots, leaves and R2 mints)
+batches: 20 batch rows over 3 declared questions, 78 answers re-derived, 22 mutant controls refused
+translation: 23 declarations realized in the constitution, 6 identity rules, 6 named unobservable fields
+X2: theorems page == generic manifest (58 declarations, total derived)
+X3: README declaration counts == manifests (79, 58, 7, 9, 5)
+model-check: 38 executable corpus rows; 24 naming rows; 21 lifecycle rows; model d8aac373c739
