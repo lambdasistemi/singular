@@ -895,6 +895,7 @@ test-suite cage-tests
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLI.Inspect
     Singular.CLI.Live
+    Singular.CLI.ManagedStateSpec
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
     Singular.CLI.Permanent
