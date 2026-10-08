@@ -8,7 +8,7 @@ committed manifests drift from it by one byte. There is no hand-maintained
 registry anywhere in the gate.
 
 Discovery then runs over ALL of ``lean/`` (strict lexical scan), so
-declarations outside the four statements modules stay in the denominator as
+declarations outside the five statement surfaces stay in the denominator as
 unclassified. Reclassification is mapping work with reviewed rationale; this
 module has no helper label that could shrink the count.
 """
@@ -42,6 +42,7 @@ STATEMENT_MODULES = [
         "Singular.NamingWireStatements.",
         "lean/wire-theorem-debt.json",
     ),
+    ("lean/Singular/M1.lean", "Singular.M1.Statements.", "lean/m1-theorem-debt.json"),
 ]
 
 
