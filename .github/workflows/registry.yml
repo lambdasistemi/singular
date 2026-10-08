@@ -662,12 +662,22 @@ jobs:
         run: |
           printf 'DEMO1_CONTROLS_RESULTS=%s\n' "$RUNNER_TEMP/demo1-controls-results" >> "$GITHUB_ENV"
           DEMO1_CONTROLS_RESULTS="$RUNNER_TEMP/demo1-controls-results" nix run --quiet .#demo1-cli-controls
+      # One archive lets zstd share repeated journal and receipt bytes across
+      # files. Keep every evidence file; extract with tar --zstd -xf FILE.
+      - name: Compress the refusal controls' verdicts and receipts
+        if: always() && env.DEMO1_CONTROLS_RESULTS != ''
+        run: |
+          nix shell --quiet --inputs-from . nixpkgs#gnutar nixpkgs#zstd --command \
+            tar -I 'zstd -T1 -3 --long=27' \
+              -cf "$DEMO1_CONTROLS_RESULTS.tar.zst" \
+              -C "$DEMO1_CONTROLS_RESULTS" .
       - name: Preserve the refusal controls' verdicts and receipts
         if: always() && env.DEMO1_CONTROLS_RESULTS != ''
         uses: actions/upload-artifact@v7
         with:
           name: demo1-refusal-controls
-          path: ${{ env.DEMO1_CONTROLS_RESULTS }}
+          path: ${{ env.DEMO1_CONTROLS_RESULTS }}.tar.zst
+          compression-level: 0
           if-no-files-found: error
   demo1-readback:
     name: Demo 1 public-indexer readback
