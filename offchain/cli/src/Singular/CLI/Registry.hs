@@ -64,6 +64,7 @@ import Cardano.Ledger.Api.Tx.Out
     , getMinCoinTxOut
     , mkBasicTxOut
     , referenceScriptTxOutL
+    , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
 import Cardano.Ledger.Core (PParams, Script)
@@ -95,6 +96,7 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (Release (..), renderStateToken)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.WalletOutputs (covering, fundable)
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
 
@@ -397,27 +399,36 @@ publicationFunding pp seed bootCost before after wallet = do
                     else
                         Left (PublicationUnfunded "boot" (bootCost + minimumChange) inCoin)
     publishing scripts held = foldl (\acc s -> acc >>= publishOne s) (Right held) scripts
-    -- One publication from the largest ada-only output that is not the
-    -- seed; its change, a fresh output, joins the wallet.
+    -- One publication from the smallest permitted output that covers it;
+    -- its change, a fresh output, joins the wallet. Outputs too small
+    -- never strand a publication a larger permitted output covers.
     publishOne (role, script) held =
-        case sortOn
-            (Down . (^. coinTxOutL) . snd)
-            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o] of
-            [] -> Left (PublicationUnfunded role (needed script) 0)
-            (fund@(_, out) : _) ->
-                let Coin inCoin = out ^. coinTxOutL
-                    change = inCoin - fee - referenceCoin script
-                in  if change > minimumChange
-                        then
-                            Right
-                                ( filter ((/= fst fund) . fst) held
-                                    <> [
-                                           ( Right (length held)
-                                           , out & coinTxOutL .~ Coin change
-                                           )
-                                       ]
-                                )
-                        else Left (PublicationUnfunded role (needed script) inCoin)
+        let candidates = [u | u@(k, _) <- held, k /= Left seed]
+        in  case covering (needed script) candidates of
+                Nothing ->
+                    Left (PublicationUnfunded role (needed script) (largestHeld candidates))
+                Just (fund@(_, out)) ->
+                    let Coin inCoin = out ^. coinTxOutL
+                        change = inCoin - fee - referenceCoin script
+                    in  if change > minimumChange
+                            then
+                                Right
+                                    ( filter ((/= fst fund) . fst) held
+                                        <> [
+                                               ( Right (length held)
+                                               , out & coinTxOutL .~ Coin change
+                                               )
+                                           ]
+                                    )
+                            else Left (PublicationUnfunded role (needed script) inCoin)
+    largestHeld held =
+        case [ c
+             | (_, o) <- held
+             , fundable o
+             , let MaryValue (Coin c) _ = o ^. valueTxOutL
+             ] of
+            [] -> 0
+            coins -> maximum coins
     -- The reference output is paid to the wallet's own address.
     referenceCoin script = case wallet of
         (_, o) : _ ->

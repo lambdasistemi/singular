@@ -137,6 +137,11 @@ spec = describe "a wallet's named selections" $ do
         w <- acquire
         map fst (burnCandidates burnAsset w)
             `shouldBe` [holderIn, twiceIn]
+    it "covers an amount from the smallest sufficient plain output" $ do
+        w <- acquire
+        fmap fst (coveringFunding 15_000_000 w) `shouldBe` Just plainIn
+        fmap fst (coveringFunding 25_000_000 w) `shouldBe` Nothing
+        fmap fst (coveringFunding 300_000_000 w) `shouldBe` Nothing
   where
     acquire = either (fail . show) pure =<< walletOutputs serving payer
     acquireFrom s = either (fail . show) pure =<< walletOutputs s payer

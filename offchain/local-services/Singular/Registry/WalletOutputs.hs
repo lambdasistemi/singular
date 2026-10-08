@@ -22,6 +22,7 @@ module Singular.Registry.WalletOutputs
     , fundable
     , fundingOutputs
     , coveringFunding
+    , covering
     , FundingRefusal (..)
     , renderFundingRefusal
     , chosenFunding
@@ -35,9 +36,9 @@ module Singular.Registry.WalletOutputs
     , burnCandidates
     ) where
 
-import Data.List (minimumBy, sortOn)
+import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..), comparing)
+import Data.Ord (Down (..))
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
@@ -102,14 +103,21 @@ fundable out =
 -- has one. A publication takes the output that covers it whenever one
 -- exists instead of stranding on outputs too small.
 coveringFunding :: Integer -> WalletOutputs -> Maybe (TxIn, TxOut ConwayEra)
-coveringFunding needed w =
+coveringFunding needed w = covering needed (fundingOutputs w)
+
+-- | The smallest output covering this amount from fundable candidates,
+-- if one covers. Shared publication selection: callers pass only the
+-- outputs they may spend (never the seed, never carriers). Covering is
+-- strict, as the change it leaves must stay above the minimum.
+covering :: Integer -> [(k, TxOut ConwayEra)] -> Maybe (k, TxOut ConwayEra)
+covering needed outs =
     case [ u
-         | u@(_, out) <- fundingOutputs w
-         , let MaryValue (Coin have) _ = out ^. valueTxOutL
-         , have >= needed
+         | u@(_, out) <- sortOn (coinOf . snd) outs
+         , fundable out
+         , coinOf out > needed
          ] of
         [] -> Nothing
-        covered -> Just (minimumBy (comparing (coinOf . snd)) covered)
+        covered : _ -> Just covered
   where
     coinOf out = let MaryValue (Coin c) _ = out ^. valueTxOutL in c
 
