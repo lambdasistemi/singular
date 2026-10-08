@@ -3,9 +3,10 @@
 Only new or changed modules are listed. Fields are in the [data model](data-model.md) and
 signatures in the [functions model](functions-model.md). Dependencies point downward: the CLI
 depends on the registry library, and the library depends on the provider interface.
-PR1 binds main `21f1d8560be008a8b2045e583fc384f10809260e`, Lean tree
+PR1 binds main `23964e667fa278b2027d0c05169c0f5e0e9233cb`, Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` and constitution 1.13.0. No model or on-chain
-change is authorised. New reference commands, closed-wallet funding and the page follow in PR2.
+change is authorised. The complete issue retains reference commands, closed-wallet funding and the page as the next
+serial implementation boundaries under E371; PR1 alone cannot close the issue.
 
 ## The provider interface
 
@@ -67,8 +68,11 @@ whole derivation from a state token.
   - It writes no `registry.json` and prints the state token.
 - **PR2: funding and the reference commands.** The closed wallet-output interface and narrowed
   fund inputs protect ordinary funding; a reference-command module handles publication and
-  retirement. These interfaces remain in the preserved PR2 plans rather than this PR1 model.
-- **PR2: the page.** A page module renders chain-derived information and release-archive evidence.
+  retirement. Before that phase, version the preserved PR2 wallet/read interface against the current main
+  composition; keep ordinary funding inaccessible outside its opaque module.
+- **PR2: the page.** `Singular.Registry.Page` owns deterministic public replay and archive facts;
+  LedgerProvider and Koios/facade own its typed transaction-block read. The release assembler
+  and checker own adjacent version.txt and its asset/checksum agreement.
 
 ## Public evidence and inherited fold inputs
 

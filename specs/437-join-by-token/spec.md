@@ -1,15 +1,16 @@
 # A registry joined from its state token: stories and requirements
 
-Issue [#437](https://github.com/lambdasistemi/singular/issues/437), child of epic
-[#301](https://github.com/lambdasistemi/singular/issues/301). It absorbs
+Issue [#437](https://github.com/lambdasistemi/singular/issues/437), child of feature epic
+[#371](https://github.com/lambdasistemi/singular/issues/371). It absorbs
 [#439](https://github.com/lambdasistemi/singular/issues/439) (the provider cannot find outputs by
 reference-script hash) and [#406](https://github.com/lambdasistemi/singular/issues/406) (create
 checks publication funding one script at a time). Read the [plan](plan.md) for the slices, the
 [modules model](modules-model.md), [data model](data-model.md) and
 [functions model](functions-model.md) for the changed rows, and the [tasks](tasks.md) for the
-commit boundaries. PR1 base: main `21f1d8560be008a8b2045e583fc384f10809260e`.
-The operator's 2026-10-07 cut ships token-only commands and Bob's connected journey first.
-Issue #437 remains open for PR2; the preserved plans and unfinished work are follow-up scope.
+commit boundaries. PR1 base: main `23964e667fa278b2027d0c05169c0f5e0e9233cb`.
+The operator's 2026-10-08 E371 order resumes the complete issue with serial Sol, Muse and GLM.
+Token-only commands and Bob's connected journey remain the first delivery boundary; all reference,
+funding and page requirements below remain required before issue #437 can close.
 
 ## User stories
 
@@ -87,14 +88,54 @@ expected hash serves, whoever made it and wherever it sits.
   The boot runs the state script from whichever reference was found. The funding for every
   publication is checked before the boot.
 
-### Follow-up on the same issue
+### References anyone can restore and retire
 
-PR2 delivers reference publication and retirement commands, automatic publication, protection of
-ordinary funding through a closed wallet-output interface, narrowed fund inputs, and the registry
-page with tagged release-archive evidence. It also owes independently derived action identity in
-the conformance report under the operator's A-013 ruling. These are unmet follow-up requirements,
-not PR1 claims. Their accepted rulings and preserved work remain authoritative; this cut does not
-waive them or close the issue.
+As Bob, when Carol spends her reference outputs, I rebuild the scripts from the release and
+publish them into outputs I control. There is no forever lock. Each applied script is checked
+against its expected hash before publication. An explicit automatic-publication flag can do the
+same before the requested write; a missing carrier otherwise produces the named refusal.
+
+Retirement spends every carrier in my wallet matching a hash this registry needs. The state
+script is shared by every registry of the release: its retirement is labelled as shared and may
+remove my convenience carrier for those registries too. Applied roles for other registries are
+excluded. A connected journey retires carriers, observes the missing-reference refusal, restores
+them permissionlessly and folds successfully.
+
+### Funding protected by one wallet-output boundary
+
+As an actor, my ordinary funding cannot consume a reference-script carrier or a token holding.
+Wallet outputs cross one opaque interface; only its funding projection applies the single
+fundable predicate. Named state-token, request and owned-reference selectors supply protocol
+inputs separately. Every existing ordinary selector, including largest-output request funding,
+moves behind that boundary; raw outputs are unavailable to downstream builders. Insert, update,
+terminate, create and reference publication/retirement controls present a 300 ADA script carrier,
+a large token holding and a 20 ADA plain output: only the plain output funds the transaction.
+A bypass control must fail at compilation or at the closed module-export boundary.
+
+### A registry page bound to its release
+
+As an integrator, I run describe and receive deterministic human and machine renderings from
+chain-derived facts. The page contains the token, rules, expected script hashes, provider-found
+references, current registry state and provider-labelled last-state-transaction block anchor.
+It names the application blueprint title and computed applied hash. Missing anchor data refuses
+by name. The page is unsigned and provider answers are unverified.
+
+Release facts come from version.txt beside the archive blueprint, without a new release-directory
+flag. Missing version.txt refuses with no release label. The blueprint SHA256 and derived state
+hash bind the archive to the registry; a mismatch refuses. The archive assembly stages and checks
+version.txt against asset names/checksums. The release tag is labelled as the archive's claim.
+Known limits link to that tag's GitHub release and published documentation asset/page, never
+handwritten limits or current-main Pages. Replaying the same chain state and regenerating must
+produce identical bytes.
+
+### Public evidence names each performed action
+
+The report renders each live and retired clause's action kind and target from its description.
+A separate check derives that identity independently over both current story families; clauses
+differing only in action identity render differently and swapping them fails. This does not
+reopen the accepted saved-selector retirement or transfer its receipts/state. Missing evidence
+remains visible. These full-issue requirements remain actionable after PR1; PR1 alone cannot
+close issue #437.
 
 ### Changed public promise
 
