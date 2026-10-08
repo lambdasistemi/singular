@@ -1616,24 +1616,32 @@ for t in "$reject_tx" "$booking_tx"; do
   [ "$(jq -s --arg t "$t" '[.[] | select(.journalTxId == $t and .journalEvent == "confirmed")] | length' "$j")" = 1 ] \
     || fail "the journal does not show $t confirmed"
 done
-# body_bound TXID FILE: zero only when FILE's body hashes to TXID and its bytes to the journal's hash.
+# body_bound TXID FILE JOURNAL: zero only when FILE's body hashes to TXID
+# and its bytes to JOURNAL's saved-body hash. The journal is bound
+# explicitly: deriving it from the candidate file turns a tampered body
+# outside any partition into a missing-evidence setup error instead of the
+# claimed mismatch.
 body_bound() {
-  local id file="$2" computed saved journal
+  local id file="$2" journal="$3" computed saved
+  [ -r "$journal" ] || return 1
   computed="$(jq -R -r "$(cat "$work/cbor.jq") body_span" "$file" | tr -d '\n' | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
   saved="$(tr -d '\n' <"$file" | tr a-f A-F | basenc --base16 -d | b2sum -l 256 | cut -d' ' -f1)" || return 1
-  journal="$(dirname "$(dirname "$file")")/journal.jsonl"
   id="$(jq -r --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared") | .journalBodyHash' "$journal")"
   [ "$computed" = "$1" ] && [ -n "$id" ] && [ "$saved" = "$id" ]
 }
 for t in "$reject_tx" "$booking_tx"; do
-  body_bound "$t" "$(managed_body "$reg" "$t")" || fail "the saved body of $t is not the transaction it is claimed to be"
+  case "$t" in
+    "$reject_tx") j="$bob_main_journal" ;;
+    *) j="$alice_journal" ;;
+  esac
+  body_bound "$t" "$(managed_body "$reg" "$t")" "$j" || fail "the saved body of $t is not the transaction it is claimed to be"
 done
 flip() { # one hex digit changed
   local c="${1:0:1}"
   [ "$c" = 0 ] && c=1 || c=0
   printf '%s%s' "$c" "${1:1}"
 }
-body_bound "$(flip "$reject_tx")" "$(managed_body "$reg" "$reject_tx")" \
+body_bound "$(flip "$reject_tx")" "$(managed_body "$reg" "$reject_tx")" "$bob_main_journal" \
   && fail "a body passed for a transaction id that is not its own"
 # the same bytes with their last digit changed no longer match the journal's hash
 # (the id, a hash of the body alone, still does)
@@ -1648,7 +1656,7 @@ case "$cmp_status" in
   1) ;;
   *) setup_fail "the tampered body comparison could not run" ;;
 esac
-body_bound "$reject_tx" "$work/body-tampered.hex" \
+body_bound "$reject_tx" "$work/body-tampered.hex" "$bob_main_journal" \
   && fail "a body with changed bytes passed the journal's saved-body hash"
 booking_outs="$(tx_outputs_of "$booking_tx")" || fail "the booking's saved body could not be read"
 reject_outs="$(tx_outputs_of "$reject_tx")" || fail "the reject's saved body could not be read"
@@ -1762,8 +1770,8 @@ tail -n +"$((reclaim_before + 1))" "$alice_journal" \
 run inspect-after-reclaim success -- registry inspect --key keyF --outputs-at "$alice_addr" "${common[@]}" "${node[@]}"
 retract_tx="$(field reclaim .retract)"
 booking_tx="$(field insert-to-reclaim .booking)"
-body_bound "$retract_tx" "$(managed_body "$reg" "$retract_tx")" || fail "the retract body is not the transaction claimed"
-body_bound "$booking_tx" "$(managed_body "$reg" "$booking_tx")" || fail "the reclaimed booking body is not the transaction claimed"
+body_bound "$retract_tx" "$(managed_body "$reg" "$retract_tx")" "$alice_journal" || fail "the retract body is not the transaction claimed"
+body_bound "$booking_tx" "$(managed_body "$reg" "$booking_tx")" "$alice_journal" || fail "the reclaimed booking body is not the transaction claimed"
 retract_outs="$(tx_outputs_of "$retract_tx")"
 booking_outs="$(tx_outputs_of "$booking_tx")"
 node_pending="$(jq -c --arg r "$(field insert-to-reclaim .request)" '[.pendingRequests[] | select(.request == $r)]' "$receipts/inspect-before-reclaim.json")"
