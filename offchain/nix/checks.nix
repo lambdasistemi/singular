@@ -56,7 +56,7 @@ let
       '';
   # #326 R4: a SignedTx is constructible only by signing. The project's
   # GHC type-checks the fixtures under signed-tx-control against the
-  # defining Signing module, with local-services'
+  # defining Signing module, with ledger-kernel's
   # compiled dependencies: no cabal, no package index (D-011).
   signedTxControl =
     pkgs.runCommand "signed-tx-control"
@@ -68,16 +68,16 @@ let
             ../../tools/signed_tx_control.sh
             ../../tools/signing-exports.allow
             ../signed-tx-control
-            ../local-services/Singular/Registry/Signing.hs
+            ../kernel/Singular/Registry/Signing.hs
           ];
         };
       }
       ''
-        # Every library local-services was built against: its propagated
+        # Every library ledger-kernel was built against: its propagated
         # build inputs, followed transitively.
         dbs=()
         declare -A seen=()
-        queue=(${components.sublibs.local-services})
+        queue=(${components.sublibs.ledger-kernel})
         while [ ''${#queue[@]} -gt 0 ]; do
           p=''${queue[0]}
           queue=("''${queue[@]:1}")
@@ -89,10 +89,10 @@ let
             queue+=("''${next[@]}")
           fi
         done
-        # Expose exactly local-services's own dependencies, as Cabal does
+        # Expose exactly ledger-kernel's own dependencies, as Cabal does
         # when it compiles Signing.hs.
         for id in $(sed -n '/^depends:/,/^[a-z-]*:/p' \
-            ${components.sublibs.local-services}/package.conf.d/*-local-services.conf \
+            ${components.sublibs.ledger-kernel}/package.conf.d/*-ledger-kernel.conf \
             | grep -v '^[a-z-]*:' ); do
           dbs+=(-package-id "$id")
         done

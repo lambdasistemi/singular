@@ -16,7 +16,7 @@ root=$1
 shift
 [ "${1:-}" = "--" ] && shift
 ghc_flags=("$@")
-signing="$root/offchain/local-services/Singular/Registry/Signing.hs"
+signing="$root/offchain/kernel/Singular/Registry/Signing.hs"
 fixtures="$root/offchain/signed-tx-control"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT

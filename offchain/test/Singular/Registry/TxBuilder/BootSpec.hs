@@ -153,13 +153,13 @@ publicationBeforeBoot = describe "the reference publication before a boot" $ do
             result `shouldSatisfy` isRight
 
     it
-        "without a reservation funds from the largest ada-only output, as before"
+        "without a reservation funds from the smallest covering output, leaving the largest alone"
         $ do
             (legacy, _) <- publish legacyScript [bigSeed, alternative]
             (unreserved, _) <-
                 publish (reservingScript Set.empty) [bigSeed, alternative]
-            map spent legacy `shouldBe` [[seedIn]]
-            map spent unreserved `shouldBe` [[seedIn]]
+            map spent legacy `shouldBe` [[fundIn]]
+            map spent unreserved `shouldBe` [[fundIn]]
 
     it
         "refuses before submitting when every ada-only output is reserved"
@@ -168,7 +168,7 @@ publicationBeforeBoot = describe "the reference publication before a boot" $ do
                 publish (reservingScript (Set.singleton seedIn)) [bigSeed]
             map spent submitted `shouldBe` []
             case result of
-                Left (ErrorCall why) -> why `shouldSatisfy` isInfixOf "no ada-only output"
+                Left (ErrorCall why) -> why `shouldSatisfy` isInfixOf "no permitted output covers"
                 Right _ -> expectationFailure "the publication spent the reserved seed"
 
     it

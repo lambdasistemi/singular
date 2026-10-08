@@ -295,8 +295,8 @@ publishRefScriptReserving reserved prov submit payerAddr script = do
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
 {- | The unsigned publication of one reference script, funded by the
-largest ada-only output outside the reservation, and the reference
-output it creates.
+smallest permitted output that covers it outside the reservation, and
+the reference output it creates.
 -}
 publishRefScriptTx
     :: Set.Set TxIn

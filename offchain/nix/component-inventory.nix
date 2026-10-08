@@ -76,6 +76,7 @@ let
     # have stable public ownership. Shipping composition links koios-http;
     # the old process-global node/indexer runtime is deleted.
     sublibs = [
+      "ledger-kernel"
       "local-services"
       "koios-http"
     ];
