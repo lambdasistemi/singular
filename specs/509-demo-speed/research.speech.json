@@ -1,0 +1,108 @@
+{
+  "faster-confirmation-measured-on-a-private-ledger": [
+    {
+      "text": "Faster confirmation, measured on a private ledger.",
+      "pause": 500
+    },
+    {
+      "text": "As a demo operator, I want a transaction that has reached the ledger to be noticed promptly, without multiplying requests when a transaction stays missing.",
+      "pause": 400
+    },
+    {
+      "text": "The shared confirmation loop now waits one second before its first retry, then two, four, and at most five seconds. Previously every retry waited five seconds. The original proposal to poll every second was rejected by a compiled load control: it made 301 output queries in a five-minute missing-output scenario. Backoff makes 63 in the same deterministic control. Exact-output identity, deadline calculation, wall-clock cancellation, and provider-failure distinctions are retained.",
+      "pause": 400
+    },
+    {
+      "text": "The private confirmation recorder now links the threaded runtime required by its HTTP server. Its smoke run records 12 actual signed payment submissions and confirmations, two missing-output timeout controls, the wrong-network refusal, ten individual follow-on timings, and the provider's raw query trace. This is harness evidence, not a conformance claim for the registry journeys.",
+      "pause": 400
+    }
+  ],
+  "measured-results": [
+    {
+      "text": "Measured results.",
+      "pause": 500
+    },
+    {
+      "text": "The raw receipts completed with exit zero on both revisions. Values below are computed from those receipts; machine-readable values and hashes are in measurements.json.",
+      "pause": 400
+    },
+    {
+      "text": "The first payment needed exactly two output queries on each revision, making its four-second saving the clearest comparison. The baseline's ninth follow-on payment also retried (5.2137 seconds); every candidate follow-on payment was already visible at its first query. The larger aggregate difference therefore includes differing initial visibility, and is not a repeatable speedup estimate.",
+      "pause": 400
+    },
+    {
+      "text": "One pair, sequential on the same shared host, candidate first and baseline second, GHC 9.12.3 and Cabal -O0. Builds are outside the timings. Both use warm build/dependency caches, the same locked cardano-node 10.7.0, 0.1-second slots, and private generated genesis. Host load differed: initial one-minute load was 18.92 for the baseline and 13.80 for the candidate; other builds and checks were active. CPU/RSS differences are descriptive only. Peak disk, total simultaneous process-tree RSS, public-provider latency and whole-demo wall time were not measured. These timings do not establish a whole-demo speedup.",
+      "pause": 400
+    }
+  ],
+  "revision-binding-and-reproduction": [
+    {
+      "text": "Revision binding and reproduction.",
+      "pause": 500
+    },
+    {
+      "text": "Before: 23964e667fa278b2027d0c05169c0f5e0e9233cb from main, plus only the identical recorder instrumentation and threaded-runtime repair. After: 4c52082711b98acea5797b620f3057a55e5d963b, also based directly on that main revision. Source patches, binary hashes and receipt hashes are retained. The final code commit 69120979 differs from the measured candidate only in provider-test formatting; production and recording code are byte-identical.",
+      "pause": 400
+    },
+    {
+      "text": "The original b70e978a proposal, the inherited #437-based research branch and its earlier measurements remain preserved as research evidence. They are not the source of the table above and are not included in the delivery ancestry.",
+      "pause": 400
+    },
+    {
+      "text": "From each revision's offchain/ directory, with an unused absolute output path:",
+      "pause": 400
+    },
+    {
+      "text": "For the before revision, copy the candidate's offchain/test/local-services-record/ConfirmationSmoke.hs and add only ghc-options: -threaded to its local-services-record executable stanza. Do not copy the production confirmation implementation. The ten sample records contain trace offsets, so their query counts can be recovered without guessing.",
+      "pause": 400
+    },
+    {
+      "text": "Raw evidence remains at /srv/lanes/singular-e371/demo-speed-results/{main-baseline-smoke,delivery-smoke}; each contains source identity/patch, binary hash, exit, time, host load, and the recorder's full trace and receipts. Earlier failed and synthetic runs remain separate. No secret or public-chain transaction was used.",
+      "pause": 400
+    },
+    {
+      "text": "Both measured workloads and GNU time recorded exit zero. The baseline non-login shell also exited zero. After the candidate receipts were saved, its login shell reported exit 127 because its system logout script read an unset variable under set -u. That teardown failure is separate from the completed workload; it is not represented as a successful outer shell invocation.",
+      "pause": 400
+    }
+  ],
+  "demo-inventory-and-remaining-opportunities": [
+    {
+      "text": "Demo inventory and remaining opportunities.",
+      "pause": 500
+    },
+    {
+      "text": "Inventory investigated on bb134add and its offchain/flake.nix entry points; the delivery branch changes only shared confirmation and its recorder and tests on main. The legacy journey findings below remain research gaps, not newly verified journey outcomes on the delivery branch.",
+      "pause": 400
+    },
+    {
+      "text": "These are concrete remaining coverage gaps, not passing journey results. The complete four-journey closure criterion remains unfulfilled; a scope question was sent to the operator. The operator requested an explanation of the API removal; no narrowed scope has been approved.",
+      "pause": 400
+    },
+    {
+      "text": "The API removal was intentional in #157, commit 9cba521fdf244b12bf508ad83c01b193866411cd: the pinned consumer script and its mandatory withdrawal were removed, so its stake-registration builder was deleted. The approved design is in specs/157-cage-registry-mode/spec.md. The stale runner calls are unfinished migration work, tracked by open #283 for register rows and #172 for the derived consumers and journeys. These commands are not declared retired. A dummy compatibility alias would conceal the missing migration. The naming pilot's validator rejection has not been shown to have the same cause.",
+      "pause": 400
+    }
+  ],
+  "appendix-model-mapping-and-harness-verification-limits": [
+    {
+      "text": "Appendix: model mapping and harness verification limits.",
+      "pause": 500
+    },
+    {
+      "text": "Lean revision: bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713; the measurement and delivery trees have unchanged model files. Singular.admittedExitStep, Singular.admittedTxOfExit, Singular.retractAdmission and Singular.inPhase2 retain their transitions, signatures and validity rules. This patch observes the exact transaction output; it does not construct or submit different bodies, change recipients, custody, token identity, witnesses, or admission. Concrete transaction identity is outside the model's observation vocabulary; no new model/ledger equivalence claim is made by a timing result.",
+      "pause": 400
+    },
+    {
+      "text": "The provider control detects both slow first retry and excessive missing-output traffic. It preserves the exact deadline while checking observation within the existing five-second polling granularity, rather than requiring the old loop's accidental overshoot. Added controls keep backend, conflicting-output, wrong-missing-reference and released-session failures distinct and immediate.",
+      "pause": 400
+    },
+    {
+      "text": "The inherited measurement tree's aggregate was red: 1081 examples, 29 failures, 11 pending, in recovery/CLI integration; root just ci reached its documentation check and failed on missing #437 narration clips. Those failures are not waived. The isolated delivery tree's full suite passed: 1029 examples, zero failures, 11 pre-existing pending. This does not fill the legacy journey gaps above.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "336ab55ba2fce2eca3f60ae7a47ae261333e0a61ce890242ee1702bbf8f28740"
+  }
+}

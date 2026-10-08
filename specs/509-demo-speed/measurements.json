@@ -1,0 +1,122 @@
+{
+  "main-baseline-smoke": {
+    "source_commit": "23964e667fa278b2027d0c05169c0f5e0e9233cb",
+    "workload_exit": 0,
+    "finite_submit_confirm_seconds": 5.116881681,
+    "unbounded_submit_confirm_seconds": 0.127923039,
+    "ten_following_confirmations_seconds": [
+      0.125372054,
+      0.107628891,
+      0.095489752,
+      0.102332475,
+      0.099446883,
+      0.118863388,
+      0.100233467,
+      0.113374769,
+      5.21371729,
+      0.123983082
+    ],
+    "total_success_seconds": 11.445246770999999,
+    "calls": {
+      "cli_protocol_params": 1,
+      "address_utxos": 25,
+      "tx_info": 98,
+      "tip": 100
+    },
+    "output_queries": {
+      "confirmedFiniteTx": 2,
+      "confirmedNoUpperTx": 1,
+      "finiteMissingTx": 24,
+      "noUpperMissingTx": 60
+    },
+    "wall_seconds": 320.37,
+    "cpu_user_seconds": 33.81,
+    "cpu_system_seconds": 2.22,
+    "peak_rss_kib": 278712,
+    "retained_bytes": 922096,
+    "load_before": "18.92 20.72 18.23 22/8787 2068699",
+    "load_after": "16.05 20.18 19.03 23/8353 2144793",
+    "time_raw": "\tCommand being timed: \"timeout 600 dist-newstyle/build/x86_64-linux/ghc-9.12.3/singular-registry-0.1.0.0/x/local-services-record/noopt/build/local-services-record/local-services-record\"\n\tUser time (seconds): 33.81\n\tSystem time (seconds): 2.22\n\tPercent of CPU this job got: 11%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 5:20.37\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 278712\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 70999\n\tVoluntary context switches: 152260\n\tInvoluntary context switches: 7816\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 29200\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "sha256": {
+      "confirmation-smoke.json": "8a94faa9fa5dcef3f482431987667e594a6ec2cded745426fb19a80fd1eea186",
+      "confirmation-latency.json": "1ee0984a159d32e2c931759aab37ec41b161d738020196b0648ee838155e3258",
+      "provider-trace.json": "476c1092304d118126487657a471663da1175b9a94c6a371213ddf1329a3c323",
+      "source.patch": "9a3d73cf5a6748be79fadde6380f6dad0411b3f2d437b0d91ca7fde34f46586f",
+      "time.txt": "0386a00b441f5e1ee5dec0fcaecd2e18ff06f934825d28588cababd7fbae1c76"
+    },
+    "outer_shell_exit": 0,
+    "outer_shell_note": "Non-login shell.",
+    "ten_following_output_queries": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      1
+    ]
+  },
+  "delivery-smoke": {
+    "source_commit": "4c52082711b98acea5797b620f3057a55e5d963b",
+    "workload_exit": 0,
+    "finite_submit_confirm_seconds": 1.117037171,
+    "unbounded_submit_confirm_seconds": 0.147167591,
+    "ten_following_confirmations_seconds": [
+      0.120530568,
+      0.107552391,
+      0.132734545,
+      0.126759172,
+      0.138072903,
+      0.143790957,
+      0.106440025,
+      0.114292597,
+      0.128441813,
+      0.107499359
+    ],
+    "total_success_seconds": 2.490319092,
+    "calls": {
+      "cli_protocol_params": 1,
+      "address_utxos": 25,
+      "tx_info": 102,
+      "tip": 104
+    },
+    "output_queries": {
+      "confirmedFiniteTx": 2,
+      "confirmedNoUpperTx": 1,
+      "finiteMissingTx": 27,
+      "noUpperMissingTx": 62
+    },
+    "wall_seconds": 313.67,
+    "cpu_user_seconds": 32.7,
+    "cpu_system_seconds": 2.02,
+    "peak_rss_kib": 281084,
+    "retained_bytes": 957957,
+    "load_before": "13.80 17.65 15.49 11/8321 1832515",
+    "load_after": "17.67 20.18 17.42 10/8676 1989310",
+    "time_raw": "\tCommand being timed: \"timeout 600 dist-newstyle/build/x86_64-linux/ghc-9.12.3/singular-registry-0.1.0.0/x/local-services-record/noopt/build/local-services-record/local-services-record\"\n\tUser time (seconds): 32.70\n\tSystem time (seconds): 2.02\n\tPercent of CPU this job got: 11%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 5:13.67\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 281084\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 70835\n\tVoluntary context switches: 149164\n\tInvoluntary context switches: 6429\n\tSwaps: 0\n\tFile system inputs: 8\n\tFile system outputs: 28944\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "sha256": {
+      "confirmation-smoke.json": "0a0695ddad624b16eca0c67de5d6e7dd5e79142b7cf13ea0abfd6fd404f1c21a",
+      "confirmation-latency.json": "8fabf1e19f3e18549ed3502e06a82f02b0ccf7947b447330979e3cff31e430d7",
+      "provider-trace.json": "195447b71e3c069bc47c7c735c9abae7fe8e2c57c25f9cea87310a4e2409c2d9",
+      "source.patch": "5436118d507d79dd2f9aff15cd1df6ff201553bac2c5df2d77d964266bc0c271",
+      "time.txt": "bc46ab8217d9ffe8b30ab9aef71699e4d5b11d6574683b6931ed6862f710ae61"
+    },
+    "outer_shell_exit": 127,
+    "outer_shell_note": "Login-shell teardown read an unset __ETC_BASHLOGOUT_SOURCED after workload exit 0 was saved.",
+    "ten_following_output_queries": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  }
+}
