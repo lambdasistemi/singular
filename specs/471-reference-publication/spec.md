@@ -5,7 +5,7 @@ Depends on #501. Work starts from its frozen `26af5ae7ea881b433f2f317f10e09ddab7
 candidate; starting work does not accept that dependency. Lean tree
 `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, constitution 1.13.0, is unchanged.
 E371 subsequently accepted #501; PR476 merged as `b3e6db96957c53a1ce7bf749ec6b0adcb48349d3`.
-The #471 branch now inherits main `33ed4c2202f1abff53a5f19665f92ac098381176`;
+The #471 branch now inherits main `e48e309801ea42bd3d3d90934164a61d19f88f30`;
 its own implementation remains unaccepted. E437 owns acceptance and merge; E371 is a sibling.
 The parent [spec](../437-join-by-token/spec.md) and settled October 6–7 rulings remain binding.
 
@@ -13,7 +13,7 @@ The parent [spec](../437-join-by-token/spec.md) and settled October 6–7 ruling
 
 As Carol, I explicitly publish the missing scripts of a registry from its state token and the
 bound release. I choose the network, provider and wallet. The command is
-`singular registry publish-references --state-token …`, with repeatable `--role ROLE`.
+`singular registry publish-references --state-dir DIR --state-token …`, with repeatable `--role ROLE`.
 Without role selection it considers all six roles, publishing only those actually missing.
 It does not create a registry, mint a registry token or change the existing registry state.
 
@@ -79,8 +79,8 @@ Reuse #439 discovery rather than adding another provider implementation.
 
 ## Preservation and delivery
 
-Keep #383 session/provider composition, #389 Koios evidence, #419 public fold/carried datum and
-#416 tracing. Preserve exact-output confirmation, address-wide recovery/refund observations,
+Keep #383 session/provider composition, #389 Koios evidence, #419 public fold/carried datum
+and #416 tracing. Preserve exact-output confirmation, address-wide recovery/refund observations,
 inspect receipt fields and distinctions between missing, spent, altered and failed reads.
 The abstract Lean model does not establish physical reference placement or lifetime; publication
 must preserve registry state, token identity, custody and authorization through actual receipts.

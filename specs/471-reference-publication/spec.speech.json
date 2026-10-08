@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Issue #471, child of dedicated epic #437. Depends on #501. Work starts from its frozen 26af5ae7ea881b433f2f317f10e09ddab7a45cae candidate; starting work does not accept that dependency. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, constitution 1.13.0, is unchanged. E371 subsequently accepted #501; PR476 merged as b3e6db96957c53a1ce7bf749ec6b0adcb48349d3. The #471 branch now inherits main 33ed4c2202f1abff53a5f19665f92ac098381176; its own implementation remains unaccepted. E437 owns acceptance and merge; E371 is a sibling. The parent spec and settled October 6–7 rulings remain binding.",
+      "text": "Issue #471, child of dedicated epic #437. Depends on #501. Work starts from its frozen 26af5ae7ea881b433f2f317f10e09ddab7a45cae candidate; starting work does not accept that dependency. Lean tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, constitution 1.13.0, is unchanged. E371 subsequently accepted #501; PR476 merged as b3e6db96957c53a1ce7bf749ec6b0adcb48349d3. The #471 branch now inherits main e48e309801ea42bd3d3d90934164a61d19f88f30; its own implementation remains unaccepted. E437 owns acceptance and merge; E371 is a sibling. The parent spec and settled October 6–7 rulings remain binding.",
       "pause": 400
     }
   ],
@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As Carol, I explicitly publish the missing scripts of a registry from its state token and the bound release. I choose the network, provider and wallet. The command is singular registry publish-references --state-token …, with repeatable --role ROLE. Without role selection it considers all six roles, publishing only those actually missing. It does not create a registry, mint a registry token or change the existing registry state.",
+      "text": "As Carol, I explicitly publish the missing scripts of a registry from its state token and the bound release. I choose the network, provider and wallet. The command is singular registry publish-references --state-dir DIR --state-token …, with repeatable --role ROLE. Without role selection it considers all six roles, publishing only those actually missing. It does not create a registry, mint a registry token or change the existing registry state.",
       "pause": 400
     },
     {
@@ -81,17 +81,7 @@
       "pause": 500
     },
     {
-      "text": "Keep #383 session/provider composition, #389 Koios evidence, #419 public fold/carried datum and",
-      "pause": 400
-    }
-  ],
-  "416-tracing-preserve-exact-output-confirmation-address-wide-recoveryrefund-observations": [
-    {
-      "text": "416 tracing. Preserve exact-output confirmation, address-wide recovery/refund observations,.",
-      "pause": 500
-    },
-    {
-      "text": "inspect receipt fields and distinctions between missing, spent, altered and failed reads. The abstract Lean model does not establish physical reference placement or lifetime; publication must preserve registry state, token identity, custody and authorization through actual receipts.",
+      "text": "Keep #383 session/provider composition, #389 Koios evidence, #419 public fold/carried datum and #416 tracing. Preserve exact-output confirmation, address-wide recovery/refund observations, inspect receipt fields and distinctions between missing, spent, altered and failed reads. The abstract Lean model does not establish physical reference placement or lifetime; publication must preserve registry state, token identity, custody and authorization through actual receipts.",
       "pause": 400
     },
     {
@@ -105,6 +95,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "060270be3e8c9b4efe9ce76592b4077f09f0311ede6d088972bb299660b4e7d1"
+    "sha256": "12725c9b754998f8e35588181757bb45c296bf7336fc701ea01c965baf98dbff"
   }
 }
