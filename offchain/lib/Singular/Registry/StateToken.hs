@@ -30,6 +30,8 @@ module Singular.Registry.StateToken
     , roleName
     , parseRole
     , expectedReferences
+    , referenceScripts
+    , checkedScript
 
       -- * Resolving a token into a registry
     , ResolvedRegistry (..)
@@ -62,6 +64,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
+import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 import Cardano.Crypto.Hash.Class (hashFromBytes)
@@ -75,7 +78,7 @@ import Cardano.Ledger.Api.Tx.Out
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Credential
     ( Credential (ScriptHashObj)
     , StakeReference (StakeRefNull)
@@ -94,7 +97,12 @@ import Singular.Application.OpenDatum.Script
     , applicationCodes
     )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (NamingCodes, applyRequestParams)
+import Singular.Registry.Blueprint
+    ( NamingCodes (..)
+    , applyBytesParam
+    , applyDataParam
+    , applyRequestParams
+    )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
@@ -115,6 +123,7 @@ import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
+    , scriptFromBytes
     , scriptHashBytes
     , txInToRef
     )
@@ -235,6 +244,55 @@ expectedReferences release (_, AssetName name) =
             (error "expectedReferences: a pin is not a script hash")
             ScriptHash
             (hashFromBytes (SBS.fromShort pin))
+
+{- | The six scripts a registry runs, rebuilt from the release and the
+token alone: the same derivations 'expectedReferences' hashes, as
+scripts. Economics never enter a script: windows and fees live in the
+configuration built around them, not in the code.
+-}
+referenceScripts :: Release -> Asset -> Map ReferenceRole (Script ConwayEra)
+referenceScripts release (_, AssetName name) =
+    Map.fromList
+        [ (RoleState, stateScript)
+        , (RoleRequest, requestScript)
+        , (RoleWitnessAbsent, witnessScript 0)
+        , (RoleWitnessActive, witnessScript 1)
+        , (RoleWitnessTerminal, witnessScript 2)
+        , (RoleApplication, applicationScript)
+        ]
+  where
+    stateHash = computeScriptHash (releaseState release)
+    stateScript = scriptFromBytes "reference-state" (releaseState release)
+    registryId = scriptHashBytes stateHash <> SBS.fromShort name
+    codes = applicationCodes OpenDatumApplication registryId (releaseCodes release)
+    requestScript =
+        scriptFromBytes
+            "reference-request"
+            ( applyRequestParams
+                (scriptHashBytes stateHash)
+                (OnChainTokenId (BuiltinByteString (SBS.fromShort name)))
+                (releaseRequest release)
+            )
+    witnessScript kind =
+        scriptFromBytes
+            ("reference-witness-" <> show kind)
+            ( applyBytesParam
+                registryId
+                (applyDataParam (PLC.I kind) (ncWitness codes))
+            )
+    applicationScript = scriptFromBytes "reference-application" (ncApplication codes)
+
+{- | The rebuilt script for one role, hash-checked against the expected
+role hash before anything is built, signed or written.
+-}
+checkedScript
+    :: Release -> Asset -> ReferenceRole -> Either ReferenceRefusal (Script ConwayEra)
+checkedScript release token role =
+    let script = referenceScripts release token Map.! role
+        expected = expectedReferences release token Map.! role
+    in  if hashScript script == expected
+            then Right script
+            else Left (ReferenceScriptMismatch role expected (hashScript script))
 
 -- | The datum policy a registry pins, in the order they are compared.
 data PinField
@@ -417,6 +475,8 @@ data ReferenceRefusal
       ReferenceMissing ReferenceRole ScriptHash
     | -- | A source could not be read
       ReferenceUnreadable ReadFailure
+    | -- | The rebuilt script hashes to another hash: role, expected, actual
+      ReferenceScriptMismatch ReferenceRole ScriptHash ScriptHash
     deriving stock (Eq, Show)
 
 {- | Whether the output carries a reference script whose hash, computed here
@@ -493,6 +553,13 @@ renderReferenceRefusal = \case
     ReferenceUnreadable failure ->
         "the provider could not be read while finding references: "
             <> T.pack (show failure)
+    ReferenceScriptMismatch role expected actual ->
+        "reference-script-mismatch "
+            <> roleName role
+            <> ": rebuilt "
+            <> hexText (scriptHashBytes actual)
+            <> ", expected "
+            <> hexText (scriptHashBytes expected)
 
 -- | A pin field as refusals spell it.
 pinName :: PinField -> Text

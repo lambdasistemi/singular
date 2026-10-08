@@ -42,6 +42,7 @@ import Control.Exception (Exception)
 import Control.Tracer (Tracer)
 import Data.ByteString (ByteString)
 import Data.List.NonEmpty (NonEmpty)
+import Data.Map.Strict (Map)
 import Data.Text (Text)
 import Data.Word (Word32, Word64)
 import Singular.Registry.Evidence
@@ -181,6 +182,10 @@ data Session w m = Session
     { sessionNetwork :: Network
     , sessionId :: SessionId
     , sessionBinding :: SessionBinding
+    , sessionFunding :: Map Addr TxIn
+    {- ^ The ordinary funding input chosen at each address, if any: honored
+    by the wallet selections, invisible to every other read.
+    -}
     , sessionTracer :: Tracer m ReadEvent
     {- ^ Where the local services report what they do under this session:
     the tracer of the scope that acquired it

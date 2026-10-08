@@ -43,6 +43,7 @@ stubSession =
         { sessionNetwork = Network 42
         , sessionId = SessionId "raw-builder-fixture"
         , sessionBinding = Unbound
+        , sessionFunding = Map.empty
         , sessionTracer = nullTracer
         , sessionEvaluated = \_ -> pure ()
         , outputs =

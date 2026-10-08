@@ -1129,6 +1129,7 @@ lineageSession blocks =
         { LP.sessionNetwork = LP.Network 42
         , LP.sessionId = Evidence.SessionId "chain-replay-component"
         , LP.sessionBinding = Evidence.Unbound
+        , LP.sessionFunding = Map.empty
         , LP.outputs = const (pure (Left unused))
         , LP.protocolParameters = pure (Left unused)
         , LP.tipObservation = pure (Left unused)

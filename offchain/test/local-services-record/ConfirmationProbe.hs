@@ -35,6 +35,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
+import Data.Map.Strict qualified as Map
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.String (fromString)
 import Data.Text (Text)
@@ -124,6 +125,7 @@ probeConfirmation output magic snapshot (SystemStart start) history horizon pp =
                                     { sessionNetwork = Network magic
                                     , sessionId = identity
                                     , sessionBinding = Unbound
+                                    , sessionFunding = Map.empty
                                     , sessionTracer = nullTracer
                                     , sessionEvaluated = const (pure ())
                                     , networkTime = rawTime

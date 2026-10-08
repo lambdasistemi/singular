@@ -39,6 +39,7 @@ import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
+import Singular.Registry.ReferencePublicationSpec qualified
 import Singular.Registry.StateTokenSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
@@ -51,6 +52,7 @@ import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Singular.Registry.WaitSpec qualified
+import Singular.Registry.WalletOutputsSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
 
@@ -123,6 +125,9 @@ main = hspec $ do
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
+        (tagged "Singular.Registry.ReferencePublication" [Provider])
+        Singular.Registry.ReferencePublicationSpec.spec
+    describe
         (tagged "Singular.Registry.StateToken" [Provider])
         Singular.Registry.StateTokenSpec.spec
     describe
@@ -146,6 +151,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TrieStateContract" [Trie])
         Singular.Registry.TrieStateContractSpec.spec
+    describe
+        (tagged "Singular.Registry.WalletOutputs" [Provider])
+        Singular.Registry.WalletOutputsSpec.spec
     describe
         (tagged "Naming.CompleteVerify" [Naming, Application])
         Naming.CompleteVerifySpec.spec

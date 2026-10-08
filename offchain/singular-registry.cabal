@@ -194,6 +194,7 @@ library local-services
     Singular.Registry.WaitTypes
     Singular.Registry.Signing
     Singular.Registry.Wallet
+    Singular.Registry.WalletOutputs
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
     Singular.Registry.ProviderSettings
@@ -946,6 +947,7 @@ test-suite cage-tests
     Singular.Registry.LocalServicesCallerSpec
     Singular.Registry.SessionServicesSpec
     Singular.Registry.WaitSpec
+    Singular.Registry.WalletOutputsSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.OneViewSpec
     Singular.Registry.PhaseLogSpec
@@ -955,6 +957,7 @@ test-suite cage-tests
     Singular.Registry.StubSession
     Singular.Registry.StateTokenFixture
     Singular.Registry.StateTokenSpec
+    Singular.Registry.ReferencePublicationSpec
     Singular.Registry.RawChainFixture
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime

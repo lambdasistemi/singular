@@ -153,6 +153,7 @@ koiosProvider runtime configured loadSource client =
                 { sessionNetwork = configured
                 , sessionId = identity
                 , sessionBinding = Unbound
+                , sessionFunding = Map.empty
                 , sessionTracer = nullTracer
                 , sessionEvaluated = \_ -> pure ()
                 , outputs =

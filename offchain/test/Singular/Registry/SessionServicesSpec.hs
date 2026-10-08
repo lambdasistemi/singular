@@ -57,6 +57,7 @@ rawSession context resolved =
         { sessionNetwork = Network 1
         , sessionId = SessionId "local-service-fixture"
         , sessionBinding = Unbound
+        , sessionFunding = Map.empty
         , sessionTracer = nullTracer
         , sessionEvaluated = \_ -> pure ()
         , outputs = \query -> observed "outputs" $ case query of
