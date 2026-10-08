@@ -25,6 +25,81 @@
 # shellcheck disable=SC2016 # single-quoted jq programs name jq variables, never shell ones
 set -euo pipefail
 
+# 50 MiB. Receipts hold the journal fields the cross-wallet predicates read
+# and one exit code per alteration. Past this cap the run stops.
+receipt_cap_bytes=52428800
+receipt_bytes() {
+  local s=0 n
+  while IFS= read -r n; do
+    s=$((s + n))
+  done < <(find "$1" -type f -printf '%s\n' 2>/dev/null || true)
+  printf '%d' "$s"
+}
+enforce_receipt_cap() {
+  local bytes
+  bytes="$(receipt_bytes "$1")"
+  if [ "$bytes" -gt "$receipt_cap_bytes" ]; then
+    echo "recovery: receipt bytes $bytes exceed $receipt_cap_bytes ($1)" >&2
+    return 1
+  fi
+}
+# Fields the cross-wallet predicates and their alterations actually read.
+cross_evidence_filter='
+def line:
+  {journalTxId,journalEvent,journalCommand,journalInputs,journalKey,journalEdge,journalRootBefore,journalRootAfter,journalStep}
+  | with_entries(select(.value != null));
+def lines: map(line);
+def projected_loss:
+  if . == null then null
+  else {outcome, submissions: [(.submissions // [])[] | {step, tx, case}]}
+  end;
+{fold:$fold,key:$key,point:$point,reached:$reached,folder:$folder,signers:$signers,clean:$clean,exit:$exit,
+ loss:($loss | projected_loss),
+ booking:($booking[0] | {outcome, request, booking, requester}),
+ next:($next[0] | {outcome, reconciled: {observed: .reconciled.observed}}),
+ inspect:($inspect[0] | {outcome, leaf, root}),
+ booked:($booked | lines), held:($held | lines), after:($after | lines),
+ roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot}}'
+# Fixture entries for the receipt-size check. Neither starts a node.
+if [ "${1:-}" = "--project-evidence" ]; then
+  [ "$#" -eq 3 ] || {
+    echo "usage: $0 --project-evidence FIXTURE OUT" >&2
+    exit 2
+  }
+  fixture="$2"
+  out="$3"
+  jq -n \
+    --arg fold "$(jq -r .fold "$fixture/meta.json")" \
+    --arg key "$(jq -r .key "$fixture/meta.json")" \
+    --arg point "$(jq -r .point "$fixture/meta.json")" \
+    --argjson reached "$(jq .reached "$fixture/meta.json")" \
+    --arg folder "$(jq -r .folder "$fixture/meta.json")" \
+    --argjson signers "$(jq .signers "$fixture/meta.json")" \
+    --argjson clean "$(jq .clean "$fixture/meta.json")" \
+    --argjson exit "$(jq .exit "$fixture/meta.json")" \
+    --argjson loss "$(cat "$fixture/loss.json")" \
+    --slurpfile booking "$fixture/booking.json" \
+    --slurpfile next "$fixture/next.json" \
+    --slurpfile inspect "$fixture/inspect.json" \
+    --slurpfile booked "$fixture/booked.jsonl" \
+    --slurpfile held "$fixture/held.jsonl" \
+    --slurpfile after "$fixture/after.jsonl" \
+    --arg beforeRoot "$(jq -r .before "$fixture/roots.json")" \
+    --arg bookedRoot "$(jq -r .booked "$fixture/roots.json")" \
+    --arg heldRoot "$(jq -r .held "$fixture/roots.json")" \
+    --arg afterRoot "$(jq -r .after "$fixture/roots.json")" \
+    "$cross_evidence_filter" >"$out"
+  exit 0
+fi
+if [ "${1:-}" = "--receipt-cap" ]; then
+  [ "$#" -eq 2 ] || {
+    echo "usage: $0 --receipt-cap RECEIPTS-DIR" >&2
+    exit 2
+  }
+  enforce_receipt_cap "$2"
+  exit
+fi
+
 [ "$#" -eq 5 ] || {
   echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT" >&2
   exit 2
@@ -121,15 +196,40 @@ harness_started=$(date +%s)
 # The node-backed invocation's own measured wall time (#451 re-cut): setup
 # and clause checks included, collection/upload excluded. Written at every
 # exit, including refusals, so a missing record is honestly absent.
+# shellcheck disable=SC2329 # the EXIT trap below invokes this
 finish() {
   local code=$?
-  {
-    kill "${devnet_pid:-}" 2>/dev/null || true
-    pkill -f "cardano-node run --config $work/" 2>/dev/null || true
-  } >/dev/null 2>&1
+  local _wait
+  trap - EXIT
+  kill "${devnet_pid:-}" 2>/dev/null || true
+  if command -v pkill >/dev/null 2>&1; then
+    pkill -f "cardano-node run --config $work/" >/dev/null 2>&1 || true
+  fi
+  for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+    if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config $work/" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
   printf '{"part":"%s","elapsed_seconds":%d,"exit_code":%d}\n' \
     "${CLI_RECOVERY_PARTS:-all}" "$(($(date +%s) - harness_started))" "$code" \
     >"$work/node-execution-time.json" 2>/dev/null || true
+  if ! enforce_receipt_cap "$receipts"; then
+    code=1
+  fi
+  # DEMO1_KEEP_SCRATCH=1 keeps the run, including for the cross-wallet
+  # collector that reads it after this script returns.
+  if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
+    echo "kept scratch: $work" >&2
+  else
+    chmod -R u+rwx "$work" 2>/dev/null || true
+    rm -rf "$work" || true
+    if [ -e "$work" ]; then
+      echo "scratch remains: $work" >&2
+      code=1
+    fi
+  fi
+  exit "$code"
 }
 trap finish EXIT
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
@@ -713,6 +813,7 @@ if [ "$cross_any" -eq 1 ]; then
       # jq's false verdict is 1. A parse/setup error cannot prove rejection.
       clause "altered evidence $mutation_no is rejected: $text" is_equal "$status" 1
       clause "alteration $mutation_no changed evidence: $text" bash -c '! cmp -s "$1" "$2"' _ "$cross_evidence" "$mutant"
+      rm -f "$mutant" "$red.out" "$red.err"
     done
     cross_check=$((cross_check + 1))
   }
@@ -773,6 +874,8 @@ if [ "$cross_any" -eq 1 ]; then
         || [ "$(field "$cross-next" .unresolved.tx)" != "$cross_fold" ]; then refusals_clean=1; fi
       # Retain every refusal; the next run otherwise reuses the receipt name.
       cp "$receipts/$cross-next.json" "$receipts/$cross-refused-$i.json"
+      # The comparison has been recorded. The copy is a full journal.
+      rm -f "$snaps/$cross-try-$i.jsonl"
       sleep 2
     done
     snap "$cross-next"
@@ -789,9 +892,8 @@ if [ "$cross_any" -eq 1 ]; then
       --slurpfile after "$snaps/$cross-next.jsonl" \
       --arg beforeRoot "$(cat "$snaps/$cross-before.root")" --arg bookedRoot "$(cat "$snaps/$cross-booked.root")" \
       --arg heldRoot "$(cat "$snaps/$cross-held.root")" --arg afterRoot "$(root_now)" \
-      '{fold:$fold,key:$key,point:$point,reached:$reached,folder:$folder,signers:$signers,clean:$clean,exit:$exit,loss:$loss,
-      booking:$booking[0],next:$next[0],inspect:$inspect[0],booked:$booked,held:$held,after:$after,
-      roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot}}' >"$cross_evidence"
+      "$cross_evidence_filter" >"$cross_evidence"
+    enforce_receipt_cap "$receipts" || exit 1
     cross_check=1
     cross_clause "the requester booked only, leaving the public root unchanged" \
       '. as $e | .booking.outcome == "success" and .booking.request == (.booking.booking + "#0")
@@ -859,6 +961,7 @@ if [ "$cross_any" -eq 1 ]; then
     fi
     clause "the saved signed body is bound to its prepared line" body_bound "$cross_fold"
     clause "the journal was only appended to and no saved body changed" appended_only "$cross-before"
+    rm -f "$snaps/$cross"-*.jsonl
   done
   # The two runtime extents must agree for this invocation: a selected case
   # without its own prerequisite, or a prerequisite no selected case owns,

@@ -16,8 +16,8 @@
 # archive itself is not touched. The blueprint is the archive's, the bound
 # statements are the archive's statement ledger, and the take is the archive's own
 # tools/demo1_cli_attach.sh, which must be the one this checkout holds. The
-# verdict sections are printed; the receipts stay in the run's directory, which is
-# named on the last line.
+# verdict sections are printed. The scratch is removed on exit.
+# DEMO1_KEEP_SCRATCH=1 keeps it and prints its path.
 set -euo pipefail
 
 [ "$#" -eq 1 ] || {
@@ -31,6 +31,37 @@ fail() {
 }
 
 scratch="$(mktemp -d "${RUNNER_TEMP:-/tmp}/demo1-attach.XXXXXX")"
+# Stop the node before removing the tree. A mode-000 directory left by the
+# run is made writable first. DEMO1_KEEP_SCRATCH=1 keeps the tree and names it.
+# shellcheck disable=SC2329 # the EXIT trap below invokes this
+release_scratch() {
+  local code=$?
+  local _wait
+  trap - EXIT
+  if [ -n "${scratch:-}" ] && [ -e "$scratch" ]; then
+    if command -v pkill >/dev/null 2>&1; then
+      pkill -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1 || true
+    fi
+    for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+      if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
+      echo "kept scratch: $scratch" >&2
+    else
+      chmod -R u+rwx "$scratch" 2>/dev/null || true
+      rm -rf "$scratch" || true
+      if [ -e "$scratch" ]; then
+        echo "scratch remains: $scratch" >&2
+        code=1
+      fi
+    fi
+  fi
+  exit "$code"
+}
+trap release_scratch EXIT
 release_dir="$scratch/release"
 mkdir -p "$release_dir"
 (cd "$root" && nix run --quiet .#release-artifacts -- "$release_dir")

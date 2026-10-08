@@ -25,6 +25,27 @@ fail() {
 }
 
 out="$(mktemp "${RUNNER_TEMP:-/tmp}/demo1-two-actor-control.XXXXXX")"
+# The journey's own scratch is removed by that check. This file is the
+# copy the verdict is read from. DEMO1_KEEP_SCRATCH=1 keeps it and names it.
+# shellcheck disable=SC2329 # the EXIT trap below invokes this
+release_out() {
+  local code=$?
+  trap - EXIT
+  if [ -n "${out:-}" ] && [ -e "$out" ]; then
+    if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
+      echo "kept scratch: $out" >&2
+    else
+      chmod u+rwx "$out" 2>/dev/null || true
+      rm -rf "$out" || true
+      if [ -e "$out" ]; then
+        echo "scratch remains: $out" >&2
+        code=1
+      fi
+    fi
+  fi
+  exit "$code"
+}
+trap release_out EXIT
 status=0
 # The raw run stays visible in the job log and is judged from the copy.
 DEMO1_TWO_ACTOR_DELIBERATE_OPEN=1 bash "$check" "$root" 2>&1 | tee "$out" || status="${PIPESTATUS[0]}"
