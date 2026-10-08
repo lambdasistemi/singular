@@ -1,6 +1,6 @@
 # A registry joined from its state token: stories and requirements
 
-Issue [#437](https://github.com/lambdasistemi/singular/issues/437), child of feature epic
+Feature epic [#437](https://github.com/lambdasistemi/singular/issues/437), child of feature epic
 [#371](https://github.com/lambdasistemi/singular/issues/371). It absorbs
 [#439](https://github.com/lambdasistemi/singular/issues/439) (the provider cannot find outputs by
 reference-script hash) and [#406](https://github.com/lambdasistemi/singular/issues/406) (create
@@ -11,6 +11,14 @@ commit boundaries. PR1 base: main `23964e667fa278b2027d0c05169c0f5e0e9233cb`.
 The operator's 2026-10-08 E371 order resumes the complete issue with serial Sol, Muse and GLM.
 Token-only commands and Bob's connected journey remain the first delivery boundary; all reference,
 funding and page requirements below remain required before issue #437 can close.
+
+Delivery proceeds through four runnable slices: [token-only join, book, fold and inspect](https://github.com/lambdasistemi/singular/issues/501)
+in draft [PR476](https://github.com/lambdasistemi/singular/pull/476),
+[protected funding and explicit reference restoration](https://github.com/lambdasistemi/singular/issues/471),
+[owned-carrier retirement and reclaim](https://github.com/lambdasistemi/singular/issues/502), and
+[the release-bound registry page and action report](https://github.com/lambdasistemi/singular/issues/503).
+Each slice is delivered when its own connected evidence and required checks pass. The later
+slices do not delay the first; PR476 closes #501 only and leaves this feature epic open.
 
 ## User stories
 
@@ -66,7 +74,7 @@ expected hash serves, whoever made it and wherever it sits.
   the pending identity. `registry.json` is neither written nor read. There is no join command: an
   empty directory is a valid start.
 - **`create` prints the state token** and writes no identity file. Printing a usable page command
-  follows when PR2 delivers that command.
+  follows when the registry-page slice delivers that command.
 
 ### Reference outputs found by hash
 
@@ -160,7 +168,7 @@ their published identity record. There is no migration and no `registry.json` fa
 ## Limits
 
 - **Missing carriers.** PR1 retains the named missing-reference refusal. Its diagnostic names the
-  planned publication command; that command and restoration journey are still PR2 requirements.
+  planned publication command; that command and restoration journey belong to the reference-restoration slice.
 - **Verification boundary.** The resolver checks the token against Koios
   answers, which are unverified under the Lockness rules
   ([lockness#39](https://github.com/lambdasistemi/lockness/issues/39)). Writes are protected by the

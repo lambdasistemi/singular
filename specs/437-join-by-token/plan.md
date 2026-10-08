@@ -9,10 +9,12 @@ states those requirements; the [tasks](tasks.md) names their serial implementati
 - Completed preparation: existing source and remote head preserved; the authorized rebase
   completed26/26 at7d000f8a153613ce779936e7a3705087c9197a32;
   all prior rulings, PR2 work and review findings retained. This records preparation, not acceptance.
-- Current: current-base planning publication, then GLM repairs Trace/build/deployment consumers
-  before the next Muse phase repairs public Bob and refusal composition. Connected evidence follows these repairs.
-- Blockers: missing public fold sentence, saved-identity binding, refusal receipt composition,
-  provider-failure narration and old-head hosted failures. New-head results are not yet observed.
+- Current: GLM baseline and Muse public-Bob/refusal repairs are committed in a clean source
+  candidate. Their focused checks passed; fresh connected evidence and hosted checks remain required.
+- Delivery: reconcile this four-slice plan, freeze the candidate and push draft PR476 immediately
+  after main and explicit remote-lease checks. Run required local checks alongside hosted CI.
+- Evidence gaps: current-candidate deliberate Alice-file-open control, connected controls/journey,
+  full local CI and exact-head hosted results. Historical receipts do not certify changed source.
 
 ## Accepted design
 
@@ -40,20 +42,20 @@ Muse `muse-spark-1.3-contributor` and native GLM `glm-5.3`, serially, with no au
 One implementation writer owns the worktree at a time. Sol owns planning, rebase/integration,
 command receipts and PR bodies. E371 owns merge and product acceptance.
 
-Muse first resolves named rebase conflicts and preserves current-main consumers. After clean
-integration, its terminal handback and planning publication, GLM reproduces and repairs create
-read-failure narration and the stale build/deployment consumers. The next bounded Muse phase
-repairs public Bob fold/inspect binding and underfunded receipt admission and assertions. The parent changes writers only after a durable
-handoff, clean source boundary and owned-job inspection. Later bounded Muse/GLM phases deliver
-references, protected funding and page/report work. Idle symmetry launches are not part of the plan.
+The rebase, GLM baseline repairs and Muse public-Bob/refusal repairs have source handbacks.
+Their source evidence is retained without claiming product acceptance. The delivery owner now
+freezes the first slice and starts draft hosted CI alongside required local checks, prioritizing
+the missing deliberate-open control on the reordered journey. Later bounded Muse/GLM phases
+deliver the remaining slices. The parent changes writers only after a durable handoff and a
+clean source boundary. The withdrawn parallel-runner experiment adds no further repair campaign.
 
 | boundary | runnable outcome | dependency |
 |---|---|---|
 | current-base integration | all original commits retained or explicitly reconciled; conflict/range receipts | preserved local/remote heads |
-| PR1 repairs | real failing controls become passing through the actual consumer paths; public token-only Bob clause | clean integration and sane tasks |
-| PR1 connected evidence | create, Bob booking/fold/inspect without Alice files; real deliberate-open refusal | repaired components and receipt composition |
-| remaining references and funding | publish/retire/automatic publication, protected ordinary funding, restored fold | PR1 connected path; preserved PR2 work adapted deliberately |
-| remaining page and report | deterministic public-state page, tagged packaged release evidence, independent action identity | reference/funding boundary and versioned page reads |
+| #501 / PR476, tasks T001–T017 | create, Bob booking/fold/inspect without Alice files; real deliberate-open refusal | repaired components and receipt composition |
+| #471, tasks T018–T021/T023–T024 | explicit publication/restoration, protected ordinary funding and restored fold | delivered token-only path; preserved work adapted selectively |
+| #502, tasks T022/T025/T026 | retire owned carriers, observe missing-reference refusal, restore and fold | reference restoration; shared-state role labelled |
+| #503, tasks T027–T033 | deterministic public-state page, tagged packaged release evidence, independent action identity | reference/funding boundary and versioned page reads |
 | complete issue evidence | actual local CI and required exact-head hosted checks and stories | all coherent implementation boundaries |
 
 ## Model and evidence binding
@@ -78,15 +80,21 @@ including a deliberate Alice-file open and small-wallet refusal with no submissi
 and the original seed still unspent. Every instruction must execute/render over discovered extent.
 
 Run the actual local CI recipes and four hosted static commands at coherent heads, retaining raw
-logs, actual producer exits, commands, CWD, head and tree. Then push with the preserved remote
-head as an explicit force-with-lease after rebase, and track required exact-head hosted jobs.
+logs, actual producer exits, commands, CWD, head and tree. Reuse source-bound receipts when their
+inputs are unchanged. After main and explicit preserved-remote-head lease checks, push the coherent
+candidate to draft PR476 immediately and track exact-head hosted jobs alongside local checks.
 Green static checks or historical 45-success/4-failure/9-skipped totals cannot accept the product.
 No GitHub comments. Keep the owned PR body and evidence limits current. No public-chain writes,
 signing or private wallet material; local devnet and public reads are authorized.
 
 ## Completion
 
-PR1 may be delivered first but does not close #437. All remaining reference, full closed-funding,
+Each child carries tasks T034–T036 for documentation, required checks and its PR handback; these
+same rows also carry the final aggregate evidence. The publication slice preserves #471 preview,
+recovery and packaging criteria, reuses #439 and addresses #479 funding selection. Publication is
+explicit opt-in; Demo2 #472 keeps its separate no-auto policy and adds no work to this first slice.
+
+PR476 closes #501 only. It may be delivered first but does not close #437. All remaining reference, full closed-funding,
 page/archive and report-identity requirements stay actionable; no cut turns them into non-goals.
 Only E371 can accept or merge the result after current evidence and unmet rows are assessed.
 Planning checkboxes never supply product evidence. Runtime journals and immutable handoffs retain

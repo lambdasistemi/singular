@@ -5,7 +5,11 @@
       "pause": 500
     },
     {
-      "text": "Issue #437, child of feature epic #371. It absorbs #439 (the provider cannot find outputs by reference-script hash) and #406 (create checks publication funding one script at a time). Read the plan for the slices, the modules model, data model and functions model for the changed rows, and the tasks for the commit boundaries. PR1 base: main 23964e667fa278b2027d0c05169c0f5e0e9233cb. The operator's 2026-10-08 E371 order resumes the complete issue with serial Sol, Muse and GLM. Token-only commands and Bob's connected journey remain the first delivery boundary; all reference, funding and page requirements below remain required before issue #437 can close.",
+      "text": "Feature epic #437, child of feature epic #371. It absorbs #439 (the provider cannot find outputs by reference-script hash) and #406 (create checks publication funding one script at a time). Read the plan for the slices, the modules model, data model and functions model for the changed rows, and the tasks for the commit boundaries. PR1 base: main 23964e667fa278b2027d0c05169c0f5e0e9233cb. The operator's 2026-10-08 E371 order resumes the complete issue with serial Sol, Muse and GLM. Token-only commands and Bob's connected journey remain the first delivery boundary; all reference, funding and page requirements below remain required before issue #437 can close.",
+      "pause": 400
+    },
+    {
+      "text": "Delivery proceeds through four runnable slices: token-only join, book, fold and inspect in draft PR476, protected funding and explicit reference restoration, owned-carrier retirement and reclaim, and the release-bound registry page and action report. Each slice is delivered when its own connected evidence and required checks pass. The later slices do not delay the first; PR476 closes #501 only and leaves this feature epic open.",
       "pause": 400
     }
   ],
@@ -89,7 +93,7 @@
       "pause": 300
     },
     {
-      "text": "create prints the state token and writes no identity file. Printing a usable page command follows when PR2 delivers that command.",
+      "text": "create prints the state token and writes no identity file. Printing a usable page command follows when the registry-page slice delivers that command.",
       "pause": 300
     }
   ],
@@ -197,7 +201,7 @@
       "pause": 500
     },
     {
-      "text": "Missing carriers. PR1 retains the named missing-reference refusal. Its diagnostic names the planned publication command; that command and restoration journey are still PR2 requirements.",
+      "text": "Missing carriers. PR1 retains the named missing-reference refusal. Its diagnostic names the planned publication command; that command and restoration journey belong to the reference-restoration slice.",
       "pause": 300
     },
     {
@@ -229,6 +233,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "0c894c409df06df5af88cd855ea3d490c90959a0f178756b9eef1f8529c5420b"
+    "sha256": "e2fff443a7e730810432be8489723d146a2fef712654900c8393cbdd4de822d4"
   }
 }

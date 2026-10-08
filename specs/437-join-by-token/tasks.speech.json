@@ -5,13 +5,13 @@
       "pause": 500
     },
     {
-      "text": "As Bob, I join with the token, restore missing reference scripts and read a release-bound page. The plan orders one writer at a time under E371. Stable task keys are bookkeeping; checkboxes record delivered work only when bound receipts exist, never public product state.",
+      "text": "As Bob, I join with the token, restore missing reference scripts and read a release-bound page. The plan orders one writer at a time under E371. Stable task keys are bookkeeping; checkboxes record delivered work only when bound receipts exist, never public product state. The four children own the rows below; T034–T036 apply to every child and the final aggregate. PR476 closes #501 only. Later children do not delay its delivery.",
       "pause": 400
     }
   ],
-  "integration-and-runnable-baseline": [
+  "token-only-join-integration-and-runnable-baseline-501": [
     {
-      "text": "Integration and runnable baseline.",
+      "text": "Token-only join: integration and runnable baseline (#501).",
       "pause": 500
     },
     {
@@ -39,9 +39,9 @@
       "pause": 300
     }
   ],
-  "token-only-connected-actor-journey": [
+  "token-only-connected-actor-journey-501": [
     {
-      "text": "Token-only connected actor journey.",
+      "text": "Token-only connected actor journey (#501).",
       "pause": 500
     },
     {
@@ -89,9 +89,9 @@
       "pause": 300
     }
   ],
-  "protected-funding-and-permissionless-references": [
+  "protected-funding-and-reference-restoration-471": [
     {
-      "text": "Protected funding and permissionless references.",
+      "text": "Protected funding and reference restoration (#471).",
       "pause": 500
     },
     {
@@ -111,15 +111,21 @@
       "pause": 300
     },
     {
-      "text": "[ ] T022 [US2] Narrow explicit reclaim funding and preserve required token/request selection in offchain/cli/src/Singular/CLI/Reclaim.hs and builder callers through the same opaque boundary.",
-      "pause": 300
-    },
-    {
       "text": "[ ] T023 [US2] Add RED/GREEN release-script hash controls and publishReferencesTx in offchain/lib/Singular/Registry/StateToken.hs and TxBuilder/Edges.hs; checked scripts produce minimum-ada outputs owned by the payer.",
       "pause": 300
     },
     {
-      "text": "[ ] T024 [US2] Implement token-only publish-references and explicit automatic publication in offchain/cli/src/Singular/CLI/References.hs and Command/Attached write consumers; publish only missing needed roles and read back typed results.",
+      "text": "[ ] T024 [US2] Implement token-only publish-references and explicit automatic publication in offchain/cli/src/Singular/CLI/References.hs and Command/Attached write consumers; publish only missing needed roles and read back typed results. The publication slice retains #471 preview/recovery/packaging criteria, reuses #439 and addresses",
+      "pause": 300
+    }
+  ],
+  "owned-carrier-retirement-and-reclaim-502": [
+    {
+      "text": "Owned-carrier retirement and reclaim (#502).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T022 [US2] Narrow explicit reclaim funding and preserve required token/request selection in offchain/cli/src/Singular/CLI/Reclaim.hs and builder callers through the same opaque boundary.",
       "pause": 300
     },
     {
@@ -131,9 +137,9 @@
       "pause": 300
     }
   ],
-  "registry-page-and-public-report": [
+  "registry-page-and-public-report-503": [
     {
-      "text": "Registry page and public report.",
+      "text": "Registry page and public report (#503).",
       "pause": 500
     },
     {
@@ -189,12 +195,12 @@
       "pause": 500
     },
     {
-      "text": "Serial order: integration/preparation → GLM runnable baseline/read-failure repair → Muse public language/binding/refusal composition → connected PR1 evidence → closed funding/references → page/archive/action identity → complete issue evidence. No parallel writer or extra audit. Every repair first observes a meaningful failing subject check, then a passing one. Old-head receipts, compilation and fixture stand-ins do not replace connected or exact-head evidence.",
+      "text": "Serial order: integration/preparation → GLM runnable baseline/read-failure repair → Muse public language/binding/refusal composition → connected PR1 evidence → closed funding/references → owned-carrier retirement/reclaim → page/archive/action identity → complete issue evidence. T034–T036 run at each child boundary and at final aggregation. No parallel writer or extra audit. Every repair first observes a meaningful failing subject check, then a passing one. Old-head receipts, compilation and fixture stand-ins do not replace connected or exact-head evidence.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "33274ba4b39d16939a91d7fe8edcb90aebae7c2e42092b31fe017091e8691290"
+    "sha256": "e1971fb5735cfd3e4f5fd087ae9aee9e06bc4bd7c1c5d38f8a14f6cdbddfe9b0"
   }
 }
