@@ -26,10 +26,10 @@ reported extent, not validator, consumer or connected ledger acceptance.
 No other expensive check was run and no hosted check was rerun.
 
 This evidence is permanently retained separately at
-`preserve/m2-evidence/4301c45d-recovery-v2`; the broad ref remains frozen.
+`preserve/m2-evidence/4301c45d-ci-docs`; the broad ref remains frozen.
 To retrieve it after the README's fresh fetch, run:
 
-`git checkout --detach origin/preserve/m2-evidence/4301c45d-recovery-v2`
+`git checkout --detach origin/preserve/m2-evidence/4301c45d-ci-docs`
 
 Then verify the original manifest snapshot with:
 
@@ -53,3 +53,12 @@ unchanged at `5d7ddb07d0c92d5389c96948555a5add3abaccb2`. The final forward
 record uses explicit `-` placeholders for empty census ref fields so its
 whole-candidate whitespace check passes; source/ref identities do not change.
 The original broad snapshot and its model execution remain unchanged.
+
+Hosted checks on the prior final head exposed receipt filename classifications
+and a directory link without a rendered page. The forward repair uses `.txt`
+evidence filenames and a link to the provenance file; raw model/fetch receipt
+bytes and all source/ref identities remain unchanged. [CI diagnosis](evidence/ci-diagnosis.json)
+records the actual failed jobs and Registry cancellation limits. The original
+Conformance workflow passed. [Static checks](evidence/static-check.json) record
+local inventory and preservation-helper formatting/lint exit0. No failed hosted
+job or model check was rerun, and no workflow or runtime source was changed.

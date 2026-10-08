@@ -1,0 +1,48 @@
+{
+  "checkedHead": "6b03916f171b194be6a2aeb5456add4362feffe1",
+  "conformance": {
+    "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865441",
+    "conclusion": "success"
+  },
+  "ciFailures": [
+    {
+      "jobs": [
+        "Code inventory",
+        "Development shell build",
+        "Development shell checks"
+      ],
+      "cause": "Unclassified SHA256SUMS and .stdout/.stderr receipt extensions",
+      "fix": "Rename safe evidence to .txt, preserving raw receipt bytes",
+      "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865424/job/113268117488"
+    },
+    {
+      "jobs": [
+        "Rendered documentation"
+      ],
+      "cause": "Link to evidence/ directory has no rendered index",
+      "fix": "Link to existing provenance.json",
+      "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865424/job/113268117407"
+    }
+  ],
+  "registryLimits": [
+    {
+      "job": "Demo 1 ordinary CLI refusal controls",
+      "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865553/job/113266937137",
+      "observed": "The operation was canceled after step122; earlier output-missing exit1 is an expected negative control",
+      "classification": "Incomplete execution; no full pass or established validator defect"
+    },
+    {
+      "job": "Devnet E2E part: node, boot, insert and config",
+      "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865553/job/113268768628",
+      "observed": "3 examples, 0 failures then The operation was canceled",
+      "classification": "Part incomplete as a hosted job; reported test extent is narrower"
+    },
+    {
+      "job": "Devnet E2E part: criterion 3",
+      "url": "https://github.com/lambdasistemi/singular/actions/runs/37763865553/job/113268768585",
+      "observed": "error: interrupted by the user; The operation was canceled",
+      "classification": "Interrupted setup/execution; no behavioral RED"
+    }
+  ],
+  "authority": "No hosted rerun, model rerun, workflow or runtime behavior edit; permanent prior refs stay frozen"
+}
