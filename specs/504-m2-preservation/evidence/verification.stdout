@@ -1,0 +1,31 @@
+manifest_commit=4301c45d201430fea46080999f5eb8a332a9c8a3
+baseline=23964e667fa278b2027d0c05169c0f5e0e9233cb tree=4afbdd69413bc5c8152fa2a3bc42fb6fcac71b7c ref=refs/heads/preserve/m2-registry-extensions exit=0
+candidate=b8f45983073d4dc4c3091530c957dcfa8d94e232 tree=60ac8cf31bfdef282c4ace7966c84e693cf96625 ref=refs/heads/preserve/m2-candidates/checkpoint-157-opus-final-pre-terminal-rebase-b8f45983 exit=0
+candidate=1cea9b175b5ee5671077d45835b0d788177ae1ef tree=1a25605d37f15e5cf99860d8ee0e00a63c578e1e ref=refs/heads/preserve/m2-candidates/checkpoint-157-opus-pre-rebase-1cea9b17 exit=0
+candidate=872a9419b6c6ca44b309952f8c20caf893703f90 tree=e88ff97db54a834255011ca22dd6856b655085dc ref=refs/heads/preserve/m2-candidates/checkpoint-157-opus-pre-v4-872a9419 exit=0
+candidate=4663d2f99f9cbe78643c8ae5bc411d294fe10534 tree=3430661d38afb5ee0269ed2264f9ddac8562e252 ref=refs/heads/preserve/m2-candidates/checkpoint-157-opus-pre-v5-4663d2f9 exit=0
+candidate=0caa84f78d0010eb39a0373128ade57a3162ec7e tree=71e4443eb48bed1e189b4fc93a8612c5f9a3a4f2 ref=refs/heads/preserve/m2-candidates/feat-157-cage-registry-mode-0caa84f7 exit=0
+candidate=ee2d164b3217be3eb702bd719441b19c8f76a03a tree=d574b342733eecb534d671efcb0927ca734a7c16 ref=refs/heads/preserve/m2-candidates/feat-157-note006-nongoal-ee2d164b exit=0
+candidate=89b23713c5fca5761ca1b68ff9eb44f4c047357d tree=3813f797b1350979db7084a3f4e0289a92cc66cc ref=refs/heads/preserve/m2-candidates/feat-157-request-home-model-89b23713 exit=0
+candidate=34aee48916938fe29787ca46ae5432d51dd0554d tree=9617465a3cfd11ca59a826cd6beeeeb3f801f001 ref=refs/heads/preserve/m2-candidates/retained-177-post-wall-34aee489-34aee489 exit=0
+candidate=46e18a1c10bce8a68ddbac53f8d6516a5a1ec3cf tree=3039b88c3c68854138784947a85db6e109f3debf ref=refs/heads/preserve/m2-candidates/retained-177-pre-metadata-46e18a1-46e18a1c exit=0
+candidate=810bf471f05d6ef511e5718d1a96129539f45f88 tree=db4c3339e491598990bd3a798a8cc5640ae6891c ref=refs/heads/preserve/m2-candidates/work-157-grok-request-home-810bf471 exit=0
+candidate=f6b2eed8034341962292b54a3ec5e9f22eddc362 tree=852584f9f08c3e55a34b43db3886ddc0de3b40d5 ref=refs/heads/preserve/m2-candidates/work-157-opus-owner-f6b2eed8 exit=0
+candidate=062783a2cdebb19caaab55d59950c445ac826c94 tree=f5c3a329253a35898d17a95c6a1a4dd61973c280 ref=refs/heads/preserve/m2-candidates/issue-158-salvage-062783a2 exit=0
+candidate=bbce8a88f382476753434f8ff4433717f7753821 tree=a9744901003f0dcf55bd31f61443e83af16036d4 ref=refs/heads/preserve/m2-candidates/issue-310-application-bbce8a88 exit=0
+candidate=2adc310123153eb54af878fd4c39a92962bd0b52 tree=4f7f1cd779177d0847ea6ccfbd3b343d56d14cf3 ref=refs/heads/preserve/m2-candidates/issue-381-replay-2adc3101 exit=0
+candidate=4cb4a44159464a4f30dcc3628c554e3d3fd9e385 tree=21842fdb63bb1301406cdf421f8390504a37b591 ref=refs/heads/preserve/m2-candidates/issue-396-fold-4cb4a441 exit=0
+candidate=bb134addd9e8d7b4fccb9c2b1e50ca9b99551d88 tree=2cde856fb0242512a2b48afe197d2d7fcfe3a613 ref=refs/heads/preserve/m2-candidates/issue-437-local-bb134add exit=0
+candidate=fd35d372749f1b9b0a8242a3c50e1260b4e61ca9 tree=a5c6f6ff3292c2aa347c7776a751406c8e290ecf ref=refs/heads/preserve/m2-candidates/issue-233-local-fd35d372 exit=0
+candidate=a7224021dc055a14afd3e6d23013c8dd4d5a8ff6 tree=17a172575613e779c6eb3ee7d5966c8e2791525e ref=refs/heads/preserve/m2-candidates/issue-498-pr508-a7224021 exit=0
+candidate=39575cd1be506876771377c457ad5b352cccaf0f tree=c221493fe4f73bf0a75115fda084ba21739c7d54 ref=refs/heads/preserve/m2-candidates/issue-437-remote-39575cd1 exit=0
+candidate=b1ead5ee4a0948de5f5fb5c49cafc75414679646 tree=f6a548cba234ee83163ff612399651b1b7c0fc53 ref=refs/heads/preserve/m2-candidates/issue-233-remote-b1ead5ee exit=0
+candidate=c10cb3b3cf9285c7b6ed278ebae06635044bb1d3 tree=0071b04e558ae7877ce268a0b867382b8bca2a9c ref=refs/heads/preserve/m2-candidates/issue-178-pr212-c10cb3b3 exit=0
+candidate=86a56a42533f9f9ab7849226b03b795cbe391243 tree=731fac716e28e038fc1d3c6506f9551ac797e8c1 ref=refs/heads/preserve/m2-candidates/issue-178-merge-86a56a42 exit=0
+specs/504-m2-preservation/evidence/census.tsv: OK
+specs/504-m2-preservation/evidence/issue396-owner-handoff.md: OK
+specs/504-m2-preservation/evidence/issue437-source-verdict.md: OK
+specs/504-m2-preservation/evidence/pr508.json: OK
+specs/504-m2-preservation/evidence/provenance.json: OK
+specs/504-m2-preservation/evidence/publication-scan.json: OK
+PASS candidates=22 source_blobs=930 doc_only=1

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "bash",
+    "specs/504-m2-preservation/verify.sh",
+    "HEAD"
+  ],
+  "cwd": "/home/paolino/.orch-runtime/singular/m1/epic-507/preservation-504/recovery",
+  "start": "2026-10-08T10:25:21.151Z",
+  "end": "2026-10-08T10:25:26.716Z",
+  "manifestCommit": "4301c45d201430fea46080999f5eb8a332a9c8a3",
+  "tree": "90a40e60677b326deca23fdce3d6b488be03b5de",
+  "exit": 0,
+  "stdoutSha256": "a212277aa4ef8b1d0b3e97fb43d10b70ba4aea498c732eddda85cf7b6d9881a1",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "noAlternates": true
+}
