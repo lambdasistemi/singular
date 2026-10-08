@@ -15,13 +15,16 @@ built, signed or written, with the role and both hashes named.
 module Singular.Registry.ReferencePublicationSpec (spec) where
 
 import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , mkBasicTxOut
@@ -31,8 +34,10 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID)
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Tx.Ledger (ConwayTx)
+import Data.Foldable (toList)
 
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger (ConwayEra)
@@ -51,60 +56,87 @@ import Singular.Registry.StateToken
     , renderReferenceRefusal
     )
 import Singular.Registry.StateTokenFixture (refOf, release, token, tokenOf)
-import Singular.Registry.StubSession (stubSession)
-import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
+import Singular.Registry.StubSession (stubSession, withParameters, withTime)
+import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
+import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
+import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes, policyIdFromPin)
+import Singular.Registry.WalletOutputs (WalletOutputs, walletOutputs)
 
 
 spec :: Spec
 spec = do
-    describe "checked reference scripts" $ do
-        it "rebuilds all six roles, each hashing to its expected hash" $ do
-            let scripts = referenceScripts release token
-            Map.keys scripts
-                `shouldBe` [ RoleState
-                           , RoleRequest
-                           , RoleWitnessAbsent
-                           , RoleWitnessActive
-                           , RoleWitnessTerminal
-                           , RoleApplication
-                           ]
-            Map.intersectionWith (==) (hashScript <$> scripts) (expectedReferences release token)
-                `shouldBe` Map.fromList [(r, True) | r <- [minBound .. maxBound]]
-        it "checks each role successfully" $ do
-            let expected = expectedReferences release token
-            [ checkedScript release token r
-              | r <- [minBound .. maxBound]
-              ]
-                `shouldBe` [ Right s
-                           | r <- [minBound .. maxBound]
-                           , let s = referenceScripts release token Map.! r
-                           ]
-            [ hashScript s | Right s <- [checkedScript release token r | r <- [minBound .. maxBound]] ]
-                `shouldBe` Map.elems expected
-        it "refuses a mismatching role by name before building anything" $ do
-            -- The comparison discriminates: scripts built for another registry
-            -- hash differently from this registry's expected role hashes, so a
-            -- foreign script supplied for the role would be refused with both
-            -- hashes named. Same-release derivation agrees by the tests above.
-            let expected = expectedReferences release token
-                other = referenceScripts release (tokenOf (refOf (T.replicate 64 "9" <> "#0")))
-            Map.intersectionWith
-                (/=)
-                (hashScript <$> other)
-                expected
-                -- The state script is the same for every registry of the
-                -- release; every applied role differs by registry.
-                `shouldBe` Map.fromList
-                    [ (r, r /= RoleState) | r <- [minBound .. maxBound]
-                    ]
-            renderReferenceRefusal
-                ( ReferenceScriptMismatch
-                    RoleRequest
-                    (expected Map.! RoleRequest)
-                    (hashScript (other Map.! RoleRequest))
-                )
-                `shouldSatisfy` T.isPrefixOf "reference-script-mismatch request"
-    describe "missing-reference discovery" $ do
+    publicationScripts
+    publicationDiscovery
+    publicationBuilder
+
+publicationBuilder :: Spec
+publicationBuilder = describe "reference publication funding" $ do
+    it "funds from a covering output while smaller ones exist (#479)" $ do
+        w <- fullWallet
+        (tx, outs) <- publishReferencesTx session49 payerAddr w [script49]
+        length outs `shouldBe` 1
+        spentInputs tx `shouldBe` [largeIn]
+    it "names a genuine shortfall when no permitted output covers" $ do
+        w <- smallWallet
+        publishReferencesTx session49 payerAddr w [script49]
+            `shouldThrow` anyErrorCall
+    it "never spends carriers or token holdings" $ do
+        w <- protectedWallet
+        publishReferencesTx session49 payerAddr w [script49]
+            `shouldThrow` anyErrorCall
+
+publicationScripts :: Spec
+publicationScripts = describe "checked reference scripts" $ do
+    it "rebuilds all six roles, each hashing to its expected hash" $ do
+        let scripts = referenceScripts release token
+        Map.keys scripts
+            `shouldBe` [ RoleState
+                       , RoleRequest
+                       , RoleWitnessAbsent
+                       , RoleWitnessActive
+                       , RoleWitnessTerminal
+                       , RoleApplication
+                       ]
+        Map.intersectionWith (==) (hashScript <$> scripts) (expectedReferences release token)
+            `shouldBe` Map.fromList [(r, True) | r <- [minBound .. maxBound]]
+    it "checks each role successfully" $ do
+        let expected = expectedReferences release token
+        [ checkedScript release token r
+          | r <- [minBound .. maxBound]
+          ]
+            `shouldBe` [ Right s
+                       | r <- [minBound .. maxBound]
+                       , let s = referenceScripts release token Map.! r
+                       ]
+        [ hashScript s | Right s <- [checkedScript release token r | r <- [minBound .. maxBound]] ]
+            `shouldBe` Map.elems expected
+    it "refuses a mismatching role by name before building anything" $ do
+        -- The comparison discriminates: scripts built for another registry
+        -- hash differently from this registry's expected role hashes, so a
+        -- foreign script supplied for the role would be refused with both
+        -- hashes named. Same-release derivation agrees by the tests above.
+        let expected = expectedReferences release token
+            other = referenceScripts release (tokenOf (refOf (T.replicate 64 "9" <> "#0")))
+        Map.intersectionWith
+            (/=)
+            (hashScript <$> other)
+            expected
+            -- The state script is the same for every registry of the
+            -- release; every applied role differs by registry.
+            `shouldBe` Map.fromList
+                [ (r, r /= RoleState) | r <- [minBound .. maxBound]
+                ]
+        renderReferenceRefusal
+            ( ReferenceScriptMismatch
+                RoleRequest
+                (expected Map.! RoleRequest)
+                (hashScript (other Map.! RoleRequest))
+            )
+            `shouldSatisfy` T.isPrefixOf "reference-script-mismatch request"
+
+publicationDiscovery :: Spec
+publicationDiscovery = describe "missing-reference discovery" $ do
         it "finds every role from the provider without consulting the wallet" $ do
             found <- missingReferences providerHit (Just walletAddr) wanted allRoles
             found `shouldBe` Right (Map.fromList [(RoleState, carrier)], Set.empty)
@@ -175,3 +207,79 @@ providerFailed =
             AtAddress _ -> pure (Right (Evidenced [carrier] Nothing))
             _ -> fail "unexpected provider query"
         }
+
+-- ---------------------------------------------------------------------------
+-- Publication funding fixtures (#479)
+-- ---------------------------------------------------------------------------
+
+smallIn, largeIn :: TxIn
+smallIn = ref '5'
+largeIn = ref '6'
+
+ref :: Char -> TxIn
+ref c = refOf (T.replicate 64 (T.singleton c) <> "#0")
+
+script49 :: Script ConwayEra
+script49 = carrierScript
+
+session49 :: Session NoWitness IO
+session49 = withTime (pure syntheticTime) (withParameters preprodParams stubSession)
+
+serveList :: [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
+serveList utxos =
+    stubSession
+        { outputs = \case
+            AtAddress _ -> pure (Right (Evidenced utxos Nothing))
+            _ -> fail "unexpected provider query"
+        }
+
+acquireList :: [(TxIn, TxOut ConwayEra)] -> IO WalletOutputs
+acquireList utxos =
+    either (fail . show) pure =<< walletOutputs (serveList utxos) walletAddr
+
+payerAddr :: Addr
+payerAddr = walletAddr
+
+fullWallet :: IO WalletOutputs
+fullWallet =
+    acquireList
+        [ (smallIn, mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty))
+        , (largeIn, mkBasicTxOut walletAddr (MaryValue (Coin 100_000_000) mempty))
+        ]
+
+smallWallet :: IO WalletOutputs
+smallWallet =
+    acquireList
+        [(smallIn, mkBasicTxOut walletAddr (MaryValue (Coin 2_000_000) mempty))]
+
+protectedWallet :: IO WalletOutputs
+protectedWallet =
+    acquireList
+        [ (protectedCarrierIn, protectedCarrierOut)
+        , (protectedTokenIn, protectedTokenOut)
+        ]
+
+protectedCarrierIn, protectedTokenIn :: TxIn
+protectedCarrierIn = ref '7'
+protectedTokenIn = ref '8'
+
+protectedCarrierOut :: TxOut ConwayEra
+protectedCarrierOut =
+    mkBasicTxOut walletAddr (MaryValue (Coin 300_000_000) mempty)
+        & referenceScriptTxOutL
+        .~ SJust carrierScript
+
+protectedTokenOut :: TxOut ConwayEra
+protectedTokenOut =
+    mkBasicTxOut
+        walletAddr
+        ( MaryValue
+            (Coin 800_000_000)
+            (MultiAsset (Map.singleton tokenPolicy (Map.singleton (AssetName "approval") 1)))
+        )
+
+tokenPolicy :: PolicyID
+tokenPolicy = policyIdFromPin (SBS.toShort (BS.replicate 28 0xbb))
+
+spentInputs :: ConwayTx -> [TxIn]
+spentInputs tx = toList (tx ^. bodyTxL . inputsTxBodyL)

@@ -37,6 +37,7 @@ module Singular.Registry.TxBuilder.Edges
     , publishRefScript
     , publishRefScriptReserving
     , publishRefScriptTx
+    , publishReferencesTx
     , publishStateRef
     , publishStateRefReserving
     , stateRefIn
@@ -67,6 +68,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -74,7 +76,7 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , collateralReturnTxBodyL
@@ -135,6 +137,7 @@ import Singular.Registry.Trace
     , ReadEvent (..)
     , timedTrace
     )
+import Singular.Registry.WalletOutputs (WalletOutputs, fundingOutputs)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
@@ -339,6 +342,80 @@ publishRefScriptTx reserved v payerAddr script = do
                         ]
                 & feeTxBodyL .~ Coin fee
     pure (mkBasicTx body, refOut)
+
+{- | Publish every checked script as a minimum-ADA reference output at the
+payer's address, in one transaction funded from permitted outputs only.
+The first largest-first prefix that settles at the ledger's exact fee
+funds it; carriers and token holdings never do. Insufficient permitted
+funds fail closed with a stable message (the command gates sufficiency
+by name before building).
+-}
+publishReferencesTx
+    :: Cage.Session Cage.NoWitness IO
+    -> Addr
+    -> WalletOutputs
+    -> [Script ConwayEra]
+    -> IO (ConwayTx, [TxOut ConwayEra])
+publishReferencesTx session payerAddr wallet scripts = do
+    when (null scripts) $
+        error "publishReferencesTx: no scripts to publish"
+    pp <- Cage.parameters session
+    let funds = fundingOutputs wallet
+        published =
+            [ atMinimum
+                pp
+                ( mkBasicTxOut payerAddr (MaryValue (Coin 0) mempty)
+                    & referenceScriptTxOutL
+                    .~ SJust script
+                )
+            | script <- scripts
+            ]
+    case mapMaybe (\n -> settleTo pp payerAddr (take n funds) published) [1 .. length funds] of
+        tx : _ -> pure (tx, published)
+        [] ->
+            error
+                "publishReferencesTx: permitted outputs cannot cover the reference outputs and the fee"
+
+atMinimum :: PParams ConwayEra -> TxOut ConwayEra -> TxOut ConwayEra
+atMinimum pp out
+    | out ^. coinTxOutL == Coin wanted = out
+    | otherwise = out & coinTxOutL .~ Coin wanted
+  where
+    Coin base = getMinCoinTxOut pp (out & coinTxOutL .~ Coin 0)
+    wanted = base + 1_000_000
+
+{- | Settle inputs and minimum outputs at the ledger's exact fee: try the
+fee, charge it, and repeat until the fee stops moving (at most eight
+rounds) or the inputs cannot cover outputs, fee and a minimum-ada
+change. Nothing means they cannot.
+-}
+settleTo
+    :: PParams ConwayEra
+    -> Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [TxOut ConwayEra]
+    -> Maybe ConwayTx
+settleTo pp payerAddr inputs outs = go (0 :: Int) (Coin 0)
+  where
+    MaryValue (Coin held) _ = foldMap ((^. valueTxOutL) . snd) inputs
+    Coin paid = foldMap (^. coinTxOutL) outs
+    build fee@(Coin f) =
+        let rest = mkBasicTxOut payerAddr (MaryValue (Coin (held - paid - f)) mempty)
+        in  ( rest
+            , mkBasicTx $
+                mkBasicTxBody
+                    & inputsTxBodyL .~ Set.fromList (map fst inputs)
+                    & outputsTxBodyL .~ StrictSeq.fromList (outs <> [rest])
+                    & feeTxBodyL .~ fee
+            )
+    go rounds fee@(Coin f)
+        | rounds > 8 || held - paid - f < 0 = Nothing
+        | needed > fee = go (rounds + 1) needed
+        | rest ^. coinTxOutL < getMinCoinTxOut pp rest = Nothing
+        | otherwise = Just tx
+      where
+        (rest, tx) = build fee
+        needed = estimateMinFeeTx pp tx 1 0 0
 
 {- | Publish the state validator as a reference output, once, before any
 boot (#177).

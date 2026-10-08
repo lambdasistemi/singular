@@ -21,6 +21,7 @@ module Singular.Registry.WalletOutputs
       -- * Ordinary funding
     , fundable
     , fundingOutputs
+    , coveringFunding
     , FundingRefusal (..)
     , renderFundingRefusal
     , chosenFunding
@@ -34,9 +35,9 @@ module Singular.Registry.WalletOutputs
     , burnCandidates
     ) where
 
-import Data.List (sortOn)
+import Data.List (minimumBy, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..))
+import Data.Ord (Down (..), comparing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
@@ -47,6 +48,7 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     , valueTxOutL
     )
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
@@ -95,6 +97,21 @@ fundable out =
                 SNothing -> True
                 SJust _ -> False
            )
+
+-- | The smallest fundable output covering this amount, if the wallet
+-- has one. A publication takes the output that covers it whenever one
+-- exists instead of stranding on outputs too small.
+coveringFunding :: Integer -> WalletOutputs -> Maybe (TxIn, TxOut ConwayEra)
+coveringFunding needed w =
+    case [ u
+         | u@(_, out) <- fundingOutputs w
+         , let MaryValue (Coin have) _ = out ^. valueTxOutL
+         , have >= needed
+         ] of
+        [] -> Nothing
+        covered -> Just (minimumBy (comparing (coinOf . snd)) covered)
+  where
+    coinOf out = let MaryValue (Coin c) _ = out ^. valueTxOutL in c
 
 -- | The fundable outputs, largest first, ties by output reference.
 fundingOutputs :: WalletOutputs -> [(TxIn, TxOut ConwayEra)]
