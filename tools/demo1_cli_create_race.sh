@@ -95,7 +95,7 @@ status=0
 wait "$late" || status=$?
 outcome="$(jq -r .outcome "$receipts/create-late.json" 2>/dev/null || echo none)"
 reason="$(jq -r .reason "$receipts/create-late.json" 2>/dev/null || echo none)"
-expected="$target already holds a registry or its journal; create never overwrites one"
+expected="$target already holds your state or its journal; create never overwrites one"
 [ "$outcome" = client-refusal ] && [ "$status" -eq 10 ] \
   || fail "the late create was not refused (outcome $outcome, exit $status): $reason"
 [ "$reason" = "$expected" ] \

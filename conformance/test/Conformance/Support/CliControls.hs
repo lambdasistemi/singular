@@ -1997,7 +1997,7 @@ provoked p r =
                     { rcOutcome = "client-refusal"
                     , rcReason =
                         Just
-                            "targets/raced already holds a registry or its journal; create never overwrites one"
+                            "targets/raced already holds your state or its journal; create never overwrites one"
                     , rcProcess =
                         Just
                             still
