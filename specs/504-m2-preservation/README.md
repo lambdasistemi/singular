@@ -50,7 +50,7 @@ token/datum identities and uncovered conformance obligations remain retained.
 
 ## Evidence and open ownership
 
-Safe original records retained under [evidence](evidence/): #396's owner handoff
+Safe original records retained under [the evidence provenance record](evidence/provenance.json): #396's owner handoff
 (source/lint extent, hosted failures and live gaps), #437's original source-only
 BLOCKED verdict at its remote candidate (four findings; zero auditor executions),
 and the fresh PR508 disposition/check snapshot. PR508 is open, unmerged at

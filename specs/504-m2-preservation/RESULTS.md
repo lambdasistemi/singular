@@ -7,7 +7,7 @@ The source snapshot and 22 candidate refs were fetched over HTTPS into an empty
 independent repository with no local object alternates.
 
 The [fresh Git receipt](evidence/verification.json) records exit 0;
-its [stdout](evidence/verification.stdout) identifies all 22 exact candidate
+its [stdout](evidence/verification.stdout.txt) identifies all 22 exact candidate
 SHA/tree/ref ancestry checks and 930 baseline/broad blob comparisons.
 The [fetch receipt](evidence/fresh-fetch.json) records actual commands and exits;
 [publication](evidence/publication.json) records the create-only atomic push
@@ -17,7 +17,7 @@ protection. No permanent target was advanced or overwritten.
 The one fresh `nix run --quiet .#model-check` completed in
 19.989 seconds with exit 0, at the broad commit above.
 [Command, revision and hashes](evidence/model.json),
-[complete stdout](evidence/model.stdout) and [stderr](evidence/model.stderr)
+[complete stdout](evidence/model.stdout.txt) and [stderr](evidence/model.stderr.txt)
 are retained. The recovered checkout remained clean.
 The checker reported 46 generic, 7 naming, 9 lifecycle and 5 wire exact identities
 using only the standard axioms; 38 corpus, 24 naming and 21 lifecycle rows;

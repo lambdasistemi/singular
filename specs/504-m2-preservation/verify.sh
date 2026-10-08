@@ -44,5 +44,5 @@ while IFS=$'\t' read -r source sha expected_tree disposition ref; do
   census_checked=$((census_checked + 1))
 done < specs/504-m2-preservation/evidence/census.tsv
 printf 'retained_census_rows=%s exit=0\n' "$census_checked"
-sha256sum -c specs/504-m2-preservation/evidence/SHA256SUMS
+sha256sum -c specs/504-m2-preservation/evidence/SHA256SUMS.txt
 printf 'PASS candidates=%s source_blobs=%s doc_only=1\n' "$(jq '.candidates | length' "$manifest")" "$(jq '.sourceBlobs | length' "$manifest")"
