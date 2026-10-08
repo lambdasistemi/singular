@@ -4,7 +4,7 @@
   "profiles": [
     {
       "id": "generic",
-      "label": "Generic registry profile",
+      "label": "Preserved broader registry profile",
       "engine": "simulator/core.mjs"
     },
     {

@@ -13,7 +13,7 @@
       "pause": 400
     },
     {
-      "text": "New state: 807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa. New unapplied witness: 4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1. All four fixed scripts, compiler identity, parameter counts and byte digests are recorded in onchain/permanent-contract.json. The original broader state and witness identities are unchanged.",
+      "text": "New state: 807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa. New unapplied witness: 4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1. New unapplied application: eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03. Its booking, payload-update and release guards are unchanged; its fixed state pin matches the new registry. All four fixed scripts, compiler identity, parameter counts and byte digests are recorded in onchain/permanent-contract.json. Every original broader compiled identity is unchanged. The simulator preserves those broader profiles and explicitly discloses that it has no playable bounded profile. The theorem inventory retains all prior declarations and adds the ten audited bounded statements: 136 obligations, 77 manifest-bound and 59 unclassified; integration coverage debt stays visible.",
       "pause": 400
     },
     {
@@ -27,6 +27,6 @@
   ],
   "_source": {
     "file": "RESULTS.md",
-    "sha256": "ab48b1428f6ba62bf65a1662b391d7df863efde3d45e541f93be28b00857c355"
+    "sha256": "fc8c7d6cb87f82d972a9836a46bb821f89e773fa60f2d1b369dc75baefc1c7f4"
   }
 }

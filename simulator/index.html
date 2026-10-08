@@ -557,7 +557,10 @@ dl dd {
 </style></head><body>
 <main id="app">
   <header class="hdr">
-    <h1>Singular · the registry, in registry mode</h1>
+    <h1>Singular · the preserved broader registry</h1>
+    <p class="sub">These profiles replay the preserved broader contract. New permanent
+      registries admit registration and permanent termination only; their bounded
+      model is included in the source mirror, with no playable profile here.</p>
     <p class="sub">A leaf is <em>Unknown</em> or <em>Known</em> one of three states.
       Seven edges move it, each an MPFS primitive applied to a state, each a delta
       over three token kinds. Six need an approval; the seventh is a read that
@@ -565,7 +568,7 @@ dl dd {
     <div class="row">
       <label for="profile-picker">Profile</label>
       <select id="profile-picker">
-        <option value="generic">Generic registry</option>
+        <option value="generic">Preserved broader registry</option>
         <option value="naming">Naming — the Over witness</option>
       </select>
       <button id="btn-theme" type="button">Theme</button>
@@ -5642,7 +5645,7 @@ const STORIES=[
   "profiles": [
     {
       "id": "generic",
-      "label": "Generic registry profile",
+      "label": "Preserved broader registry profile",
       "engine": "simulator/core.mjs"
     },
     {

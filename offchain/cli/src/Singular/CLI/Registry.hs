@@ -158,7 +158,7 @@ loadReleaseWith recognize path = do
                 knownScripts
         state <- code "permanent_state.state"
         request <- code "request.request"
-        application <- code "open_datum.open_datum"
+        application <- code "permanent_open_datum.open_datum"
         witness <- code "permanent_witness.witness"
         pure
             ( Release

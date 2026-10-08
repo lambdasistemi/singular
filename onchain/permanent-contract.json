@@ -25,9 +25,9 @@
       "parameters": 2
     },
     {
-      "title": "open_datum.open_datum",
-      "hash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
-      "compiledCodeSha256": "d20660fd99a4a4cd6e6571a35381c284bac7315b476b8a070c0a30838d125333",
+      "title": "permanent_open_datum.open_datum",
+      "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+      "compiledCodeSha256": "5e7d5fbaec2b573f97d5211cfd42fb7032815f821d51125fc80154425fed02ae",
       "parameters": 1
     }
   ],

@@ -28,7 +28,7 @@ knownScripts =
         , "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1"
         )
     ,
-        ( "open_datum.open_datum"
-        , "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb"
+        ( "permanent_open_datum.open_datum"
+        , "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03"
         )
     ]

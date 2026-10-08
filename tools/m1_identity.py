@@ -11,7 +11,7 @@ TITLES = [
     "permanent_state.state.spend",
     "request.request.spend",
     "permanent_witness.witness.mint",
-    "open_datum.open_datum.mint",
+    "permanent_open_datum.open_datum.mint",
 ]
 
 

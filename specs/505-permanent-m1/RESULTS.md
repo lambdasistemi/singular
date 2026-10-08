@@ -16,17 +16,17 @@ are refreshed for the wider source inventory; their behavior is unchanged.
 | --- | --- | --- |
 | Bounded model | 10 audited declarations using standard axioms; 10 executed scenarios and 4 batches, 30 independently derived observations | Abstract model, not Cardano execution |
 | Conformance transport | 10 scenario and 4 batch outputs match the bounded driver; broader-law and unknown-contract controls fire | No live consumer comparison receipt |
-| Exported state/request/witness code | 49 component evaluations: 2 allowed edges, all 5 excluded edges, mixed batch, 6 malformed or alternate contexts, joined component contexts for every edge | Fixture roots and witness policies; absent starting states are unreachable from genesis |
+| Exported state/request/witness code | 57 component evaluations: 2 allowed edges, all 5 excluded edges, mixed batch, 6 malformed or alternate contexts, joined component contexts for every edge and four application booking/update/release contexts against both fixed and broader code | Fixture roots and witness policies; absent starting states are unreachable from genesis |
 | Boundary checker fault | Replace the bounded exported state with the broader program; the same checker exits1 and names accepted terminal witnessing as a mismatch | Controlled artifact mutation, not a chain transaction |
 | Script identity and size | Nix identity and publication-size checks passed, including their controls; state15,231 bytes under15,878 limit | Unapplied identities; application and witness instance pins are derived from the boot seed |
 | Ordinary CLI handlers | 13 examples passed including lifecycle receipts and unknown-code refusal | Synthetic provider fixture; final packaged script pins require the connected run |
-| Extracted ordinary CLI journey | Pending bounded execution | No connected ledger acceptance claimed yet |
+| Extracted ordinary CLI journey | Archive assembly, checksums, source/model stamp, script identities and surface fault controls passed; first connected run booted and read the fixed registry, then exposed the old application pin at approval minting | Repaired application passes 66 component controls; completed connected lifecycle remains pending |
 | Public conformance inventory | 47 rows, 46 owned; new bounded story remains uncovered; original broader rows retained | A component result never assigns an executed product status |
 
 New state: `807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa`. New unapplied witness: `4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1`.
+New unapplied application: `eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03`. Its booking, payload-update and release guards are unchanged; its fixed state pin matches the new registry.
 All four fixed scripts, compiler identity, parameter counts and byte digests are
-recorded in `onchain/permanent-contract.json`. The original broader state and
-witness identities are unchanged.
+recorded in `onchain/permanent-contract.json`. Every original broader compiled identity is unchanged. The simulator preserves those broader profiles and explicitly discloses that it has no playable bounded profile. The theorem inventory retains all prior declarations and adds the ten audited bounded statements: 136 obligations, 77 manifest-bound and 59 unclassified; integration coverage debt stays visible.
 
 Reproduce the component boundary from a clean checkout:
 

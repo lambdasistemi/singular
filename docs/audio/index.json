@@ -1279,169 +1279,176 @@
     "index": 11,
     "name": "docs-conformance-api-reference/what-this-reference-contains-11",
     "pause_ms": 300,
-    "text": "Conformance.Edge.Programs — source",
-    "v": "b361121fb4a8"
+    "text": "Conformance.Edge.Permanent — source",
+    "v": "0e9ae17fd2c3"
    },
    {
     "index": 12,
     "name": "docs-conformance-api-reference/what-this-reference-contains-12",
     "pause_ms": 300,
-    "text": "Conformance.Edge.Register — source",
-    "v": "d74a95d9640c"
+    "text": "Conformance.Edge.Programs — source",
+    "v": "fc05bfc1a0b7"
    },
    {
     "index": 13,
     "name": "docs-conformance-api-reference/what-this-reference-contains-13",
     "pause_ms": 300,
-    "text": "Conformance.Edge.Retire — source",
-    "v": "8848d9b6c19a"
+    "text": "Conformance.Edge.Register — source",
+    "v": "3acc1a8fd99a"
    },
    {
     "index": 14,
     "name": "docs-conformance-api-reference/what-this-reference-contains-14",
     "pause_ms": 300,
-    "text": "Conformance.Edge.RetractionWindow — source",
-    "v": "940b2e1abb06"
+    "text": "Conformance.Edge.Retire — source",
+    "v": "78398f92d849"
    },
    {
     "index": 15,
     "name": "docs-conformance-api-reference/what-this-reference-contains-15",
     "pause_ms": 300,
-    "text": "Conformance.Edge.Sequence — source",
-    "v": "f54558292a09"
+    "text": "Conformance.Edge.RetractionWindow — source",
+    "v": "a65c8aa5edd0"
    },
    {
     "index": 16,
     "name": "docs-conformance-api-reference/what-this-reference-contains-16",
     "pause_ms": 300,
-    "text": "Conformance.Evidence.Asset — source",
-    "v": "7af4d3c96d2f"
+    "text": "Conformance.Edge.Sequence — source",
+    "v": "e71e12c5d052"
    },
    {
     "index": 17,
     "name": "docs-conformance-api-reference/what-this-reference-contains-17",
     "pause_ms": 300,
-    "text": "Conformance.EvidencePage — source",
-    "v": "16af18e3702f"
+    "text": "Conformance.Evidence.Asset — source",
+    "v": "5c58ef761f5d"
    },
    {
     "index": 18,
     "name": "docs-conformance-api-reference/what-this-reference-contains-18",
     "pause_ms": 300,
-    "text": "Conformance.Extent — source",
-    "v": "f589a45ff1c2"
+    "text": "Conformance.EvidencePage — source",
+    "v": "edcbb3bedc76"
    },
    {
     "index": 19,
     "name": "docs-conformance-api-reference/what-this-reference-contains-19",
     "pause_ms": 300,
-    "text": "Conformance.Fold.KeyedMint — source",
-    "v": "3e6f406ef69f"
+    "text": "Conformance.Extent — source",
+    "v": "09d8dc06baae"
    },
    {
     "index": 20,
     "name": "docs-conformance-api-reference/what-this-reference-contains-20",
     "pause_ms": 300,
-    "text": "Conformance.Lean.Oracle — source",
-    "v": "e3e4de1bfbf0"
+    "text": "Conformance.Fold.KeyedMint — source",
+    "v": "5bc680bed8aa"
    },
    {
     "index": 21,
     "name": "docs-conformance-api-reference/what-this-reference-contains-21",
     "pause_ms": 300,
-    "text": "Conformance.Lean.Registration — source",
-    "v": "77882f1e4605"
+    "text": "Conformance.Lean.Oracle — source",
+    "v": "907fb07dbf6f"
    },
    {
     "index": 22,
     "name": "docs-conformance-api-reference/what-this-reference-contains-22",
     "pause_ms": 300,
-    "text": "Conformance.Lean.Retirement — source",
-    "v": "b4d3f0762809"
+    "text": "Conformance.Lean.Registration — source",
+    "v": "3eadb51f858e"
    },
    {
     "index": 23,
     "name": "docs-conformance-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
-    "text": "Conformance.NodeRejection — source",
-    "v": "22739e32fcf6"
+    "text": "Conformance.Lean.Retirement — source",
+    "v": "2e3f6d85ee23"
    },
    {
     "index": 24,
     "name": "docs-conformance-api-reference/what-this-reference-contains-24",
     "pause_ms": 300,
-    "text": "Conformance.Observe.Payments — source",
-    "v": "f0769fd3b46d"
+    "text": "Conformance.NodeRejection — source",
+    "v": "e05ab593e87f"
    },
    {
     "index": 25,
     "name": "docs-conformance-api-reference/what-this-reference-contains-25",
     "pause_ms": 300,
-    "text": "Conformance.PurposeUnits — source",
-    "v": "f9f41b44cea2"
+    "text": "Conformance.Observe.Payments — source",
+    "v": "3b58b0d55f95"
    },
    {
     "index": 26,
     "name": "docs-conformance-api-reference/what-this-reference-contains-26",
     "pause_ms": 300,
-    "text": "Conformance.Receipt — source",
-    "v": "46151cd07b4e"
+    "text": "Conformance.PurposeUnits — source",
+    "v": "7b13820d13de"
    },
    {
     "index": 27,
     "name": "docs-conformance-api-reference/what-this-reference-contains-27",
     "pause_ms": 300,
-    "text": "Conformance.Refusal — source",
-    "v": "1b3c5033a447"
+    "text": "Conformance.Receipt — source",
+    "v": "889d24bc3d0b"
    },
    {
     "index": 28,
     "name": "docs-conformance-api-reference/what-this-reference-contains-28",
     "pause_ms": 300,
-    "text": "Conformance.Replay — source",
-    "v": "998e3d4a84f5"
+    "text": "Conformance.Refusal — source",
+    "v": "b768235dce13"
    },
    {
     "index": 29,
     "name": "docs-conformance-api-reference/what-this-reference-contains-29",
     "pause_ms": 300,
-    "text": "Conformance.RowNames — source — associates historical receipt keys with descriptive requirement names",
-    "v": "b99a8cb74fc3"
+    "text": "Conformance.Replay — source",
+    "v": "5205379367bf"
    },
    {
     "index": 30,
     "name": "docs-conformance-api-reference/what-this-reference-contains-30",
     "pause_ms": 300,
-    "text": "Conformance.Rows — source",
-    "v": "7861bdfc2f16"
+    "text": "Conformance.RowNames — source — associates historical receipt keys with descriptive requirement names",
+    "v": "9b178ab633ca"
    },
    {
     "index": 31,
     "name": "docs-conformance-api-reference/what-this-reference-contains-31",
     "pause_ms": 300,
-    "text": "Conformance.Story.Binding — source",
-    "v": "a91acdeebcc5"
+    "text": "Conformance.Rows — source",
+    "v": "8f53a7b67746"
    },
    {
     "index": 32,
     "name": "docs-conformance-api-reference/what-this-reference-contains-32",
     "pause_ms": 300,
-    "text": "Conformance.Story.Identity — source",
-    "v": "167332df7de5"
+    "text": "Conformance.Story.Binding — source",
+    "v": "b6bf6241e6c7"
    },
    {
     "index": 33,
     "name": "docs-conformance-api-reference/what-this-reference-contains-33",
     "pause_ms": 300,
-    "text": "Conformance.Story.Live — source",
-    "v": "b4f54cc53f52"
+    "text": "Conformance.Story.Identity — source",
+    "v": "02fd51e57e6f"
    },
    {
     "index": 34,
     "name": "docs-conformance-api-reference/what-this-reference-contains-34",
     "pause_ms": 300,
+    "text": "Conformance.Story.Live — source",
+    "v": "834642061d8f"
+   },
+   {
+    "index": 35,
+    "name": "docs-conformance-api-reference/what-this-reference-contains-35",
+    "pause_ms": 300,
     "text": "Conformance.Story.Specification — source",
-    "v": "39f2b547203d"
+    "v": "0d6007a0f99f"
    }
   ]
  },

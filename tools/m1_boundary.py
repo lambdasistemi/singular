@@ -143,6 +143,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--blueprint", type=Path, required=True)
     parser.add_argument("--contexts", type=Path, required=True)
+    parser.add_argument("--application-contexts", type=Path, required=True)
     parser.add_argument("--aiken", required=True)
     parser.add_argument("--receipts-dir", type=Path, required=True)
     parser.add_argument("--fault-child", action="store_true", help=argparse.SUPPRESS)
@@ -150,6 +151,25 @@ def main():
     args.receipts_dir.mkdir(parents=True, exist_ok=False)
     blueprint = json.loads(args.blueprint.read_text())
     contexts, extras, routes = parse_contexts(args.contexts)
+    raw = args.application_contexts.read_text()
+    application_document, _ = json.JSONDecoder().raw_decode(raw[raw.index("{") :])
+    if (
+        application_document["summary"]["failed"]
+        or not application_document["summary"]["total"]
+    ):
+        raise ValueError("application fixture producer did not pass executed tests")
+    application_contexts = {}
+    for module in application_document["modules"]:
+        for test in module["tests"]:
+            for trace in test.get("traces", []):
+                match = re.fullmatch(r"M1-APPLICATION:(\d+):([0-9A-Fa-f]+)", trace)
+                if match:
+                    number = int(match[1])
+                    if number in application_contexts:
+                        raise ValueError("duplicate application context")
+                    application_contexts[number] = bytes.fromhex(match[2])
+    if set(application_contexts) != set(range(4)):
+        raise ValueError("missing application booking/update/release contexts")
     rows = []
     failures = []
     evaluations = []
@@ -186,6 +206,23 @@ def main():
                 ],
             )
         )
+    for family, bounded in [("open_datum", False), ("permanent_open_datum", True)]:
+        for purpose, numbers in [("mint", (0, 1)), ("spend", (2, 3))]:
+            evaluations.append(
+                (
+                    f"{family}.open_datum.{purpose}",
+                    [
+                        (
+                            f"application-{number}",
+                            None,
+                            application_contexts[number],
+                            bounded or number == 2,
+                            True,
+                        )
+                        for number in numbers
+                    ],
+                )
+            )
     for title, cases in evaluations:
         entries = [v for v in blueprint["validators"] if v["title"] == title]
         if len(entries) != 1:
@@ -198,9 +235,12 @@ def main():
             data = decoder.item()
             if decoder.offset != len(payload):
                 raise ValueError("trailing context bytes")
-            if bundle and (data[0] != "List" or len(data[1]) != 3):
+            if bundle and (
+                data[0] != "List"
+                or len(data[1]) != len(validator.get("parameters", [])) + 1
+            ):
                 raise ValueError(
-                    "parameterized route must have two parameters and one context"
+                    "parameterized route must have its parameters and one context"
                 )
             arguments = [
                 f"(con data ({literal(arg)}))"
@@ -275,6 +315,8 @@ def main():
                 str(fault_path),
                 "--contexts",
                 str(args.contexts),
+                "--application-contexts",
+                str(args.application_contexts),
                 "--aiken",
                 args.aiken,
                 "--receipts-dir",
@@ -302,7 +344,7 @@ def main():
     if failures:
         raise SystemExit("\n".join(failures))
     print(
-        "Exported M1: 49 component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes; excluded-admission artifact fault refused by checker"
+        "Exported M1: 57 component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes, fixed application booking/update/release; excluded-admission artifact fault refused by checker"
     )
 
 
