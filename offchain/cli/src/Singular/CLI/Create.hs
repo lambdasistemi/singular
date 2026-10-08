@@ -28,7 +28,13 @@ holds a journal or a pending create is refused before a node is contacted.
 -}
 module Singular.CLI.Create (runCreate) where
 
-import Control.Exception (throwIO)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -98,6 +104,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( Building (..)
+    , CommandFailure (..)
     , Env (..)
     , WriteContext (..)
     , expecting
@@ -203,6 +210,28 @@ runCreate env a = do
                         )
         Submit ws -> createWith env a rel ws
 
+{- | Run the pre-lock selection read, reporting a provider it cannot use as
+node-unavailable with the session's own wording. A failure the command
+itself classified, and any asynchronous failure, propagates unchanged.
+-}
+catchSelection :: IO a -> ProviderSettings -> IO a
+catchSelection act settings = do
+    result <- try act
+    case result of
+        Right x -> pure x
+        Left (e :: SomeException) -> case fromException e of
+            Just (_ :: CommandFailure) -> throwIO e
+            Nothing -> case fromException e of
+                Just (_ :: SomeAsyncException) -> throwIO e
+                Nothing ->
+                    failWith
+                        NodeUnavailable
+                        ( "the provider at "
+                            <> providerUrl settings
+                            <> " could not be used: "
+                            <> show e
+                        )
+
 createWith
     :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
 createWith env a rel ws = do
@@ -215,12 +244,20 @@ createWith env a rel ws = do
     -- of the wallet's outputs. An automatically selected seed is validated,
     -- never re-selected, under the lock, so the managed journal always binds
     -- the state token this command creates: a seed spent in between refuses
-    -- instead of silently booting another registry.
+    -- instead of silently booting another registry. A provider the selection
+    -- read cannot use is reported as node-unavailable, as a session
+    -- established for a write would report it, never as a client refusal.
     (utxos, scope) <-
-        readOnce env settings ["wallet outputs"] $ \caps v -> do
-            outputs <- Cage.outputsAt v addr
-            evidence <- sessionReceipt caps v
-            pure (outputs, evidence)
+        readOnce
+            env
+            settings
+            ["wallet outputs"]
+            ( \caps v -> do
+                outputs <- Cage.outputsAt v addr
+                evidence <- sessionReceipt caps v
+                pure (outputs, evidence)
+            )
+            `catchSelection` settings
     ((seedIn, cfg, pinned), identity) <-
         previewIdentity (not (createPreview a)) a rel addr utxos
     let token = stateTokenOf rel seedIn
