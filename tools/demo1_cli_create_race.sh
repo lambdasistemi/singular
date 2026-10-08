@@ -55,10 +55,10 @@ preview() {
 source "$(dirname "$0")/managed_state.sh"
 
 digest() {
-  local journal
-  journal="$(managed_find "$target" journal.jsonl)"
-  [ "$(printf '%s' "$journal" | wc -l | tr -d ' ')" = 1 ] || return 1
-  (cd "$target" && sha256sum "$journal" && ls -A)
+  local found
+  mapfile -t found < <(managed_find "$target" journal.jsonl)
+  [ "${#found[@]}" -eq 1 ] || return 1
+  (cd "$target" && sha256sum "${found[0]}" && ls -A)
 }
 
 preview preview-first "$first_key" || setup_fail "the first wallet's preview failed"
@@ -90,8 +90,9 @@ status=0
 jq -e '.processTime == 45000 and .retractTime == 15000' "$receipts/create-first.json" >/dev/null \
   || fail "the first registry did not read back the short CI windows"
 before="$(digest)"
-winner_journal="$(managed_find "$target" journal.jsonl)"
-[ "$(printf '%s' "$winner_journal" | wc -l | tr -d ' ')" = 1 ] && [ -s "$winner_journal" ] \
+winner_found=()
+mapfile -t winner_found < <(managed_find "$target" journal.jsonl)
+[ "${#winner_found[@]}" -eq 1 ] && [ -s "${winner_found[0]}" ] \
   || setup_fail "the first create left no single journal"
 [ -z "$(managed_find "$target" registry.json)" ] && [ -z "$(managed_find "$target" registry.pending.json)" ] \
   || fail "the first create left an identity file"

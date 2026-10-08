@@ -776,7 +776,8 @@ done
 bob_journal="$(managed_journal "$bob_root" "$state_token" "$bobkey")"
 [ -f "$bob_journal" ] \
   || fail "fresh bob's booking left no journal under the managed default root"
-[ "$(managed_find "$bob_root" journal.jsonl | wc -l | tr -d ' ')" = 1 ] \
+mapfile -t bob_journals < <(managed_find "$bob_root" journal.jsonl)
+[ "${#bob_journals[@]}" -eq 1 ] \
   || fail "fresh bob's root holds more than his one journal"
 # 2b. Bob folds with the COPIED key: key-file relocation reuses the same
 # journal and partition, and the fold consumes exactly his booking.
@@ -814,7 +815,8 @@ for root in "$reg/" "$bob_actor/" "$reader/"; do
   ! grep -qF "$root" "$work/bob-fold.strace" \
     || fail "fresh bob's fold accessed another actor's directory: $(grep -F "$root" "$work/bob-fold.strace" | head -n 3)"
 done
-[ "$(managed_find "$bob_root" journal.jsonl | wc -l | tr -d ' ')" = 1 ] \
+mapfile -t bob_journals_after < <(managed_find "$bob_root" journal.jsonl)
+[ "${#bob_journals_after[@]}" -eq 1 ] \
   || fail "the copied key created another journal instead of reusing bob's"
 # 3. Readback binds the fold: same request consumed, delivered and observed.
 bob_run bob-default-readback success -- registry inspect --key "$bob_key" \
