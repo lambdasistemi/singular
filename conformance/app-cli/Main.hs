@@ -13,7 +13,7 @@ doing exactly that, so its verdict is the one a later reader recomputes.
 -}
 module Main (main) where
 
-import Conformance.Cli.Admission (admit)
+import Conformance.Cli.Admission (newReplayAdmission)
 import Conformance.Cli.Backend (runAttach, runControls)
 import Conformance.Cli.Controls
     ( Receipt (..)
@@ -90,7 +90,9 @@ render story dir = do
     -- Every receipt is admitted from the run's directory, the parent of
     -- its receipts, before any verdict is computed from it.
     let work = takeDirectory (dropTrailingPathSeparator dir)
-    receipts <- mapM (\n -> readReceipt (dir </> n) >>= admit work) names
+    admitReceipt <- newReplayAdmission work
+    receipts <-
+        mapM (\n -> readReceipt (dir </> n) >>= admitReceipt) names
     let results = judge receipts story
     putStr (renderControls results story)
     pure (if held results then ExitSuccess else ExitFailure 1)

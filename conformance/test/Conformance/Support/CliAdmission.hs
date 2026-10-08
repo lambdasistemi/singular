@@ -3,7 +3,12 @@
 -- | A refusal counts only on its retained body and rejection, read back.
 module Conformance.Support.CliAdmission (spec) where
 
-import Conformance.Cli.Admission (admit, sha256Hex, txIdHexOf)
+import Conformance.Cli.Admission
+    ( admit
+    , newReplayAdmission
+    , sha256Hex
+    , txIdHexOf
+    )
 import Conformance.Cli.Controls
     ( JournalSpan (..)
     , ProcessEvidence (..)
@@ -79,7 +84,7 @@ mentions :: String -> Receipt -> Bool
 mentions phrase r = any (phrase `isInfixOf`) (problems r)
 
 spec :: Spec
-spec = commandSpec >> refusalSpec >> processSpec
+spec = commandSpec >> refusalSpec >> processSpec >> replaySpec
 
 refusalSpec :: Spec
 refusalSpec = describe
@@ -600,3 +605,63 @@ processSpec = describe
                 printed `shouldSatisfy` mentions "differs from evidence/printed.json"
                 unrecorded <- admit work r{rcProcess = Nothing}
                 unrecorded `shouldSatisfy` mentions "is not recorded"
+
+{- | A completed replay reads each journal once and still judges every
+receipt on its own span; a journal it could not read is read again.
+-}
+replaySpec :: Spec
+replaySpec = describe
+    "A completed replay reads each journal once, judging every receipt alone"
+    $ do
+        it "admits each receipt as a single admission does" $
+            withSystemTempDirectory "admission" $ \work -> do
+                r <- commandIn work
+                let moved =
+                        r
+                            { rcJournal =
+                                (\j -> j{jsAfter = jsAfter j + 9})
+                                    <$> rcJournal r
+                            }
+                replay <- newReplayAdmission work
+                honest <- replay r
+                broken <- replay moved
+                single <- admit work moved
+                problems honest `shouldBe` []
+                problems broken `shouldBe` problems single
+                broken `shouldSatisfy` (not . null . problems)
+        it
+            "keeps the lines first read, while a new replay reads the changed journal"
+            $ withSystemTempDirectory "admission"
+            $ \work -> do
+                r <- commandIn work
+                let journal = work </> "targets/t/journal.jsonl"
+                replay <- newReplayAdmission work
+                before <- replay r
+                problems before `shouldBe` []
+                saved <- BS.readFile journal
+                BS.writeFile
+                    journal
+                    (BC.map (\c -> if c == 'b' then 'B' else c) saved)
+                kept <- replay r
+                problems kept `shouldBe` []
+                fresh <- newReplayAdmission work
+                changed <- fresh r
+                changed
+                    `shouldSatisfy` mentions "are not the bytes the receipt digests"
+        it "reads again a journal that was missing or unreadable" $
+            withSystemTempDirectory "admission" $ \work -> do
+                r <- processIn work
+                let journal = work </> "targets/t/journal.jsonl"
+                saved <- BS.readFile journal
+                replay <- newReplayAdmission work
+                removeFile journal
+                missing <- replay r
+                missing `shouldSatisfy` mentions "is missing"
+                BS.writeFile journal saved
+                perms <- getPermissions journal
+                setPermissions journal emptyPermissions
+                unreadable <- replay r
+                unreadable `shouldSatisfy` mentions "could not be read"
+                setPermissions journal perms
+                restored <- replay r
+                problems restored `shouldBe` []

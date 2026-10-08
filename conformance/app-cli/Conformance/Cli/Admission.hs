@@ -15,6 +15,7 @@ verdict reports; a receipt read without admission is never credited.
 -}
 module Conformance.Cli.Admission
     ( admit
+    , newReplayAdmission
     , blake2b256Hex
     , lastEventOf
     , lastMaybe
@@ -33,7 +34,9 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.Char (isSpace)
 import Data.Foldable (toList)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (nub)
+import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -103,9 +106,34 @@ what is wrong with it. A receipt that names no transaction has nothing to
 admit.
 -}
 admit :: FilePath -> Receipt -> IO Receipt
-admit work r
-    | "run " `T.isPrefixOf` rcAction r = admitCommand work r
-    | "provoke " `T.isPrefixOf` rcAction r = admitProcess work r
+admit = admitWithJournalReader (fmap BC.lines . BS.readFile)
+
+{- | Admit a completed replay using journal lines read once per file. Allocate
+this reader separately for every replay; never reuse it across live writes or
+mutation cases. Every receipt still checks its own span, digest and evidence.
+-}
+newReplayAdmission :: FilePath -> IO (Receipt -> IO Receipt)
+newReplayAdmission work = do
+    cache <- newIORef Map.empty
+    let readJournal path = do
+            saved <- readIORef cache
+            case Map.lookup path saved of
+                Just rows -> pure rows
+                Nothing -> do
+                    rows <- BC.lines <$> BS.readFile path
+                    modifyIORef' cache (Map.insert path rows)
+                    pure rows
+    pure (admitWithJournalReader readJournal work)
+
+admitWithJournalReader
+    :: (FilePath -> IO [ByteString])
+    -> FilePath
+    -> Receipt
+    -> IO Receipt
+admitWithJournalReader readJournal work r
+    | "run " `T.isPrefixOf` rcAction r = admitCommand readJournal work r
+    | "provoke " `T.isPrefixOf` rcAction r =
+        admitProcess readJournal work r
     | "read-indexer " `T.isPrefixOf` rcAction r = admitReadback work r
     | otherwise = admitTransaction work r
 
@@ -268,10 +296,11 @@ read back that the receipt names among its references. A command that
 submitted must have prepared something, and one that submits nothing must
 have prepared nothing.
 -}
-admitCommand :: FilePath -> Receipt -> IO Receipt
-admitCommand work r = do
+admitCommand
+    :: (FilePath -> IO [ByteString]) -> FilePath -> Receipt -> IO Receipt
+admitCommand readJournal work r = do
     bodies <- mapM (submissionProblems work) (rcSubmissions r)
-    gained <- journalSpan work r
+    gained <- journalSpan readJournal work r
     let problems = case gained of
             Left spanProblems -> spanProblems
             Right ls -> reconcile ls
@@ -355,19 +384,22 @@ admitCommand work r = do
 run's files and checked against the receipt's digest. A journal that does not
 exist is empty, which an empty span may be.
 -}
-journalSpan :: FilePath -> Receipt -> IO (Either [Text] [ByteString])
-journalSpan work r = case rcJournal r of
+journalSpan
+    :: (FilePath -> IO [ByteString])
+    -> FilePath
+    -> Receipt
+    -> IO (Either [Text] [ByteString])
+journalSpan readJournal work r = case rcJournal r of
     Nothing -> pure (Left ["no journal span of the command is recorded"])
     Just j -> do
-        read' <- try (BS.readFile (work </> T.unpack (jsFile j)))
+        read' <- try (readJournal (work </> T.unpack (jsFile j)))
         pure $ case read' of
             Left (_ :: IOException)
                 | jsBefore j == 0 && jsAfter j == 0 -> Right []
                 | otherwise ->
                     Left ["the command's journal " <> jsFile j <> " is missing"]
-            Right bytes ->
-                let ls = BC.lines bytes
-                    gained = take (jsAfter j - jsBefore j) (drop (jsBefore j) ls)
+            Right ls ->
+                let gained = take (jsAfter j - jsBefore j) (drop (jsBefore j) ls)
                 in  if jsBefore j < 0 || jsAfter j < jsBefore j || jsAfter j > length ls
                         then
                             Left
@@ -461,8 +493,9 @@ left read back from the run's files — the registry's journal, the copies of
 a registry's saved files and the files themselves, and a seed's probe. A
 recorded part that differs from those files is a problem.
 -}
-admitProcess :: FilePath -> Receipt -> IO Receipt
-admitProcess work r = do
+admitProcess
+    :: (FilePath -> IO [ByteString]) -> FilePath -> Receipt -> IO Receipt
+admitProcess readJournal work r = do
     bodies <- mapM (submissionProblems work) (rcSubmissions r)
     printedProblems <- printed
     processProblems <-
@@ -503,11 +536,11 @@ admitProcess work r = do
                                ]
 
     process p = do
-        journal <- try (BS.readFile (work </> T.unpack (peJournal p)))
+        journal <- try (readJournal (work </> T.unpack (peJournal p)))
         files <- mapM digestProblem (peFilesBefore p <> peFilesAfter p)
         probe <- maybe (pure []) probeProblems (peSeedProbe p)
         pure
-            ( either (absentJournal p) (journalProblems p . BC.lines) journal
+            ( either (absentJournal p) (journalProblems p) journal
                 <> concat files
                 <> probe
             )
