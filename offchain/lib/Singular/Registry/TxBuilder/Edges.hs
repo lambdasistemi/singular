@@ -137,7 +137,7 @@ import Singular.Registry.Trace
     , ReadEvent (..)
     , timedTrace
     )
-import Singular.Registry.WalletOutputs (WalletOutputs, covering, fundable, fundingOutputs)
+import Singular.Registry.WalletOutputs (WalletOutputs, fundingOutputs)
 import Singular.Registry.TxBuilder.ConnectedFold
     ( RawRedeemer (..)
     , generousUnits
@@ -295,8 +295,8 @@ publishRefScriptReserving reserved prov submit payerAddr script = do
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
 {- | The unsigned publication of one reference script, funded by the
-smallest permitted output that covers it outside the reservation, and
-the reference output it creates.
+largest ada-only output outside the reservation, and the reference
+output it creates.
 -}
 publishRefScriptTx
     :: Set.Set TxIn
@@ -307,19 +307,18 @@ publishRefScriptTx
 publishRefScriptTx reserved v payerAddr script = do
     pp <- Cage.parameters v
     utxos <- Cage.outputsAt v payerAddr
+    fund <-
+        case sortOn
+            (Down . (^. coinTxOutL) . snd)
+            (filter (\(i, o) -> adaOnlyOut o && Set.notMember i reserved) utxos) of
+            [] -> error "publishRefScript: the payer wallet has no ada-only output"
+            (u : _) -> pure u
     let probe =
             mkBasicTxOut payerAddr (MaryValue (Coin 0) mempty)
                 & referenceScriptTxOutL .~ SJust script
         Coin minCoin = getMinCoinTxOut pp probe
         refCoin = minCoin + 1_000_000
-        needed = refCoin + 1_000_000 + 1_000_000
-    fund <-
-        case covering needed [u | u@(i, o) <- utxos, Set.notMember i reserved, fundable o] of
-            Nothing ->
-                error
-                    "publishRefScript: no permitted output covers a reference output"
-            Just u -> pure u
-    let refOut =
+        refOut =
             mkBasicTxOut payerAddr (MaryValue (Coin refCoin) mempty)
                 & referenceScriptTxOutL .~ SJust script
         fee = 1_000_000
