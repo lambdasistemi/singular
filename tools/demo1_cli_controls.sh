@@ -145,6 +145,13 @@ say "story run took $((SECONDS - run_start))s wall"
 # refusal for the admission reason named, and exit non-zero.
 copies="$work/artifact-controls"
 mkdir -p "$copies"
+# Every mutation changes its own copy; the completed source run is immutable.
+# Discover its journalled bodies and process files once rather than parsing
+# the same large receipts again for each copy. Replay still reads and admits
+# every copied receipt and evidence file after that case's mutation.
+jq -r '.submissions[]?.bodyFile' "$work"/receipts/*.json >"$copies/retained-bodies"
+jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/receipts/*.json \
+  | sort -u >"$copies/retained-files"
 step="$(first_receipt fold-unevaluated duplicate)"
 [ -n "$step" ] || fail_control "no refused fold receipt for the duplicate target"
 name="$(basename "$step")"
@@ -154,21 +161,20 @@ sha256sum "$controls" "$step" "$work/$rejection" "$work/$body" >"$copies/inputs.
 # shellcheck disable=SC2016 # the backticks are the section's own Markdown
 claim='| `OpenDatumApplication.Statements.duplicate_refused_by_registry` | that request'"'"'s fold, submitted without local evaluation, is refused by the registry'"'"'s state validator | '
 copy() {
+  local kept
   rm -rf "${copies:?}/$1"
   mkdir -p "$copies/$1"
   cp -r "$work/receipts" "$work/evidence" "$copies/$1/"
-  # the bodies ordinary commands journalled, each at its own relative path
-  jq -r '.submissions[]?.bodyFile' "$work"/receipts/*.json | while read -r kept; do
+  # All retained files keep their original relative paths in every copy.
+  while read -r kept; do
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
-  done
-  # the journals and saved files provoked commands' receipts read back;
-  # a journal the command never wrote is legitimately absent and stays
-  # absent in the copy, where admission reads the same empty span
-  jq -r '(.journal // empty | .file), (.process // empty | .journal, (.filesAfter[]?[0]))' "$work"/receipts/*.json \
-    | sort -u | while read -r kept; do
+  done <"$copies/retained-bodies"
+  # A journal the command never wrote stays absent in the copy, where
+  # admission reads the same empty span. Submission bodies remain required.
+  while read -r kept; do
     [ -e "$work/$kept" ] || continue
     (cd "$work" && cp --parents "$kept" "$copies/$1/")
-  done
+  done <"$copies/retained-files"
 }
 # expect COPY CAUSE: COPY's render fails the claim for CAUSE (empty: holds).
 expect() {
