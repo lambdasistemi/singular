@@ -38,6 +38,8 @@ stamp-speech +pages:
 model:
     lake build
     python3 tools/check_model.py
+    python3 tools/check_m1.py
+    python3 tools/check_m1_transport.py
 
 # #310: the open-datum application, an isolated Lake project over the unchanged
 # root model. The selected compiler must be the root pin. `check` regenerates the

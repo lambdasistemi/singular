@@ -12,3 +12,5 @@ import Singular.NamingLifecycleAudit
 import Singular.NamingWire
 import Singular.NamingWireStatements
 import Singular.NamingWireAudit
+import Singular.M1Driver
+import Singular.M1Audit

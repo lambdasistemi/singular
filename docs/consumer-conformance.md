@@ -29,7 +29,7 @@ name.
 
 ## The denominator
 
-`conformance/rows.json` carries **46 rows, 45 owned**: five registry identity
+`conformance/rows.json` carries **47 rows, 46 owned**: one permanent contract requirement, five registry identity
 requirements, twenty-four registry operation requirements, eight serialization
 requirements, five consumer resolution requirements and three execution-limit
 requirements, plus the checkpoint and treasury policy (bonds, poison,

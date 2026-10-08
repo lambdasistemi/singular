@@ -1,4 +1,5 @@
 import Singular.Driver
+import Singular.M1Driver
 
 /-! # The generic model evaluator, over a supplied abstract context
 
@@ -240,11 +241,18 @@ inputs and outputs of a transaction the caller observed is also answered with th
 driver's judgement of them, under `settle`: the reason `spend` or `settle` gives,
 or `null` when the transaction spends what the exit may and pays what it owes. -/
 def answer (j : Json) : Except String Json := do
+  let permanent ← match j.getObjVal? "contract" with
+    | .error _ => pure false
+    | .ok named => do
+      let contract : String ← fromJson? named
+      if contract == "permanent-m1" then pure true
+      else throw s!"unknown contract {contract}"
   if let .ok named := j.getObjVal? "question" then
     let question : String ← fromJson? named
-    return batchScenarioJson (← toBatchScenario j question)
+    let scenario ← toBatchScenario j question
+    return if permanent then M1Driver.batchScenarioJson scenario else batchScenarioJson scenario
   let scenario ← toScenario j
-  let row := scenarioJson scenario
+  let row := if permanent then M1Driver.scenarioJson scenario else scenarioJson scenario
   match j.getObjVal? "outputs" with
   | .error _ => pure row
   | .ok (Json.arr observed) => do

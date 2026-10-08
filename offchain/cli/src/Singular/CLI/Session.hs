@@ -154,6 +154,7 @@ import Singular.CLI.Receipt
     , readJournal
     , submissionCase
     )
+import Singular.CLI.Registry (Release, loadRelease)
 import Singular.CLI.Trace
     ( ConfirmVerdict (..)
     , Ended (..)
@@ -252,6 +253,8 @@ data Env = Env
     { envTracer :: Tracer IO Trace
     , envSource :: Text
     -- ^ The name the provider's reads report as
+    , envLoadRelease :: FilePath -> IO (Either String Release)
+    -- ^ Recognition is fixed by the shipping composition; tests supply code fixtures.
     , envReads
         :: forall a
          . ProviderSettings
@@ -271,6 +274,7 @@ koiosEnv tracer =
     Env
         { envTracer = tracer
         , envSource = koiosSource
+        , envLoadRelease = loadRelease
         , envReads = withReads (backendUnder tracer) (readsUnder tracer)
         , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)
         }

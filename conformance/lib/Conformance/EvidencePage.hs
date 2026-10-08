@@ -41,6 +41,7 @@ module Conformance.EvidencePage
     , runEvidencePage
     ) where
 
+import Conformance.Edge.Permanent qualified as Permanent
 import Control.Monad (unless)
 import Data.Aeson
     ( FromJSON (..)
@@ -388,6 +389,15 @@ layout model rows snap =
 
     sections =
         [ Section
+            2
+            "Permanent registration and termination"
+            [ "This bounded story targets the new permanent contract. Its evidence state is computed with the inventory below; historical broader receipts do not execute it. Exported script evaluation and the packaged ordinary CLI journey remain separate boundaries. The new release abandons earlier deployed registries; protected rejection follows this carve before M1 can close."
+            , ""
+            , T.pack Permanent.description
+            ]
+            [ "A new permanent registry supports registration and permanent termination only. The story compares both allowed operations and refusals of all five excluded operations, including a mixed batch. Its current live conformance evidence state is read from receipts, never assigned from component tests."
+            ]
+        , Section
             2
             "What this evidence is bound to"
             [ "| | |"

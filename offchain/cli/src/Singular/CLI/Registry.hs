@@ -17,6 +17,7 @@ module Singular.CLI.Registry
     ( -- * The release a command brings
       Release (..)
     , loadRelease
+    , loadReleaseCodes
     , registryConfigFor
     , economics
     , Pins (..)
@@ -76,10 +77,8 @@ import Cardano.Ledger.TxIn (TxIn)
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 
-import Singular.Application.OpenDatum.Script
-    ( Application (..)
-    , loadApplicationCodes
-    )
+import Singular.Application.OpenDatum.Script (Application (..))
+import Singular.CLI.Permanent (knownScripts)
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
     , extractCompiledCode
@@ -95,7 +94,10 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (Release (..), renderStateToken)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
-import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    )
 import Singular.Registry.Types (OnChainTxOutRef)
 
 -- | The pins a registry's configuration carries, as hex.
@@ -119,7 +121,16 @@ instance FromJSON Pins where
 
 -- | Read the registry blueprint a command was given.
 loadRelease :: FilePath -> IO (Either String Release)
-loadRelease path = do
+loadRelease = loadReleaseWith True
+
+{- | Read code for an explicitly supplied implementation fixture. This makes
+no recognition claim; the shipping environment always uses 'loadRelease'.
+-}
+loadReleaseCodes :: FilePath -> IO (Either String Release)
+loadReleaseCodes = loadReleaseWith False
+
+loadReleaseWith :: Bool -> FilePath -> IO (Either String Release)
+loadReleaseWith recognize path = do
     loaded <- loadBlueprint path
     pure $ do
         bp <-
@@ -129,10 +140,32 @@ loadRelease path = do
                     (Left ("the blueprint carries no " <> name))
                     Right
                     (extractCompiledCode (T.pack name) bp)
-        Release
-            <$> code "state.state"
-            <*> code "request.request"
-            <*> loadApplicationCodes OpenDatumApplication bp
+        when recognize $
+            mapM_
+                ( \(title, expected) -> do
+                    compiled <- code (T.unpack title)
+                    let actual = hexT (scriptHashBytes (computeScriptHash compiled))
+                    when (actual /= expected) $
+                        Left
+                            ( "unknown permanent contract script "
+                                <> T.unpack title
+                                <> ": expected "
+                                <> T.unpack expected
+                                <> ", computed "
+                                <> T.unpack actual
+                            )
+                )
+                knownScripts
+        state <- code "permanent_state.state"
+        request <- code "request.request"
+        application <- code "open_datum.open_datum"
+        witness <- code "permanent_witness.witness"
+        pure
+            ( Release
+                state
+                request
+                NamingCodes{ncApplication = application, ncWitness = witness}
+            )
 
 -- | The windows and tip a registry this command creates is booted with.
 economics :: RegistryEconomics

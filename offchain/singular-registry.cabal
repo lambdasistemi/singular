@@ -95,9 +95,9 @@ library
     Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History
     Singular.Provider.Koios.Provider
+    Singular.Provider.Koios.Recorded
     Singular.Provider.Koios.Runtime
     Singular.Provider.Koios.State
-    Singular.Provider.Koios.Recorded
     Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
@@ -106,14 +106,13 @@ library
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
     Singular.Registry.Capabilities
-    Singular.Registry.Funding
     Singular.Registry.Config
     Singular.Registry.Config.Application
+    Singular.Registry.Confirmation
     Singular.Registry.Deployment
     Singular.Registry.Driver
+    Singular.Registry.Funding
     Singular.Registry.Lifecycle
-    Singular.Registry.Wait
-    Singular.Registry.Confirmation
     Singular.Registry.Proof
     Singular.Registry.Replay
     Singular.Registry.StateToken
@@ -136,6 +135,7 @@ library
     Singular.Registry.TxBuilder.Retract
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
+    Singular.Registry.Wait
 
   -- #267: the fold's focused owners behind the Update facade. They are
   -- implementation modules of the existing public library: the facade
@@ -187,18 +187,18 @@ library local-services
     Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.NetworkTime
+    Singular.Registry.ProviderSettings
     Singular.Registry.ProviderTrace
-    Singular.Registry.SessionServices
-    Singular.Registry.SessionIO
     Singular.Registry.SessionEvidence
-    Singular.Registry.WaitTypes
+    Singular.Registry.SessionIO
+    Singular.Registry.SessionServices
     Singular.Registry.Signing
-    Singular.Registry.Wallet
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
-    Singular.Registry.ProviderSettings
     Singular.Registry.Trace
     Singular.Registry.TraceRender
+    Singular.Registry.WaitTypes
+    Singular.Registry.Wallet
 
   build-depends:
     , aeson
@@ -240,15 +240,14 @@ executable local-services-record
     ConfirmationProbe
     ConfirmationSmoke
     EvaluationFixture
-    Singular.Registry.Private.RawFacts
     Singular.Registry.Private.Archive
-    Singular.Registry.Private.Source
     Singular.Registry.Private.EpochParameters
     Singular.Registry.Private.Facade
+    Singular.Registry.Private.RawFacts
+    Singular.Registry.Private.Source
     Singular.Registry.Private.TimePublication
 
   build-depends:
-    , contra-tracer
     , aeson
     , async
     , base                              >=4.14 && <5
@@ -259,42 +258,42 @@ executable local-services-record
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
+    , cardano-ledger-byron
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-ledger-read
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
+    , case-insensitive
+    , chain-follower
     , containers
+    , contra-tracer
     , crypton
     , directory
     , filepath
+    , http-types
     , memory
     , microlens
     , ouroboros-consensus
     , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
     , ouroboros-network:api
     , plutus-core
     , plutus-ledger-api
     , process
     , serialise
     , singular-registry
-    , singular-registry:local-services
-    , chain-follower
-    , contra-tracer
-    , http-types
-    , wai
-    , warp
-    , unix
-    , cardano-ledger-read
-    , ouroboros-consensus:protocol
     , singular-registry:koios-http
-    , cardano-ledger-byron
-    , case-insensitive
+    , singular-registry:local-services
     , text
     , time
+    , unix
+    , wai
+    , warp
 
 -- #389: the read-only Koios probe and fixture recorder over koios-http.
 executable singular-koios
@@ -322,12 +321,12 @@ library koios-http
   exposed-modules:
     Singular.Provider.Koios.Http
     Singular.Provider.Koios.Recorder
-    Singular.Registry.Terminal
     Singular.Registry.Runner
+    Singular.Registry.Terminal
 
   build-depends:
     , aeson
-    , base                   >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -336,9 +335,9 @@ library koios-http
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-slotting
+    , cardano-tx-tools:tx-build
     , case-insensitive
     , contra-tracer
-    , cardano-tx-tools:tx-build
     , directory
     , filepath
     , http-client
@@ -395,7 +394,7 @@ executable journey
 
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
@@ -407,8 +406,8 @@ executable journey
     , mts:mpf-write
     , plutus-tx
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -427,7 +426,7 @@ executable li01
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -436,8 +435,8 @@ executable li01
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , memory
@@ -466,7 +465,7 @@ executable naming-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -475,17 +474,17 @@ executable naming-rows
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-node-clients:devnet
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , memory
     , microlens
     , plutus-core
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -505,7 +504,7 @@ executable recovery-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -515,9 +514,9 @@ executable recovery-rows
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-node-clients:devnet
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , memory
@@ -525,8 +524,8 @@ executable recovery-rows
     , mts:mpf-write
     , plutus-core
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -546,7 +545,7 @@ executable retirement-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -556,9 +555,9 @@ executable retirement-rows
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-node-clients:devnet
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , directory
@@ -568,8 +567,8 @@ executable retirement-rows
     , mts:mpf-write
     , plutus-core
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -587,7 +586,7 @@ executable register-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -597,9 +596,9 @@ executable register-rows
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-node-clients:devnet
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , directory
@@ -610,8 +609,8 @@ executable register-rows
     , plutus-core
     , plutus-tx
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -631,7 +630,7 @@ executable li-refusals
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -640,9 +639,9 @@ executable li-refusals
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
     , cardano-node-clients:devnet
     , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , containers
     , crypton
     , memory
@@ -650,8 +649,8 @@ executable li-refusals
     , plutus-core
     , plutus-tx
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -669,7 +668,7 @@ executable repair-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -687,8 +686,8 @@ executable repair-rows
     , microlens
     , plutus-tx
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -734,55 +733,56 @@ executable devnet
   other-modules:
     Devnet.Probe
     Singular.Registry.Private.Archive
-    Singular.Registry.Private.Source
-    Singular.Registry.Private.Smoke
     Singular.Registry.Private.EpochParameters
     Singular.Registry.Private.Facade
+    Singular.Registry.Private.Smoke
+    Singular.Registry.Private.Source
     Singular.Registry.Private.TimePublication
+
   build-depends:
     , aeson
     , async
     , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
+    , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-byron
+    , cardano-ledger-conway
+    , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-ledger-read
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
     , cardano-strict-containers
-    , containers
-    , directory
-    , filepath
-    , microlens
-    , ouroboros-consensus
-    , ouroboros-network:api
-    , singular-registry
-    , singular-registry:local-services
-    , cardano-ledger-alonzo
-    , cardano-ledger-binary
-    , cardano-ledger-conway
-    , cardano-ledger-core
     , cardano-tx-tools:tx-build
+    , case-insensitive
     , chain-follower
+    , containers
     , contra-tracer
     , crypton
+    , directory
+    , filepath
     , http-types
     , memory
-    , wai
-    , warp
-    , unix
-    , serialise
-    , time
-    , cardano-ledger-read
+    , microlens
+    , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-consensus:protocol
-    , singular-registry:koios-http
-    , cardano-ledger-byron
-    , case-insensitive
-    , temporary
+    , ouroboros-network:api
     , process
+    , serialise
+    , singular-registry
+    , singular-registry:koios-http
+    , singular-registry:local-services
+    , temporary
     , text
+    , time
+    , unix
+    , wai
+    , warp
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -802,7 +802,7 @@ executable deployment
     Deployment.Verify
 
   build-depends:
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -816,8 +816,8 @@ executable deployment
     , directory
     , microlens
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -856,7 +856,7 @@ test-suite record-value-tests
   default-language: GHC2021
   hs-source-dirs:   record-value-test test-tags
   main-is:          Main.hs
-  other-modules: Test.Tags
+  other-modules:    Test.Tags
   build-depends:
     , base               >=4.14 && <5
     , bytestring
@@ -873,7 +873,6 @@ test-suite cage-tests
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
-    Test.Tags
     Naming.CompleteVerifySpec
     Naming.RecordValueSpec
     Naming.RegisterSpec
@@ -898,6 +897,7 @@ test-suite cage-tests
     Singular.CLI.Live
     Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
+    Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Preview
     Singular.CLI.Proof
@@ -913,23 +913,22 @@ test-suite cage-tests
     Singular.CLI.Reject
     Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
-    Singular.CLI.StateTokenSpec
     Singular.CLI.RequestWindow
     Singular.CLI.Root
     Singular.CLI.Session
+    Singular.CLI.StateTokenSpec
     Singular.CLI.Trace
     Singular.CLI.TraceSpec
     Singular.CLI.TrieHistory
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
-    Singular.CLI
     Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
-    Singular.Provider.Koios.ProviderSpec
     Singular.Provider.Koios.FakeServer
     Singular.Provider.Koios.HttpSpec
+    Singular.Provider.Koios.ProviderSpec
     Singular.Provider.Koios.RecordedSpec
     Singular.Provider.Koios.RecorderSpec
     Singular.Provider.Koios.ReferenceScriptsSpec
@@ -944,18 +943,17 @@ test-suite cage-tests
     Singular.Registry.LineageSpec
     Singular.Registry.LocalEvaluationSpec
     Singular.Registry.LocalServicesCallerSpec
-    Singular.Registry.SessionServicesSpec
-    Singular.Registry.WaitSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.OneViewSpec
     Singular.Registry.PhaseLogSpec
-    Singular.Registry.ProviderSpec
-    Singular.Registry.Private.ArchiveSpec
     Singular.Registry.Private.Archive
-    Singular.Registry.StubSession
+    Singular.Registry.Private.ArchiveSpec
+    Singular.Registry.ProviderSpec
+    Singular.Registry.RawChainFixture
+    Singular.Registry.SessionServicesSpec
     Singular.Registry.StateTokenFixture
     Singular.Registry.StateTokenSpec
-    Singular.Registry.RawChainFixture
+    Singular.Registry.StubSession
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime
     Singular.Registry.TrieStateContractSpec
@@ -970,12 +968,14 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.TypesSpec
+    Singular.Registry.WaitSpec
+    Test.Tags
 
   build-depends:
     , aeson
     , aeson-pretty
     , async
-    , base                                   >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bech32
     , bytestring
@@ -987,6 +987,7 @@ test-suite cage-tests
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-ledger-read
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
@@ -1020,7 +1021,6 @@ test-suite cage-tests
     , singular-registry:koios-http
     , singular-registry:local-services
     , temporary
-    , cardano-ledger-read
     , text
     , time
     , unix
@@ -1055,7 +1055,6 @@ test-suite contract-tests
     Test.Tags
 
   build-depends:
-    , contra-tracer
     , aeson
     , async
     , base
@@ -1111,7 +1110,6 @@ test-suite e2e-tests
   hs-source-dirs:   e2e-test private-facade test-tags
   main-is:          main.hs
   other-modules:
-    Test.Tags
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Config
     Singular.Registry.E2E.ConfigSpec
@@ -1132,27 +1130,10 @@ test-suite e2e-tests
     Singular.Registry.Private.RawFacts
     Singular.Registry.Private.Source
     Singular.Registry.Private.TimePublication
+    Test.Tags
 
   build-depends:
     , aeson
-    , cardano-slotting
-    , chain-follower
-    , contra-tracer
-    , crypton
-    , http-types
-    , memory
-    , wai
-    , warp
-    , unix
-    , serialise
-    , time
-    , cardano-ledger-read
-    , ouroboros-consensus
-    , ouroboros-consensus:cardano
-    , ouroboros-consensus:protocol
-    , singular-registry:koios-http
-    , cardano-ledger-byron
-    , case-insensitive
     , async
     , base
     , base16-bytestring
@@ -1161,28 +1142,46 @@ test-suite e2e-tests
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
+    , cardano-ledger-byron
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-ledger-read
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-slotting
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
+    , case-insensitive
+    , chain-follower
     , containers
+    , contra-tracer
+    , crypton
     , directory
     , filepath
     , hspec
+    , http-types
+    , memory
     , microlens
     , mts:mpf-write
+    , ouroboros-consensus
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
     , ouroboros-network:api
     , ouroboros-network:framework
     , plutus-tx
     , process
     , random
+    , serialise
     , singular-registry
+    , singular-registry:koios-http
     , singular-registry:local-services
     , temporary
     , text
+    , time
+    , unix
+    , wai
+    , warp
 
   ghc-options:      -threaded -with-rtsopts=-N
 
@@ -1207,7 +1206,7 @@ executable insert-active
   build-depends:
     , aeson
     , aeson-pretty
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -1218,8 +1217,8 @@ executable insert-active
     , containers
     , microlens
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1248,7 +1247,7 @@ executable update-terminal
   build-depends:
     , aeson
     , aeson-pretty
-    , base                         >=4.14 && <5
+    , base                              >=4.14 && <5
     , base16-bytestring
     , bytestring
     , cardano-crypto-class
@@ -1260,8 +1259,8 @@ executable update-terminal
     , containers
     , microlens
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
@@ -1288,6 +1287,7 @@ executable singular
     Singular.CLI.Inspect
     Singular.CLI.Live
     Singular.CLI.Outlay
+    Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Preview
     Singular.CLI.Proof
@@ -1331,8 +1331,8 @@ executable singular
     , mts:mpf-write
     , plutus-core
     , singular-registry
-    , singular-registry:local-services
     , singular-registry:koios-http
+    , singular-registry:local-services
     , text
     , time
     , unix

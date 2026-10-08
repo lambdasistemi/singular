@@ -107,7 +107,6 @@ import Singular.CLI.Registry
     , checkPendingToken
     , hexT
     , keyFields
-    , loadRelease
     , parseEnterpriseAddress
     , pendingPath
     )
@@ -153,7 +152,7 @@ runInspect env a = do
         settings = inspectProvider a
         requested = accessToken (inspectAccess a)
     release <-
-        loadRelease (inspectBlueprint a)
+        envLoadRelease env (inspectBlueprint a)
             >>= either (failWith ClientRefusal) pure
     pending <- doesFileExist (pendingPath dir)
     if pending

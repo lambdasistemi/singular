@@ -19,7 +19,7 @@ nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key
 ```
 
-`list` prints the complete 46-row inventory from `rows.json` with each
+`list` prints the complete 47-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:
@@ -33,7 +33,7 @@ The runner sets its own unique `TMPDIR` before starting a node and
 never touches the default path, so concurrent devnet lanes on one host
 keep their databases.
 
-`rows.json` carries the complete inventory: the 45 owned consumer rows
+`rows.json` carries the complete inventory: the 46 owned consumer rows
 plus checkpoint-and-treasury-policy (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes

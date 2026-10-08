@@ -1,5 +1,21 @@
 <!--
 Sync impact report
+Version: 1.13.0 -> 1.13.1 (the fixed permanent M1 contract has its own bounded law)
+Amended: 2026-10-08
+Authority: operator's two-edge ruling and subsequent old-registry abandonment and
+protected-rejection ordering, recorded in specs/505-permanent-m1/ruling.md.
+Rationale: distinguish new restricted instances from the preserved broader contract.
+Affected principles: no change to Principles I-VI; their model authority and evidence
+requirements also govern the bounded contract. Translation clarification added below.
+Consumers: Singular.M1, its driver/audit/corpus, the simulator mirror, permanent state
+and witness scripts, fixed CLI loader, script manifests, conformance transport and
+permanent story. Earlier deployed registries are abandoned, with no migration or old
+recognition path. #498/#495 follows #505 under separate identities and remains an M1
+closing condition; the carve alone cannot close the milestone.
+Contributor instructions and PR template checked: both already require exact model,
+implementation and receipt mapping, and remain applicable unchanged.
+
+Sync impact report
 Version: 1.12.0 -> 1.13.0 (a request carries the datum it names; every fold is built from public
 inputs)
 Amended: 2026-10-06
@@ -514,6 +530,36 @@ checked first, and observes no transaction, since the model builds none for it.
 | `transactionId` | unobservable | the built transaction has no identity until a ledger accepts it. |
 | `utxoReference` | unobservable | inputs are modelled by role, not by concrete output reference. An output reference appears only as an identity a caller allocates while acting — the one a request sits at, which a retraction's return is bound to, or another one a tamper names — never as its bytes. |
 
+## Permanent M1 translation
+
+The new permanent contract is governed by `Singular.M1`, a fixed restriction of
+`Singular` authorized by the operator on 8 October 2026. `M1.allowed` names only
+`insertActive` and `updateTerminal`; `M1.step`, `M1.admittedExitStep` and
+`M1.foldBatch` refuse every excluded updating member, including a mixed batch.
+Allowed steps delegate to the broader law. Reject and retract retain its current
+admission, refund, datum, public-input and timing rules and its visible gaps.
+No registry field or redeemer can change the deployed admission set.
+
+`Singular.M1Driver` executes setup and exits through this bounded law, retaining
+the declared broader observation and unobservable vocabulary. The conformance
+transport selects it only for a question explicitly naming `permanent-m1` and
+refuses unknown contract names. Its corpus binds source hashes and audited
+statement digests; refused setup remains unsupported. The new script's compiled
+state handler checks fixed admission, then uses the two-edge trie fold and the
+original duty, continuation, immutable-pin and settlement owners. Its witness
+script is pinned to that state's compiled identity. The CLI computes the four
+known unapplied script hashes from supplied bytes before deriving instance pins.
+Wrong or unknown identities are refused. Registries from previous releases,
+including old Demo1 instances, are abandoned: no migration or compatibility
+recognition is authorized. Preserved broader artifacts describe their own law.
+
+Component evaluations against exported code do not establish a reachable ledger
+history. A connected claim requires the existing packaged ordinary-CLI Demo1
+registration, application payload update and permanent termination journey.
+Unreachable absent starting states and uncovered KERI comparisons remain visible.
+Protected rejection #498/#495 is subsequent M1 work with its own identity change;
+this candidate neither implements that repair nor closes M1.
+
 ## Development and review
 
 Contributors MUST read this constitution before specifying, implementing or
@@ -546,4 +592,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.13.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-06
+**Version**: 1.13.1 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-08

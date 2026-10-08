@@ -37,6 +37,9 @@
                 --lifecycle-binary .lake/build/bin/lifecycle-corpus \
                 --axioms-report axioms-report.txt \
                 --root . > model-check.txt
+              lake env lean tools/m1_axioms.lean > m1-axioms-report.txt
+              python3 tools/check_m1.py --axioms-report m1-axioms-report.txt --root . > m1-check.txt
+              python3 tools/check_m1_transport.py --root . >> m1-check.txt
               node simulator/build.mjs --check > page-build-check.txt
               node simulator/gate.mjs > replay-check.txt
               node simulator/gate.mjs --selftest > replay-selftest.txt
@@ -49,6 +52,7 @@
                 node --version
                 lean --version
                 cat model-check.txt
+                cat m1-check.txt
                 cat page-build-check.txt
                 tail -n 28 replay-check.txt
                 grep -F '"controlsDiscovered": 43' replay-selftest.txt
@@ -60,7 +64,7 @@
           };
           runner = pkgs.writeShellApplication {
             name = "singular-archive-check";
-            text = ''cat ${checked}/receipt.txt'';
+            text = "cat ${checked}/receipt.txt";
           };
         in
         {

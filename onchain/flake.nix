@@ -226,10 +226,14 @@
         script-identity =
           pkgs.runCommand "mpf-script-identity-check"
             {
-              nativeBuildInputs = [ pkgs.jq ];
+              nativeBuildInputs = [
+                pkgs.jq
+                pkgs.python3
+              ];
               blueprint = plutus-blueprint;
               manifest = scriptIdentityManifest;
               witnessSource = ./validators/witness.ak;
+              permanentWitnessSource = ./validators/permanent_witness.ak;
             }
             ''
               set -euo pipefail
@@ -298,6 +302,13 @@
                 exit 1
               fi
               echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
+              pin="$(sed -n 's/^  #"\([0-9a-f]\{56\}\)"$/\1/p' "$permanentWitnessSource" | head -n1)"
+              built="$(jq -r '.validators[] | select(.title == "permanent_state.state.spend") | .hash' "$blueprint")"
+              if [ -z "$pin" ] || [ -z "$built" ] || [ "$pin" != "$built" ]; then
+                echo "FAIL: permanent witness pin $pin differs from permanent state $built" >&2
+                exit 1
+              fi
+              python3 ${../tools/m1_identity.py} --root ${../.} --blueprint "$blueprint" --check
               echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
               touch $out
             '';
@@ -382,7 +393,27 @@
               touch $out
             '';
 
-        scriptIdentityChecks = { inherit script-identity reference-publication-size; };
+        permanent-boundary = pkgs.stdenv.mkDerivation {
+          pname = "permanent-m1-compiled-boundary";
+          version = "0.1.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [
+            pkgs.aiken
+            pkgs.python3
+          ];
+          buildPhase = ''
+            ${aikenPrelude}
+            aiken check -m 'permanent_boundary.{..}' --seed 505 > contexts.json
+            python3 ${../tools/m1_boundary.py} \
+              --blueprint ${plutus-blueprint} --contexts contexts.json \
+              --aiken ${pkgs.aiken}/bin/aiken --receipts-dir receipts
+          '';
+          installPhase = ''
+            mkdir -p "$out"
+            cp -r receipts contexts.json "$out/"
+          '';
+        };
+        scriptIdentityChecks = { inherit script-identity reference-publication-size permanent-boundary; };
 
         # The Aiken dev shell, bound once so `default` and the
         # back-compat `aiken` name expose the same shell.

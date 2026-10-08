@@ -1,0 +1,38 @@
+{
+  "contract": "permanent-m1",
+  "model": "Singular.M1",
+  "compiler": {
+    "name": "Aiken",
+    "version": "v1.1.21+unknown"
+  },
+  "scripts": [
+    {
+      "title": "permanent_state.state",
+      "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+      "compiledCodeSha256": "d89f8ee773ae575cac14ef19096aafde9492a06765643dddadc80a7b534cecc1",
+      "parameters": 0
+    },
+    {
+      "title": "request.request",
+      "hash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "compiledCodeSha256": "61c8f44aef8315add51b431c59f923f4b73f6628e54aff09df60678dd0978cb5",
+      "parameters": 2
+    },
+    {
+      "title": "permanent_witness.witness",
+      "hash": "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1",
+      "compiledCodeSha256": "77b4bf5d44ddf2e5cc401b1ec27148c17bcb00f93f3b14752ce8b999d41e0544",
+      "parameters": 2
+    },
+    {
+      "title": "open_datum.open_datum",
+      "hash": "ad0536789a51367a01cd775cfbc71acfa86c46272fe0a5ca4882e0bb",
+      "compiledCodeSha256": "d20660fd99a4a4cd6e6571a35381c284bac7315b476b8a070c0a30838d125333",
+      "parameters": 1
+    }
+  ],
+  "registryEdges": [
+    "insertActive",
+    "updateTerminal"
+  ]
+}

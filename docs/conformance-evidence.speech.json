@@ -59,6 +59,12 @@
       "text": "1 requirements belong to the consumer, are recorded here and never claimed."
     }
   ],
+  "permanent-registration-and-termination": [
+    {
+      "pause": 400,
+      "text": "A new permanent registry supports registration and permanent termination only. The story compares both allowed operations and refusals of all five excluded operations, including a mixed batch. Its current live conformance evidence state is read from receipts, never assigned from component tests."
+    }
+  ],
   "requirements-a-run-demonstrated": [
     {
       "pause": 400,
@@ -80,7 +86,7 @@
   "uncovered": [
     {
       "pause": 400,
-      "text": "14 requirements have no evidence yet."
+      "text": "15 requirements have no evidence yet."
     }
   ],
   "what-this-evidence-is-bound-to": [
@@ -90,7 +96,7 @@
     },
     {
       "pause": 400,
-      "text": "46 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 5 are bound to evidence elsewhere, 14 are uncovered and 1 are out of scope."
+      "text": "47 requirements are in the inventory. 22 were demonstrated by a run, 0 partly, 4 ran without a pass, 5 are bound to evidence elsewhere, 15 are uncovered and 1 are out of scope."
     },
     {
       "pause": 400,
@@ -99,6 +105,6 @@
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "be7937d6cab910164dcd3a646d022fea383e2c7010a01a6a13c9ad50e1855bfc"
+    "sha256": "b6484974f2f90c119d133b38663dbc384fe4f741eb9e1c449cbce42f1e478556"
   }
 }
