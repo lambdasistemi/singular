@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "The Demo 1 journey runs on the Koios path only; its former node/indexer backend comparison is retired. A private generated node supplies the harness API and independent probes. Each step below is a separate process, and each prints one JSON receipt. The saved registry directory carries the identity from one process to the next.",
+      "text": "The Demo 1 journey runs on the Koios path only; its former node/indexer backend comparison is retired. A private generated node supplies the harness API and independent probes. Each step below is a separate process, and each prints one JSON receipt. Your saved state directory carries the identity from one process to the next.",
       "pause": 400
     },
     {
@@ -145,7 +145,7 @@
       "pause": 500
     },
     {
-      "text": "Every submission is journalled in the registry directory before it is sent, and its confirmation after. A command never resubmits, reboots or overwrites on its own:",
+      "text": "Every submission is journalled in your state directory before it is sent, and its confirmation after. A command never resubmits, reboots or overwrites on its own:",
       "pause": 400
     },
     {
@@ -179,7 +179,7 @@
       "pause": 400
     },
     {
-      "text": "Preview with a public address, then write. A preview names the caller by an enterprise address instead of a signing key, reads through a connection that cannot sign or send, and writes nothing: the registry directory is byte for byte the same afterwards.",
+      "text": "Preview with a public address, then write. A preview names the caller by an enterprise address instead of a signing key, reads through a connection that cannot sign or send, and writes nothing: your state directory is byte for byte the same afterwards.",
       "pause": 400
     },
     {
@@ -191,7 +191,7 @@
       "pause": 400
     },
     {
-      "text": "The four refusals on a registry that already exists. cli-controls takes an existing registry by its state token, an actor directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts, stops or resets a node. This test executable also requires --node-socket for its separate independent LSQ probe; that socket is never sent to ordinary singular. Its attach behavior is a harness surface, not another provider:",
+      "text": "The four refusals on a registry that already exists. cli-controls takes an existing registry by its state token, a state directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts, stops or resets a node. This test executable also requires --node-socket for its separate independent LSQ probe; that socket is never sent to ordinary singular. Its attach behavior is a harness surface, not another provider:",
       "pause": 400
     },
     {
@@ -235,6 +235,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "3890abde4c77045441fc9973e8786bba96c46b947d7f9a4e24500fa8c81d6ccf"
+    "sha256": "e5672ed1acb665337ed73a3d7b170b0c6eaf36c166aa926bb631afdfe48c3942"
   }
 }

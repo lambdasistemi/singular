@@ -23,7 +23,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--confirm-timeout SECONDS` | the seven writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--registry DIR` | all eight | Your own working directory: the journal of your submissions, their saved bodies and, while `create` runs, its pending identity. It names no registry and holds nothing anyone else needs: an empty directory is a valid start for any command. |
+| `--state-dir DIR` | all eight | Your state directory: the journal of your submissions, their saved bodies and, while `create` runs, its pending identity. It names no registry and holds nothing anyone else needs: an empty directory is a valid start for any command. |
 | `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
 | `--blueprint PLUTUS_JSON` | all eight | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. |
@@ -51,7 +51,7 @@ settings are read from the command line only; the one exception is the
 [test-harness hooks](#test-harness-hooks), which operators never set.
 
 ```sh
-singular registry insert --registry ./work --blueprint plutus.json \
+singular registry insert --state-dir ./work --blueprint plutus.json \
   --state-token "$state_token" --key keyA --payload alice.json \
   --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
@@ -127,7 +127,7 @@ registry's root, its mirror and its saved state do not move.
 funds with the wallet it is given, journals its own transactions, and may be
 run by any wallet, not only the one that booked. An insertion's request carries
 the envelope its fold delivers, so the folder reads it from the pending request
-on the chain; nothing the booking wrote to its own registry directory is needed.
+on the chain; nothing the booking wrote to its own state directory is needed.
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -186,7 +186,7 @@ give it. It refuses before building when that request is not pending, belongs
 to another wallet, or names an update or deletion edge that Lean cannot retract.
 
 ```bash
-singular registry reclaim --registry reg --blueprint onchain/plutus.json \
+singular registry reclaim --state-dir reg --blueprint onchain/plutus.json \
   --request TXID#IX --koios-url "$koios_url" --network-time "$time_dir" --network-magic 42 \
   --wallet-skey alice.skey --receipt reclaim.json
 ```
@@ -362,7 +362,7 @@ base16, and no event carries a signing key or the text of a failure: a failure
 names only its type.
 
 ```sh
-singular registry fold --registry ./reg --blueprint plutus.json \
+singular registry fold --state-dir ./reg --blueprint plutus.json \
   --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ~/keys/payment.skey \
   --trace how --trace-to stderr --trace-to file:fold.trace.jsonl
@@ -440,7 +440,7 @@ flowchart TB
 
 | Variable | Where the command stops or what it changes |
 | --- | --- |
-| `SINGULAR_HARNESS_HOLD_BEFORE_LOCK` | a write, after its checks and before it takes the registry directory's lock |
+| `SINGULAR_HARNESS_HOLD_BEFORE_LOCK` | a write, after its checks and before it takes your state directory's lock |
 | `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
 | `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the provider's acceptance of a submission journalled |
 | `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |

@@ -35,7 +35,7 @@ Using a deployed blueprint and a funded public preprod address, run:
 
 ```sh
 SINGULAR_LOG=create.phase.jsonl result/bin/singular registry create --preview \
-  --registry /tmp/new-preview-target --wallet-address "$PUBLIC_ADDRESS" \
+  --state-dir /tmp/new-preview-target --wallet-address "$PUBLIC_ADDRESS" \
   --blueprint "$DEPLOYED_BLUEPRINT" \
   --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
   --receipt create.receipt.json

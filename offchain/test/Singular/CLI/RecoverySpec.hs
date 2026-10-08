@@ -903,7 +903,7 @@ data WriteAnswer = LostAnswer | AnsweredAndConfirmed
 recorded view: build from a live recorded read, sign with a
 deterministic test key, save the body, journal @prepared@, and then
 either lose the node's answer or hear an acceptance and its
-confirmation. Returns the registry directory, the journalled
+confirmation. Returns your state directory, the journalled
 transaction's id, and the saved body read back from disk.
 -}
 withRecordedWrite

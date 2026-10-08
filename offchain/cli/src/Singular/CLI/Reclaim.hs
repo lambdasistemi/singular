@@ -88,7 +88,7 @@ import Singular.Registry.Wallet (Wallet (..), bech32Address)
 runReclaim :: Env -> ReclaimArgs -> IO Value
 runReclaim env a = attached
     env
-    (reclaimRegistry a)
+    (reclaimStateDir a)
     (reclaimBlueprint a)
     (reclaimAccess a)
     (neededRoles (Reclaim a))

@@ -16,7 +16,7 @@ the key.
 The Demo 1 journey runs on the Koios path only; its former node/indexer
 backend comparison is retired. A private generated node supplies the harness
 API and independent probes. Each step below is a separate process, and
-each prints one JSON receipt. The saved registry directory carries the
+each prints one JSON receipt. Your saved state directory carries the
 identity from one process to the next.
 
 An `insert` or a `terminate` books and stops: its request waits at the
@@ -76,8 +76,8 @@ provider=(--koios-url "$koios_url" --network-time "$time_dir" --network-magic 42
 
 ```bash
 # 1. Preview the identity a seed gives, then create the registry on it.
-"$singular" registry create --preview --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
-"$singular" registry create --seed TXID#IX --registry reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey \
+"$singular" registry create --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
+"$singular" registry create --seed TXID#IX --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey \
   > create.json
 # Every later command names the registry by the state token create printed.
 # The directory reg only keeps your own journal: nothing in it names the registry.
@@ -85,56 +85,56 @@ token=(--state-token "$(jq -r .stateToken create.json)")
 
 # 2. Book an insertion of a key with its first payload; Alice's wallet is its controller.
 #    The request stays pending; the receipt names it and its fold deadline.
-"$singular" registry insert --registry reg --blueprint "$blueprint" "${token[@]}" --key alice \
+"$singular" registry insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
   --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 3. Fold it, before that deadline. Any wallet may fold: here, Bob's.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$singular" registry fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
 
 # 4. Read it back: no signing key, nothing submitted.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
+"$singular" registry inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 5. Replace the payload.
-"$singular" registry update --registry reg --blueprint "$blueprint" "${token[@]}" --key alice \
+"$singular" registry update --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
   --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 6. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
+"$singular" registry inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 7. Book the termination of the key.
-"$singular" registry terminate --registry reg --blueprint "$blueprint" "${token[@]}" --key alice \
+"$singular" registry terminate --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
   "${provider[@]}" --wallet-skey alice.skey
 
 # 8. Fold it: the fold burns the token and releases the deposit.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$singular" registry fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
 
 # 9. Read it back.
-"$singular" registry inspect --registry reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
+"$singular" registry inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 10. A request nobody folded or took back stays pending past both its windows and
 #     blocks the registry's fold. Reject it; any wallet may: here, Bob's.
-"$singular" registry reject --registry reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
 
 # 11. The registry takes requests again: book a new insertion.
-"$singular" registry insert --registry reg --blueprint "$blueprint" "${token[@]}" --key bob \
+"$singular" registry insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key bob \
   --payload payload.json "${provider[@]}" --wallet-skey bob.skey
 
 # 12. Fold it.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey alice.skey
+"$singular" registry fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey alice.skey
 
 # 13. Book a different insertion and keep its request reference from the receipt.
 #     Let its processing deadline pass, then reclaim during its retract window.
-"$singular" registry insert --registry reg --blueprint "$blueprint" "${token[@]}" --key carol \
+"$singular" registry insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key carol \
   --payload payload.json "${provider[@]}" --wallet-skey alice.skey
-"$singular" registry reclaim --registry reg --blueprint "$blueprint" "${token[@]}" --request TXID#IX \
+"$singular" registry reclaim --state-dir reg --blueprint "$blueprint" "${token[@]}" --request TXID#IX \
   "${provider[@]}" --wallet-skey alice.skey
 
 # 14. The reclaimed request no longer blocks the next insertion.
-"$singular" registry insert --registry reg --blueprint "$blueprint" "${token[@]}" --key dave \
+"$singular" registry insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key dave \
   --payload payload.json "${provider[@]}" --wallet-skey alice.skey
 
 # 15. Fold it with Bob's wallet.
-"$singular" registry fold --registry reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$singular" registry fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
 ```
 
 Run the fold of a request before the deadline its booking's receipt names
@@ -239,7 +239,7 @@ status: `client-refusal` (nothing submitted), `ledger-refusal`,
 
 ## Partial outcomes and recovery
 
-Every submission is journalled in the registry directory before it is
+Every submission is journalled in your state directory before it is
 sent, and its confirmation after. A command never resubmits, reboots or
 overwrites on its own:
 
@@ -278,14 +278,14 @@ split by an ordinary wallet transaction into a seed and a funding output.
 
 **Preview with a public address, then write.** A preview names the caller
 by an enterprise address instead of a signing key, reads through a
-connection that cannot sign or send, and writes nothing: the registry
+connection that cannot sign or send, and writes nothing: your state
 directory is byte for byte the same afterwards.
 
 ```bash
 # The identity a seed gives, and what each write would cost, from public facts alone.
-"$singular" registry create --preview --registry reg --blueprint "$blueprint" \
+"$singular" registry create --preview --state-dir reg --blueprint "$blueprint" \
   --koios-url "$koios_url" --network-magic 1 --wallet-address "$address"
-"$singular" registry insert --preview --registry reg --blueprint "$blueprint" "${token[@]}" --key "$key" \
+"$singular" registry insert --preview --state-dir reg --blueprint "$blueprint" "${token[@]}" --key "$key" \
   --payload payload.json --koios-url "$koios_url" --network-magic 1 --wallet-address "$address"
 ```
 
@@ -321,7 +321,7 @@ of at least its minimum ada is refused before anything is submitted, never
 collateralised whole.
 
 **The four refusals on a registry that already exists.** `cli-controls`
-takes an existing registry by its state token, an actor directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts,
+takes an existing registry by its state token, a state directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts,
 stops or resets a node. This test executable also requires `--node-socket`
 for its separate independent LSQ probe; that socket is never sent to ordinary
 `singular`. Its attach behavior is a harness surface, not another provider:
@@ -330,7 +330,7 @@ for its separate independent LSQ probe; that socket is never sent to ordinary
 cli-controls attach --singular "$singular" --blueprint "$blueprint" \
   --ledger applications/open-datum/ledgers.json \
   --koios-url "$koios_url" --network-magic 1 --node-socket "$sock" --wallet-skey wallet.skey --stranger-skey stranger.skey \
-  --registry reg "${token[@]}" --key take-one --collateral-allowance 10000000 --max-outlay 40000000 \
+  --state-dir reg "${token[@]}" --key take-one --collateral-allowance 10000000 --max-outlay 40000000 \
   --readback tools/demo1_readback.sh --blockfrost-credential-file "$BLOCKFROST_KEY_FILE" --work take-one
 ```
 
@@ -416,7 +416,7 @@ other is substituted.
 starts from the policy id and asset name alone:
 
 ```bash
-"$singular" registry inspect --registry reg --blueprint "$blueprint" "${token[@]}" --key "$key" \
+"$singular" registry inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key "$key" \
   --koios-url "$koios_url" --network-magic 1 > inspect.json
 tools/demo1_readback.sh --provider koios --policy "$policy" --name "$name" \
   --inspect inspect.json --out koios.json

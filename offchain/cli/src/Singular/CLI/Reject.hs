@@ -137,7 +137,7 @@ runReject :: Env -> RejectArgs -> IO Value
 runReject env a =
     attached
         env
-        (rejectRegistry a)
+        (rejectStateDir a)
         (rejectBlueprint a)
         (rejectAccess a)
         (neededRoles (Reject a))

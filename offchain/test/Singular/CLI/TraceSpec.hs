@@ -158,7 +158,7 @@ commands =
     seed = replicate 64 'a' <> "#0"
     tokenFlag = ["--state-token", spelledToken]
     base =
-        [ "--registry"
+        [ "--state-dir"
         , "/srv/reg"
         , "--blueprint"
         , "/srv/plutus.json"
@@ -798,7 +798,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , "alice-1"
                     , "--state-token"
                     , spelledToken
-                    , "--registry"
+                    , "--state-dir"
                     , dir </> "none"
                     , "--blueprint"
                     , dir </> "none.json"
@@ -835,7 +835,7 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     , "alice-1"
                     , "--state-token"
                     , spelledToken
-                    , "--registry"
+                    , "--state-dir"
                     , dir </> "none"
                     , "--blueprint"
                     , dir </> "none.json"
@@ -972,7 +972,7 @@ setupRecut = describe "(#416) tracing setup re-cut" $ do
                     , "alice-1"
                     , "--state-token"
                     , spelledToken
-                    , "--registry"
+                    , "--state-dir"
                     , dir </> "none"
                     , "--blueprint"
                     , dir </> "none.json"

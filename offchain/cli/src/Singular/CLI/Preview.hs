@@ -155,7 +155,7 @@ runPreview env kind a settings addrText = do
             point <- Cage.tip v
             saved <-
                 resolveSaved
-                    (entryRegistry a)
+                    (entryStateDir a)
                     release
                     (entryAccess a)
                     (neededRoles (commandOf kind a))

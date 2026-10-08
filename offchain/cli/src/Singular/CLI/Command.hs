@@ -129,7 +129,7 @@ newtype RegistryAccess = RegistryAccess
 
 -- | @registry create@.
 data CreateArgs = CreateArgs
-    { createRegistry :: FilePath
+    { createStateDir :: FilePath
     , createBlueprint :: FilePath
     , createMode :: EntryMode
     {- ^ Submit with the caller's key, or (with @--preview@ only) read for a
@@ -158,7 +158,7 @@ data EntryMode
 
 -- | @registry insert@, @registry update@ and @registry terminate@.
 data EntryArgs = EntryArgs
-    { entryRegistry :: FilePath
+    { entryStateDir :: FilePath
     , entryAccess :: RegistryAccess
     , entryBlueprint :: FilePath
     , entryMode :: EntryMode
@@ -188,7 +188,7 @@ data EntryArgs = EntryArgs
 
 -- | @registry fold@: the registry's pending request, folded by this wallet.
 data FoldArgs = FoldArgs
-    { foldRegistry :: FilePath
+    { foldStateDir :: FilePath
     , foldAccess :: RegistryAccess
     , foldBlueprint :: FilePath
     , foldWrite :: WriteSettings
@@ -206,7 +206,7 @@ data FoldArgs = FoldArgs
 
 -- | @registry reject@: every pending request, rejected by this wallet.
 data RejectArgs = RejectArgs
-    { rejectRegistry :: FilePath
+    { rejectStateDir :: FilePath
     , rejectAccess :: RegistryAccess
     , rejectBlueprint :: FilePath
     , rejectWrite :: WriteSettings
@@ -220,7 +220,7 @@ data RejectArgs = RejectArgs
 
 -- | @registry reclaim@: take back this wallet's own pending request.
 data ReclaimArgs = ReclaimArgs
-    { reclaimRegistry :: FilePath
+    { reclaimStateDir :: FilePath
     , reclaimAccess :: RegistryAccess
     , reclaimBlueprint :: FilePath
     , reclaimWrite :: WriteSettings
@@ -237,7 +237,7 @@ data ReclaimArgs = ReclaimArgs
 
 -- | @registry inspect@: node settings only, never a wallet.
 data InspectArgs = InspectArgs
-    { inspectRegistry :: FilePath
+    { inspectStateDir :: FilePath
     , inspectAccess :: RegistryAccess
     {- ^ The registry, by its state token: required on every command but
     create.
@@ -385,7 +385,7 @@ parseWith environment args = do
             windowFrom "--process-time" (reProcessTime economics) flags
         retracting <-
             windowFrom "--retract-time" (reRetractTime economics) flags
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
             publicPreview = preview && isJust (lookup "--wallet-address" flags)
@@ -404,7 +404,7 @@ parseWith environment args = do
                 | otherwise -> Left (MissingFlag "--seed")
         pure
             CreateArgs
-                { createRegistry = dir
+                { createStateDir = dir
                 , createBlueprint = bp
                 , createMode = mode
                 , createSeed = seed
@@ -436,7 +436,7 @@ parseWith environment args = do
                     "is a registry insert flag: only insert sets a deposit"
                 )
     entryArgs books document env flags = do
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         unless books (refuseFold flags)
@@ -462,7 +462,7 @@ parseWith environment args = do
         access <- registryAccess env flags
         pure
             EntryArgs
-                { entryRegistry = dir
+                { entryStateDir = dir
                 , entryAccess = access
                 , entryBlueprint = bp
                 , entryMode = mode
@@ -475,7 +475,7 @@ parseWith environment args = do
                 , entryFold = isJust (lookup "--fold" flags)
                 }
     foldArgs env flags = do
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
@@ -499,7 +499,7 @@ parseWith environment args = do
         access <- registryAccess env flags
         pure
             FoldArgs
-                { foldRegistry = dir
+                { foldStateDir = dir
                 , foldAccess = access
                 , foldBlueprint = bp
                 , foldWrite = settings
@@ -509,7 +509,7 @@ parseWith environment args = do
                 , foldReceipt = optional "--receipt" flags
                 }
     rejectArgs env flags = do
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             ( ["--request"]
@@ -531,7 +531,7 @@ parseWith environment args = do
         access <- registryAccess env flags
         pure
             RejectArgs
-                { rejectRegistry = dir
+                { rejectStateDir = dir
                 , rejectAccess = access
                 , rejectBlueprint = bp
                 , rejectWrite = settings
@@ -540,7 +540,7 @@ parseWith environment args = do
                 , rejectReceipt = optional "--receipt" flags
                 }
     reclaimArgs env flags = do
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
             (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
@@ -561,7 +561,7 @@ parseWith environment args = do
         access <- registryAccess env flags
         pure
             ReclaimArgs
-                { reclaimRegistry = dir
+                { reclaimStateDir = dir
                 , reclaimAccess = access
                 , reclaimBlueprint = bp
                 , reclaimWrite = settings
@@ -596,14 +596,14 @@ parseWith environment args = do
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
-        dir <- required "--registry" flags
+        dir <- required "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
         settings <- providerSettings flags
         access <- registryAccess env flags
         pure
             InspectArgs
-                { inspectRegistry = dir
+                { inspectStateDir = dir
                 , inspectAccess = access
                 , inspectBlueprint = bp
                 , inspectProvider = settings
@@ -780,18 +780,21 @@ tokens = go [] []
     go ws fs (a : rest)
         | "--" `isPrefixOf` a || a == "-h" =
             let (name, inline) = break (== '=') a
-            in  if name `elem` ["--backend", "--node-socket"]
-                    then Left (RemovedSetting name)
+            in  if name == "--registry"
+                    then Left (BadValue "--registry" "was renamed to --state-dir")
                     else
-                        if name `elem` switches
-                            then go ws ((name, Nothing) : fs) rest
+                        if name `elem` ["--backend", "--node-socket"]
+                            then Left (RemovedSetting name)
                             else
-                                if name `elem` valuedFlags
-                                    then case (inline, rest) of
-                                        ('=' : v, _) -> go ws (keep name v fs) rest
-                                        (_, v : rest') -> go ws (keep name v fs) rest'
-                                        (_, []) -> Left (BadValue name "needs a value")
-                                    else Left (BadValue name "is not a flag singular reads")
+                                if name `elem` switches
+                                    then go ws ((name, Nothing) : fs) rest
+                                    else
+                                        if name `elem` valuedFlags
+                                            then case (inline, rest) of
+                                                ('=' : v, _) -> go ws (keep name v fs) rest
+                                                (_, v : rest') -> go ws (keep name v fs) rest'
+                                                (_, []) -> Left (BadValue name "needs a value")
+                                            else Left (BadValue name "is not a flag singular reads")
         | otherwise = go (a : ws) fs rest
     keep name v fs
         | isJust (lookup name fs) = fs
@@ -801,7 +804,7 @@ tokens = go [] []
 -- | The flags that take a value: the next token, or their @=value@ spelling.
 valuedFlags :: [String]
 valuedFlags =
-    [ "--registry"
+    [ "--state-dir"
     , "--blueprint"
     , "--koios-url"
     , "--koios-token-file"
@@ -870,54 +873,54 @@ usage :: String
 usage =
     unlines
         [ "usage:"
-        , "  singular registry create --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry create --state-dir DIR --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "  singular registry create --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry create --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "  singular registry insert --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry insert --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry insert --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry insert --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry update --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry update --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry terminate --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry terminate --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry terminate --preview --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry terminate --preview --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry fold --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry fold --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reclaim --registry DIR --blueprint PLUTUS_JSON --request TXID#IX"
+        , "  singular registry reclaim --state-dir DIR --blueprint PLUTUS_JSON --request TXID#IX"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reject --registry DIR --blueprint PLUTUS_JSON"
+        , "  singular registry reject --state-dir DIR --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry inspect --registry DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "  singular registry inspect --state-dir DIR --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , ""

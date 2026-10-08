@@ -263,7 +263,7 @@ probe_ins() {
   for t in "$@"; do a+=(--tx-in "$t"); done
   "$devnet" probe --node-socket "$sock" --network-magic 42 "${a[@]}"
 }
-common=(--registry "$reg" --blueprint "$blueprint")
+common=(--state-dir "$reg" --blueprint "$blueprint")
 alice=(--wallet-skey "$work/alice.skey")
 bob=(--wallet-skey "$work/bob.skey")
 
@@ -406,7 +406,7 @@ with open(os.path.join(registry, ".lock"), "a") as lock:
     except BlockingIOError:
         pass  # a deliberately held command already prevents reconciliation
     result = subprocess.run([binary, "registry", "inspect", "--key-hex", "00",
-        "--registry", registry, "--blueprint", blueprint, *settings], capture_output=True, text=True,
+        "--state-dir", registry, "--blueprint", blueprint, *settings], capture_output=True, text=True,
         env={k: v for k, v in os.environ.items() if k != "SINGULAR_HARNESS_TRIE_TRACE"})
     receipt = json.loads(result.stdout)
     root = receipt.get("root")
@@ -531,7 +531,7 @@ signers_of() {
     decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
     "$(prepared_of "$1" | jq -r .journalBody)")
 }
-run bob-preview registry create --process-time 120000 --retract-time 15000 --preview --registry "$work/bob-preview" --blueprint "$blueprint" \
+run bob-preview registry create --process-time 120000 --retract-time 15000 --preview --state-dir "$work/bob-preview" --blueprint "$blueprint" \
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -589,7 +589,7 @@ if part accepting; then
     source_dir="$clean_source"
     [ "$source" != corrupt ] || source_dir="$corrupt_source"
     run "inspect-$source-source" registry inspect --key-hex 6b0a \
-      --registry "$source_dir" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
+      --state-dir "$source_dir" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
     clause "$source directory reads the active key from public history" \
       is_equal "$(field "inspect-$source-source" '.outcome + "/" + .leaf')" success/active
   done
@@ -632,7 +632,7 @@ if part accepting; then
   mv "$work/preview-incomplete-journal" "$preview_copy/journal.jsonl"
   preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
   run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
-    --registry "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
+    --state-dir "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
   clause "preview succeeds without the local boot journal" exit_is preview-incomplete 0
   clause "preview without local boot records reads the same public root" is_equal \
     "$(field preview-incomplete .stateRoot)" "$(field update-active-preview .stateRoot)"
@@ -1191,7 +1191,7 @@ if part rollback; then
 
   reg="$work/registry-rolled-back"
   journal="$reg/journal.jsonl"
-  common=(--registry "$reg" --blueprint "$blueprint")
+  common=(--state-dir "$reg" --blueprint "$blueprint")
   run preview-rb registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
   run create-rb registry create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"

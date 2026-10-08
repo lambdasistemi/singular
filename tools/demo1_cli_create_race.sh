@@ -43,7 +43,7 @@ node=(--koios-url "$provider_url" --network-time "$time_directory" --network-mag
 # seed it succeeds only while that seed is an unspent output of the wallet.
 preview() {
   local name="$1" skey="$2" seed="${3:-}"
-  local args=(registry create --process-time 45000 --retract-time 15000 --preview --registry "$work/probe-$name" --blueprint "$blueprint"
+  local args=(registry create --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
     "${node[@]}" --wallet-skey "$skey")
   [ -z "$seed" ] || args+=(--seed "$seed")
   local status=0
@@ -64,7 +64,7 @@ seed_late="$(jq -r .seed "$receipts/preview-late.json")"
 [ "$seed_first" != "$seed_late" ] || setup_fail "the two creates name the same seed"
 
 SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_late" \
-  --registry "$target" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$late_key" \
+  --state-dir "$target" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$late_key" \
   >"$receipts/create-late.json" 2>"$receipts/create-late.err" &
 late=$!
 for _ in $(seq 1 300); do
@@ -74,7 +74,7 @@ done
 [ -e "$work/go.waiting" ] || setup_fail "the late create never reached its hold point"
 
 status=0
-"$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_first" --registry "$target" --blueprint "$blueprint" \
+"$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_first" --state-dir "$target" --blueprint "$blueprint" \
   "${node[@]}" --wallet-skey "$first_key" >"$receipts/create-first.json" 2>"$receipts/create-first.err" \
   || status=$?
 [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/create-first.json")" = success ] \

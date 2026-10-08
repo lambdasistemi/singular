@@ -21,8 +21,8 @@ receipts say which clauses that leaves uncovered or unmet.
 
 A registry is resolved here from the release and its state token, as every
 command resolves it: the run's own registries by the token their create's
-seed derives, a take's by the token it is given. Nothing is read from a
-registry directory but the journal.
+seed derives, a take's by the token it is given. Nothing is read from your
+state directory but the journal.
 -}
 module Conformance.Cli.Backend (runControls, runAttach) where
 
@@ -344,8 +344,8 @@ data Options = Options
     {- ^ The CLI's specification, whose rows the client obligations bind;
     by default the one in the repository holding the statement ledger
     -}
-    , optRegistry :: Maybe FilePath
-    {- ^ A take on an existing registry, from this actor directory, not on
+    , optStateDir :: Maybe FilePath
+    {- ^ A take on an existing registry, from this state directory, not on
     registries the run creates
     -}
     , optStateToken :: Maybe String
@@ -430,7 +430,7 @@ parseOptions =
         "--stranger-skey" -> go o{optStranger = v} rest
         "--underfunded-skey" -> go o{optUnderfunded = v} rest
         "--specification" -> go o{optSpecification = v} rest
-        "--registry" -> go o{optRegistry = Just v} rest
+        "--state-dir" -> go o{optStateDir = Just v} rest
         "--state-token" -> go o{optStateToken = Just v} rest
         "--key" -> go o{optKey = v} rest
         "--collateral-allowance" -> case reads v of
@@ -494,7 +494,7 @@ runAttach = runWith attachStory
 
 attachStory :: Options -> Either String (Story ())
 attachStory o = do
-    when (isNothing (optRegistry o)) (Left "--registry is required")
+    when (isNothing (optStateDir o)) (Left "--state-dir is required")
     when (isNothing (optStateToken o)) (Left "--state-token is required")
     when (null (optKey o)) (Left "--key is required")
     case optAllowance o of
@@ -531,7 +531,7 @@ runWith chooseStory args = do
     -- What the take reads its indexers through is checked before anything is
     -- written: the script is there and the credential file is readable. Its
     -- bytes are not read here.
-    when (isJust (optRegistry o)) $ do
+    when (isJust (optStateDir o)) $ do
         script <- doesFileExist (optReadback o)
         unless script $
             fail
@@ -579,7 +579,7 @@ runWith chooseStory args = do
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
     -- One session for every backend action: opening one per action spends
     -- the requests' processing window before their folds are built.
-    let strict = isJust (optRegistry o)
+    let strict = isJust (optStateDir o)
     stopped <-
         try
             ( withBackendNode
@@ -818,13 +818,13 @@ recorded env name (Target t) k body = do
 -- ---------------------------------------------------------
 
 targetDir :: Env -> Target -> FilePath
-targetDir env (Target t) = case optRegistry (envOptions env) of
+targetDir env (Target t) = case optStateDir (envOptions env) of
     Just existing -> existing
     Nothing -> optWork (envOptions env) </> "targets" </> t
 
 -- | Whether the run takes one existing registry rather than creating its own.
 attached :: Env -> Bool
-attached = isJust . optRegistry . envOptions
+attached = isJust . optStateDir . envOptions
 
 -- | The explicit payload a take writes for its key: a constructor over the key and a number.
 attachedPayload :: String -> Int -> PLC.Data
@@ -1378,7 +1378,7 @@ commandArgsFor env c actor registry key r = do
             providerArgs o
         wallet = ["--wallet-skey", optWalletKey o, "--confirm-timeout", "120"]
         outlay = maybe [] (\n -> ["--max-outlay", show n]) (optMaxOutlay o)
-        directory = ["--registry", dir, "--blueprint", optBlueprint o]
+        directory = ["--state-dir", dir, "--blueprint", optBlueprint o]
         keyArg = ["--key-hex", T.unpack (hex (keyBytes key))]
         named = (directory <>) <$> tokenArgs env registry
     case c of
@@ -1482,7 +1482,7 @@ previewSeed env r label skey dir seed = do
             [ "registry"
             , "create"
             , "--preview"
-            , "--registry"
+            , "--state-dir"
             , dir
             , "--blueprint"
             , optBlueprint o
@@ -1699,7 +1699,7 @@ provoke env p target key r = do
                     $ [ "registry"
                       , "create"
                       , "--preview"
-                      , "--registry"
+                      , "--state-dir"
                       , work </> "probe-after"
                       , "--blueprint"
                       , optBlueprint o
@@ -1747,7 +1747,7 @@ provoke env p target key r = do
                     $ [ "registry"
                       , "create"
                       , "--preview"
-                      , "--registry"
+                      , "--state-dir"
                       , work </> "probe-poor-after"
                       , "--blueprint"
                       , optBlueprint o
@@ -1817,7 +1817,7 @@ provoke env p target key r = do
             , "create"
             , "--seed"
             , seed
-            , "--registry"
+            , "--state-dir"
             , registry
             , "--blueprint"
             , optBlueprint o
