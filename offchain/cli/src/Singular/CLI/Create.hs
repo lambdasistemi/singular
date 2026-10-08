@@ -28,6 +28,7 @@ holds a journal or a pending create is refused before a node is contacted.
 -}
 module Singular.CLI.Create (runCreate) where
 
+import Control.Exception (throwIO)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -481,8 +482,13 @@ boot wc cfg pinned seedIn foundState = do
     txIdOfRef = T.takeWhile (/= '#')
 
 {- | Read a reference back — the exact output, live, carrying exactly this
-script — and only then journal it @observed@. A missing or different
-reference leaves the publication at @confirmed@, unresolved.
+script — and only then journal it @observed@. A read the provider
+refused — a backend failure, a released view, a missing output — is
+attributed as the typed failure the client holds: thrown inside the timed
+step, so the step ends failed and no absence is claimed from a read that
+was not made (#416). A read that answered — with the output, another
+script, or nothing — is a fact; a missing or different reference leaves
+the publication at @confirmed@, unresolved.
 -}
 observeReference
     :: WriteContext
@@ -491,15 +497,17 @@ observeReference
     -> (TxIn, TxOut ConwayEra)
     -> IO ()
 observeReference wc step script (i, _) = do
-    answer <-
+    found <-
         readStep
             (wcTracer wc)
             (wcSource wc)
             ["reference scripts"]
             (wcCapabilities wc)
-            (\v -> LP.outputs v (LP.AtTxIn i))
+            ( \v ->
+                LP.outputs v (LP.AtTxIn i)
+                    >>= either throwIO (pure . map snd . value)
+            )
     let wanted = hashScript script
-        found = either (const []) (map snd . value) answer
     case found of
         [o]
             | SJust carried <- o ^. referenceScriptTxOutL

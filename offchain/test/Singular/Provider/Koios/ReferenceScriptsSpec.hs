@@ -19,6 +19,7 @@ spent, and Koios naming a hash for an output that carries another script.
 -}
 module Singular.Provider.Koios.ReferenceScriptsSpec (spec) where
 
+import Control.Tracer (nullTracer)
 import Data.Aeson
     ( Object
     , Value (..)
@@ -73,7 +74,6 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
-import Singular.Registry.PhaseLog (noPhaseLog)
 import Singular.Registry.StateToken (carriesReference)
 import Singular.Registry.TimeSource (TimeSource (..))
 import Singular.Registry.TxBuilder.Internal (txInToRef)
@@ -260,7 +260,7 @@ withSession
     :: Client.Transport IO -> (Session NoWitness IO -> IO a) -> IO a
 withSession transport use = do
     (manifest, genesis, historyBytes, _) <- loadNetworkFixture "preprod"
-    runtime <- newIORuntime noPhaseLog (const (pure ()))
+    runtime <- newIORuntime nullTracer (const (pure ()))
     let provider =
             koiosProvider
                 runtime

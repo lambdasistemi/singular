@@ -182,7 +182,7 @@ import Singular.CLI.Reconcile
     , reconciledJson
     , refuseUnreconciled
     )
-import Singular.CLI.Registry (hexT, mkRegistryConfig, pinsOf)
+import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
     ( CommandFailure (..)
     , Expectation (..)
@@ -213,11 +213,9 @@ import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config
     ( CageConfig (..)
     , bootStateFromCfg
-    , defaultProcessTime
-    , defaultRetractTime
     )
-import Singular.Registry.Deployment (Deployment (..), parseOutRef)
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( Addr
     , Coin (..)
@@ -1233,30 +1231,13 @@ withSyntheticSavedRegistry publishHistory story =
                                 (ConwaySpending (AsIx 0))
                                 (Data (toPlcData (Modify [Update []])), ExUnits 0 0)
                             )
-            deployment =
-                Deployment
-                    { depRelease = "synthetic-saved-registry-supplement"
-                    , depLeanRevision = "no-ledger-admission-claim"
-                    , depNetworkMagic = 1
-                    , depSeedOutRef = T.pack (replicate 64 '7' <> "#0")
-                    , depCageToken = hexT (SBS.fromShort name)
-                    , depStatePolicy = hexT (scriptHashBytes (cfgScriptHash cfg))
-                    , depRequestHash = ""
-                    , depApplicationHash = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                    , depRepresentativePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                    , depProcessTime = defaultProcessTime cfg
-                    , depRetractTime = defaultRetractTime cfg
-                    , depTip = 1_000
-                    , depReferenceScripts = []
-                    , depBootstrapTxs = []
-                    }
             saved =
                 Saved
                     (dir </> "registry")
-                    (mkRegistryConfig 1 (walletAddr wallet) (pinsOf cfg) deployment)
                     cfg
                     Booking.codes
                     tid
+                    []
             expectation = "active:" <> hexT (envelopeHash envelope)
             serve addr
                 | addr == cageAddrFromCfg cfg Testnet =
@@ -1264,12 +1245,26 @@ withSyntheticSavedRegistry publishHistory story =
                 | addr == applicationAddr saved = pure [(foldHoldingIn, holding)]
                 | otherwise =
                     fail "the synthetic registry serves no other address"
-            session =
-                ( withTip
+            serving =
+                withTip
                     (Cage.TipObservation (SlotNo 7) (BS.replicate 32 3) 7 0)
                     (withAddressOutputs serve stubSession)
-                )
+            session =
+                serving
                     { Cage.history = \_ _ -> Right <$> readIORef historyRef
+                    , Cage.outputs = \case
+                        -- The resolver finds the registry's state output by
+                        -- the token it holds, not by its address.
+                        Cage.HoldingAsset asset
+                            | asset == (policy, AssetName name) ->
+                                pure
+                                    ( Right
+                                        ( Evidenced
+                                            [(foldStateIn, foldStateOut)]
+                                            Nothing
+                                        )
+                                    )
+                        requested -> Cage.outputs serving requested
                     }
             provider = servingSession session
             ctx =
