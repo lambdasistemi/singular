@@ -37,12 +37,12 @@
       "pause": 400
     },
     {
-      "text": "Superseding scope: the later operator ruling abandons registries from earlier releases and withdraws old-deployment compatibility. New M1 identities must still be checked and wrong/unknown identities refused. Protected rejection (#498/#495) follows this carve with its own identity change and remains an M1 closing condition. This candidate does not close M1. Protected deposit is outside this carve's closing conditions.",
+      "text": "Superseding scope: the later operator ruling abandons registries from earlier releases and withdraws old-deployment compatibility. New fixed identities must still be checked and wrong/unknown identities refused. Protected rejection (#498/#495) follows this carve with its own identity change and remains a first-milestone closing condition. This candidate does not close that milestone. Protected deposit is outside this carve's closing conditions.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "3618f37fc91809967acf4f1429cad92b2fbfac4c4966fa915afbd096275a98bb"
+    "sha256": "7e0071e134ef61f08c905da1c6cb1c1050be298301584ddc26e70ef79ddfafc4"
   }
 }

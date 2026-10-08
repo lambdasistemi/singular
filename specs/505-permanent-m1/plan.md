@@ -45,8 +45,8 @@ conformance and demonstrated integration remain distinct unmet outcomes. This
 worker has no merge, release, deployment or public-network transaction authority.
 
 Superseding scope: [the later operator ruling](ruling.md) abandons registries
-from earlier releases and withdraws old-deployment compatibility. New M1
+from earlier releases and withdraws old-deployment compatibility. New fixed
 identities must still be checked and wrong/unknown identities refused. Protected
 rejection (#498/#495) follows this carve with its own identity change and remains
-an M1 closing condition. This candidate does not close M1. Protected deposit
+a first-milestone closing condition. This candidate does not close that milestone. Protected deposit
 is outside this carve's closing conditions.

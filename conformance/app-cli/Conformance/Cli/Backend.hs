@@ -171,10 +171,6 @@ import Singular.Application.OpenDatum.Release
     , liveEnvelope
     , withApplication
     )
-import Singular.Application.OpenDatum.Script
-    ( Application (..)
-    , loadApplicationCodes
-    )
 import Singular.Application.OpenDatum.Update
     ( continuationOf
     , releaseRedeemer
@@ -857,9 +853,12 @@ runRelease env = do
                 pure
                 (extractCompiledCode (T.pack name) bp)
     Release
-        <$> code "state.state"
+        <$> code "permanent_state.state"
         <*> code "request.request"
-        <*> either fail pure (loadApplicationCodes OpenDatumApplication bp)
+        <*> ( NamingCodes
+                <$> code "permanent_open_datum.open_datum"
+                <*> code "permanent_witness.witness"
+            )
 
 {- | The state token of a target: the one a take is given, or the one the
 seed of the run's own create derives under this release.

@@ -34,6 +34,14 @@ way the dependencies run is on the
 - <a href="../onchain/validators/registry/custody.ak" data-api="module">registry/custody</a> — the cage's custody of absent tokens
 - <a href="../onchain/validators/registry/refusal.ak" data-api="module">registry/refusal</a> — how a refusal is reported, and the shared reasons
 
+The permanent registration-and-termination contract uses separate fixed scripts:
+
+- <a href="../onchain/validators/permanent_state.ak" data-api="module">permanent_state</a> — the state validator for the two admitted registry transitions
+- <a href="../onchain/validators/permanent_witness.ak" data-api="module">permanent_witness</a> — the witness policy pinned to that state validator
+- <a href="../onchain/validators/registry/permanent.ak" data-api="module">registry/permanent</a> — refusing excluded and malformed request actions before approval
+- <a href="../onchain/validators/registry/permanent_fold.ak" data-api="module">registry/permanent_fold</a> — the fixed registration and termination trie dispatch
+- <a href="../onchain/validators/registry/permanent_modify.ak" data-api="module">registry/permanent_modify</a> — immutable pins, continuation, duties and settlement for that fold
+
 The open-datum application's protected envelope:
 
 - <a href="../onchain/validators/application/envelope.ak" data-api="module">application/envelope</a> — the controller, registry binding, deposit and arbitrary payload representation
@@ -55,8 +63,8 @@ Test support, documented because it is public to the test modules:
 ## What it leaves out
 
 A module gets a page when it declares a public definition. Test and
-property modules are not documented, and four modules declare nothing
-public — the `open` approval policy, `open_datum` validator, `staking`
+property modules are not documented, and five modules declare nothing
+public — the `open` approval policy, `open_datum` and `permanent_open_datum` validators, `staking`
 validator and `cage_vectors` table — so their sources are their reference.
 The naming application's validators under `naming-onchain/` are a separate Aiken
 project and have no generated reference on this site. Members that belong

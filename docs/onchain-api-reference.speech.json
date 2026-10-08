@@ -63,6 +63,30 @@
       "pause": 300
     },
     {
+      "text": "The permanent registration-and-termination contract uses separate fixed scripts:",
+      "pause": 400
+    },
+    {
+      "text": "permanent_state — the state validator for the two admitted registry transitions",
+      "pause": 300
+    },
+    {
+      "text": "permanent_witness — the witness policy pinned to that state validator",
+      "pause": 300
+    },
+    {
+      "text": "registry/permanent — refusing excluded and malformed request actions before approval",
+      "pause": 300
+    },
+    {
+      "text": "registry/permanent_fold — the fixed registration and termination trie dispatch",
+      "pause": 300
+    },
+    {
+      "text": "registry/permanent_modify — immutable pins, continuation, duties and settlement for that fold",
+      "pause": 300
+    },
+    {
       "text": "The open-datum application's protected envelope:",
       "pause": 400
     },
@@ -117,7 +141,7 @@
       "pause": 500
     },
     {
-      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+      "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and five modules declare nothing public — the open approval policy, open_datum and permanent_open_datum validators, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
       "pause": 400
     },
     {
@@ -127,6 +151,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "bd2887acd04a3e69c06504fd65dc519460b942531958966664c3ef50f443afde"
+    "sha256": "2aa1d44681be9789ee4f9842cb670d386b83cff7e9534218f8ae16f6c3d27164"
   }
 }

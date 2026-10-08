@@ -4,7 +4,7 @@ As a reviewer, I need to distinguish a new permanent registry from an earlier
 deployment and understand which behavior this candidate establishes.
 
 The operator's 8 October 2026 ruling selects `insertActive` and
-`updateTerminal` for M1. `witnessTerminal`, `insertAbsent`, `updateActive`,
+`updateTerminal` for the first milestone. `witnessTerminal`, `insertAbsent`, `updateActive`,
 `deleteAbsent` and `deleteActive` are excluded. Application payload updates and
 KERI close/reopen are application operations. The admission set of a deployed
 script remains fixed; no mutable configuration can enable another registry edge.
@@ -14,12 +14,12 @@ supersedes the earlier old-instance compatibility requirement: registries made
 by earlier releases, including old Demo1 registries, are abandoned by the new
 release. There is no migration or old deployed recognition path. The new CLI
 refuses wrong or unknown script identities. Preserved broader source, artifacts
-and remote history remain evidence for their own contracts, not restricted M1.
+and remote history remain evidence for their own contracts, not the restricted first milestone.
 
-M1's finish line is KERI feature support, for which the open-datum application
+The first milestone's finish line is KERI feature support, for which the open-datum application
 is sufficient. The later `NOTE-002` corrects the milestone ordering: #498
-protected rejection IS an M1 closing condition, landing AFTER #505 through
-#495 with its own identity change. This carve does not close M1 and must not
+protected rejection is a first-milestone closing condition, landing after #505
+through #495 with its own identity change. This carve does not close that milestone and must not
 include #495 or PR508. Protected deposit is outside this carve's closing
 conditions. Current valid model behavior, deposits and refunds must still be
 preserved. The parent reports the eventual #505 merge to release #495.
