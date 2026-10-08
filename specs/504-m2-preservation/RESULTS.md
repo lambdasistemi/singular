@@ -26,10 +26,10 @@ reported extent, not validator, consumer or connected ledger acceptance.
 No other expensive check was run and no hosted check was rerun.
 
 This evidence is permanently retained separately at
-`preserve/m2-evidence/4301c45d-recovery`; the broad ref remains frozen.
+`preserve/m2-evidence/4301c45d-recovery-v2`; the broad ref remains frozen.
 To retrieve it after the README's fresh fetch, run:
 
-`git checkout --detach origin/preserve/m2-evidence/4301c45d-recovery`
+`git checkout --detach origin/preserve/m2-evidence/4301c45d-recovery-v2`
 
 Then verify the original manifest snapshot with:
 
@@ -47,3 +47,9 @@ raw owner receipts need original-owner disposition; dirty work stays excluded;
 no hosting enforcement is established. No existing release tag/artifact moved.
 The evidence-ref commit adds only recovery documentation and receipts, so the
 model result stays bound to the unchanged permanently retained broad snapshot.
+
+The original evidence ref `preserve/m2-evidence/4301c45d-recovery` remains
+unchanged at `5d7ddb07d0c92d5389c96948555a5add3abaccb2`. The final forward
+record uses explicit `-` placeholders for empty census ref fields so its
+whole-candidate whitespace check passes; source/ref identities do not change.
+The original broad snapshot and its model execution remain unchanged.

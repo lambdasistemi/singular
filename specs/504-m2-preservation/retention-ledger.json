@@ -147,11 +147,19 @@
     }
   ],
   "evidence": {
-    "ref": "refs/heads/preserve/m2-evidence/4301c45d-recovery",
+    "ref": "refs/heads/preserve/m2-evidence/4301c45d-recovery-v2",
     "meaning": "Creation SHA/tree supplied in final fresh-fetch handback and PR; contains this ledger and exact4301 receipts"
   },
   "policy": "No reset, force push, deletion or reuse without explicit later operator ruling",
   "enforcement": "Procedural; read-only ruleset list found active main only; no preservation protection claimed",
   "cleanup": "All original histories, dirty work, raw evidence and releases excluded pending original-owner disposition",
-  "parentAction": "Epic507/M1 consume this ledger and record independent acceptance before narrowing"
+  "parentAction": "Epic507/M1 consume this ledger and record independent acceptance before narrowing",
+  "intermediateEvidence": [
+    {
+      "ref": "refs/heads/preserve/m2-evidence/4301c45d-recovery",
+      "sha": "5d7ddb07d0c92d5389c96948555a5add3abaccb2",
+      "tree": "e80dda31bba008e46609329bce71f41fa9c71501",
+      "meaning": "Original receipt commit retained unchanged; final forward census normalization at v2"
+    }
+  ]
 }
