@@ -67,7 +67,7 @@ import Singular.Registry.Ledger
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.StateToken (ReferenceRole, Release, roleName)
+import Singular.Registry.StateToken (ReferenceRole, Release)
 import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
@@ -116,6 +116,11 @@ attached env dir blueprint access roles ws command body = do
                             (InRegistry (hexT (SBS.fromShort raw)))
                             (wcTracer connected)
                     }
+        -- Explicit opt-in restoration runs before any view resolves
+        -- the references the write runs: views capture immutable facts
+        -- at acquisition, so restoration's submissions must land first.
+        when (writePublishReferences ws && not (Set.null roles)) $
+            restoreMissing wc release (accessToken access) roles
         Cage.withLatest
             (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             $ \v -> do
@@ -143,8 +148,6 @@ attached env dir blueprint access roles ws command body = do
                     (wcTracer wc)
                     []
                     (RegistrySeen (txInText (fst (liveState live))) (hexT observed) Nothing)
-                when (writePublishReferences ws && not (Set.null roles)) $
-                    restoreMissing wc release (accessToken access) roles
                 printed <-
                     body Attached{atWrite = wc, atLive = live, atTrie = context}
                 pure $ case printed of
@@ -194,7 +197,7 @@ restoreMissing wc release token roles = do
                 ( \(role, out) ->
                     observeReference
                         wc
-                        ("publish-" <> roleName role)
+                        "publish-references"
                         (plannedScript planned role)
                         out
                 )

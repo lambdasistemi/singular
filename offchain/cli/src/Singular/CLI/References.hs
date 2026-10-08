@@ -177,7 +177,7 @@ runPublish env a =
                 ( \(role, out) ->
                     observeReference
                         wc
-                        ("publish-" <> roleName role)
+                        "publish-references"
                         (plannedScript planned role)
                         out
                 )
@@ -236,6 +236,18 @@ receiptFields planned tx published =
                     Aeson..= hexT (scriptHashBytes (hashScript (plannedScript planned role)))
                 , "transaction" Aeson..= txIdHex tx
                 , "output" Aeson..= Live.txInText out
+                ]
+            | (role, (out, _)) <- published
+            ]
+        )
+    ,
+        ( "references"
+        , toJSON
+            [ Aeson.object
+                [ "role" Aeson..= roleName role
+                , "output" Aeson..= Live.txInText out
+                , "scriptHash"
+                    Aeson..= hexT (scriptHashBytes (hashScript (plannedScript planned role)))
                 ]
             | (role, (out, _)) <- published
             ]

@@ -29,6 +29,7 @@ module Singular.CLI.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (bracket, throwIO)
+import Control.Monad (when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -64,7 +65,7 @@ import GHC.Generics
     , conName
     , (:+:)
     )
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.Directory
     ( createDirectory
     , doesDirectoryExist
@@ -100,13 +101,26 @@ import System.Posix.IO
 import System.Posix.Types (Fd)
 import Test.Hspec
 
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Word (Word64)
 
 import Singular.CLI (runCommand)
@@ -122,7 +136,7 @@ import Singular.Registry.Evidence
     , NoWitness
     , unverifiedVerifier
     )
-import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -157,7 +171,11 @@ import Singular.Registry.Types
     , edgeName
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 spec :: Spec
 spec =
@@ -166,6 +184,7 @@ spec =
         >> readbackRows
         >> publishPreviewRows
         >> optInRunRows
+        >> missingStateRows
 
 handlerRows :: Spec
 handlerRows = describe
@@ -960,13 +979,6 @@ publishPreviewRows =
                     `shouldBe` []
                 afterRefused <- journalLines rig
                 afterRefused `shouldBe` beforeRefused
-  where
-    journalLines rig = do
-        let journal = rigDir rig </> "registry" </> "journal.jsonl"
-        exists <- doesFileExist journal
-        if exists
-            then length . BC.lines <$> BS.readFile journal
-            else pure 0
 
 -- ---------------------------------------------------------
 -- An opted-in write that finds nothing to restore
@@ -1008,13 +1020,180 @@ optInRunRows = describe "an opted-in write that finds nothing to restore" $ do
                 (runReceipt opted)
                 (runEvents opted)
                 `shouldBe` []
+    it "restores a missing needed role and folds through" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["registry", "create", "--seed", seed]
+            t1 <- tokenOf create
+            booking <-
+                run
+                    rig
+                    "insert alice-1"
+                    ( [ "registry"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t1
+                    )
+            runExit booking `shouldBe` ExitSuccess
+            (_, hashHex) <- spendFirstRefOutput rig
+            let requestArgs = case textAt "request" (runReceipt booking) of
+                    Just q -> ["--request", T.unpack q]
+                    Nothing -> []
+            folded <-
+                run
+                    rig
+                    "fold with restoration"
+                    ( ["registry", "fold"]
+                        <> requestArgs
+                        <> tokenArgs t1
+                        <> ["--publish-references"]
+                    )
+            when (runExit folded /= ExitSuccess) $
+                expectationFailure
+                    ("fold refused: " <> show (runReceipt folded))
+            runExit folded `shouldBe` ExitSuccess
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            disagreements
+                (runKey folded)
+                (runReceipt folded)
+                (runEvents folded)
+                `shouldBe` []
+            live <- chainHasHash rig hashHex
+            live `shouldBe` True
+
+-- ---------------------------------------------------------
+-- Publishing a missing reference after its carrier is spent
+-- ---------------------------------------------------------
+
+{- | The payer spends one published reference output back to itself
+through the fixture chain, so exactly one role is missing. Preview
+reports that role with its destination, script hash, output ada and
+fee and submits nothing; submission publishes it, reads it back and
+receipts the transaction; a refused submission keeps its transaction
+identity in the journal and the retry reconciles it without a second
+submission. The role vocabulary below pins the bound receipt spelling.
+-}
+missingStateRows :: Spec
+missingStateRows = describe "publishing a missing reference after its carrier is spent" $ do
+    let roleNames =
+            [ "state"
+            , "request"
+            , "witness-absent"
+            , "witness-active"
+            , "witness-terminal"
+            , "application"
+            ]
+        withMissing body = withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["registry", "create", "--seed", seed]
+            t1 <- tokenOf create
+            (_, hashHex) <- spendFirstRefOutput rig
+            body (rig, t1, hashHex)
+    it
+        "reports the missing role with destination, hash, output ada and fee"
+        $ withMissing
+        $ \(rig, t1, hashHex) -> do
+            beforePreview <- journalLines rig
+            preview <-
+                run
+                    rig
+                    "publish preview of a missing role"
+                    (["registry", "publish-references", "--preview"] <> tokenArgs t1)
+            runExit preview `shouldBe` ExitSuccess
+            outcomeOf (runReceipt preview) `shouldBe` Just "success"
+            previewMark (runReceipt preview) `shouldBe` Just True
+            textAt "token" (runReceipt preview) `shouldBe` Just (T.pack t1)
+            pubs <- case elementsAt "publications" (runReceipt preview) of
+                Just [p] -> pure p
+                _ ->
+                    expectationFailure "a preview names exactly the one missing role"
+                        >> pure (Aeson.Bool False)
+            case pubs of
+                Aeson.Object o -> do
+                    fieldOf "role" o `shouldSatisfy` (`elem` map Just roleNames)
+                    fieldOf "scriptHash" o `shouldBe` Just hashHex
+                    fieldOf "destination" o
+                        `shouldBe` Just (T.pack (bech32Address (walletAddr (rigWallet rig))))
+                    case valueAt "outputAda" pubs of
+                        Just (Aeson.Number _) -> pure ()
+                        _ -> expectationFailure "a preview names the output ada"
+                _ -> expectationFailure "a publication is an object"
+            case valueAt "fee" (runReceipt preview) of
+                Just (Aeson.Number _) -> pure ()
+                _ -> expectationFailure "a preview names its fee"
+            submissionsOf (runReceipt preview) `shouldBe` []
+            afterPreview <- journalLines rig
+            afterPreview `shouldBe` beforePreview
+    it
+        "publishes the missing role, reads it back and receipts the transaction"
+        $ withMissing
+        $ \(rig, t1, hashHex) -> do
+            published <-
+                run
+                    rig
+                    "publish the missing role"
+                    (["registry", "publish-references"] <> tokenArgs t1)
+            runExit published `shouldBe` ExitSuccess
+            outcomeOf (runReceipt published) `shouldBe` Just "success"
+            txid <- case textAt "transaction" (runReceipt published) of
+                Just t -> pure t
+                Nothing ->
+                    expectationFailure "a publication receipts its transaction" >> pure ""
+            pubs <- case elementsAt "publications" (runReceipt published) of
+                Just [p] -> pure p
+                _ ->
+                    expectationFailure "a publication names exactly the one missing role"
+                        >> pure (Aeson.Bool False)
+            case pubs of
+                Aeson.Object o -> do
+                    fieldOf "role" o `shouldSatisfy` (`elem` map Just roleNames)
+                    fieldOf "scriptHash" o `shouldBe` Just hashHex
+                _ -> expectationFailure "a publication is an object"
+            map (\(_, t, _, _) -> t) (submissionsOf (runReceipt published))
+                `shouldBe` [txid]
+            disagreements
+                (runKey published)
+                (runReceipt published)
+                (runEvents published)
+                `shouldBe` []
+            live <- chainHasHash rig hashHex
+            live `shouldBe` True
+    it "keeps a refused submission's identity and reconciles the retry" $
+        withMissing $ \(rig, t1, _) -> do
+            writeIORef
+                (rigAnswer rig)
+                (Just (Cage.SubmitRefused "the ledger said no"))
+            refused <-
+                run
+                    rig
+                    "publish refused by the ledger"
+                    (["registry", "publish-references"] <> tokenArgs t1)
+            runExit refused `shouldBe` ExitFailure 11
+            outcomeOf (runReceipt refused) `shouldBe` Just "ledger-refusal"
+            txid <- case map (\(_, t, _, _) -> t) (submissionsOf (runReceipt refused)) of
+                [t] -> pure t
+                other ->
+                    expectationFailure
+                        ("a refusal keeps its transaction identity: " <> show other)
+                        >> pure ""
+            retried <-
+                run
+                    rig
+                    "publish retry reconciles"
+                    (["registry", "publish-references"] <> tokenArgs t1)
+            runExit retried `shouldBe` ExitSuccess
+            outcomeOf (runReceipt retried) `shouldBe` Just "success"
+            textAt "transaction" (runReceipt retried) `shouldBe` Just txid
+            map (\(_, t, _, _) -> t) (submissionsOf (runReceipt retried))
+                `shouldBe` [txid]
   where
-    journalLines rig = do
-        let journal = rigDir rig </> "registry" </> "journal.jsonl"
-        exists <- doesFileExist journal
-        if exists
-            then length . BC.lines <$> BS.readFile journal
-            else pure 0
+    previewMark = \case
+        Aeson.Object o | Just (Aeson.Bool b) <- KeyMap.lookup "preview" o -> Just b
+        _ -> Nothing
 
 -- ---------------------------------------------------------
 -- The lifecycle
@@ -1269,6 +1448,71 @@ jumpPast rig booking more = case deadlineSlot (runReceipt booking) of
             , Just (Aeson.Number n) <- KeyMap.lookup "posixMs" d ->
                 Just (round n `div` 1000)
         _ -> Nothing
+
+{- | Spend the payer's first reference-script output back to the payer,
+through the fixture chain's own record/apply primitives (the same two
+calls a submission applies). The payer spends its own convenience
+carrier, keeping every coin: the registry, its token and custody are
+untouched, but that role's reference is genuinely missing afterwards.
+Returns the spent input and the spent script's hash hex.
+-}
+spendFirstRefOutput :: Rig -> IO (TxIn, Text)
+spendFirstRefOutput rig = do
+    held <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \s ->
+            SessionIO.outputsAt s (walletAddr (rigWallet rig))
+    case [(i, o) | (i, o) <- held, Just _ <- [scriptHashOf o]] of
+        [] -> fail "the wallet holds no published reference output to spend"
+        (spent, out) : _ -> do
+            let payer = walletAddr (rigWallet rig)
+                scriptHashHex = case scriptHashOf out of
+                    Just hex -> hex
+                    Nothing -> error "spendFirstRefOutput: reference vanished"
+                tx :: ConwayTx
+                tx =
+                    mkBasicTx $
+                        mkBasicTxBody
+                            & inputsTxBodyL .~ Set.singleton spent
+                            & outputsTxBodyL
+                                .~ StrictSeq.fromList
+                                    [mkBasicTxOut payer (out ^. valueTxOutL)]
+                            & feeTxBodyL .~ Coin 0
+            recordTransaction (rigChain rig) tx
+            advanceChain (rigChain rig) $ \facts ->
+                facts
+                    { csUTxO =
+                        Map.insert
+                            (TxIn (txIdTx tx) (TxIx 0))
+                            (mkBasicTxOut payer (out ^. valueTxOutL))
+                            . Map.delete spent
+                            $ csUTxO facts
+                    }
+            pure (spent, scriptHashHex)
+
+-- | The hex hash of the script an output carries, if it carries one.
+scriptHashOf :: TxOut ConwayEra -> Maybe Text
+scriptHashOf out = case out ^. referenceScriptTxOutL of
+    SJust script ->
+        Just
+            (TE.decodeUtf8 (B16.encode (scriptHashBytes (hashScript script))))
+    _ -> Nothing
+
+-- | Journal lines in the actor directory the rig runs in.
+journalLines :: Rig -> IO Int
+journalLines rig = do
+    let journal = rigDir rig </> "registry" </> "journal.jsonl"
+    exists <- doesFileExist journal
+    if exists
+        then length . BC.lines <$> BS.readFile journal
+        else pure 0
+
+-- | Whether an output carrying this script hash is live at the payer.
+chainHasHash :: Rig -> Text -> IO Bool
+chainHasHash rig wanted = do
+    held <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \s ->
+            SessionIO.outputsAt s (walletAddr (rigWallet rig))
+    pure (any (== Just wanted) (map (scriptHashOf . snd) held))
 
 -- | A wallet output the create can consume as its seed.
 fundSeed :: Rig -> IO String
