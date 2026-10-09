@@ -240,6 +240,8 @@ def derive_wallet_address(skey_bytes):
 
 def _cbor_item(buf, pos):
     """One CBOR item from BUF at POS; definite lengths only."""
+    if pos >= len(buf):
+        raise ValueError("truncated datum")
     first = buf[pos]
     major, info = first >> 5, first & 0x1F
     pos += 1
@@ -264,8 +266,12 @@ def _cbor_item(buf, pos):
     if major == 1:
         return -1 - length, pos
     if major == 2:
+        if pos + length > len(buf):
+            raise ValueError("truncated datum")
         return bytes(buf[pos : pos + length]), pos + length
     if major == 3:
+        if pos + length > len(buf):
+            raise ValueError("truncated datum")
         return bytes(buf[pos : pos + length]).decode("utf-8"), pos + length
     if major == 4:
         items = []
@@ -295,11 +301,83 @@ def _cbor_item(buf, pos):
 
 def decode_plutus_datum(datum_hex):
     """The top Plutus-Data value of hex datum bytes."""
-    raw = bytes.fromhex(datum_hex)
-    value, pos = _cbor_item(raw, 0)
+    try:
+        raw = bytes.fromhex(datum_hex)
+    except ValueError:
+        raise ValueError("a datum is not hex")
+    try:
+        value, pos = _cbor_item(raw, 0)
+    except (IndexError, UnicodeDecodeError) as error:
+        raise ValueError(f"a datum did not decode: {error}")
     if pos != len(raw):
         raise ValueError("trailing bytes after the datum")
     return value
+
+
+def _plutus_json_value(node):
+    """A Koios datum-value JSON node as plain Plutus data."""
+    if not isinstance(node, dict):
+        raise ValueError("a datum value node is not an object")
+    if "int" in node:
+        value = node["int"]
+        if not isinstance(value, int):
+            raise ValueError("a datum integer is not a number")
+        return value
+    if "bytes" in node:
+        return bytes.fromhex(node["bytes"])
+    if "list" in node:
+        return [_plutus_json_value(item) for item in node["list"]]
+    if "map" in node:
+        return [
+            (_plutus_json_value(pair["k"]), _plutus_json_value(pair["v"]))
+            for pair in node["map"]
+        ]
+    if "constructor" in node:
+        return (
+            "constr",
+            node["constructor"],
+            [_plutus_json_value(field) for field in node.get("fields", [])],
+        )
+    raise ValueError("a datum value node has no known shape")
+
+
+def _koios_post(provider_base, path, payload, timeout=30):
+    """One Koios JSON round trip; raises on transport or shape errors."""
+    import urllib.request
+
+    request = urllib.request.Request(
+        provider_base + path,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as answer:
+        return json.loads(answer.read().decode("utf-8"))
+
+
+def _datum_candidates(provider_base, row, reasons):
+    """Hex datum bytes observable for one asset_utxos row, in order."""
+    inline = row.get("inline_datum")
+    if isinstance(inline, dict):
+        if isinstance(inline.get("bytes"), str):
+            yield ("inline-bytes", inline["bytes"])
+        elif "value" in inline:
+            yield ("inline-value", inline["value"])
+        else:
+            reasons.append("a row names no inline datum bytes or value")
+    datum_hash = row.get("datum_hash")
+    if isinstance(datum_hash, str) and datum_hash:
+        try:
+            found = _koios_post(provider_base, "/datum_info", {"_datums": [datum_hash]})
+            entries = found if isinstance(found, list) else [found]
+            for entry in entries:
+                if isinstance(entry, dict) and isinstance(entry.get("bytes"), str):
+                    yield ("datum-info-bytes", entry["bytes"])
+                elif isinstance(entry, dict) and "value" in entry:
+                    yield ("datum-info-value", entry["value"])
+        except Exception as error:
+            reasons.append(f"datum_info failed: {type(error).__name__}")
+    if not isinstance(inline, dict) and not datum_hash:
+        reasons.append("a row carries neither inline datum nor datum hash")
 
 
 def fetch_state_fee_bound(
@@ -308,79 +386,79 @@ def fetch_state_fee_bound(
     """Read the registry's fee bound from its state datum on the chain.
 
     Queries the Koios-shaped provider for unspent outputs holding the
-    state token, decodes each inline datum, and takes the Constr-0
-    eight-field state datum whose process and retract windows match the
+    state token, reads each output's datum (inline bytes, inline JSON
+    value, or datum_info by hash), and takes the Constr-0 eight-field
+    state datum whose process and retract windows match the
     independently observed registry windows. Returns the fee bound with
     its provenance. Raises RuntimeError with a diagnostic otherwise.
     """
-    import urllib.request
-
     base = provider_url.rstrip("/")
-    body = json.dumps(
-        {"_asset_list": [[policy_hex, name_hex]], "_extended": True}
-    ).encode()
-    last_error = "no datum decoded"
+    reasons = []
     for attempt in range(3):
         try:
-            request = urllib.request.Request(
-                base + "/asset_utxos",
-                data=body,
-                headers={"Content-Type": "application/json"},
+            rows = _koios_post(
+                base,
+                "/asset_utxos",
+                {"_asset_list": [[policy_hex, name_hex]], "_extended": True},
             )
-            with urllib.request.urlopen(request, timeout=30) as answer:
-                rows = json.loads(answer.read().decode("utf-8"))
             if not isinstance(rows, list) or not rows:
-                last_error = "asset_utxos answered no rows for the state token"
-                raise ValueError(last_error)
+                reasons.append("asset_utxos answered no rows for the state token")
+                raise ValueError(reasons[-1])
+            print(f"two actors: fee bound query saw {len(rows)} rows", flush=True)
             for row in rows:
                 if not isinstance(row, dict):
+                    reasons.append("a row is not an object")
                     continue
-                inline = row.get("inline_datum")
-                if not isinstance(inline, dict) or "bytes" not in inline:
-                    continue
-                try:
-                    datum = decode_plutus_datum(inline["bytes"])
-                except ValueError as error:
-                    last_error = f"a datum did not decode: {error}"
-                    continue
-                if (
-                    not isinstance(datum, tuple)
-                    or len(datum) != 3
-                    or datum[0] != "constr"
-                    or datum[1] != 0
-                    or not isinstance(datum[2], list)
-                    or len(datum[2]) != 8
-                ):
-                    continue
-                _root, fee, process, retract = datum[2][0:4]
-                if not all(isinstance(v, int) for v in (fee, process, retract)):
-                    continue
-                if process != expect_process_ms or retract != expect_retract_ms:
-                    last_error = (
-                        f"a state datum carries other windows: {process}/{retract}"
-                    )
-                    continue
-                if fee <= 0:
-                    last_error = "a state datum carries no positive fee"
-                    continue
-                return {
-                    "stateMaxFee": fee,
-                    "processTime": process,
-                    "retractTime": retract,
-                    "observedTx": f"{row.get('tx_hash')}#{row.get('tx_index')}",
-                }
-            last_error = "no row carried the registry state datum"
-            raise ValueError(last_error)
+                for kind, raw_datum in _datum_candidates(base, row, reasons):
+                    try:
+                        if kind.endswith("value"):
+                            datum = _plutus_json_value(raw_datum)
+                        else:
+                            datum = decode_plutus_datum(raw_datum)
+                    except ValueError as error:
+                        reasons.append(f"a datum did not decode: {error}")
+                        continue
+                    if (
+                        not isinstance(datum, tuple)
+                        or len(datum) != 3
+                        or datum[0] != "constr"
+                        or datum[1] != 0
+                        or not isinstance(datum[2], list)
+                        or len(datum[2]) != 8
+                    ):
+                        reasons.append("a datum is not the eight-field state datum")
+                        continue
+                    _root, fee, process, retract = datum[2][0:4]
+                    if not all(isinstance(v, int) for v in (fee, process, retract)):
+                        reasons.append("a state datum carries non-integer windows")
+                        continue
+                    if process != expect_process_ms or retract != expect_retract_ms:
+                        reasons.append(
+                            f"a state datum carries other windows: {process}/{retract}"
+                        )
+                        continue
+                    if fee <= 0:
+                        reasons.append("a state datum carries no positive fee")
+                        continue
+                    return {
+                        "stateMaxFee": fee,
+                        "processTime": process,
+                        "retractTime": retract,
+                        "observedTx": f"{row.get('tx_hash')}#{row.get('tx_index')}",
+                    }
+            reasons.append("no row carried the registry state datum")
+            raise ValueError(reasons[-1])
         except ValueError:
             if attempt >= 2:
                 break
             time.sleep(2)
         except Exception as error:
-            last_error = f"{type(error).__name__}: {error}"
+            reasons.append(f"{type(error).__name__}: {error}")
             if attempt >= 2:
                 break
             time.sleep(2)
-    raise RuntimeError(f"the fee bound is not established: {last_error}")
+    detail = "; ".join(reasons[-4:])
+    raise RuntimeError(f"the fee bound is not established: {detail}")
 
 
 class SetupFailure(Exception):
