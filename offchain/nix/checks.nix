@@ -98,6 +98,30 @@ let
         done
         bash $src/tools/signed_tx_control.sh "$src" -- -hide-all-packages "''${dbs[@]}" | tee $out
       '';
+  # #528 slice 1: the registry library names no application. The check
+  # scans the library's sources and its build-depends; the controls plant
+  # an import and a dependency in a throwaway copy and must fail there.
+  applicationBoundaryCheck = pkgs.writeShellApplication {
+    name = "application-boundary-check";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.gawk
+      pkgs.gnugrep
+    ];
+    text = builtins.readFile ./application-boundary-check.sh;
+  };
+  applicationBoundaryControls = pkgs.writeShellApplication {
+    name = "application-boundary-controls";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.gnused
+    ];
+    text =
+      "check=${pkgs.lib.getExe applicationBoundaryCheck}\n"
+      + builtins.readFile ./application-boundary-controls.sh;
+  };
 in
 {
   inherit (components) library;
@@ -106,6 +130,8 @@ in
     cage-tests = cageTestsWrapped;
     inherit (components.tests) record-value-tests;
     inherit (components.exes) cage-test-vectors;
+    application-boundary-check = applicationBoundaryCheck;
+    application-boundary-controls = applicationBoundaryControls;
   };
   cage-tests = unitCheck "cage-tests" cageTestsWrapped;
   record-value-tests =

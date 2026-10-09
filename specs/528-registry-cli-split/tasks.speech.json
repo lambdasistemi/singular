@@ -15,23 +15,23 @@
       "pause": 500
     },
     {
-      "text": "[ ] add-application-value",
+      "text": "[x] add-application-value",
       "pause": 300
     },
     {
-      "text": "[ ] move-open-datum-into-its-own-library",
+      "text": "[x] move-open-datum-into-its-own-library",
       "pause": 300
     },
     {
-      "text": "[ ] state-token-and-config-take-the-value",
+      "text": "[x] state-token-and-config-take-the-value",
       "pause": 300
     },
     {
-      "text": "[ ] boundary-control-scoped-to-the-registry-library",
+      "text": "[x] boundary-control-scoped-to-the-registry-library",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-new-library-in-the-component-inventory",
+      "text": "[x] classify-the-new-library-in-the-component-inventory",
       "pause": 300
     }
   ],
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "803c1a13557b70852161ff263f3ad9e43471f2706e3282a3ed33576fbbfa4686"
+    "sha256": "9a9eb6c9f8df60424a40b996716211c5ff22d7bf2a7d4bbf7d602515c64a5864"
   }
 }

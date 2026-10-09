@@ -26,6 +26,7 @@ import Singular.Provider.Koios.ProviderSpec qualified
 import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Provider.Koios.ReferenceScriptsSpec qualified
+import Singular.Registry.ApplicationSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
@@ -123,6 +124,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
+    describe
+        (tagged "Singular.Registry.Application" [Application])
+        Singular.Registry.ApplicationSpec.spec
     describe
         (tagged "Singular.Registry.StateToken" [Provider])
         Singular.Registry.StateTokenSpec.spec

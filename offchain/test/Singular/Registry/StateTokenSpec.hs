@@ -53,6 +53,8 @@ import Cardano.Ledger.Plutus.Data (Datum (NoDatum))
 import Cardano.Ledger.TxIn (TxIn)
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Registry.Application (appPin)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as LP
@@ -109,7 +111,8 @@ stateTokens = describe "a state token as the command line spells it" $ do
 expectedHashes :: Spec
 expectedHashes = describe "the hashes a registry's references must carry" $ do
     it "names every role" $
-        Map.keys (expectedReferences release token)
+        Map.keys
+            (expectedReferences (appPin openDatumApplication) release token)
             `shouldBe` [minBound .. maxBound]
     it
         "are the hashes of the scripts the boot published, derived from the token alone"
@@ -121,18 +124,21 @@ expectedHashes = describe "the hashes a registry's references must carry" $ do
                         , Just role <- [testParseRole name]
                         ]
             Map.size published `shouldBe` length bootScripts
-            expectedReferences release token `shouldBe` published
+            expectedReferences (appPin openDatumApplication) release token
+                `shouldBe` published
     it "spell their roles as receipts do" $
         map
             (roleName . fst)
-            (Map.toAscList (expectedReferences release token))
+            ( Map.toAscList
+                (expectedReferences (appPin openDatumApplication) release token)
+            )
             `shouldBe` map fst bootScripts
     it
         "differ between two registries of one release in everything but the state script"
         $ do
             let other = tokenOf (refOf (T.replicate 64 "4" <> "#2"))
-                here = expectedReferences release token
-                there = expectedReferences release other
+                here = expectedReferences (appPin openDatumApplication) release token
+                there = expectedReferences (appPin openDatumApplication) release other
             Map.lookup RoleState here `shouldBe` Map.lookup RoleState there
             [ role
               | role <- [minBound .. maxBound]
@@ -477,7 +483,12 @@ resolveOn
     -> IO (Either IdentityRefusal ResolvedRegistry, [Text])
 resolveOn chain asked = do
     logRef <- newIORef []
-    result <- resolveRegistry release asked (chainSession logRef chain)
+    result <-
+        resolveRegistry
+            openDatumApplication
+            release
+            asked
+            (chainSession logRef chain)
     reads' <- readIORef logRef
     pure (result, reads')
 

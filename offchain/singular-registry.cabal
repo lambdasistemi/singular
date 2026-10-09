@@ -85,12 +85,6 @@ library
     Naming.Verify
     Naming.Wire
     Naming.Wire.Vectors
-    Singular.Application.OpenDatum.Book
-    Singular.Application.OpenDatum.Build
-    Singular.Application.OpenDatum.Envelope
-    Singular.Application.OpenDatum.Release
-    Singular.Application.OpenDatum.Script
-    Singular.Application.OpenDatum.Update
     Singular.Provider.Koios.Client
     Singular.Provider.Koios.Evidence
     Singular.Provider.Koios.History
@@ -99,6 +93,7 @@ library
     Singular.Provider.Koios.Runtime
     Singular.Provider.Koios.State
     Singular.Provider.Koios.Wire
+    Singular.Registry.Application
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -172,6 +167,44 @@ library
     , Singular.Registry.LedgerProvider
     , Singular.Registry.Evidence
     , Singular.Registry.Signing
+
+-- The open-datum application: the envelope, its booking approval and
+-- destination, payload update, release rules, script, the application value
+-- the command line composes, and the open-datum verbs' modules. Public so
+-- the command line, the tests and the open-datum executable link it; the
+-- registry library names none of it (see application-boundary-check).
+library open-datum-application
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   open-datum/src
+  exposed-modules:
+    Singular.Application.OpenDatum.Book
+    Singular.Application.OpenDatum.Build
+    Singular.Application.OpenDatum.Envelope
+    Singular.Application.OpenDatum.Release
+    Singular.Application.OpenDatum.Script
+    Singular.Application.OpenDatum.Update
+    Singular.Application.OpenDatum.Value
+
+  build-depends:
+    , aeson                              >=2.1  && <2.3
+    , base                               >=4.14 && <5
+    , base16-bytestring
+    , bytestring                         >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
+    , containers                         >=0.6  && <0.8
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , singular-registry
+    , singular-registry:local-services
+    , text                               >=2.0  && <2.2
 
 -- Common derived services are public and independent of node transport.
 library local-services
@@ -935,6 +968,7 @@ test-suite cage-tests
     Singular.Provider.Koios.RecorderSpec
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
+    Singular.Registry.ApplicationSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.ContractMemory
@@ -1022,6 +1056,7 @@ test-suite cage-tests
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:open-datum-application
     , temporary
     , text
     , time
@@ -1336,6 +1371,7 @@ executable singular
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:open-datum-application
     , text
     , time
     , unix

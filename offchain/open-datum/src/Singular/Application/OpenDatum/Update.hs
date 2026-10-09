@@ -55,7 +55,7 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     , scriptFromBytes
     )
-import Singular.Registry.TxBuilder.Update.Build (NoCtx, mkEvalTx)
+import Singular.Registry.TxBuilder.Update (NoCtx, mkEvalTx)
 
 -- | @Update@: the first constructor of @OpenDatumSpend@.
 updateRedeemer :: RawRedeemer

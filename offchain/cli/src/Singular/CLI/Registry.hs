@@ -77,8 +77,8 @@ import Cardano.Ledger.TxIn (TxIn)
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 
-import Singular.Application.OpenDatum.Script (Application (..))
 import Singular.CLI.Permanent (knownScripts)
+import Singular.Registry.Application (Application (..))
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
     , extractCompiledCode
@@ -176,19 +176,20 @@ economics =
         , reTip = Coin 1_000_000
         }
 
-{- | The configuration of the open-datum registry this release boots from
+{- | The configuration of the application registry this release boots from
 this seed, and the codes as that registry runs them: the application
 applied to the registry identity the seed determines, and
 @witness(kind, registry)@ at kinds 0, 1 and 2.
 -}
 registryConfigFor
-    :: Release
+    :: Application decoder holding
+    -> Release
     -> RegistryEconomics
     -> OnChainTxOutRef
     -> (CageConfig, NamingCodes)
-registryConfigFor rel chosen =
+registryConfigFor app rel chosen =
     configForApplication
-        OpenDatumApplication
+        (appPin app)
         (releaseCodes rel)
         (releaseState rel)
         (releaseRequest rel)

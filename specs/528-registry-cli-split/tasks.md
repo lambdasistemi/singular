@@ -4,11 +4,11 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## application-value-seam
 
-- [ ] add-application-value
-- [ ] move-open-datum-into-its-own-library
-- [ ] state-token-and-config-take-the-value
-- [ ] boundary-control-scoped-to-the-registry-library
-- [ ] classify-the-new-library-in-the-component-inventory
+- [x] add-application-value
+- [x] move-open-datum-into-its-own-library
+- [x] state-token-and-config-take-the-value
+- [x] boundary-control-scoped-to-the-registry-library
+- [x] classify-the-new-library-in-the-component-inventory
 
 ## commands-through-the-value
 

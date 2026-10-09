@@ -83,6 +83,7 @@ import Singular.Application.OpenDatum.Script
     ( Application (..)
     , applicationTitle
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command
     ( CreateArgs (..)
     , EntryMode (..)
@@ -132,6 +133,7 @@ import Singular.CLI.Trace
     , What (Created, EdgeStarted, RegistrySeen)
     , report
     )
+import Singular.Registry.Application (appPin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Capabilities (sessionReceipt)
@@ -429,7 +431,11 @@ stateReference v wallet rel seedIn = do
         findReferences
             v
             (Just wallet)
-            (expectedReferences rel (stateTokenOf rel seedIn))
+            ( expectedReferences
+                (appPin openDatumApplication)
+                rel
+                (stateTokenOf rel seedIn)
+            )
             (Set.singleton RoleState)
     case found of
         Right chosen -> pure (Map.lookup RoleState chosen)
@@ -683,7 +689,8 @@ previewIdentity submitting a rel addr utxos = do
                 { reProcessTime = createProcessTime a
                 , reRetractTime = createRetractTime a
                 }
-        (cfg, pinned) = registryConfigFor rel chosen (txInToRef seedIn)
+        (cfg, pinned) =
+            registryConfigFor openDatumApplication rel chosen (txInToRef seedIn)
         identity =
             [ ("application", toJSON (applicationTitle OpenDatumApplication))
             , ("stateToken", toJSON (renderStateToken (stateTokenOf rel seedIn)))

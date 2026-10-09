@@ -88,6 +88,7 @@ import Singular.Application.OpenDatum.Envelope
     , registryBytes
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command (RegistryAccess (..))
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
@@ -403,7 +404,7 @@ resolveSaved
     -> IO Saved
 resolveSaved dir release access roles wallet view = do
     resolved <-
-        resolveRegistry release (accessToken access) view
+        resolveRegistry openDatumApplication release (accessToken access) view
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
                 pure

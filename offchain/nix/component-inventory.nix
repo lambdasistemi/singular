@@ -78,6 +78,11 @@ let
     sublibs = [
       "local-services"
       "koios-http"
+      # #528 slice 1: the open-datum application, built from this
+      # repository against the library and linked by `singular` and
+      # `cage-tests`; the application boundary control governs who may
+      # depend on it, not this list.
+      "open-datum-application"
     ];
   };
 

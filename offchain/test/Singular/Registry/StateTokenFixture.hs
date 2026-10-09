@@ -71,7 +71,8 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 
-import Singular.Application.OpenDatum.Script (Application (..))
+import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Registry.Application (appPin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
@@ -141,7 +142,7 @@ bootCfg :: CageConfig
 bootCodes :: NamingCodes
 (bootCfg, bootCodes) =
     configForApplication
-        OpenDatumApplication
+        (appPin openDatumApplication)
         (releaseCodes release)
         (releaseState release)
         (releaseRequest release)
