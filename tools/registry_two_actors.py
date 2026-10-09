@@ -22,6 +22,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 from shutil import which
 import signal
 import subprocess
@@ -565,8 +566,8 @@ class Journey:
                 flush=True,
             )
 
-    def load_receipt(self, name):
-        path = self.receipts / f"{name}.json"
+    def load_receipt(self, name, receipts=None):
+        path = (receipts or self.receipts) / f"{name}.json"
         if not path.exists():
             return None
         try:
@@ -574,10 +575,42 @@ class Journey:
         except json.JSONDecodeError:
             return None
 
-    def run_one_agreement(self, actor, leg):
+    def directory_bytes(self, path):
+        return sum(
+            entry.stat().st_size for entry in path.rglob("*") if entry.is_file()
+        )
+
+    def removal_check(self, legs):
+        """One receipt removed must turn its row pending, on a scratch copy."""
+        scratch = self.work / "scratch-remove-one"
+        if scratch.exists():
+            shutil.rmtree(scratch)
+        shutil.copytree(self.receipts, scratch)
+        (scratch / "alice-fold.json").unlink()
+        passed, _, _ = self.run_one_agreement(
+            "alice", legs["alice"], scratch
+        )
+        require(
+            not passed,
+            "the receipt-removal control did not turn the row pending",
+        )
+        print("two actors: receipt-removal control holds", flush=True)
+
+    def cap_check(self):
+        size = self.directory_bytes(self.receipts)
+        print(
+            f"two actors: receipts {size} bytes (cap {RECEIPT_CAP_BYTES})",
+            flush=True,
+        )
+        require(
+            size <= RECEIPT_CAP_BYTES,
+            f"receipts exceed the cap: {size} > {RECEIPT_CAP_BYTES}",
+        )
+
+    def run_one_agreement(self, actor, leg, receipts=None):
         """Recompute one run-one row from its receipts on disk."""
         docs = {
-            slot: self.load_receipt(leg[slot]) if slot in leg else None
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
             for slot in ("inspect_before", "booking", "fold", "inspect_after")
         }
         missing = [slot for slot, doc in docs.items() if doc is None]
@@ -724,6 +757,8 @@ class Journey:
         try:
             for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
                 legs[actor] = self.actor_leg(actor, key)
+            self.removal_check(legs)
+            self.cap_check()
             rows = self.compute_rows(legs)
             self.report(rows)
         except JourneyFailure as failed:
