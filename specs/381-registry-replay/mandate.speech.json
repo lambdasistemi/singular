@@ -73,7 +73,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] The narration and speech records agree with the pages. On the rebased base the narration check reports six stale clips and seven orphan clips, and the presentation check reports the stale speech stamp of docs/singular-node.md. Main, PR 525 and the previous base pass the narration check. The commit that clears it is the first commit of the ticket's source work and contains nothing else. Proof: python3 tools/narrate.py --check and just check-presentation exit 0, and nix run --quiet .#docs-check exits 0.",
+      "text": "[ ] The narration and speech records agree with the pages. On the rebased base the narration check reports six stale clips and seven orphan clips, and the presentation check reports the stale speech stamp of docs/singular-node.md. Main, PR 525 and the previous base pass the narration check. The commit that clears it is the first commit of the ticket's source work and contains nothing else. It is cb546aec, made by the ticket owner before the source writer started, with the narration key's standing authorization. Proof: python3 tools/narrate.py --check and just check-presentation exit 0, and nix run --quiet .#docs-check exits 0.",
       "pause": 300
     }
   ],
@@ -279,7 +279,7 @@
       "pause": 500
     },
     {
-      "text": "Written independently by the ticket owner and the auditor, then synthesized once into version 1, which is frozen before any source writer runs. It lives in the ticket owner's runtime record, and its hash binds it.",
+      "text": "Written independently by the ticket owner and the auditor, then synthesized once into version 1, then completed by version 2 before any source writer runs. It lives in the ticket owner's runtime record, and its hash binds it.",
       "pause": 400
     },
     {
@@ -289,6 +289,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "47f740c684aa157e0f34ca9819c7e033911474d7eadda1b4ad3cfd18645067ab"
+    "sha256": "06c7ddf8b3ed2666dcb433a4a73618eeda307ad4e175ff6008772aef435520ec"
   }
 }

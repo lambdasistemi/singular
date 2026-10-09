@@ -78,7 +78,8 @@ or it is a named control; reading the harness source is never a check. The froze
   narration check reports six stale clips and seven orphan clips, and the presentation
   check reports the stale speech stamp of `docs/singular-node.md`. Main, PR 525 and the
   previous base pass the narration check. The commit that clears it is the first commit of the
-  ticket's source work and contains nothing else. Proof: `python3 tools/narrate.py
+  ticket's source work and contains nothing else. It is `cb546aec`, made by the ticket
+  owner before the source writer started, with the narration key's standing authorization. Proof: `python3 tools/narrate.py
   --check` and `just check-presentation` exit 0, and `nix run --quiet .#docs-check`
   exits 0.
 
@@ -187,7 +188,7 @@ question filed because the writer is blocked, or stopped at capacity with a hand
 
 | Run | Content |
 | --- | --- |
-| One | The docs baseline as its own first commit. Then the token-only actors, the isolation guard with its positive and negative control, the first actor rows (each actor inserts and folds; the first `inspect` roots), the receipt-computed report skeleton, and the hosted jobs. |
+| One | The docs baseline as its own first commit (done: `cb546aec`). Then the token-only actors, the isolation guard with its positive and negative control, the first actor rows (each actor inserts and folds; the first `inspect` roots), the receipt-computed report skeleton, and the hosted jobs. |
 | Two | Terminate-and-fold-by-the-other, another actor folds an insertion, the controller refusals, and the `inspect` root after every fold. |
 | Three | Reject and reclaim across actors. |
 | Four | The two history faults, the final report and appendix, the verification record, and the aggregate. |
@@ -241,13 +242,14 @@ list is not a gate: a hosted failure is one repair commit.
 ## The frozen gate
 
 Written independently by the ticket owner and the auditor, then synthesized once into
-version 1, which is frozen before any source writer runs. It lives in the ticket owner's
+version 1, then completed by version 2 before any source writer runs. It lives in the ticket owner's
 runtime record, and its hash binds it.
 
 | Gate | Value |
 | --- | --- |
-| Path | `/home/paolino/.orch-runtime/singular/epic-371/to-381-sonnet-1/handoffs/gate-v1.md` |
-| sha256 | `bdf2acb3e24bb3832b303504e52cf8d097ef7b23f654668ce9c710abf4fd6945` |
+| Path | `/home/paolino/.orch-runtime/singular/epic-371/to-381-sonnet-1/handoffs/gate-v2.md` |
+| sha256 | `a1c4e62ba62488aa5849042d61231343c39f8028787822af9d1574654093ed73` |
+| Version 1 | `gate-v1.md` beside it, sha256 `bdf2acb3e24bb3832b303504e52cf8d097ef7b23f654668ce9c710abf4fd6945`; version 2 is version 1 byte for byte plus one section on the journey's four exit statuses and how a run is judged before the last run |
 | Inputs | the ticket owner's table, sha256 `5d477dde9ee79f197f9522231becf676f9d87ccc21c51257ed1a4a31abcc7d62`; the auditor's table, sha256 `6a7ae2c278224449f50431f7f7f0ca0ac9dca0a8f2daa3336ac67af179a51ec6` |
 
 Every row is an existing hosted command, or a command this ticket adds to the hosted
