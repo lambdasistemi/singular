@@ -633,7 +633,42 @@ class Journey:
             f"{actor} inspect root {after.get('root')} != fold root {fold['root']}",
         )
         leg["inspect_after"] = f"{actor}-inspect-after"
+        other = "bob" if actor == "alice" else "alice"
+        other_others = tuple(
+            home for party, home in self.homes.items() if party != other
+        )
+        status, seen = self.run_party(
+            other,
+            f"{actor}-fold-seen-by-{other}",
+            self.inspect_key(key),
+            other_others,
+        )
+        require(
+            status == 0 and seen.get("outcome") == "success",
+            f"{other} inspect-after failed: exit {status}, {seen}",
+        )
+        require(
+            seen.get("root") == fold["root"],
+            f"{other} inspect root {seen.get('root')} "
+            f"!= fold root {fold['root']}",
+        )
+        self.record_fold_root(
+            leg["fold"], key, leg["inspect_after"], f"{actor}-fold-seen-by-{other}"
+        )
         return leg
+
+    def record_fold_root(self, fold, key, inspect_a, inspect_b):
+        """Remember one fold both actors must read back at its root."""
+        if not hasattr(self, "fold_records"):
+            self.fold_records = []
+        self.fold_records.append(
+            {
+                "fold": fold,
+                "key": key,
+                "inspect_a": inspect_a,
+                "inspect_b": inspect_b,
+            }
+        )
 
     def fold_pending(self, party):
         """Fold the one pending request, discovering it from the chain alone.
@@ -757,6 +792,9 @@ class Journey:
                 f"!= fold root {fold['root']}",
             )
             leg[slot] = f"{direction}-inspect-{party}"
+        self.record_fold_root(
+            leg["fold"], key, leg["inspect_owner"], leg["inspect_other"]
+        )
         return leg
 
     def cross_insert_leg(self, booker, folder, key):
@@ -858,6 +896,9 @@ class Journey:
                 f"!= fold root {fold['root']}",
             )
             leg[slot] = f"{direction}-inspect-{party}"
+        self.record_fold_root(
+            leg["fold"], key, leg["inspect_booker"], leg["inspect_folder"]
+        )
         return leg
 
     def refusal_leg(self, owner, foreign, key):
@@ -1418,6 +1459,7 @@ class Journey:
                 "alice-books": self.cross_insert_leg("alice", "bob", "alice-2"),
                 "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
             }
+            legs["fold_roots"] = getattr(self, "fold_records", [])
             self.removal_check(legs)
             self.cap_check()
             self.verify_records()
