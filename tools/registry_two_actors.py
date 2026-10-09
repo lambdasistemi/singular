@@ -212,17 +212,22 @@ class Journey:
             self.receipts / f"{name}.err",
         )
         with stdout.open("w") as output, stderr.open("w") as error:
-            result = subprocess.run(
-                self.traced(trace, [self.singular] + list(arguments)),
-                env=self.environment(party),
-                cwd=self.homes[party],
-                stdout=output,
-                stderr=error,
-                check=False,
-                timeout=600,
-            )
+            try:
+                result = subprocess.run(
+                    self.traced(trace, [self.singular] + list(arguments)),
+                    env=self.environment(party),
+                    cwd=self.homes[party],
+                    stdout=output,
+                    stderr=error,
+                    check=False,
+                    timeout=600,
+                )
+            except OSError as error:
+                raise SetupFailure(f"{party} {name} did not start: {error}")
         trace_text = trace.read_text() if trace.exists() else ""
-        require(trace_text != "", f"SETUP: {party} {name} left no access trace")
+        require(
+            trace_text != "", f"{party} {name} left no access trace"
+        )
         check_access(trace_text, forbidden)
         try:
             receipt = json.loads(stdout.read_text())
@@ -234,6 +239,11 @@ class Journey:
         self.appendix.append(
             {"process": f"{party} {name}", "accessTrace": str(trace)}
         )
+        if result.returncode == 12 or receipt.get("outcome") == "node-unavailable":
+            raise SetupFailure(
+                f"{party} {name} lost the provider: exit "
+                f"{result.returncode}, {receipt.get('reason')}"
+            )
         return result.returncode, receipt
 
     def book(self, party, command, key, name):
@@ -414,6 +424,128 @@ class Journey:
             f"exit {status}, {receipt}"
         )
 
+    def actor_leg(self, actor, key):
+        """One actor proves a key absent, books it, folds it, reads it back."""
+        others = tuple(
+            home
+            for party, home in self.homes.items()
+            if party != actor
+        )
+        leg = {}
+        status, before = self.run_party(
+            actor,
+            f"{actor}-inspect-before",
+            [
+                "registry",
+                "inspect",
+                "--key",
+                key,
+                "--blueprint",
+                self.blueprint,
+                "--state-token",
+                self.state_token,
+                *self.node_arguments(),
+            ],
+            others,
+        )
+        require(
+            status == 0 and before.get("outcome") == "success",
+            f"{actor} inspect-before failed: exit {status}, {before}",
+        )
+        require(
+            before.get("leaf") == "unknown",
+            f"{actor} key {key} is not absent: {before.get('leaf')}",
+        )
+        require(
+            before.get("pendingRequests") == [],
+            f"{actor} saw pending requests before booking: "
+            f"{before.get('pendingRequests')}",
+        )
+        leg["inspect_before"] = f"{actor}-inspect-before"
+        status, booking = self.run_party(
+            actor,
+            f"{actor}-booking",
+            self.book(actor, "insert", key, f"{actor}-payload"),
+            others,
+        )
+        require(
+            status == 0 and booking.get("outcome") == "success",
+            f"{actor} booking failed: exit {status}, {booking}",
+        )
+        require(
+            isinstance(booking.get("request"), str),
+            f"{actor} booking named no request: {booking}",
+        )
+        leg["booking"] = f"{actor}-booking"
+        status, fold = self.run_party(
+            actor,
+            f"{actor}-fold",
+            [
+                "registry",
+                "fold",
+                "--request",
+                booking["request"],
+                "--blueprint",
+                self.blueprint,
+                "--state-token",
+                self.state_token,
+                *self.node_arguments(),
+                "--wallet-skey",
+                str(self.keys / f"{actor}.skey"),
+            ],
+            others,
+        )
+        require(
+            status == 0 and fold.get("outcome") == "success",
+            f"{actor} fold failed: exit {status}, {fold}",
+        )
+        require(
+            fold.get("request") == booking["request"],
+            f"{actor} folded another request: {fold.get('request')} "
+            f"!= {booking['request']}",
+        )
+        require(
+            fold.get("edge") == "insertActive",
+            f"{actor} folded another edge: {fold.get('edge')}",
+        )
+        require(
+            fold.get("folder") == booking.get("requester"),
+            f"{actor} fold names another folder: {fold.get('folder')}",
+        )
+        require(fold.get("root"), f"{actor} fold named no root: {fold}")
+        leg["fold"] = f"{actor}-fold"
+        status, after = self.run_party(
+            actor,
+            f"{actor}-inspect-after",
+            [
+                "registry",
+                "inspect",
+                "--key",
+                key,
+                "--blueprint",
+                self.blueprint,
+                "--state-token",
+                self.state_token,
+                *self.node_arguments(),
+            ],
+            others,
+        )
+        require(
+            status == 0 and after.get("outcome") == "success",
+            f"{actor} inspect-after failed: exit {status}, {after}",
+        )
+        require(
+            after.get("leaf") == "active",
+            f"{actor} key {key} is not active: {after.get('leaf')}",
+        )
+        require(
+            after.get("root") == fold["root"],
+            f"{actor} inspect root {after.get('root')} != "
+            f"fold root {fold['root']}",
+        )
+        leg["inspect_after"] = f"{actor}-inspect-after"
+        return leg
+
     def report(self, rows):
         report = {
             "requirements": rows,
@@ -432,6 +564,95 @@ class Journey:
                 f"two actors: {row['requirement']}: {row['state']}{waiting}",
                 flush=True,
             )
+
+    def load_receipt(self, name):
+        path = self.receipts / f"{name}.json"
+        if not path.exists():
+            return None
+        try:
+            return json.loads(path.read_text())
+        except json.JSONDecodeError:
+            return None
+
+    def run_one_agreement(self, actor, leg):
+        """Recompute one run-one row from its receipts on disk."""
+        docs = {
+            slot: self.load_receipt(leg[slot]) if slot in leg else None
+            for slot in ("inspect_before", "booking", "fold", "inspect_after")
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the actor's {', '.join(missing)} receipt"
+        before, booking, fold, after = (
+            docs["inspect_before"],
+            docs["booking"],
+            docs["fold"],
+            docs["inspect_after"],
+        )
+        if before.get("leaf") != "unknown":
+            return False, list(leg.values()), "the absent key readback"
+        if before.get("pendingRequests") != []:
+            return False, list(leg.values()), "the empty pending readback"
+        if not isinstance(booking.get("request"), str):
+            return False, list(leg.values()), "the booking request"
+        if fold.get("request") != booking["request"]:
+            return False, list(leg.values()), "the fold of the booking"
+        if fold.get("edge") != "insertActive":
+            return False, list(leg.values()), "the insertion fold"
+        if fold.get("folder") != booking.get("requester"):
+            return False, list(leg.values()), "the folder's own booking"
+        if not fold.get("root"):
+            return False, list(leg.values()), "the fold root"
+        if after.get("leaf") != "active":
+            return False, list(leg.values()), "the active key readback"
+        if after.get("root") != fold["root"]:
+            return False, list(leg.values()), "the fold root readback"
+        return True, list(leg.values()), ""
+
+    def compute_rows(self, legs):
+        rows = []
+        for name in REQUIREMENTS:
+            if name in PAGE_ROWS:
+                actor = "alice" if name.startswith("Alice") else "bob"
+                joining = (
+                    [legs[actor]["inspect_before"]]
+                    if "inspect_before" in legs.get(actor, {})
+                    else []
+                )
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "pending",
+                        "receipts": joining,
+                        "dependencies": [ISSUE_503],
+                        "waitingOn": ISSUE_503,
+                    }
+                )
+            elif name in RUN_ONE_ROWS:
+                actor = "alice" if name.startswith("Alice") else "bob"
+                passed, receipts, waiting = self.run_one_agreement(
+                    actor, legs.get(actor, {})
+                )
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "pending",
+                        "receipts": [],
+                        "dependencies": [ISSUE_381],
+                        "waitingOn": WAITING_ON[name],
+                    }
+                )
+        return rows
 
     def pending_report(self):
         rows = []
@@ -480,6 +701,7 @@ class Journey:
         return 1
 
     def execute(self):
+        legs = {}
         try:
             self.fixture()
             if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
@@ -498,11 +720,23 @@ class Journey:
             finally:
                 self.stop_devnet()
             return 3
+        rows = self.pending_report()
         try:
-            rows = self.pending_report()
+            for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
+                legs[actor] = self.actor_leg(actor, key)
+            rows = self.compute_rows(legs)
             self.report(rows)
+        except JourneyFailure as failed:
+            print(f"two actors: FAIL: {failed}", flush=True)
+            try:
+                rows = self.compute_rows(legs)
+                self.report(rows)
+            finally:
+                self.stop_devnet()
+            return 1
         finally:
-            self.stop_devnet()
+            if self.node is not None:
+                self.stop_devnet()
         return self.exit_for(rows)
 
 
