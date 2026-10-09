@@ -48,14 +48,14 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
+    , NoWitness
     , Root (..)
+    , Session
     , TokenId (..)
     , TxIn
     )
-import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.Trie
     ( TrieManager (..)
     )

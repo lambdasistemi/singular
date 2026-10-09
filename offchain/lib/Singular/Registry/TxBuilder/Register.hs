@@ -39,11 +39,14 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Address (Addr)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.SessionIO (outputsAt, parameters)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface
+    ( ConwayEra
+    , NoWitness
+    , Session
+    , outputsAt
+    , parameters
+    )
+import Singular.Registry.Surface qualified as Services
 
 -- | Empty query generalized algebraic data type (no context needed).
 data NoCtx a

@@ -105,16 +105,16 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
+    , NoWitness
     , PParams
+    , Session
     , TokenId (..)
     )
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum

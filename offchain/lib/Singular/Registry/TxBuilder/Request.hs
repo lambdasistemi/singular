@@ -51,15 +51,16 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( Coin (..)
     , ConwayEra
+    , NoWitness
     , PParams
+    , Session
     , TokenId
+    , outputsAt
+    , parameters
     )
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types

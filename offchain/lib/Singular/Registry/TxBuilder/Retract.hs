@@ -70,17 +70,16 @@ import PlutusTx.Builtins.Internal
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayTxBody
-    , TokenId
-    )
-import Singular.Registry.LedgerProvider
-    ( Session (..)
+    , NoWitness
+    , Session
     , TipObservation (..)
+    , TokenId
+    , outputsAt
+    , parameters
     )
-import Singular.Registry.SessionIO (outputsAt, parameters)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types

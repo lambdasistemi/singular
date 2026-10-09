@@ -56,17 +56,19 @@ import Cardano.Slotting.Slot (SlotNo)
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
+    , NoWitness
     , PParams
     , Root (..)
+    , Session
+    , TipObservation (..)
     , TokenId
     , TxIn
+    , outputsAt
+    , parameters
     )
-import Singular.Registry.LedgerProvider (Session, TipObservation (..))
-import Singular.Registry.SessionIO (outputsAt, parameters)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)

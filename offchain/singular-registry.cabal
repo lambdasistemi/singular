@@ -71,6 +71,7 @@ library
     , process
     , singular-registry:local-services
     , singular-registry:ledger-kernel
+    , singular-registry:registry-surface
     , text                              >=2.0  && <2.2
     , time
     , unix
@@ -94,7 +95,6 @@ library
     Singular.Registry.Blueprint.Params
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
-    Singular.Registry.Capabilities
     Singular.Registry.Config
     Singular.Registry.Config.Application
     Singular.Registry.Deployment
@@ -203,13 +203,18 @@ library registry-surface
   exposed-modules:
     Singular.Registry.Surface
     Singular.Registry.Funding
+    Singular.Registry.Capabilities
   build-depends:
     , base                       >=4.14 && <5
+    , aeson
+    , base16-bytestring
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
     , containers                   >=0.6  && <0.8
     , microlens
+    , text                         >=2.0  && <2.2
     , singular-registry:ledger-kernel
     , singular-registry:local-services
 
@@ -362,6 +367,7 @@ executable local-services-record
     , serialise
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , chain-follower
     , contra-tracer
@@ -446,6 +452,7 @@ library koios-http
     , scientific
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:registry-surface
     , text
@@ -508,6 +515,7 @@ executable journey
     , plutus-tx
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -548,6 +556,7 @@ executable li01
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , text
 
@@ -587,6 +596,7 @@ executable naming-rows
     , plutus-core
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -629,6 +639,7 @@ executable recovery-rows
     , plutus-core
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -673,6 +684,7 @@ executable retirement-rows
     , plutus-core
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -716,6 +728,7 @@ executable register-rows
     , plutus-tx
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -757,6 +770,7 @@ executable li-refusals
     , plutus-tx
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -795,6 +809,7 @@ executable repair-rows
     , plutus-tx
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -867,6 +882,7 @@ executable devnet
     , ouroboros-network:api
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , cardano-ledger-alonzo
     , cardano-ledger-binary
@@ -926,6 +942,7 @@ executable deployment
     , microlens
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -1133,6 +1150,7 @@ test-suite cage-tests
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:registry-history
     , temporary
@@ -1211,6 +1229,7 @@ test-suite contract-tests
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , temporary
     , text
@@ -1298,6 +1317,7 @@ test-suite e2e-tests
     , random
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:registry-harness
     , singular-registry:registry-history
     , singular-registry:ledger-kernel
@@ -1339,6 +1359,7 @@ executable insert-active
     , microlens
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -1382,6 +1403,7 @@ executable update-terminal
     , microlens
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text
@@ -1456,6 +1478,7 @@ executable singular
     , plutus-core
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-surface
     , singular-registry:registry-history
     , singular-registry:ledger-kernel
     , singular-registry:koios-http

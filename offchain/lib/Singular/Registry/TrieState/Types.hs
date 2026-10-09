@@ -37,12 +37,15 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Exclusion (MPFExclusionProof)
-import Singular.Registry.Evidence
-    ( SessionBinding (..)
+import Singular.Registry.Surface
+    ( AssetName
+    , HistoryFailure
+    , Root
+    , SessionBinding (..)
     , SessionId (..)
+    , TxId
+    , TxIn
     )
-import Singular.Registry.Ledger (AssetName, Root, TxId, TxIn)
-import Singular.Registry.LedgerProvider (HistoryFailure)
 import Singular.Registry.Types (ProofStep)
 
 newtype StatePolicyId = StatePolicyId ByteString

@@ -20,6 +20,8 @@ module Singular.Registry.Surface
     ( -- * Abstract session (Singular.Registry.LedgerProvider)
       Session
     , NoWitness
+    , SessionBinding (..)
+    , SessionId (..)
     , Network (..)
 
       -- * Named read services (Singular.Registry.SessionIO)
@@ -65,17 +67,20 @@ module Singular.Registry.Surface
 
       -- * Plain ledger types (Singular.Registry.Ledger)
     , ConwayEra
+    , ConwayTxBody
     , Addr
     , TxId
     , TxIn
     , TxOut
     , Coin (..)
     , MaryValue
+    , PParams
     , PolicyID (..)
     , AssetName (..)
     , SlotNo (..)
     , ScriptHash (..)
     , TokenId (..)
+    , Root (..)
 
       -- * Signing (Singular.Registry.Signing)
     , SignedTx
@@ -105,14 +110,21 @@ module Singular.Registry.Surface
     , TimeSource (..)
     ) where
 
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Evidence
+    ( NoWitness
+    , SessionBinding (..)
+    , SessionId (..)
+    )
 import Singular.Registry.Ledger
     ( Addr
     , AssetName (..)
     , Coin (..)
     , ConwayEra
+    , ConwayTxBody
     , MaryValue
+    , PParams
     , PolicyID (..)
+    , Root (..)
     , ScriptHash (..)
     , SlotNo (..)
     , TokenId (..)

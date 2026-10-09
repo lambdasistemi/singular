@@ -65,16 +65,17 @@ import PlutusTx.IsData.Class (ToData (..))
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
+    , NoWitness
     , Root (..)
+    , Session
+    , TipObservation (..)
     , TokenId
     , TxIn
+    , parameters
     )
-import Singular.Registry.LedgerProvider (Session, TipObservation (..))
-import Singular.Registry.SessionIO (parameters)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.Trie
     ( Trie (..)
     , TrieManager (..)

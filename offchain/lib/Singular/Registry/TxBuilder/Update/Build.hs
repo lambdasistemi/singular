@@ -59,14 +59,14 @@ import Cardano.Tx.Ledger
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
+    , NoWitness
     , PParams
+    , Session
     , TxIn
     )
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.ConnectedFold
     ( ConnectedMint (..)
     , ConnectedSpend (..)

@@ -64,7 +64,7 @@ import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
 
 import Singular.Registry.Deployment.Manifest (renderOutRef)
-import Singular.Registry.Ledger (AssetName (..), Root (..))
+import Singular.Registry.Surface (AssetName (..), Root (..))
 import Singular.Registry.Trie.Pure (verifyExclusion)
 import Singular.Registry.TrieState.Types
 
