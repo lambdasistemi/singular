@@ -77,6 +77,7 @@ let
     # the old process-global node/indexer runtime is deleted.
     sublibs = [
       "ledger-kernel"
+      "registry-surface"
       "local-services"
       "koios-http"
     ];

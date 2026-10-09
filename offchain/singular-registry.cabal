@@ -210,6 +210,18 @@ library ledger-kernel
     , time
     , transformers
 
+library registry-surface
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   surface
+  exposed-modules:
+    Singular.Registry.Surface
+  build-depends:
+    , base                       >=4.14 && <5
+    , singular-registry:ledger-kernel
+    , singular-registry:local-services
+
 library local-services
   import:           warnings
   visibility:       public
