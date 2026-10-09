@@ -1,6 +1,6 @@
 # Registry tries rebuilt from public history
 
-As Alice and Bob, each with our own machine, wallet and registry directory,
+As Alice and Bob, each with our own machine and wallet and no registry directory,
 we want to insert, terminate, fold and inspect keys of one registry through a
 hosted provider, so that neither of us needs the other's files, a node or a
 shared directory. This is the intake for
@@ -9,21 +9,25 @@ under [the Koios demonstration](https://github.com/lambdasistemi/singular/issues
 It consumes the trie-state and history interfaces proposed by
 [the provider interface ticket](https://github.com/lambdasistemi/singular/issues/383).
 Replay and command migration are merged. Independent-user CLI acceptance
-remains incomplete; see the ordered [tasks](tasks.md).
+remains incomplete; the [mandate](mandate.md) and the ordered [tasks](tasks.md)
+name what is left.
 
 ## The user stories
 
-The October 6 ruling assigns the registry page and joining by state token to
-[issue #437](https://github.com/lambdasistemi/singular/issues/437). Importing a
-creator's identity file is superseded. The pre-#437 part ships a private creator
-fixture, two empty independent users and unit controls; joining and every
-subsequent CLI journey step remain pending by name. These integration stories
-remain requirements, not executed acceptance for that part.
+The October 6 ruling defines the demonstration: Alice and Bob start empty, on
+separate terminals, and read only the registry page and the provider. Importing a
+creator's identity file is superseded. Since then joining by state token has
+merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)) and
+the managed state directory is stacked beneath this branch
+([issue #485](https://github.com/lambdasistemi/singular/issues/485)): a command
+takes the state token and needs no registry directory. The registry page itself
+waits on [issue #503](https://github.com/lambdasistemi/singular/issues/503). The
+[mandate](mandate.md) orders the remaining work. These stories are requirements
+until the journey executes them through the shipped commands.
 
-
-As Bob, starting with an empty home and registry directory and reading only
-the registry page generated from the chain and Koios, I prove a key absent and
-insert it. Alice starts the same way; neither user is the creator. My `singular` rebuilds
+As Bob, starting with an empty home and no registry directory, holding only the
+registry's state token from the page generated from the chain and Koios, I prove a
+key absent and insert it. Alice starts the same way; neither user is the creator. My `singular` rebuilds
 the registry's trie from the transactions that moved its state token since
 `create`. Alice's mirror, journal and envelopes are never read.
 
@@ -101,10 +105,13 @@ A source reading of the MPFS indexer suggests it applies every consumed request
 of a fold that is not all rejections. That rule is wrong for mixed folds and is
 not copied. A dedicated mixed-fold test covers it.
 
-## What the registry directory keeps
+## What my state keeps
 
-As a registry owner, my directory keeps only what I alone hold: the registry's
-identity and the journal of my own submissions. Insertion requests carry their
+As a registry owner, my state keeps only what I alone hold: the journal of my own
+submissions. Since the managed state directory ([issue #485](https://github.com/lambdasistemi/singular/issues/485)) the
+command chooses where it lives, partitioned by network, state token and wallet; I
+never name a registry directory, and the registry is named by its state token
+alone. Insertion requests carry their
 envelopes publicly; commands do not keep private preimage files. The trie mirror and the saved root commitment are no
 longer written or read; the replay replaces both. No local trie copy survives
 as a cache in this ticket. A later cache is a further trie-state backend and
@@ -132,8 +139,9 @@ Each line is the issue's acceptance, with the check that would contradict it.
 - **Independent actors on the CLI's two edges.** An actor starting with no
   other actor's files operates `insert` (`insertActive`) and `terminate`
   (`updateTerminal`) from public data alone. Alice and Bob run the
-  development-network journey with separate registry directories on one
-  registry, covering both edges plus reject and reclaim. Bob proves absence and
+  development-network journey from separate empty homes, each holding only the
+  state token, a wallet and the provider, on one registry, covering both edges
+  plus reject and reclaim. Bob proves absence and
   inserts a key Alice never saw locally. Each key is updated and terminated only
   by its controller; the cross-actor step is the fold: Alice folds the
   termination of a key Bob created, with the membership proof from her own

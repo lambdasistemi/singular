@@ -2,9 +2,11 @@
 
 As a registry user, I want public history to rebuild the selected chain root
 and supply valid proofs, or refuse incomplete or altered history by name.
-This record establishes the independent replay checks. The two users joining
-and operating through the actual CLI remain unexecuted under the stopped
-token-joining dependency; see the [tasks](tasks.md).
+This record establishes the independent replay checks as they stood on October 7.
+The two users joining and operating through the actual CLI were then unexecuted, under
+a token-joining dependency that has since merged. The [mandate](mandate.md) orders that
+work and the [tasks](tasks.md) track it; its evidence is recorded in a later section of
+this page, under its own heading, when it exists.
 
 ## Source and model binding
 
