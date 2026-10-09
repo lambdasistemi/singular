@@ -965,12 +965,19 @@ def _synthetic_state_fields(fee=1000000, process=120000, retract=120000):
 
 def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
     fields = _synthetic_state_fields(fee, process, retract)
+    inner = _cbor_tag(121, _cbor_array(fields))
+    return (_cbor_tag(122, _cbor_array([inner]))).hex()
+
+
+def _synthetic_bare_state_datum_hex(fee=1000000, process=120000, retract=120000):
+    fields = _synthetic_state_fields(fee, process, retract)
     return (_cbor_tag(121, _cbor_array(fields))).hex()
 
 
 def _synthetic_state_datum_indefinite_hex():
     fields = _synthetic_state_fields()
-    return (_cbor_tag(121, b"\x9f" + b"".join(fields) + b"\xff")).hex()
+    inner = _cbor_tag(121, b"\x9f" + b"".join(fields) + b"\xff")
+    return (_cbor_tag(122, _cbor_array([inner]))).hex()
 
 
 def test_cbor_decoder_synthetic(mod, tmp):
@@ -982,14 +989,22 @@ def test_cbor_decoder_synthetic(mod, tmp):
     ok = (
         isinstance(datum, tuple)
         and datum[0] == "constr"
-        and datum[1] == 0
+        and datum[1] == 1
         and isinstance(datum[2], list)
-        and len(datum[2]) == 8
-        and datum[2][1] == 1000000
-        and datum[2][2] == 120000
-        and datum[2][3] == 120000
+        and len(datum[2]) == 1
+        and isinstance(datum[2][0], tuple)
+        and datum[2][0][1] == 0
+        and datum[2][0][2][1] == 1000000
+        and datum[2][0][2][2] == 120000
+        and datum[2][0][2][3] == 120000
     )
     check("cbor-decoder-synthetic", ok, "a hand-built state datum misdecoded")
+    bare = decode(_synthetic_bare_state_datum_hex())
+    check(
+        "cbor-decoder-bare-state",
+        isinstance(bare, tuple) and bare[0] == "constr" and bare[1] == 0,
+        "a bare eight-field state datum misdecoded",
+    )
     try:
         indefinite = decode(_synthetic_state_datum_indefinite_hex())
     except Exception as error:
@@ -1003,7 +1018,8 @@ def test_cbor_decoder_synthetic(mod, tmp):
             "cbor-decoder-indefinite",
             isinstance(indefinite, tuple)
             and indefinite[0] == "constr"
-            and indefinite[2][1] == 1000000,
+            and indefinite[1] == 1
+            and indefinite[2][0][2][1] == 1000000,
             "an indefinite-length state datum misdecoded",
         )
     try:
