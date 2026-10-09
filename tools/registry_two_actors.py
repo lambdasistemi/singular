@@ -476,6 +476,17 @@ def fetch_state_fee_bound(
                     except ValueError as error:
                         reasons.append(f"a datum did not decode: {error}")
                         continue
+                    # The chain carries the CageDatum envelope: StateDatum is
+                    # variant 1 holding the eight-field State record.
+                    if (
+                        isinstance(datum, tuple)
+                        and len(datum) == 3
+                        and datum[0] == "constr"
+                        and datum[1] == 1
+                        and isinstance(datum[2], list)
+                        and len(datum[2]) == 1
+                    ):
+                        datum = datum[2][0]
                     if (
                         not isinstance(datum, tuple)
                         or len(datum) != 3
