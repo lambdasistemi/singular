@@ -118,6 +118,15 @@ RECORD_KEPT_FIELDS = (
     "edge",
     "folder",
     "stateToken",
+    "reject",
+    "rejected",
+    "rejector",
+    "retract",
+    "returned",
+    "locked",
+    "owner",
+    "key",
+    "tip",
 )
 
 
@@ -1204,6 +1213,278 @@ class Journey:
                 return False, found, "both actors' root readback"
         return True, found, ""
 
+    def reject_agreement(self, legs, receipts=None):
+        """Recompute the cross-actor reject row from its receipts.
+
+        Alice books an insertion and leaves it past its processing
+        deadline. Bob's reject while the retract window is still open is
+        refused by name with the request still pending, and succeeds once
+        the window has closed: the reject names the request, the request
+        is no longer pending, the root is unchanged, and the owner's
+        refund is returned.
+        """
+        leg = legs.get("reject", {})
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "booking",
+                "early_inspect_before",
+                "early_reject",
+                "early_inspect_after",
+                "late_inspect_before",
+                "late_reject",
+                "late_inspect_after",
+            )
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the reject's {', '.join(missing)} receipt"
+        (
+            booking,
+            early_before,
+            early_reject,
+            early_after,
+            late_before,
+            late_reject,
+            late_after,
+        ) = (
+            docs["booking"],
+            docs["early_inspect_before"],
+            docs["early_reject"],
+            docs["early_inspect_after"],
+            docs["late_inspect_before"],
+            docs["late_reject"],
+            docs["late_inspect_after"],
+        )
+        if not isinstance(booking.get("request"), str):
+            return False, list(leg.values()), "the reject booking request"
+        if not isinstance(booking.get("foldDeadline"), dict):
+            return False, list(leg.values()), "the booking fold deadline"
+        if self.load_exit(leg["early_reject"], receipts) != 10:
+            return False, list(leg.values()), "the early reject refusal exit"
+        if early_reject.get("outcome") != "client-refusal":
+            return False, list(leg.values()), "the early reject refusal class"
+        if "still inside a window" not in early_reject.get("reason", ""):
+            return False, list(leg.values()), "the early reject refusal name"
+        if booking["request"] not in early_reject.get("reason", ""):
+            return False, list(leg.values()), "the early rejected request name"
+        if early_before.get("root") != early_after.get("root"):
+            return False, list(leg.values()), "the unchanged root"
+        if early_before.get("pendingRequests") != early_after.get("pendingRequests"):
+            return False, list(leg.values()), "the unchanged pending requests"
+        before_pending = early_before.get("pendingRequests") or []
+        if not any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in before_pending
+        ):
+            return False, list(leg.values()), "the still-pending request"
+        if late_reject.get("outcome") != "success":
+            return False, list(leg.values()), "the reject"
+        if not isinstance(late_reject.get("reject"), str):
+            return False, list(leg.values()), "the reject transaction"
+        rejected = late_reject.get("rejected")
+        if not isinstance(rejected, list) or len(rejected) != 1:
+            return False, list(leg.values()), "the rejected request"
+        row = rejected[0]
+        if not isinstance(row, dict):
+            return False, list(leg.values()), "the rejected request"
+        if row.get("request") != booking["request"]:
+            return False, list(leg.values()), "the rejected request"
+        if row.get("owner") != booking.get("requester"):
+            return False, list(leg.values()), "the rejected owner"
+        if not row.get("returned"):
+            return False, list(leg.values()), "the owner refund"
+        if not late_reject.get("root"):
+            return False, list(leg.values()), "the reject root"
+        if late_before.get("root") != late_after.get("root"):
+            return False, list(leg.values()), "the unchanged root"
+        if late_before.get("root") != late_reject.get("root"):
+            return False, list(leg.values()), "the reject root readback"
+        late_before_pending = late_before.get("pendingRequests") or []
+        if not any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in late_before_pending
+        ):
+            return False, list(leg.values()), "the pending request before reject"
+        late_after_pending = late_after.get("pendingRequests") or []
+        if any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in late_after_pending
+        ):
+            return False, list(leg.values()), "the cleared request"
+        if late_after.get("leaf") != "unknown":
+            return False, list(leg.values()), "the rejected key readback"
+        return True, list(leg.values()), ""
+
+    def wrong_reclaim_agreement(self, legs, receipts=None):
+        """Recompute the wrong-owner reclaim row from its receipts.
+
+        The other actor's reclaim of a request it did not book is refused
+        by name with the not-owner class and a non-zero exit, and inspect
+        shows the request still pending and the root unchanged.
+        """
+        leg = legs.get("reclaim-wrong", {})
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in ("booking", "inspect_before", "attempt", "inspect_after")
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the wrong-owner reclaim's {', '.join(missing)} receipt"
+        booking, before, attempt, after = (
+            docs["booking"],
+            docs["inspect_before"],
+            docs["attempt"],
+            docs["inspect_after"],
+        )
+        if not isinstance(booking.get("request"), str):
+            return False, list(leg.values()), "the reclaim booking request"
+        if self.load_exit(leg["attempt"], receipts) != 10:
+            return False, list(leg.values()), "the not-owner refusal exit"
+        if attempt.get("outcome") != "client-refusal":
+            return False, list(leg.values()), "the not-owner refusal class"
+        if "retract-owner" not in attempt.get("reason", ""):
+            return False, list(leg.values()), "the not-owner refusal name"
+        if before.get("root") != after.get("root"):
+            return False, list(leg.values()), "the unchanged root"
+        if before.get("pendingRequests") != after.get("pendingRequests"):
+            return False, list(leg.values()), "the unchanged pending requests"
+        pending = before.get("pendingRequests") or []
+        if not any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in pending
+        ):
+            return False, list(leg.values()), "the still-pending request"
+        return True, list(leg.values()), ""
+
+    def owner_reclaim_agreement(self, legs, receipts=None):
+        """Recompute the owner-reclaim row from its receipts.
+
+        An early attempt before the processing deadline is refused by
+        name; the owner's reclaim inside the window succeeds with the
+        receipt's request, locked and returned binding the return to that
+        request, and the request is no longer pending. Only an insertion
+        is retractable. After it a new request still folds.
+        """
+        leg = legs.get("reclaim-owner", {})
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "booking",
+                "early_inspect_before",
+                "early_attempt",
+                "early_inspect_after",
+                "window_inspect_before",
+                "success",
+                "window_inspect_after",
+                "continue_booking",
+                "continue_fold",
+                "continue_inspect_a",
+                "continue_inspect_b",
+            )
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the owner reclaim's {', '.join(missing)} receipt"
+        (
+            booking,
+            early_before,
+            early_attempt,
+            early_after,
+            window_before,
+            success,
+            window_after,
+            continue_booking,
+            continue_fold,
+            continue_a,
+            continue_b,
+        ) = (
+            docs["booking"],
+            docs["early_inspect_before"],
+            docs["early_attempt"],
+            docs["early_inspect_after"],
+            docs["window_inspect_before"],
+            docs["success"],
+            docs["window_inspect_after"],
+            docs["continue_booking"],
+            docs["continue_fold"],
+            docs["continue_inspect_a"],
+            docs["continue_inspect_b"],
+        )
+        if not isinstance(booking.get("request"), str):
+            return False, list(leg.values()), "the reclaim booking request"
+        if not isinstance(booking.get("foldDeadline"), dict):
+            return False, list(leg.values()), "the booking fold deadline"
+        if self.load_exit(leg["early_attempt"], receipts) != 10:
+            return False, list(leg.values()), "the early reclaim refusal exit"
+        if early_attempt.get("outcome") != "client-refusal":
+            return False, list(leg.values()), "the early reclaim refusal class"
+        early_reason = early_attempt.get("reason", "")
+        if (
+            "retract window opens" not in early_reason
+            and "before the window" not in early_reason
+        ):
+            return False, list(leg.values()), "the early reclaim refusal name"
+        if early_before.get("root") != early_after.get("root"):
+            return False, list(leg.values()), "the unchanged root"
+        early_pending = early_before.get("pendingRequests") or []
+        if not any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in early_pending
+        ):
+            return False, list(leg.values()), "the still-pending request"
+        if success.get("outcome") != "success":
+            return False, list(leg.values()), "the reclaim"
+        if success.get("request") != booking["request"]:
+            return False, list(leg.values()), "the reclaimed request"
+        if success.get("edge") != "insertActive":
+            return False, list(leg.values()), "the retractable edge"
+        if success.get("owner") != booking.get("requester"):
+            return False, list(leg.values()), "the reclaim owner"
+        if not success.get("locked"):
+            return False, list(leg.values()), "the locked value"
+        returned = success.get("returned")
+        if not isinstance(returned, dict):
+            return False, list(leg.values()), "the owner return"
+        if returned.get("request") != booking["request"]:
+            return False, list(leg.values()), "the return bound to the request"
+        if not isinstance(returned.get("lovelace"), int):
+            return False, list(leg.values()), "the returned lovelace"
+        if not success.get("root"):
+            return False, list(leg.values()), "the reclaim root"
+        if window_before.get("root") != window_after.get("root"):
+            return False, list(leg.values()), "the unchanged root"
+        if window_before.get("root") != success.get("root"):
+            return False, list(leg.values()), "the reclaim root readback"
+        window_before_pending = window_before.get("pendingRequests") or []
+        if not any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in window_before_pending
+        ):
+            return False, list(leg.values()), "the pending request before reclaim"
+        window_after_pending = window_after.get("pendingRequests") or []
+        if any(
+            isinstance(entry, dict) and entry.get("request") == booking["request"]
+            for entry in window_after_pending
+        ):
+            return False, list(leg.values()), "the cleared request"
+        if window_after.get("leaf") != "unknown":
+            return False, list(leg.values()), "the reclaimed key readback"
+        if not isinstance(continue_booking.get("request"), str):
+            return False, list(leg.values()), "the continued booking request"
+        if continue_fold.get("request") != continue_booking["request"]:
+            return False, list(leg.values()), "the fold after reclaim"
+        if continue_fold.get("edge") != "insertActive":
+            return False, list(leg.values()), "the continued insertion fold"
+        if not continue_fold.get("root"):
+            return False, list(leg.values()), "the continued fold root"
+        for inspect in (continue_a, continue_b):
+            if inspect.get("leaf") != "active":
+                return False, list(leg.values()), "the continued active readback"
+            if inspect.get("root") != continue_fold["root"]:
+                return False, list(leg.values()), "the continued root readback"
+        return True, list(leg.values()), ""
+
     def verify_records(self):
         """Every stored receipt is raw-small or a well-formed record."""
         for path in sorted(self.receipts.glob("*.json")):
@@ -1339,6 +1620,39 @@ class Journey:
                 )
             elif name == "Another controller cannot update or terminate a key":
                 passed, receipts, waiting = self.refusal_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Bob rejects Alice's expired request":
+                passed, receipts, waiting = self.reject_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Alice cannot reclaim Bob's request":
+                passed, receipts, waiting = self.wrong_reclaim_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Bob reclaims his request during its retract window":
+                passed, receipts, waiting = self.owner_reclaim_agreement(legs)
                 rows.append(
                     {
                         "requirement": name,
