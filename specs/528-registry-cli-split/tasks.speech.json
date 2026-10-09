@@ -67,15 +67,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] move-command-line-modules-into-registry-cli",
+      "text": "[x] move-command-line-modules-into-registry-cli",
       "pause": 300
     },
     {
-      "text": "[ ] cage-tests-depend-on-the-library",
+      "text": "[x] cage-tests-depend-on-the-library",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-new-library-in-the-component-inventory-for-registry-cli",
+      "text": "[x] classify-the-new-library-in-the-component-inventory-for-registry-cli",
       "pause": 300
     }
   ],
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "9d12b937361fec988990dc4697446491a779aa42a4ce12fd47da6767ca0db24c"
+    "sha256": "da0d0f8646c0fa25c492ff5fcb57ea1818f9eafdcf627b47edcde873d171aa90"
   }
 }

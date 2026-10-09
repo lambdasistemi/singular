@@ -212,6 +212,22 @@ payload update, release rules, script, and the application value:
 `Singular.Application.OpenDatum.Update` and
 `Singular.Application.OpenDatum.Value`; their sources live under
 `offchain/open-datum/src/Singular/Application/OpenDatum/`.
+The public `registry-cli` component (`offchain/cli/`) carries the registry
+command line the two binaries link — session, journal and receipts, the
+flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
+recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
+`Singular.CLI.Command`, `Singular.CLI.Create`, `Singular.CLI.Entry`,
+`Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
+`Singular.CLI.InsertEnvelope`, `Singular.CLI.Inspect`, `Singular.CLI.Live`,
+`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Permanent`,
+`Singular.CLI.Plan`, `Singular.CLI.Preview`, `Singular.CLI.Proof`,
+`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
+`Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
+`Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
+`Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
+`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
+`Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
+under `offchain/cli/src/Singular/CLI/`.
 Their generated pages are not in this main-library reference either: only
 the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a

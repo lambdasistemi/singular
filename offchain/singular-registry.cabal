@@ -206,6 +206,84 @@ library open-datum-application
     , singular-registry:local-services
     , text                               >=2.0  && <2.2
 
+-- #528 slice 3: the registry command line is its own library. Every
+-- Singular.CLI.* module deciding a registry rule lives here under its
+-- unchanged module name; singular and cage-tests depend on it instead of
+-- compiling cli/src. The entry commands (Entry, Plan, InsertEnvelope,
+-- Command, and the insert/update/terminate parts of Preview) stay in this
+-- source until slice 4 moves them into open-datum-application, so this
+-- library temporarily depends on open-datum-application; slice 4 removes
+-- that arrow (see application-boundary-check).
+library registry-cli
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   cli/src
+  exposed-modules:
+    Singular.CLI
+    Singular.CLI.Attached
+    Singular.CLI.Command
+    Singular.CLI.Create
+    Singular.CLI.Entry
+    Singular.CLI.Finish
+    Singular.CLI.Fold
+    Singular.CLI.FoldRules
+    Singular.CLI.InsertEnvelope
+    Singular.CLI.Inspect
+    Singular.CLI.Live
+    Singular.CLI.ManagedState
+    Singular.CLI.Outlay
+    Singular.CLI.Permanent
+    Singular.CLI.Plan
+    Singular.CLI.Preview
+    Singular.CLI.Proof
+    Singular.CLI.Receipt
+    Singular.CLI.ReceiptBody
+    Singular.CLI.Reclaim
+    Singular.CLI.ReclaimRules
+    Singular.CLI.Reconcile
+    Singular.CLI.Recovery
+    Singular.CLI.Registry
+    Singular.CLI.Reject
+    Singular.CLI.RejectRules
+    Singular.CLI.RequestWindow
+    Singular.CLI.Root
+    Singular.CLI.Session
+    Singular.CLI.Trace
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
+
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , async
+    , base                              >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers
+    , contra-tracer
+    , contra-tracer-contrib
+    , directory
+    , filepath
+    , microlens
+    , mts:mpf-write
+    , plutus-core
+    , singular-registry
+    , singular-registry:koios-http
+    , singular-registry:local-services
+    , singular-registry:open-datum-application
+    , text
+    , time
+    , unix
+
 -- Common derived services are public and independent of node transport.
 library local-services
   import:           warnings
@@ -902,7 +980,7 @@ test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
-  hs-source-dirs:   test cli/src private-facade test-tags
+  hs-source-dirs:   test private-facade test-tags
   main-is:          Main.hs
   autogen-modules:  Paths_singular_registry
   other-modules:
@@ -914,49 +992,17 @@ test-suite cage-tests
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
-    Singular.CLI
-    Singular.CLI.Attached
-    Singular.CLI.Command
     Singular.CLI.CommandRunSpec
-    Singular.CLI.Create
-    Singular.CLI.Entry
-    Singular.CLI.Finish
-    Singular.CLI.Fold
-    Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
-    Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
-    Singular.CLI.Inspect
-    Singular.CLI.Live
-    Singular.CLI.ManagedState
     Singular.CLI.ManagedStateSpec
-    Singular.CLI.Outlay
     Singular.CLI.OutlaySpec
-    Singular.CLI.Permanent
-    Singular.CLI.Plan
-    Singular.CLI.Preview
-    Singular.CLI.Proof
-    Singular.CLI.Receipt
-    Singular.CLI.ReceiptBody
-    Singular.CLI.Reclaim
-    Singular.CLI.ReclaimRules
     Singular.CLI.ReclaimSpec
-    Singular.CLI.Reconcile
-    Singular.CLI.Recovery
     Singular.CLI.RecoverySpec
-    Singular.CLI.Registry
-    Singular.CLI.Reject
-    Singular.CLI.RejectRules
     Singular.CLI.RejectSpec
-    Singular.CLI.RequestWindow
-    Singular.CLI.Root
-    Singular.CLI.Session
     Singular.CLI.StateTokenSpec
-    Singular.CLI.Trace
     Singular.CLI.TraceSpec
-    Singular.CLI.TrieHistory
     Singular.CLI.TrieRefusalSpec
-    Singular.CLI.TrieTrace
     Singular.CLI.WriteSpec
     Singular.CLISpec
     Singular.PhaseLogFixture
@@ -1033,7 +1079,6 @@ test-suite cage-tests
     , case-insensitive
     , containers
     , contra-tracer
-    , contra-tracer-contrib
     , crypton
     , directory
     , filepath
@@ -1058,6 +1103,7 @@ test-suite cage-tests
     , singular-registry:koios-http
     , singular-registry:local-services
     , singular-registry:open-datum-application
+    , singular-registry:registry-cli
     , temporary
     , text
     , time
@@ -1307,74 +1353,18 @@ executable update-terminal
 -- commands. One ordinary process per command over a saved registry
 -- directory: the node and wallet are the caller's, the registry is the
 -- one the directory records, and nothing is booted a second time.
+-- #528 slice 3: the packaged singular command. Main composes the
+-- application value and runs the registry verbs from the registry-cli
+-- library; no command-line source is compiled here.
 executable singular
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   cli cli/src
+  hs-source-dirs:   cli
   main-is:          Main.hs
-  other-modules:
-    Singular.CLI
-    Singular.CLI.Attached
-    Singular.CLI.Command
-    Singular.CLI.Create
-    Singular.CLI.Entry
-    Singular.CLI.Finish
-    Singular.CLI.Fold
-    Singular.CLI.FoldRules
-    Singular.CLI.InsertEnvelope
-    Singular.CLI.Inspect
-    Singular.CLI.Live
-    Singular.CLI.ManagedState
-    Singular.CLI.Outlay
-    Singular.CLI.Permanent
-    Singular.CLI.Plan
-    Singular.CLI.Preview
-    Singular.CLI.Proof
-    Singular.CLI.Receipt
-    Singular.CLI.ReceiptBody
-    Singular.CLI.Reclaim
-    Singular.CLI.ReclaimRules
-    Singular.CLI.Reconcile
-    Singular.CLI.Recovery
-    Singular.CLI.Registry
-    Singular.CLI.Reject
-    Singular.CLI.RejectRules
-    Singular.CLI.RequestWindow
-    Singular.CLI.Root
-    Singular.CLI.Session
-    Singular.CLI.Trace
-    Singular.CLI.TrieHistory
-    Singular.CLI.TrieTrace
 
   build-depends:
-    , aeson
-    , aeson-pretty
-    , async
     , base                              >=4.14 && <5
-    , base16-bytestring
-    , bech32
-    , bytestring
-    , cardano-crypto-class
-    , cardano-ledger-api
-    , cardano-ledger-binary
-    , cardano-ledger-core
-    , cardano-ledger-mary
-    , cardano-slotting
-    , cardano-tx-tools:tx-build
-    , containers
-    , contra-tracer
-    , contra-tracer-contrib
-    , directory
-    , filepath
-    , microlens
-    , mts:mpf-write
-    , plutus-core
-    , singular-registry
-    , singular-registry:koios-http
-    , singular-registry:local-services
     , singular-registry:open-datum-application
-    , text
-    , time
-    , unix
+    , singular-registry:registry-cli
 
   ghc-options:      -threaded -with-rtsopts=-N

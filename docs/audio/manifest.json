@@ -140996,17 +140996,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "e467f823684d5971a2108f669254e9260a923bfdc0eb82b4f34d4242929f6aec",
-   "characters": 2485,
-   "cost": 0.00246015,
-   "duration": 175.275,
+   "audio_sha256": "440ca8f44a33cfb14ce4114810dae81464cbf10ce674773b96aca6ca608b6b6f",
+   "characters": 3502,
+   "cost": 0.00346698,
+   "duration": 256.975,
    "index": 1,
-   "key": "2e053d7368647ec29385bb44994becc22256e14176eca0ad88a6db931ab863ba",
+   "key": "b43b2a752a51644e647f059d844f9c7a859b5ca37793e61268bd491f0f253f57",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (offchain/open-datum/) carries the open-datum application the command line composes — envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under offchain/open-datum/src/Singular/Application/OpenDatum/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (offchain/open-datum/) carries the open-datum application the command line composes — envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under offchain/open-datum/src/Singular/Application/OpenDatum/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (offchain/open-datum/) carries the open-datum application the command line composes — envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under offchain/open-datum/src/Singular/Application/OpenDatum/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Entry, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.InsertEnvelope, Singular.CLI.Inspect, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Preview, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (offchain/open-datum/) carries the open-datum application the command line composes — envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under offchain/open-datum/src/Singular/Application/OpenDatum/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Entry, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.InsertEnvelope, Singular.CLI.Inspect, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Preview, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
    "words": [
     {
      "end": 0.375,
@@ -142474,553 +142474,1433 @@
      "text": "offchain/open-datum/src/Singular/Application/OpenDatum/."
     },
     {
-     "end": 136.062,
-     "start": 135.875,
-     "text": "Their"
-    },
-    {
-     "end": 136.625,
-     "start": 136.062,
-     "text": "generated"
-    },
-    {
-     "end": 137.188,
-     "start": 136.625,
-     "text": "pages"
-    },
-    {
-     "end": 137.363,
-     "start": 137.188,
-     "text": "are"
-    },
-    {
-     "end": 137.675,
-     "start": 137.363,
-     "text": "not"
-    },
-    {
-     "end": 137.762,
-     "start": 137.675,
-     "text": "in"
-    },
-    {
-     "end": 137.95,
-     "start": 137.762,
-     "text": "this"
-    },
-    {
-     "end": 138.625,
-     "start": 137.95,
-     "text": "main-library"
-    },
-    {
-     "end": 139.113,
-     "start": 138.625,
-     "text": "reference"
-    },
-    {
-     "end": 139.95,
-     "start": 139.113,
-     "text": "either"
-    },
-    {
-     "end": 140.175,
-     "start": 139.95,
-     "text": ":"
-    },
-    {
-     "end": 140.675,
-     "start": 140.375,
-     "text": "only"
-    },
-    {
-     "end": 140.8,
-     "start": 140.675,
-     "text": "the"
-    },
-    {
-     "end": 141.125,
-     "start": 140.8,
-     "text": "main"
-    },
-    {
-     "end": 141.725,
-     "start": 141.125,
-     "text": "library"
-    },
-    {
-     "end": 141.925,
-     "start": 141.725,
-     "text": "has"
-    },
-    {
-     "end": 142.05,
-     "start": 141.925,
-     "text": "a"
-    },
-    {
-     "end": 142.7,
-     "start": 142.05,
-     "text": "generated"
-    },
-    {
-     "end": 143.325,
-     "start": 142.7,
-     "text": "reference"
-    },
-    {
-     "end": 143.425,
-     "start": 143.325,
-     "text": "."
-    },
-    {
-     "end": 143.663,
-     "start": 143.425,
-     "text": "This"
-    },
-    {
-     "end": 144.075,
-     "start": 143.663,
-     "text": "coverage"
-    },
-    {
-     "end": 144.4,
-     "start": 144.075,
-     "text": "gap"
-    },
-    {
-     "end": 144.775,
-     "start": 144.4,
-     "text": "stays"
-    },
-    {
-     "end": 145.75,
-     "start": 144.775,
-     "text": "visible"
-    },
-    {
-     "end": 145.975,
-     "start": 145.75,
-     "text": ";"
-    },
-    {
-     "end": 146.562,
-     "start": 146.2,
-     "text": "wider"
-    },
-    {
-     "end": 147.188,
-     "start": 146.562,
-     "text": "generated"
-    },
-    {
-     "end": 147.762,
-     "start": 147.188,
-     "text": "coverage"
-    },
-    {
-     "end": 147.925,
-     "start": 147.762,
-     "text": "is"
-    },
-    {
-     "end": 148.05,
-     "start": 147.925,
-     "text": "a"
-    },
-    {
-     "end": 148.475,
-     "start": 148.05,
-     "text": "separate"
-    },
-    {
-     "end": 149.0,
-     "start": 148.475,
-     "text": "decision"
-    },
-    {
-     "end": 149.113,
-     "start": 149.0,
-     "text": "for"
-    },
-    {
-     "end": 149.25,
-     "start": 149.113,
-     "text": "the"
-    },
-    {
-     "end": 149.625,
-     "start": 149.25,
-     "text": "epic's"
-    },
-    {
-     "end": 150.1,
-     "start": 149.625,
-     "text": "owner"
-    },
-    {
-     "end": 150.2,
-     "start": 150.1,
-     "text": ","
-    },
-    {
-     "end": 150.413,
-     "start": 150.2,
-     "text": "not"
-    },
-    {
-     "end": 150.475,
-     "start": 150.413,
-     "text": "a"
-    },
-    {
-     "end": 150.8,
-     "start": 150.475,
-     "text": "claim"
-    },
-    {
-     "end": 150.988,
-     "start": 150.8,
-     "text": "this"
-    },
-    {
-     "end": 151.375,
-     "start": 150.988,
-     "text": "page"
-    },
-    {
-     "end": 152.325,
-     "start": 151.375,
-     "text": "makes"
-    },
-    {
-     "end": 152.525,
-     "start": 152.325,
-     "text": "."
-    },
-    {
-     "end": 153.113,
-     "start": 152.775,
-     "text": "Nothing"
-    },
-    {
-     "end": 153.275,
-     "start": 153.113,
-     "text": "on"
-    },
-    {
-     "end": 153.488,
-     "start": 153.275,
-     "text": "this"
-    },
-    {
-     "end": 153.925,
-     "start": 153.488,
-     "text": "page"
-    },
-    {
-     "end": 154.038,
-     "start": 153.925,
-     "text": "is"
-    },
-    {
-     "end": 154.1,
-     "start": 154.038,
-     "text": "a"
-    },
-    {
-     "end": 154.962,
-     "start": 154.1,
-     "text": "publication"
-    },
-    {
-     "end": 155.15,
-     "start": 154.962,
-     "text": "or"
-    },
-    {
-     "end": 155.55,
-     "start": 155.15,
-     "text": "release"
-    },
-    {
-     "end": 156.137,
-     "start": 155.55,
-     "text": "claim"
-    },
-    {
-     "end": 156.225,
-     "start": 156.137,
-     "text": "—"
-    },
-    {
-     "end": 156.35,
-     "start": 156.225,
-     "text": "the"
-    },
-    {
-     "end": 156.913,
-     "start": 156.35,
-     "text": "reference"
-    },
-    {
-     "end": 157.25,
-     "start": 156.913,
-     "text": "ships"
-    },
-    {
-     "end": 157.387,
-     "start": 157.25,
-     "text": "with"
-    },
-    {
-     "end": 157.475,
-     "start": 157.387,
-     "text": "the"
-    },
-    {
-     "end": 158.012,
-     "start": 157.475,
-     "text": "candidate"
-    },
-    {
-     "end": 158.387,
-     "start": 158.012,
-     "text": "site"
-    },
-    {
-     "end": 158.512,
-     "start": 158.387,
-     "text": "and"
-    },
-    {
-     "end": 158.688,
-     "start": 158.512,
-     "text": "its"
-    },
-    {
-     "end": 159.1,
-     "start": 158.688,
-     "text": "future"
-    },
-    {
-     "end": 160.375,
-     "start": 159.1,
-     "text": "archives"
-    },
-    {
-     "end": 160.6,
-     "start": 160.375,
-     "text": ","
-    },
-    {
-     "end": 160.887,
-     "start": 160.8,
-     "text": "and"
-    },
-    {
-     "end": 161.05,
-     "start": 160.887,
-     "text": "no"
-    },
-    {
-     "end": 161.375,
-     "start": 161.05,
-     "text": "version"
-    },
-    {
-     "end": 161.538,
-     "start": 161.375,
-     "text": "is"
-    },
-    {
-     "end": 162.025,
-     "start": 161.538,
-     "text": "tagged"
-    },
-    {
-     "end": 162.175,
-     "start": 162.025,
-     "text": "or"
-    },
-    {
-     "end": 162.6,
-     "start": 162.175,
-     "text": "published"
-    },
-    {
-     "end": 162.75,
-     "start": 162.6,
-     "text": "by"
-    },
-    {
-     "end": 163.275,
-     "start": 162.75,
-     "text": "existing"
-    },
-    {
-     "end": 164.0,
-     "start": 163.275,
-     "text": "here"
-    },
-    {
-     "end": 164.225,
-     "start": 164.0,
-     "text": "."
-    },
-    {
-     "end": 164.475,
-     "start": 164.4,
+     "end": 135.975,
+     "start": 135.9,
      "text": "The"
     },
     {
-     "end": 165.05,
-     "start": 164.475,
-     "text": "behavioral"
+     "end": 136.375,
+     "start": 135.975,
+     "text": "public"
     },
     {
-     "end": 165.5,
-     "start": 165.05,
-     "text": "evidence"
+     "end": 137.15,
+     "start": 136.375,
+     "text": "registry-cli"
     },
     {
-     "end": 165.613,
-     "start": 165.5,
-     "text": "for"
+     "end": 137.812,
+     "start": 137.15,
+     "text": "component"
     },
     {
-     "end": 165.7,
-     "start": 165.613,
+     "end": 137.9,
+     "start": 137.812,
+     "text": "("
+    },
+    {
+     "end": 139.85,
+     "start": 137.9,
+     "text": "offchain/cli/"
+    },
+    {
+     "end": 139.988,
+     "start": 139.85,
+     "text": ")"
+    },
+    {
+     "end": 140.4,
+     "start": 139.988,
+     "text": "carries"
+    },
+    {
+     "end": 140.525,
+     "start": 140.4,
      "text": "the"
     },
     {
-     "end": 165.975,
-     "start": 165.7,
-     "text": "moved"
+     "end": 141.025,
+     "start": 140.525,
+     "text": "registry"
     },
     {
-     "end": 166.775,
-     "start": 165.975,
-     "text": "builder"
+     "end": 141.525,
+     "start": 141.025,
+     "text": "command"
     },
     {
-     "end": 167.0,
-     "start": 166.775,
+     "end": 141.812,
+     "start": 141.525,
+     "text": "line"
+    },
+    {
+     "end": 141.913,
+     "start": 141.812,
+     "text": "the"
+    },
+    {
+     "end": 142.125,
+     "start": 141.913,
+     "text": "two"
+    },
+    {
+     "end": 142.663,
+     "start": 142.125,
+     "text": "binaries"
+    },
+    {
+     "end": 143.012,
+     "start": 142.663,
+     "text": "link"
+    },
+    {
+     "end": 143.1,
+     "start": 143.012,
+     "text": "—"
+    },
+    {
+     "end": 144.175,
+     "start": 143.1,
+     "text": "session"
+    },
+    {
+     "end": 144.4,
+     "start": 144.175,
      "text": ","
     },
     {
-     "end": 167.725,
-     "start": 167.2,
-     "text": "blueprint"
+     "end": 144.95,
+     "start": 144.6,
+     "text": "journal"
     },
     {
-     "end": 167.85,
-     "start": 167.725,
+     "end": 145.062,
+     "start": 144.95,
      "text": "and"
     },
     {
-     "end": 168.225,
-     "start": 167.85,
-     "text": "wire"
+     "end": 145.525,
+     "start": 145.062,
+     "text": "receipts"
     },
     {
-     "end": 168.587,
-     "start": 168.225,
-     "text": "code"
-    },
-    {
-     "end": 168.95,
-     "start": 168.587,
-     "text": "lives"
-    },
-    {
-     "end": 169.062,
-     "start": 168.95,
-     "text": "in"
-    },
-    {
-     "end": 169.188,
-     "start": 169.062,
-     "text": "the"
-    },
-    {
-     "end": 169.587,
-     "start": 169.188,
-     "text": "check"
-    },
-    {
-     "end": 170.012,
-     "start": 169.587,
-     "text": "commands"
-    },
-    {
-     "end": 170.163,
-     "start": 170.012,
-     "text": "the"
-    },
-    {
-     "end": 170.725,
-     "start": 170.163,
-     "text": "off-chain"
-    },
-    {
-     "end": 171.275,
-     "start": 170.725,
-     "text": "development"
-    },
-    {
-     "end": 171.575,
-     "start": 171.275,
-     "text": "guide"
-    },
-    {
-     "end": 172.65,
-     "start": 171.575,
-     "text": "records"
-    },
-    {
-     "end": 172.85,
-     "start": 172.65,
+     "end": 145.562,
+     "start": 145.525,
      "text": ","
     },
     {
-     "end": 173.212,
-     "start": 173.05,
-     "text": "not"
-    },
-    {
-     "end": 173.288,
-     "start": 173.212,
-     "text": "in"
-    },
-    {
-     "end": 173.363,
-     "start": 173.288,
+     "end": 145.65,
+     "start": 145.562,
      "text": "the"
     },
     {
-     "end": 173.863,
-     "start": 173.363,
-     "text": "existence"
+     "end": 146.0,
+     "start": 145.65,
+     "text": "flag"
     },
     {
-     "end": 173.938,
-     "start": 173.863,
-     "text": "of"
+     "end": 146.275,
+     "start": 146.0,
+     "text": "group"
     },
     {
-     "end": 174.15,
-     "start": 173.938,
-     "text": "these"
+     "end": 146.337,
+     "start": 146.275,
+     "text": ","
     },
     {
-     "end": 175.075,
-     "start": 174.15,
+     "end": 146.775,
+     "start": 146.337,
+     "text": "create"
+    },
+    {
+     "end": 146.863,
+     "start": 146.775,
+     "text": ","
+    },
+    {
+     "end": 147.325,
+     "start": 146.863,
+     "text": "fold"
+    },
+    {
+     "end": 147.375,
+     "start": 147.325,
+     "text": ","
+    },
+    {
+     "end": 147.85,
+     "start": 147.375,
+     "text": "reject"
+    },
+    {
+     "end": 147.9,
+     "start": 147.85,
+     "text": ","
+    },
+    {
+     "end": 148.45,
+     "start": 147.9,
+     "text": "reclaim"
+    },
+    {
+     "end": 148.5,
+     "start": 148.45,
+     "text": ","
+    },
+    {
+     "end": 149.025,
+     "start": 148.5,
+     "text": "inspect"
+    },
+    {
+     "end": 149.075,
+     "start": 149.025,
+     "text": ","
+    },
+    {
+     "end": 150.325,
+     "start": 149.075,
+     "text": "reconcile"
+    },
+    {
+     "end": 150.55,
+     "start": 150.325,
+     "text": ","
+    },
+    {
+     "end": 151.2,
+     "start": 150.725,
+     "text": "recovery"
+    },
+    {
+     "end": 151.312,
+     "start": 151.2,
+     "text": "and"
+    },
+    {
+     "end": 151.4,
+     "start": 151.312,
+     "text": "the"
+    },
+    {
+     "end": 151.725,
+     "start": 151.4,
+     "text": "booking"
+    },
+    {
+     "end": 152.425,
+     "start": 151.725,
+     "text": "call"
+    },
+    {
+     "end": 152.625,
+     "start": 152.425,
+     "text": ":"
+    },
+    {
+     "end": 153.3,
+     "start": 152.85,
+     "text": "Singular"
+    },
+    {
+     "end": 153.375,
+     "start": 153.3,
+     "text": "."
+    },
+    {
+     "end": 153.9,
+     "start": 153.375,
+     "text": "CLI"
+    },
+    {
+     "end": 153.988,
+     "start": 153.9,
+     "text": ","
+    },
+    {
+     "end": 154.475,
+     "start": 153.988,
+     "text": "Singular"
+    },
+    {
+     "end": 154.55,
+     "start": 154.475,
+     "text": "."
+    },
+    {
+     "end": 155.4,
+     "start": 154.55,
+     "text": "CLI.Attached"
+    },
+    {
+     "end": 155.488,
+     "start": 155.4,
+     "text": ","
+    },
+    {
+     "end": 155.975,
+     "start": 155.488,
+     "text": "Singular"
+    },
+    {
+     "end": 156.05,
+     "start": 155.975,
+     "text": "."
+    },
+    {
+     "end": 156.825,
+     "start": 156.05,
+     "text": "CLI.Command"
+    },
+    {
+     "end": 156.913,
+     "start": 156.825,
+     "text": ","
+    },
+    {
+     "end": 157.375,
+     "start": 156.913,
+     "text": "Singular"
+    },
+    {
+     "end": 157.425,
+     "start": 157.375,
+     "text": "."
+    },
+    {
+     "end": 158.775,
+     "start": 157.425,
+     "text": "CLI.Create"
+    },
+    {
+     "end": 159.025,
+     "start": 158.775,
+     "text": ","
+    },
+    {
+     "end": 159.725,
+     "start": 159.275,
+     "text": "Singular"
+    },
+    {
+     "end": 159.8,
+     "start": 159.725,
+     "text": "."
+    },
+    {
+     "end": 160.5,
+     "start": 159.8,
+     "text": "CLI.Entry"
+    },
+    {
+     "end": 160.587,
+     "start": 160.5,
+     "text": ","
+    },
+    {
+     "end": 161.1,
+     "start": 160.587,
+     "text": "Singular"
+    },
+    {
+     "end": 161.2,
+     "start": 161.1,
+     "text": "."
+    },
+    {
+     "end": 162.075,
+     "start": 161.2,
+     "text": "CLI.Finish"
+    },
+    {
+     "end": 162.163,
+     "start": 162.075,
+     "text": ","
+    },
+    {
+     "end": 162.725,
+     "start": 162.163,
+     "text": "Singular"
+    },
+    {
+     "end": 162.825,
+     "start": 162.725,
+     "text": "."
+    },
+    {
+     "end": 163.625,
+     "start": 162.825,
+     "text": "CLI.Fold"
+    },
+    {
+     "end": 163.712,
+     "start": 163.625,
+     "text": ","
+    },
+    {
+     "end": 164.2,
+     "start": 163.712,
+     "text": "Singular"
+    },
+    {
+     "end": 164.275,
+     "start": 164.2,
+     "text": "."
+    },
+    {
+     "end": 166.05,
+     "start": 164.275,
+     "text": "CLI.FoldRules"
+    },
+    {
+     "end": 166.275,
+     "start": 166.05,
+     "text": ","
+    },
+    {
+     "end": 166.95,
+     "start": 166.5,
+     "text": "Singular"
+    },
+    {
+     "end": 167.025,
+     "start": 166.95,
+     "text": "."
+    },
+    {
+     "end": 168.3,
+     "start": 167.025,
+     "text": "CLI.InsertEnvelope"
+    },
+    {
+     "end": 168.387,
+     "start": 168.3,
+     "text": ","
+    },
+    {
+     "end": 168.9,
+     "start": 168.387,
+     "text": "Singular"
+    },
+    {
+     "end": 169.0,
+     "start": 168.9,
+     "text": "."
+    },
+    {
+     "end": 169.85,
+     "start": 169.0,
+     "text": "CLI.Inspect"
+    },
+    {
+     "end": 169.913,
+     "start": 169.85,
+     "text": ","
+    },
+    {
+     "end": 170.4,
+     "start": 169.913,
+     "text": "Singular"
+    },
+    {
+     "end": 170.475,
+     "start": 170.4,
+     "text": "."
+    },
+    {
+     "end": 171.75,
+     "start": 170.475,
+     "text": "CLI.Live"
+    },
+    {
+     "end": 171.975,
+     "start": 171.75,
+     "text": ","
+    },
+    {
+     "end": 172.65,
+     "start": 172.2,
+     "text": "Singular"
+    },
+    {
+     "end": 172.725,
+     "start": 172.65,
+     "text": "."
+    },
+    {
+     "end": 173.825,
+     "start": 172.725,
+     "text": "CLI.ManagedState"
+    },
+    {
+     "end": 173.913,
+     "start": 173.825,
+     "text": ","
+    },
+    {
+     "end": 175.175,
+     "start": 173.913,
+     "text": "Singular.CLI.Outlay"
+    },
+    {
+     "end": 175.288,
+     "start": 175.175,
+     "text": ","
+    },
+    {
+     "end": 175.775,
+     "start": 175.288,
+     "text": "Singular"
+    },
+    {
+     "end": 175.85,
+     "start": 175.775,
+     "text": "."
+    },
+    {
+     "end": 177.25,
+     "start": 175.85,
+     "text": "CLI.Permanent"
+    },
+    {
+     "end": 177.45,
+     "start": 177.25,
+     "text": ","
+    },
+    {
+     "end": 178.125,
+     "start": 177.675,
+     "text": "Singular"
+    },
+    {
+     "end": 178.2,
+     "start": 178.125,
+     "text": "."
+    },
+    {
+     "end": 178.9,
+     "start": 178.2,
+     "text": "CLI.Plan"
+    },
+    {
+     "end": 178.988,
+     "start": 178.9,
+     "text": ","
+    },
+    {
+     "end": 179.5,
+     "start": 178.988,
+     "text": "Singular"
+    },
+    {
+     "end": 179.6,
+     "start": 179.5,
+     "text": "."
+    },
+    {
+     "end": 180.475,
+     "start": 179.6,
+     "text": "CLI.Preview"
+    },
+    {
+     "end": 180.587,
+     "start": 180.475,
+     "text": ","
+    },
+    {
+     "end": 181.125,
+     "start": 180.587,
+     "text": "Singular"
+    },
+    {
+     "end": 181.225,
+     "start": 181.125,
+     "text": "."
+    },
+    {
+     "end": 182.0,
+     "start": 181.225,
+     "text": "CLI.Proof"
+    },
+    {
+     "end": 182.062,
+     "start": 182.0,
+     "text": ","
+    },
+    {
+     "end": 182.55,
+     "start": 182.062,
+     "text": "Singular"
+    },
+    {
+     "end": 182.625,
+     "start": 182.55,
+     "text": "."
+    },
+    {
+     "end": 183.95,
+     "start": 182.625,
+     "text": "CLI.Receipt"
+    },
+    {
+     "end": 184.175,
+     "start": 183.95,
+     "text": ","
+    },
+    {
+     "end": 184.85,
+     "start": 184.4,
+     "text": "Singular"
+    },
+    {
+     "end": 184.925,
+     "start": 184.85,
+     "text": "."
+    },
+    {
+     "end": 185.875,
+     "start": 184.925,
+     "text": "CLI.ReceiptBody"
+    },
+    {
+     "end": 185.962,
+     "start": 185.875,
+     "text": ","
+    },
+    {
+     "end": 186.55,
+     "start": 185.962,
+     "text": "Singular"
+    },
+    {
+     "end": 186.675,
+     "start": 186.55,
+     "text": "."
+    },
+    {
+     "end": 187.55,
+     "start": 186.675,
+     "text": "CLI.Reclaim"
+    },
+    {
+     "end": 187.637,
+     "start": 187.55,
+     "text": ","
+    },
+    {
+     "end": 188.125,
+     "start": 187.637,
+     "text": "Singular"
+    },
+    {
+     "end": 188.225,
+     "start": 188.125,
+     "text": "."
+    },
+    {
+     "end": 189.95,
+     "start": 188.225,
+     "text": "CLI.ReclaimRules"
+    },
+    {
+     "end": 190.15,
+     "start": 189.95,
+     "text": ","
+    },
+    {
+     "end": 190.825,
+     "start": 190.375,
+     "text": "Singular"
+    },
+    {
+     "end": 190.9,
+     "start": 190.825,
+     "text": "."
+    },
+    {
+     "end": 191.925,
+     "start": 190.9,
+     "text": "CLI.Reconcile"
+    },
+    {
+     "end": 192.012,
+     "start": 191.925,
+     "text": ","
+    },
+    {
+     "end": 192.525,
+     "start": 192.012,
+     "text": "Singular"
+    },
+    {
+     "end": 192.6,
+     "start": 192.525,
+     "text": "."
+    },
+    {
+     "end": 193.5,
+     "start": 192.6,
+     "text": "CLI.Recovery"
+    },
+    {
+     "end": 193.587,
+     "start": 193.5,
+     "text": ","
+    },
+    {
+     "end": 194.075,
+     "start": 193.587,
+     "text": "Singular"
+    },
+    {
+     "end": 194.15,
+     "start": 194.075,
+     "text": "."
+    },
+    {
+     "end": 195.6,
+     "start": 194.15,
+     "text": "CLI.Registry"
+    },
+    {
+     "end": 195.85,
+     "start": 195.6,
+     "text": ","
+    },
+    {
+     "end": 196.525,
+     "start": 196.075,
+     "text": "Singular"
+    },
+    {
+     "end": 196.6,
+     "start": 196.525,
+     "text": "."
+    },
+    {
+     "end": 197.425,
+     "start": 196.6,
+     "text": "CLI.Reject"
+    },
+    {
+     "end": 197.512,
+     "start": 197.425,
+     "text": ","
+    },
+    {
+     "end": 198.025,
+     "start": 197.512,
+     "text": "Singular"
+    },
+    {
+     "end": 198.125,
+     "start": 198.025,
+     "text": "."
+    },
+    {
+     "end": 199.2,
+     "start": 198.125,
+     "text": "CLI.RejectRules"
+    },
+    {
+     "end": 199.262,
+     "start": 199.2,
+     "text": ","
+    },
+    {
+     "end": 199.775,
+     "start": 199.262,
+     "text": "Singular"
+    },
+    {
+     "end": 199.875,
+     "start": 199.775,
+     "text": "."
+    },
+    {
+     "end": 201.6,
+     "start": 199.875,
+     "text": "CLI.RequestWindow"
+    },
+    {
+     "end": 201.825,
+     "start": 201.6,
+     "text": ","
+    },
+    {
+     "end": 202.5,
+     "start": 202.05,
+     "text": "Singular"
+    },
+    {
+     "end": 202.575,
+     "start": 202.5,
+     "text": "."
+    },
+    {
+     "end": 203.2,
+     "start": 202.575,
+     "text": "CLI.Root"
+    },
+    {
+     "end": 203.288,
+     "start": 203.2,
+     "text": ","
+    },
+    {
+     "end": 203.775,
+     "start": 203.288,
+     "text": "Singular"
+    },
+    {
+     "end": 203.875,
+     "start": 203.775,
+     "text": "."
+    },
+    {
+     "end": 204.65,
+     "start": 203.875,
+     "text": "CLI.Session"
+    },
+    {
+     "end": 204.738,
+     "start": 204.65,
+     "text": ","
+    },
+    {
+     "end": 205.225,
+     "start": 204.738,
+     "text": "Singular"
+    },
+    {
+     "end": 205.275,
+     "start": 205.225,
+     "text": "."
+    },
+    {
+     "end": 206.55,
+     "start": 205.275,
+     "text": "CLI.Trace"
+    },
+    {
+     "end": 206.75,
+     "start": 206.55,
+     "text": ","
+    },
+    {
+     "end": 207.325,
+     "start": 206.95,
+     "text": "Singular"
+    },
+    {
+     "end": 207.375,
+     "start": 207.325,
+     "text": "."
+    },
+    {
+     "end": 208.35,
+     "start": 207.375,
+     "text": "CLI.TrieHistory"
+    },
+    {
+     "end": 208.488,
+     "start": 208.35,
+     "text": "and"
+    },
+    {
+     "end": 208.925,
+     "start": 208.488,
+     "text": "Singular"
+    },
+    {
+     "end": 208.975,
+     "start": 208.925,
+     "text": "."
+    },
+    {
+     "end": 210.4,
+     "start": 208.975,
+     "text": "CLI.TrieTrace"
+    },
+    {
+     "end": 210.6,
+     "start": 210.4,
+     "text": ";"
+    },
+    {
+     "end": 210.975,
+     "start": 210.8,
+     "text": "their"
+    },
+    {
+     "end": 211.425,
+     "start": 210.975,
+     "text": "sources"
+    },
+    {
+     "end": 211.613,
+     "start": 211.425,
+     "text": "live"
+    },
+    {
+     "end": 211.863,
+     "start": 211.613,
+     "text": "under"
+    },
+    {
+     "end": 217.4,
+     "start": 211.863,
+     "text": "offchain/cli/src/Singular/CLI/."
+    },
+    {
+     "end": 217.762,
+     "start": 217.575,
+     "text": "Their"
+    },
+    {
+     "end": 218.325,
+     "start": 217.762,
+     "text": "generated"
+    },
+    {
+     "end": 218.887,
+     "start": 218.325,
      "text": "pages"
     },
     {
-     "end": 175.275,
-     "start": 175.075,
+     "end": 219.062,
+     "start": 218.887,
+     "text": "are"
+    },
+    {
+     "end": 219.375,
+     "start": 219.062,
+     "text": "not"
+    },
+    {
+     "end": 219.462,
+     "start": 219.375,
+     "text": "in"
+    },
+    {
+     "end": 219.65,
+     "start": 219.462,
+     "text": "this"
+    },
+    {
+     "end": 220.325,
+     "start": 219.65,
+     "text": "main-library"
+    },
+    {
+     "end": 220.812,
+     "start": 220.325,
+     "text": "reference"
+    },
+    {
+     "end": 221.65,
+     "start": 220.812,
+     "text": "either"
+    },
+    {
+     "end": 221.875,
+     "start": 221.65,
+     "text": ":"
+    },
+    {
+     "end": 222.375,
+     "start": 222.075,
+     "text": "only"
+    },
+    {
+     "end": 222.5,
+     "start": 222.375,
+     "text": "the"
+    },
+    {
+     "end": 222.825,
+     "start": 222.5,
+     "text": "main"
+    },
+    {
+     "end": 223.425,
+     "start": 222.825,
+     "text": "library"
+    },
+    {
+     "end": 223.625,
+     "start": 223.425,
+     "text": "has"
+    },
+    {
+     "end": 223.75,
+     "start": 223.625,
+     "text": "a"
+    },
+    {
+     "end": 224.4,
+     "start": 223.75,
+     "text": "generated"
+    },
+    {
+     "end": 225.025,
+     "start": 224.4,
+     "text": "reference"
+    },
+    {
+     "end": 225.125,
+     "start": 225.025,
+     "text": "."
+    },
+    {
+     "end": 225.363,
+     "start": 225.125,
+     "text": "This"
+    },
+    {
+     "end": 225.775,
+     "start": 225.363,
+     "text": "coverage"
+    },
+    {
+     "end": 226.1,
+     "start": 225.775,
+     "text": "gap"
+    },
+    {
+     "end": 226.475,
+     "start": 226.1,
+     "text": "stays"
+    },
+    {
+     "end": 227.45,
+     "start": 226.475,
+     "text": "visible"
+    },
+    {
+     "end": 227.675,
+     "start": 227.45,
+     "text": ";"
+    },
+    {
+     "end": 228.262,
+     "start": 227.9,
+     "text": "wider"
+    },
+    {
+     "end": 228.887,
+     "start": 228.262,
+     "text": "generated"
+    },
+    {
+     "end": 229.462,
+     "start": 228.887,
+     "text": "coverage"
+    },
+    {
+     "end": 229.625,
+     "start": 229.462,
+     "text": "is"
+    },
+    {
+     "end": 229.75,
+     "start": 229.625,
+     "text": "a"
+    },
+    {
+     "end": 230.175,
+     "start": 229.75,
+     "text": "separate"
+    },
+    {
+     "end": 230.7,
+     "start": 230.175,
+     "text": "decision"
+    },
+    {
+     "end": 230.812,
+     "start": 230.7,
+     "text": "for"
+    },
+    {
+     "end": 230.95,
+     "start": 230.812,
+     "text": "the"
+    },
+    {
+     "end": 231.325,
+     "start": 230.95,
+     "text": "epic's"
+    },
+    {
+     "end": 231.8,
+     "start": 231.325,
+     "text": "owner"
+    },
+    {
+     "end": 231.9,
+     "start": 231.8,
+     "text": ","
+    },
+    {
+     "end": 232.113,
+     "start": 231.9,
+     "text": "not"
+    },
+    {
+     "end": 232.175,
+     "start": 232.113,
+     "text": "a"
+    },
+    {
+     "end": 232.5,
+     "start": 232.175,
+     "text": "claim"
+    },
+    {
+     "end": 232.688,
+     "start": 232.5,
+     "text": "this"
+    },
+    {
+     "end": 233.075,
+     "start": 232.688,
+     "text": "page"
+    },
+    {
+     "end": 234.025,
+     "start": 233.075,
+     "text": "makes"
+    },
+    {
+     "end": 234.225,
+     "start": 234.025,
+     "text": "."
+    },
+    {
+     "end": 234.812,
+     "start": 234.475,
+     "text": "Nothing"
+    },
+    {
+     "end": 234.975,
+     "start": 234.812,
+     "text": "on"
+    },
+    {
+     "end": 235.188,
+     "start": 234.975,
+     "text": "this"
+    },
+    {
+     "end": 235.625,
+     "start": 235.188,
+     "text": "page"
+    },
+    {
+     "end": 235.738,
+     "start": 235.625,
+     "text": "is"
+    },
+    {
+     "end": 235.8,
+     "start": 235.738,
+     "text": "a"
+    },
+    {
+     "end": 236.663,
+     "start": 235.8,
+     "text": "publication"
+    },
+    {
+     "end": 236.85,
+     "start": 236.663,
+     "text": "or"
+    },
+    {
+     "end": 237.25,
+     "start": 236.85,
+     "text": "release"
+    },
+    {
+     "end": 237.837,
+     "start": 237.25,
+     "text": "claim"
+    },
+    {
+     "end": 237.925,
+     "start": 237.837,
+     "text": "—"
+    },
+    {
+     "end": 238.05,
+     "start": 237.925,
+     "text": "the"
+    },
+    {
+     "end": 238.613,
+     "start": 238.05,
+     "text": "reference"
+    },
+    {
+     "end": 238.95,
+     "start": 238.613,
+     "text": "ships"
+    },
+    {
+     "end": 239.087,
+     "start": 238.95,
+     "text": "with"
+    },
+    {
+     "end": 239.175,
+     "start": 239.087,
+     "text": "the"
+    },
+    {
+     "end": 239.712,
+     "start": 239.175,
+     "text": "candidate"
+    },
+    {
+     "end": 240.087,
+     "start": 239.712,
+     "text": "site"
+    },
+    {
+     "end": 240.212,
+     "start": 240.087,
+     "text": "and"
+    },
+    {
+     "end": 240.387,
+     "start": 240.212,
+     "text": "its"
+    },
+    {
+     "end": 240.8,
+     "start": 240.387,
+     "text": "future"
+    },
+    {
+     "end": 242.075,
+     "start": 240.8,
+     "text": "archives"
+    },
+    {
+     "end": 242.3,
+     "start": 242.075,
+     "text": ","
+    },
+    {
+     "end": 242.587,
+     "start": 242.5,
+     "text": "and"
+    },
+    {
+     "end": 242.75,
+     "start": 242.587,
+     "text": "no"
+    },
+    {
+     "end": 243.075,
+     "start": 242.75,
+     "text": "version"
+    },
+    {
+     "end": 243.238,
+     "start": 243.075,
+     "text": "is"
+    },
+    {
+     "end": 243.725,
+     "start": 243.238,
+     "text": "tagged"
+    },
+    {
+     "end": 243.875,
+     "start": 243.725,
+     "text": "or"
+    },
+    {
+     "end": 244.3,
+     "start": 243.875,
+     "text": "published"
+    },
+    {
+     "end": 244.45,
+     "start": 244.3,
+     "text": "by"
+    },
+    {
+     "end": 244.975,
+     "start": 244.45,
+     "text": "existing"
+    },
+    {
+     "end": 245.7,
+     "start": 244.975,
+     "text": "here"
+    },
+    {
+     "end": 245.925,
+     "start": 245.7,
+     "text": "."
+    },
+    {
+     "end": 246.175,
+     "start": 246.1,
+     "text": "The"
+    },
+    {
+     "end": 246.75,
+     "start": 246.175,
+     "text": "behavioral"
+    },
+    {
+     "end": 247.2,
+     "start": 246.75,
+     "text": "evidence"
+    },
+    {
+     "end": 247.312,
+     "start": 247.2,
+     "text": "for"
+    },
+    {
+     "end": 247.4,
+     "start": 247.312,
+     "text": "the"
+    },
+    {
+     "end": 247.675,
+     "start": 247.4,
+     "text": "moved"
+    },
+    {
+     "end": 248.475,
+     "start": 247.675,
+     "text": "builder"
+    },
+    {
+     "end": 248.7,
+     "start": 248.475,
+     "text": ","
+    },
+    {
+     "end": 249.425,
+     "start": 248.9,
+     "text": "blueprint"
+    },
+    {
+     "end": 249.55,
+     "start": 249.425,
+     "text": "and"
+    },
+    {
+     "end": 249.925,
+     "start": 249.55,
+     "text": "wire"
+    },
+    {
+     "end": 250.288,
+     "start": 249.925,
+     "text": "code"
+    },
+    {
+     "end": 250.65,
+     "start": 250.288,
+     "text": "lives"
+    },
+    {
+     "end": 250.762,
+     "start": 250.65,
+     "text": "in"
+    },
+    {
+     "end": 250.887,
+     "start": 250.762,
+     "text": "the"
+    },
+    {
+     "end": 251.288,
+     "start": 250.887,
+     "text": "check"
+    },
+    {
+     "end": 251.712,
+     "start": 251.288,
+     "text": "commands"
+    },
+    {
+     "end": 251.863,
+     "start": 251.712,
+     "text": "the"
+    },
+    {
+     "end": 252.425,
+     "start": 251.863,
+     "text": "off-chain"
+    },
+    {
+     "end": 252.975,
+     "start": 252.425,
+     "text": "development"
+    },
+    {
+     "end": 253.275,
+     "start": 252.975,
+     "text": "guide"
+    },
+    {
+     "end": 254.35,
+     "start": 253.275,
+     "text": "records"
+    },
+    {
+     "end": 254.55,
+     "start": 254.35,
+     "text": ","
+    },
+    {
+     "end": 254.913,
+     "start": 254.75,
+     "text": "not"
+    },
+    {
+     "end": 254.988,
+     "start": 254.913,
+     "text": "in"
+    },
+    {
+     "end": 255.062,
+     "start": 254.988,
+     "text": "the"
+    },
+    {
+     "end": 255.562,
+     "start": 255.062,
+     "text": "existence"
+    },
+    {
+     "end": 255.637,
+     "start": 255.562,
+     "text": "of"
+    },
+    {
+     "end": 255.85,
+     "start": 255.637,
+     "text": "these"
+    },
+    {
+     "end": 256.775,
+     "start": 255.85,
+     "text": "pages"
+    },
+    {
+     "end": 256.975,
+     "start": 256.775,
      "text": "."
     }
    ]

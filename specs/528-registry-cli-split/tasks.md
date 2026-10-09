@@ -20,9 +20,9 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## registry-cli-library
 
-- [ ] move-command-line-modules-into-registry-cli
-- [ ] cage-tests-depend-on-the-library
-- [ ] classify-the-new-library-in-the-component-inventory-for-registry-cli
+- [x] move-command-line-modules-into-registry-cli
+- [x] cage-tests-depend-on-the-library
+- [x] classify-the-new-library-in-the-component-inventory-for-registry-cli
 
 ## open-datum-executable
 

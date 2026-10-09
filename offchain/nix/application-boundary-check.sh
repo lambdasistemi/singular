@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# application-boundary-check: the registry library and the migrated
-# command-line modules name no application.
+# application-boundary-check: the registry library and the registry-cli
+# command-line library name no application but the named temporary arrow.
 #
-# Slice 2 scope (#528): the slice-1 library scope (lib, naming/src) plus
-# every other command-line module under cli/src, with four named exceptions
-# that stay open-datum code until slice 4 (Command, Plan, Entry,
-# InsertEnvelope) — slice 4 removes the exception. The check names each
+# Slice 3 scope (#528): the slice-1 library scope (lib, naming/src) plus
+# every command-line module under cli/src, now held by the public sublibrary
+# registry-cli, with four named exceptions that stay open-datum code until
+# slice 4 (Command, Plan, Entry, InsertEnvelope) — slice 4 moves them into
+# open-datum-application and removes the exception. The check names each
 # offender and exits nonzero while one remains. The proof of the boundary
-# is the build graph (the library stanza does not list
+# is the build graph (no registry-side stanza but registry-cli lists
 # `open-datum-application` in build-depends); this check reads the same
 # graph so the violation is named.
 #
@@ -44,8 +45,8 @@ if [ -n "$outside" ]; then
     fail=1
 fi
 
-# Slice 2: every other command-line module under cli/src names no
-# application. Four named exceptions stay open-datum code until slice 4
+# Slice 3: the registry-cli modules under cli/src name no application but
+# the four named exceptions, which stay open-datum code until slice 4
 # (Command, Plan, Entry, InsertEnvelope) — slice 4 removes the exception.
 # All other cli modules (Create, Fold, FoldRules, Live, Reconcile, Inspect,
 # Preview and the rest) must not import the open-datum package.
@@ -58,14 +59,32 @@ if [ -n "$cli_outside" ]; then
     fail=1
 fi
 
-# The bare `library` stanza (the registry library, not a named sublibrary)
-# must not list the open-datum sublibrary in build-depends.
-stanza=$(awk '/^library$/ { inlib = 1; next } /^[^ \t]/ { if (inlib) exit } inlib { print }' "$cabal")
-[ -n "$stanza" ] || { echo "application-boundary-check: no bare library stanza in $cabal" >&2; exit 2; }
-dep=$(printf '%s\n' "$stanza" | grep 'open-datum-application' || true)
-if [ -n "$dep" ]; then
-    echo "application-boundary-check: registry library build-depends lists open-datum-application:" >&2
-    printf '%s\n' "$dep" >&2
+# Slice 3: the dependency side of the boundary, quantified over every
+# library stanza. registry-cli's build-depends on open-datum-application is
+# the temporary arrow slice 4 removes (named here, not hidden): the check
+# requires it present and names everything else that lists the package. The
+# bare library, local-services and koios-http must not list it.
+dep_holders=$(awk '
+    /^library[ \t]*$/ { stanza = "lib:singular-registry"; indep = 0; next }
+    /^library[ \t]+/ { stanza = "sublib:" $2; indep = 0; next }
+    /^executable[ \t]+/ { stanza = "exe:" $2; indep = 0; next }
+    /^test-suite[ \t]+/ { stanza = "test:" $2; indep = 0; next }
+    /^[^ \t]/ { stanza = ""; indep = 0; next }
+    stanza != "" && /^[ \t]*build-depends:/ {
+        if ($0 ~ /open-datum-application/) print stanza ": " $0
+        indep = 1; next
+    }
+    stanza != "" && indep && /^[ \t]*[a-zA-Z0-9-]+:/ { indep = 0; next }
+    stanza != "" && indep && /open-datum-application/ { print stanza ": " $0 }
+' "$cabal" | grep -E '^(lib|sublib):' || true)
+if ! printf '%s\n' "$dep_holders" | grep -q '^sublib:registry-cli:'; then
+    echo "application-boundary-check: library registry-cli lacks the temporary open-datum-application dependency slice 4 removes" >&2
+    fail=1
+fi
+others=$(printf '%s\n' "$dep_holders" | grep -v '^sublib:registry-cli:' | grep -v '^$' || true)
+if [ -n "$others" ]; then
+    echo "application-boundary-check: registry-side library lists open-datum-application (only sublib:registry-cli may, until slice 4):" >&2
+    printf '%s\n' "$others" >&2
     fail=1
 fi
 

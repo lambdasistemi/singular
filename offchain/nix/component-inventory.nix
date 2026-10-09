@@ -83,6 +83,11 @@ let
       # `cage-tests`; the application boundary control governs who may
       # depend on it, not this list.
       "open-datum-application"
+      # #528 slice 3: the registry command line as its own library
+      # (cli/src, Singular.CLI.* under unchanged names), linked by
+      # `singular` and `cage-tests`; it temporarily depends on
+      # open-datum-application for the entry commands slice 4 moves.
+      "registry-cli"
     ];
   };
 
