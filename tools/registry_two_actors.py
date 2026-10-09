@@ -1051,6 +1051,224 @@ class Journey:
         leg["inspect_after"] = "reclaim-wrong-inspect-after"
         return leg
 
+    def reclaim_owner_leg(self, owner, key):
+        """OWNER reclaims KEY inside its retract window.
+
+        Reuses the booking the wrong-owner leg left pending in the same
+        run. An early attempt before the processing deadline is refused by
+        name; the reclaim inside the window succeeds with the return bound
+        to the request. Only an insertion is retractable. After it a new
+        request still folds.
+        """
+        owner_others = tuple(
+            home for party, home in self.homes.items() if party != owner
+        )
+        other = "bob" if owner == "alice" else "alice"
+        other_others = tuple(
+            home for party, home in self.homes.items() if party != other
+        )
+        leg = {}
+        leg["booking"] = "reclaim-bob-3-booking"
+        booking = self.load_receipt(leg["booking"])
+        require(
+            booking is not None and isinstance(booking.get("request"), str),
+            f"{owner} reclaim booking is not pending: {booking}",
+        )
+        require(
+            isinstance(booking.get("foldDeadline"), dict)
+            and isinstance(booking["foldDeadline"].get("posixMs"), int),
+            f"{owner} booking named no fold deadline: {booking}",
+        )
+        deadline_ms = booking["foldDeadline"]["posixMs"]
+        status, early_before = self.run_party(
+            owner,
+            "reclaim-early-inspect-before",
+            self.inspect_key(key),
+            owner_others,
+        )
+        require(
+            status == 0 and early_before.get("outcome") == "success",
+            f"{owner} early inspect-before failed: exit {status}, {early_before}",
+        )
+        leg["early_inspect_before"] = "reclaim-early-inspect-before"
+        status, early_attempt = self.run_party(
+            owner,
+            "reclaim-early-attempt",
+            self.reclaim_command(owner, booking["request"]),
+            owner_others,
+        )
+        require(
+            status == 10
+            and early_attempt.get("outcome") == "client-refusal"
+            and (
+                "retract window opens" in early_attempt.get("reason", "")
+                or "before the window" in early_attempt.get("reason", "")
+            ),
+            f"{owner} early reclaim was not refused by window: "
+            f"exit {status}, {early_attempt}",
+        )
+        leg["early_attempt"] = "reclaim-early-attempt"
+        status, early_after = self.run_party(
+            owner,
+            "reclaim-early-inspect-after",
+            self.inspect_key(key),
+            owner_others,
+        )
+        require(
+            status == 0 and early_after.get("outcome") == "success",
+            f"{owner} early inspect-after failed: exit {status}, {early_after}",
+        )
+        require(
+            early_after.get("root") == early_before.get("root"),
+            f"{owner} root moved under a refused reclaim",
+        )
+        leg["early_inspect_after"] = "reclaim-early-inspect-after"
+        self.sleep_until_ms(deadline_ms + 5000)
+        status, window_before = self.run_party(
+            owner,
+            "reclaim-window-inspect-before",
+            self.inspect_key(key),
+            owner_others,
+        )
+        require(
+            status == 0 and window_before.get("outcome") == "success",
+            f"{owner} window inspect-before failed: exit {status}, {window_before}",
+        )
+        leg["window_inspect_before"] = "reclaim-window-inspect-before"
+        status, success = self.run_party(
+            owner,
+            "reclaim-success",
+            self.reclaim_command(owner, booking["request"]),
+            owner_others,
+        )
+        require(
+            status == 0 and success.get("outcome") == "success",
+            f"{owner} reclaim failed: exit {status}, {success}",
+        )
+        require(
+            success.get("request") == booking["request"],
+            f"{owner} reclaimed another request: {success.get('request')} "
+            f"!= {booking['request']}",
+        )
+        require(
+            success.get("edge") == "insertActive",
+            f"{owner} reclaimed another edge: {success.get('edge')}",
+        )
+        require(
+            success.get("owner") == booking.get("requester"),
+            f"{owner} reclaim names another owner: {success.get('owner')}",
+        )
+        require(
+            success.get("locked"),
+            f"{owner} reclaim names no locked value: {success}",
+        )
+        returned = success.get("returned")
+        require(
+            isinstance(returned, dict)
+            and returned.get("request") == booking["request"]
+            and isinstance(returned.get("lovelace"), int),
+            f"{owner} return is not bound to the request: {success}",
+        )
+        require(
+            success.get("root"),
+            f"{owner} reclaim named no root: {success}",
+        )
+        leg["success"] = "reclaim-success"
+        status, window_after = self.run_party(
+            owner,
+            "reclaim-window-inspect-after",
+            self.inspect_key(key),
+            owner_others,
+        )
+        require(
+            status == 0 and window_after.get("outcome") == "success",
+            f"{owner} window inspect-after failed: exit {status}, {window_after}",
+        )
+        require(
+            window_after.get("root")
+            == window_before.get("root")
+            == success.get("root"),
+            f"{owner} root moved during a reclaim",
+        )
+        require(
+            window_after.get("leaf") == "unknown",
+            f"{owner} reclaimed key is not unknown: {window_after.get('leaf')}",
+        )
+        window_after_pending = window_after.get("pendingRequests") or []
+        require(
+            not any(
+                isinstance(entry, dict) and entry.get("request") == booking["request"]
+                for entry in window_after_pending
+            ),
+            f"{owner} reclaimed request is still pending",
+        )
+        leg["window_inspect_after"] = "reclaim-window-inspect-after"
+        status, continue_booking = self.run_party(
+            "alice",
+            "reclaim-continue-booking",
+            self.book("alice", "insert", "alice-4", "reclaim-continue"),
+            tuple(home for party, home in self.homes.items() if party != "alice"),
+        )
+        require(
+            status == 0 and continue_booking.get("outcome") == "success",
+            f"alice continue booking failed: exit {status}, {continue_booking}",
+        )
+        leg["continue_booking"] = "reclaim-continue-booking"
+        status, continue_fold = self.run_party(
+            "bob",
+            "reclaim-continue-fold",
+            self.fold_pending("bob"),
+            other_others if other == "bob" else owner_others,
+        )
+        require(
+            status == 0 and continue_fold.get("outcome") == "success",
+            f"bob continue fold failed: exit {status}, {continue_fold}",
+        )
+        require(
+            continue_fold.get("request") == continue_booking["request"],
+            "bob folded another request after reclaim",
+        )
+        require(
+            continue_fold.get("edge") == "insertActive",
+            "bob folded another edge after reclaim",
+        )
+        require(
+            continue_fold.get("root"),
+            f"bob continue fold named no root: {continue_fold}",
+        )
+        leg["continue_fold"] = "reclaim-continue-fold"
+        for party, slot in (
+            ("alice", "continue_inspect_a"),
+            ("bob", "continue_inspect_b"),
+        ):
+            others = tuple(home for name, home in self.homes.items() if name != party)
+            status, after = self.run_party(
+                party,
+                f"reclaim-continue-inspect-{party}",
+                self.inspect_key("alice-4"),
+                others,
+            )
+            require(
+                status == 0 and after.get("outcome") == "success",
+                f"{party} continue inspect failed: exit {status}, {after}",
+            )
+            require(
+                after.get("leaf") == "active",
+                f"{party} continued key is not active: {after.get('leaf')}",
+            )
+            require(
+                after.get("root") == continue_fold["root"],
+                f"{party} continued root differs from the fold",
+            )
+            leg[slot] = f"reclaim-continue-inspect-{party}"
+        self.record_fold_root(
+            leg["continue_fold"],
+            "alice-4",
+            leg["continue_inspect_a"],
+            leg["continue_inspect_b"],
+        )
+        return leg
+
     def terminate_leg(self, controller, folder, key):
         """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
         direction = f"terminate-{key}-by-{folder}"
@@ -2213,6 +2431,7 @@ class Journey:
             }
             legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
             legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
+            legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
             legs["fold_roots"] = getattr(self, "fold_records", [])
             self.removal_check(legs)
             self.cap_check()
