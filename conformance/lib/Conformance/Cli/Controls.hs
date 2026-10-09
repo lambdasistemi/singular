@@ -1826,7 +1826,7 @@ processStory = do
                 (pure <$> action (Run Insert target third))
         _ <-
             clause
-                "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                "the same wallet starts create on the same seed twice; the second is held before the lock while the first completes, and is refused because the registry exists"
                 (requirement haltsAttributably LateCreateRefused)
                 (pure <$> action (Provoke LateCreate raced ""))
         _ <-
@@ -3940,10 +3940,10 @@ approvedCases =
              )
            | (name, row, titles) <-
                 [
-                    ( "a second create racing for one target on another wallet's live seed"
+                    ( "a second create racing for one seed with one wallet"
                     , "R299-05"
                     ,
-                        [ "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                        [ "the same wallet starts create on the same seed twice; the second is held before the lock while the first completes, and is refused because the registry exists"
                         ]
                     )
                 ,
