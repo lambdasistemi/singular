@@ -10,7 +10,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Text (Text)
 import Singular.CLI.Registry (hexT)
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Ledger (AssetName (..), Root (..))
+import Singular.Registry.Surface (AssetName (..), Root (..))
 import Singular.Registry.TrieState
 import System.Environment (lookupEnv)
 

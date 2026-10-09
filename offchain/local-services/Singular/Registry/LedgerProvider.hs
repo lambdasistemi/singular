@@ -25,6 +25,7 @@ module Singular.Registry.LedgerProvider
     , TipObservation (..)
     , HistoryRange (..)
     , HistoryFailure (..)
+    , isHistoryReadFailure
     , HistoricalTransaction (..)
     , HistoryBlock (..)
     , HistoryStream (..)
@@ -151,6 +152,15 @@ data HistoryFailure
     deriving stock (Eq, Show)
 
 instance Exception HistoryFailure
+
+{- | Whether this history failure is a read failure (as a command
+classifies a provider-history refusal): a read refusal, not an
+inconsistency in the material.
+-}
+isHistoryReadFailure :: HistoryFailure -> Bool
+isHistoryReadFailure failure = case failure of
+    HistoryReadFailure _ -> True
+    _ -> False
 
 {- | Complete CBOR plus resolved inputs, references and outputs, with validity.
 These are reconstruction material, without an evidence verdict.

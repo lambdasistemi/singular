@@ -39,7 +39,7 @@ import Singular.CLI.Trace
     , Trace (..)
     , What (..)
     )
-import Singular.Registry.Trace (startTimer)
+import Singular.Registry.Surface (startTimer)
 
 {- | Print the receipt, write it where asked, and exit with the class of
 its outcome. A failure is its own receipt. The command's stream opens with

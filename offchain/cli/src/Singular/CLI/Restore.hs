@@ -38,9 +38,6 @@ import Lens.Micro ((^.))
 
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (failWith)
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (Addr, ConwayEra)
-import Singular.Registry.LedgerProvider (Asset, Session)
 import Singular.Registry.StateToken
     ( ReferenceRole
     , Release
@@ -49,8 +46,13 @@ import Singular.Registry.StateToken
     , missingReferences
     , renderReferenceRefusal
     )
-import Singular.Registry.WalletOutputs
-    ( FundingViewRefusal (..)
+import Singular.Registry.Surface
+    ( Addr
+    , Asset
+    , ConwayEra
+    , FundingViewRefusal (..)
+    , NoWitness
+    , Session
     , WalletOutputs
     , narrowFunding
     , renderFundingRefusal

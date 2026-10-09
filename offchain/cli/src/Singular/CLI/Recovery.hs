@@ -6,7 +6,7 @@ module Singular.CLI.Recovery (Inclusion (..), inclusionOf, rollbackEvidence, exc
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Singular.CLI.Receipt (SubmissionCase (..))
-import Singular.Registry.Ledger (SlotNo, TxIn)
+import Singular.Registry.Surface (SlotNo (..), TxIn)
 
 -- | What one view shows about whether a transaction is on its chain.
 data Inclusion

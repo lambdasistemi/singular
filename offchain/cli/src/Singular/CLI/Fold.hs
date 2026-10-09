@@ -109,14 +109,16 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
+    , NoWitness
     , Root (..)
+    , Session
+    , fundedView
+    , readOutputsAt
+    , walletAddr
     )
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Edges (registryContextFor)
 import Singular.Registry.TxBuilder.Internal
@@ -132,7 +134,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 -- ---------------------------------------------------------
 -- The processing deadline
@@ -169,7 +170,7 @@ deadlineJson d =
 slot when the view converts the time.
 -}
 deadlineOf
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> OnChainRequest
     -> OnChainTokenState
     -> IO Deadline
@@ -178,7 +179,7 @@ deadlineOf v r st = do
     Deadline ms <$> slotAt v ms
 
 slotAt
-    :: Cage.Session Cage.NoWitness IO -> Integer -> IO (Maybe SlotNo)
+    :: Session NoWitness IO -> Integer -> IO (Maybe SlotNo)
 slotAt v ms = do
     placed <- try (Services.floorSlot v ms)
     case placed of
@@ -340,9 +341,9 @@ foldPending at FoldSpec{..} = do
                     (Just rootBefore)
                     (Just (plRootAfter p))
             )
-            ( \building v -> do
+            ( \building _tracer v -> do
                 pending <-
-                    Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
+                    readOutputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
                 let pendingIns = map fst pending
                     stop' = stop fsOrigin named
                 request <- case foldTarget named pendingIns of

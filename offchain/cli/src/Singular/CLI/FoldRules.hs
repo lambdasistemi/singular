@@ -38,15 +38,11 @@ module Singular.CLI.FoldRules
     , FoldKind (..)
     , foldKind
     , carriedEnvelope
-
-      -- * Which funding
-    , fundedView
     ) where
 
 import Data.List (intercalate)
 import Data.Text qualified as T
 
-import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.Application.OpenDatum.Envelope
@@ -54,10 +50,6 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeFromData
     )
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
@@ -280,34 +272,6 @@ foldKind e
                 <> edgeName e
                 <> ", which registry fold does not fold: it folds insertActive and updateTerminal"
             )
-
-{- | A view in which the wallet's own address holds only the output the caller
-named to fund the fold: the production fold funds and collateralises from
-the largest ada-only output of the wallet it reads, and takes no funding
-argument. The named output must be an ada-only output of that wallet. With
-none named the view is the fold's own.
--}
-fundedView
-    :: Maybe TxIn
-    -> Addr
-    -> Cage.Session Cage.NoWitness IO
-    -> IO (Either String (Cage.Session Cage.NoWitness IO))
-fundedView Nothing _ v = pure (Right v)
-fundedView chosen addr v = do
-    wallet <- Cage.outputsAt v addr
-    pure $ case selectFunding chosen wallet of
-        Left why -> Left why
-        Right one ->
-            Right
-                v
-                    { Cage.outputs = \query ->
-                        fmap (fmap (select query one)) (Cage.outputs v query)
-                    }
-  where
-    select (Cage.AtAddress address) one fact
-        | address == addr =
-            fact{Cage.value = filter ((== fst one) . fst) (Cage.value fact)}
-    select _ _ fact = fact
 
 {- | The time at which a built fold's upper-bound slot begins, as the view
 that built it converts times; nothing when it cannot place the bound.

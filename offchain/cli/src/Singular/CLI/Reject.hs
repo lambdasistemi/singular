@@ -55,7 +55,6 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
@@ -63,7 +62,6 @@ import Singular.CLI.Command
     , neededRoles
     )
 import Singular.CLI.Fold (slotAt)
-import Singular.CLI.FoldRules (fundedView)
 import Singular.CLI.Live
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
@@ -79,9 +77,16 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Surface
+    ( ConwayEra
+    , SlotNo (..)
+    , TipObservation (..)
+    , bech32Address
+    , fundedView
+    , readOutputsAt
+    , tip
+    , walletAddr
+    )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , extractCageDatum
@@ -97,7 +102,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | One pending request the reject takes, and what it is owed.
 data Row = Row
@@ -161,8 +165,8 @@ rejectPending at a = do
             "reject"
             ["state", "requests"]
             (const (expecting "state"))
-            ( \building v -> do
-                allAtRequestAddr <- Cage.outputsAt v requestAddr
+            ( \building _tracer v -> do
+                allAtRequestAddr <- readOutputsAt v requestAddr
                 let pending = sortOn fst (findRequestUtxos (savedToken s) allAtRequestAddr)
                     pendingIns = map fst pending
                 live <- attachLive v s
@@ -177,8 +181,8 @@ rejectPending at a = do
                     forM pending $ \(i, o) -> case extractCageDatum o of
                         Just (RequestDatum r) -> pure (i, o, r)
                         _ -> stop ClientRefusal "a pending request carries no request datum" []
-                observed <- Cage.tip v
-                let tipSlot = toInteger (Cage.unSlotNo (Cage.observedSlot observed))
+                observed <- tip v
+                let tipSlot = toInteger (unSlotNo (observedSlot observed))
                     boundsOf r =
                         windowOf
                             (requestSubmittedAt r)
@@ -188,7 +192,7 @@ rejectPending at a = do
                     forM booked $ \(i, _, r) -> do
                         let b = boundsOf r
                         slot <- slotAt v (retractEnds b)
-                        pure (i, b, toInteger . Cage.unSlotNo <$> slot)
+                        pure (i, b, toInteger . unSlotNo <$> slot)
                 taken <- either (refuse tipSlot) pure (rejectGate tipSlot slotted)
                 let rows =
                         [ Row
@@ -202,7 +206,7 @@ rejectPending at a = do
                             }
                         | ((i, o, r), (_, b)) <- zip booked taken
                         ]
-                    tip = stateMaxFee st
+                    tipCoin = stateMaxFee st
                 forM_ rows $ \r ->
                     found
                         building
@@ -268,7 +272,7 @@ rejectPending at a = do
                             ClientRefusal
                             "the built reject does not begin with the state's continuation, so it is not signed"
                             []
-                let owed = [coinOf (rowLocked r) - tip | r <- rows]
+                let owed = [coinOf (rowLocked r) - tipCoin | r <- rows]
                 returned <-
                     either
                         ( \why ->
@@ -289,7 +293,7 @@ rejectPending at a = do
                     ( unsigned
                     , Plan
                         { plRows = rows
-                        , plTip = tip
+                        , plTip = tipCoin
                         , plTipSlot = tipSlot
                         , plRootBefore = rootBefore
                         , plReturned = returned
@@ -300,11 +304,11 @@ rejectPending at a = do
     -- and each refund is live at its owner's address as built.
     after <-
         readingBack at "reject" tx ["requests", "state", "owner outputs"] $ \v -> do
-            left <- Cage.outputsAt v requestAddr
+            left <- readOutputsAt v requestAddr
             live <- attachLive v s
             owners <-
                 forM (Set.toList (Set.fromList (map rowRecipient (plRows plan)))) $ \o ->
-                    (,) o <$> Cage.outputsAt v o
+                    (,) o <$> readOutputsAt v o
             pure (left, live, Map.fromList owners)
     let (leftover, afterLive, ownerOuts) = after
         rejectedIns = map rowRequest (plRows plan)
@@ -353,17 +357,17 @@ rejectPending at a = do
         (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
     pure Rejected{rjTx = tx, rjPlan = plan, rjRejector = callerKey at}
   where
-    refuse tip = \case
+    refuse tipSlot = \case
         NothingToReject ->
             stop
                 ClientRefusal
                 (renderRejectRefusal NothingToReject)
-                [("tipSlot", toJSON tip)]
+                [("tipSlot", toJSON tipSlot)]
         refusal@(WindowsOpen open) ->
             stop
                 ClientRefusal
                 (renderRejectRefusal refusal)
-                [ ("tipSlot", toJSON tip)
+                [ ("tipSlot", toJSON tipSlot)
                 , ("pendingRequests", toJSON (map openJson open))
                 ]
     openJson o =

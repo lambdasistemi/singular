@@ -23,6 +23,7 @@ module Singular.Registry.WalletOutputs
     , fundingOutputs
     , coveringFunding
     , covering
+    , selectFunding
     , FundingRefusal (..)
     , renderFundingRefusal
     , chosenFunding
@@ -138,6 +139,27 @@ fundingOutputs w =
         , maybe True (== i) (chosen w)
         ]
 
+{- | The wallet output a transaction is funded and collateralised from: the
+one the caller chose, which must be an ada-only output of the wallet, or else
+the largest ada-only output. A caller that chose none still gets the output
+least likely to leave the change under its minimum.
+-}
+selectFunding
+    :: Maybe TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either String (TxIn, TxOut ConwayEra)
+selectFunding chosen utxos = case chosen of
+    Nothing -> case sortOn (Down . (^. coinTxOutL) . snd) usable of
+        [] -> Left "the payer wallet has no ada-only output"
+        (u : _) -> Right u
+    Just wanted -> case [u | u@(i, _) <- usable, i == wanted] of
+        (u : _) -> Right u
+        [] ->
+            Left
+                "the chosen funding output is not an ada-only output of the payer"
+  where
+    usable = filter (fundable . snd) utxos
+
 {- | Why a chosen funding input cannot fund.
 | The wallet does not hold the chosen input, or it is not fundable.
 -}
@@ -205,12 +227,7 @@ fundingView reserved v =
                 _ -> result
         }
   where
-    available (i, out) =
-        i `notElem` reserved
-            && out ^. referenceScriptTxOutL == SNothing
-            && ( let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-                 in  Map.null assets
-               )
+    available (i, out) = fundable out && i `notElem` reserved
 
 -- | Why an output cannot be create's seed.
 data SeedRefusal

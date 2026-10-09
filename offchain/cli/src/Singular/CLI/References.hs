@@ -64,19 +64,21 @@ import Singular.CLI.Session
     , txIdHex
     )
 import Singular.Registry.Capabilities (sessionReceipt)
-import Singular.Registry.Ledger (Addr, Coin (..), ConwayEra)
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , renderStateToken
     , roleName
     )
-import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
-import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
-import Singular.Registry.Wallet
-    ( bech32Address
+import Singular.Registry.Surface
+    ( Addr
+    , Coin (..)
+    , ConwayEra
+    , bech32Address
     , loadWallet
     , walletAddr
     )
+import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
+import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 
 -- | @singular registry publish-references@: preview or publish.
 runPublishReferences :: Env -> PublishArgs -> IO Value

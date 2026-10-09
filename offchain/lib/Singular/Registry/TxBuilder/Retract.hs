@@ -79,9 +79,9 @@ import Singular.Registry.Surface
     , fundableOutputsAt
     , parameters
     , readOutputsAt
+    , selectFunding
     )
 import Singular.Registry.Surface qualified as Services
-import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)

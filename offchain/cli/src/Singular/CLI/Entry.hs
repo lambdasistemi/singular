@@ -101,9 +101,13 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Surface
+    ( NoWitness
+    , Session
+    , parameters
+    , readOutputsAt
+    , walletAddr
+    )
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
@@ -115,17 +119,16 @@ import Singular.Registry.Types
     , OnChainTokenState
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 -- | The state a request's deadline is read under, and the request it names.
 requestAndState
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Saved
     -> TxIn
     -> IO (Maybe (OnChainRequest, OnChainTokenState))
 requestAndState v s request = do
     reqs <-
-        Cage.outputsAt
+        readOutputsAt
             v
             (requestAddrFromCfg (savedCfg s) (savedToken s) Testnet)
     live <- attachLive v s
@@ -150,7 +153,7 @@ book
     :: Attached
     -> EntryArgs
     -> ByteString
-    -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
+    -> (Session NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
     -> IO (ConwayTx, r, Deadline)
 book at a key plan = do
@@ -163,7 +166,7 @@ book at a key plan = do
             "book"
             ["state", "key outputs"]
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
-            ( \building v -> do
+            ( \building tracer v -> do
                 live <- attachLive v s
                 (b, decided) <- plan v live
                 let edge = T.pack (edgeName (bookedEdge b))
@@ -175,7 +178,7 @@ book at a key plan = do
                     bookEdgeMeasured
                         cfg
                         v
-                        (Cage.sessionTracer v)
+                        tracer
                         (walletAddr (wcWallet wc))
                         (savedToken s)
                         key
@@ -185,7 +188,7 @@ book at a key plan = do
                         (bookedApproval b)
                         (liveRefs live)
                         (entryFund a)
-                pp <- Cage.parameters v
+                pp <- parameters v
                 refuseOver
                     (entryMaxOutlay a)
                     (bookingOutlay pp (liveRefs live) tx)
@@ -195,7 +198,7 @@ book at a key plan = do
     deadline <-
         readingBack at "book" booking ["requests", "state"] $ \v -> do
             reqs <-
-                Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
+                readOutputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
             unless (any ((== request) . fst) reqs) $
                 failWith
                     Partial
@@ -339,13 +342,13 @@ runUpdate env a = case entryMode a of
                                 Nothing
                                 Nothing
                         )
-                        ( \building v -> do
+                        ( \building tracer v -> do
                             live <- attachLive v s
                             outs <- liveOutputs v s
                             (holding, envelope) <- planUpdate live (callerKey at) key outs
                             place building placed (EdgeStarted Updating)
                             unsigned <-
-                                buildUpdate v live addr (entryFund a) holding payload
+                                buildUpdate v tracer live addr (entryFund a) holding payload
                             refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
                             pure (unsigned, envelope)
                         )

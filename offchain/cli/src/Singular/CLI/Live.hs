@@ -67,7 +67,8 @@ import Cardano.Ledger.Api.Tx.Out
     , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes qualified as Cardano
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential
@@ -98,15 +99,6 @@ import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger
-    ( AssetName (..)
-    , ConwayEra
-    , Root (..)
-    , TokenId (..)
-    )
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
     ( ReferenceRole
     , ResolvedRegistry (..)
@@ -115,6 +107,21 @@ import Singular.Registry.StateToken
     , renderIdentityRefusal
     , renderReferenceRefusal
     , resolveRegistry
+    )
+import Singular.Registry.Surface
+    ( Asset
+    , AssetName (..)
+    , ConwayEra
+    , Network (..)
+    , NoWitness
+    , Root (..)
+    , Session
+    , SessionBinding (..)
+    , SessionId (..)
+    , TokenId (..)
+    , isHistoryReadFailure
+    , readOutputsAt
+    , sessionScope
     )
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TrieState.Lineage (lineageTrieStateObserved)
@@ -151,7 +158,7 @@ applied = ncApplication . savedCodes
 
 -- | A saved registry with its live outputs resolved.
 data Live = Live
-    { liveSession :: Cage.Session Cage.NoWitness IO
+    { liveSession :: Session NoWitness IO
     , liveSaved :: Saved
     , liveRefs :: [(TxIn, TxOut ConwayEra)]
     , liveState :: (TxIn, TxOut ConwayEra)
@@ -161,7 +168,7 @@ data Live = Live
 output that holds the state token at the state address. The references are
 the ones the resolution found.
 -}
-attachLive :: Cage.Session Cage.NoWitness IO -> Saved -> IO Live
+attachLive :: Session NoWitness IO -> Saved -> IO Live
 attachLive view s = do
     found <- findStateOutput (stateToken s) view
     (stateIn, stateOut, _) <-
@@ -178,7 +185,7 @@ attachLive view s = do
             }
 
 -- | The state token of a saved registry.
-stateToken :: Saved -> Cage.Asset
+stateToken :: Saved -> Asset
 stateToken s =
     let TokenId name = savedToken s
     in  (PolicyID (cfgScriptHash (savedCfg s)), name)
@@ -193,16 +200,16 @@ observedRoot l = case extractCageDatum (snd (liveState l)) of
 applicationAddr :: Saved -> Addr
 applicationAddr s =
     Addr
-        Testnet
+        Cardano.Testnet
         (ScriptHashObj (computeScriptHash (applied s)))
         StakeRefNull
 
 -- | Every output at the application's address.
 liveOutputs
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Saved
     -> IO [(TxIn, TxOut ConwayEra)]
-liveOutputs view s = Cage.outputsAt view (applicationAddr s)
+liveOutputs view s = readOutputsAt view (applicationAddr s)
 
 {- | The outputs at the application that are this registry's holding of
 @key@: an envelope of version 1 naming this registry's full state asset,
@@ -273,12 +280,12 @@ savedIdentity saved =
             name
 
 newStatePoint
-    :: Cage.Session Cage.NoWitness IO -> TxIn -> TS.StatePoint
+    :: Session NoWitness IO -> TxIn -> TS.StatePoint
 newStatePoint session output =
-    let Cage.SessionId label = Cage.sessionId session
-        binding = case Cage.sessionBinding session of
-            Cage.Unbound -> TS.Unbound
-            Cage.Bound slot header -> TS.Bound slot header
+    let (SessionId label, scopeBinding) = sessionScope session
+        binding = case scopeBinding of
+            Unbound -> TS.Unbound
+            Bound slot header -> TS.Bound slot header
     in  TS.StatePoint (TS.SessionId label) binding output
 
 openTrie :: Saved -> IO TrieContext
@@ -349,7 +356,8 @@ failTrie why =
         TS.HistoryIncomplete
             _
             _
-            (TS.ProviderHistoryFailure (Cage.HistoryReadFailure _)) -> Receipt.ClientRefusal
+            (TS.ProviderHistoryFailure failure)
+                | isHistoryReadFailure failure -> Receipt.ClientRefusal
         TS.HistoryIncomplete{} -> Receipt.StaleState
         TS.RootDoesNotChain{} -> Receipt.StaleState
         TS.StaleState{} -> Receipt.StaleState
@@ -399,8 +407,8 @@ resolveSaved
     -> Set ReferenceRole
     -> Maybe Addr
     -- ^ The actor's wallet, when the command has one
-    -> Cage.Network
-    -> Cage.Session Cage.NoWitness IO
+    -> Network
+    -> Session NoWitness IO
     -> IO Saved
 resolveSaved dir release access roles wallet network view = do
     resolved <-

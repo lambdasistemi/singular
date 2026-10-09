@@ -45,8 +45,8 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.Lifecycle (protocolFeeReserve)
+import Singular.Registry.Surface (ConwayEra, PParams)
 
 -- | What one command puts out, in lovelace.
 data Outlay = Outlay

@@ -91,10 +91,14 @@ import Singular.Registry.Config.Application
     , configForApplication
     )
 import Singular.Registry.Deployment (renderOutRef)
-import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (Release (..), renderStateToken)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.Surface
+    ( Asset
+    , Coin (..)
+    , ConwayEra
+    , fundable
+    )
+
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainTxOutRef)
 
@@ -250,7 +254,7 @@ seedHeld
 seedHeld seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
     [] -> Left (SeedNotInWallet (renderOutRef seed))
     (u@(_, out) : _)
-        | adaOnlyOut out -> Right u
+        | fundable out -> Right u
         | otherwise -> Left (SeedNotAdaOnly (renderOutRef seed))
 
 {- | The seed, as a create needs it: held ('seedHeld'), with another ada-only
@@ -263,7 +267,7 @@ checkSeed
     -> Either IdentityError (TxIn, TxOut ConwayEra)
 checkSeed seed utxos = do
     u <- seedHeld seed utxos
-    if null [() | (i, o) <- utxos, i /= seed, adaOnlyOut o]
+    if null [() | (i, o) <- utxos, i /= seed, fundable o]
         then Left (NoFundingBesideSeed (renderOutRef seed))
         else Right u
 
@@ -383,7 +387,7 @@ publicationFunding pp seed bootCost before after wallet = do
                     take 1 $
                         sortOn
                             (Down . (^. coinTxOutL) . snd)
-                            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o]
+                            [u | u@(k, o) <- held, k /= Left seed, fundable o]
                 spent = Left seed : map fst funds
                 inCoin =
                     sum [c | o <- seedOut : map snd funds, let Coin c = o ^. coinTxOutL]
@@ -402,7 +406,7 @@ publicationFunding pp seed bootCost before after wallet = do
     publishOne (role, script) held =
         case sortOn
             (Down . (^. coinTxOutL) . snd)
-            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o] of
+            [u | u@(k, o) <- held, k /= Left seed, fundable o] of
             [] -> Left (PublicationUnfunded role (needed script) 0)
             (fund@(_, out) : _) ->
                 let Coin inCoin = out ^. coinTxOutL

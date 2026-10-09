@@ -95,13 +95,12 @@ import Singular.CLI.Trace
     )
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.LedgerProvider (Asset)
-import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , parseRole
     , parseStateToken
     )
+import Singular.Registry.Surface (Asset, ProviderSettings (..))
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}

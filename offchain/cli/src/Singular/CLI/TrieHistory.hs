@@ -7,7 +7,7 @@ import Cardano.Ledger.TxIn (TxId)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Text qualified as T
-import Singular.Registry.Ledger (Root (..))
+import Singular.Registry.Surface (Root (..))
 import Singular.Registry.TrieState
 
 {- | A root an accepted fold's journal entry records: none is an incomplete

@@ -51,6 +51,7 @@ module Singular.CLI.Session
     , submitBuiltIn
     , Building (..)
     , readStep
+    , readView
     , timedRead
     , inScopes
     , Expectation (..)
@@ -190,6 +191,7 @@ import Singular.Registry.Terminal
     )
 import Singular.Registry.Trace
     ( Evaluation (..)
+    , ReadEvent (..)
     , errorClassOf
     , startTimer
     , timedTrace
@@ -591,7 +593,7 @@ submitBuilt
     -> (r -> Expectation)
     -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
     -> IO (ConwayTx, r)
-submitBuilt wc step expect build = submitBuiltIn wc step [] expect (const build)
+submitBuilt wc step expect build = submitBuiltIn wc step [] expect (const (const build))
 
 {- | 'submitBuilt', with the build reading what it names and placing its
 transaction where it decides: a fold learns its request and edge only from
@@ -613,7 +615,11 @@ submitBuiltIn
     -> Text
     -> [Text]
     -> (r -> Expectation)
-    -> (Building -> Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
+    -> ( Building
+         -> Tracer IO ReadEvent
+         -> Cage.Session Cage.NoWitness IO
+         -> IO (ConwayTx, r)
+       )
     -> IO (ConwayTx, r)
 submitBuiltIn wc step items expect build = do
     placement <- newIORef []
@@ -656,7 +662,7 @@ submitBuiltIn wc step items expect build = do
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
-                    (build acting (recording v))
+                    (build acting (readsUnder building) (recording v))
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of
@@ -708,6 +714,18 @@ readStep tracer source items caps body =
         source
         items
         (Cage.withLatest (readsIn source tracer caps) body)
+
+{- | One view for a whole preparation, untimed: the state, the replayed
+root, the wallet, the parameters, the evaluation and the chain point a
+report names are all that view's. For callers that time their own reads.
+-}
+readView
+    :: Env
+    -> Capabilities Cage.NoWitness IO
+    -> (Cage.Session Cage.NoWitness IO -> IO a)
+    -> IO a
+readView env caps body =
+    Cage.withLatest (readsIn (envSource env) (envTracer env) caps) body
 
 {- | A read step inside a view already held: timed and reported with what it
 read.

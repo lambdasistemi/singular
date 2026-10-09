@@ -42,8 +42,6 @@ module Singular.Registry.TxBuilder.Edges
     , publishStateRefReserving
     , stateRefIn
     , publishCageRefs
-    , adaOnlyOut
-    , selectFunding
 
       -- * Booking one edge
     , BookingApproval (..)
@@ -148,6 +146,7 @@ import Singular.Registry.Surface
     , fundingOutputs
     , parameters
     , readOutputsAt
+    , selectFunding
     , timedTrace
     )
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -246,40 +245,6 @@ namingPins codes registryId =
                 (applyDataParam (PLC.I kind) (ncWitness codes))
             )
 
-{- | Can this output fund a transaction? It must hold ada and nothing
-else, because it doubles as collateral, and it must not be one of the
-published reference outputs, because a transaction may not both spend an
-output and reference it.
--}
-adaOnlyOut :: TxOut ConwayEra -> Bool
-adaOnlyOut out =
-    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
-        && ( case out ^. referenceScriptTxOutL of
-                SNothing -> True
-                SJust _ -> False
-           )
-
-{- | The wallet output a transaction is funded and collateralised from: the
-one the caller chose, which must be an ada-only output of the wallet, or else
-the largest ada-only output. A caller that chose none still gets the output
-least likely to leave the change under its minimum.
--}
-selectFunding
-    :: Maybe TxIn
-    -> [(TxIn, TxOut ConwayEra)]
-    -> Either String (TxIn, TxOut ConwayEra)
-selectFunding chosen utxos = case chosen of
-    Nothing -> case sortOn (Down . (^. coinTxOutL) . snd) usable of
-        [] -> Left "the payer wallet has no ada-only output"
-        (u : _) -> Right u
-    Just wanted -> case [u | u@(i, _) <- usable, i == wanted] of
-        (u : _) -> Right u
-        [] ->
-            Left
-                "the chosen funding output is not an ada-only output of the payer"
-  where
-    usable = filter (adaOnlyOut . snd) utxos
-
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
     :: Session NoWitness IO
@@ -321,7 +286,7 @@ publishRefScriptTx reserved v payerAddr script = do
     fund <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
-            (filter (\(i, o) -> adaOnlyOut o && Set.notMember i reserved) utxos) of
+            (filter (\(i, _) -> Set.notMember i reserved) utxos) of
             [] -> error "publishRefScript: the payer wallet has no ada-only output"
             (u : _) -> pure u
     let probe =
@@ -775,7 +740,7 @@ bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
     (feeIn, feeOut) <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
-            (filter (adaOnlyOut . snd) utxos) of
+            utxos of
             [] -> error "bookEdge: the payer wallet has no ada-only output"
             (u : _) -> pure u
     now <- currentPosixMs

@@ -127,10 +127,13 @@ import Singular.CLI.Trace
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider (Asset)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Surface
+    ( Asset
+    , ConwayEra
+    , Network (..)
+    , readOutputsAt
+    , tip
+    )
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
@@ -226,7 +229,7 @@ inspectIncompleteCreate
 inspectIncompleteCreate env dir settings identity = do
     reached <-
         try $ readOnce env settings ["chain tip", "journal transactions"] $ \caps v -> do
-            point <- Cage.tip v
+            point <- tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
             pending <- unresolved <$> readJournal dir
@@ -312,9 +315,9 @@ inspectSaved env dir key settings release a = do
                     (inspectAccess a)
                     Set.empty
                     Nothing
-                    (Cage.Network magic)
+                    (Network magic)
                     v
-            point <- Cage.tip v
+            point <- tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved
             state <- case extractCageDatum (snd (liveState live)) of
@@ -327,7 +330,7 @@ inspectSaved env dir key settings release a = do
             leaf <- trieLeaf context key root
             outs <- liveOutputs v saved
             requests <-
-                Cage.outputsAt
+                readOutputsAt
                     v
                     (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
             listed <- case inspectOutputsAt a of
@@ -338,7 +341,7 @@ inspectSaved env dir key settings release a = do
                             (failWith ClientRefusal . replaceFlag)
                             pure
                             (parseEnterpriseAddress magic text)
-                    os <- Cage.outputsAt v addr
+                    os <- readOutputsAt v addr
                     pure
                         [
                             ( "outputsAt"

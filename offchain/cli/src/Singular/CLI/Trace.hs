@@ -106,7 +106,7 @@ import Data.Word (Word64)
 import System.IO (Handle, hFlush)
 import Text.Printf (printf)
 
-import Singular.Registry.Trace
+import Singular.Registry.Surface
     ( BackendEvent (..)
     , BodyBuild (..)
     , BodyEnd (..)
@@ -120,9 +120,7 @@ import Singular.Registry.Trace
     , ValiditySelection (..)
     , ViewOpening (..)
     , ViewRelease (..)
-    )
-import Singular.Registry.TraceRender
-    ( appendPhaseLine
+    , appendPhaseLine
     , backendPhase
     , readPhase
     )

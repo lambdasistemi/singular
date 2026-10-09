@@ -65,8 +65,8 @@ import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Tracer (Tracer)
 
-import Cardano.Slotting.Slot qualified as Cage
 import Singular.Application.OpenDatum.Envelope
     ( dataFromJson
     , envelopeToJson
@@ -94,12 +94,21 @@ import Singular.CLI.Registry
     , loadRelease
     , parseEnterpriseAddress
     )
-import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
+import Singular.CLI.Session (Env (..), failWith, readView, txIdHex)
+import Singular.CLI.Trace (readsUnder)
 import Singular.Registry.Capabilities (sessionReceipt)
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger (ConwayEra, PParams)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Surface
+    ( ConwayEra
+    , Network (..)
+    , NoWitness
+    , PParams
+    , ReadEvent (..)
+    , Session
+    , SlotNo (..)
+    , TipObservation (..)
+    , parameters
+    , tip
+    )
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
@@ -150,9 +159,9 @@ runPreview env kind a settings addrText = do
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
     envReads env settings $ \caps ->
-        Cage.withLatest (readsIn (envSource env) (envTracer env) caps) $ \v -> do
-            pp <- Cage.parameters v
-            point <- Cage.tip v
+        readView env caps $ \v -> do
+            pp <- parameters v
+            point <- tip v
             saved <-
                 resolveSaved
                     (entryStateDir a)
@@ -160,7 +169,7 @@ runPreview env kind a settings addrText = do
                     (entryAccess a)
                     (neededRoles (commandOf kind a))
                     (Just addr)
-                    (Cage.Network magic)
+                    (Network magic)
                     v
             let inserted = insertionOf saved a caller <$> insertPayload
             context <- openTrie saved
@@ -173,16 +182,24 @@ runPreview env kind a settings addrText = do
                         maybe (failWith ClientRefusal "insert has no envelope") pure inserted
                     booked <- planInsert live envelope
                     (<> [("envelope", envelopeToJson envelope)])
-                        <$> previewBooking a v live addr key booked
+                        <$> previewBooking a v (readsUnder (envTracer env)) live addr key booked
                 KTerminate -> do
                     outs <- liveOutputs v saved
                     (booked, _, _) <- planTerminate live caller key outs
-                    previewBooking a v live addr key booked
+                    previewBooking a v (readsUnder (envTracer env)) live addr key booked
                 KUpdate -> do
                     payload <- document "update needs --payload" dataFromJson
                     outs <- liveOutputs v saved
                     (holding, _) <- planUpdate live caller key outs
-                    tx <- buildUpdate v live addr (entryFund a) holding payload
+                    tx <-
+                        buildUpdate
+                            v
+                            (readsUnder (envTracer env))
+                            live
+                            addr
+                            (entryFund a)
+                            holding
+                            payload
                     let outlay = updateOutlay tx
                     refuseOver (entryMaxOutlay a) outlay
                     pure
@@ -217,21 +234,25 @@ report it beside the bound on the fold that follows.
 -}
 previewBooking
     :: EntryArgs
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
+    -> Tracer IO ReadEvent
+    {- ^ Where the booking reports its timing: the acquiring scope's
+    tracer, threaded explicitly because the session record stays closed.
+    -}
     -> Live
     -> Addr
     -> ByteString
     -> Booked
     -> IO [(Text, Value)]
-previewBooking a v live addr key b = do
+previewBooking a v tracer live addr key b = do
     let s = liveSaved live
         cfg = savedCfg s
-    pp <- Cage.parameters v
+    pp <- parameters v
     booking <-
         bookEdgeMeasured
             cfg
             v
-            (Cage.sessionTracer v)
+            tracer
             addr
             (savedToken s)
             key
@@ -314,11 +335,11 @@ foldBound pp live outlay =
         ]
 
 -- | The view's chain point, as the other commands print it: slot, a dot, the block hash.
-pointText :: Cage.TipObservation -> Text
+pointText :: TipObservation -> Text
 pointText p =
-    T.pack (show (Cage.unSlotNo (Cage.observedSlot p)))
+    T.pack (show (unSlotNo (observedSlot p)))
         <> "."
-        <> hexT (Cage.observedHash p)
+        <> hexT (observedHash p)
 
 {- | A digest of the parameters the bodies were built under, so a later
 reader can tell whether they moved: BLAKE2b-256 of their JSON.

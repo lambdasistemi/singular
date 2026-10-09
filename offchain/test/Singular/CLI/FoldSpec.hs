@@ -59,6 +59,7 @@ import Singular.CLI.FoldRules
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.StubSession
+import Singular.Registry.Surface (fundedView)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , policyIdFromPin

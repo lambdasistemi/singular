@@ -38,7 +38,6 @@ import Cardano.Ledger.BaseTypes
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Slotting.Slot qualified as Cage
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
@@ -46,7 +45,7 @@ import Singular.CLI.Command
     , neededRoles
     )
 import Singular.CLI.Fold (slotAt)
-import Singular.CLI.FoldRules (boundStartMs, fundedView, placedEdge)
+import Singular.CLI.FoldRules (boundStartMs, placedEdge)
 import Singular.CLI.Live
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
@@ -61,9 +60,16 @@ import Singular.CLI.Trace
     , What (EdgeStarted, Reclaimed, RequestSeen, RootSeen)
     , report
     )
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.SessionIO qualified as Services
+import Singular.Registry.Surface
+    ( SlotNo (..)
+    , TipObservation (..)
+    , bech32Address
+    , fundedView
+    , readOutputsAt
+    , tip
+    , walletAddr
+    )
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , addrWitnessKeyHash
@@ -82,7 +88,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
 runReclaim :: Env -> ReclaimArgs -> IO Value
@@ -116,8 +121,8 @@ runReclaim env a = attached
                 "reclaim"
                 ["requests", "state"]
                 (const (expecting ("reclaim:" <> txInText named)))
-                $ \building v -> do
-                    allRequests <- Cage.outputsAt v requestAddr
+                $ \building _tracer v -> do
+                    allRequests <- readOutputsAt v requestAddr
                     let pending = findRequestUtxos (savedToken s) allRequests
                     locked <-
                         maybe
@@ -131,18 +136,18 @@ runReclaim env a = attached
                     st <- case extractCageDatum (snd (liveState live)) of
                         Just (StateDatum st) -> pure st
                         _ -> stop "the registry's state output carries no state datum"
-                    observed <- Cage.tip v
+                    observed <- tip v
                     let b =
                             windowOf
                                 (requestSubmittedAt req)
                                 (stateProcessTime st)
                                 (stateRetractTime st)
-                        tip = Cage.observedSlot observed
-                        tipSlot = toInteger (Cage.unSlotNo tip)
+                        tipPoint = observedSlot observed
+                        tipSlot = toInteger (unSlotNo tipPoint)
                     opens <-
-                        fmap (toInteger . Cage.unSlotNo) <$> slotAt v (processingEnds b)
+                        fmap (toInteger . unSlotNo) <$> slotAt v (processingEnds b)
                     closes <-
-                        fmap (toInteger . Cage.unSlotNo) <$> slotAt v (retractEnds b)
+                        fmap (toInteger . unSlotNo) <$> slotAt v (retractEnds b)
                     found
                         building
                         [InRequest (txInText named)]
@@ -166,24 +171,30 @@ runReclaim env a = attached
                         Just start -> pure start
                         _ -> stop "the view cannot establish the opening of the retract window"
                     ceilStart <-
-                        toInteger . Cage.unSlotNo
+                        toInteger . unSlotNo
                             <$> Services.ceilingSlot v (processingEnds bounds)
                     funded <-
                         fundedView (reclaimFund a) wallet v
                             >>= either (stop . ("the wallet cannot fund the reclaim: " <>)) pure
                     unsigned <-
-                        retractRequestAtTipImpl tip cfg funded (savedToken s) named wallet
+                        retractRequestAtTipImpl
+                            tipPoint
+                            cfg
+                            funded
+                            (savedToken s)
+                            named
+                            wallet
                     let body = unsigned ^. bodyTxL
                         interval = body ^. vldtTxBodyL
                         slot = \case
-                            SJust n -> Just (toInteger (Cage.unSlotNo n))
+                            SJust n -> Just (toInteger (unSlotNo n))
                             SNothing -> Nothing
                         upper = slot (invalidHereafter interval)
                     upperLimit <- case closes of
                         Just end -> pure (DeadlineSlot end)
                         Nothing -> do
                             let slotOf ms =
-                                    fmap (toInteger . Cage.unSlotNo) <$> slotAt v ms
+                                    fmap (toInteger . unSlotNo) <$> slotAt v ms
                             high <- placedEdge slotOf (processingEnds bounds) (retractEnds bounds)
                             boundTime <- case (high, upper) of
                                 (Just hi, Just u) -> boundStartMs slotOf (processingEnds bounds) hi u
@@ -199,7 +210,7 @@ runReclaim env a = attached
                         $ stop
                             "not-phase2: the built reclaim has no nonempty validity interval inside the retract window; it is not signed"
                     -- Fees come from this wallet. No state or another request may be spent.
-                    walletOuts <- Cage.outputsAt funded wallet
+                    walletOuts <- readOutputsAt funded wallet
                     let spent = Set.fromList (toList (body ^. inputsTxBodyL))
                         allowed = Set.fromList (named : map fst walletOuts)
                     unless
@@ -228,9 +239,9 @@ runReclaim env a = attached
                     pure
                         (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
         (pendingAfter, liveAfter, ownerOuts) <- readingBack at "reclaim" tx ["requests", "state", "owner outputs"] $ \v -> do
-            requests <- Cage.outputsAt v requestAddr
+            requests <- readOutputsAt v requestAddr
             live <- attachLive v s
-            ownerOuts <- Cage.outputsAt v recipient
+            ownerOuts <- readOutputsAt v recipient
             pure (requests, live, ownerOuts)
         when (named `elem` map fst pendingAfter) $
             failWith

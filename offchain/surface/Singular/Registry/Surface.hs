@@ -29,11 +29,14 @@ module Singular.Registry.Surface
       -- * Named read services (Singular.Registry.SessionIO)
     , outputsAt
     , outputsAtAddress
+    , outputsAtTxIn
     , outputsHolding
     , outputsCarrying
     , mintRecordOf
     , readOutputsAt
     , fundableOutputsAt
+    , fundedView
+    , sessionScope
     , parameters
     , tip
     , slotStart
@@ -63,6 +66,7 @@ module Singular.Registry.Surface
     , FundingViewRefusal (..)
     , narrowFunding
     , fundingView
+    , selectFunding
     , SeedRefusal (..)
     , seedOf
     , carriersOf
@@ -80,6 +84,7 @@ module Singular.Registry.Surface
     , SubmitResult (..)
     , TipObservation (..)
     , HistoryFailure
+    , isHistoryReadFailure
     , Outputs
 
       -- * Plain ledger types (Singular.Registry.Ledger)
@@ -105,11 +110,22 @@ module Singular.Registry.Surface
     , signedTx
 
       -- * Traces (Singular.Registry.Trace)
+    , BackendEvent (..)
     , BodyBuild (..)
     , BodyEnd (..)
+    , ErrorClass (..)
     , ReadEvent (..)
     , Evaluation (..)
+    , HorizonEnd (..)
+    , HorizonWait (..)
+    , Query (..)
+    , QueryEnd (..)
+    , ValiditySelection (..)
+    , ViewOpening (..)
+    , ViewRelease (..)
     , timedTrace
+    , startTimer
+    , isoNow
 
       -- * Provider settings (Singular.Registry.ProviderSettings)
     , ProviderSettings (..)
@@ -171,6 +187,7 @@ import Singular.Registry.LedgerProvider
     , Session
     , SubmitResult (..)
     , TipObservation (..)
+    , isHistoryReadFailure
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO
@@ -178,13 +195,16 @@ import Singular.Registry.SessionIO
     , evaluateTx
     , floorSlot
     , fundableOutputsAt
+    , fundedView
     , mintRecordOf
     , outputsAt
     , outputsAtAddress
+    , outputsAtTxIn
     , outputsCarrying
     , outputsHolding
     , parameters
     , readOutputsAt
+    , sessionScope
     , slotStart
     , tip
     , validityUpper
@@ -193,10 +213,21 @@ import Singular.Registry.SessionServices (ServiceFailure (..))
 import Singular.Registry.Signing (SignedTx, signTx, signedTx)
 import Singular.Registry.TimeSource (TimeSource (..))
 import Singular.Registry.Trace
-    ( BodyBuild (..)
+    ( BackendEvent (..)
+    , BodyBuild (..)
     , BodyEnd (..)
+    , ErrorClass (..)
     , Evaluation (..)
+    , HorizonEnd (..)
+    , HorizonWait (..)
+    , Query (..)
+    , QueryEnd (..)
     , ReadEvent (..)
+    , ValiditySelection (..)
+    , ViewOpening (..)
+    , ViewRelease (..)
+    , isoNow
+    , startTimer
     , timedTrace
     )
 import Singular.Registry.TraceRender
@@ -228,5 +259,6 @@ import Singular.Registry.WalletOutputs
     , narrowFunding
     , renderFundingRefusal
     , seedOf
+    , selectFunding
     , walletOutputs
     )

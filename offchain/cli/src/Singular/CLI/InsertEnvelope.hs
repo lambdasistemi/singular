@@ -24,7 +24,7 @@ import Singular.Application.OpenDatum.Envelope
     , StateAsset (..)
     )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), TokenId (..))
+import Singular.Registry.Surface (AssetName (..), TokenId (..))
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 
 {- | The envelope an insert books.

@@ -23,7 +23,7 @@ import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import Singular.CLI.Receipt (JournalEntry (..))
 import Singular.CLI.Registry (hexT)
-import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.Surface (ConwayEra)
 
 {- | A journalled transaction's saved body, bound to its @prepared@ line
 by byte hash and derived id, or why it is not.

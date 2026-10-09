@@ -35,7 +35,7 @@ import Data.Text qualified as T
 
 import MPF.Backend.Pure (MPFInMemoryDB)
 
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( AssetName (..)
     , Root (..)
     , TokenId (..)

@@ -49,6 +49,7 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Tracer (Tracer)
 
 import Singular.Application.OpenDatum.Book
     ( insertApproval
@@ -80,14 +81,17 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session (failWith, failWithFields)
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.Surface
+    ( ConwayEra
+    , NoWitness
+    , ReadEvent (..)
+    , Session
+    , fundableOutputsAt
+    , selectFunding
+    )
 import Singular.Registry.TxBuilder.Edges
     ( BookingApproval (..)
     , edgeDeposit
-    , selectFunding
     )
 import Singular.Registry.Types
     ( Edge
@@ -224,18 +228,22 @@ planUpdate live caller key outs = do
 caller's chosen ada-only output or else the largest.
 -}
 buildUpdate
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -- ^ The one view the update is built from: its wallet, parameters and evaluation
+    -> Tracer IO ReadEvent
+    {- ^ Where the build reports its timing: the caller's scope tracer,
+    threaded explicitly because the session record stays closed.
+    -}
     -> Live
     -> Addr
     -> Maybe TxIn
     -> (TxIn, TxOut ConwayEra)
     -> PLC.Data
     -> IO ConwayTx
-buildUpdate v live addr chosen holding payload = do
+buildUpdate v tracer live addr chosen holding payload = do
     appRef <- appReferenceOf live
     let refOut = [u | u@(i, _) <- liveRefs live, i == appRef]
-    wallet <- Cage.outputsAt v addr
+    wallet <- fundableOutputsAt v addr
     fee <-
         either
             ( \why ->
@@ -246,7 +254,7 @@ buildUpdate v live addr chosen holding payload = do
     updatePayloadTx
         UpdateArgs
             { uaSession = v
-            , uaTracer = Cage.sessionTracer v
+            , uaTracer = tracer
             , uaApplied = applied (liveSaved live)
             , uaHolding = holding
             , uaPayload = payload

@@ -67,7 +67,6 @@ import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Cardano.Slotting.Slot qualified as Cage
 import Singular.Application.OpenDatum.Envelope
     ( Envelope (..)
     , envelopeHash
@@ -106,14 +105,16 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Deployment (parseOutRef)
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( Addr
     , ConwayEra
+    , NoWitness
+    , Session
     , SlotNo (..)
+    , TipObservation (..)
+    , readOutputsAt
+    , tip
     )
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , mkInlineDatum
@@ -159,7 +160,7 @@ reconcile
     :: Text
     -> FilePath
     -> Saved
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> IO Reconciliation
 reconcile command dir saved view = do
     liveAt <- liveReader view
@@ -191,7 +192,7 @@ no key; the registry identity has not been saved yet.
 reconcileIncomplete
     :: Text
     -> FilePath
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> IO Reconciliation
 reconcileIncomplete command dir view = do
     liveAt <- liveReader view
@@ -282,11 +283,11 @@ recoveryJson recovered =
         ]
 
 -- | A chain point as the journal writes it: slot, a dot, the block hash.
-renderPoint :: Cage.TipObservation -> Text
+renderPoint :: TipObservation -> Text
 renderPoint p =
-    T.pack (show (Cage.unSlotNo (Cage.observedSlot p)))
+    T.pack (show (unSlotNo (observedSlot p)))
         <> "."
-        <> hexT (Cage.observedHash p)
+        <> hexT (observedHash p)
 
 -- ---------------------------------------------------------
 -- 1 and 2. Rollback, inclusion and exclusion
@@ -295,7 +296,7 @@ renderPoint p =
 -- | The outputs live at an address, read once per address per view.
 type LiveAt = Addr -> IO (Set TxIn)
 
-liveReader :: Cage.Session Cage.NoWitness IO -> IO LiveAt
+liveReader :: Session NoWitness IO -> IO LiveAt
 liveReader view = do
     cache <- newIORef Map.empty
     pure $ \addr -> do
@@ -304,7 +305,7 @@ liveReader view = do
             Just found -> pure found
             Nothing -> do
                 found <-
-                    Set.fromList . map fst <$> Cage.outputsAt view addr
+                    Set.fromList . map fst <$> readOutputsAt view addr
                 modifyIORef' cache (Map.insert addr found)
                 pure found
 
@@ -329,11 +330,11 @@ included but which a live input now shows off the chain. Returns them.
 rollBack
     :: Text
     -> FilePath
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> LiveAt
     -> IO [Text]
 rollBack command dir view liveAt = do
-    observed <- Cage.tip view
+    observed <- tip view
     entries <- readJournal dir
     let included =
             [ t
@@ -377,11 +378,11 @@ one that lacked it, and @excluded@ for one that can never be included.
 recoverInclusion
     :: Text
     -> FilePath
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> LiveAt
     -> IO [Recovery]
 recoverInclusion command dir view liveAt = do
-    observed <- Cage.tip view
+    observed <- tip view
     entries <- readJournal dir
     let settled = ["observed", "rejected", "excluded"]
         open =
@@ -389,7 +390,7 @@ recoverInclusion command dir view liveAt = do
             | t <- nub (map journalTxId entries)
             , journalEvent (lastOf entries t) `notElem` settled
             ]
-        tip = Cage.observedSlot observed
+        tipPoint = observedSlot observed
     forM open $ \e -> do
         let txid = journalTxId e
         (prepared, body) <- boundBody entries txid
@@ -430,7 +431,11 @@ recoverInclusion command dir view liveAt = do
                                 , recBody = Just tx
                                 }
                     _
-                        | excludedAt tip (upperOf tx) (submissionCase entries txid) inclusion
+                        | excludedAt
+                            tipPoint
+                            (upperOf tx)
+                            (submissionCase entries txid)
+                            inclusion
                         , OffChain found <- inclusion
                         , Just (SlotNo upper) <- upperOf tx -> do
                             appendJournal
@@ -442,7 +447,7 @@ recoverInclusion command dir view liveAt = do
                                     ( "it is not on the chain ("
                                         <> T.pack (show (length found))
                                         <> " input(s) it spends are live) and the tip's slot "
-                                        <> T.pack (show (Cage.unSlotNo tip))
+                                        <> T.pack (show (unSlotNo tipPoint))
                                         <> " has reached its validity upper bound "
                                         <> T.pack (show upper)
                                         <> ": it can never be included"

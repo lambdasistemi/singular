@@ -7,11 +7,14 @@ module Singular.Registry.SessionIO
     ( withLatest
     , outputsAt
     , outputsAtAddress
+    , outputsAtTxIn
     , outputsHolding
     , outputsCarrying
     , mintRecordOf
     , readOutputsAt
     , fundableOutputsAt
+    , fundedView
+    , sessionScope
     , parameters
     , tip
     , registered
@@ -23,6 +26,7 @@ module Singular.Registry.SessionIO
     ) where
 
 import Cardano.Ledger.Hashes (ScriptHash)
+import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
@@ -31,7 +35,12 @@ import Control.Tracer (traceWith)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
-import Singular.Registry.Evidence (Evidenced (..))
+import Singular.Registry.Evidence
+    ( Evidenced (..)
+    , NoWitness
+    , SessionBinding (..)
+    , SessionId (..)
+    )
 import Singular.Registry.Ledger (Addr, ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
     ( Acquisition (..)
@@ -62,7 +71,7 @@ import Singular.Registry.Trace
     , timedTrace
     , tracedQuery
     )
-import Singular.Registry.WalletOutputs (fundable)
+import Singular.Registry.WalletOutputs (fundable, selectFunding)
 import System.Timeout (timeout)
 
 -- | Request Latest on the caller's explicit network and preserve acquisition refusal.
@@ -92,6 +101,11 @@ and failure semantics exactly.
 outputsAtAddress
     :: Session w m -> Addr -> m (Either ReadFailure (Evidenced w Outputs))
 outputsAtAddress session address = outputs session (AtAddress address)
+
+-- | The output at one exact reference, with its evidence.
+outputsAtTxIn
+    :: Session w m -> TxIn -> m (Either ReadFailure (Evidenced w Outputs))
+outputsAtTxIn session ref = outputs session (AtTxIn ref)
 
 -- | The outputs holding any quantity of this asset.
 outputsHolding
@@ -123,6 +137,38 @@ ada-only with no reference script. Identical to reading through
 fundableOutputsAt :: Session w IO -> Addr -> IO Outputs
 fundableOutputsAt session address =
     filter (fundable . snd) <$> readOutputsAt session address
+
+-- | The session's own identity and binding, as its receipts name them.
+sessionScope :: Session w m -> (SessionId, SessionBinding)
+sessionScope session = (sessionId session, sessionBinding session)
+
+{- | A view in which the wallet's own address holds only the output the caller
+named to fund the fold: the production fold funds and collateralises from
+the largest ada-only output of the wallet it reads, and takes no funding
+argument. The named output must be an ada-only output of that wallet. With
+none named the view is the fold's own.
+-}
+fundedView
+    :: Maybe TxIn
+    -> Addr
+    -> Session NoWitness IO
+    -> IO (Either String (Session NoWitness IO))
+fundedView Nothing _ v = pure (Right v)
+fundedView chosen addr v = do
+    wallet <- readOutputsAt v addr
+    pure $ case selectFunding chosen wallet of
+        Left why -> Left why
+        Right one ->
+            Right
+                v
+                    { outputs = \query ->
+                        fmap (fmap (select query one)) (outputs v query)
+                    }
+  where
+    select (AtAddress address) one fact
+        | address == addr =
+            fact{value = filter ((== fst one) . fst) (value fact)}
+    select _ _ fact = fact
 
 parameters :: Session w IO -> IO (PParams ConwayEra)
 parameters session =

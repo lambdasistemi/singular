@@ -124,16 +124,6 @@ import Singular.Registry.Deployment
     , parseOutRef
     , renderAddrBytes
     )
-import Singular.Registry.Evidence (Evidenced (..), NoWitness)
-import Singular.Registry.Ledger
-    ( AssetName (..)
-    , Coin (..)
-    , ConwayEra
-    , TokenId (..)
-    )
-import Singular.Registry.LedgerProvider (Asset)
-import Singular.Registry.LedgerProvider qualified as LP
-import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
     ( ReferenceRefusal (..)
     , ReferenceRole (..)
@@ -142,10 +132,25 @@ import Singular.Registry.StateToken
     , renderReferenceRefusal
     , renderStateToken
     )
+import Singular.Registry.Surface
+    ( Asset
+    , AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , Evidenced (value)
+    , NoWitness
+    , Session
+    , TokenId (..)
+    , bech32Address
+    , fundable
+    , outputsAtTxIn
+    , parameters
+    , readOutputsAt
+    , walletAddr
+    )
 import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)
 import Singular.Registry.TxBuilder.Edges
-    ( adaOnlyOut
-    , publishRefScriptTx
+    ( publishRefScriptTx
     , witnessScriptOf
     )
 import Singular.Registry.TxBuilder.Internal
@@ -166,7 +171,6 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 runCreate :: Env -> CreateArgs -> IO Value
 runCreate env a = do
@@ -186,7 +190,7 @@ runCreate env a = do
                     pure
                     (parseEnterpriseAddress magic addrText)
             readOnce env settings ["wallet outputs"] $ \caps v -> do
-                utxos <- Cage.outputsAt v addr
+                utxos <- readOutputsAt v addr
                 (_, identity) <- previewIdentity False a rel addr utxos
                 scope <- sessionReceipt caps v
                 pure $
@@ -213,7 +217,7 @@ createWith env a rel ws = do
                 ["wallet outputs"]
                 (wcCapabilities wc)
                 ( \v -> do
-                    outputs <- Cage.outputsAt v addr
+                    outputs <- readOutputsAt v addr
                     evidence <- sessionReceipt (wcCapabilities wc) v
                     pure (outputs, evidence)
                 )
@@ -245,7 +249,7 @@ createWith env a rel ws = do
                         (wcCapabilities wc)
                         $ \v -> do
                             found <- stateReference v addr rel seedIn
-                            (found,) <$> Cage.parameters v
+                            (found,) <$> parameters v
                 let token = stateTokenOf rel seedIn
                     stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
                     beforeBoot = case foundState of
@@ -327,7 +331,7 @@ stateTokenOf rel seedIn =
 provider, then the wallet; none when neither has one.
 -}
 stateReference
-    :: LP.Session NoWitness IO
+    :: Session NoWitness IO
     -> Addr
     -- ^ The creator's wallet
     -> Release
@@ -414,7 +418,7 @@ boot wc cfg pinned seedIn foundState = do
             "boot"
             []
             (const (expecting "state"))
-            ( \building v -> do
+            ( \building _tracer v -> do
                 place building [InEdge Booting] (EdgeStarted Booting)
                 (,()) <$> bootTokenFrom cfg stateRef v addr
             )
@@ -428,7 +432,7 @@ boot wc cfg pinned seedIn foundState = do
             (wcSource wc)
             ["state"]
             (wcCapabilities wc)
-            (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
+            (`readOutputsAt` cageAddrFromCfg cfg (network cfg))
     (seenOutput, seenState) <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith Partial "the boot confirmed but its state output is not live"
@@ -504,7 +508,7 @@ observeReference wc step script (i, _) = do
             ["reference scripts"]
             (wcCapabilities wc)
             ( \v ->
-                LP.outputs v (LP.AtTxIn i)
+                outputsAtTxIn v i
                     >>= either throwIO (pure . map snd . value)
             )
     let wanted = hashScript script
@@ -576,7 +580,7 @@ previewIdentity submitting a rel addr utxos = do
         Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
         Nothing -> case sortOn
             (Down . (^. coinTxOutL) . snd)
-            (filter (adaOnlyOut . snd) utxos) of
+            (filter (fundable . snd) utxos) of
             ((i, _) : _) -> pure i
             [] ->
                 failWith
