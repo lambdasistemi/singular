@@ -922,6 +922,189 @@ def test_trim_derived_from_reads(mod, tmp):
     )
 
 
+def _cbor_uint(value):
+    if value < 24:
+        return bytes([value])
+    if value < 256:
+        return bytes([24, value])
+    if value < 65536:
+        return bytes([25]) + value.to_bytes(2, "big")
+    return bytes([26]) + value.to_bytes(4, "big")
+
+
+def _cbor_bstr(blob):
+    assert len(blob) < 256
+    if len(blob) < 24:
+        return bytes([64 + len(blob)]) + blob
+    return bytes([88, len(blob)]) + blob
+
+
+def _cbor_array(items):
+    assert len(items) < 24
+    return bytes([128 + len(items)]) + b"".join(items)
+
+
+def _cbor_tag(number, item):
+    if number < 24:
+        return bytes([192 + number]) + item
+    return bytes([216, number]) + item
+
+
+def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
+    fields = [
+        _cbor_bstr(bytes(range(32))),
+        _cbor_uint(fee),
+        _cbor_uint(process),
+        _cbor_uint(retract),
+        _cbor_bstr(bytes([1]) * 28),
+        _cbor_bstr(bytes([2]) * 28),
+        _cbor_bstr(bytes([3]) * 28),
+        _cbor_bstr(bytes([4]) * 28),
+    ]
+    return (_cbor_tag(121, _cbor_array(fields))).hex()
+
+
+def test_cbor_decoder_synthetic(mod, tmp):
+    decode = getattr(mod, "decode_plutus_datum", None)
+    if decode is None:
+        check("cbor-decoder-synthetic", False, "decode_plutus_datum is absent")
+        return
+    datum = decode(_synthetic_state_datum_hex())
+    ok = (
+        isinstance(datum, tuple)
+        and datum[0] == "constr"
+        and datum[1] == 0
+        and isinstance(datum[2], list)
+        and len(datum[2]) == 8
+        and datum[2][1] == 1000000
+        and datum[2][2] == 120000
+        and datum[2][3] == 120000
+    )
+    check("cbor-decoder-synthetic", ok, "a hand-built state datum misdecoded")
+    try:
+        decode("d8798800")
+        check("cbor-decoder-rejects-short", False, "a truncated datum decoded")
+    except ValueError:
+        check("cbor-decoder-rejects-short", True)
+    except Exception as error:
+        check(
+            "cbor-decoder-rejects-short",
+            False,
+            f"a truncated datum escaped as {type(error).__name__}, not ValueError",
+        )
+
+
+def test_plutus_json_walker(mod, tmp):
+    walk = getattr(mod, "_plutus_json_value", None)
+    if walk is None:
+        check("plutus-json-walker", False, "_plutus_json_value is absent")
+        return
+    node = {
+        "constructor": 0,
+        "fields": [
+            {"bytes": "00" * 32},
+            {"int": 1000000},
+            {"int": 120000},
+            {"int": 120000},
+        ],
+    }
+    value = walk(node)
+    check(
+        "plutus-json-walker",
+        isinstance(value, tuple)
+        and value[0] == "constr"
+        and value[1] == 0
+        and value[2][1] == 1000000,
+        "a datum-value object misconverted",
+    )
+
+
+def test_fee_bound_fetch_mocked(mod, tmp):
+    fetch = getattr(mod, "fetch_state_fee_bound", None)
+    post = getattr(mod, "_koios_post", None)
+    walk = getattr(mod, "_plutus_json_value", None)
+    if fetch is None or post is None or walk is None:
+        missing = [
+            name
+            for name, fn in (
+                ("fetch_state_fee_bound", fetch),
+                ("_koios_post", post),
+                ("_plutus_json_value", walk),
+            )
+            if fn is None
+        ]
+        check(
+            "fee-bound-fetch-mocked",
+            False,
+            f"the fetch path is absent: {missing}",
+        )
+        return
+    from unittest import mock as _mock
+
+    datum_hex = _synthetic_state_datum_hex()
+    inline_row = {
+        "tx_hash": "aa" * 32,
+        "tx_index": 1,
+        "inline_datum": {"bytes": datum_hex},
+    }
+    with _mock.patch.object(mod, "_koios_post", return_value=[inline_row]):
+        bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+    check(
+        "fee-bound-fetch-inline",
+        bound["stateMaxFee"] == 1000000 and bound["observedTx"] == f"{'aa' * 32}#1",
+        f"the inline datum gave {bound}",
+    )
+    hashed_row = {
+        "tx_hash": "bb" * 32,
+        "tx_index": 0,
+        "datum_hash": "cc" * 32,
+    }
+
+    def fake_post(base, path, payload, timeout=30):
+        if path == "/asset_utxos":
+            return [hashed_row]
+        if path == "/datum_info":
+            return [{"bytes": datum_hex}]
+        raise AssertionError(f"unexpected path {path}")
+
+    with _mock.patch.object(mod, "_koios_post", side_effect=fake_post):
+        bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+    check(
+        "fee-bound-fetch-by-hash",
+        bound["stateMaxFee"] == 1000000,
+        f"the datum_info fallback gave {bound}",
+    )
+    other_row = {
+        "tx_hash": "dd" * 32,
+        "tx_index": 0,
+        "inline_datum": {
+            "bytes": _synthetic_state_datum_hex(
+                fee=1000000, process=60000, retract=30000
+            )
+        },
+    }
+    with _mock.patch.object(mod, "_koios_post", return_value=[other_row]):
+        try:
+            fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+            check("fee-bound-rejects-windows", False, "other windows accepted")
+        except RuntimeError as error:
+            check(
+                "fee-bound-rejects-windows",
+                "other windows" in str(error),
+                f"unexpected error: {error}",
+            )
+    with _mock.patch.object(mod, "_koios_post", return_value=[]):
+        try:
+            fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+            check("fee-bound-rejects-empty", False, "no rows accepted")
+        except RuntimeError as error:
+            check(
+                "fee-bound-rejects-empty",
+                "no rows" in str(error),
+                f"unexpected error: {error}",
+            )
+
+
 def test_nonzero_topup_survives_trim(mod, tmp):
     import json as _json
 
@@ -1172,6 +1355,9 @@ def main():
         test_money_compares_value_and_recipient,
         test_no_preview_files_needed,
         test_trim_derived_from_reads,
+        test_cbor_decoder_synthetic,
+        test_plutus_json_walker,
+        test_fee_bound_fetch_mocked,
         test_nonzero_topup_survives_trim,
         test_trim_preserves_run_three_predicates,
         test_refusal_compares_pending_set,
