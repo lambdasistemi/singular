@@ -728,8 +728,20 @@ class Journey:
         return environment
 
     def neutral_environment(self):
+        import tempfile
+
         environment = os.environ.copy()
-        environment.update(HOME=str(self.neutral), TMPDIR=str(self.neutral))
+        # The node socket lives under getTemporaryDirectory (TMPDIR); the
+        # harness used to run devnet with TMPDIR=neutral (work/devnet
+        # derived from the journey root), so a long journey root alone broke
+        # the start even when the outer TMPDIR was short (NOTE-001 probe).
+        # Use a short runtime independent of the journey root while receipts
+        # stay under that root; evidence stays under neutral via --evidence-dir.
+        runtime = getattr(self, "runtime", None)
+        if runtime is None:
+            runtime = Path(tempfile.mkdtemp(prefix="singular-", dir="/tmp"))
+            self.runtime = runtime
+        environment.update(HOME=str(self.neutral), TMPDIR=str(runtime))
         environment.pop("SINGULAR_NODE_SOCKET", None)
         environment.pop("SINGULAR_STATE_TOKEN", None)
         environment.pop("XDG_STATE_HOME", None)
@@ -826,6 +838,15 @@ class Journey:
         ]
         return arguments
 
+    def _devnet_cause(self):
+        """Last lines of the development source stderr, for the setup line."""
+        try:
+            lines = (self.neutral / "devnet.err").read_text().splitlines()
+        except OSError:
+            return "no devnet.err"
+        tail = [line.strip() for line in lines if line.strip()][-5:]
+        return "; ".join(tail) if tail else "empty devnet.err"
+
     def start_devnet(self):
         trace = self.neutral / "devnet.access"
         with (
@@ -844,6 +865,8 @@ class Journey:
                 str(self.keys / "alice.skey"),
                 "--fund-skey",
                 str(self.keys / "bob.skey"),
+                "--evidence-dir",
+                str(self.neutral / "facade-evidence"),
             ]
             self.node = subprocess.Popen(
                 self.traced(trace, command),
@@ -863,11 +886,14 @@ class Journey:
                     self.settings = None
                 if self.settings is not None:
                     break
-            setup_require(self.node.poll() is None, "development source exited")
+            setup_require(
+                self.node.poll() is None,
+                f"development source exited: {self._devnet_cause()}",
+            )
             time.sleep(1)
         setup_require(
             self.settings is not None,
-            "development source did not print settings",
+            f"development source did not print settings: {self._devnet_cause()}",
         )
         for field in ("providerUrl", "networkMagic", "networkTimeDirectory"):
             setup_require(
@@ -888,24 +914,32 @@ class Journey:
             self.node = None
         if which("pkill") is None or which("pgrep") is None:
             raise SetupFailure("cannot verify no surviving node")
-        subprocess.run(
-            ["pkill", "-f", f"cardano-node run --config {self.neutral}/"],
-            check=False,
-        )
+        runtime = getattr(self, "runtime", None)
+        patterns = [f"cardano-node run --config {self.neutral}/"]
+        if runtime is not None:
+            patterns.append(f"cardano-node run --config {runtime}/")
+        for pattern in patterns:
+            subprocess.run(["pkill", "-f", pattern], check=False)
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
-            probe = subprocess.run(
-                ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
-                check=False,
-            )
-            if probe.returncode != 0:
+            alive = False
+            for pattern in patterns:
+                probe = subprocess.run(["pgrep", "-f", pattern], check=False)
+                if probe.returncode == 0:
+                    alive = True
+                    break
+            if not alive:
                 break
             time.sleep(0.5)
-        probe = subprocess.run(
-            ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
-            check=False,
-        )
-        setup_require(probe.returncode != 0, "a node of this run survives")
+        for pattern in patterns:
+            probe = subprocess.run(["pgrep", "-f", pattern], check=False)
+            setup_require(probe.returncode != 0, "a node of this run survives")
+        if runtime is not None:
+            try:
+                shutil.rmtree(runtime, ignore_errors=False)
+            except OSError as error:
+                raise SetupFailure(f"the short runtime did not clean: {error}")
+            self.runtime = None
         print("two actors: owned processes: none", flush=True)
 
     def fixture(self):
@@ -2878,7 +2912,9 @@ class Journey:
                         "waitingOn": waiting,
                     }
                 )
-            elif name == "Withheld fold history refuses HistoryIncomplete without a trie":
+            elif (
+                name == "Withheld fold history refuses HistoryIncomplete without a trie"
+            ):
                 passed, receipts, waiting = self.withheld_fold_agreement(legs)
                 rows.append(
                     {
@@ -2889,7 +2925,10 @@ class Journey:
                         "waitingOn": waiting,
                     }
                 )
-            elif name == "An altered request edge refuses RootDoesNotChain without a trie":
+            elif (
+                name
+                == "An altered request edge refuses RootDoesNotChain without a trie"
+            ):
                 passed, receipts, waiting = self.altered_edge_agreement(legs)
                 rows.append(
                     {
