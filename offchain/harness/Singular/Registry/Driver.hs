@@ -203,7 +203,7 @@ bootRegistry cfg codes prov submit payer tm = do
     signedBoot <- submit unsignedBoot
     tid <- tokenIdOfBootTx cfg signedBoot
     createTrie tm tid
-    refs <- Edges.publishCageRefs cfg codes prov submit payer tid
+    refs <- Cage.withLatest prov $ \v -> Edges.publishCageRefs cfg codes v submit payer tid
     -- The boot is not booted until the chain holds its state UTxO.
     stateUtxos <-
         Cage.withLatest
@@ -294,26 +294,28 @@ foldEdgeWith reg key edge mDest = do
             )
     booking <- case mDest of
         Nothing ->
-            Edges.bookEdge
-                (regCfg reg)
-                (regCodes reg)
-                (regProv reg)
-                (regSubmit reg)
-                (regPayer reg)
-                (regTid reg)
-                key
-                edge
+            Cage.withLatest (regProv reg) $ \v ->
+                Edges.bookEdge
+                    (regCfg reg)
+                    (regCodes reg)
+                    v
+                    (regSubmit reg)
+                    (regPayer reg)
+                    (regTid reg)
+                    key
+                    edge
         Just dest ->
-            Edges.bookEdgeTo
-                (regCfg reg)
-                (regCodes reg)
-                (regProv reg)
-                (regSubmit reg)
-                (regPayer reg)
-                (regTid reg)
-                key
-                edge
-                dest
+            Cage.withLatest (regProv reg) $ \v ->
+                Edges.bookEdgeTo
+                    (regCfg reg)
+                    (regCodes reg)
+                    v
+                    (regSubmit reg)
+                    (regPayer reg)
+                    (regTid reg)
+                    key
+                    edge
+                    dest
     unsigned <- Cage.withLatest (regProv reg) $ \v -> do
         ctx <-
             Edges.registryContextFor

@@ -104,11 +104,12 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- the very output the seed pins. Boot then references the
         -- fifteen-kilobyte script instead of carrying it inline.
         stateRef <-
-            Edges.publishRefScript
-                prov
-                (submitWithWallet wallet caps)
-                (walletAddr wallet)
-                (scriptFromBytes "state" stateBytes)
+            Cage.withLatest prov $ \v ->
+                Edges.publishRefScript
+                    v
+                    (submitWithWallet wallet caps)
+                    (walletAddr wallet)
+                    (scriptFromBytes "state" stateBytes)
         -- Pick the boot seed from the genesis wallet. The state
         -- script is unparameterized; boot carries the seed in the
         -- mint redeemer.
@@ -128,13 +129,14 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- fit in a transaction. Published once, every purpose resolves
         -- through these instead.
         refs <-
-            Edges.publishCageRefs
-                cfg
-                codes
-                prov
-                (submitWithWallet wallet caps)
-                (walletAddr wallet)
-                tokenId
+            Cage.withLatest prov $ \v ->
+                Edges.publishCageRefs
+                    cfg
+                    codes
+                    v
+                    (submitWithWallet wallet caps)
+                    (walletAddr wallet)
+                    tokenId
         emit
             "references"
             ( show (length refs)

@@ -71,8 +71,8 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.LedgerProvider (LedgerProvider)
 import Singular.Registry.LedgerProvider qualified as LedgerProvider
+import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Boot
     ( BootRefusal (..)
@@ -191,8 +191,8 @@ publicationBeforeBoot = describe "the reference publication before a boot" $ do
     bigSeed = (seedIn, adaAt 900_000_000)
     alternative = (fundIn, adaAt 50_000_000)
     script = scriptFromBytes "published" stateProgram
-    legacyScript p s a = publishRefScript p s a script
-    reservingScript reserved p s a = publishRefScriptReserving reserved p s a script
+    legacyScript v s a = publishRefScript v s a script
+    reservingScript reserved v s a = publishRefScriptReserving reserved v s a script
     reservingState reserved = publishStateRefReserving reserved cfg
     spent tx = toList (tx ^. bodyTxL . inputsTxBodyL)
 
@@ -201,7 +201,7 @@ transaction it is handed and returns it as signed; a refusal is returned,
 not rethrown, so a row can require that nothing was submitted.
 -}
 publish
-    :: ( (LedgerProvider.Network, LedgerProvider NoWitness IO)
+    :: ( LedgerProvider.Session NoWitness IO
          -> (ConwayTx -> IO ConwayTx)
          -> Addr
          -> IO a
@@ -218,7 +218,8 @@ publish run wallet = do
         submit tx = do
             modifyIORef kept (<> [tx])
             pure tx
-    result <- try (run provider submit payer)
+    result <-
+        try (SessionIO.withLatest provider (\v -> run v submit payer))
     submitted <- readIORef kept
     pure (submitted, result)
 

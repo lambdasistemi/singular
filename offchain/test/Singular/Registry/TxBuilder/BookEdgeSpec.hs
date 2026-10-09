@@ -78,6 +78,7 @@ import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (LedgerProvider)
 import Singular.Registry.LedgerProvider qualified as LedgerProvider
+import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
@@ -116,15 +117,16 @@ booked :: Edge -> ByteString -> IO ConwayTx
 booked edge key = do
     kept <- newIORef Nothing
     _ <-
-        bookEdge
-            cfg
-            codes
-            provider
-            (\tx -> tx <$ writeIORef kept (Just tx))
-            payer
-            tokenId
-            key
-            edge
+        SessionIO.withLatest provider $ \v ->
+            bookEdge
+                cfg
+                codes
+                v
+                (\tx -> tx <$ writeIORef kept (Just tx))
+                payer
+                tokenId
+                key
+                edge
     readIORef kept >>= maybe (fail "bookEdge submitted nothing") pure
 
 -- ---------------------------------------------------------

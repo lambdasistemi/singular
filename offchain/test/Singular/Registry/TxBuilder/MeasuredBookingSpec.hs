@@ -106,6 +106,7 @@ import Singular.Registry.LedgerProvider
     , Network
     , OutputQuery (..)
     , Session (..)
+    , sessionTracer
     )
 import Singular.Registry.NetworkTime
     ( networkEpochInfo
@@ -327,6 +328,7 @@ measuredBooking sc =
     bookEdgeMeasured
         cfg
         (viewFor sc)
+        (sessionTracer (viewFor sc))
         payer
         tokenId
         key0
@@ -340,17 +342,18 @@ measuredBooking sc =
 -- | Book through the fixed builder, the control.
 fixedBooking :: Scenario -> IO ConwayTx
 fixedBooking sc =
-    bookEdgeWith
-        cfg
-        (providerFor sc)
-        pure
-        payer
-        tokenId
-        key0
-        edge0
-        (edgeDestinationOf cfg codes payer edge0)
-        (scDeposit sc)
-        (Just (approvalFor sc))
+    withLatest (providerFor sc) $ \v ->
+        bookEdgeWith
+            cfg
+            v
+            pure
+            payer
+            tokenId
+            key0
+            edge0
+            (edgeDestinationOf cfg codes payer edge0)
+            (scDeposit sc)
+            (Just (approvalFor sc))
 
 -- ---------------------------------------------------------
 -- The judgement
@@ -505,6 +508,7 @@ spec =
                         bookEdgeMeasured
                             cfg
                             v
+                            (sessionTracer v)
                             payer
                             tokenId
                             key0
@@ -553,6 +557,7 @@ spec =
                         ( bookEdgeMeasured
                             cfg
                             (withParameters high $ viewFor sc)
+                            (sessionTracer (withParameters high $ viewFor sc))
                             payer
                             tokenId
                             key0
@@ -629,6 +634,7 @@ spec =
                         bookEdgeMeasured
                             cfg
                             v
+                            (sessionTracer v)
                             payer
                             tokenId
                             key0
@@ -693,6 +699,7 @@ spec =
         bookEdgeMeasured
             cfg
             (viewFor sc)
+            (sessionTracer (viewFor sc))
             payer
             tokenId
             key0

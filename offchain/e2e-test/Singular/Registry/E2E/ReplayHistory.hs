@@ -341,7 +341,9 @@ book
     -> Edge
     -> RequestDestination
     -> IO TxIn
-book cfg codes prov submit = Edges.bookEdgeTo cfg codes prov submit genesisAddr
+book cfg codes prov submit tokenId key edge dest =
+    Cage.withLatest prov $ \v ->
+        Edges.bookEdgeTo cfg codes v submit genesisAddr tokenId key edge dest
 
 {- | Book @insertActive@ requests on fresh keys until there are at least
 three and their booking order differs from their ledger order. Six

@@ -68,6 +68,7 @@ import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken (ReferenceRole, Release)
+import Singular.Registry.Surface (ProviderSettings (..))
 import Singular.Registry.TxBuilder.Edges (publishReferencesTx)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 import Singular.Registry.Wallet (Wallet (..))
@@ -131,6 +132,7 @@ attached env dir blueprint access roles ws command body = do
                         access
                         roles
                         (Just (walletAddr (wcWallet wc)))
+                        (Cage.Network (providerMagic (writeProvider ws)))
                         v
                 (reconciled, live) <-
                     timedRead

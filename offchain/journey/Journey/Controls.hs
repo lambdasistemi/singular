@@ -138,15 +138,16 @@ stepReject wallet cfg codes prov caps tm tid refs stateBeforeRejects = do
     require "reject: request address empty before the second request" $
         null before
     _ <-
-        Edges.bookEdge
-            cfg
-            codes
-            prov
-            (submitWithWallet wallet caps)
-            (walletAddr wallet)
-            tid
-            negativeKey
-            edgeInsertAbsent
+        Cage.withLatest prov $ \v ->
+            Edges.bookEdge
+                cfg
+                codes
+                v
+                (submitWithWallet wallet caps)
+                (walletAddr wallet)
+                tid
+                negativeKey
+                edgeInsertAbsent
     reqUtxos <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1

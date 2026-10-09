@@ -399,11 +399,12 @@ resolveSaved
     -> Set ReferenceRole
     -> Maybe Addr
     -- ^ The actor's wallet, when the command has one
+    -> Cage.Network
     -> Cage.Session Cage.NoWitness IO
     -> IO Saved
-resolveSaved dir release access roles wallet view = do
+resolveSaved dir release access roles wallet network view = do
     resolved <-
-        resolveRegistry release (accessToken access) view
+        resolveRegistry release (accessToken access) network view
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
                 pure

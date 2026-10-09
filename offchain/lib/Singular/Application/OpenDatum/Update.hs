@@ -33,6 +33,7 @@ import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
 
+import Control.Tracer (Tracer)
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
@@ -41,7 +42,7 @@ import Singular.Application.OpenDatum.Envelope
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra, TxIn)
-import Singular.Registry.LedgerProvider (Session (..))
+import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.SessionIO (parameters)
 import Singular.Registry.Trace
     ( BodyBuild (..)
@@ -70,6 +71,10 @@ data UpdateArgs = UpdateArgs
     { uaSession :: Session NoWitness IO
     {- ^ The view the update is built from: its parameters, its script
     evaluation
+    -}
+    , uaTracer :: Tracer IO ReadEvent
+    {- ^ Where the build reports its timing: the caller's scope, passed
+    explicitly because the session record stays closed.
     -}
     , uaApplied :: SBS.ShortByteString
     -- ^ The applied open-datum script
@@ -102,7 +107,7 @@ token.
 updatePayloadTx :: UpdateArgs -> IO (Either String ConwayTx)
 updatePayloadTx args =
     timedTrace
-        (sessionTracer (uaSession args))
+        (uaTracer args)
         ( \ms end ->
             BodyBuilt
                 BodyBuild

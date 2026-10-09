@@ -129,6 +129,7 @@ import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
@@ -305,7 +306,14 @@ inspectSaved env dir key settings release a = do
         try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             -- An inspect runs no transaction: it looks up no reference.
             saved <-
-                resolveSaved dir release (inspectAccess a) Set.empty Nothing v
+                resolveSaved
+                    dir
+                    release
+                    (inspectAccess a)
+                    Set.empty
+                    Nothing
+                    (Cage.Network magic)
+                    v
             point <- Cage.tip v
             reconciled <- reconcileLocked dir (reconcile "inspect" dir saved v)
             live <- attachLive v saved

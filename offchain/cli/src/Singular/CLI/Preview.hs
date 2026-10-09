@@ -160,6 +160,7 @@ runPreview env kind a settings addrText = do
                     (entryAccess a)
                     (neededRoles (commandOf kind a))
                     (Just addr)
+                    (Cage.Network magic)
                     v
             let inserted = insertionOf saved a caller <$> insertPayload
             context <- openTrie saved
@@ -230,6 +231,7 @@ previewBooking a v live addr key b = do
         bookEdgeMeasured
             cfg
             v
+            (Cage.sessionTracer v)
             addr
             (savedToken s)
             key

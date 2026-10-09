@@ -498,6 +498,7 @@ directories = describe "the actor's directory" $ do
             ours
             (Set.singleton RoleApplication)
             Nothing
+            (LP.Network 42)
             (chainSession logRef chain)
 
 -- | The six published scripts by role.

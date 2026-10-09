@@ -271,7 +271,8 @@ spec bp =
                         let tokenId = Driver.registryTokenId reg
                             requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
                         codes <- loadRegistryCodesFromEnv
-                        refs <- publishCageRefs cfg prov submit tokenId
+                        refs <-
+                            Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
                         orderingStage cfg codes prov submit tm tokenId requestAddr refs
                         connectedStages cfg codes prov submit tm tokenId requestAddr refs
             _ ->
@@ -319,27 +320,29 @@ orderingStage cfg codes prov submit tm tokenId requestAddr refs = do
         keyB = "c3-order-b"
         destA = deliverDest orderDatumA
     refB <-
-        Edges.bookEdgeTo
-            cfg
-            codes
-            prov
-            (submitWithGenesis submit)
-            genesisAddr
-            tokenId
-            keyB
-            edgeInsertAbsent
-            (serialiseAddr genesisAddr, Nothing)
+        Cage.withLatest prov $ \v ->
+            Edges.bookEdgeTo
+                cfg
+                codes
+                v
+                (submitWithGenesis submit)
+                genesisAddr
+                tokenId
+                keyB
+                edgeInsertAbsent
+                (serialiseAddr genesisAddr, Nothing)
     refA <-
-        Edges.bookEdgeTo
-            cfg
-            codes
-            prov
-            (submitWithGenesis submit)
-            genesisAddr
-            tokenId
-            keyA
-            edgeInsertActive
-            destA
+        Cage.withLatest prov $ \v ->
+            Edges.bookEdgeTo
+                cfg
+                codes
+                v
+                (submitWithGenesis submit)
+                genesisAddr
+                tokenId
+                keyA
+                edgeInsertActive
+                destA
     -- The booking sequence, written beside the calls in their order;
     -- a future reordering of the calls must edit this list to match.
     let bookingSequence = [(keyB, refB), (keyA, refA)]
@@ -542,16 +545,17 @@ bookFoldObserve
     -> IO ()
 bookFoldObserve cfg codes prov submit tm tokenId requestAddr refs key edge dest = do
     requestTxIn <-
-        Edges.bookEdgeTo
-            cfg
-            codes
-            prov
-            (submitWithGenesis submit)
-            genesisAddr
-            tokenId
-            key
-            edge
-            dest
+        Cage.withLatest prov $ \v ->
+            Edges.bookEdgeTo
+                cfg
+                codes
+                v
+                (submitWithGenesis submit)
+                genesisAddr
+                tokenId
+                key
+                edge
+                dest
     pending <- Cage.withLatest prov (`Cage.outputsAt` requestAddr)
     (reqOut, req) <- observedRequestAt requestTxIn pending
     cageUtxos <-

@@ -126,6 +126,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
 
+import Control.Tracer (Tracer)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint.Load (NamingCodes (..))
 import Singular.Registry.Blueprint.Params
@@ -276,7 +277,7 @@ selectFunding chosen utxos = case chosen of
 
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
-    :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    :: Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
@@ -289,14 +290,13 @@ publishes. The largest ada-only output that is not reserved funds it.
 -}
 publishRefScriptReserving
     :: Set.Set TxIn
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
     -> IO (TxIn, TxOut ConwayEra)
-publishRefScriptReserving reserved prov submit payerAddr script = do
-    (unsigned, refOut) <-
-        Cage.withLatest prov $ \v -> publishRefScriptTx reserved v payerAddr script
+publishRefScriptReserving reserved v submit payerAddr script = do
+    (unsigned, refOut) <- publishRefScriptTx reserved v payerAddr script
     signed <- submit unsigned
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
@@ -440,7 +440,7 @@ cages publishes once.
 -}
 publishStateRef
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
@@ -453,16 +453,16 @@ outside the reservation.
 publishStateRefReserving
     :: Set.Set TxIn
     -> CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
-publishStateRefReserving reserved cfg prov submit payerAddr = do
+publishStateRefReserving reserved cfg v submit payerAddr = do
     let script = mkCageScript cfg
-    utxos <- Cage.withLatest prov (`Cage.outputsAt` payerAddr)
+    utxos <- Cage.outputsAt v payerAddr
     case stateRefIn cfg utxos of
         Just u -> pure u
-        Nothing -> publishRefScriptReserving reserved prov submit payerAddr script
+        Nothing -> publishRefScriptReserving reserved v submit payerAddr script
 
 -- | An output among these that publishes this cage's state validator.
 stateRefIn
@@ -484,14 +484,14 @@ request validator and the three token policies.
 publishCageRefs
     :: CageConfig
     -> NamingCodes
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
-publishCageRefs cfg codes prov submit payerAddr tokenId =
+publishCageRefs cfg codes v submit payerAddr tokenId =
     mapM
-        (publishRefScript prov submit payerAddr)
+        (publishRefScript v submit payerAddr)
         ( [ mkCageScript cfg
           , mkRequestScript cfg tokenId
           ]
@@ -656,18 +656,18 @@ certifyBooking pp collateral mApproval unsigned =
 bookEdge
     :: CageConfig
     -> NamingCodes
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
     -> ByteString
     -> Edge
     -> IO TxIn
-bookEdge cfg codes prov submit payerAddr tokenId key edge =
+bookEdge cfg codes v submit payerAddr tokenId key edge =
     bookEdgeTo
         cfg
         codes
-        prov
+        v
         submit
         payerAddr
         tokenId
@@ -695,7 +695,7 @@ a tree edge mints and certifies, and a read books nothing at all.
 bookEdgeTo
     :: CageConfig
     -> NamingCodes
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -703,11 +703,11 @@ bookEdgeTo
     -> Edge
     -> (ByteString, Maybe PLC.Data)
     -> IO TxIn
-bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest = do
+bookEdgeTo cfg codes v submit payerAddr tokenId key edge dest = do
     signed <-
         bookEdgeWith
             cfg
-            prov
+            v
             submit
             payerAddr
             tokenId
@@ -733,7 +733,7 @@ the request is its first output.
 -}
 bookEdgeWith
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -744,11 +744,8 @@ bookEdgeWith
     -- ^ The deposit, over and above the tip
     -> Maybe BookingApproval
     -> IO ConwayTx
-bookEdgeWith cfg prov submit payerAddr tokenId key edge dest deposit approval =
-    Cage.withLatest
-        prov
-        ( \v -> bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval
-        )
+bookEdgeWith cfg v submit payerAddr tokenId key edge dest deposit approval =
+    bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval
         >>= submit
 
 {- | The unsigned booking of one edge, built from one view: the payer's
@@ -880,6 +877,10 @@ bookEdgeMeasured
     from: its protocol parameters are the ones the caller reports and judges
     its outlay under, and nothing is submitted while it is held
     -}
+    -> Tracer IO ReadEvent
+    {- ^ Where the build reports its timing: the caller's scope, passed
+    explicitly because the session record stays closed.
+    -}
     -> Addr
     -> TokenId
     -> ByteString
@@ -893,9 +894,9 @@ bookEdgeMeasured
     -> Maybe TxIn
     -- ^ The wallet output the caller chose to fund and collateralise
     -> IO ConwayTx
-bookEdgeMeasured cfg v payerAddr tokenId key edge dest deposit approval refs chosen =
+bookEdgeMeasured cfg v tracer payerAddr tokenId key edge dest deposit approval refs chosen =
     timedTrace
-        (Cage.sessionTracer v)
+        tracer
         ( \ms end ->
             BodyBuilt
                 BodyBuild

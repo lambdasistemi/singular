@@ -248,6 +248,7 @@ updates = describe "a payload update" $ do
     let args holding =
             UpdateArgs
                 { uaSession = stubSession
+                , uaTracer = sessionTracer stubSession
                 , uaApplied = applied
                 , uaHolding = (ref '4' 1, holding)
                 , uaPayload = PLC.I 7
@@ -263,6 +264,7 @@ updates = describe "a payload update" $ do
                 updatePayloadTx
                     (args (liveWith 1 Nothing))
                         { uaSession = stubSession{sessionTracer = readPhaseLog path}
+                        , uaTracer = readPhaseLog path
                         }
             r `shouldSatisfy` isLeft
             objects <- logObjects path
@@ -299,6 +301,7 @@ updates = describe "a payload update" $ do
                     updatePayloadTx
                         UpdateArgs
                             { uaSession = v
+                            , uaTracer = sessionTracer v
                             , uaApplied = applied
                             , uaHolding = (ref '4' 1, held)
                             , uaPayload = PLC.I 7

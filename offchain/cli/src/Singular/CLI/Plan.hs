@@ -246,6 +246,7 @@ buildUpdate v live addr chosen holding payload = do
     updatePayloadTx
         UpdateArgs
             { uaSession = v
+            , uaTracer = Cage.sessionTracer v
             , uaApplied = applied (liveSaved live)
             , uaHolding = holding
             , uaPayload = payload

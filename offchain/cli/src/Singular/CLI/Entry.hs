@@ -175,6 +175,7 @@ book at a key plan = do
                     bookEdgeMeasured
                         cfg
                         v
+                        (Cage.sessionTracer v)
                         (walletAddr (wcWallet wc))
                         (savedToken s)
                         key

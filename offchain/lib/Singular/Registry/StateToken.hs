@@ -361,9 +361,10 @@ resolveRegistry
     :: (Monad m)
     => Release
     -> Asset
+    -> Network
     -> Session w m
     -> m (Either IdentityRefusal ResolvedRegistry)
-resolveRegistry release token@(PolicyID policy, AssetName name) session =
+resolveRegistry release token@(PolicyID policy, AssetName name) network session =
     runExceptT $ do
         let stateHash = computeScriptHash (releaseState release)
         when (policy /= stateHash) $
@@ -394,7 +395,6 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
         forM_ [minBound .. maxBound] $ \field ->
             when (datumPin field datum /= SBS.fromShort (configPin field cfg)) $
                 throwError (RegistryPinMismatch field)
-        let network = sessionNetwork session
         when (ledgerNetwork network /= Ledger.Testnet) $
             throwError (NetworkMismatch network)
         pure

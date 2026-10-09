@@ -189,15 +189,20 @@ cageFlowSpec stateBytes requestBytes = do
             -- leaf. This row books the witnessed absence of "hello"
             -- (edge 0), carrying the approval the cage demands of every
             -- processed request, and folds it.
-            refs <- publishCageRefs cfg prov submit tokenId
+            refs <-
+                Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
             reqTxIn <-
-                bookEdge
-                    cfg
+                Cage.withLatest
                     prov
-                    submit
-                    tokenId
-                    "hello"
-                    edgeInsertAbsent
+                    ( \v ->
+                        bookEdge
+                            cfg
+                            v
+                            submit
+                            tokenId
+                            "hello"
+                            edgeInsertAbsent
+                    )
             reqUtxosBefore <-
                 Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosBefore
@@ -207,7 +212,8 @@ cageFlowSpec stateBytes requestBytes = do
             stateBefore <- currentState cfg prov tokenId
             oldState <- observedState (snd stateBefore)
 
-            unsignedUpdate <- foldUnsigned cfg prov tm tokenId refs
+            unsignedUpdate <-
+                Cage.withLatest prov (\v -> foldUnsigned cfg v tm tokenId refs)
             assertConsumedRequest reqTxIn reqUtxosBefore unsignedUpdate
             let updateBody = unsignedUpdate ^. bodyTxL
                 updateOutputs = toList (updateBody ^. outputsTxBodyL)
@@ -406,7 +412,8 @@ cageFlowSpec stateBytes requestBytes = do
             -- that attaches it and the request script is 18317 bytes
             -- against a 16384-byte protocol maximum. Published
             -- references carry both instead.
-            refs <- publishCageRefs cfg prov submit tokenId
+            refs <-
+                Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
             unsignedReject <-
                 Cage.withLatest prov $ \v ->
                     rejectRequestsWithRefs
@@ -645,7 +652,8 @@ rejectsWithin window startMs cfg prov submit _tm reg = do
             ProcessingWindow -> (submittedAt, processDeadline)
             RetractionWindow -> (processDeadline, retractDeadline)
     waitUntilMs (windowStart + 1_000)
-    refs <- publishCageRefs cfg prov submit tokenId
+    refs <-
+        Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
     unsignedReject <-
         Cage.withLatest prov $ \v ->
             rejectRequestsWithRefs
@@ -805,11 +813,12 @@ withE2ETimed stateBytes requestBytes action =
         -- seed picked first would have pinned — the boot would then
         -- look for a UTxO the publication had already spent.
         _ <-
-            Edges.publishRefScript
-                prov
-                (submitWithGenesis caps)
-                genesisAddr
-                (scriptFromBytes "state" stateBytes)
+            Cage.withLatest prov $ \v ->
+                Edges.publishRefScript
+                    v
+                    (submitWithGenesis caps)
+                    genesisAddr
+                    (scriptFromBytes "state" stateBytes)
         -- Pick the seed from the genesis wallet. The state script
         -- is unparameterized; boot carries the seed in the mint
         -- redeemer.
@@ -1040,16 +1049,16 @@ references every purpose resolves through them instead.
 -}
 publishCageRefs
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
-publishCageRefs cfg prov submit tokenId = do
+publishCageRefs cfg v submit tokenId = do
     codes <- loadRegistryCodesFromEnv
     Edges.publishCageRefs
         cfg
         codes
-        prov
+        v
         (genesisSubmit submit)
         genesisAddr
         tokenId
@@ -1057,34 +1066,33 @@ publishCageRefs cfg prov submit tokenId = do
 -- | The unsigned fold of every pending request, built from one view.
 foldUnsigned
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ConwayTx
-foldUnsigned cfg prov tm tokenId refs = do
+foldUnsigned cfg v tm tokenId refs = do
     codes <- loadRegistryCodesFromEnv
-    Cage.withLatest prov $ \v -> do
-        ctx <- Edges.registryContextFor cfg codes v refs
-        updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
+    ctx <- Edges.registryContextFor cfg codes v refs
+    updateTokenWithDuties cfg v tm tokenId genesisAddr ctx
 
 {- | Book one tree edge: the approval the naming application mints
 certifies the edge, and the request carries it to the fold.
 -}
 bookEdge
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> Capabilities Cage.NoWitness IO
     -> TokenId
     -> ByteString
     -> Edge
     -> IO TxIn
-bookEdge cfg prov submit tokenId key op = do
+bookEdge cfg v submit tokenId key op = do
     codes <- loadRegistryCodesFromEnv
     Edges.bookEdge
         cfg
         codes
-        prov
+        v
         (genesisSubmit submit)
         genesisAddr
         tokenId
@@ -1094,7 +1102,7 @@ bookEdge cfg prov submit tokenId key op = do
 -- | Book one edge and fold it, end to end on a real devnet.
 foldEdge
     :: CageConfig
-    -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
+    -> Cage.Session Cage.NoWitness IO
     -> Capabilities Cage.NoWitness IO
     -> TrieManager IO
     -> TokenId
@@ -1102,7 +1110,7 @@ foldEdge
     -> ByteString
     -> Edge
     -> IO ConwayTx
-foldEdge cfg prov submit tm tokenId refs key op = do
-    _ <- bookEdge cfg prov submit tokenId key op
-    unsigned <- foldUnsigned cfg prov tm tokenId refs
+foldEdge cfg v submit tm tokenId refs key op = do
+    _ <- bookEdge cfg v submit tokenId key op
+    unsigned <- foldUnsigned cfg v tm tokenId refs
     submitWithGenesis submit unsigned

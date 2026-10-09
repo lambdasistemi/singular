@@ -477,7 +477,12 @@ resolveOn
     -> IO (Either IdentityRefusal ResolvedRegistry, [Text])
 resolveOn chain asked = do
     logRef <- newIORef []
-    result <- resolveRegistry release asked (chainSession logRef chain)
+    result <-
+        resolveRegistry
+            release
+            asked
+            (chainNetwork chain)
+            (chainSession logRef chain)
     reads' <- readIORef logRef
     pure (result, reads')
 

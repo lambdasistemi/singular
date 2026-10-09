@@ -137,15 +137,16 @@ stepRequest wallet cfg codes prov caps tid = do
     -- from REGISTRY_BLUEPRINT) certifies which edge this is, for whom and
     -- where it delivers; the request carries it to the fold.
     booked <-
-        Edges.bookEdge
-            cfg
-            codes
-            prov
-            (submitWithWallet wallet caps)
-            (walletAddr wallet)
-            tid
-            journeyKey
-            edgeInsertAbsent
+        Cage.withLatest prov $ \v ->
+            Edges.bookEdge
+                cfg
+                codes
+                v
+                (submitWithWallet wallet caps)
+                (walletAddr wallet)
+                tid
+                journeyKey
+                edgeInsertAbsent
     after <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require
         "request: request UTxO observed at the request address"

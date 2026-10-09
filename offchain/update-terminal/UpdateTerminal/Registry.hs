@@ -167,11 +167,12 @@ openSession wallet caps inputs = do
     -- largest ada-only output, which a seed picked first could be, and
     -- boot would then look for a UTxO the publication had spent.
     _ <-
-        Edges.publishRefScript
-            prov
-            (submitWithWallet wallet caps)
-            address
-            (scriptFromBytes "state" (inputStateBytes inputs))
+        Cage.withLatest prov $ \v ->
+            Edges.publishRefScript
+                v
+                (submitWithWallet wallet caps)
+                address
+                (scriptFromBytes "state" (inputStateBytes inputs))
     codes <- loadRegistryCodesFromEnv
     pure
         Session
@@ -210,13 +211,14 @@ bootRegistry s label = do
     (tid, tidBytes) <- extractTokenId cfg signedBoot
     createTrie (sessTries s) tid
     refs <-
-        Edges.publishCageRefs
-            cfg
-            (sessCodes s)
-            prov
-            (submitWithWallet wallet submit)
-            address
-            tid
+        Cage.withLatest prov $ \v ->
+            Edges.publishCageRefs
+                cfg
+                (sessCodes s)
+                v
+                (submitWithWallet wallet submit)
+                address
+                tid
     say (label <> ": booted registry token 0x" <> T.unpack (hex tidBytes))
     pure (Registry s cfg tid refs signedBoot tidBytes)
 
@@ -224,19 +226,20 @@ bootRegistry s label = do
 book :: Registry -> ByteString -> Edge -> IO ()
 book reg key op =
     void $
-        Edges.bookEdgeTo
-            (regCfg reg)
-            (sessCodes (regSession reg))
-            (sessProvider (regSession reg))
-            ( submitWithWallet
-                (sessWallet (regSession reg))
-                (sessWrites (regSession reg))
-            )
-            (walletAddr (sessWallet (regSession reg)))
-            (regTid reg)
-            key
-            op
-            (walletDestination reg)
+        Cage.withLatest (sessProvider (regSession reg)) $ \v ->
+            Edges.bookEdgeTo
+                (regCfg reg)
+                (sessCodes (regSession reg))
+                v
+                ( submitWithWallet
+                    (sessWallet (regSession reg))
+                    (sessWrites (regSession reg))
+                )
+                (walletAddr (sessWallet (regSession reg)))
+                (regTid reg)
+                key
+                op
+                (walletDestination reg)
 
 {- | Fold the pending booking and walk the same edge in the mirror.
 

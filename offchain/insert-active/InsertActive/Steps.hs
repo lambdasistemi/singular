@@ -148,11 +148,12 @@ bootStory wallet caps inputs = do
     -- largest ada-only output, which a seed picked first could be, and
     -- boot would then look for a UTxO the publication had spent.
     _ <-
-        Edges.publishRefScript
-            prov
-            submit
-            address
-            (scriptFromBytes "state" stateBytes)
+        Cage.withLatest prov $ \v ->
+            Edges.publishRefScript
+                v
+                submit
+                address
+                (scriptFromBytes "state" stateBytes)
     utxos <- Cage.withLatest prov (`Cage.outputsAt` address)
     -- #177 A-003: never seed from the reference publication. Boot
     -- REFERENCES that output, and a transaction may not both spend and
@@ -192,13 +193,14 @@ bootStory wallet caps inputs = do
     say ("booted registry token 0x" <> T.unpack (hex tidBytes))
 
     refs <-
-        Edges.publishCageRefs
-            cfg
-            codes
-            prov
-            submit
-            address
-            tid
+        Cage.withLatest prov $ \v ->
+            Edges.publishCageRefs
+                cfg
+                codes
+                v
+                submit
+                address
+                tid
     pure
         Story
             { storyProvider = prov
@@ -217,16 +219,17 @@ bootStory wallet caps inputs = do
 book :: Story -> ByteString -> IO ()
 book story key =
     void $
-        Edges.bookEdgeTo
-            (storyConfig story)
-            (storyCodes story)
-            (storyProvider story)
-            (submitWithWallet (storyWallet story) (storyWrites story))
-            (walletAddr (storyWallet story))
-            (storyToken story)
-            key
-            edgeInsertActive
-            (walletDestination story)
+        Cage.withLatest (storyProvider story) $ \v ->
+            Edges.bookEdgeTo
+                (storyConfig story)
+                (storyCodes story)
+                v
+                (submitWithWallet (storyWallet story) (storyWrites story))
+                (walletAddr (storyWallet story))
+                (storyToken story)
+                key
+                edgeInsertActive
+                (walletDestination story)
 
 {- | Fold the pending booking and commit the key's active leaf to the
 local mirror.

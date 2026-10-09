@@ -130,7 +130,8 @@ updateTerminalSpec stateBytes requestBytes = do
         $ withBootedCage id stateBytes requestBytes
         $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
-            refs <- publishCageRefs cfg prov submit tokenId
+            refs <-
+                Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
             codes <- loadRegistryCodesFromEnv
 
             -- 1. the prerequisite, executed rather than fabricated: the
@@ -188,7 +189,8 @@ updateTerminalSpec stateBytes requestBytes = do
         $ withBootedCage id stateBytes requestBytes
         $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
-            refs <- publishCageRefs cfg prov submit tokenId
+            refs <-
+                Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
             codes <- loadRegistryCodesFromEnv
             -- The control FIRST: a key that was inserted Active retires
             -- in this very cage, through this very builder. A failure
@@ -240,7 +242,8 @@ updateTerminalSpec stateBytes requestBytes = do
         $ withBootedCage id stateBytes requestBytes
         $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
-            refs <- publishCageRefs cfg prov submit tokenId
+            refs <-
+                Cage.withLatest prov (\v -> publishCageRefs cfg v submit tokenId)
             codes <- loadRegistryCodesFromEnv
             -- The control, again first and in this same cage.
             _ <-
@@ -316,13 +319,18 @@ book
     -> Edge
     -> RequestDestination
     -> IO TxIn
-book cfg codes prov submit =
-    Edges.bookEdgeTo
-        cfg
-        codes
-        prov
-        (submitWithGenesis submit)
-        genesisAddr
+book cfg codes prov submit tokenId key edge dest =
+    Cage.withLatest prov $ \v ->
+        Edges.bookEdgeTo
+            cfg
+            codes
+            v
+            (submitWithGenesis submit)
+            genesisAddr
+            tokenId
+            key
+            edge
+            dest
 
 {- | Build and submit the fold of whatever is pending, WITHOUT mirroring.
 The refusal rows use this: a fold that never lands must not move the
@@ -337,7 +345,7 @@ foldOnce
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ConwayTx
 foldOnce cfg prov submit tm tokenId refs = do
-    unsigned <- foldUnsigned cfg prov tm tokenId refs
+    unsigned <- Cage.withLatest prov $ \v -> foldUnsigned cfg v tm tokenId refs
     submitWithGenesis submit unsigned
 
 {- | Fold, submit, and MIRROR the landed fold into the committed trie.

@@ -115,15 +115,16 @@ driverSpec stateBytes requestBytes = do
             -- submit it — and then NOT the mirror. The edge is on chain;
             -- the manager does not know.
             _ <-
-                Edges.bookEdge
-                    cfg
-                    codes
-                    prov
-                    submit'
-                    genesisAddr
-                    (registryTokenId reg)
-                    seededKey
-                    edgeInsertAbsent
+                Cage.withLatest prov $ \v ->
+                    Edges.bookEdge
+                        cfg
+                        codes
+                        v
+                        submit'
+                        genesisAddr
+                        (registryTokenId reg)
+                        seededKey
+                        edgeInsertAbsent
             unsigned <- Cage.withLatest prov $ \v -> do
                 ctx <- Edges.registryContextFor cfg codes v (registryRefs reg)
                 updateTokenWithDuties

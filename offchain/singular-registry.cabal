@@ -58,6 +58,7 @@ library
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers                        >=0.6  && <0.8
+    , contra-tracer
     , crypton
     , directory
     , filepath
