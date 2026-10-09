@@ -73,7 +73,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] The narration and speech records agree with the pages. On the rebased base the narration check reports six stale clips and seven orphan clips, and the presentation check reports the stale speech stamp of docs/singular-node.md. Main, PR 525 and the previous base pass the narration check. The commit that clears it is the first commit of the ticket's source work and contains nothing else. It is cb546aec, made by the ticket owner before the source writer started, with the narration key's standing authorization. Proof: python3 tools/narrate.py --check and just check-presentation exit 0, and nix run --quiet .#docs-check exits 0.",
+      "text": "[ ] The narration and speech records agree with the pages. On the rebased base the narration check reports six stale clips and seven orphan clips, and the presentation check reports the stale speech stamp of docs/singular-node.md. Main, PR 525 and the previous base pass the narration check. The commit that clears it is the first commit of the ticket's source work and contains nothing else. It is 02510b95, made by the ticket owner before the source writer started, with the narration key's standing authorization. Proof: python3 tools/narrate.py --check and just check-presentation exit 0, and nix run --quiet .#docs-check exits 0.",
       "pause": 300
     }
   ],
@@ -289,6 +289,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "06c7ddf8b3ed2666dcb433a4a73618eeda307ad4e175ff6008772aef435520ec"
+    "sha256": "718659af23c4cbeb76640679aed13767c5660efb390f4ddb2dbe3dc5972e952d"
   }
 }

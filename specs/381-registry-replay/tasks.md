@@ -12,6 +12,8 @@ frozen gate decides each run's end.
 - [x] T002 Reconcile merged #419 and the staffing instruction in `specs/381-registry-replay/{spec,plan,decisions}.md`.
 - [x] T008 [US2] Run and reconcile `offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs` and `offchain/test/Singular/Registry/TrieStateContractSpec.hs` for every-fold roots, mixed folds, input order and proofs. Executed October 7: 48 replay and 36 capability examples passed; scope and limits in [verification](verification.md).
 - [x] T010 [US2] Verify replay controls detect wrong edges, corrupted proofs and missing history; retained in [verification](verification.md).
+- [x] prepare-empty-actor-harness Make a private creator registry and start Alice and Bob with empty homes, tracing every process, with all fourteen product requirements published as pending.
+- [x] verify-component-actor-controls Check two actors' public-fact decisions at component level, with five wired faults that each turn a named check red; align the fixture with public carried datums.
 - [x] T012 Reconcile user instructions and historical mirror statements in `docs/consumer-onboarding.md`, `docs/singular-node.md`, `specs/324-indexer-view/plan.md` and `specs/362-separate-fold/spec.md`; regenerate affected speech companions.
 
 ## Stack and dependency
@@ -44,6 +46,7 @@ only with the state token, a wallet and the provider address.
 
 - [ ] T009 [US2] Withheld fold history through the actor's command refuses `HistoryIncomplete` with no trie; a replay that maps one edge wrongly, in a control build, refuses `RootDoesNotChain` with no trie.
 - [ ] T011 Compute all fourteen row states from the executed receipts in `tools/registry_two_actors.py`; the two rows that read the registry page stay pending on issue 503; keep harness evidence in a marked appendix.
+- [ ] reconcile-onboarding-join-statement Correct the statement in `docs/consumer-onboarding.md` that joining by state token is pending under issue 437, regenerating its speech companion and narration.
 - [ ] T013 Run the packaged journey and `nix develop --quiet -c just ci` on the final candidate; record candidate, Lean tree, commands, receipts and limits in `specs/381-registry-replay/verification.md`.
 - [ ] T014 Update PR 433 from `.github/pull_request_template.md` with the words "stacked on PR 525", verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.
 

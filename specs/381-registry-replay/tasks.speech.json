@@ -31,6 +31,14 @@
       "pause": 300
     },
     {
+      "text": "[x] prepare-empty-actor-harness Make a private creator registry and start Alice and Bob with empty homes, tracing every process, with all fourteen product requirements published as pending.",
+      "pause": 300
+    },
+    {
+      "text": "[x] verify-component-actor-controls Check two actors' public-fact decisions at component level, with five wired faults that each turn a named check red; align the fixture with public carried datums.",
+      "pause": 300
+    },
+    {
       "text": "[x] T012 Reconcile user instructions and historical mirror statements in docs/consumer-onboarding.md, docs/singular-node.md, specs/324-indexer-view/plan.md and specs/362-separate-fold/spec.md; regenerate affected speech companions.",
       "pause": 300
     }
@@ -121,6 +129,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] reconcile-onboarding-join-statement Correct the statement in docs/consumer-onboarding.md that joining by state token is pending under issue 437, regenerating its speech companion and narration.",
+      "pause": 300
+    },
+    {
       "text": "[ ] T013 Run the packaged journey and nix develop --quiet -c just ci on the final candidate; record candidate, Lean tree, commands, receipts and limits in specs/381-registry-replay/verification.md.",
       "pause": 300
     },
@@ -141,6 +153,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "dc1c680dea544de7a49779870b566c1c1d9f545e0eac71b12c7cd1850e58c77c"
+    "sha256": "4b6cd5e3d98c799a1f5f5129b1868ba280a83428df8886da0924e4cdc9b99fbd"
   }
 }

@@ -20,8 +20,8 @@ branch and this ticket never edits it.
 | Repository, issue, pull request | lambdasistemi/singular, issue 381, draft PR 433 |
 | Worktree and branch | `/code/singular-381-registry-replay`, `feat/381-two-terminals` |
 | Stacked on PR 525 | `feat/485-managed-state` at `026576268e916c964426d4a4be304d35544d9816`, itself on main `e48e3098` |
-| Nine commits of this ticket on top | from `b0e4e36d` (reconstruction plan) to the narration refresh |
-| Previous tip, kept | branch `archive/e371-381-before-485-stack-20261009` at `046706c4`; the remote head `2adc3101` is kept as `archive/e371-381-before-refresh-20261008` |
+| Nine commits of this ticket on top | from `9d690989` (reconstruction plan) to the narration refresh `2d995b8e`; their messages were completed and their trees are unchanged |
+| Previous tips, kept | `archive/e371-381-before-485-stack-20261009` at `046706c4` (before the stack); `archive/e371-381-before-message-rewrite-20261009` at `53a6600075f8d42d85ac360b313819555fcde6f9` (before the nine messages were completed); the remote head `2adc3101` as `archive/e371-381-before-refresh-20261008` |
 | Main when this was written | `76bb09936f79a97adb2d359a0c5eb8806d2af5aa`; this branch is not rebased onto it before the desk grants the merge slot |
 | Lean | tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, the same tree on main, on PR 525 and here |
 | Constitution | version 1.13.0, sha256 `4e99d8486db1b88c414ad6e57c4ca1472f9afd8915e2a0b63539bd99fbf72131` |
@@ -78,7 +78,7 @@ or it is a named control; reading the harness source is never a check. The froze
   narration check reports six stale clips and seven orphan clips, and the presentation
   check reports the stale speech stamp of `docs/singular-node.md`. Main, PR 525 and the
   previous base pass the narration check. The commit that clears it is the first commit of the
-  ticket's source work and contains nothing else. It is `cb546aec`, made by the ticket
+  ticket's source work and contains nothing else. It is `02510b95`, made by the ticket
   owner before the source writer started, with the narration key's standing authorization. Proof: `python3 tools/narrate.py
   --check` and `just check-presentation` exit 0, and `nix run --quiet .#docs-check`
   exits 0.
@@ -188,7 +188,7 @@ question filed because the writer is blocked, or stopped at capacity with a hand
 
 | Run | Content |
 | --- | --- |
-| One | The docs baseline as its own first commit (done: `cb546aec`). Then the token-only actors, the isolation guard with its positive and negative control, the first actor rows (each actor inserts and folds; the first `inspect` roots), the receipt-computed report skeleton, and the hosted jobs. |
+| One | The docs baseline as its own first commit (done: `02510b95`). Then the token-only actors, the isolation guard with its positive and negative control, the first actor rows (each actor inserts and folds; the first `inspect` roots), the receipt-computed report skeleton, and the hosted jobs. |
 | Two | Terminate-and-fold-by-the-other, another actor folds an insertion, the controller refusals, and the `inspect` root after every fold. |
 | Three | Reject and reclaim across actors. |
 | Four | The two history faults, the final report and appendix, the verification record, and the aggregate. |
