@@ -258,6 +258,7 @@ executable cli-controls
     , process >=1.6 && <1.7
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-history
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text >=2.0 && <2.2
@@ -380,6 +381,9 @@ test-suite conformance-tests
     , microlens
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-history
+    , singular-registry:registry-harness
+    , singular-registry:registry-surface
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , validation-selective

@@ -146,10 +146,8 @@ withWritesObserved
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
 withWritesObserved backend reading observe settings wallet action = withReadsObserved backend reading observe settings $ \capabilities -> do
-    checkFunding
-        (tracedReads koiosSource reading capabilities)
-        (walletAddr wallet)
-        defaultFundingFloor
+    withLatest (tracedReads koiosSource reading capabilities) $ \v ->
+        checkFunding v (walletAddr wallet) defaultFundingFloor
     action capabilities
 
 -- | Sign with the caller's explicit wallet and confirm only these signed bytes.

@@ -23,7 +23,7 @@ import Cardano.Ledger.Api.Tx.Out (valueTxOutL)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Control.Exception (ErrorCall (..), throwIO)
 import Singular.Registry.Ledger (Coin (..))
-import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Wallet (bech32Address)
 
@@ -52,12 +52,12 @@ defaultFundingFloor =
 address, what is required, what is there, and the faucet step.
 -}
 checkFunding
-    :: (Cage.Network, Cage.LedgerProvider w IO)
+    :: Session w IO
     -> Addr
     -> FundingFloor
     -> IO ()
-checkFunding prov addr fl = do
-    utxos <- Cage.withLatest prov (`Cage.outputsAt` addr)
+checkFunding session addr fl = do
+    utxos <- Cage.outputsAt session addr
     let values = map (\(_, out) -> out ^. valueTxOutL) utxos
         total = sum [c | MaryValue (Coin c) _ <- values]
         adaOnly = [c | MaryValue (Coin c) (MultiAsset m) <- values, Map.null m]

@@ -78,6 +78,8 @@ let
     sublibs = [
       "ledger-kernel"
       "registry-surface"
+      "registry-history"
+      "registry-harness"
       "local-services"
       "koios-http"
     ];

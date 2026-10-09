@@ -107,11 +107,9 @@ library
     Singular.Registry.Blueprint.Schema
     Singular.Registry.Candidate
     Singular.Registry.Capabilities
-    Singular.Registry.Funding
     Singular.Registry.Config
     Singular.Registry.Config.Application
     Singular.Registry.Deployment
-    Singular.Registry.Driver
     Singular.Registry.Lifecycle
     Singular.Registry.Wait
     Singular.Registry.Confirmation
@@ -122,8 +120,9 @@ library
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
     Singular.Registry.TrieState
+    Singular.Registry.TrieState.Core
     Singular.Registry.TrieState.Fixture
-    Singular.Registry.TrieState.Lineage
+    Singular.Registry.TrieState.Types
     Singular.Registry.TxBuilder.Boot
     Singular.Registry.TxBuilder.ConnectedFold
     Singular.Registry.TxBuilder.Edges
@@ -152,8 +151,6 @@ library
     Singular.Registry.Deployment.Attach
     Singular.Registry.Deployment.Manifest
     Singular.Registry.Deployment.Mirror
-    Singular.Registry.TrieState.Core
-    Singular.Registry.TrieState.Types
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
@@ -217,8 +214,63 @@ library registry-surface
   hs-source-dirs:   surface
   exposed-modules:
     Singular.Registry.Surface
+    Singular.Registry.Funding
   build-depends:
     , base                       >=4.14 && <5
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , containers                   >=0.6  && <0.8
+    , microlens
+    , singular-registry:ledger-kernel
+    , singular-registry:local-services
+
+library registry-history
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   history
+  exposed-modules:
+    Singular.Registry.TrieState.Lineage
+  build-depends:
+    , base                       >=4.14 && <5
+    , bytestring                   >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
+    , containers                   >=0.6  && <0.8
+    , microlens
+    , mtl
+    , mts:mpf-write
+    , text                         >=2.0  && <2.2
+    , singular-registry
+    , singular-registry:ledger-kernel
+    , singular-registry:local-services
+
+library registry-harness
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   harness
+  exposed-modules:
+    Singular.Registry.Driver
+  build-depends:
+    , base                       >=4.14 && <5
+    , bytestring                   >=0.11 && <0.13
+    , base16-bytestring
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
+    , containers                   >=0.6  && <0.8
+    , microlens
+    , plutus-core
+    , singular-registry
     , singular-registry:ledger-kernel
     , singular-registry:local-services
 
@@ -390,6 +442,7 @@ library koios-http
     , singular-registry
     , singular-registry:local-services
     , singular-registry:ledger-kernel
+    , singular-registry:registry-surface
     , text
     , time
 
@@ -1076,6 +1129,7 @@ test-suite cage-tests
     , singular-registry:koios-http
     , singular-registry:local-services
     , singular-registry:ledger-kernel
+    , singular-registry:registry-history
     , temporary
     , cardano-ledger-read
     , text
@@ -1239,6 +1293,8 @@ test-suite e2e-tests
     , random
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-harness
+    , singular-registry:registry-history
     , singular-registry:ledger-kernel
     , temporary
     , text
@@ -1395,6 +1451,7 @@ executable singular
     , plutus-core
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:registry-history
     , singular-registry:ledger-kernel
     , singular-registry:koios-http
     , text

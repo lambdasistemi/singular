@@ -80,7 +80,9 @@ runForkProbeSession
 runForkProbeSession stateBytes requestBytes namingCodes caps = do
     let prov = capReads (actorCaps caps)
         submit = caps
-    checkFunding prov (actorAddress caps) defaultFundingFloor
+    Cage.withLatest
+        prov
+        (\v -> checkFunding v (actorAddress caps) defaultFundingFloor)
     tm <- mkPureTrieManager
     -- Boots by reference: publish the state validator before the seed
     -- is chosen, so the publication cannot spend the seed.

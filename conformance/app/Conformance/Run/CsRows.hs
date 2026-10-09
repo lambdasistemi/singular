@@ -221,7 +221,9 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 <> hex
                     (scriptHashBytes (computeScriptHash requestBytes))
     _ <- Cage.withLatest prov Cage.parameters
-    checkFunding prov (actorAddress caps) defaultFundingFloor
+    Cage.withLatest
+        prov
+        (\v -> checkFunding v (actorAddress caps) defaultFundingFloor)
     -- Every serialization row boots by reference: publish the state validator
     -- once, before any row picks its seed.
     ensureStateRefWith prov submit stateBytes

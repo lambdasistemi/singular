@@ -259,7 +259,9 @@ runSession
     caps
     replayIndex = do
         let prov = capReads (actorCaps caps)
-        checkFunding prov (actorAddress caps) defaultFundingFloor
+        Cage.withLatest
+            prov
+            (\v -> checkFunding v (actorAddress caps) defaultFundingFloor)
         _ <- Cage.withLatest prov Cage.parameters
         let caMode = any (`elem` caRows) rows
             environment cfg world = do

@@ -151,9 +151,18 @@ import Singular.Registry.Trace
     , ReadEvent (..)
     , timedTrace
     )
-import Singular.Registry.TraceRender (appendPhaseLine, backendPhase, readPhase)
+import Singular.Registry.TraceRender
+    ( appendPhaseLine
+    , backendPhase
+    , readPhase
+    )
 import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
-import Singular.Registry.Wallet (Wallet (..), bech32Address, loadWallet, walletAddr)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    , walletAddr
+    )
 import Singular.Registry.WalletOutputs
     ( FundingRefusal (..)
     , FundingViewRefusal (..)
