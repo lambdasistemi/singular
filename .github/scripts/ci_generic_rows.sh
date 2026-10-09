@@ -366,7 +366,7 @@ grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGEN
 # 11. empty-fold (#287): the empty fold is compared with the model's fold batch
 #     over no request, refused by both for empty-fold with the reason the
 #     traced replay admits for the state script, beside its accepting
-#     control, an insertion folded on the same registry.
+#     control, an Active registration folded on the same registry.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
@@ -377,7 +377,7 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
     and (.chain.refusal.hashes | index($state) != null)
     and .chain.refusal.trace == "empty-fold"
     and .comparison == "agrees")
-  and (.steps[1] | .edge == "insertAbsent" and .tamper == null
+  and (.steps[1] | .edge == "insertActive" and .tamper == null
     and .model.outcome == "accepted" and .chain.outcome == "accepted"
     and .comparison == "agrees" and (.compared | length) == 9)
   and ([.steps[].registry] | unique | length) == 1
