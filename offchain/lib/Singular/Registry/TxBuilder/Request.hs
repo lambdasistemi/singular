@@ -58,8 +58,8 @@ import Singular.Registry.Surface
     , PParams
     , Session
     , TokenId
-    , outputsAt
     , parameters
+    , readOutputsAt
     )
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
@@ -88,7 +88,7 @@ requestEdgeImpl
     -> IO ConwayTx
 requestEdgeImpl cfg view (Coin mf) tid key edge addr = do
     pp <- parameters view
-    utxos <- outputsAt view addr
+    utxos <- readOutputsAt view addr
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
         utxos of

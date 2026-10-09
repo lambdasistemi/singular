@@ -43,6 +43,13 @@ module Singular.Registry.Surface
     , validityUpper
     , ServiceFailure (..)
 
+      -- * Capabilities (Singular.Registry.Capabilities)
+    , Capabilities
+    , sessionReceipt
+    , withCapSession
+    , submitCap
+    , confirmCap
+
       -- * Opaque wallet funding (Singular.Registry.WalletOutputs)
     , WalletOutputs
     , walletOutputs
@@ -70,6 +77,7 @@ module Singular.Registry.Surface
     , Asset
     , MintRecord (..)
     , ReadFailure (..)
+    , SubmitResult (..)
     , TipObservation (..)
     , HistoryFailure
     , Outputs
@@ -123,6 +131,13 @@ module Singular.Registry.Surface
     , TimeSource (..)
     ) where
 
+import Singular.Registry.Capabilities
+    ( Capabilities
+    , confirmCap
+    , sessionReceipt
+    , submitCap
+    , withCapSession
+    )
 import Singular.Registry.Evidence
     ( Evidenced (value)
     , NoWitness
@@ -154,6 +169,7 @@ import Singular.Registry.LedgerProvider
     , Outputs
     , ReadFailure (..)
     , Session
+    , SubmitResult (..)
     , TipObservation (..)
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))

@@ -75,24 +75,27 @@ import Cardano.Tx.Balance
 import Cardano.Tx.Ledger (ConwayTx)
 import PlutusLedgerApi.V3 qualified as PLC
 
-import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
-    ( Coin (..)
+import Singular.Registry.Surface
+    ( Capabilities
+    , Coin (..)
     , ConwayEra
+    , Network (..)
+    , NoWitness
     , PParams
-    , TokenId
-    )
-import Singular.Registry.LedgerProvider
-    ( Network (..)
-    , Session (..)
+    , Session
     , SubmitResult (..)
+    , TokenId
+    , Wallet (..)
+    , confirmCap
+    , fundableOutputsAt
+    , parameters
+    , signTx
+    , signedTx
+    , submitCap
+    , withCapSession
     )
-import Singular.Registry.SessionIO (parameters, withLatest)
-import Singular.Registry.SessionIO qualified as Services
-import Singular.Registry.Signing (signTx, signedTx)
-import Singular.Registry.Surface (fundableOutputsAt)
+import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -103,7 +106,6 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     )
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
 import Singular.Registry.Types (Edge)
-import Singular.Registry.Wallet (Wallet (..))
 
 {- | Public external nodes use the lifecycle automatically: a chain point
 on a network other than the factory devnet (network magic 42). The
@@ -249,16 +251,16 @@ fundLifecycle
     -> [TxOut ConwayEra]
     -> IO [(TxIn, TxOut ConwayEra)]
 fundLifecycle wallet caps outs = do
-    unsigned <- withLatest (capReads caps) $ \v -> fundingTx wallet v outs
+    unsigned <- withCapSession caps $ \v -> fundingTx wallet v outs
     let signed = signTx (walletSignKey wallet) unsigned
         tx = signedTx signed
-    capSubmit caps signed >>= \case
+    submitCap caps signed >>= \case
         SubmitAccepted _ -> pure ()
         SubmitRefused reason -> fail ("lifecycle funding rejected: " <> show reason)
         SubmitFailed reason -> fail ("lifecycle funding answer unavailable: " <> show reason)
         SubmitWrongNetwork wanted actual ->
             fail ("lifecycle funding wrong network: " <> show (wanted, actual))
-    capConfirm caps tx
+    confirmCap caps tx
     putStrLn ("lifecycle funding confirmed: " <> show (txIdTx tx))
     pure
         [ (TxIn (txIdTx tx) (TxIx (fromIntegral i)), o)

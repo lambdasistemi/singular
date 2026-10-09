@@ -40,14 +40,15 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeToData
     )
 import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (ConwayEra, TxIn)
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.SessionIO (parameters)
-import Singular.Registry.Trace
+import Singular.Registry.Surface
     ( BodyBuild (..)
     , BodyEnd (..)
+    , ConwayEra
+    , NoWitness
     , ReadEvent (..)
+    , Session
+    , TxIn
+    , parameters
     , timedTrace
     )
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))

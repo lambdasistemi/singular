@@ -63,8 +63,8 @@ import Singular.Registry.Surface
     , TipObservation (..)
     , TokenId
     , TxIn
-    , outputsAt
     , parameters
+    , readOutputsAt
     )
 import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
@@ -172,8 +172,8 @@ queryRejectContext cfg view tid addr = do
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- outputsAt view stateAddr
-    requestUtxos <- outputsAt view reqAddr
+    stateUtxos <- readOutputsAt view stateAddr
+    requestUtxos <- readOutputsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -192,7 +192,7 @@ queryRejectContext cfg view tid addr = do
             "rejectRequests: no pending \
             \requests"
     pp <- parameters view
-    walletUtxos <- outputsAt view addr
+    walletUtxos <- readOutputsAt view addr
     -- A published reference output lives in this same wallet. Spending
     -- one to pay the fee would destroy the script the transaction is
     -- resolving through, and collateral must be ada-only besides.

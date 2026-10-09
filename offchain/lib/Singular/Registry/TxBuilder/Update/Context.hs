@@ -45,12 +45,9 @@ import Cardano.Ledger.Api.Tx.Out
     , coinTxOutL
     , datumTxOutL
     , mkBasicTxOut
-    , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Slotting.Slot (SlotNo)
 
 import Singular.Registry.Config
@@ -65,8 +62,9 @@ import Singular.Registry.Surface
     , TipObservation (..)
     , TokenId
     , TxIn
-    , outputsAt
+    , fundableOutputsAt
     , parameters
+    , readOutputsAt
     )
 import Singular.Registry.Surface qualified as Services
 import Singular.Registry.Trie
@@ -180,7 +178,7 @@ completeContext cfg view addr script ctx0 = do
     -- have queried them, and the cage script is this build's own.
     cageUtxos <-
         if null (rcCageUtxos ctx0)
-            then outputsAt view (cageAddrFromCfg cfg (network cfg))
+            then readOutputsAt view (cageAddrFromCfg cfg (network cfg))
             else pure (rcCageUtxos ctx0)
     -- #177 I177-BUILDER: the candidate burn sources. A retirement or a
     -- deletion of an active key destroys an asset it does not create,
@@ -189,7 +187,7 @@ completeContext cfg view addr script ctx0 = do
     -- `insertActive` delivered it.
     holderUtxos <-
         if null (rcHolderUtxos ctx0)
-            then outputsAt view addr
+            then readOutputsAt view addr
             else pure (rcHolderUtxos ctx0)
     pure
         ctx0
@@ -219,8 +217,8 @@ queryContext cfg view tid addr = do
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
-    stateUtxos <- outputsAt view stateAddr
-    requestUtxos <- outputsAt view reqAddr
+    stateUtxos <- readOutputsAt view stateAddr
+    requestUtxos <- readOutputsAt view reqAddr
     let policyId = cagePolicyIdFromCfg cfg
     stateUtxo <- case findStateUtxo
         policyId
@@ -237,13 +235,13 @@ queryContext cfg view tid addr = do
     when (null reqUtxos) $
         error "updateToken: no pending requests"
     pp <- parameters view
-    walletUtxos <- outputsAt view addr
+    walletUtxos <- fundableOutputsAt view addr
     -- #157: an approval is not burned at the fold, so it returns to the
     -- funder and rides in the wallet from then on. The fee input doubles
     -- as collateral, and collateral must be ada-only.
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
-        (filter (adaOnlyOutput . snd) walletUtxos) of
+        walletUtxos of
         [] -> error "updateToken: no ada-only UTxO to fund the fold"
         (u : _) -> pure u
     pure (stateUtxo, reqUtxos, feeUtxo, pp)
@@ -354,16 +352,3 @@ processRequest trie (_txIn, txOut) =
             error
                 "processRequest: \
                 \invalid request datum"
-
-{- | Can this output fund a fold? It must hold ada and nothing else,
-because it doubles as collateral, and it must not be one of the published
-reference outputs, because a transaction may not both spend an output and
-reference it.
--}
-adaOnlyOutput :: TxOut ConwayEra -> Bool
-adaOnlyOutput out =
-    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
-        && ( case out ^. referenceScriptTxOutL of
-                SNothing -> True
-                SJust _ -> False
-           )

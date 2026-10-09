@@ -70,7 +70,6 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
-    , singular-registry:local-services
     , singular-registry:ledger-kernel
     , singular-registry:registry-surface
     , text                              >=2.0  && <2.2
@@ -154,7 +153,6 @@ library
   -- concern, and the generated API reference documents them here.
   reexported-modules:
     , Singular.Registry.Ledger
-    , Singular.Registry.LedgerProvider
     , Singular.Registry.Evidence
     , Singular.Registry.Signing
 

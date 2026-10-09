@@ -2,7 +2,13 @@
 network and generic provider; submission accepts only signed bytes; clocks
 and bounded confirmation belong to the caller's effect composition.
 -}
-module Singular.Registry.Capabilities (Capabilities (..), sessionReceipt) where
+module Singular.Registry.Capabilities
+    ( Capabilities (..)
+    , sessionReceipt
+    , withCapSession
+    , submitCap
+    , confirmCap
+    ) where
 
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Aeson (Value (..), object, toJSON, (.=))
@@ -21,6 +27,7 @@ import Singular.Registry.LedgerProvider
     , SubmitResult
     )
 import Singular.Registry.SessionEvidence (FactRecord (..))
+import Singular.Registry.SessionIO (withLatest)
 import Singular.Registry.Signing (SignedTx)
 
 data Capabilities w m = Capabilities
@@ -33,6 +40,21 @@ data Capabilities w m = Capabilities
     , capFacts :: m [FactRecord]
     , capTrace :: m [Value]
     }
+
+{- | Acquire the capability's read session. This is the one named
+acquisition production builders use: the raw provider pair behind
+'capReads' never leaves this module.
+-}
+withCapSession :: Capabilities w IO -> (Session w IO -> IO a) -> IO a
+withCapSession caps = withLatest (capReads caps)
+
+-- | Submit signed bytes through the capability.
+submitCap :: Capabilities w m -> SignedTx -> m SubmitResult
+submitCap = capSubmit
+
+-- | Confirm a submitted transaction through the capability.
+confirmCap :: Capabilities w m -> ConwayTx -> m ()
+confirmCap = capConfirm
 
 {- | Only the actual scope's facts and source exchanges; later confirmation
 and prior funding scopes cannot enter this body's evidence.

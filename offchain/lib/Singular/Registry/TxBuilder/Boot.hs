@@ -81,15 +81,16 @@ import Singular.Registry.Config
     ( CageConfig (..)
     , bootStateFromCfg
     )
-import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger
+import Singular.Registry.Lifecycle (protocolFeeReserve)
+import Singular.Registry.Surface
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
+    , NoWitness
+    , Session
+    , parameters
+    , readOutputsAt
     )
-import Singular.Registry.LedgerProvider (Session)
-import Singular.Registry.Lifecycle (protocolFeeReserve)
-import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.Types
@@ -158,7 +159,7 @@ bootTokenImpl
     -> IO ConwayTx
 bootTokenImpl cfg view addr = do
     pp <- parameters view
-    utxos <- outputsAt view addr
+    utxos <- readOutputsAt view addr
     stateRef <-
         maybe
             (throwIO StateValidatorNotPublished)
@@ -179,7 +180,7 @@ bootTokenFrom
     -> IO ConwayTx
 bootTokenFrom cfg stateRef view addr = do
     pp <- parameters view
-    utxos <- outputsAt view addr
+    utxos <- readOutputsAt view addr
     bootFrom cfg pp utxos stateRef view addr
 
 -- | The boot, from the parameters and the payer's outputs already read.

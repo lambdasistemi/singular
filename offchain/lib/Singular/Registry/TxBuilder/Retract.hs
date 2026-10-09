@@ -76,8 +76,9 @@ import Singular.Registry.Surface
     , Session
     , TipObservation (..)
     , TokenId
-    , outputsAt
+    , fundableOutputsAt
     , parameters
+    , readOutputsAt
     )
 import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Edges (selectFunding)
@@ -125,8 +126,8 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
             requestAddrFromCfg cfg tid (network cfg)
         stateAddr =
             cageAddrFromCfg cfg (network cfg)
-    requestUtxos <- outputsAt view reqAddr
-    stateUtxos <- outputsAt view stateAddr
+    requestUtxos <- readOutputsAt view reqAddr
+    stateUtxos <- readOutputsAt view stateAddr
     let reqUtxo =
             findUtxoByTxIn reqTxIn requestUtxos
     reqUtxoPair <- case reqUtxo of
@@ -149,7 +150,7 @@ retractRequestAtTipImpl tip cfg view tid reqTxIn addr = do
             Just x -> pure x
     let (stateIn, stateOut) = stateUtxo
     pp <- parameters view
-    walletUtxos <- outputsAt view addr
+    walletUtxos <- fundableOutputsAt view addr
     -- The funding output is also the collateral, so it must hold ada and
     -- nothing else, and must not be a published reference script.
     feeUtxo <- case selectFunding Nothing walletUtxos of

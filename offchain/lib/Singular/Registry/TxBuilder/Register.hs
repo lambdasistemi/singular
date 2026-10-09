@@ -43,8 +43,8 @@ import Singular.Registry.Surface
     ( ConwayEra
     , NoWitness
     , Session
-    , outputsAt
     , parameters
+    , readOutputsAt
     )
 import Singular.Registry.Surface qualified as Services
 
@@ -87,7 +87,7 @@ registerScriptImpl
     -> IO ConwayTx
 registerScriptImpl view fundAddr credHash = do
     pp <- parameters view
-    utxos <- outputsAt view fundAddr
+    utxos <- readOutputsAt view fundAddr
     let funding =
             sortOn
                 (Down . (^. coinTxOutL) . snd)

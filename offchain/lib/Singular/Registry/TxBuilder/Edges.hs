@@ -134,14 +134,20 @@ import Singular.Registry.Blueprint.Params
     , applyDataParam
     )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId)
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.Trace
+import Singular.Registry.Surface
     ( BodyBuild (..)
     , BodyEnd (..)
+    , Coin (..)
+    , ConwayEra
+    , NoWitness
     , ReadEvent (..)
+    , Session
+    , TokenId
+    , WalletOutputs
+    , fundableOutputsAt
+    , fundingOutputs
+    , parameters
+    , readOutputsAt
     , timedTrace
     )
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -182,7 +188,6 @@ import Singular.Registry.Types
     , edgeUpdateActive
     , edgeWitnessTerminal
     )
-import Singular.Registry.WalletOutputs (WalletOutputs, fundingOutputs)
 
 {- | Sign a built transaction with the payer's key, submit it, and wait
 for it. The caller owns its own signing key and its own confirmation
@@ -277,7 +282,7 @@ selectFunding chosen utxos = case chosen of
 
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
@@ -290,7 +295,7 @@ publishes. The largest ada-only output that is not reserved funds it.
 -}
 publishRefScriptReserving
     :: Set.Set TxIn
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> Script ConwayEra
@@ -306,13 +311,13 @@ output it creates.
 -}
 publishRefScriptTx
     :: Set.Set TxIn
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> Addr
     -> Script ConwayEra
     -> IO (ConwayTx, TxOut ConwayEra)
 publishRefScriptTx reserved v payerAddr script = do
-    pp <- Cage.parameters v
-    utxos <- Cage.outputsAt v payerAddr
+    pp <- parameters v
+    utxos <- fundableOutputsAt v payerAddr
     fund <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -357,7 +362,7 @@ funds fail closed with a stable message (the command gates sufficiency
 by name before building).
 -}
 publishReferencesTx
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Addr
     -> WalletOutputs
     -> [Script ConwayEra]
@@ -365,7 +370,7 @@ publishReferencesTx
 publishReferencesTx session payerAddr wallet scripts = do
     when (null scripts) $
         error "publishReferencesTx: no scripts to publish"
-    pp <- Cage.parameters session
+    pp <- parameters session
     let funds = fundingOutputs wallet
         published =
             [ atMinimum
@@ -440,7 +445,7 @@ cages publishes once.
 -}
 publishStateRef
     :: CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
@@ -453,13 +458,13 @@ outside the reservation.
 publishStateRefReserving
     :: Set.Set TxIn
     -> CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> IO (TxIn, TxOut ConwayEra)
 publishStateRefReserving reserved cfg v submit payerAddr = do
     let script = mkCageScript cfg
-    utxos <- Cage.outputsAt v payerAddr
+    utxos <- readOutputsAt v payerAddr
     case stateRefIn cfg utxos of
         Just u -> pure u
         Nothing -> publishRefScriptReserving reserved v submit payerAddr script
@@ -484,7 +489,7 @@ request validator and the three token policies.
 publishCageRefs
     :: CageConfig
     -> NamingCodes
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -656,7 +661,7 @@ certifyBooking pp collateral mApproval unsigned =
 bookEdge
     :: CageConfig
     -> NamingCodes
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -695,7 +700,7 @@ a tree edge mints and certifies, and a read books nothing at all.
 bookEdgeTo
     :: CageConfig
     -> NamingCodes
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -733,7 +738,7 @@ the request is its first output.
 -}
 bookEdgeWith
     :: CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> SubmitSigned
     -> Addr
     -> TokenId
@@ -753,7 +758,7 @@ largest ada-only output pays the bond, the fee and the change.
 -}
 bookEdgeTx
     :: CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> Addr
     -> TokenId
     -> ByteString
@@ -765,8 +770,8 @@ bookEdgeTx
     -> IO ConwayTx
 bookEdgeTx cfg v payerAddr tokenId key edge dest deposit approval = do
     requireAdmissible key edge
-    pp <- Cage.parameters v
-    utxos <- Cage.outputsAt v payerAddr
+    pp <- parameters v
+    utxos <- fundableOutputsAt v payerAddr
     (feeIn, feeOut) <-
         case sortOn
             (Down . (^. coinTxOutL) . snd)
@@ -872,7 +877,7 @@ released, and a caller that only prepares submits nothing.
 -}
 bookEdgeMeasured
     :: CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     {- ^ The one acquired view the booking is built, measured and certified
     from: its protocol parameters are the ones the caller reports and judges
     its outlay under, and nothing is submitted while it is held
@@ -922,7 +927,7 @@ bookEdgeMeasured cfg v tracer payerAddr tokenId key edge dest deposit approval r
 -- | The measured booking, unlogged: the builder 'bookEdgeMeasured' times.
 measuredBody
     :: CageConfig
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> Addr
     -> TokenId
     -> ByteString
@@ -935,8 +940,8 @@ measuredBody
     -> IO ConwayTx
 measuredBody cfg v payerAddr tokenId key edge dest deposit approval refs chosen = do
     requireAdmissible key edge
-    pp <- Cage.parameters v
-    utxos <- Cage.outputsAt v payerAddr
+    pp <- parameters v
+    utxos <- fundableOutputsAt v payerAddr
     funding <-
         either (error . ("bookEdge: " <>)) pure (selectFunding chosen utxos)
     now <- currentPosixMs
@@ -1002,11 +1007,11 @@ outputs the fold's scripts resolve through.
 registryContextFor
     :: CageConfig
     -> NamingCodes
-    -> Cage.Session Cage.NoWitness IO
+    -> Session NoWitness IO
     -> [(TxIn, TxOut ConwayEra)]
     -> IO RegistryContext
 registryContextFor cfg codes v refs = do
-    utxos <- Cage.outputsAt v (cageAddrFromCfg cfg (network cfg))
+    utxos <- readOutputsAt v (cageAddrFromCfg cfg (network cfg))
     pure
         emptyRegistryContext
             { rcWitnessScripts =
