@@ -65,7 +65,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
@@ -880,6 +880,15 @@ commandJournal env Fold actor registry = do
         )
 commandJournal env _ actor registry = primaryJournal env actor registry
 
+{- | Whether the registry's token is already named: by flag, or by the seed
+a previous create recorded. A registry neither names has no managed
+partition yet: nothing could be journalled without the token.
+-}
+establishedRegistry :: Env -> Target -> IO Bool
+establishedRegistry env target = case optStateToken (envOptions env) of
+    Just _ -> pure True
+    Nothing -> doesFileExist (backendDir env target </> "seed")
+
 {- | The primary wallet's journal for one actor and registry: what every
 non-fold command journals to, and what a lock guards.
 -}
@@ -1621,10 +1630,19 @@ provoke env p target key r = do
         hold = envEvidence env </> printf "step-%03d-hold" (rcStep r)
         seedFile = backendDir env target </> "seed"
         label = provocationName p
-    journal <- primaryJournal env target target
+    -- A registry not established yet has no managed partition: fall back
+    -- to the directory itself, where reads find nothing. Branches that
+    -- establish the registry re-resolve below once their seed is written.
+    journalRef <- do
+        established <- establishedRegistry env target
+        newIORef
+            =<< if established
+                then primaryJournal env target target
+                else pure (dir </> "journal.jsonl")
     createDirectoryIfMissing True (backendDir env target)
-    before <- journalLines journal
+    before <- journalLines =<< readIORef journalRef
     let finishFrom from status printed file extra = do
+            journal <- readIORef journalRef
             ls <- journalLines' journal
             let delta = drop from ls
             (submissions, resolved) <- journalledSubmissions env (pure delta)
@@ -1653,6 +1671,7 @@ provoke env p target key r = do
         finish = finishFrom before
         -- the transaction a killed command left accepted, once on the chain
         awaitKilled = do
+            journal <- readIORef journalRef
             ls <- journalLines' journal
             mapM_ (awaitOnChain env) (lastMaybe (submittedIn (drop before ls)))
         plain args = do
@@ -1667,7 +1686,11 @@ provoke env p target key r = do
     case p of
         WhileLocked -> do
             args <- commandArgs env Insert target key r
-            lock <- primaryLock env target target
+            lock <- do
+                established <- establishedRegistry env target
+                if established
+                    then primaryLock env target target
+                    else pure (dir </> ".lock")
             createDirectoryIfMissing True (takeDirectory lock)
             bracket
                 ( openFd
@@ -1688,6 +1711,7 @@ provoke env p target key r = do
                 -- of the asset named, its receipt carrying the count
                 through name tag =
                     withWithholding (optProviderUrl o) (policy, hex name) $ \w -> do
+                        journal <- readIORef journalRef
                         from <- journalLines journal
                         (status, printed, file) <-
                             singular env r (label <> tag) (providerTo (withholdingUrl w) args)
@@ -1719,6 +1743,8 @@ provoke env p target key r = do
             seed <-
                 previewSeed env r "preview" (optWalletKey o) dir Nothing
             writeFile seedFile seed
+            -- The registry is established now: later reads track its journal.
+            writeIORef journalRef =<< primaryJournal env target target
             let args = createArgs dir (optWalletKey o) seed
             (status, printed, file) <- killedAt env r label hold "boot" args
             awaitKilled
@@ -1738,6 +1764,7 @@ provoke env p target key r = do
             -- The double boot races one seed with one wallet: different
             -- seeds boot different registries in different partitions.
             writeFile seedFile first
+            writeIORef journalRef =<< primaryJournal env target target
             let lateArgs = createArgs dir (optWalletKey o) first
                 firstArgs = createArgs dir (optWalletKey o) first
             (late', out) <-
@@ -1762,7 +1789,7 @@ provoke env p target key r = do
             -- its hold after validating the live seed and before the first
             -- create consumed it. The winner spends the raced seed, so a
             -- preview of it must no longer succeed.
-            lockedBefore <- journalLines journal
+            lockedBefore <- journalLines =<< readIORef journalRef
             writeFile hold ""
             status <- waitForProcess late'
             printed <-

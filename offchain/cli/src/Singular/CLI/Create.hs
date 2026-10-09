@@ -243,6 +243,23 @@ createWith env a rel ws = do
     root <- resolveStateRoot (createStateDir a)
     let addr = walletAddr caller
         settings = writeProvider ws
+    -- An explicit seed already names its managed partition before any chain
+    -- read: existing state there refuses before seed validation, so a second
+    -- boot of one seed is refused for the existing state however far chain
+    -- inclusion has progressed. An automatically selected seed still needs
+    -- its wallet view first and is checked after selection below.
+    case createSeed a of
+        Just s -> do
+            named <- either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
+            refuseExisting
+                ( managedDir
+                    root
+                    magic
+                    (stateTokenOf rel named)
+                    (walletPartition caller)
+                )
+                >>= either (failWith ClientRefusal . renderIdentityError) pure
+        Nothing -> pure ()
     -- The seed is selected before any lock or journal use, from one view
     -- of the wallet's outputs. An automatically selected seed is validated,
     -- never re-selected, under the lock, so the managed journal always binds
