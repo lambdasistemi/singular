@@ -6,11 +6,11 @@ Module      : Negative.Run
 Description : The host's entry handlers over the shared session
 License     : Apache-2.0
 
-For this slice only the holding-spend shapes (controller update,
-stranger update, tampered update, release outside a fold) run end to
-end; every other host command stops at a clear client refusal naming
-its slice. Every ordinary spelling is handed to the shared command
-unchanged.
+For this slice the holding-spend shapes (controller update,
+stranger update, tampered update, release outside a fold) and the
+termination booking run end to end; every other host command stops at
+a clear client refusal naming its slice. Every ordinary spelling is
+handed to the shared command unchanged.
 -}
 module Negative.Run
     ( -- * Entry handlers
@@ -22,6 +22,7 @@ module Negative.Run
     ) where
 
 import Control.Exception (SomeException, fromException, try)
+import Control.Monad (when)
 import Data.Aeson (Value, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Text (Text)
@@ -62,7 +63,12 @@ import Singular.CLI.Session
     , txIdHex
     )
 
-import Negative.Craft (HoldingSpend (..), craftHoldingSpend)
+import Negative.Craft
+    ( BookingShape (..)
+    , HoldingSpend (..)
+    , craftBooking
+    , craftHoldingSpend
+    )
 import Negative.Parse (TamperField (..))
 import Negative.Read (Around (..), readAround)
 import Negative.Submit
@@ -87,13 +93,13 @@ negativeStateDir args ws =
         (writeWalletKey ws)
 
 {- | Book an insertion through the library builder and submit
-unevaluated. Not in this slice.
+unevaluated. Insert bookings and their pairs arrive in the third slice.
 -}
 runNegativeInsert :: Env -> EntryArgs -> IO Value
 runNegativeInsert _ _ =
     failWith
         ClientRefusal
-        "not in this slice: insert arrives in the second slice"
+        "not in this slice: insert bookings arrive in the third slice"
 
 {- | Build the update for any signer, unevaluated. The honest, stranger
 and tampered shapes run in this slice.
@@ -219,12 +225,114 @@ runNegativeUpdate env args tamper = case entryMode args of
                                     ClientRefusal
                                     ("update failed: " <> show e)
 
--- | Book a termination for any signer. Not in this slice.
+{- | Book a termination for any signer, unevaluated. The controller's own
+booking is the accepting control; a stranger's is refused by the
+application at the booking. No controller check here: the booking names
+the signing wallet payer and owner, and the node judges it. With @--fold@
+the fold would follow; folds arrive in the third slice.
+-}
 runNegativeTerminate :: Env -> EntryArgs -> IO Value
-runNegativeTerminate _ _ =
-    failWith
-        ClientRefusal
-        "not in this slice: terminate arrives in the second slice"
+runNegativeTerminate env args = case entryMode args of
+    Preview _ _ ->
+        failWith ClientRefusal "preview takes no key: the host submits"
+    Submit ws -> do
+        let Key key = entryKey args
+        when (entryFold args) $
+            failWith
+                ClientRefusal
+                "not in this slice: folds arrive in the third slice"
+        dir <- negativeStateDir args ws
+        attached
+            env
+            dir
+            (entryBlueprint args)
+            (entryAccess args)
+            (neededRoles (Terminate args))
+            ws
+            "terminate"
+            $ \at -> do
+                let s = savedOf at
+                    wc = atWrite at
+                    wallet = wcWallet wc
+                before <- readAround at key wallet
+                result <-
+                    try
+                        ( submitBuiltIn
+                            wc
+                            "book"
+                            ["state", "key outputs"]
+                            ( const
+                                ( Expectation
+                                    (Just key)
+                                    "request"
+                                    Nothing
+                                    Nothing
+                                    Nothing
+                                )
+                            )
+                            ( \_building v -> do
+                                live <- attachLive v s
+                                unsigned <-
+                                    craftBooking
+                                        v
+                                        live
+                                        wallet
+                                        key
+                                        BookingTerminate
+                                pure (unsigned, ())
+                            )
+                        )
+                case result of
+                    Right (signed, _) -> do
+                        after <- readAround at key wallet
+                        let registry = atLive at
+                        pure
+                            ( receipt
+                                "terminate"
+                                Success
+                                [ ("key", toJSON (hexT key))
+                                , ("booking", toJSON (txIdHex signed))
+                                , ("before", aroundJson before)
+                                , ("after", aroundJson after)
+                                , ("applicationHash", toJSON (applicationHashOf registry))
+                                , ("stateHash", toJSON (stateHashOf registry))
+                                ]
+                            )
+                    Left (e :: SomeException) ->
+                        case fromException e :: Maybe CommandFailure of
+                            Just (CommandFailure LedgerRefusal why _) -> do
+                                after <- readAround at key wallet
+                                let registry = atLive at
+                                    failed =
+                                        failedScripts
+                                            registry
+                                            (AnswerRefused (T.pack why))
+                                pure
+                                    ( receipt
+                                        "terminate"
+                                        LedgerRefusal
+                                        [ ("key", toJSON (hexT key))
+                                        , ("reason", toJSON (T.pack why))
+                                        ,
+                                            ( "failedScripts"
+                                            , toJSON
+                                                [ Aeson.object
+                                                    [ "hash" .= failedHash f
+                                                    , "role" .= scriptRoleName (failedRole f)
+                                                    ]
+                                                | f <- failed
+                                                ]
+                                            )
+                                        , ("before", aroundJson before)
+                                        , ("after", aroundJson after)
+                                        , ("applicationHash", toJSON (applicationHashOf registry))
+                                        , ("stateHash", toJSON (stateHashOf registry))
+                                        ]
+                                    )
+                            _ ->
+                                failWith
+                                    ClientRefusal
+                                    ("terminate failed: " <> show e)
 
 -- | Build the release outside any fold. Runs in this slice.
 runNegativeWithdraw :: Env -> EntryArgs -> IO Value

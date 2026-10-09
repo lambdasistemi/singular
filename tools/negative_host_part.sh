@@ -21,7 +21,7 @@ set -euo pipefail
 root="$1"
 part="$2"
 case "$part" in
-  stranger-updates-the-key|controller-tamper-controller|controller-tamper-deposit|controller-tamper-token|controller-tamper-address|controller-tamper-datum|stranger-terminates-the-key|controller-withdraws-outside-a-fold) ;;
+  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold) ;;
   *)
     echo "negative-host-part: unknown part: $part" >&2
     exit 2
@@ -200,7 +200,7 @@ mkdir -p "$work/host-bob" "$work/host-alice"
 forbidden_status=0
 control_status=0
 case "$part" in
-  stranger-updates-the-key|controller-tamper-controller|controller-tamper-deposit|controller-tamper-token|controller-tamper-address|controller-tamper-datum)
+  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum)
     forbidden_args=(registry update --key alice-1 --payload "$work/payload-update.json")
     case "$part" in
       controller-tamper-controller) forbidden_args+=(--tamper controller) ;;
