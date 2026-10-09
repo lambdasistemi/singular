@@ -85,6 +85,7 @@ if [ "${1:-}" = "--project-evidence" ]; then
     --slurpfile booked "$fixture/booked.jsonl" \
     --slurpfile held "$fixture/held.jsonl" \
     --slurpfile after "$fixture/after.jsonl" \
+    --slurpfile reconciled "$fixture/reconciled.jsonl" \
     --arg beforeRoot "$(jq -r .before "$fixture/roots.json")" \
     --arg bookedRoot "$(jq -r .booked "$fixture/roots.json")" \
     --arg heldRoot "$(jq -r .held "$fixture/roots.json")" \

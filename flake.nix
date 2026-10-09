@@ -210,6 +210,17 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          # Scripts sourcing managed_state.sh travel with it: a bare
+          # ${./tools/<script>} copies one file, leaving the sourced
+          # sibling behind, so every such entry point resolves from here.
+          managedScripts = pkgs.runCommand "managed-scripts" { } ''
+            mkdir -p $out
+            cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
+            cp ${./tools/managed_state.sh} $out/managed_state.sh
+            cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
+            cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
+            cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
+          '';
           # #449: the recovery controls as one app per part, each on its own
           # development node, so CI runs the parts as parallel jobs. An empty
           # part list runs them all.
@@ -260,8 +271,8 @@
                   python3
                 ];
                 text = ''
-                  bash ${./tools/cli_recovery_receipt_cap.test.sh} ${./tools/cli_recovery_controls.sh}
-                  CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                  bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
+                  CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
                 '';
               }
             );
@@ -290,8 +301,8 @@
                 ];
                 text = ''
                   [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
-                  bash ${./tools/cli_recovery_receipt_cap.test.sh} ${./tools/cli_recovery_controls.sh}
-                  CLI_RECOVERY_PARTS="$1" CLI_RECOVERY_CONTROLS=${./tools/cli_recovery_controls.sh} bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                  bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
+                  CLI_RECOVERY_PARTS="$1" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
                 '';
               }
             );
@@ -337,8 +348,8 @@
               strace
             ];
             text = ''
-              export VERIFY_RELEASE_JOURNEY=${./tools/demo1_cli_journey.sh}
-              export DEMO1_CREATE_RACE=${./tools/demo1_cli_create_race.sh}
+              export VERIFY_RELEASE_JOURNEY=${managedScripts}/demo1_cli_journey.sh
+              export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
               export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
               bash ${./tools/verify_release.sh} "$@"
             '';
