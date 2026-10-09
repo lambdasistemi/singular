@@ -124,6 +124,7 @@ export SINGULAR_HARNESS_TRIE_TRACE="$work/direct-processes.trie.jsonl"
 : >"$work/trie-command-invocations"
 reg="$work/registry"
 # shellcheck source=tools/managed_state.sh
+# shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/managed_state.sh"
 # The journal under test, reassigned per phase and writer: journals live in
 # managed identity partitions, never directly at the configured root.
