@@ -1106,7 +1106,8 @@ loadReceipts dir = do
                     Left
                         (path <> ": retraction window requires before, accepted control, after")
         (row, Just steps)
-            | isNothing (programFor (T.unpack row)) ->
+            | isNothing (programFor (T.unpack row))
+            , row `notElem` historicalStepRows ->
                 Left (path <> ": only a program's receipt carries steps")
             -- #287: an attribution receipt carrying, beside its own outcome,
             -- the batch comparisons none of which landed, as the conformance
@@ -1124,6 +1125,15 @@ loadReceipts dir = do
         ("reject-inside-processing-and-retraction-windows", Nothing) -> Left (path <> ": early rejection names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
+    -- Archived programs remain readable with the same structural evidence
+    -- checks. This does not restore a runner: effectiveState separately binds
+    -- every receipt to its recorded code revision before giving it credit.
+    historicalStepRows =
+        [ "update-existing-key"
+        , "delete-existing-key"
+        , "reinsert-deleted-key"
+        , "retire-active-key"
+        ]
     isBatchStep step = case step of
         Object fields -> KM.member "batch" fields
         _ -> False

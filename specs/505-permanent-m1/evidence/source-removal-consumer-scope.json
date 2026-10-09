@@ -44,8 +44,8 @@
   ],
   "currentRequirementIdentity": "permanent-retire-active-key",
   "controls": {
-    "appendix": "606 examples, 0 failures; effectiveState overlays a separate current retirement receipt and requires all four original requirements to remain present and ShownPlannedUncovered; the current requirement is the positive ShownExecuted control.",
-    "liveGate": ".github/scripts/ci_generic_rows.sh repeats the public CLI inventory with invocation-fresh actual current receipts; hosted execution remains pending."
+    "appendix": "608 examples, 0 failures; effectiveState overlays a separate current retirement receipt and requires all four original requirements to remain present and ShownPlannedUncovered; the current requirement is the positive ShownExecuted control. Archived step receipts also remain readable, with structural/replay checks and current-revision uncovered controls.",
+    "liveGate": ".github/scripts/ci_generic_rows.sh repeats the public CLI inventory with invocation-fresh actual current receipts; consult the exact-head hosted result in PR523."
   },
   "limits": [
     "Historical broader receipts certify their recorded base only.",

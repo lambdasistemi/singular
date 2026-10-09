@@ -12,8 +12,56 @@ The operator subsequently authorized removing obsolete active success paths.
 aliases in `Singular.M1`; canonical validators and builders implement that law.
 The [retired scope table](https://github.com/lambdasistemi/singular/blob/feat/505-permanent-m1/conformance/coverage/m1-scope-retirement.md) records
 exact archived identities and changed signatures without consumer coverage credit.
-Fresh candidate verification is in progress; the table below certifies only the
-historical preserved revision, not the changed source.
+The single registry law is `lean/Singular/Model.lean`, source SHA-256
+`af220eec1be2733a7930c7fc047da63737ae26667049386eaee7af8a6559907b`.
+Its driver, exported corpora, simulator, validators and builders share that law.
+The application model stamp carried by the archive is separately
+`de34300540223ccedf1ca85216b131fd09a148b4`; it is not the registry source identity.
+
+| Boundary | Fresh source-removal evidence | Limit |
+| --- | --- | --- |
+| Model and application | Native Lean builds; 57 generic/naming/lifecycle/wire declarations and 10 M1 admission declarations; application 35/35 proved with executable and independent axiom-bridge controls | Abstract model; terminal hypotheses are proof-only |
+| Compiled admission | 39 evaluated contexts against exported code, including both allowed effects, all five excluded encodings, mixed batches and malformed contexts; an always-unit state mutant is detected | CEK evaluation, not ledger budget or reachable Absent history |
+| Validators and identities | Canonical Aiken 2,562 reported checks and naming 307 checks, zero errors; identity, size and complete deployment identity checks including disposable-devnet controls | Property iterations are included in reported counts |
+| Haskell consumers | 1,077 examples, zero failures, 11 existing pending; supported components compile | Component compilation is separate from execution |
+| Conformance reader and controls | 608 appendix examples, zero failures; original broader requirement texts retained; separate current retirement evidence cannot cover them; archived receipts remain readable with structural and replay checks | Appendix checks do not establish a live product claim |
+| Extracted ordinary CLI | One complete fresh packaged check passes on `eae076fb8847c419bc5d7577551e5339e1ca1b3a`: registration, payload update without registry movement, permanent termination, rejection, owner reclaim, recovery, capabilities/events and deliberate receipt/readback faults; retained insert-active/update-terminal commands also pass | Owner execution on disposable local ledgers; retained-command negative probes are builder/evaluator refusals |
+| Presentation and scope | Simulator browser assertions, 32 inspected diagram views and missing-render controls; inventory/coverage ratchet and extra-active-deletion fault; regenerated evidence page and all five page tampering controls | Historical diagrams and receipts retain their recorded revision; no consumer credit from theorem retirement |
+
+The [connected command summary](evidence/source-removal-packaged-lifecycle.json)
+binds the extracted candidate, 69 exact source hashes, fixed script identities
+and individual receipt hashes. Registration reads Active. The payload update
+leaves the registry root unchanged and the 2,000,000-lovelace application deposit
+held. Termination reads Terminal with no live holding. Rejection and owner
+reclaim are checked against signed transaction outputs and independent readback;
+both leave the registry root unchanged and allow a later registration. All eight
+commands have actual capability evidence, and 178 prepared submissions in twelve
+journals name their acquisition. Archive integrity and these connected results
+are distinct checks. Subsequent conformance reader/control and evidence-documentation
+changes leave the bound production, model, validator and CLI sources byte-identical.
+
+The public inventory has 48 requirements, 47 owned. The
+[consumer scope receipt](evidence/source-removal-consumer-scope.json) lists the exact
+four original broader requirements and their computed current uncovered state,
+with historical passing receipt identities. No successful Absent setup, deletion
+refund or reincarnation is claimed by the supported current retirement story.
+The generated conformance evidence page remains an explicitly historical snapshot;
+its counts are computed from that snapshot's receipts. Current conformance and
+exact-head hosted outcomes are recorded separately in
+[PR523](https://github.com/lambdasistemi/singular/pull/523).
+
+Canonical state is `68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5`,
+11,557 bytes under the unchanged 15,878-byte limit. Naming custody
+`f154ff8488a83ed77e4cf3e4b2702d781f86d783ee291ef32e82dee5` and application
+`6f778eccda6306d930c6443a5d7670a02b2df79ac71437488d38a559` now carry
+pins sourced from the canonical compiled identities.
+Earlier aggregate failures at application proof inversion, naming cross-pins and
+the historical evidence-page reader are preserved as failures; their targeted
+repairs pass. Reproduce the complete repository gate with `nix develop -c just ci`
+and the connected check with `nix run .#demo1-cli-check`; consult PR523 for the
+final frozen-head gate outcomes. Existing processing-window and protected-rejection
+holds, KERI integration and unreachable Absent cases are not counted as passing.
+Protected rejection #498/#495 follows this carve; this delivery does not close M1.
 
 ## Archived evidence before source removal
 

@@ -624,6 +624,31 @@ stepRoundTrip = describe "Saving compared live requests" $
 -- written receipt, so none can pass merely because JSON round-trips.
 liveStepChecks :: Spec
 liveStepChecks = describe "Checking compared requests in live receipts" $ do
+    it
+        "reads archived broader program steps without crediting the current revision"
+        $ forM_
+            [ "update-existing-key"
+            , "delete-existing-key"
+            , "reinsert-deleted-key"
+            , "retire-active-key"
+            ]
+        $ \identity -> do
+            let archived = acceptedLive{receiptRow = identity}
+            loadLive archived `shouldReturn` Right 1
+            rows <- loadCommitted
+            case filter ((== identity) . rowId) rows of
+                [row] ->
+                    effectiveState "current-two-edge-revision" [archived] row
+                        `shouldBe` ShownPlanned Uncovered
+                _ -> fail "archived requirement is missing"
+    it
+        "keeps comparison completeness mandatory when reading archived steps"
+        $ loadLive
+            ( changeStep
+                (setField "compared" (["mint"] :: [String]))
+                acceptedLive{receiptRow = "retire-active-key"}
+            )
+            >>= (`shouldSatisfy` isLeft)
     it "publishes the unnamed request sequence beside the two chapters" $
         renderBook [] [acceptedLive]
             `shouldSatisfy` isInfixOf "## A sequence no chapter names"

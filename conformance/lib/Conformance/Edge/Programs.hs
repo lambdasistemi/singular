@@ -666,7 +666,7 @@ emptyFold =
         , programCohort = noCohort
         , programStory = single $ \(Context registry holder) -> do
             _ <- foldBatch registry []
-            compared registry [EdgeRequest InsertAbsent "cg11-key" holder]
+            compared registry [EdgeRequest InsertActive "cg11-key" holder]
         , programExpected = [Agrees, Agrees]
         , programStanding =
             Held

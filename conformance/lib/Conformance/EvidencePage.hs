@@ -385,6 +385,12 @@ layout model rows snap =
           \documentation check regenerates it from those committed files and fails on \
           \any difference."
         , ""
+        , "The runs below are a historical snapshot of the broader registry law at \
+          \their recorded code revision. They certify that revision only. To assess \
+          \current two-edge coverage, read `conformance list` with receipts from the \
+          \current revision. A separate supported retirement story cannot certify \
+          \the original successful Absent, deletion or reincarnation requirements."
+        , ""
         ]
 
     sections =
