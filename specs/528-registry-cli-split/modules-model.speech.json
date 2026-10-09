@@ -1,0 +1,48 @@
+{
+  "modules-model": [
+    {
+      "text": "Modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Responsibilities, dependency direction and promotion. Names and fields are in data-model.md, signatures in functions-model.md. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "components": [
+    {
+      "text": "Components.",
+      "pause": 500
+    }
+  ],
+  "rules": [
+    {
+      "text": "Rules.",
+      "pause": 500
+    },
+    {
+      "text": "application-boundary (invariant): no module of registry-library, registry-cli, singular or keri-stub imports Singular.Application.OpenDatum.*, and none of those components lists open-datum-application in build-depends. Enforced by application-boundary-check and by the cabal dependency graph.",
+      "pause": 300
+    },
+    {
+      "text": "one-flag-group (invariant): the flag group lives in registry-cli and is parsed by one function; singular and open-datum call it, neither re-spells a flag.",
+      "pause": 300
+    },
+    {
+      "text": "value-is-the-only-door (invariant): the open-datum knowledge Fold, Live, Reconcile, Inspect, Create, Registry, Preview hold today (envelope check, holding lookup, release, decode, pin title) is reached only through the application value.",
+      "pause": 300
+    },
+    {
+      "text": "booking-written-once (invariant): the early refusal of a booking the current leaf rules out exists in Singular.CLI.Booking and nowhere else.",
+      "pause": 300
+    },
+    {
+      "text": "No promotion upstream: cardano-keri consumes registry-cli and the registry library as published components; nothing in this ticket moves code into that repository.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "3d1ecba5d07c191c5d4a5bba507f3e26a5a2ad14dfb6ad23341a84e6c7a80d5a"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "One group per slice; a task is checked when its slice's candidate gate is green at the slice head and its checkpoint is approved.",
+      "pause": 400
+    }
+  ],
+  "application-value-seam": [
+    {
+      "text": "application-value-seam.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] add-application-value",
+      "pause": 300
+    },
+    {
+      "text": "[ ] move-open-datum-into-its-own-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] state-token-and-config-take-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[ ] boundary-control-scoped-to-the-registry-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-new-library-in-the-component-inventory",
+      "pause": 300
+    }
+  ],
+  "commands-through-the-value": [
+    {
+      "text": "commands-through-the-value.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] create-pins-through-the-value-or-a-hash",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-and-live-reach-the-application-only-through-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reconcile-matches-by-datum-hash",
+      "pause": 300
+    },
+    {
+      "text": "[ ] inspect-decodes-only-through-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[ ] neutral-value-specs",
+      "pause": 300
+    }
+  ],
+  "registry-cli-library": [
+    {
+      "text": "registry-cli-library.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] move-command-line-modules-into-registry-cli",
+      "pause": 300
+    },
+    {
+      "text": "[ ] cage-tests-depend-on-the-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-new-library-in-the-component-inventory-for-registry-cli",
+      "pause": 300
+    }
+  ],
+  "open-datum-executable": [
+    {
+      "text": "open-datum-executable.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] open-datum-verbs-and-executable",
+      "pause": 300
+    },
+    {
+      "text": "[ ] singular-refuses-insert-update-terminate",
+      "pause": 300
+    },
+    {
+      "text": "[ ] demo1-scripts-and-controls-use-the-new-binaries",
+      "pause": 300
+    },
+    {
+      "text": "[ ] release-archive-and-documented-flags",
+      "pause": 300
+    },
+    {
+      "text": "[ ] docs-name-the-new-commands",
+      "pause": 300
+    },
+    {
+      "text": "[ ] boundary-control-covers-every-component",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-open-datum-executable-in-the-component-inventory",
+      "pause": 300
+    }
+  ],
+  "booking-refusal": [
+    {
+      "text": "booking-refusal.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] booking-call-in-the-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] early-refusal-in-preview-and-submit",
+      "pause": 300
+    },
+    {
+      "text": "[ ] refusal-row-in-demo1-controls",
+      "pause": 300
+    }
+  ],
+  "keri-stub": [
+    {
+      "text": "keri-stub.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] stub-executable-and-policy",
+      "pause": 300
+    },
+    {
+      "text": "[ ] keri-stub-check-and-job",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-stub-in-the-component-inventory",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "803c1a13557b70852161ff263f3ad9e43471f2706e3282a3ed33576fbbfa4686"
+  }
+}
