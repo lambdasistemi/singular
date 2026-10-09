@@ -228,6 +228,27 @@ POLICIES: dict[str, dict] = {
         "offchain's, so both checks resolve the same pinned "
         "Fourmolu.",
     },
+    "hlint-negative-host": {
+        "kind": "lint",
+        "tool": "hlint",
+        "status": "enforced",
+        "carrier": "root `nix run .#negative-host-lint` — CI job "
+        "'Negative host sources: format and lint' (negative-host.yml)",
+        "note": "the adversarial host package lives outside the offchain "
+        "checker's manifest-discovered extent by design, so its lint runs "
+        "in its own app with the same pinned HLint, over every Haskell "
+        "source under offchain/negative/ with no exclusions.",
+    },
+    "fourmolu-negative-host": {
+        "kind": "format",
+        "tool": "fourmolu",
+        "status": "enforced",
+        "carrier": "root `nix run .#negative-host-lint` — CI job "
+        "'Negative host sources: format and lint' (negative-host.yml), "
+        "and the whole-tree `just format-check` inside `just ci`",
+        "note": "the same committed house fourmolu.yaml, over every "
+        "Haskell source under offchain/negative/ with no exclusions.",
+    },
     "aiken-fmt": {
         "kind": "format",
         "tool": "aiken fmt --check",
@@ -406,6 +427,20 @@ CODE_RULES: list[dict] = [
         "format": "fourmolu-offchain-active",
         "generated": False,
         "note": VENDOR_NOTE,
+    },
+    # The adversarial host's own sources: outside the offchain checker's
+    # manifest-discovered extent by design, linted and formatted by the
+    # host's own app instead. Placed before the reject rule so the reject
+    # still fires for any other unmapped offchain Haskell file.
+    {
+        "id": "hs-negative-host",
+        "family": "haskell",
+        "pattern": "offchain/negative/**/*.hs",
+        "lint": "hlint-negative-host",
+        "format": "fourmolu-negative-host",
+        "generated": False,
+        "note": "the singular-negative package, linted by "
+        "negative-host-lint and never by the offchain checker.",
     },
     # A reject rule: an offchain Haskell source NO checker-visited component
     # directory contains is a finding, never a row — the stable diagnostic
