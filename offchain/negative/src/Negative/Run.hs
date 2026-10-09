@@ -37,6 +37,9 @@ import Singular.CLI.Command
     , EntryMode (..)
     , FoldArgs (..)
     , Key (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
+    , WriteSettings (..)
     , neededRoles
     )
 import Singular.CLI.Live
@@ -45,6 +48,7 @@ import Singular.CLI.Live
     , liveOutputs
     , receipt
     )
+import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Plan (readJson)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
@@ -69,6 +73,18 @@ import Negative.Submit
     , scriptRoleName
     , stateHashOf
     )
+
+{- | Resolve the host's state directory exactly as the shared entry
+runners do: the override as it comes (including 'Nothing') goes to
+the shared function, which alone decides the default.
+-}
+negativeStateDir :: EntryArgs -> WriteSettings -> IO FilePath
+negativeStateDir args ws =
+    resolveWalletDir
+        (entryStateDir args)
+        (providerMagic (writeProvider ws))
+        (accessToken (entryAccess args))
+        (writeWalletKey ws)
 
 {- | Book an insertion through the library builder and submit
 unevaluated. Not in this slice.
@@ -99,9 +115,10 @@ runNegativeUpdate env args tamper = case entryMode args of
                 (failWith ClientRefusal)
                 pure
                 (dataFromJson payloadValue)
+        dir <- negativeStateDir args ws
         attached
             env
-            (entryStateDir args)
+            dir
             (entryBlueprint args)
             (entryAccess args)
             (neededRoles (Update args))
@@ -216,9 +233,10 @@ runNegativeWithdraw env args = case entryMode args of
         failWith ClientRefusal "preview takes no key: the host submits"
     Submit ws -> do
         let Key key = entryKey args
+        dir <- negativeStateDir args ws
         attached
             env
-            (entryStateDir args)
+            dir
             (entryBlueprint args)
             (entryAccess args)
             (neededRoles (Terminate args))

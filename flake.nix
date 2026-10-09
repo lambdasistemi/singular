@@ -577,6 +577,7 @@
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
           })
+          // (import ./nix/negative-host.nix { pkgs = import nixpkgs { inherit system; }; })
         )
       );
       # #278 terminal-attestation-permanent: the root development shell carries the pinned house

@@ -1,0 +1,113 @@
+# Negative host gates (#358, first slice).
+#
+# The host and its stranger-update pair from the release archive, plus the
+# ordinary-executables and lint checks. Every command below is a Nix app
+# defined in nix/negative-host.nix; no step runs cabal, python or shell
+# directly. Each job name is what it runs.
+name: Negative host
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'offchain/negative/**'
+      - 'offchain/cabal.project'
+      - 'offchain/flake.nix'
+      - 'offchain/flake.lock'
+      - 'nix/negative-host.nix'
+      - 'tools/negative_host_*.sh'
+      - 'flake.nix'
+      - 'flake.lock'
+      - '.github/workflows/negative-host.yml'
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: negative-host-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  negative-host-parts:
+    name: Negative host pair parts
+    runs-on: nixos
+    timeout-minutes: 15
+    outputs:
+      parts: ${{ steps.parts.outputs.parts }}
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Discover every pair part from the host table
+        id: parts
+        run: printf 'parts=%s\n' "$(nix run --quiet .#negative-host-parts)" >> "$GITHUB_OUTPUT"
+  negative-host-part:
+    name: "Negative host pair from the release archive: ${{ matrix.part }}"
+    needs: [negative-host-parts]
+    runs-on: nixos
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.negative-host-parts.outputs.parts).part }}
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run the selected pair from the release archive
+        run: nix run --quiet .#negative-host-part -- '${{ matrix.part }}'
+  negative-host-ordinary:
+    name: Ordinary executables cannot reach the bypass
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Check ordinary executables cannot reach the bypass
+        run: nix run --quiet .#negative-host-ordinary
+  negative-host-lint:
+    name: "Negative host sources: format and lint"
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Format and lint the host sources
+        run: nix run --quiet .#negative-host-lint
