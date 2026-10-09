@@ -19,6 +19,10 @@
       "pause": 400
     },
     {
+      "text": "Each pair differs from its control in exactly one thing. The rewrite of a protected field and the release outside a fold are therefore signed by the controller, whose signature the application accepts. A stranger's signature is refused first (update_requires_controller), which would hide the rule under test and would leave no single mutant validator able to make the row fail; the stranger case is the pair stranger-updates-the-key.",
+      "pause": 400
+    },
+    {
       "text": "The last pair is one connected sequence over one request: the termination is booked and left unfolded (registry terminate without --fold, which stops at the pending request), the short fold is refused with the request still pending and the deposit held, and the honest fold of that same request then burns the token, leaves the key terminal and pays the controller in full. It stands for rows 11, 12 and 12b of the preprod demonstration.",
       "pause": 400
     },
@@ -77,6 +81,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "b687adaa8c8e87394a52854f9d8bf8297d0a5b5112f08887982659395fedb518"
+    "sha256": "85bc13e3cb0d5b39513604b4bcec30ed3782ee0b630f70d50c21360f1106e906"
   }
 }

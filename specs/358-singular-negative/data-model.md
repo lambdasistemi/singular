@@ -9,14 +9,16 @@ Each row is one forbidden move and its accepting control. The command spellings 
 | Pair | Forbidden command | Refused by | Model statement | Accepting control | Delivered in |
 |---|---|---|---|---|---|
 | stranger-updates-the-key | `registry update --key alice-1 --wallet-skey bob.skey` | application spending contract | `update_requires_controller` | the controller's own update of that key | first slice |
-| stranger-rewrites-protected-fields | `registry update … --tamper controller\|deposit\|token\|address\|datum` | application spending contract | `update_preserves_custody` | the controller's update with no tamper | second slice |
+| controller-rewrites-protected-fields | `registry update --key alice-1 --wallet-skey alice.skey --tamper controller\|deposit\|token\|address\|datum` | application spending contract | `update_preserves_custody` | the controller's update with no tamper | second slice |
 | stranger-terminates-the-key | `registry terminate --key alice-1 --wallet-skey bob.skey` | application, at the termination booking | `bookTerminate_inversion` | the controller's own termination booking | second slice |
-| stranger-withdraws-the-holding | `registry withdraw --key alice-1 --wallet-skey bob.skey` | application spending contract | `only_fold_releases` | the same release made inside the honest fold of the booked termination | second slice |
+| controller-withdraws-outside-a-fold | `registry withdraw --key alice-1 --wallet-skey alice.skey` | application spending contract | `only_fold_releases` | the same release made inside the honest fold of the booked termination | second slice |
 | stranger-registers-a-taken-key | `registry insert --key alice-1 --wallet-skey bob.skey` | registry state validator, at the fold | `duplicate_refused_by_registry` | the same insertion of a key the registry never held | third slice |
 | owner-registers-a-taken-key-again | `registry insert --key alice-1 --wallet-skey alice.skey` | registry state validator, at the fold | `duplicate_refused_by_registry` | the same insertion of a key the registry never held | third slice |
 | owner-revives-a-terminated-key | `registry insert --key alice-1 --wallet-skey alice.skey` | registry state validator | `resurrection_refused_by_registry` | the same insertion of a key the registry never held | third slice |
 | stranger-revives-a-terminated-key | `registry insert --key alice-1 --wallet-skey bob.skey` | registry state validator | `resurrection_refused_by_registry` | the same insertion of a key the registry never held | third slice |
 | short-fold-of-a-booked-termination | `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` | application, at the fold | `fold_settles_additively` | the honest fold of the same request | third slice |
+
+Each pair differs from its control in exactly one thing. The rewrite of a protected field and the release outside a fold are therefore signed by the controller, whose signature the application accepts. A stranger's signature is refused first (`update_requires_controller`), which would hide the rule under test and would leave no single mutant validator able to make the row fail; the stranger case is the pair `stranger-updates-the-key`.
 
 The last pair is one connected sequence over one request: the termination is booked and left unfolded (`registry terminate` without `--fold`, which stops at the pending request), the short fold is refused with the request still pending and the deposit held, and the honest fold of that same request then burns the token, leaves the key terminal and pays the controller in full. It stands for rows 11, 12 and 12b of the preprod demonstration.
 
