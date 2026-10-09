@@ -484,6 +484,9 @@
                   work="$(mktemp -d "$base/control.XXXXXX")"
                   echo "two-actor control: receipts in $work"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  # #381: the shipped harness's status taxonomy needs no
+                  # development network, so it runs before anything starts one.
+                  python3 ${./tools/registry_two_actors_status.test.py} ${./tools/registry_two_actors.py}
                   bash ${./tools/registry_two_actors_control.test.sh} ${./tools/registry_two_actors_control.sh}
                   bash ${./tools/registry_two_actors_control.sh} "$work" \
                     python3 ${./tools/registry_two_actors.py} \
