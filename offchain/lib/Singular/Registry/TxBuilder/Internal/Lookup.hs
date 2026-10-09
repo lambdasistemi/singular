@@ -113,6 +113,7 @@ import Singular.Registry.Surface
     , PParams
     , Session
     , TokenId (..)
+    , tryOutcome
     )
 import Singular.Registry.Surface qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
@@ -125,7 +126,6 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , OnChainTokenId (..)
     )
-import Singular.Registry.Wait qualified as Wait
 
 {- | Placeholder execution units used in the initial
 unbalanced transaction.
@@ -390,4 +390,4 @@ exception — a cancellation, a timeout — is rethrown, never taken for a
 conversion that failed and so never answered by a fallback.
 -}
 trySync :: IO a -> IO (Either SomeException a)
-trySync = Wait.tryOutcome
+trySync = tryOutcome

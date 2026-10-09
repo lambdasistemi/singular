@@ -111,15 +111,18 @@ import Singular.Registry.Config.Application
     , configForApplication
     )
 import Singular.Registry.Deployment.Manifest (renderOutRef)
-import Singular.Registry.Evidence (Evidenced (..))
-import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider
+import Singular.Registry.Surface
     ( Asset
+    , ConwayEra
+    , Evidenced (value)
     , MintRecord (..)
     , Network (..)
-    , OutputQuery (..)
     , ReadFailure (..)
-    , Session (..)
+    , Session
+    , mintRecordOf
+    , outputsAtAddress
+    , outputsCarrying
+    , outputsHolding
     )
 import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
@@ -370,7 +373,7 @@ resolveRegistry release token@(PolicyID policy, AssetName name) network session 
         when (policy /= stateHash) $
             throwError (StateTokenForeignRelease stateHash)
         record <-
-            readFact (mintRecord session token)
+            readFact (mintRecordOf session token)
                 >>= maybe (throwError StateTokenNotFound) pure
         when (mintSupply record /= 1) $
             throwError (StateTokenBurned (mintSupply record))
@@ -427,7 +430,7 @@ findStateOutput
     -> Session w m
     -> m (Either IdentityRefusal (TxIn, TxOut ConwayEra, OnChainTokenState))
 findStateOutput token@(PolicyID policy, AssetName name) session = do
-    answer <- outputs session (HoldingAsset token)
+    answer <- outputsHolding session token
     pure $ case answer of
         Left failure -> Left (IdentityUnreadable failure)
         Right held ->
@@ -568,13 +571,16 @@ searchReferences session walletAt expected needed = runExceptT $ do
         traverse
             ( \(_, hash) ->
                 carries hash
-                    <$> readReference (outputs session (CarryingReferenceScript hash))
+                    <$> readReference (outputsCarrying session hash)
             )
             wanted
     wallet <-
         if any null fromProvider
             then
-                maybe (pure []) (readReference . outputs session . AtAddress) walletAt
+                maybe
+                    (pure [])
+                    (\address -> readReference (outputsAtAddress session address))
+                    walletAt
             else pure []
     let choose ((role, hash), provided) =
             case filter (not . null) [provided, carries hash wallet] of

@@ -15,7 +15,6 @@ module Singular.Registry.Lifecycle
     , verifyLifecycleBudget
     , fundingRequirement
     , fundLifecycle
-    , fundingView
     , checkExecutionLimit
     , prepareLifecycleTx
     ) where
@@ -59,15 +58,13 @@ import Cardano.Ledger.Api.Tx.Out
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
-    , referenceScriptTxOutL
-    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Coin (CoinPerByte (..))
 import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Balance
     ( BalanceResult (..)
@@ -80,7 +77,7 @@ import PlutusLedgerApi.V3 qualified as PLC
 
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Evidence (Evidenced (..), NoWitness)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( Coin (..)
     , ConwayEra
@@ -89,13 +86,13 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider
     ( Network (..)
-    , OutputQuery (..)
     , Session (..)
     , SubmitResult (..)
     )
-import Singular.Registry.SessionIO (outputsAt, parameters, withLatest)
+import Singular.Registry.SessionIO (parameters, withLatest)
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.Surface (fundableOutputsAt)
 import Singular.Registry.TxBuilder.Internal.Identity
     ( mkInlineDatum
     , mkRequestDatum
@@ -245,24 +242,6 @@ fundingRequirement address pp outs =
     in  Coin
             (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
 
--- | Keep request funding away from references and inputs reserved for later steps.
-fundingView :: [TxIn] -> Session NoWitness IO -> Session NoWitness IO
-fundingView reserved v =
-    v
-        { outputs = \query -> do
-            result <- outputs v query
-            pure $ case query of
-                AtAddress _ -> fmap (\fact -> fact{value = filter available (value fact)}) result
-                _ -> result
-        }
-  where
-    available (i, out) =
-        i `notElem` reserved
-            && out ^. referenceScriptTxOutL == SNothing
-            && ( let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-                 in  Map.null assets
-               )
-
 -- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle
     :: Wallet
@@ -292,7 +271,7 @@ fundingTx
 fundingTx fundingWallet v outs = do
     pp <- parameters v
     let address = walletAddr fundingWallet
-    wallet <- outputsAt (fundingView [] v) address
+    wallet <- fundableOutputsAt v address
     let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
         Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
         Coin need = fundingRequirement address pp outs

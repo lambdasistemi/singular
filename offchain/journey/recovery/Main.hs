@@ -225,6 +225,7 @@ import Singular.Registry.Lifecycle qualified as Lifecycle
 import Singular.Registry.Runner (withRunner)
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
+import Singular.Registry.Surface qualified as Surface
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -770,7 +771,7 @@ fundPublicLifecycle env = do
         reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs
     wallet <-
         Services.outputsAt
-            (Lifecycle.fundingView [] (envProv env))
+            (Surface.fundingView [] (envProv env))
             (walletAddr (envWallet env))
     let Coin available =
             mconcat
@@ -1947,7 +1948,7 @@ submitRecoveryRequest env spelling value = do
     pool <- readIORef (envPool env)
     let prov =
             if envLifecycle env
-                then Lifecycle.fundingView (map fst pool) (envProv env)
+                then Surface.fundingView (map fst pool) (envProv env)
                 else envProv env
     unsigned <-
         requestEdgeImpl

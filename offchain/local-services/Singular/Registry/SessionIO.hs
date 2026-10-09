@@ -6,6 +6,12 @@ Failures preserve their original type and payload at the IO boundary.
 module Singular.Registry.SessionIO
     ( withLatest
     , outputsAt
+    , outputsAtAddress
+    , outputsHolding
+    , outputsCarrying
+    , mintRecordOf
+    , readOutputsAt
+    , fundableOutputsAt
     , parameters
     , tip
     , registered
@@ -29,7 +35,9 @@ import Singular.Registry.Evidence (Evidenced (..))
 import Singular.Registry.Ledger (Addr, ConwayEra, PParams)
 import Singular.Registry.LedgerProvider
     ( Acquisition (..)
+    , Asset
     , LedgerProvider (..)
+    , MintRecord (..)
     , Network
     , OutputQuery (..)
     , Outputs
@@ -54,6 +62,7 @@ import Singular.Registry.Trace
     , timedTrace
     , tracedQuery
     )
+import Singular.Registry.WalletOutputs (fundable)
 import System.Timeout (timeout)
 
 -- | Request Latest on the caller's explicit network and preserve acquisition refusal.
@@ -72,6 +81,48 @@ requireFact action = action >>= either refused (pure . value)
 
 outputsAt :: Session w IO -> Addr -> IO Outputs
 outputsAt session address = requireFact (outputs session (AtAddress address))
+
+{- | Named reads (A-001 §2): fixed-query runners over the abstract
+session. Builders and commands name one of these, never the generic
+'OutputQuery' mechanism. Each preserves the underlying read's evidence
+and failure semantics exactly.
+-}
+
+-- | The outputs at one address, with their evidence.
+outputsAtAddress
+    :: Session w m -> Addr -> m (Either ReadFailure (Evidenced w Outputs))
+outputsAtAddress session address = outputs session (AtAddress address)
+
+-- | The outputs holding any quantity of this asset.
+outputsHolding
+    :: Session w m -> Asset -> m (Either ReadFailure (Evidenced w Outputs))
+outputsHolding session asset = outputs session (HoldingAsset asset)
+
+-- | The outputs carrying a reference script with this hash.
+outputsCarrying
+    :: Session w m
+    -> ScriptHash
+    -> m (Either ReadFailure (Evidenced w Outputs))
+outputsCarrying session hash = outputs session (CarryingReferenceScript hash)
+
+-- | The mint record for this asset, when the provider knows one.
+mintRecordOf
+    :: Session w m
+    -> Asset
+    -> m (Either ReadFailure (Evidenced w (Maybe MintRecord)))
+mintRecordOf session asset = mintRecord session asset
+
+-- | The outputs at one address, read failure thrown as 'outputsAt' throws it.
+readOutputsAt :: Session w IO -> Addr -> IO Outputs
+readOutputsAt session address = requireFact (outputsAtAddress session address)
+
+{- | The fundable outputs at one address (ordering is the caller's):
+ada-only with no reference script. Identical to reading through
+'fundingView' with no reservation.
+-}
+fundableOutputsAt :: Session w IO -> Addr -> IO Outputs
+fundableOutputsAt session address =
+    filter (fundable . snd) <$> readOutputsAt session address
 
 parameters :: Session w IO -> IO (PParams ConwayEra)
 parameters session =

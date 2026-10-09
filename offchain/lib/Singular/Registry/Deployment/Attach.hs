@@ -61,21 +61,23 @@ import Singular.Registry.Deployment.Manifest
     , parseOutRef
     , renderOutRef
     )
-import Singular.Registry.Evidence qualified as Cage
-import Singular.Registry.Ledger
-    ( AssetName (..)
-    , Coin (..)
-    , ConwayEra
-    , TokenId (..)
-    )
-import Singular.Registry.LedgerProvider qualified as Cage
-import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
     ( ReferenceRefusal (..)
     , carriesReference
     , findReferences
     , parseRole
     , renderReferenceRefusal
+    )
+import Singular.Registry.Surface
+    ( AssetName (..)
+    , Coin (..)
+    , ConwayEra
+    , NoWitness
+    , Session
+    , TokenId (..)
+    , outputsCarrying
+    , readOutputsAt
+    , value
     )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( cageAddrFromCfg
@@ -202,7 +204,7 @@ token under the recorded policy. The first claim that fails is raised
 by name.
 -}
 verifyDeployment
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Deployment
     -> CageParts
     -> IO [String]
@@ -267,7 +269,7 @@ transaction runs, is found by the same rule on its own. Each is
 returned beside its manifest entry, in manifest order.
 -}
 referencesByHash
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Deployment
     -> IO [(ReferenceScript, (TxIn, TxOut ConwayEra))]
 referencesByHash view dep = do
@@ -322,15 +324,15 @@ to fall back on — a run attached to a deployment spends the publication
 its manifest names.
 -}
 custodyCarrier
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> ScriptHash
     -> IO (TxIn, TxOut ConwayEra)
 custodyCarrier view hash = do
     answer <-
-        Cage.outputs view (Cage.CarryingReferenceScript hash)
+        outputsCarrying view hash
             >>= either
                 (die . T.unpack . renderReferenceRefusal . ReferenceUnreadable)
-                (pure . Cage.value)
+                (pure . value)
     case filter (carriesReference hash . snd) answer of
         [] ->
             die
@@ -342,13 +344,13 @@ custodyCarrier view hash = do
 
 -- | The registry's state output, by the token it must carry.
 resolveStateUtxo
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> CageConfig
     -> TokenId
     -> IO (TxIn, TxOut ConwayEra)
 resolveStateUtxo view cfg tok = do
     let stateAddr = cageAddrFromCfg cfg Testnet
-    utxos <- Cage.outputsAt view stateAddr
+    utxos <- readOutputsAt view stateAddr
     case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
         Just u -> pure u
         Nothing ->
@@ -380,7 +382,7 @@ and windows are not checked here; verification is the operation that
 reads them.
 -}
 attach
-    :: Cage.Session Cage.NoWitness IO
+    :: Session NoWitness IO
     -> Deployment
     -> CageParts
     -> IO Attached

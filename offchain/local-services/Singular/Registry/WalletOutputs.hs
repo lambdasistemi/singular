@@ -28,6 +28,7 @@ module Singular.Registry.WalletOutputs
     , chosenFunding
     , FundingViewRefusal (..)
     , narrowFunding
+    , fundingView
 
       -- * Named selections
     , SeedRefusal (..)
@@ -188,6 +189,28 @@ narrowFunding address input session = do
                         { sessionFunding =
                             Map.insert address input (sessionFunding session)
                         }
+
+{- | Keep request funding away from references and inputs reserved for
+later steps: address answers list only fundable outputs outside the
+reservation; every other query is unchanged. Moved here from Lifecycle
+so builders name this restricted view, never a record update.
+-}
+fundingView :: (Monad m) => [TxIn] -> Session w m -> Session w m
+fundingView reserved v =
+    v
+        { outputs = \query -> do
+            result <- outputs v query
+            pure $ case query of
+                AtAddress _ -> fmap (\fact -> fact{value = filter available (value fact)}) result
+                _ -> result
+        }
+  where
+    available (i, out) =
+        i `notElem` reserved
+            && out ^. referenceScriptTxOutL == SNothing
+            && ( let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
+                 in  Map.null assets
+               )
 
 -- | Why an output cannot be create's seed.
 data SeedRefusal

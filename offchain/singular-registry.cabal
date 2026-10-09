@@ -100,8 +100,6 @@ library
     Singular.Registry.Config.Application
     Singular.Registry.Deployment
     Singular.Registry.Lifecycle
-    Singular.Registry.Wait
-    Singular.Registry.Confirmation
     Singular.Registry.Proof
     Singular.Registry.Replay
     Singular.Registry.StateToken
@@ -276,6 +274,7 @@ library local-services
   autogen-modules:  Paths_singular_registry
   other-modules:    Paths_singular_registry
   exposed-modules:
+    Singular.Registry.Confirmation
     Singular.Registry.LedgerProvider
     Singular.Registry.LocalEvaluation
     Singular.Registry.ProviderTrace
@@ -289,6 +288,7 @@ library local-services
     Singular.Registry.TimeSource
     Singular.Registry.ProviderSettings
     Singular.Registry.TraceRender
+    Singular.Registry.Wait
 
   build-depends:
     , singular-registry:ledger-kernel
@@ -298,6 +298,7 @@ library local-services
     , bech32
     , bytestring
     , cardano-crypto-class
+    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-binary
@@ -312,6 +313,7 @@ library local-services
     , filepath
     , microlens
     , text
+    , time
     , transformers
     , unix
 
@@ -451,7 +453,6 @@ library koios-http
     , mtl
     , random
     , scientific
-    , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-surface
     , singular-registry:ledger-kernel

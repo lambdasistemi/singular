@@ -12,11 +12,11 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Network (..))
 import Singular.Registry.Lifecycle
     ( checkExecutionLimit
-    , fundingView
     , lifecycleRequested
     )
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.StubSession
+import Singular.Registry.Surface (fundingView)
 import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 

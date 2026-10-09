@@ -22,12 +22,8 @@ import Control.Exception
     , try
     )
 import GHC.Clock (getMonotonicTime)
-import Singular.Registry.Surface
-    ( SignedTx
-    , WaitFailure (..)
-    , WaitStage (..)
-    , signedTx
-    )
+import Singular.Registry.Signing (SignedTx, signedTx)
+import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
 import System.Timeout (timeout)
 
 {- | The start of a wait on the monotonic clock. The public call that

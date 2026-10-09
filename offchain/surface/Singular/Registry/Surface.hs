@@ -6,10 +6,12 @@ License     : Apache-2.0
 Everything the registry builders (the main library) and the shipped
 @singular@ commands may name: the abstract session, the named read
 services, the opaque wallet funding boundary and the plain nomination
-types. Nothing here exposes session fields or constructors, output
-queries, history plumbing, unrestricted session wrapping, evidence
-internals or provider modules; those stay in @local-services@ (and the
-kernel), which production builders and commands must not import. The
+types. Nothing here exposes session fields or constructors, the generic
+output-query mechanism, history plumbing, unrestricted session wrapping,
+evidence internals or provider modules; those stay in @local-services@ (and the
+kernel), which production builders and commands must not import. Output
+reads are fixed-query named runners (A-001 §2); evidence is unwrapped
+with 'value' only, never constructed. The
 test, harness and provider closures keep their raw dependencies.
 
 Each re-export below names its defining module beside the group. Names
@@ -26,6 +28,12 @@ module Singular.Registry.Surface
 
       -- * Named read services (Singular.Registry.SessionIO)
     , outputsAt
+    , outputsAtAddress
+    , outputsHolding
+    , outputsCarrying
+    , mintRecordOf
+    , readOutputsAt
+    , fundableOutputsAt
     , parameters
     , tip
     , slotStart
@@ -47,6 +55,7 @@ module Singular.Registry.Surface
     , chosenFunding
     , FundingViewRefusal (..)
     , narrowFunding
+    , fundingView
     , SeedRefusal (..)
     , seedOf
     , carriersOf
@@ -97,9 +106,13 @@ module Singular.Registry.Surface
       -- * Provider settings (Singular.Registry.ProviderSettings)
     , ProviderSettings (..)
 
-      -- * Waiting (Singular.Registry.WaitTypes)
+      -- * Waiting (Singular.Registry.WaitTypes, Singular.Registry.Wait)
     , WaitFailure (..)
     , WaitStage (..)
+    , tryOutcome
+
+      -- * Evidence unwrapping (Singular.Registry.Evidence)
+    , Evidenced (value)
 
       -- * Phase rendering (Singular.Registry.TraceRender)
     , appendPhaseLine
@@ -111,7 +124,8 @@ module Singular.Registry.Surface
     ) where
 
 import Singular.Registry.Evidence
-    ( NoWitness
+    ( Evidenced (value)
+    , NoWitness
     , SessionBinding (..)
     , SessionId (..)
     )
@@ -147,8 +161,14 @@ import Singular.Registry.SessionIO
     ( ceilingSlot
     , evaluateTx
     , floorSlot
+    , fundableOutputsAt
+    , mintRecordOf
     , outputsAt
+    , outputsAtAddress
+    , outputsCarrying
+    , outputsHolding
     , parameters
+    , readOutputsAt
     , slotStart
     , tip
     , validityUpper
@@ -168,6 +188,7 @@ import Singular.Registry.TraceRender
     , backendPhase
     , readPhase
     )
+import Singular.Registry.Wait (tryOutcome)
 import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
 import Singular.Registry.Wallet
     ( Wallet (..)
@@ -187,6 +208,7 @@ import Singular.Registry.WalletOutputs
     , coveringFunding
     , fundable
     , fundingOutputs
+    , fundingView
     , narrowFunding
     , renderFundingRefusal
     , seedOf
