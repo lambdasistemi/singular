@@ -96,6 +96,11 @@ class JourneyFailure(Exception):
     pass
 
 
+def setup_require(condition, message):
+    if not condition:
+        raise SetupFailure(message)
+
+
 def require(condition, message):
     if not condition:
         raise JourneyFailure(message)
@@ -223,10 +228,12 @@ class Journey:
                     check=False,
                     timeout=600,
                 )
+            except subprocess.TimeoutExpired:
+                raise SetupFailure(f"{party} {name} timed out")
             except OSError as error:
                 raise SetupFailure(f"{party} {name} did not start: {error}")
         trace_text = trace.read_text() if trace.exists() else ""
-        require(
+        setup_require(
             trace_text != "", f"{party} {name} left no access trace"
         )
         check_access(trace_text, forbidden)
@@ -307,18 +314,18 @@ class Journey:
                     self.settings = None
                 if self.settings is not None:
                     break
-            require(
-                self.node.poll() is None, "SETUP: development source exited"
+            setup_require(
+                self.node.poll() is None, "development source exited"
             )
             time.sleep(1)
-        require(
+        setup_require(
             self.settings is not None,
-            "SETUP: development source did not print settings",
+            "development source did not print settings",
         )
         for field in ("providerUrl", "networkMagic", "networkTimeDirectory"):
-            require(
+            setup_require(
                 self.settings.get(field),
-                f"SETUP: development settings lack {field}",
+                f"development settings lack {field}",
             )
 
     def stop_devnet(self):
@@ -327,27 +334,31 @@ class Journey:
                 os.killpg(self.node.pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-            self.node.wait(timeout=60)
+            try:
+                self.node.wait(timeout=60)
+            except subprocess.TimeoutExpired:
+                raise SetupFailure("the development source did not stop")
             self.node = None
-        if which("pkill"):
-            subprocess.run(
-                ["pkill", "-f", f"cardano-node run --config {self.neutral}/"],
-                check=False,
-            )
-            deadline = time.monotonic() + 30
-            while time.monotonic() < deadline:
-                probe = subprocess.run(
-                    ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
-                    check=False,
-                )
-                if probe.returncode != 0:
-                    break
-                time.sleep(0.5)
+        if which("pkill") is None or which("pgrep") is None:
+            raise SetupFailure("cannot verify no surviving node")
+        subprocess.run(
+            ["pkill", "-f", f"cardano-node run --config {self.neutral}/"],
+            check=False,
+        )
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
             probe = subprocess.run(
                 ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
                 check=False,
             )
-            require(probe.returncode != 0, "SETUP: a node of this run survives")
+            if probe.returncode != 0:
+                break
+            time.sleep(0.5)
+        probe = subprocess.run(
+            ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
+            check=False,
+        )
+        setup_require(probe.returncode != 0, "a node of this run survives")
         print("two actors: owned processes: none", flush=True)
 
     def fixture(self):
@@ -373,11 +384,11 @@ class Journey:
             ],
             forbidden,
         )
-        require(
+        setup_require(
             preview_status == 0 and preview.get("outcome") == "success",
-            f"SETUP: creator preview failed: exit {preview_status}, {preview}",
+            f"creator preview failed: exit {preview_status}, {preview}",
         )
-        require(preview.get("seed"), "SETUP: creator preview named no seed")
+        setup_require(preview.get("seed"), "creator preview named no seed")
         create_status, create = self.run_party(
             "creator",
             "create",
@@ -398,11 +409,11 @@ class Journey:
             ],
             forbidden,
         )
-        require(
+        setup_require(
             create_status == 0 and create.get("outcome") == "success",
-            f"SETUP: creator create failed: exit {create_status}, {create}",
+            f"creator create failed: exit {create_status}, {create}",
         )
-        require(create.get("stateToken"), "SETUP: create named no state token")
+        setup_require(create.get("stateToken"), "create named no state token")
         self.state_token = create["stateToken"]
         print(f"two actors: registry {self.state_token} created", flush=True)
 
@@ -734,45 +745,62 @@ class Journey:
         return 1
 
     def execute(self):
+        # Every exit path below funnels through the one unconditional
+        # teardown: no run ends with a surviving node, whatever failed.
+        # A teardown failure is status 3 and never overrides status 2,
+        # so the foreign-open control keeps its guard evidence.
         legs = {}
+        status = None
         try:
             self.fixture()
             if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
                 self.foreign_open()
-        except GuardFired as fired:
-            print(f"two actors: GUARD: {fired.path}", flush=True)
-            try:
-                self.report(self.pending_report())
-            finally:
-                self.stop_devnet()
-            return 2
-        except SetupFailure as failed:
-            print(f"two actors: SETUP: {failed}", flush=True)
-            try:
-                self.report(self.pending_report())
-            finally:
-                self.stop_devnet()
-            return 3
-        rows = self.pending_report()
-        try:
             for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
                 legs[actor] = self.actor_leg(actor, key)
             self.removal_check(legs)
             self.cap_check()
             rows = self.compute_rows(legs)
             self.report(rows)
+            status = self.exit_for(rows)
+        except GuardFired as fired:
+            status = 2
+            print(f"two actors: GUARD: {fired.path}", flush=True)
+            self.report(self.pending_report())
+        except SetupFailure as failed:
+            status = 3
+            print(f"two actors: SETUP: {failed}", flush=True)
+            self.report(self.pending_report())
         except JourneyFailure as failed:
+            status = 1
             print(f"two actors: FAIL: {failed}", flush=True)
+            self.report(self.compute_rows(legs))
+        except Exception as failed:  # noqa: BLE001 - a harness-internal
+            # error fails the journey as a row result; it never masquerades
+            # as setup and never escapes without teardown and a report.
+            status = 1
+            print(
+                f"two actors: FAIL: internal error: "
+                f"{type(failed).__name__}: {failed}",
+                flush=True,
+            )
             try:
-                rows = self.compute_rows(legs)
-                self.report(rows)
-            finally:
-                self.stop_devnet()
-            return 1
+                self.report(self.compute_rows(legs))
+            except Exception as report_failed:  # noqa: BLE001 - see above
+                print(
+                    f"two actors: FAIL: report failed: {report_failed}",
+                    flush=True,
+                )
         finally:
-            if self.node is not None:
+            try:
                 self.stop_devnet()
-        return self.exit_for(rows)
+            except Exception as teardown:  # noqa: BLE001 - see below
+                print(
+                    f"two actors: SETUP: teardown failed: {teardown}",
+                    flush=True,
+                )
+                if status != 2:
+                    status = 3
+        return status
 
 
 if __name__ == "__main__":
