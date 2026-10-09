@@ -116,7 +116,6 @@ import Singular.CLI.Trace
     )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
-import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment
@@ -146,6 +145,7 @@ import Singular.Registry.Surface
     , outputsAtTxIn
     , parameters
     , readOutputsAt
+    , sessionReceipt
     , walletAddr
     )
 import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)

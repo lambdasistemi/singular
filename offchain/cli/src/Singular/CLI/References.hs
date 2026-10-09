@@ -63,7 +63,6 @@ import Singular.CLI.Session
     , submitBuilt
     , txIdHex
     )
-import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , renderStateToken
@@ -75,6 +74,7 @@ import Singular.Registry.Surface
     , ConwayEra
     , bech32Address
     , loadWallet
+    , sessionReceipt
     , walletAddr
     )
 import Singular.Registry.TxBuilder.Edges (publishReferencesTx)

@@ -198,3 +198,21 @@ node-confinement:
 # Run the node confinement check's negative and positive controls.
 node-confinement-controls:
     bash tools/node_confinement_controls.sh
+
+# G08: raw session capabilities are named only at the command boundary
+# (tools/capability-confinement.allow). Builders and commands take the
+# safe surface; the check scans main-lib and CLI sources, the controls
+# plant violations on scratch copies (the working tree is never touched).
+
+# Check that only allowlisted modules name raw capabilities.
+capability-confinement:
+    bash tools/capability_confinement_check.sh
+
+# Its controls, on scratch copies: planted raw imports in main-lib and
+# CLI modules, boundary allowlist behavior, damaged allowlists, the
+# compiler negative in the production closure and the legal-use build.
+# The working tree is never touched.
+
+# Run the capability confinement check's negative and positive controls.
+capability-confinement-controls:
+    bash tools/capability_confinement_controls.sh

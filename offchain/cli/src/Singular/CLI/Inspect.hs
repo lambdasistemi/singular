@@ -125,13 +125,13 @@ import Singular.CLI.Trace
     , within
     )
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Surface
     ( Asset
     , ConwayEra
     , Network (..)
     , readOutputsAt
+    , sessionReceipt
     , tip
     )
 import Singular.Registry.TxBuilder.Internal

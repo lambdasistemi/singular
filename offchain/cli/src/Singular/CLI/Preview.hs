@@ -96,7 +96,6 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session (Env (..), failWith, readView, txIdHex)
 import Singular.CLI.Trace (readsUnder)
-import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Surface
     ( ConwayEra
     , Network (..)
@@ -107,6 +106,7 @@ import Singular.Registry.Surface
     , SlotNo (..)
     , TipObservation (..)
     , parameters
+    , sessionReceipt
     , tip
     )
 import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)

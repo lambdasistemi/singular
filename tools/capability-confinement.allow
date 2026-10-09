@@ -1,0 +1,7 @@
+# Modules allowed to name raw session capabilities (tools/capability_confinement_check.sh).
+# One per line: <path from the repository root>: <why it must>.
+# These are the two command-boundary modules (G08 Stage 2c-ii-d): they
+# assemble traced providers and acquisitions for commands. Every other
+# main-library or singular-command module imports the safe surface only.
+offchain/cli/src/Singular/CLI/Session.hs: command boundary — assembles traced providers, acquisitions, submissions and confirmations for commands; the only CLI module that may name the raw provider
+offchain/cli/src/Singular/CLI/Attached.hs: deployment-attach boundary — reads providers directly to attach to a deployment; same exception as Session
