@@ -211,7 +211,7 @@ spec = describe "Comparing a registration with the model" $ do
     it "compares transaction output lovelace as a floor" $ do
         value <- corpus
         declared <- either error pure (declaredSurface value)
-        let observations = part "observations" (row "DR01-register-absent" value)
+        let observations = part "observations" (row "DR02-register-active" value)
             outputs = items (part "outputs" (part "tx" observations))
             positiveFloors =
                 [ (index, number (part "lovelace" output))
@@ -221,7 +221,7 @@ spec = describe "Comparing a registration with the model" $ do
         positiveFloors `shouldSatisfy` not . null
         let (index, minimumAda) = case positiveFloors of
                 first : _ -> first
-                [] -> error "the insert-absent model row has no positive output floor"
+                [] -> error "the insert-active model row has no positive output floor"
             below = setOutputLovelace index (minimumAda - 1) observations
             above = setOutputLovelace index (minimumAda + 1) observations
         case compareRegistration declared observations below of
@@ -248,27 +248,13 @@ spec = describe "Comparing a registration with the model" $ do
             mapM_ (checkPaymentFloors declared) payingRows
 
     it
-        "compares a custody refund as a floor: paid in full or more agrees, short is refused"
+        "compares a rejected request's refund as a floor: paid in full or more agrees, short is refused"
         $ do
             value <- corpus
             declared <- either error pure (declaredSurface value)
-            -- The refund a custody pays when it is spent is its own recorded
-            -- address and value, read off the model's insert-absent row.
-            let absent = part "observations" (row "DR01-register-absent" value)
-                refunds =
-                    [ Object
-                        ( KM.fromList
-                            [ ("address", part "refundAddress" entry)
-                            , ("value", part "value" entry)
-                            ]
-                        )
-                    | entry <- items (part "custody" absent)
-                    ]
+            let observations = part "observations" (row "DR07-reject-registered-twice" value)
+                refunds = items (part "paid" observations)
             refunds `shouldSatisfy` not . null
-            let observations =
-                    appendPayments
-                        refunds
-                        (part "observations" (row "DR07-reject-registered-twice" value))
             checkPaymentFloors declared observations
 
     it
@@ -522,22 +508,6 @@ replaceOutput index output observations = case part "tx" observations of
                 observations
         _ -> error "transaction outputs are not an array"
     _ -> error "transaction is not an object"
-
--- | Append payments to both @paid@ and @tx.refunds@, as a fold that also spent them would report.
-appendPayments :: [Value] -> Value -> Value
-appendPayments extra observations =
-    let grow entries = case entries of
-            Array vector -> Array (vector <> V.fromList extra)
-            _ -> error "payments are not an array"
-        tx = case part "tx" observations of
-            Object fields ->
-                Object
-                    (KM.insert "refunds" (grow (part "refunds" (Object fields))) fields)
-            _ -> error "transaction is not an object"
-    in  replacing
-            "tx"
-            tx
-            (replacing "paid" (grow (part "paid" observations)) observations)
 
 -- | Set the value of payment @index@ in both @paid@ and @tx.refunds@.
 setPaymentValue :: Int -> Integer -> Value -> Value

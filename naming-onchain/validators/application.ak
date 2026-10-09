@@ -81,7 +81,7 @@ pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
 /// `Retire` may place the active token at. Regenerated from the custody
 /// validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"bf59677c147919ba5388db3af4b7a64e7e9485359bd69a16526e5d25"
+  #"f154ff8488a83ed77e4cf3e4b2702d781f86d783ee291ef32e82dee5"
 
 /// The naming application validator (issue #52), in registry mode (#157).
 ///
@@ -234,7 +234,7 @@ pub fn approval_name(
   )
 }
 
-/// The six arms of naming-approval-rules (#157 application-approval-minting). Edge indices are the seven-admitted-edges row indices:
+/// The two supported arms of naming-approval-rules (#157 application-approval-minting). Edge indices are the seven-admitted-edges row indices:
 /// `0` insertAbsent, `1` insertActive, `2` updateActive, `3`
 /// updateTerminal, `4` deleteAbsent, `5` deleteActive.
 fn approve(
@@ -246,23 +246,8 @@ fn approve(
   tx: Transaction,
 ) -> Bool {
   let (dest_address, datum_hash) = destination
-  if edge == 0 {
-    // insertAbsent — anyone may witness that a name is free. What the
-    // approval binds is where the deposit goes back to: `owner` is the
-    // refund address's payment key, and the request's destination names
-    // that address. No signature: Carol needs nobody's permission to say
-    // a name is unclaimed, and she alone can retract it later.
-    if datum_hash != #"" {
-      trace @"absence-names-no-datum"
-      False
-    } else if !refund_binds(dest_address, owner) {
-      trace @"absence-refund-binding"
-      False
-    } else {
-      True
-    }
-  } else if edge == 1 || edge == 2 {
-    // insertActive / updateActive — the controller who will own the
+  if edge == 1 {
+    // insertActive — the controller who will own the
     // record signs, and the destination binds the record datum, so the
     // folder cannot create Alice's record with a controller of its own
     // choosing (request-destination-binding).
@@ -289,19 +274,6 @@ fn approve(
     } else {
       True
     }
-  } else if edge == 4 {
-    // deleteAbsent — the refund address the cage recorded in custody for
-    // this key signs. The custody UTxO is read as a REFERENCE input: the
-    // fold spends it, this arm only reads what it says.
-    if destination != (#"", #"") {
-      trace @"deletion-names-no-destination"
-      False
-    } else if !custody_refund_signs(key, owner, tx) {
-      trace @"custody-refund-signature"
-      False
-    } else {
-      True
-    }
   } else {
     // deleteActive — never certified. A live registration does not
     // return to absence; it ends (`updateTerminal`) or it is deleted by
@@ -313,13 +285,6 @@ fn approve(
 
 /// The refund address is canonical, pays a key, and that key is the
 /// `owner` the approval binds.
-fn refund_binds(dest_address: ByteArray, owner: ByteArray) -> Bool {
-  when naming.decode_address(dest_address) is {
-    Some(shape) -> shape.payment_key && shape.payment_hash == owner
-    None -> False
-  }
-}
-
 /// The destination of a booking is the application's own address, and it
 /// names a well-formed (32-byte) datum hash.
 fn record_destination(
@@ -420,53 +385,6 @@ fn state_policy_of(input: Input) -> Option<PolicyId> {
 
 /// The custody UTxO for this key, read as a reference input, records a
 /// refund address whose payment key is `owner` — and `owner` signs.
-fn custody_refund_signs(
-  key: ByteArray,
-  owner: ByteArray,
-  tx: Transaction,
-) -> Bool {
-  when
-    find(
-      tx.reference_inputs,
-      fn(input) { is_cage_address(input) && custody_key_of(input) == Some(key) },
-    )
-  is {
-    Some(custody) ->
-      when custody_refund_of(custody) is {
-        Some(refund) ->
-          refund_binds(refund, owner) && has(tx.extra_signatories, owner)
-        None -> False
-      }
-    None -> False
-  }
-}
-
-fn is_cage_address(input: Input) -> Bool {
-  input.output.address.payment_credential == address.Script(mpfs_state_hash)
-}
-
-fn custody_key_of(input: Input) -> Option<ByteArray> {
-  when input.output.datum is {
-    InlineDatum(datum) ->
-      when naming.mpfs_custody(datum) is {
-        Some((key, _)) -> Some(key)
-        None -> None
-      }
-    _ -> None
-  }
-}
-
-fn custody_refund_of(input: Input) -> Option<ByteArray> {
-  when input.output.datum is {
-    InlineDatum(datum) ->
-      when naming.mpfs_custody(datum) is {
-        Some((_, refund)) -> Some(refund)
-        None -> None
-      }
-    _ -> None
-  }
-}
-
 /// `LM01` accepts; `LM02` (no signature), `LM03` (tampered control or
 /// recovery field) and `LM04` (altered quorum) refuse. local-record-update-preserves-registry (#157 N9):
 /// maintenance never touches the trie, so the registry state may not be

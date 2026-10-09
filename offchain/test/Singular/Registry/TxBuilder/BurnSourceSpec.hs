@@ -18,8 +18,7 @@ A mint of @-1@ with no such input is not a retirement. It is a claim the
 ledger cannot settle and the cage refuses (`token-missing`), so a builder
 that emits it has produced a transaction whose only possible outcome is a
 refusal. The failure belongs HERE, in the builder, where it is cheap and
-named — the same rule `registryDuties` already applies to the custody an
-`updateActive` spends.
+named.
 
 These rows are pure. `registryDuties` is the ONE place the off-chain side
 decides what an edge owes; it is the decision site this ticket changes,
@@ -182,18 +181,13 @@ import Singular.Registry.Types
     , OnChainTokenId (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeInsertAbsent
     , edgeInsertActive
-    , edgeUpdateActive
     , edgeUpdateTerminal
-    , edgeWitnessTerminal
     )
 
 import Control.Monad (forM_, void)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isNothing)
 import Data.Text qualified as T
 
 -- ---------------------------------------------------------
@@ -278,7 +272,7 @@ requestFor edge =
             , requestEdge = edge
             , requestDeposit = 2000000
             , requestSubmittedAt = 0
-            , requestDestination = ("", Nothing)
+            , requestDestination = (refund, Nothing)
             }
 
 {- | The three witness policies the fold mints under. Their BYTES do
@@ -327,10 +321,9 @@ decide edge =
 
 spec :: Spec
 spec = do
-    custodyIdentity
     holderSelection
     burnSourceRequired
-    deletionBurnSource
+    retirementBurnSource
     depositReturn
     requestOrder
     noFoldSigner
@@ -341,23 +334,10 @@ spec = do
     openDatumFold
     releaseResolution
 
--- ---------------------------------------------------------
--- #178: absent custody identity comes from its sole asset
--- ---------------------------------------------------------
-
-custodyRef :: TxIn
-custodyRef = holderIn 8
-
-refund :: ByteString
-refund = serialiseAddr (cageAddrFromCfg cfg Testnet)
-
-refundOnly, retiredTwoField :: PLC.Data
-refundOnly = PLC.Constr 2 [PLC.B refund]
-retiredTwoField = PLC.Constr 2 [PLC.B keyA, PLC.B refund]
-
-custodyValue
+-- | A token-bearing holder value for application release controls.
+witnessValue
     :: SBS.ShortByteString -> ByteString -> Integer -> MaryValue
-custodyValue policy key quantity =
+witnessValue policy key quantity =
     MaryValue
         (Coin 10000000)
         ( MultiAsset
@@ -367,87 +347,9 @@ custodyValue policy key quantity =
             )
         )
 
-twoAssetCustodyValue :: MaryValue
-twoAssetCustodyValue =
-    MaryValue
-        (Coin 10000000)
-        ( MultiAsset
-            ( Map.fromList
-                [
-                    ( policyIdFromPin (cfgAbsentPolicy cfg)
-                    , Map.singleton (AssetName (SBS.toShort keyA)) 1
-                    )
-                ,
-                    ( policyIdFromPin (cfgActivePolicy cfg)
-                    , Map.singleton (AssetName (SBS.toShort keyB)) 1
-                    )
-                ]
-            )
-        )
-
-custodyWith :: PLC.Data -> MaryValue -> (TxIn, TxOut ConwayEra)
-custodyWith datum value =
-    ( custodyRef
-    , mkBasicTxOut (cageAddrFromCfg cfg Testnet) value
-        & datumTxOutL .~ mkInlineDatum datum
-    )
-
-decideCustody
-    :: (TxIn, TxOut ConwayEra) -> Either String RegistryDuties
-decideCustody held =
-    registryDuties
-        cfg
-        emptyPParams
-        tokenState
-        custodyContext
-        [requestFor edgeDeleteAbsent]
-        [True]
-  where
-    cageScript = scriptFromBytes "t178 cage" (SBS.toShort (BS.pack [0x58]))
-    custodyContext =
-        witnessScripts
-            { rcCageScript = Just cageScript
-            , rcCageUtxos = [held]
-            }
-
-expectAssetRefusal :: (TxIn, TxOut ConwayEra) -> Expectation
-expectAssetRefusal held@(_, out) = do
-    extractCageDatum out `shouldSatisfy` isJust
-    void (decideCustody held) `shouldSatisfy` isLeft
-
-custodyIdentity :: Spec
-custodyIdentity = describe "#178: absent custody derives identity from its sole asset" $ do
-    it "selects a refund-only custody carrying one absent asset" $ do
-        let held = custodyWith refundOnly (custodyValue (cfgAbsentPolicy cfg) keyA 1)
-        extractCageDatum (snd held) `shouldSatisfy` isJust
-        case decideCustody held of
-            Left err -> expectationFailure err
-            Right duties -> map (fst . csUtxo) (rdSpends duties) `shouldBe` [custodyRef]
-
-    it "does not use the retired datum key as an identity fallback" $
-        void
-            ( decideCustody
-                ( custodyWith
-                    retiredTwoField
-                    (custodyValue (cfgAbsentPolicy cfg) keyA 1)
-                )
-            )
-            `shouldSatisfy` isLeft
-
-    it "refuses refund-only custody with no non-ADA asset" $
-        expectAssetRefusal
-            (custodyWith refundOnly (MaryValue (Coin 10000000) mempty))
-
-    it "refuses refund-only custody with two non-ADA assets" $
-        expectAssetRefusal (custodyWith refundOnly twoAssetCustodyValue)
-
-    it "refuses refund-only custody under the wrong policy" $
-        expectAssetRefusal
-            (custodyWith refundOnly (custodyValue (cfgActivePolicy cfg) keyA 1))
-
-    it "refuses refund-only custody with a quantity other than one" $
-        expectAssetRefusal
-            (custodyWith refundOnly (custodyValue (cfgAbsentPolicy cfg) keyA 2))
+-- | A decodable destination for registration.
+refund :: ByteString
+refund = serialiseAddr (cageAddrFromCfg cfg Testnet)
 
 burnSourceRequired :: Spec
 burnSourceRequired = describe
@@ -461,21 +363,15 @@ burnSourceRequired = describe
             "refuses to build the retirement when nothing holds the key's active witness"
             $ decide retirement `shouldSatisfy` isLeft
 
-        -- The control for the row above, and the reason it is not vacuous:
-        -- `updateActive` at the same key, through the same call, with the
-        -- same empty context, ALREADY fails — for its own missing custody.
-        -- So `registryDuties` is demonstrably able to return `Left` here,
-        -- and a green row above is about the retirement, not about the
-        -- harness.
-        it
-            "already refuses updateActive with no custody in hand (the harness can fail)"
-            $ decide edgeUpdateActive `shouldSatisfy` isLeft
+        it "refuses each excluded historical edge" $
+            forM_ [0, 2, 4, 5, 6] $
+                \edge -> decide edge `shouldSatisfy` isLeft
 
         -- The other direction: an edge that owes nothing beyond its mint
         -- must still build from the same empty context, so `Left` above is
         -- attributable to the missing witness rather than to the fixture.
-        it "still builds an edge that owes no external input (insertAbsent)" $
-            decide edgeInsertAbsent `shouldSatisfy` isRight
+        it "still builds an edge that owes no external input (insertActive)" $
+            decide edgeInsertActive `shouldSatisfy` isRight
 
 {- | The candidate burn-source inventory the builder selects from: wallet
 outputs that actually hold registry witnesses.
@@ -567,22 +463,14 @@ holderSelection = describe "#177 I177-BUILDER: the burn source is selected exact
             Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
 
 -- ---------------------------------------------------------
--- #236: deleteActive burns the witness it holds
+-- #236: updateTerminal burns the witness it holds
 -- ---------------------------------------------------------
 
-{- | `deleteActive` (edge 5) destroys the key's active witness as
-`updateTerminal` does: @deltaOf 5 = [(active, -1)]@, and Lean's
-`applyEdge` for `.deleteActive` drops the key's active holding. The
-ledger balances a burn only against an input carrying the burned asset,
-so the fold has to consume the holder's own UTxO and create no carrier.
-
-The asset under test is not typed into the fixture. Its policy is the
-hash of the witness script the builder mints under for the active kind,
-read from the context, and the registry's active pin is set to that
-hash, so the holder, the mint and the selection name one asset.
+{- | Retirement destroys the active witness. These controls bind the
+holder, mint and selection to one script-derived active policy.
 -}
-deletion :: Edge
-deletion = edgeDeleteActive
+boundRetirement :: Edge
+boundRetirement = edgeUpdateTerminal
 
 activeWitness :: Script ConwayEra
 activeWitness = case Map.lookup 1 (rcWitnessScripts witnessScripts) of
@@ -617,15 +505,15 @@ boundHolder i key quantity =
         )
     )
 
-decideDeletion
+decideRetirement
     :: [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
-decideDeletion utxos =
+decideRetirement utxos =
     registryDuties
         boundCfg
         emptyPParams
         tokenState
         (holding utxos)
-        [requestFor deletion]
+        [requestFor boundRetirement]
         [True]
 
 -- | Quantity of the active witness for `key` an output carries.
@@ -647,7 +535,7 @@ minted key d =
         , Just q <- [Map.lookup (AssetName (SBS.toShort key)) (cmAssets m)]
         ]
 
-{- | The witness shape of one deletion: mint @-1@, exactly one input
+{- | The witness shape of one retirement: mint @-1@, exactly one input
 carrying quantity 1 of the asset, and no output carrying any of it.
 Plain inputs and script-spent inputs are counted together, so a witness
 that rode in by either route counts once.
@@ -659,9 +547,9 @@ witnessShape key d = do
     filter (/= 0) (map (carried key) ins) `shouldBe` [1]
     filter (/= 0) (map (carried key) (rdOutputs d)) `shouldBe` []
 
-deletionBurnSource :: Spec
-deletionBurnSource =
-    describe "#236: deleteActive sources its burn from a holder" $ do
+retirementBurnSource :: Spec
+retirementBurnSource =
+    describe "#236: updateTerminal sources its burn from a holder" $ do
         -- The fixture binds one asset: a holder built from the pin
         -- carries what the builder's mint policy names. Without this
         -- every `carried` below could read 0 and prove nothing.
@@ -672,17 +560,17 @@ deletionBurnSource =
         -- its head, cannot pass.
         it
             "burns -1 from the one input holding the key's witness, outputs none"
-            $ case decideDeletion [boundHolder 1 keyB 1, boundHolder 2 keyA 1] of
+            $ case decideRetirement [boundHolder 1 keyB 1, boundHolder 2 keyA 1] of
                 Left err -> expectationFailure err
                 Right d -> do
                     witnessShape keyA d
                     map fst (rdInputs d) `shouldBe` [holderIn 2]
 
-        it "refuses the deletion when nothing holds the key's witness" $
-            void (decideDeletion []) `shouldSatisfy` isLeft
+        it "refuses the retirement when nothing holds the key's witness" $
+            void (decideRetirement []) `shouldSatisfy` isLeft
 
-        it "does not sweep another key's holder into the deletion" $
-            void (decideDeletion [boundHolder 1 keyB 1])
+        it "does not sweep another key's holder into the retirement" $
+            void (decideRetirement [boundHolder 1 keyB 1])
                 `shouldSatisfy` isLeft
 
 -- ---------------------------------------------------------
@@ -735,8 +623,8 @@ depositReturn =
     describe
         "#253: the deposit of a fold that delivers nothing goes to its owner"
         $ do
-            it "pays a deletion's deposit to its owner's key" $
-                case depositsOf [ownedRequest 1 ownerKey edgeDeleteActive] of
+            it "pays a retirement's deposit to its owner's key" $
+                case depositsOf [ownedRequest 1 ownerKey edgeUpdateTerminal] of
                     Left err -> expectationFailure err
                     Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
 
@@ -745,18 +633,18 @@ depositReturn =
             it "pays one output per owner, summing that owner's deposits" $
                 case depositsOf
                     [ ownedRequest 1 ownerKey edgeUpdateTerminal
-                    , ownedRequest 2 otherKey edgeDeleteActive
-                    , ownedRequest 3 ownerKey edgeDeleteActive
+                    , ownedRequest 2 otherKey edgeUpdateTerminal
+                    , ownedRequest 3 ownerKey edgeUpdateTerminal
                     ] of
                     Left err -> expectationFailure err
                     Right d ->
                         rdOutputs d
                             `shouldMatchList` [ownerPaid ownerKey 4000000, ownerPaid otherKey 2000000]
 
-            -- The approval a deletion carried is not burned: it goes back to
+            -- The approval a retirement carried is not burned: it goes back to
             -- the owner in the deposit's own output, never beside it.
-            it "returns a deletion's approval inside its deposit output" $
-                case depositsOf [approved (ownedRequest 1 ownerKey edgeDeleteActive)] of
+            it "returns a retirement's approval inside its deposit output" $
+                case depositsOf [approved (ownedRequest 1 ownerKey edgeUpdateTerminal)] of
                     Left err -> expectationFailure err
                     Right d ->
                         rdOutputs d
@@ -773,7 +661,7 @@ depositReturn =
                     emptyPParams
                     tokenState
                     witnessScripts{rcAllowInadmissible = True}
-                    [ownedRequest 1 ownerKey edgeDeleteActive]
+                    [ownedRequest 1 ownerKey edgeUpdateTerminal]
                     [False] of
                     Left err -> expectationFailure err
                     Right d -> rdOutputs d `shouldBe` []
@@ -845,18 +733,18 @@ by key, so no row here orders them.
 requestOrder :: Spec
 requestOrder =
     describe "#267: accumulated duties preserve request order" $ do
-        it "locks custody in request order" $
+        it "delivers active tokens in request order" $
             case orderOf
-                [ keyedRequest 1 keyB edgeInsertAbsent
-                , keyedRequest 2 keyA edgeInsertAbsent
+                [ keyedRequest 1 keyB edgeInsertActive
+                , keyedRequest 2 keyA edgeInsertActive
                 ] of
                 Left err -> expectationFailure err
                 Right d -> map soleAssetKey (rdOutputs d) `shouldBe` [keyB, keyA]
 
         it "mints in request order" $
             case orderOf
-                [ keyedRequest 1 keyB edgeInsertAbsent
-                , keyedRequest 2 keyA edgeInsertAbsent
+                [ keyedRequest 1 keyB edgeInsertActive
+                , keyedRequest 2 keyA edgeInsertActive
                 ] of
                 Left err -> expectationFailure err
                 Right d -> map mintAssetKey (rdMints d) `shouldBe` [keyB, keyA]
@@ -871,8 +759,8 @@ requestOrder =
                 emptyPParams
                 tokenState
                 (holding [boundHolder 1 keyA 1, boundHolder 2 keyB 1])
-                [ keyedRequest 3 keyB edgeDeleteActive
-                , keyedRequest 4 keyA edgeDeleteActive
+                [ keyedRequest 3 keyB edgeUpdateTerminal
+                , keyedRequest 4 keyA edgeUpdateTerminal
                 ]
                 [True, True] of
                 Left err -> expectationFailure err
@@ -891,53 +779,36 @@ requestOrder =
 -- #267: no edge of a fold requires a signature
 -- ---------------------------------------------------------
 
-{- | The model proves every fold requires no signer
-(`Singular.Statements.fold_requires_no_signer`), so the duties a fold
-accumulates must carry no signature requirement however many edges it
-discharges. One request on each of the seven admissible edges, all
-processed, each with what that edge needs in hand — custody for the two
-that spend it, holders for the two that burn — read through the public
-`Update` import, exactly as a caller reads it.
+{- | Both supported transitions require no signer from the public folder.
+This is builder-body evidence; application approval is checked separately.
 -}
 noFoldSigner :: Spec
 noFoldSigner =
     describe "#267: no edge of a fold requires a signature" $
-        it "accumulates no required signer across all seven edges" $
+        it "accumulates no required signer across both supported edges" $
             case registryDuties
                 boundCfg
                 emptyPParams
                 tokenState
                 fullFoldContext
-                sevenEdges
-                (map (const True) sevenEdges) of
+                supportedEdges
+                (map (const True) supportedEdges) of
                 Left err -> expectationFailure err
                 Right d -> do
                     rdSigners d `shouldSatisfy` null
-                    -- Non-vacuity: this fold did real work on every edge,
-                    -- so an empty signer list is a decision and not an
-                    -- empty answer. Seven edges mint eight entries
-                    -- (updateActive mints two), and the two custody
-                    -- spends and two burn sources are all consumed.
-                    length (rdMints d) `shouldBe` 8
-                    length (rdSpends d) `shouldBe` 2
-                    length (rdInputs d) `shouldBe` 2
+                    -- Both transitions mint, and retirement consumes its holder.
+                    length (rdMints d) `shouldBe` 2
+                    length (rdSpends d) `shouldBe` 0
+                    length (rdInputs d) `shouldBe` 1
                     rdOutputs d `shouldSatisfy` (not . null)
 
 -- | The key a request on `edge` is booked at, one byte of edge in it.
 edgeKey :: Edge -> ByteString
 edgeKey e = "t267-key-" <> BS.pack [fromIntegral (e + 48)]
 
--- | All seven admissible edges, in ordinal order.
+-- | Both admissible edges, in ordinal order.
 allEdges :: [Edge]
-allEdges =
-    [ edgeInsertAbsent
-    , edgeInsertActive
-    , edgeUpdateActive
-    , edgeUpdateTerminal
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeWitnessTerminal
-    ]
+allEdges = [edgeInsertActive, edgeUpdateTerminal]
 
 {- | A request on `edge` at its own key, with a destination this builder
 can decode (the cage's own address, as the #178 refund fixture uses).
@@ -956,39 +827,12 @@ destinedRequest i edge =
         )
 
 -- | One request per admissible edge, at distinct inputs.
-sevenEdges :: [(TxIn, TxOut ConwayEra)]
-sevenEdges = [destinedRequest i e | (i, e) <- zip [20 ..] allEdges]
+supportedEdges :: [(TxIn, TxOut ConwayEra)]
+supportedEdges = [destinedRequest i e | (i, e) <- zip [20 ..] allEdges]
 
-{- | A custody UTxO at its own input, holding one absent token for `key`
-and naming a decodable refund address.
--}
-keyedCustody :: Int -> ByteString -> (TxIn, TxOut ConwayEra)
-keyedCustody i key =
-    ( holderIn i
-    , mkBasicTxOut
-        (cageAddrFromCfg cfg Testnet)
-        (custodyValue (cfgAbsentPolicy cfg) key 1)
-        & datumTxOutL .~ mkInlineDatum refundOnly
-    )
-
-{- | Everything the seven-edge fold needs in hand: the witness scripts,
-the cage script, custody for the two edges that spend it, and holders
-for the two edges that burn.
--}
+-- | The supported fold needs one active burn source.
 fullFoldContext :: RegistryContext
-fullFoldContext =
-    ( holding
-        [ boundHolder 11 (edgeKey edgeUpdateTerminal) 1
-        , boundHolder 12 (edgeKey edgeDeleteActive) 1
-        ]
-    )
-        { rcCageScript =
-            Just (scriptFromBytes "t267 cage" (SBS.toShort (BS.pack [0x57])))
-        , rcCageUtxos =
-            [ keyedCustody 13 (edgeKey edgeUpdateActive)
-            , keyedCustody 14 (edgeKey edgeDeleteAbsent)
-            ]
-        }
+fullFoldContext = holding [boundHolder 11 (edgeKey edgeUpdateTerminal) 1]
 
 -- ---------------------------------------------------------
 -- #267: the BUILT fold requires no signature
@@ -1068,7 +912,7 @@ foldProvider =
         withParameters (withSyntheticCosts preprodParams) $
             withTime (pure syntheticTime) $
                 withResolvedOutputs
-                    (resolveBuilt [builtRequest (requestFor edgeInsertAbsent)] [])
+                    (resolveBuilt [builtRequest (requestFor edgeInsertActive)] [])
                     stubSession
 
 -- | Actual script address for the request the built fixture owns.
@@ -1102,7 +946,7 @@ utxosAt :: Addr -> [(TxIn, TxOut ConwayEra)]
 utxosAt a
     | a == cageAddrFromCfg builtCfg Testnet = [stateUtxoFor]
     | a == requestAddrFromCfg builtCfg foldTokenId Testnet =
-        [builtRequest (requestFor edgeInsertAbsent)]
+        [builtRequest (requestFor edgeInsertActive)]
     | otherwise =
         [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
 
@@ -1236,7 +1080,7 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
     build = buildAt 868
     buildAt observed = buildWith (pure observed)
     buildWith nextTip upper = do
-        let (reference, output) = requestFor edgeInsertAbsent
+        let (reference, output) = requestFor edgeInsertActive
             requested = case extractCageDatum output of
                 Just (RequestDatum request) ->
                     ( reference
@@ -1290,14 +1134,14 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
             otherWho
             stateIn
             validState
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "names another selected output StaleState" $
         check
             "TrieState StaleState"
             who
             requestIn
             validState
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "names a different recorded root StaleState" $
         check
             "TrieState StaleState"
@@ -1311,14 +1155,14 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                                 (StateDatum tokenState{stateRoot = OnChainRoot "different-root"})
                             )
             )
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "names an undecodable state datum StaleState" $
         check
             "TrieState StaleState"
             who
             stateIn
             (const (snd stateUtxoFor & datumTxOutL .~ mkInlineDatum (PLC.I 42)))
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "names a request datum in the state output StaleState" $
         check
             "TrieState StaleState"
@@ -1326,9 +1170,9 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
             stateIn
             ( const $
                 snd stateUtxoFor
-                    & datumTxOutL .~ (snd (requestFor edgeInsertAbsent) ^. datumTxOutL)
+                    & datumTxOutL .~ (snd (requestFor edgeInsertActive) ^. datumTxOutL)
             )
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "names a missing state datum StaleState" $
         check
             "TrieState StaleState"
@@ -1339,7 +1183,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     (snd stateUtxoFor ^. addrTxOutL)
                     (snd stateUtxoFor ^. valueTxOutL)
             )
-            [requestFor edgeInsertAbsent]
+            [requestFor edgeInsertActive]
     it "prints the speculative refusal with its subject and cause" $
         check
             ( "TrieState "
@@ -1585,7 +1429,7 @@ liveOutput =
     ( holderIn 1
     , mkBasicTxOut
         applicationAddr
-        (custodyValue (cfgActivePolicy cfg) keyA 1)
+        (witnessValue (cfgActivePolicy cfg) keyA 1)
         & datumTxOutL .~ mkInlineDatum (envelopeToData openEnvelope)
     )
 
@@ -1644,7 +1488,7 @@ openDatumFold =
                 releaseOf
                     program
                     ( second
-                        (valueTxOutL .~ custodyValue (cfgActivePolicy cfg) keyA 2)
+                        (valueTxOutL .~ witnessValue (cfgActivePolicy cfg) keyA 2)
                         liveOutput
                     )
                     `shouldSatisfy` isLeft

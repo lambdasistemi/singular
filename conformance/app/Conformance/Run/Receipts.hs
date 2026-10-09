@@ -60,12 +60,12 @@ writeExecutionUnitsAndTransactionSizeReceipt env rows = do
     receipts <-
         mapM
             readRowReceipt
-            ["update-existing-key", "delete-existing-key", "reinsert-deleted-key"]
+            ["insert-key", "register-active-key", "permanent-retire-active-key"]
     case (rows, sequence receipts) of
         (requested, Just rs)
             | all
                 (`elem` requested)
-                ["update-existing-key", "delete-existing-key", "reinsert-deleted-key"] -> do
+                ["insert-key", "register-active-key", "permanent-retire-active-key"] -> do
                 let transactions = concatMap receiptTransactions rs
                     measured =
                         [ units
@@ -74,7 +74,7 @@ writeExecutionUnitsAndTransactionSizeReceipt env rows = do
                         , Just units <- [stepMeasured step]
                         ]
                 require
-                    "execution-units-and-transaction-size: an accepting fold of update-existing-key, delete-existing-key or reinsert-deleted-key carries no units"
+                    "execution-units-and-transaction-size: an accepting fold of insert-key, register-active-key or permanent-retire-active-key carries no units"
                     (not (null measured) && length measured == length transactions)
                 writeRowReceipt
                     env
@@ -92,7 +92,7 @@ writeExecutionUnitsAndTransactionSizeReceipt env rows = do
         _ ->
             emit
                 "measure"
-                "execution-units-and-transaction-size not receipted: run did not cover update-existing-key delete-existing-key reinsert-deleted-key"
+                "execution-units-and-transaction-size not receipted: run did not cover insert-key register-active-key permanent-retire-active-key"
   where
     readRowReceipt row = do
         let path =

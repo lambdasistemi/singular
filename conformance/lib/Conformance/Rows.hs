@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 46-row consumer inventory and its validation
+Description : The 48-row consumer inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 46 rows,
-45 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — 48 rows,
+47 owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
@@ -43,23 +43,24 @@ import Data.Text qualified as T
 
 import Conformance.Receipt (Receipt (..), Verdict (..))
 
-{- | Total rows in @rows.json@: the 45 owned consumer rows (including
+{- | Total rows in @rows.json@: the 47 owned consumer rows (including
 historical-permissionless-fold, the F-002 permissionless-folder regression, register-active-key, #173's
 insertActive fold and its two refusal fixtures, retire-active-key, #177's
 updateTerminal retirement and its two refusal fixtures, reject-and-retract-refund-controls,
 issue #258's reject and retract with their tampered refunds, and reject-inside-processing-and-retraction-windows,
 issue #320's early rejection in two windows) plus checkpoint-and-treasury-policy,
 cardano-keri's checkpoint policy, recorded as out-of-scope so the
-boundary is visible instead of forgotten.
+boundary is visible instead of forgotten. The original broader retirement
+requirement stays present; permanent-retire-active-key is a separate requirement.
 -}
 expectedRowCount :: Int
-expectedRowCount = 46
+expectedRowCount = 48
 
 {- | Rows Singular owns and must eventually evidence. Out-of-scope
 rows (checkpoint-and-treasury-policy) are carried for the boundary, never counted.
 -}
 ownedDenominator :: Int
-ownedDenominator = 45
+ownedDenominator = 47
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

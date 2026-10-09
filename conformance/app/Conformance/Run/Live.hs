@@ -259,9 +259,7 @@ import Singular.Registry.Types
     , RequestAction (Update)
     , RequestDestination
     , UpdateRedeemer (Modify, Retract)
-    , edgeDeleteAbsent
     , edgeInsertAbsent
-    , edgeUpdateActive
     , edgeWitnessTerminal
     )
 import Singular.Registry.Types qualified as Types
@@ -2048,25 +2046,12 @@ sleepUntil targetMs = do
         emit "wait" (show remaining <> " ms to the next phase boundary")
         threadDelay (fromIntegral remaining * 1000)
 
--- | The certificate's destination is not an inferred post-state identity.
+{- | The two supported folds need no legacy custody reference. Raw excluded
+encodings reach the state script's refusal without inventing custody.
+-}
 storyReferences
     :: Env -> RowCage -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
-storyReferences env cage key edge
-    | edge `notElem` [edgeUpdateActive, edgeDeleteAbsent] = pure []
-    | otherwise = do
-        let cfg = rcCfg cage
-            absentPolicy = scriptHashBytes (policyID (policyIdFromPin (cfgAbsentPolicy cfg)))
-        utxos <-
-            Cage.withLatest
-                (envProv env)
-                (`Cage.outputsAt` cageAddrFromCfg cfg (network cfg))
-        case [ u
-             | u@(_, out) <- utxos
-             , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)
-             , Just (AbsentCustody _) <- [extractCageDatum out]
-             ] of
-            [u] -> pure [u]
-            _ -> failWith ("no single observed custody UTxO for " <> show key)
+storyReferences _ _ _ _ = pure []
 
 storyWitness
     :: Env

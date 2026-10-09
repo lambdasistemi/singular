@@ -1,5 +1,14 @@
 # Ending a name
 
+The current contract permits registration and permanent retirement only.
+The retained command now checks an unknown key and an already terminal key
+against real accepting controls. Absent leaves cannot be created from permanent contract
+ genesis; their retirement refusal is a synthetic compiled-context check.
+The following broader-model story and receipts are archived evidence, not
+current deployment support. See [current candidate results](../specs/505-permanent-m1/RESULTS.md).
+
+## Archived broader-model retirement evidence
+
 ## Who this is for
 
 You hold a Singular name. You booked it, the registry handed you a token

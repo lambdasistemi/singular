@@ -82,10 +82,16 @@ class RealInventoryTest(unittest.TestCase):
         # 107 = 56 + 51 (and before that 104 = 56 + 48). The registry has 44
         # statements before #419 and 46 after; naming, lifecycle and wire retain
         # 7, 9 and 5.
+        # The permanent M1 surface adds ten audited statements; all previous
+        # declarations remain: 121 = 67 manifest-bound + 54 unclassified.
         inv = build_inventory(REPO_ROOT)
         self.assertEqual(inv.manifest_bound, 67)
-        self.assertEqual(inv.unclassified, 59)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 126)
+        self.assertEqual(inv.unclassified, 54)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 121)
+        self.assertEqual(
+            len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
+            10,
+        )
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
@@ -111,7 +117,7 @@ class FixtureInventoryTest(unittest.TestCase):
             build_base_tree(root)
             inv = build_inventory(root)
             names = inv.by_name()
-            self.assertEqual(inv.manifest_bound, 5)
+            self.assertEqual(inv.manifest_bound, 6)
             self.assertEqual(inv.unclassified, 5)
             self.assertIn("Singular.Statements.greeter_iff", names)
             self.assertIn("Singular.helper.dotted", names)

@@ -8,8 +8,8 @@ the standard axioms alone.
 
 Three corpora are enforced. The generic corpus is frozen: it must reproduce byte-for-byte
 from the generic binary over the generic source extent, where `lean/Singular.lean` counts
-in its base form — the current file may differ from that base only by `import
-Singular.Naming*` lines (the naming layer hangs off the generic library by imports and
+in its base form — the current file may differ from that base only by extension imports (`Singular.Naming*`, `Singular.M1Driver` and
+`Singular.M1Audit`) (the naming layer hangs off the generic library by imports and
 nothing else). The naming corpus is checked the same way over the full current Lean
 extent, so every naming module is hash-bound to the exported evidence.
 The lifecycle corpus is produced by its own Lean executable over that same full source
@@ -38,7 +38,7 @@ GENERIC_SOURCES = [
     "lean/Singular/Statements.lean",
 ]
 
-NAMING_IMPORT = re.compile(r"^import Singular\.Naming\w*\n?", re.M)
+NAMING_IMPORT = re.compile(r"^import Singular\.(?:Naming\w*|M1Driver|M1Audit)\n?", re.M)
 
 LIFECYCLE_IDS = {
     "LM01-maintenance-accepts",
@@ -1508,7 +1508,7 @@ def main():
         data = (root / rel).read_bytes()
         if rel == "lean/Singular.lean":
             # The generic library may differ from its base only by `import
-            # Singular.Naming*` lines; hash the base form so the frozen generic
+            # extension modules; hash the base form so the frozen generic
             # corpus stays byte-reproducible. Any other edit drifts.
             data = NAMING_IMPORT.sub("", data.decode()).encode()
         sources[rel] = digest(data)

@@ -60,14 +60,14 @@ import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signTx)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
-    , leafAbsent
+    , leafActive
     )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
     , RequestAction (Update)
-    , edgeInsertAbsent
+    , edgeInsertActive
     )
 
 import Conformance.Mirror
@@ -231,7 +231,7 @@ runFoldAgainstSupersededRoot env = do
     -- The stale claims: k-c's insertion proof against the pre-fold
     -- (empty) root, captured before any fold advances it.
     (staleSteps, staleRoot) <-
-        speculativeInsert env cage tid "cg10-key-c" leafAbsent
+        speculativeInsert env cage tid "cg10-key-c" leafActive
     _ <-
         rowRequestAndFold
             env
@@ -239,7 +239,7 @@ runFoldAgainstSupersededRoot env = do
             "fold-against-superseded-root"
             "cg10-key-a"
             "cg10-value-a"
-            edgeInsertAbsent
+            edgeInsertActive
     reqC <- rowRequestInsert env cage "cg10-key-c" "cg10-value-c"
     state <- cageStateUtxo env cage
     pot <- collateralPot env
@@ -291,7 +291,7 @@ runFoldAgainstSupersededRoot env = do
                 (genesisAddr env)
                 ctxLive
     (freshSteps, freshRoot) <-
-        speculativeInsert env cage tid "cg10-key-c" leafAbsent
+        speculativeInsert env cage tid "cg10-key-c" leafActive
     let freshSpec =
             ( rowSpec
                 cage
@@ -314,7 +314,7 @@ runFoldAgainstSupersededRoot env = do
         submitExpectAccepted env (signTx (genesisSignKey env) handFresh)
     let size = txSizeBytes signed
     emitMeasure env "fold-against-superseded-root-control" mem cpu size
-    rowCommit env cage "cg10-key-c" edgeInsertAbsent
+    rowCommit env cage "cg10-key-c" edgeInsertActive
     emit
         "control"
         "fold-against-superseded-root control: the same request folded against the live root \
@@ -341,7 +341,7 @@ runSurplusFoldActions env = do
     req <-
         rowRequestInsert env cage "cg12-key" "cg12-value"
     (steps12, root12) <-
-        speculativeInsert env cage tid "cg12-key" leafAbsent
+        speculativeInsert env cage tid "cg12-key" leafActive
     state <- cageStateUtxo env cage
     pot <- collateralPot env
     units <- declaredSpec env cage
@@ -402,11 +402,11 @@ runSurplusFoldActions env = do
             failWith "surplus-fold-actions control: expected exactly two requests"
     (firstSteps, rootFirst) <- case extractCageDatum (snd firstSorted) of
         Just (RequestDatum rq)
-            | requestEdge rq == edgeInsertAbsent ->
-                speculativeInsert env cage tid (requestKey rq) leafAbsent
+            | requestEdge rq == edgeInsertActive ->
+                speculativeInsert env cage tid (requestKey rq) leafActive
         Just (RequestDatum _) ->
             failWith
-                "surplus-fold-actions control: expected an insertAbsent request"
+                "surplus-fold-actions control: expected an insertActive request"
         _ -> failWith "surplus-fold-actions control: no request datum"
     pot2 <- collateralPot env
     let (firstSorted2, secondSorted2) = case sortOn fst [reqB, reqC] of
@@ -446,7 +446,7 @@ runSurplusFoldActions env = do
         rowRequestInsert env cage "cg12-key-d" "cg12-value-d"
     state3 <- cageStateUtxo env cage
     (stepsD, rootD) <-
-        speculativeInsert env cage tid "cg12-key-d" leafAbsent
+        speculativeInsert env cage tid "cg12-key-d" leafActive
     pot3 <- collateralPot env
     let exactSpec =
             ( rowSpec
@@ -469,7 +469,7 @@ runSurplusFoldActions env = do
         submitExpectAccepted env (signTx (genesisSignKey env) exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "surplus-fold-actions-exact" memD cpuD sizeD
-    rowCommit env cage "cg12-key-d" edgeInsertAbsent
+    rowCommit env cage "cg12-key-d" edgeInsertActive
     emit
         "control"
         ( "surplus-fold-actions control: exact 1:1 fold accepted (tx="

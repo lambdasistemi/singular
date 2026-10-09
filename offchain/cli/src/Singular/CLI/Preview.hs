@@ -91,7 +91,6 @@ import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( hexT
     , keyFields
-    , loadRelease
     , parseEnterpriseAddress
     )
 import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
@@ -137,7 +136,7 @@ runPreview env kind a settings addrText = do
             pure
             (parseEnterpriseAddress magic addrText)
     release <-
-        loadRelease (entryBlueprint a)
+        envLoadRelease env (entryBlueprint a)
             >>= either (failWith ClientRefusal) pure
     let Key key = entryKey a
         caller = addrKeyHashBytes addr

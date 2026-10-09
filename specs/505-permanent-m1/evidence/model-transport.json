@@ -1,0 +1,76 @@
+{
+  "rows": [
+    {
+      "requirement": "Register an active key",
+      "outcome": "accepted",
+      "reason": null
+    },
+    {
+      "requirement": "Terminate the registered key permanently",
+      "outcome": "accepted",
+      "reason": null
+    },
+    {
+      "requirement": "Refuse an absent insertion",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse activation of an absent key",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse deletion of an absent key",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse deletion of an active key",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse terminal witnessing without approval",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Reject a pending registration",
+      "outcome": "accepted",
+      "reason": null
+    },
+    {
+      "requirement": "Retract a pending registration in its owner's window",
+      "outcome": "accepted",
+      "reason": null
+    },
+    {
+      "requirement": "An excluded setup is unsupported",
+      "outcome": "unsupported",
+      "reason": "setup-refused"
+    },
+    {
+      "requirement": "Register then terminate in one atomic batch",
+      "outcome": "accepted",
+      "reason": null
+    },
+    {
+      "requirement": "Refuse a mixed batch's excluded final member",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse an excluded first member",
+      "outcome": "refused",
+      "reason": "edge-inadmissible"
+    },
+    {
+      "requirement": "Refuse an empty batch",
+      "outcome": "refused",
+      "reason": "empty-fold"
+    }
+  ],
+  "controlsDetected": 2,
+  "boundary": "abstract conformance transport, not ledger"
+}

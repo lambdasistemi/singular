@@ -207,26 +207,18 @@ theorem step_app_edge (s : RegistryState) (a : Request) (r : Result) (h : step s
         trieGet r.state.trie a.key = .known .terminal ∧ r.mint = [((.active, a.key), -1)]) := by
   obtain ⟨href, hr⟩ := step_eq_ok s a r h
   subst hr
-  have hnone := (refusal_none_iff s a).1 href
+  obtain ⟨_, _, _, _, hcase⟩ := (refusal_none_iff s a).1 href
   have hbefore : (a.edge = .insertActive → trieGet s.trie a.key = .unknown) ∧
       (a.edge = .updateTerminal → trieGet s.trie a.key = .known .active) := by
     constructor
     · intro he'
-      rcases hnone with ⟨hw, _⟩ | ⟨ap, _, _, _, hc⟩
-      · rw [he'] at hw; exact absurd hw (by decide)
-      · rcases hc with ⟨hc1, hc2⟩ | ⟨hc1, hc2⟩ | ⟨hc1, hc2, -⟩ | ⟨hc1, hc2, -⟩ | ⟨hc1, hc2, -⟩ |
-            ⟨hc1, hc2, -⟩ <;>
-          first
-            | exact hc2
-            | (rw [he'] at hc1; exact absurd hc1 (by decide))
+      rcases hcase with ⟨_, hb⟩ | ⟨he, _, _⟩
+      · exact hb
+      · rw [he'] at he; exact absurd he (by decide)
     · intro he'
-      rcases hnone with ⟨hw, _⟩ | ⟨ap, _, _, _, hc⟩
-      · rw [he'] at hw; exact absurd hw (by decide)
-      · rcases hc with ⟨hc1, hc2⟩ | ⟨hc1, hc2⟩ | ⟨hc1, hc2, -⟩ | ⟨hc1, hc2, -⟩ | ⟨hc1, hc2, -⟩ |
-            ⟨hc1, hc2, -⟩ <;>
-          first
-            | exact hc2
-            | (rw [he'] at hc1; exact absurd hc1 (by decide))
+      rcases hcase with ⟨he, _⟩ | ⟨_, hb, _⟩
+      · rw [he'] at he; exact absurd he (by decide)
+      · exact hb
   rcases he with he | he
   · obtain ⟨h1, h2, _, _, h5, _⟩ := applyEdge_insertActive s a he
     refine ⟨fun k hk => by rw [h1]; exact trieGet_set_of_ne _ _ _ _ hk, by rw [h2], fun _ => ?_,
@@ -948,7 +940,7 @@ theorem booked_insert_refusal (s : RegistryState) (app : App) (r : Request) (sig
     (hleaf : trieGet s.trie r.key = .known .active ∨ trieGet s.trie r.key = .known .terminal) :
     refusal s (booked app r sigs) = some "key-exists" := by
   rcases hleaf with hleaf | hleaf <;>
-    simp [refusal, booked, mintApproval, admitsFor, requestDestination, hedge, hpol, hleaf]
+    simp [refusal, allowed, booked, mintApproval, admitsFor, requestDestination, hedge, hpol, hleaf]
 
 
 /-! ## The executable consistency observation -/

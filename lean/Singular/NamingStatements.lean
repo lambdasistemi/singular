@@ -33,22 +33,16 @@ theorem naming_delete_refused (hasher : RecoveryHasher) (state : NamingState) (k
     simp only [bind, Except.bind]
     rfl
 
-/-- **naming-approvals-bind-request** — the six admission rows. -/
+/-- **naming-approvals-bind-request** — the two supported approval rules. -/
 theorem naming_nm4_admissions (hasher : RecoveryHasher) (context : NamingCtx)
     (signatures : List (List Nat)) (revealed : Option NamingAddress) :
-    namingCertifies hasher .insertAbsent signatures revealed context = true ∧
     (namingCertifies hasher .insertActive signatures revealed context = true ↔
       signatures.contains context.controllerBytes = true) ∧
-    (namingCertifies hasher .updateActive signatures revealed context = true ↔
-      signatures.contains context.controllerBytes = true) ∧
-    (namingCertifies hasher .deleteAbsent signatures revealed context = true ↔
-      signatures = [context.refundBytes]) ∧
     (namingCertifies hasher .updateTerminal signatures revealed context = true ↔
       (revealsCommittedRecoveryKey hasher context.fixture revealed = true ∨
-        quorumMet context.fixture.retirementQuorum signatures = true)) ∧
-    namingCertifies hasher .deleteActive signatures revealed context = false := by
-  refine ⟨rfl, Iff.rfl, Iff.rfl, ?_, ?_, rfl⟩
-  · simp [namingCertifies]
+        quorumMet context.fixture.retirementQuorum signatures = true)) := by
+  constructor
+  · rfl
   · simp [namingCertifies]
 
 /-- **naming-approvals-bind-request** — an `updateTerminal` approval signed by the current control key
@@ -78,16 +72,12 @@ theorem naming_control_key_alone_never_retires (hasher : RecoveryHasher)
   rw [hempty]
   simpa using hthreshold
 
-/-- **naming-approvals-bind-request** — a `deleteAbsent` approval under any signature but the refund
-address's, and one under no signature, are refused. -/
-theorem naming_retract_only_inserter (context : NamingCtx) (other : List Nat)
-    (hdiff : other ≠ context.refundBytes) :
-    namingCertifies fixtureHasher .deleteAbsent [other] none context = false ∧
-    namingCertifies fixtureHasher .deleteAbsent [] none context = false := by
-  refine ⟨?_, by simp [namingCertifies]⟩
-  simp only [namingCertifies, decide_eq_false_iff_not]
-  intro hEq
-  exact hdiff (by simpa using congrArg List.head? hEq)
+/-- Every excluded wire edge lacks naming certification. -/
+theorem naming_excluded_encodings_not_certified (hasher : RecoveryHasher)
+    (context : NamingCtx) (signatures : List (List Nat)) (revealed : Option NamingAddress)
+    (edge : Edge) (excluded : allowed edge = false) :
+    namingCertifies hasher edge signatures revealed context = false := by
+  cases edge <;> simp [allowed, namingCertifies] at excluded ⊢
 
 /-- **recovery-preserves-record-rules** — the recovery commitment check binds the revealed key to the
 record's committed digest. -/

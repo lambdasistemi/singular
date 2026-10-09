@@ -161,9 +161,14 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                             action = withTrieState fixtureTrieState chosen $ \snap ->
                                 speculateEdges snap ((key, edge) :| [])
                             (walked, unchanged) = runState action fixture
-                        walk <- right walked >>= right
-                        walkRoot walk `shouldBe` expectedRoot
-                        walkProofs walk `shouldBe` [last expectedProofs]
+                        if want == Unknown
+                            then
+                                walked
+                                    `shouldBe` Right (Left (MissingProof who (NoProofFor key)))
+                            else do
+                                walk <- right walked >>= right
+                                walkRoot walk `shouldBe` expectedRoot
+                                walkProofs walk `shouldBe` [last expectedProofs]
                         fixtureNodes unchanged `shouldBe` fixtureNodes fixture
                         fixtureFolds unchanged `shouldBe` fixtureFolds fixture
                         let proofReads = withTrieState fixtureTrieState afterChosen $ \snap -> do
@@ -373,11 +378,11 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
         $ do
             before@(chosen, _, _, _) <- history identity [("neighbour", 1)]
             (_, expectedRoot, proofs) <-
-                produced token [("neighbour", 1), ("first", 0), ("first", 2)]
+                produced token [("neighbour", 1), ("first", 1), ("first", 3)]
             let fixture = storeOf before
                 action moves =
                     withTrieState fixtureTrieState chosen (`speculateEdges` moves)
-                (ordered, unchanged) = runState (action (("first", 0) :| [("first", 2)])) fixture
+                (ordered, unchanged) = runState (action (("first", 1) :| [("first", 3)])) fixture
             walk <- right ordered >>= right
             walkRoot walk `shouldBe` expectedRoot
             walkProofs walk `shouldBe` drop 1 proofs
@@ -387,8 +392,8 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
                 `shouldBe` Right (Left (UndecodableRequest identity Nothing (EdgeOutOfRange 99)))
             fixtureNodes afterBad `shouldBe` fixtureNodes fixture
             after@(afterChosen, _, _, _) <-
-                history identity [("neighbour", 1), ("first", 0), ("first", 2)]
-            let accepted = ObservedFold chosen afterChosen (("first", 0) :| [("first", 2)])
+                history identity [("neighbour", 1), ("first", 1), ("first", 3)]
+            let accepted = ObservedFold chosen afterChosen (("first", 1) :| [("first", 3)])
                 (acceptedAnswer, committed) = runState (acceptObservedFold fixtureTrieState accepted) fixture
                 (repeatAnswer, repeated) = runState (acceptObservedFold fixtureTrieState accepted) committed
             acceptedAnswer `shouldBe` Right ()
@@ -396,7 +401,7 @@ spec = describe "TrieState capability contract (pure State over MPF nodes)" $ do
             repeatAnswer `shouldBe` Right ()
             fixtureNodes repeated `shouldBe` fixtureNodes committed
             fixtureFolds repeated `shouldBe` fixtureFolds committed
-            let reordered = ObservedFold chosen afterChosen (("first", 2) :| [("first", 0)])
+            let reordered = ObservedFold chosen afterChosen (("first", 3) :| [("first", 1)])
                 (reorderedAnswer, refused) = runState (acceptObservedFold fixtureTrieState reordered) fixture
             reorderedAnswer
                 `shouldBe` Left (MissingProof identity (NoProofFor "first"))

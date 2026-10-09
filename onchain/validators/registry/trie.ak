@@ -4,8 +4,7 @@
 ////
 //// The named refusals a fold raises when the leaf an edge needs is not the
 //// leaf the trie binds: `terminalFault` for a retirement (`updateTerminal`),
-//// `readFault` for a read (`witnessTerminal`), and `terminalEdgeRefusal` for
-//// a tree-changing edge on a terminal leaf. Each is the one construction site
+//// registration refuses every occupied key. Each is the one construction site
 //// of its reasons, so a test asserting a reason asserts the value the
 //// validator traces. An insert on a key the trie already binds keeps its
 //// construction site in `lib` (`occupiedRefusal`, `key-exists`).
@@ -73,39 +72,4 @@ pub fn terminalFault(
   } else {
     None
   }
-}
-
-/// Why a read whose key does NOT bind `Terminal` refuses (#183 slice b, M3). The read carries no value
-/// byte, so the fault is read off the TRIE against the action's own
-/// proof, with the MPF library's own TOTAL checks: a terminal leaf
-/// proceeds (verified by the caller), anything else names its fact.
-/// A key the trie does not bind at all is `key-unknown` — neither
-/// `read-absent` (bound `Absent`) nor `read-non-terminal` (bound live).
-///
-/// Own site, so a test asserting a reason asserts the value the cage
-/// traces (A-006 pattern).
-pub fn readFault(
-  trie: MerklePatriciaForestry,
-  key: ByteArray,
-  proof: mpf.Proof,
-) -> Option<String> {
-  if mpf.has(trie, key, leafAbsent, proof) {
-    Some(@"read-absent")
-  } else if mpf.has(trie, key, leafActive, proof) {
-    Some(@"read-non-terminal")
-  } else {
-    Some(@"key-unknown")
-  }
-}
-
-/// The reason a tree-changing edge whose key binds `Terminal` is refused
-/// (#183 slice b, N10). The terminal leaf admits the read and nothing
-/// else, and the fault is one of the TRIE: the request states no bytes
-/// to be wrong about.
-///
-/// Own site, so a test asserting the reason asserts the value the cage
-/// traces rather than a string a helper nobody calls happens to hold
-/// (A-006 pattern, as `occupiedRefusal`).
-pub fn terminalEdgeRefusal() -> Option<String> {
-  Some(@"edge-from-terminal")
 }

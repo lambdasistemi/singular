@@ -12,6 +12,18 @@ identifiers and modules that belong to other packages are visible in the
 generated pages but are not clickable, because their documentation is not
 bundled with this site.
 
+## Which contract a story describes
+
+`Conformance.Edge.Permanent` describes the first milestone's registration and
+permanent termination, refusal of the five other encoded registry actions, and
+refusal of a mixed batch containing an excluded action. Its public requirement
+remains uncovered until a bounded live consumer comparison receipt establishes
+it. Compiled refusal tests passing does not assign that product status.
+Other seven-edge story modules retain the broader contract's descriptions;
+their historical successes do not establish support in the permanent contract.
+The [consumer record](consumer-conformance.md) keeps that distinction and the
+uncovered rows visible.
+
 ## What this reference contains
 
 Every module of the Conformance library is listed below. Each entry links
@@ -51,6 +63,7 @@ the site check fails until it and this list agree.
 - <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="module">Conformance.Edge.EarlyReject</a> — <a href="../conformance/lib/Conformance/Edge/EarlyReject.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="module">Conformance.Edge.Exit</a> — <a href="../conformance/lib/Conformance/Edge/Exit.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="module">Conformance.Edge.Occupied</a> — <a href="../conformance/lib/Conformance/Edge/Occupied.hs" data-api="source">source</a>
+- <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="module">Conformance.Edge.Permanent</a> — <a href="../conformance/lib/Conformance/Edge/Permanent.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="module">Conformance.Edge.Programs</a> — <a href="../conformance/lib/Conformance/Edge/Programs.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="module">Conformance.Edge.Register</a> — <a href="../conformance/lib/Conformance/Edge/Register.hs" data-api="source">source</a>
 - <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="module">Conformance.Edge.Retire</a> — <a href="../conformance/lib/Conformance/Edge/Retire.hs" data-api="source">source</a>

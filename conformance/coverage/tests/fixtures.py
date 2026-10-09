@@ -71,6 +71,11 @@ end Singular
 
 
 NAMING_STUBS = {
+    "lean/Singular/M1.lean": (
+        "namespace Singular.M1.Statements\n"
+        "theorem permanent_stub (n : Nat) : n + 0 = n := by\n  simp\n"
+        "end Singular.M1.Statements\n"
+    ),
     "lean/Singular/NamingStatements.lean": (
         "namespace Singular.NamingStatements\n"
         "theorem naming_stub_iff (n : Nat) (h : n > 0) : n + 0 = n := by\n  simp\n"
@@ -90,7 +95,7 @@ NAMING_STUBS = {
 
 
 def build_base_tree(root: Path) -> None:
-    """A synthetic lean/ tree: 5 manifest-bound + 5 unclassified obligations.
+    """A synthetic lean/ tree: 6 manifest-bound + 5 unclassified obligations.
 
     The unclassified five carry the identifier shapes that have each defeated
     the scanner at least once: attributed-inline, dotted, primed, `?`-carrying,

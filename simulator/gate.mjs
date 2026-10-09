@@ -29,7 +29,7 @@ import {
 } from './core.mjs';
 import { approved, read, mismatched } from './actions.mjs';
 import { theoremReport, checks } from './properties.mjs';
-import { checkNamingCorpus, overWitnessJourney, NAMING_SECTIONS } from './naming.mjs';
+import { checkNamingCorpus, permanentRetirementJourney, NAMING_SECTIONS } from './naming.mjs';
 import { checkLifecycleCorpus, LIFECYCLE_SECTIONS } from './lifecycle.mjs';
 
 const root = new URL('./', import.meta.url);
@@ -67,12 +67,7 @@ assert.equal(
 // refund the custody datum requires (R-ADA: the entry's own value to its own
 // refund address). A verdict plus state alone would pass a transcription that
 // dropped the mint or zeroed every refund.
-const expectedPaid = (before, action) => {
-  const entry = before.custody.find((c) => c.key === action.key);
-  return (action.edge === 'updateActive' || action.edge === 'deleteAbsent') && entry
-    ? [{ destination: entry.refundAddress, value: entry.value }]
-    : [];
-};
+const expectedPaid = (_before, _action) => [];
 const assertObservableResult = (row, r) => {
   assert.ok(equal(r.value.state, row.result.state), `corpus state/${row.id}`);
   assert.deepEqual(r.value.mint, delta(row.action.edge), `corpus mint/${row.id}`);
@@ -95,28 +90,20 @@ for (const row of corpus.cases) {
 }
 assert.equal(executed, discovered, 'case denominator');
 assert.ok(executed > 0, 'zero corpus');
-assert.ok(refundsObserved > 0, 'no corpus case observes a refund at all');
+assert.equal(refundsObserved, 0, 'supported transitions have no custody refund');
 
-// the deposit goes to the address the insert named, in the amount it deposited
+// Request-exit payments are Lean evidence. The simulator has no exit engine;
+// it must not claim that playing a registry transition executed an exit.
 let adaRun = 0;
 for (const row of corpus.ada) {
-  const s = {
-    ...initial(),
-    trie: [{ key: 5, leaf: 'absent' }],
-    custody: [{ key: 5, refundAddress: 91, value: 100 }],
-  };
-  s.config = { ...s.config, root: rootOf(s.trie) };
-  const edge = row.id.includes('update-active') ? 'updateActive' : 'deleteAbsent';
-  const r = step(s, approved(edge, 5, { owner: 91, output: 99, refundAddress: 91 }));
-  assert.ok(r.accepted, `ada/${row.id}`);
-  assert.deepEqual(
-    r.value.paid,
-    [{ destination: row.paidTo[0], value: 100 }],
-    `ada refund/${row.id}`,
+  assert.ok(
+    ['GAda-reject-returns-deposit', 'GAda-retract-returns-deposit-and-tip'].includes(row.id),
+    `exit evidence/${row.id}`,
   );
+  assert.deepEqual(row.paidTo, [91], `exit payee/${row.id}`);
   adaRun++;
 }
-assert.equal(adaRun, corpus.ada.length, 'ada denominator');
+assert.equal(adaRun, corpus.ada.length, 'ada evidence denominator');
 
 // codec rows, both directions, including bytes that must not decode
 let codecRun = 0;
@@ -130,18 +117,13 @@ for (const s of STATES) assert.equal(decodeState(encodeState(s)), s, `codec roun
 
 // ---- 3. every refusal the model names, refused BY NAME ---------------------
 const REQUIRED_REFUSALS = [
-  'read-unknown',
-  'read-absent',
-  'read-active',
+  'edge-inadmissible',
   'key-exists',
   'key-unknown',
-  'already-booked',
   'not-booked',
-  'not-active',
   'terminal-immutable',
   'no-approval',
   'approval-mismatch',
-  'custody-missing',
   'token-missing',
   'empty-fold',
   'net-mint-mismatch',
@@ -174,13 +156,8 @@ for (const edge of EDGES)
     pairs++;
     const inTable =
       {
-        insertAbsent: 'unknown',
         insertActive: 'unknown',
-        updateActive: 'absent',
         updateTerminal: 'active',
-        deleteAbsent: 'absent',
-        deleteActive: 'active',
-        witnessTerminal: 'terminal',
       }[edge] === (leaf === null ? 'unknown' : leaf);
     if (inTable) assert.ok(r.accepted, `edge table row refused: ${edge}/${leaf}`);
     else {
@@ -190,7 +167,7 @@ for (const edge of EDGES)
     }
   }
 assert.equal(pairs, EDGES.length * 4, 'complement denominator');
-assert.equal(refusedPairs, pairs - EDGES.length, 'every edge has exactly one admitting leaf');
+assert.equal(refusedPairs, pairs - 2, 'only the two supported transitions admit a leaf');
 
 // ---- 4. the fold: atomicity, the empty batch, the mint check ---------------
 assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
@@ -288,7 +265,7 @@ for (const row of report)
     assert.ok(row.exercised, `law not exercised: ${row.name}`);
     checked++;
   }
-assert.ok(checked >= 7, `too few controlled laws: ${checked}`);
+assert.ok(checked === 5, `active finite controlled-law count: ${checked}`);
 
 // ---- 6b. the evidence boundary: what each exported section is ---------------
 // The report classifies every array section the corpus exports: behavior (the
@@ -298,7 +275,7 @@ assert.ok(checked >= 7, `too few controlled laws: ${checked}`);
 const SECTION_CLASS = {
   cases: 'behavior',
   codec: 'behavior',
-  ada: 'behavior',
+  ada: 'evidence',
   folds: 'evidence',
   keyedMintRows: 'evidence',
   transactions: 'evidence',
@@ -390,15 +367,12 @@ assert.equal(
   'naming corpus rows are inspected Lean evidence, not executed behavior',
 );
 {
-  const j = overWitnessJourney();
-  assert.ok(
-    j.steps.every((s) => s.accepted),
-    'the Over witness journey must complete',
-  );
-  assert.equal(j.steps[2].witnesses.terminal, 1, 'a folded read mints one Over witness');
-  assert.equal(j.steps[3].witnesses.terminal, 2, 'the terminal witness is plural');
-  assert.equal(j.steps[4].witnesses.terminal, 0, 'the witnesses burn');
-  assert.equal(j.steps[4].leaf, 'terminal', 'burning changes no leaf');
+  const j = permanentRetirementJourney();
+  assert.ok(j.steps[0].accepted && j.steps[1].accepted, 'registration and retirement complete');
+  assert.equal(j.steps[2].accepted, false, 'terminal witnessing is excluded');
+  assert.equal(j.steps[2].reason, 'edge-inadmissible');
+  assert.equal(j.steps[2].witnesses.terminal, 0);
+  assert.equal(j.steps[2].leaf, 'terminal');
 }
 
 // ---- 7b. the naming lifecycle: inspected evidence, never executed ----------
@@ -514,21 +488,12 @@ if (selftest) {
       value: { state: good.value.state, mint: [], paid: good.value.paid },
     });
   });
-  mustThrow('an admitted result that zeroed a refund', () => {
-    const row = corpus.cases.find(
-      (c) =>
-        c.expectedAccept &&
-        (c.action.edge === 'updateActive' || c.action.edge === 'deleteAbsent') &&
-        c.before.custody.some((x) => x.key === c.action.key),
-    );
+  mustThrow('an admitted result invents a custody refund', () => {
+    const row = corpus.cases.find((c) => c.expectedAccept);
     const good = step(row.before, row.action);
     assertObservableResult(row, {
       accepted: true,
-      value: {
-        state: good.value.state,
-        mint: good.value.mint,
-        paid: good.value.paid.map((p) => ({ ...p, value: 0 })),
-      },
+      value: { ...good.value, paid: [{ destination: 91, value: 200 }] },
     });
   });
   mustThrow('a corpus section nobody classifies', () => {
@@ -559,17 +524,6 @@ if (selftest) {
     });
   });
   {
-    // positive control: plural terminal witnesses stay allowed where the leaf
-    // is terminal (W3), so strengthening the biconditional outlawed nothing.
-    checkNamingCorpus({
-      ...namingCorpus,
-      resolves: namingCorpus.resolves.map((r) =>
-        r.id === 'NRP05-resolve-attested' ? { ...r, terminal: 2 } : r,
-      ),
-    });
-    console.log('PASS selftest: plural terminal witnesses stay allowed on a terminal leaf');
-  }
-  {
     // positive control: the supply law is unconditional over reachable states
     // (S3 assumes only reachability). A state whose leaf says active while no
     // witness exists must stay an applicable example and must read as a
@@ -590,7 +544,7 @@ if (selftest) {
     assert.ok(step(s, approved('deleteActive', 7, { owner: 42, output: 555 })).accepted);
   });
   mustThrow('a story whose expectation is wrong', () => {
-    assert.equal(step(initial(), read(42, 700)).reason, 'read-active');
+    assert.equal(step(initial(), read(42, 700)).reason, 'read-unknown');
   });
   mustThrow('a lifecycle corpus section emptied', () => {
     checkLifecycleCorpus({ ...lifecycleCorpus, retirement: [] });

@@ -39,8 +39,9 @@ spec = describe "Appendix: keeping the published requirements complete" $ do
         $ do
             rows <- loadCommitted
             let current = map rowId rows
-            length historicalRowNames `shouldBe` expectedRowCount
-            length (nub (map snd historicalRowNames)) `shouldBe` expectedRowCount
+            -- New requirements need no fabricated historical receipt key.
+            length historicalRowNames `shouldBe` 46
+            length (nub (map snd historicalRowNames)) `shouldBe` 46
             map snd historicalRowNames `shouldSatisfy` all (`elem` current)
             map (canonicalRowName . fst) historicalRowNames
                 `shouldBe` map snd historicalRowNames

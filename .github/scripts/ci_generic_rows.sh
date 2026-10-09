@@ -11,7 +11,7 @@ blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blu
 CONFORMANCE_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/conformance-receipts.XXXXXX")"
 export CONFORMANCE_RECEIPTS
 printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >>"$GITHUB_ENV"
-rows="insert-key update-existing-key delete-existing-key reinsert-deleted-key insert-occupied-key retract-inside-window reject-after-window reject-before-deadline-consumer-requirement fold-against-superseded-root empty-fold surplus-fold-actions request-value-and-refund-routing register-active-key"
+rows="insert-key permanent-retire-active-key insert-occupied-key retract-inside-window reject-after-window reject-before-deadline-consumer-requirement fold-against-superseded-root empty-fold surplus-fold-actions request-value-and-refund-routing register-active-key"
 set +e
 # The row list is word-split on purpose: one argument per row.
 # shellcheck disable=SC2086
@@ -31,9 +31,9 @@ head_sha="$(git rev-parse HEAD)"
   echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"
   exit 1
 }
-# 2. complete session evidence: all 13 rows executed...
-grep -q 'complete: 13/13 rows ok' /tmp/generic-rows.log || {
-  echo 'FAIL: the session did not complete all 13 rows (mid-run failure or crash)'
+# 2. complete session evidence: all 11 rows executed...
+grep -q 'complete: 11/11 rows ok' /tmp/generic-rows.log || {
+  echo 'FAIL: the session did not complete all 11 rows (mid-run failure or crash)'
   exit 1
 }
 #    ...and the terminal failure is the held-rows debt report
@@ -41,7 +41,7 @@ grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || {
   echo 'FAIL: the terminal failure is not the held-rows debt report'
   exit 1
 }
-# 3. exactly the thirteen rows plus the session execution-units-and-transaction-size, no extras
+# 3. exactly the eleven rows plus the session execution-units-and-transaction-size, no extras
 # shellcheck disable=SC2086
 printf '%s\n' $rows execution-units-and-transaction-size | sort >/tmp/expected-rows.txt
 nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-*.json | sort >/tmp/receipt-rows.txt
@@ -61,7 +61,7 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    insert-key | update-existing-key | delete-existing-key | reinsert-deleted-key | insert-occupied-key | retract-inside-window | reject-after-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
+    insert-key | permanent-retire-active-key | insert-occupied-key | retract-inside-window | reject-after-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
     reject-before-deadline-consumer-requirement | fold-against-superseded-root | surplus-fold-actions) printf 'unmet-by-ruling' ;;
     empty-fold | request-value-and-refund-routing) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
@@ -90,16 +90,16 @@ for row in $rows execution-units-and-transaction-size; do
   }
 done
 # 5. execution-units-and-transaction-size carries the session's measurement evidence: the worst units and
-#    size of the accepting folds of update-existing-key, delete-existing-key and reinsert-deleted-key, read off their
+#    size of the accepting folds of insert-key, register-active-key and permanent-retire-active-key, read off their
 #    receipts' steps, those folds named — refuse missing or divergent
 # jq expands its own --slurpfile variables.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e \
-  --slurpfile cg02 "${CONFORMANCE_RECEIPTS}"/receipt-update-existing-key.json \
-  --slurpfile cg03 "${CONFORMANCE_RECEIPTS}"/receipt-delete-existing-key.json \
-  --slurpfile cg04 "${CONFORMANCE_RECEIPTS}"/receipt-reinsert-deleted-key.json '
+  --slurpfile cg02 "${CONFORMANCE_RECEIPTS}"/receipt-insert-key.json \
+  --slurpfile cg03 "${CONFORMANCE_RECEIPTS}"/receipt-register-active-key.json \
+  --slurpfile cg04 "${CONFORMANCE_RECEIPTS}"/receipt-permanent-retire-active-key.json '
   ([$cg02[0], $cg03[0], $cg04[0]] | map(.steps[] | select(.chain.outcome == "accepted") | .chain)) as $folds
-  | ($folds | length) == 7
+  | ($folds | length) == 11
   and .transactions == ($folds | map(.txid))
   and .mem == ($folds | map(.measured.mem) | max) and .mem > 0
   and .cpu == ($folds | map(.measured.cpu) | max) and .cpu > 0
@@ -168,17 +168,13 @@ grep -q '^control: surplus-fold-actions control: exact 1:1 fold accepted (tx=[0-
   echo 'FAIL: surplus-fold-actions accepting control txid missing'
   exit 1
 }
-# 8. The edge compositions (#232): each row's program, in registries of its
+# 8. The supported edge compositions (#232): each row's program, in registries of its
 #    own, every request accepted by the chain and by the model and compared
 #    on all nine observations, its transactions the envelope's.
-#    insert-key inserts; update-existing-key inserts and updates; delete-existing-key inserts and deletes; reinsert-deleted-key
-#    inserts, deletes and inserts again at the same key; retract-inside-window retracts an
+#    insert-key registers Active; retract-inside-window retracts an
 #    insertion inside phase 2; reject-after-window rejects one after the windows.
 for spec in \
-  'insert-key:[["insertAbsent","insertAbsent"]]' \
-  'update-existing-key:[["insertAbsent","insertAbsent"],["updateActive","updateActive"]]' \
-  'delete-existing-key:[["insertAbsent","insertAbsent"],["deleteAbsent","deleteAbsent"]]' \
-  'reinsert-deleted-key:[["insertAbsent","insertAbsent"],["deleteAbsent","deleteAbsent"],["insertAbsent","insertAbsent"]]' \
+  'insert-key:[["insertActive","insertActive"]]' \
   'retract-inside-window:[["insertActive","retract"]]' \
   'reject-after-window:[["insertActive","reject"]]'; do
   row="${spec%%:*}"
@@ -200,35 +196,47 @@ for spec in \
     exit 1
   }
 done
-# insert-occupied-key (#287): the insertion on an occupied key is a compared story.
-# An insertAbsent books the key in the row's registry and an
-# updateActive makes it active, the state the shared session key has
-# when this row runs after update-existing-key; both are accepted by both sides and
-# compared on all nine observations, the refusal's connected control.
-# The same insertAbsent on that key is then refused by the state
-# script and by the model for key-exists, and the traced replay of
-# the refused transaction admitted key-exists.
-# jq expands its own --arg variables inside this program.
+# The occupied-key refusal follows an actual registration. The excluded
+# update encoding is refused separately and receives no broader update credit.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   (.steps | length) == 3
   and ([.steps[] | [.edge, .exit, .tamper]]
-    == [["insertAbsent", "insertAbsent", null],
-        ["updateActive", "updateActive", null],
-        ["insertAbsent", "insertAbsent", null]])
+    == [["insertActive", "insertActive", null],
+        ["insertActive", "insertActive", null],
+        ["updateActive", "updateActive", null]])
   and ([.steps[].registry] | unique | length) == 1
   and ([.steps[].request.key] | unique | length) == 1
-  and (.steps[0:2] | all(.[];
-    .model.outcome == "accepted" and .chain.outcome == "accepted"
-    and .comparison == "agrees" and (.compared | length) == 9))
-  and .steps[2].model == {"outcome": "refused", "reason": "key-exists"}
-  and .steps[2].chain.outcome == "refused"
-  and (.steps[2].chain.refusal.hashes | index($state) != null)
-  and .steps[2].chain.refusal.trace == "key-exists"
-  and .steps[2].comparison == "agrees"
-  and .transactions == [.steps[0].chain.txid, .steps[1].chain.txid]
-' "${CONFORMANCE_RECEIPTS}"/receipt-insert-occupied-key.json >/dev/null || {
-  echo 'FAIL: insert-occupied-key occupied-key story evidence moved'
+  and (.steps[0] | .model.outcome == "accepted" and .chain.outcome == "accepted"
+    and .comparison == "agrees" and (.compared | length) == 9 and .perturbation.refused > 0)
+  and .steps[1].model == {"outcome": "refused", "reason": "key-exists"}
+  and .steps[2].model == {"outcome": "refused", "reason": "edge-inadmissible"}
+  and all(.steps[1:3][]; .chain.outcome == "refused"
+    and (.chain.refusal.hashes | index($state) != null)
+    and .chain.refusal.trace == .model.reason and .comparison == "agrees")
+  and .transactions == [.steps[0].chain.txid]
+' "${CONFORMANCE_RECEIPTS}/receipt-insert-occupied-key.json" >/dev/null || {
+  echo 'FAIL: insert-occupied-key current story evidence moved'
+  exit 1
+}
+bash test/ci/permanent-retirement-evidence.sh "${CONFORMANCE_RECEIPTS}/receipt-permanent-retire-active-key.json" "$head_sha" "$state_hash"
+# The real receipt overlay must leave every retained broader requirement
+# visible and uncovered, even beside current retirement execution evidence.
+nix run --quiet .#conformance -- list --receipts "$CONFORMANCE_RECEIPTS" >"$CONFORMANCE_RECEIPTS/consumer-scope-inventory.tsv"
+found=0
+while IFS=$'\t' read -r scope_identity _scope_group _scope_expected scope_state scope_requirement; do
+  case "$scope_identity" in
+    update-existing-key | delete-existing-key | reinsert-deleted-key | retire-active-key)
+      [ "$scope_state" = uncovered ] && [ -n "$scope_requirement" ] || {
+        echo "FAIL: broader requirement $scope_identity was credited or missing its text"
+        exit 1
+      }
+      found=$((found + 1))
+      ;;
+  esac
+done <"$CONFORMANCE_RECEIPTS/consumer-scope-inventory.tsv"
+[ "$found" -eq 4 ] || {
+  echo 'FAIL: the broader requirements are missing from the computed inventory'
   exit 1
 }
 # 9. register-active-key (#184): the insertActive edge observation, complete or
@@ -358,7 +366,7 @@ grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGEN
 # 11. empty-fold (#287): the empty fold is compared with the model's fold batch
 #     over no request, refused by both for empty-fold with the reason the
 #     traced replay admits for the state script, beside its accepting
-#     control, an insertion folded on the same registry.
+#     control, an Active registration folded on the same registry.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
@@ -369,7 +377,7 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
     and (.chain.refusal.hashes | index($state) != null)
     and .chain.refusal.trace == "empty-fold"
     and .comparison == "agrees")
-  and (.steps[1] | .edge == "insertAbsent" and .tamper == null
+  and (.steps[1] | .edge == "insertActive" and .tamper == null
     and .model.outcome == "accepted" and .chain.outcome == "accepted"
     and .comparison == "agrees" and (.compared | length) == 9)
   and ([.steps[].registry] | unique | length) == 1
@@ -460,7 +468,7 @@ got="$(nix run --quiet nixpkgs#jq -- -r '
 #     refused steps and batches meet the model's reason, and each
 #     attribution row names, per failing purpose, the reason the replay
 #     admitted or the cause it admits none.
-for row in insert-occupied-key reject-before-deadline-consumer-requirement empty-fold request-value-and-refund-routing register-active-key; do
+for row in insert-occupied-key permanent-retire-active-key reject-before-deadline-consumer-requirement empty-fold request-value-and-refund-routing register-active-key; do
   bash test/ci/replay-evidence.sh steps "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || {
     echo "FAIL: $row refused steps lack the traced replay of their reason"
     exit 1
@@ -472,5 +480,5 @@ for row in fold-against-superseded-root surplus-fold-actions; do
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 13 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold request-value-and-refund-routing and reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records the known refund-position divergence (#361). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
+echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold request-value-and-refund-routing and reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records the known refund-position divergence (#361). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

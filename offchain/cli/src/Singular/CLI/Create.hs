@@ -82,7 +82,6 @@ import Singular.CLI.Registry
     ( Release (..)
     , economics
     , hexT
-    , loadRelease
     , parseEnterpriseAddress
     , pendingPath
     , pinsOf
@@ -94,7 +93,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( Building (..)
-    , Env
+    , Env (..)
     , WriteContext (..)
     , expecting
     , failWith
@@ -174,7 +173,7 @@ runCreate env a = do
     refuseExisting dir
         >>= either (failWith ClientRefusal . renderIdentityError) pure
     rel <-
-        loadRelease (createBlueprint a)
+        envLoadRelease env (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
     case createMode a of
         Preview settings addrText -> do

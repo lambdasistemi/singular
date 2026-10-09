@@ -1,10 +1,5 @@
-// The naming profile. Naming is an *instance* of the registry, not a second
-// model, so this does not re-implement it: it replays the rows the Lean naming
-// corpus exports and plays the one journey a reader should watch — a retired
-// name attested by a folded read, the Over witness minted and freely burned.
-//
-// Re-implementing naming in JavaScript is what the previous simulator did, and
-// it is how a mirror drifts from what it mirrors.
+// The naming profile inspects the Lean naming corpus and plays registration,
+// permanent retirement, and refusal of a raw terminal-witness request.
 import { initial, step, witnesses, trieGet } from './core.mjs';
 import { approved, read } from './actions.mjs';
 
@@ -115,7 +110,7 @@ export function checkNamingCorpus(corpus) {
  * watch the attestation minted by a folded read — twice, because it is plural —
  * then burned, because an implicational witness may be. Unlike the corpus
  * checks above this EXECUTES behavior: each step runs the engine. */
-export function overWitnessJourney(key = 42, owner = 42, output = 555) {
+export function permanentRetirementJourney(key = 42, owner = 42, output = 555) {
   const steps = [];
   let state = initial();
   const take = (what, req) => {
@@ -133,17 +128,6 @@ export function overWitnessJourney(key = 42, owner = 42, output = 555) {
   };
   take('the controller books the name', approved('insertActive', key, { owner, output }));
   take('the quorum retires it: updateTerminal', approved('updateTerminal', key, { owner, output }));
-  take('a folded read mints the Over witness', read(key, 700));
-  take('and another: the terminal witness is plural', read(key, 701));
-  // burning is free: an implicational witness may be dropped and stays true
-  const burned = { ...state, held: state.held.filter((h) => h.kind !== 'terminal') };
-  steps.push({
-    what: 'both Over witnesses burned; the leaf is still terminal',
-    edge: '(burn)',
-    accepted: true,
-    reason: '',
-    witnesses: witnesses(burned, key),
-    leaf: trieGet(burned.trie, key),
-  });
-  return { steps, final: burned };
+  take('terminal witnessing is refused by M1', read(key, 700));
+  return { steps, final: state };
 }

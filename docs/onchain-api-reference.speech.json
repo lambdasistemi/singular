@@ -5,7 +5,21 @@
       "pause": 500
     },
     {
-      "text": "A contributor changing a registry validator — a refusal in the fold, the custody spend, a shared type — wants to click a module and land on its real interface: every public function, type and constant with the documentation its source carries, and a link to the lines that define it, for exactly the validators this repository ships. This page is the entry point of that reference: the pages the pinned aiken docs generates from the onchain/ Aiken project, rebuilt with the documentation site from the same source tree.",
+      "text": "A contributor changing a registry validator — a refusal in the fold, the request exit, a shared type — wants to click a module and land on its real interface: every public function, type and constant with the documentation its source carries, and a link to the lines that define it, for exactly the validators this repository ships. This page is the entry point of that reference: the pages the pinned aiken docs generates from the onchain/ Aiken project, rebuilt with the documentation site from the same source tree.",
+      "pause": 400
+    }
+  ],
+  "encoded-requests-and-supported-operations": [
+    {
+      "text": "Encoded requests and supported operations.",
+      "pause": 500
+    },
+    {
+      "text": "The permanent first-milestone contract accepts insertActive (registration) and updateTerminal (permanent termination). The shared request datum and redeemer types still encode all seven edges. Encoding an action does not make it supported: witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive are rejected by the permanent state validator, including independently constructed requests and an excluded member of a mixed batch.",
+      "pause": 400
+    },
+    {
+      "text": "The canonical state, witness, registry/admission, registry/modify and registry/fold modules implement this one active contract. The earlier broader implementations and success evidence are archived on preserve/m2/pre-m1-source-removal; they are not current permanent contract support. The witness policy checks state-validator co-presence, so transaction admission also requires the state validator. A raw terminal-policy representation or a fixture-only pure burn does not enable terminal witnessing. The candidate evidence records compiled refusal controls and their setup, reachability and live-comparison limits.",
       "pause": 400
     }
   ],
@@ -55,11 +69,15 @@
       "pause": 300
     },
     {
-      "text": "registry/custody — the cage's custody of absent tokens",
+      "text": "registry/refusal — how a refusal is reported, and the shared reasons",
       "pause": 300
     },
     {
-      "text": "registry/refusal — how a refusal is reported, and the shared reasons",
+      "text": "The fixed admission boundary:",
+      "pause": 400
+    },
+    {
+      "text": "registry/admission — refusing excluded and malformed request actions before approval",
       "pause": 300
     },
     {
@@ -127,6 +145,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "bd2887acd04a3e69c06504fd65dc519460b942531958966664c3ef50f443afde"
+    "sha256": "81fbe4ee8967161cbca3fe2c3a6d3b8670a8cbba899fdd4722bac2bb86e8d91d"
   }
 }

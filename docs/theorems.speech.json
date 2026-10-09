@@ -9,7 +9,11 @@
       "pause": 400
     },
     {
-      "text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 36 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 57 in total, each with its own manifest and its own compiled gate.",
+      "pause": 400
+    },
+    {
+      "text": "The operator-authorized source removal retires ten declarations about excluded success behavior. Their historical proofs and receipts remain on preserve/m2/pre-m1-source-removal; they do not certify permanent contract. The active model retains the applicable invariant, exit, refund, datum and public-fold laws. Public unmet consumer requirements remain uncovered.",
       "pause": 400
     }
   ],
@@ -23,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "Every promise is reached through one invariant — Consistent — that the model proves survives each of the seven edges. That is why the statements read as consequences rather than as separate arguments.",
+      "text": "Every promise is reached through one invariant — Consistent — that the model proves survives each supported transition. That is why the statements read as consequences rather than as separate arguments.",
       "pause": 400
     }
   ],
@@ -71,6 +75,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "702d6e5ddf3f8023cf905f87383e831cb13891fcc284b4d0db6c56e829b05b28"
+    "sha256": "fb6b3ca607c7b7487ad6a1f7ae444054838db801089f438a787950229dd9b728"
   }
 }

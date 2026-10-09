@@ -41,6 +41,7 @@ module Conformance.EvidencePage
     , runEvidencePage
     ) where
 
+import Conformance.Edge.Permanent qualified as Permanent
 import Control.Monad (unless)
 import Data.Aeson
     ( FromJSON (..)
@@ -384,10 +385,25 @@ layout model rows snap =
           \documentation check regenerates it from those committed files and fails on \
           \any difference."
         , ""
+        , "The runs below are a historical snapshot of the broader registry law at \
+          \their recorded code revision. They certify that revision only. To assess \
+          \current two-edge coverage, read `conformance list` with receipts from the \
+          \current revision. A separate supported retirement story cannot certify \
+          \the original successful Absent, deletion or reincarnation requirements."
+        , ""
         ]
 
     sections =
         [ Section
+            2
+            "Permanent registration and termination"
+            [ "This bounded story targets the new permanent contract. Its evidence state is computed with the inventory below; historical broader receipts do not execute it. Exported script evaluation and the packaged ordinary CLI journey remain separate boundaries. The new release abandons earlier deployed registries; protected rejection follows this carve before the first milestone can close."
+            , ""
+            , T.pack Permanent.description
+            ]
+            [ "A new permanent registry supports registration and permanent termination only. The story compares both allowed operations and refusals of all five excluded operations, including a mixed batch. Its current live conformance evidence state is read from receipts, never assigned from component tests."
+            ]
+        , Section
             2
             "What this evidence is bound to"
             [ "| | |"

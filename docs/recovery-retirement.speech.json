@@ -11,6 +11,10 @@
     {
       "text": "It is also for a holder who wants to end a name permanently, and for the quorum fixed at registration that can end it without the holder. Ending a name needs the committed recovery key or that quorum — the everyday control key alone cannot do it. Either route moves the active witness into completion-only custody, a script with no withdrawal path, and neither route can be turned into a takeover or a payment redirection.",
       "pause": 400
+    },
+    {
+      "text": "The ledger receipts described below belong to the archived broader source. The current two-edge model retains the applicable application maintenance, recovery and retirement rules, but those historical receipts do not certify the revised compiled candidate. See current candidate results.",
+      "pause": 400
     }
   ],
   "how-a-name-moves-in-the-registry": [
@@ -19,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "Naming is an instance of the registry, not a layer bolted beside it: a name is one key whose value is a single byte — Absent, Active or Terminal — and seven requests move a key, each one moving a witness token. The naming walkthrough states the state table, the seven requests and the four witness laws once; this page shows two of those edges, recovery and retirement, executed on a real ledger.",
+      "text": "Naming is an instance of the registry, not a layer bolted beside it: a name is one key whose value is a single byte — Absent, Active or Terminal — and two supported registry requests move a key, each one moving a witness token. The naming walkthrough states the archived state table and witness laws once; this page shows application recovery and registry retirement as historical ledger evidence.",
       "pause": 400
     },
     {
@@ -153,6 +157,6 @@
   ],
   "_source": {
     "file": "recovery-retirement.md",
-    "sha256": "d374d9eeec907d7377582cdce486f546530686e41454e02ba96b2ffd42e9a450"
+    "sha256": "7ef21838a4e1b3dfc44bd1ae12643a94a41d90aa332a516877fbfcc804ba5a63"
   }
 }

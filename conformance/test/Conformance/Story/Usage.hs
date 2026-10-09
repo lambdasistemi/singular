@@ -258,7 +258,7 @@ spec = do
             rendered `shouldSatisfy` isInfixOf "Submit **updateTerminal**"
             rendered `shouldSatisfy` isInfixOf "Submit **insertAbsent**"
     it
-        "The retirement chapter pays a deletion's deposit back elsewhere and one lovelace short beside the untampered deletion"
+        "The current retirement chapter compares excluded deletion beside termination without claiming deletion refunds"
         $ do
             let rendered =
                     Live.renderLive
@@ -268,15 +268,14 @@ spec = do
                         )
             rendered
                 `shouldSatisfy` isInfixOf
-                    "Submit **deleteActive** for **deleted** in **retirement** with the payment it owes one lovelace short"
-            rendered
-                `shouldSatisfy` isInfixOf
-                    "Submit **deleteActive** for **deleted** in **retirement** with the payment it owes sent to another address"
-            rendered
-                `shouldSatisfy` isInfixOf
                     "Submit **deleteActive** for **deleted** in **retirement**, using the holder."
+            rendered
+                `shouldSatisfy` isInfixOf
+                    "Submit **updateTerminal** for **deleted** in **retirement**, using the holder."
+            rendered `shouldSatisfy` (not . isInfixOf "one lovelace short")
+            rendered `shouldSatisfy` (not . isInfixOf "sent to another address")
     it
-        "The occupied-key story books its key active through accepted requests, then inserts it again, comparing each"
+        "The occupied-key story registers its key, refuses the duplicate and compares an excluded encoding"
         $ do
             let program =
                     Occupied.story (Live.Context "occupied insert" "holder wallet")
@@ -287,7 +286,7 @@ spec = do
             occurrences "Compare **" rendered `shouldBe` 3
             filter ("- Submit **" `isPrefixOf`) (lines rendered)
                 `shouldBe` [ "- " <> submitted edge <> ", using the holder wallet."
-                           | edge <- ["insertAbsent", "updateActive", "insertAbsent"]
+                           | edge <- ["insertActive", "insertActive", "updateActive"]
                            ]
             Live.validateLive (dropFirstCompare program) `shouldSatisfy` isLeft
     it "accepts the complete unnamed sequence before submitting" $ do

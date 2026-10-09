@@ -55,7 +55,7 @@ import Singular.Registry.TxBuilder.Internal
     , cagePolicyIdFromCfg
     , extractCageDatum
     , findStateUtxo
-    , leafAbsent
+    , leafActive
     , requestAddrFromCfg
     )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
@@ -63,7 +63,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , edgeInsertAbsent
+    , edgeInsertActive
     )
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -74,7 +74,7 @@ journeyKey :: ByteString
 journeyKey = "hello"
 
 journeyValue :: ByteString
-journeyValue = leafAbsent
+journeyValue = leafActive
 
 {- | Boot a cage: mint the state token, register its trie,
 observe the state UTxO and read the boot state datum.
@@ -145,7 +145,7 @@ stepRequest wallet cfg codes prov caps tid = do
             (walletAddr wallet)
             tid
             journeyKey
-            edgeInsertAbsent
+            edgeInsertActive
     after <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require
         "request: request UTxO observed at the request address"

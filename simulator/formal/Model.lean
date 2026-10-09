@@ -4,12 +4,12 @@ import Lean
 else — is this key known, and where in its life is it.
 
 `Leaf ::= Unknown | Known State` with `State ::= Absent | Active | Terminal`.
-Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta
-over three token kinds. Six of them are tree changes admitted only by an
-approval under the pinned application policy whose scoping tuple matches the
-request (approval-asset-binding); the seventh, `witnessTerminal`, is a read that changes
-nothing and needs none. The fold sums the deltas of the edges it folded and
-refuses any claimed mint that differs.
+Seven edge encodings retain their original ordinals. Only registration
+(`insertActive`) and permanent retirement (`updateTerminal`) can succeed.
+Both require a tuple-bound approval under the pinned application policy;
+the other five encodings are refused before approval or trie effects. The
+fold sums admitted keyed deltas and refuses a different claimed mint.
+
 
 Tagged commitments stand for collision-free canonical commitments; the trie is
 an authenticated logical map whose root is derived from its content, and an
@@ -63,7 +63,7 @@ def decodeState (bytes : ByteArray) : Option State :=
   | [0x02] => some .terminal
   | _ => none
 
-/-- The seven edges. Exactly seven; there is no free-form `update`. -/
+/-- Historical wire tags, with their original order. Five encode refused actions. -/
 inductive Edge where
   | insertAbsent | insertActive | updateActive | updateTerminal
   | deleteAbsent | deleteActive | witnessTerminal
@@ -121,16 +121,18 @@ instance : LawfulBEq TokenKind where
   eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
   rfl {a} := by cases a <;> rfl
 
-/-- The seven-edge table: each edge's delta, read off the edge and nothing else. -/
+/-- The historical edge constructors retain their wire ordinals. Only these
+ two operations belong to the permanent first-milestone contract. -/
+def allowed (e : Edge) : Bool :=
+  e == .insertActive || e == .updateTerminal
+
+/-- Mint deltas exist only for supported operations. Excluded encodings never
+ reach an admitted fold and have no production token movement. -/
 def delta (e : Edge) : List (TokenKind × Int) :=
   match e with
-  | .insertAbsent => [(.absent, 1)]
   | .insertActive => [(.active, 1)]
-  | .updateActive => [(.absent, -1), (.active, 1)]
   | .updateTerminal => [(.active, -1)]
-  | .deleteAbsent => [(.absent, -1)]
-  | .deleteActive => [(.active, -1)]
-  | .witnessTerminal => [(.terminal, 1)]
+  | _ => []
 
 /-- Sum a delta list along one token kind. -/
 def deltaKind (ds : List (TokenKind × Int)) (k : TokenKind) : Int :=
@@ -162,17 +164,11 @@ which is exactly the fault `assetSame` catches and a per-kind sum does not. -/
 def assetKindTotal (ds : List (Asset × Int)) (k : TokenKind) : Int :=
   ds.foldl (fun n p => if p.1.1 == k then n + p.2 else n) 0
 
-/-- The seven-edge from→to column: `none` is refusal; every edge out of
-`known terminal` is `none`. -/
+/-- Exactly two trie transitions; every excluded encoding returns none. -/
 def transition (e : Edge) (before : Leaf) : Option Leaf :=
   match e, before with
-  | .insertAbsent, .unknown => some (.known .absent)
   | .insertActive, .unknown => some (.known .active)
-  | .updateActive, .known .absent => some (.known .active)
   | .updateTerminal, .known .active => some (.known .terminal)
-  | .deleteAbsent, .known .absent => some .unknown
-  | .deleteActive, .known .active => some .unknown
-  | .witnessTerminal, .known .terminal => some (.known .terminal)
   | _, _ => none
 
 /-- The state configuration: eight fields. All eight are pinned when the
@@ -502,13 +498,6 @@ def route (k : TokenKind) (_request : Request) : Destination :=
   | .active => .requestOutput
   | .terminal => .requestOutput
 
-/-- A read of `key` claiming `value` is verified against the root of `s` — the
-state at the read's position in the batch — and only a leaf that can no longer
-move may be attested. `position` names the position `s` occupies in the batch;
-the verification binds to `s` itself, which the fold threads. -/
-def readAt (s : RegistryState) (_position : Nat) (key : Key) (value : State) : Bool :=
-  s.config.root == rootOf s.trie && trieGet s.trie key == .known value && value == .terminal
-
 /-- The canonical request of each edge, in the frame where the frozen
 three-argument `admits` observes admission: key 5; owner 42, or 91 — the refund
 address — for the absent edges; destination 99, or the cage-custody sentinel 0
@@ -519,18 +508,10 @@ def canonicalRequest (e : Edge) : Request :=
   | .deleteAbsent => { edge := e, key := 5, owner := 91, refundAddress := 91 }
   | _ => { edge := e, key := 5, owner := 42, output := 99 }
 
-/-- The real admission decision for a request (approval-admission with approval-asset-binding). The six
-tree edges need an approval under the pinned application policy whose
-`(edge, key, owner, destination)` tuple matches the request and whose asset
-name binds its own tuple: right policy is necessary and not sufficient.
-`witnessTerminal` requires none and is never refused for carrying a stray
-one (application-decides-absence-booking: `insertAbsent` is admitted exactly like the other five tree
-edges, by an approval under the pinned policy and nothing else). -/
+/-- Both supported operations need the pinned application's exact approval.
+ This shared predicate checks a tuple; refusal separately enforces the two-edge boundary. -/
 def admitsFor (c : Config) (r : Request) (approval : Option Approval) : Bool :=
-  match r.edge with
-  | .witnessTerminal => true
-  | _ =>
-    match approval with
+  match approval with
     | none => false
     | some ap =>
       ap.policy == c.applicationPolicy && ap.edge == r.edge && ap.key == r.key &&
@@ -541,54 +522,29 @@ def admitsFor (c : Config) (r : Request) (approval : Option Approval) : Bool :=
 three-argument shape evaluates the real per-request decision at the edge's
 canonical request. -/
 def admits (c : Config) (e : Edge) (approval : Option Approval) : Bool :=
-  admitsFor c (canonicalRequest e) approval
+  allowed e && admitsFor c (canonicalRequest e) approval
 
-/-- The refusal decision: `none` admits, `some why` refuses with an observable
-reason. This is the complement of the seven-edge table, stated as a function, so a
-triple nobody thought of is refused by construction rather than by omission. -/
+/-- Refuse excluded encodings before approvals or proofs; accepted actions
+ still owe every original approval, leaf and active-token obligation. -/
 def refusal (s : RegistryState) (a : Action) : Option String :=
-  let before := trieGet s.trie a.key
-  if a.edge == .witnessTerminal then
-    if readAt s 0 a.key .terminal then none
-    else some (match before with
-      | .unknown => "read-unknown"
-      | .known .absent => "read-absent"
-      | .known .active => "read-active"
-      | .known .terminal => "read-invalid")
-  else
-    match a.approval with
+  if !allowed a.edge then some "edge-inadmissible"
+  else match a.approval with
     | none => some "no-approval"
     | some ap =>
       if ap.policy != s.config.applicationPolicy then some "no-approval"
       else if !admitsFor s.config a a.approval then some "approval-mismatch"
       else
-        let custodyPresent := s.custody.any (·.key == a.key)
+        let before := trieGet s.trie a.key
         let activePresent := s.held.any fun h => h.key == a.key && h.kind == .active
         match a.edge, before with
-        | .insertAbsent, .unknown
         | .insertActive, .unknown => none
-        | .insertAbsent, _ | .insertActive, _ => some "key-exists"
-        | .witnessTerminal, _ => some "read-invalid"
-        | .updateActive, .known .absent =>
-            if custodyPresent then none else some "custody-missing"
-        | .updateActive, .unknown => some "key-unknown"
-        | .updateActive, .known .active => some "already-booked"
-        | .updateActive, .known .terminal => some "terminal-immutable"
+        | .insertActive, _ => some "key-exists"
         | .updateTerminal, .known .active =>
             if activePresent then none else some "token-missing"
         | .updateTerminal, .unknown => some "key-unknown"
         | .updateTerminal, .known .absent => some "not-booked"
         | .updateTerminal, .known .terminal => some "terminal-immutable"
-        | .deleteAbsent, .known .absent =>
-            if custodyPresent then none else some "custody-missing"
-        | .deleteAbsent, .unknown => some "key-unknown"
-        | .deleteAbsent, .known .active => some "not-absent"
-        | .deleteAbsent, .known .terminal => some "terminal-immutable"
-        | .deleteActive, .known .active =>
-            if activePresent then none else some "token-missing"
-        | .deleteActive, .unknown => some "key-unknown"
-        | .deleteActive, .known .absent => some "not-active"
-        | .deleteActive, .known .terminal => some "terminal-immutable"
+        | _, _ => some "edge-inadmissible"
 
 /-- The result of folding a batch. -/
 structure Result where
@@ -603,30 +559,15 @@ def emptyResult (s : RegistryState) : Result :=
 def combineResults (first rest : Result) : Result :=
   { state := rest.state, mint := assetPlus first.mint rest.mint, paid := first.paid ++ rest.paid }
 
-/-- Apply an admitted edge. The trie change, the token ledgers and the mint are
-exactly the seven-edge row of the edge; consuming an absent token pays its value to the
-refund address recorded in its custody datum (custody-lovelace-refund). -/
+/-- Apply one of the two admitted operations. The fallback has no effect and
+ is unreachable through step, which refuses every excluded encoding. -/
 def applyEdge (s : RegistryState) (a : Action) : Result :=
-  let entry := s.custody.find? (·.key == a.key)
   let state : RegistryState :=
     match a.edge with
-    | .insertAbsent =>
-      let trie := trieSet s.trie a.key (.known .absent)
-      { s with trie := trie
-             , config := { s.config with root := rootOf trie }
-             , custody := { key := a.key, refundAddress := a.refundAddress
-                          , value := a.deposit } :: s.custody }
     | .insertActive =>
       let trie := trieSet s.trie a.key (.known .active)
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
-             , held := { key := a.key, kind := .active, output := a.output
-                        , datum := a.datum } :: s.held }
-    | .updateActive =>
-      let trie := trieSet s.trie a.key (.known .active)
-      { s with trie := trie
-             , config := { s.config with root := rootOf trie }
-             , custody := s.custody.filter (·.key != a.key)
              , held := { key := a.key, kind := .active, output := a.output
                         , datum := a.datum } :: s.held }
     | .updateTerminal =>
@@ -634,29 +575,10 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
-    | .deleteAbsent =>
-      let trie := trieErase s.trie a.key
-      { s with trie := trie
-             , config := { s.config with root := rootOf trie }
-             , custody := s.custody.filter (·.key != a.key) }
-    | .deleteActive =>
-      let trie := trieErase s.trie a.key
-      { s with trie := trie
-             , config := { s.config with root := rootOf trie }
-             , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
-    | .witnessTerminal =>
-      { s with held := { key := a.key, kind := .terminal, output := a.output
-                           , datum := a.datum } :: s.held }
-  let paid : List (Nat × Nat) :=
-    match a.edge, entry with
-    | .updateActive, some c => [(c.refundAddress, c.value)]
-    | .deleteAbsent, some c => [(c.refundAddress, c.value)]
-    | _, _ => []
-  { state := state, mint := assetDelta a, paid := paid }
+    | _ => s
+  { state, mint := assetDelta a, paid := [] }
 
-/-- The step function: refuse every `(primitive, value, before-leaf)` triple
-outside the seven-edge table — the refused reads included — and otherwise apply the
-edge. -/
+/-- A step succeeds only when refusal admits its action. -/
 def step (s : RegistryState) (a : Action) : Except String Result :=
   match refusal s a with
   | some why => .error why
@@ -1016,23 +938,19 @@ structure Payment where
   atLeast : Nat
   deriving Repr, BEq, DecidableEq
 
-/-- What an exit owes. A fold delivering a token owes the deposit with it: to cage
-custody for `insertAbsent`, to the named destination for `insertActive`,
-`updateActive` and `witnessTerminal`. A fold delivering nothing and a reject owe
-the deposit back to the owner. A retract owes the owner everything the request
-held, deposit and tip; every other exit leaves the tip to the folder. A retract
-owes it through an output bound to the request by its `reference`, as the chain
-binds a retraction's return. -/
+/-- Registration owes its deposit at the named destination. Termination and
+reject owe it to the owner; retract returns deposit and tip through a
+request-reference-bound output. Excluded folds have no success obligations. -/
 def obligations (exit : Exit) (request : Request) : List Payment :=
   match exit with
-  | .fold .insertAbsent => [{ recipient := .custody, atLeast := request.deposit }]
-  | .fold .insertActive | .fold .updateActive | .fold .witnessTerminal =>
+  | .fold .insertActive =>
     [{ recipient := .destination (requestDestination request) request.datum
      , atLeast := request.deposit }]
-  | .fold .updateTerminal | .fold .deleteAbsent | .fold .deleteActive | .reject =>
+  | .fold .updateTerminal | .reject =>
     [{ recipient := .owner request.owner, atLeast := request.deposit }]
   | .retract =>
     [{ recipient := .bound request.owner request.reference, atLeast := request.deposit + request.tip }]
+  | .fold _ => []
 
 /-- Whether an output carries exactly this datum: the value inline, or no datum
 for none. Another value, a datum where none is carried, none where one is, or a
@@ -1123,8 +1041,7 @@ request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
 retract carries no admission here: it leaves the registry state as it was and
 mints nothing; a retraction's admission stands in front of this step, in
 `admittedExitStep`. Every exit pays what it owes, each payment recorded by
-`paymentPaid`, and then what its step pays: the custody refunds of `updateActive` and
-`deleteAbsent`. -/
+`paymentPaid`; supported registry steps create no additional custody refunds. -/
 def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
   let executed : Except String Result :=
     match exit with
@@ -1396,9 +1313,8 @@ def route (k : TokenKind) : Destination :=
   | .cageCustody => .cageCustody
   | .requestOutput => .requestOutput
 
-/-- A canonical reachable-shape state: key 5 is `Known Absent`, its absent token
-in cage custody with refund address 77 and value 100, named by the
-`insertAbsent` request that created it. -/
+/-- A synthetic invalid-context state, unreachable from M1 genesis: key 5 is `Known Absent`, its absent token
+in cage custody with refund address 77 and value 100, retained solely for legacy encoding/refusal queries. -/
 def canonicalCustody : RegistryState :=
   let trie : Trie := [(5, .known .absent)]
   { config := { referenceConfig with root := rootOf trie }
@@ -1414,11 +1330,8 @@ def referenceEdgeRequest (e : Edge) : Request :=
   { r with deposit := 55
          , approval := if e == .witnessTerminal then none else some (canonicalApproval e) }
 
-/-- custody-lovelace-refund, observed by executing the model: fold each edge at the canonical
-state and classify where the consumed absent token's value was paid. The two
-edges that consume the absent token pay the refund address its custody datum
-records; a wrong model pays the consuming request's output, the folder, or
-retains the value, and is detected. -/
+/-- Legacy refund query over the synthetic absent fixture. Excluded folds
+refuse rather than consume custody; no production success is claimed. -/
 def refund (e : Edge) : Option RefundTarget :=
   match step canonicalCustody (referenceEdgeRequest e) with
   | .error _ => none

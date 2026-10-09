@@ -1,6 +1,6 @@
 # Decisions and executable abstractions
 
-**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](model-ledger.md#the-retirement-map) records what replaced each part of this design.
+**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior](naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
 
 As an application designer, use these decisions to distinguish behavior you can explore from construction choices you still need to settle. A successful modeled transition satisfies the selected logical checks; a refusal exposes a failed obligation. Neither result chooses your deployed scripts or proves your application policy.
 

@@ -28,7 +28,6 @@ module UpdateTerminal.Registry
     , Registry (..)
     , bootRegistry
     , insertOp
-    , absentOp
     , retireOp
     , walletDestination
     , book
@@ -107,7 +106,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , OnChainTxOutRef
     , RequestDestination
-    , edgeInsertAbsent
     , edgeInsertActive
     , edgeUpdateTerminal
     )
@@ -139,10 +137,9 @@ data Registry = Registry
     , regTidBytes :: ByteString
     }
 
--- | The three seven-admitted-edges rows this story walks (#183).
-insertOp, absentOp, retireOp :: Edge
+-- | The two supported transitions this story walks (#183).
+insertOp, retireOp :: Edge
 insertOp = edgeInsertActive
-absentOp = edgeInsertAbsent
 retireOp = edgeUpdateTerminal
 
 {- | The open story names a WALLET. 'Edges.edgeDestinationOf' would send

@@ -1,4 +1,4 @@
-//// Rows for the open-datum application (#299, #310).
+//// The preserved application controls, rebound to the permanent contract.
 ////
 //// Every refusal is `== False` and sits beside an accepting control that
 //// moves exactly one fact back. The release rows run the SAME transaction
@@ -10,19 +10,22 @@ use aiken/cbor
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/primitive/bytearray
+use aiken/primitive/int
+use aiken/primitive/string
 use application/envelope.{
   BookInsert, BookTerminate, Control, Envelope, OpenDatumMint, Release,
   StateAsset, Update, envelopeHash, envelopeVersion,
 }
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
+use cardano/script_context.{Minting, ScriptContext, ScriptInfo, Spending}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
 }
 use lib.{approvalDestination, approvalName}
-use open_datum
+use open_datum as open_datum
 use registry_fixtures as fx
-use state
+use state as state
 use types.{
   Modify, Rejected, Request, RequestAction, RequestDatum, State, StateDatum,
   TokenId, UpdateAction,
@@ -140,15 +143,14 @@ fn holding() -> Input {
 // Golden vector shared with the off-chain codec
 // ----------------------------------------------------------------------------
 
-/// The CBOR and BLAKE2b-256 of `envelopeA`, byte for byte what
-/// `Singular.Application.OpenDatum.EnvelopeSpec` asserts for the same
-/// envelope.
+/// The original envelope vector with only its state-policy bytes rebound;
+/// the CBOR and BLAKE2b-256 were independently regenerated from that vector.
 test envelope_a_serialises_to_the_shared_cbor() {
-  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd934a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
+  cbor.serialise(envelopeA()) == #"d8799fd8799f01d8799f581c68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc54a636167652d746f6b656eff581caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa446b657941581cd1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d11a001e8480ff45616c696365ff"
 }
 
 test envelope_a_hashes_to_the_shared_digest() {
-  envelopeHash(envelopeA()) == #"2844c9737cde5dca3effcff86669cd38affda906362c5c6fccdd529e3fca9609"
+  envelopeHash(envelopeA()) == #"01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e38"
 }
 
 // ----------------------------------------------------------------------------
@@ -181,7 +183,7 @@ fn requestOutput(
   name: ByteArray,
 ) -> Output {
   Output {
-    address: fx.cageAddress(),
+    address: address.from_script(registryStateHash),
     value: from_lovelace(fx.tip + depositAmount)
       |> merge(from_asset(app, name, 1)),
     datum: InlineDatum(
@@ -1265,7 +1267,7 @@ fn requestTwo() -> Input {
   Input {
     output_reference: requestRefTwo,
     output: Output {
-      address: fx.cageAddress(),
+      address: address.from_script(registryStateHash),
       value: from_lovelace(fx.tip + fx.deposit)
         |> merge(
             from_asset(
@@ -1423,4 +1425,65 @@ test withdrawal_as_update_to_a_wallet_refuses() {
       [controller],
     ),
   ) == False
+}
+
+fn exportApplication(
+  number: Int,
+  tx: Transaction,
+  redeemer: Data,
+  info: ScriptInfo,
+) -> Bool {
+  let context: Data = ScriptContext { transaction: tx, redeemer, info }
+  let parameter: Data = registry()
+  let arguments: Data = [parameter, context]
+  trace string.join(
+    [
+      @"M1-APPLICATION",
+      int.to_string(number),
+      bytearray.to_hex(cbor.serialise(arguments)),
+    ],
+    @":",
+  )
+  True
+}
+
+test export_application_contexts() {
+  let e = envelopeA()
+  let insert: Data =
+    BookInsert {
+      key: e.control.key,
+      owner: controller,
+      address: appAddress(),
+      envelope: e,
+    }
+  let terminate: Data =
+    BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
+  let update: Data = Update
+  let release: Data = Release
+  let datum: Data = e
+  and {
+    exportApplication(0, honestInsertTx(e), insert, Minting(app)),
+    exportApplication(
+      1,
+      terminateTx(
+        [stateInput(), holding()],
+        [controller],
+        terminateName(controller),
+      ),
+      terminate,
+      Minting(app),
+    ),
+    exportApplication(
+      2,
+      updateTx([next(payloadB())], [controller]),
+      update,
+      Spending { output: holdingRef, datum: Some(datum) },
+    ),
+    exportApplication(
+      3,
+      honestRelease(),
+      release,
+      Spending { output: holdingRef, datum: Some(datum) },
+    ),
+  }
 }

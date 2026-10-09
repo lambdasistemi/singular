@@ -1,0 +1,55 @@
+{
+  "authority": "A-004 answers Q-004 under NOTE-005 and the contributor instructions",
+  "modelSourceSha256": "af220eec1be2733a7930c7fc047da63737ae26667049386eaee7af8a6559907b",
+  "inventorySourceSha256": "55e7fce7872af3b8235796f3e376e7cf12bce49a8131c8611da8fddd30ec4c94",
+  "computedInventoryCommand": "nix run ./conformance#conformance -- list",
+  "computedInventorySha256": "dd481d80d842f84b6f79ac64ae7312ee8050003c201e2a898e5f7751204326fb",
+  "requirementDelta": [
+    {
+      "requirementIdentity": "update-existing-key",
+      "originalRequirement": "Generic Update (OpUpdate old new) on an existing key folds; the root advances and the new value reads back from chain.",
+      "currentComputedState": "uncovered",
+      "historicalReceipt": "conformance/evidence/page/receipts/receipt-CG02.json",
+      "historicalReceiptSha256": "8a239a2b08eb973a11d5e963f4c121c51df377a9885a76d283088c7dfb1faf4a",
+      "historicalBase": "c17309ee607368615b96f23ea4f96401467195f5",
+      "historicalVerdict": "agrees-with-model"
+    },
+    {
+      "requirementIdentity": "delete-existing-key",
+      "originalRequirement": "Generic Delete (OpDelete old) on an existing key folds; the key returns to absence, proved by a read from chain.",
+      "currentComputedState": "uncovered",
+      "historicalReceipt": "conformance/evidence/page/receipts/receipt-CG03.json",
+      "historicalReceiptSha256": "1e5aae6977c024d97d80e3ec26952c51ccf7c937824f5dba3cb25c306b6c15e4",
+      "historicalBase": "c17309ee607368615b96f23ea4f96401467195f5",
+      "historicalVerdict": "agrees-with-model"
+    },
+    {
+      "requirementIdentity": "reinsert-deleted-key",
+      "originalRequirement": "After deleting a key, re-Insert the same key (reincarnation).",
+      "currentComputedState": "uncovered",
+      "historicalReceipt": "conformance/evidence/page/receipts/receipt-CG04.json",
+      "historicalReceiptSha256": "0d802eab53a8e1eea0122dfe5257d3cdfdecb7fbfdf9d8d96ced111b7bdbb1f4",
+      "historicalBase": "c17309ee607368615b96f23ea4f96401467195f5",
+      "historicalVerdict": "agrees-with-model"
+    },
+    {
+      "requirementIdentity": "retire-active-key",
+      "originalRequirement": "On a real devnet, `insertActive` then `updateTerminal` at one key: the active witness the insert delivered is the exact input the retirement burns, exactly one `(activePolicy, key)` is destroyed, no output carries it afterwards, and the committed trie leaf becomes Terminal. `updateTerminal` on an Unknown key and on an Absent key are refused with their own named reasons, each against an accepting control.",
+      "currentComputedState": "uncovered",
+      "historicalReceipt": "conformance/evidence/page/receipts/receipt-CG22.json",
+      "historicalReceiptSha256": "d4bc959256404877fb879e146205e058c3cfe037236b0a9f1e6cda277aa81f0b",
+      "historicalBase": "c17309ee607368615b96f23ea4f96401467195f5",
+      "historicalVerdict": "agrees-with-model"
+    }
+  ],
+  "currentRequirementIdentity": "permanent-retire-active-key",
+  "controls": {
+    "appendix": "608 examples, 0 failures; effectiveState overlays a separate current retirement receipt and requires all four original requirements to remain present and ShownPlannedUncovered; the current requirement is the positive ShownExecuted control. Archived step receipts also remain readable, with structural/replay checks and current-revision uncovered controls.",
+    "liveGate": ".github/scripts/ci_generic_rows.sh repeats the public CLI inventory with invocation-fresh actual current receipts; consult the exact-head hosted result in PR523."
+  },
+  "limits": [
+    "Historical broader receipts certify their recorded base only.",
+    "The separate supported story or an excluded-edge refusal cannot cover the original Absent, deletion, reincarnation or deletion-refund requirements.",
+    "This inventory read has no live receipts and does not establish a connected product claim."
+  ]
+}

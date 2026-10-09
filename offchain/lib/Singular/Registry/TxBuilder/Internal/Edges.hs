@@ -79,11 +79,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.Types
     ( Edge
     , ProofStep
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeInsertAbsent
     , edgeInsertActive
-    , edgeUpdateActive
     , edgeUpdateTerminal
     )
 
@@ -106,53 +102,40 @@ proof steps the fold states for it (#183).
 
 The edge names the move and its leaf bytes, from the table `types.ak`
 publishes. The proof is the one the cage verifies at this request's own
-position in the batch, so it is read BEFORE a delete or a replacement
+position in the batch, so it is read BEFORE a replacement
 and AFTER an insert, exactly as the cage's own walk does.
 
 A tag outside the table names no move: the cage refuses it
 `edge-inadmissible` before touching the trie, so the builder walks
 nothing either and states the proof the refusal will be judged against.
-A read (edge 6) leaves the leaf where it is (#157 read-preserves-intermediate-root).
+All five excluded encodings leave the local trie unchanged for refusal fixtures.
 
 One site, so the connected fold and the update builder cannot drift
 apart about what an edge does to the trie.
 -}
 walkEdge :: (Monad m) => Trie m -> ByteString -> Edge -> m [ProofStep]
 walkEdge trie key edge
-    | edge == edgeInsertAbsent = inserting leafAbsent
     | edge == edgeInsertActive = inserting leafActive
-    | edge == edgeUpdateActive = replacing leafActive
     | edge == edgeUpdateTerminal = replacing leafTerminal
-    | edge == edgeDeleteAbsent = deleting
-    | edge == edgeDeleteActive = deleting
     | otherwise = steps
   where
     steps = fromMaybe [] <$> getProofSteps trie key
     inserting leaf = do
         _ <- insert trie key leaf
         steps
-    deleting = do
-        before <- steps
-        _ <- delete trie key
-        pure before
     replacing leaf = do
         before <- steps
         _ <- delete trie key
         _ <- insert trie key leaf
         pure before
 
-{- | What an edge owes the mint, as @(kind, quantity)@ over the three token
-policies: kind 0 absent, 1 active, 2 terminal.
+{- | What a supported edge owes the mint, as @(kind, quantity)@.
+Registration mints one active token (kind 1); retirement burns one.
 -}
 deltaOf :: Integer -> [(Integer, Integer)]
 deltaOf edge = case edge of
-    0 -> [(0, 1)]
     1 -> [(1, 1)]
-    2 -> [(0, -1), (1, 1)]
     3 -> [(1, -1)]
-    4 -> [(0, -1)]
-    5 -> [(1, -1)]
-    6 -> [(2, 1)]
     _ -> []
 
 -- | The policy a kind names in this registry's configuration.

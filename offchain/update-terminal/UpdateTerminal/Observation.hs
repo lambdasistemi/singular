@@ -44,7 +44,7 @@ data Observed = Observed
     , obsMint :: [Value]
     -- ^ What the retirement moved under the active policy
     , obsRetirement :: Retirement
-    , obsAbsentDetail :: String
+    , obsTerminalDetail :: String
     , obsUnknown :: UnknownLeg
     }
 
@@ -123,16 +123,16 @@ observation o =
                                         :: T.Text
                                    )
                             ]
-                    , "absent"
+                    , "terminal"
                         .= object
                             [ "outcome" .= ("refused" :: T.Text)
-                            , "trace" .= refusalTrace "not-booked" (obsAbsentDetail o)
-                            , "detail" .= T.pack (take 2000 (obsAbsentDetail o))
+                            , "trace" .= refusalTrace "terminal-immutable" (obsTerminalDetail o)
+                            , "detail" .= T.pack (take 2000 (obsTerminalDetail o))
                             , "controlTxid" .= hex (txIdOf (retRetireTx r))
                             , "distinguisher"
                                 .= ( "the control retired a key that IS \
                                      \Active in this same registry; this \
-                                     \one was witnessed Absent"
+                                     \one is already Terminal"
                                         :: T.Text
                                    )
                             ]

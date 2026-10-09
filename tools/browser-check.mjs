@@ -39,58 +39,42 @@ async function checkPage(page, evidence) {
   assert(refusals.length === 28, 'the complement of the edge table is shown in full');
   const reasons = refusals.map((r) => r.split('\t').pop().trim());
   const admitted = reasons.filter((r) => r === '\u2014 admitted \u2014');
-  assert(admitted.length === 7, `exactly seven admitted rows (saw ${admitted.length})`);
+  assert(admitted.length === 2, `exactly two admitted rows (saw ${admitted.length})`);
   const refused = reasons.filter((r) => r !== '\u2014 admitted \u2014');
-  assert(refused.length === 21, `21 refused rows (saw ${refused.length})`);
+  assert(refused.length === 26, `26 refused rows (saw ${refused.length})`);
   // Every refusal is a NAME a reader can look up, and the whole vocabulary is
   // exercised: a page that collapsed two causes onto one name fails here.
   // The table supplies the custody entry and the active token for every row, so
   // custody-missing and token-missing cannot appear here; the Lean corpus rows
   // replayed above (GC01-GC06) are what exercise those two.
   const vocabulary = [
-    'already-booked',
+    'edge-inadmissible',
     'key-exists',
     'key-unknown',
-    'not-absent',
-    'not-active',
     'not-booked',
-    'read-absent',
-    'read-active',
-    'read-unknown',
     'terminal-immutable',
   ];
   const seen = [...new Set(refused)].sort().join(',');
-  assert(
-    seen === vocabulary.join(','),
-    `every refusal is named, and all ten names are exercised (saw ${seen})`,
-  );
+  assert(seen === vocabulary.join(','), `active refusal vocabulary (${seen})`);
 
-  // A journey a reader can play: witness an absence, then book it.
-  await page.selectOption('#story-picker', 'witness');
+  await page.selectOption('#story-picker', 'book');
   await page.click('#hist-last');
-  let where = await text('#where');
-  assert(/leaf Known active/.test(where), `booking a witnessed absence lands active (${where})`);
-  assert(/absent 0/.test(where), 'the absent token was consumed');
-
-  // Retirement, and the attestation that is a read.
+  assert(/leaf Known active/.test(await text('#where')), 'registration creates an active key');
   await page.selectOption('#story-picker', 'retire');
   await page.click('#hist-last');
-  where = await text('#where');
-  assert(/leaf Known terminal/.test(where), `retirement leaves the leaf terminal (${where})`);
-  assert(/terminal 2/.test(where), 'the terminal witness is plural');
-  await page.click('#hist-prev');
-  await page.click('#hist-prev');
-  assert(/terminal 0/.test(await text('#where')), 'stepping back unwinds the attestations');
-
-  // A refusal a reader can watch, named.
-  await page.selectOption('#story-picker', 'refused');
-  await page.click('#hist-next');
-  await page.click('#hist-next');
-  await page.click('#hist-next');
-  assert(
-    /read-active/.test(await text('#narration')),
-    'attesting an active key is refused by name',
-  );
+  assert(/leaf Known terminal/.test(await text('#where')), 'retirement leaves a terminal key');
+  assert(/key-exists/.test(await text('#narration')), 'terminal key reuse is refused');
+  for (const edge of [
+    'insertAbsent',
+    'updateActive',
+    'deleteAbsent',
+    'deleteActive',
+    'witnessTerminal',
+  ]) {
+    await page.selectOption('#story-picker', `refuse-${edge}`);
+    await page.click('#hist-last');
+    assert(/edge-inadmissible/.test(await text('#narration')), `${edge} is refused in its story`);
+  }
 
   // Free play: right policy, wrong tuple is not sufficient (D-APPROVAL).
   await page.click('#btn-reset');
@@ -107,14 +91,16 @@ async function checkPage(page, evidence) {
   await page.click('#edge-insertActive');
   assert(/admitted/.test(await text('#edge-result')), 'a matching approval is admitted');
 
-  // The naming profile: the Over witness, minted by a folded read and burned.
   await page.selectOption('#profile-picker', 'naming');
   const journey = await page.locator('#naming-journey tr').allInnerTexts();
-  assert(journey.length === 5, 'the Over witness journey has five steps');
-  assert(/witnessTerminal/.test(journey[2]), 'the witness is minted by a folded read');
+  assert(journey.length === 3, 'the permanent retirement journey has three steps');
   assert(
-    /burn/.test(journey[4]) && /Known terminal/.test(journey[4]),
-    'the witnesses burn and the leaf stays terminal',
+    /insertActive/.test(journey[0]) && /updateTerminal/.test(journey[1]),
+    'both supported operations are played',
+  );
+  assert(
+    /witnessTerminal/.test(journey[2]) && /edge-inadmissible/.test(journey[2]),
+    'terminal witnessing is refused',
   );
   // The naming corpus is Lean evidence, not a replay: the label must claim
   // inspection, and must not claim the rows were executed here.

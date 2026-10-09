@@ -85,7 +85,7 @@ main = do
             , diagnostic
             ] ->
                 runReplayCapsule args capsule deployed traced (Just diagnostic)
-        ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["retire-active-key"] dir
+        ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["permanent-retire-active-key"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["register-active-key"] dir
         ["evidence-page"] -> runEvidencePage "." False
         ["evidence-page", "--write"] -> runEvidencePage "." True

@@ -1,15 +1,14 @@
 <main id="app">
   <header class="hdr">
-    <h1>Singular · the registry, in registry mode</h1>
+    <h1>Singular · the permanent M1 registry</h1>
+    <p class="sub">These profiles execute the active M1 model: registration and permanent termination. Historical redeemer encodings remain available as refusal controls.</p>
     <p class="sub">A leaf is <em>Unknown</em> or <em>Known</em> one of three states.
-      Seven edges move it, each an MPFS primitive applied to a state, each a delta
-      over three token kinds. Six need an approval; the seventh is a read that
-      changes nothing.</p>
+      Only insertActive and updateTerminal move it, each with an approval and an active-token delta. Five historical edge encodings are refused.</p>
     <div class="row">
       <label for="profile-picker">Profile</label>
       <select id="profile-picker">
-        <option value="generic">Generic registry</option>
-        <option value="naming">Naming — the Over witness</option>
+        <option value="generic">Permanent M1 registry</option>
+        <option value="naming">Naming — permanent retirement</option>
       </select>
       <button id="btn-theme" type="button">Theme</button>
       <span id="identity" class="mono"></span>
@@ -44,7 +43,7 @@
     </div>
 
     <div class="panel">
-      <h2>Free play — the seven edges</h2>
+      <h2>Free play — two supported edges and five refused encodings</h2>
       <div class="row">
         <label for="key-input">key</label><input id="key-input" type="number" value="42">
         <label for="owner-input">owner</label><input id="owner-input" type="number" value="42">
@@ -87,10 +86,10 @@
 
   <section id="naming-profile" hidden>
     <div class="panel">
-      <h2>Naming: the Over witness</h2>
-      <p class="sub">Naming is an instance of the registry, not a second model.
-        A retired name is attested by a <em>folded read</em>: the witness is
-        plural, every copy is true, and burning them changes nothing.</p>
+      <h2>Naming: permanent retirement</h2>
+      <p class="sub">Naming uses the same registry model. Register an unknown
+        name, retire its active token, then observe refusal of the historical
+        terminal-witness encoding. Retirement leaves the terminal key occupied.</p>
       <table id="naming-journey-table">
         <thead><tr><th>step</th><th>edge</th><th>verdict</th><th>leaf</th><th>active</th><th>absent</th><th>terminal</th></tr></thead>
         <tbody id="naming-journey"></tbody>

@@ -5,25 +5,14 @@ open Singular
 open Lean
 
 /-! The naming corpus over the registry-mode model: registration (record-binds-active-registration), the
-absent edges with custody-lovelace-refund custody (naming-approval-rules story), retirement per naming-approval-rules as amended
+two supported registry edges, retirement per naming-approval-rules as amended
 (retirement-removes-active-witness/naming-approval-rules), the refused reads and re-registration (terminal-key-cannot-change), and the observations. -/
 
 def ns0 : NamingState := namingInitial
 
-def jWitness : NamingState :=
-  match namingWitness ns0 aliceKey 91 200 with | .ok s => s | .error _ => ns0
-
 def jRegistered : NamingState :=
   match namingRegister ns0 aliceKey 5 aliceFixture with
   | .ok s => s | .error _ => ns0
-
-def jBooked : NamingState :=
-  match namingBook jWitness aliceKey 5 aliceFixture with
-  | .ok s => s | .error _ => jWitness
-
-def jRetracted : NamingState :=
-  match namingRetract jWitness aliceKey with
-  | .ok s => s | .error _ => jWitness
 
 def completeFirstRetirement (state : NamingState) : NamingState :=
   match state.pendingRetirements.head? with
@@ -34,18 +23,14 @@ def completeFirstRetirement (state : NamingState) : NamingState :=
       | .error _ => state
 
 def jRetired : NamingState :=
-  match namingRetire jBooked aliceKey [quorumKeyHash 1, quorumKeyHash 29] none with
+  match namingRetire jRegistered aliceKey [quorumKeyHash 1, quorumKeyHash 29] none with
   | .ok pending => completeFirstRetirement pending
-  | .error _ => jBooked
+  | .error _ => jRegistered
 
 def jRetiredByRecoveryKey : NamingState :=
-  match namingRetire jBooked aliceKey [] (some nextControllerAddress) with
+  match namingRetire jRegistered aliceKey [] (some nextControllerAddress) with
   | .ok pending => completeFirstRetirement pending
-  | .error _ => jBooked
-
-def jAttested : NamingState :=
-  match namingAttest jRetired aliceKey 700 with
-  | .ok s => s | .error _ => jRetired
+  | .error _ => jRegistered
 
 /-- An observation row: naming's authenticated view of a key. -/
 def obs (id : String) (state : NamingState) (key : Nat) : Json :=
@@ -64,33 +49,21 @@ def spellings : List Json :=
                , ("resolved", toJson (spellingKey "bob" != none)) ] ]
 
 def queues : List Json :=
-  [ Json.mkObj [ ("id", toJson "NQ01-witness-accepts"), ("expected", toJson true)
-               , ("actual", toJson (namingWitness ns0 aliceKey 91 200).isOk) ]
-  , Json.mkObj [ ("id", toJson "NQ02-register-accepts"), ("expected", toJson true)
+  [ Json.mkObj [ ("id", toJson "NQ02-register-accepts"), ("expected", toJson true)
                , ("actual", toJson (namingRegister ns0 aliceKey 5 aliceFixture).isOk) ]
   , Json.mkObj [ ("id", toJson "NQ03-register-occupied-refused"), ("expected", toJson false)
-               , ("actual", toJson (namingRegister jRegistered aliceKey 6 otherFixture).isOk) ]
-  , Json.mkObj [ ("id", toJson "NQ04-book-accepts"), ("expected", toJson true)
-               , ("actual", toJson (namingBook jWitness aliceKey 5 aliceFixture).isOk) ] ]
+               , ("actual", toJson (namingRegister jRegistered aliceKey 6 otherFixture).isOk) ] ]
 
 def folds : List Json :=
   [ Json.mkObj [ ("id", toJson "NF01-registration-holds-active-token"), ("expected", toJson true)
                , ("actual", kindCount jRegistered.registry .active aliceKey == 1
                   && trieGet jRegistered.registry.trie aliceKey == .known .active) ]
-  , Json.mkObj [ ("id", toJson "NF02-witness-in-custody"), ("expected", toJson true)
-               , ("actual", toJson (custodyCount jWitness.registry aliceKey == 1)) ]
-  , Json.mkObj [ ("id", toJson "NF03-booking-consumes-custody-pays-inserter"), ("expected", toJson true)
-               , ("actual", toJson (custodyCount jBooked.registry aliceKey == 0)) ]
-  , Json.mkObj [ ("id", toJson "NF04-retraction-pays-inserter"), ("expected", toJson true)
-               , ("actual", toJson (custodyCount jRetracted.registry aliceKey == 0)) ]
   , Json.mkObj [ ("id", toJson "NF05-retirement-by-quorum"), ("expected", toJson true)
                , ("actual", toJson (trieGet jRetired.registry.trie aliceKey == .known .terminal
                   && jRetired.records.isEmpty)) ]
   , Json.mkObj [ ("id", toJson "NF06-retirement-by-recovery-key"), ("expected", toJson true)
                , ("actual", toJson (trieGet jRetiredByRecoveryKey.registry.trie aliceKey == .known .terminal)) ]
-  , Json.mkObj [ ("id", toJson "NF07-attestation-minted-by-read"), ("expected", toJson true)
-               , ("actual", toJson (kindCount jAttested.registry .terminal aliceKey ==
-                  kindCount jRetired.registry .terminal aliceKey + 1)) ] ]
+ ]
 
 def steps : List Json :=
   [ Json.mkObj [ ("id", toJson "NS03-delete-active-never-certified"), ("expected", toJson false)
@@ -115,16 +88,14 @@ def steps : List Json :=
 
 def resolves : List Json :=
   [ obs "NRP01-resolve-absent" ns0 aliceKey
-  , obs "NRP02-resolve-witnessed" jWitness aliceKey
   , obs "NRP03-resolve-active" jRegistered aliceKey
   , obs "NRP04-resolve-terminal" jRetired aliceKey
-  , obs "NRP05-resolve-attested" jAttested aliceKey ]
+ ]
 
 def replays : List Json :=
   [ Json.mkObj [ ("id", toJson "NRP10-rebooking-after-terminal-refused"), ("expected", toJson false)
                , ("actual", toJson (namingRegister jRetired aliceKey 6 otherFixture).isOk) ]
-  , Json.mkObj [ ("id", toJson "NRP11-retraction-after-booking-refused"), ("expected", toJson false)
-               , ("actual", toJson (namingRetract jBooked aliceKey).isOk) ] ]
+ ]
 
 def allOk : Bool :=
   (queues ++ steps ++ replays ++ folds).all fun row =>

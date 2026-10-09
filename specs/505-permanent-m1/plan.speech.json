@@ -1,0 +1,48 @@
+{
+  "permanent-registration-and-termination": [
+    {
+      "text": "Permanent registration and termination.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry participant, I register a key and terminate it permanently, while every caller is unable to use the other five registry transitions on this instance. I can still update an application's payload without moving the registry, fold permissionlessly, reject a pending request and retract an eligible request with the original timing and refund obligations.",
+      "pause": 400
+    },
+    {
+      "text": "Registration creates an active leaf. Permanent termination changes that leaf to terminal and consumes its active token. Updating the application's payload leaves the registry leaf unchanged. The other five registry edges are refused.",
+      "pause": 400
+    },
+    {
+      "text": "Authority: the operator's 8 October 2026 bounded permanent contract ruling, issues #505/#506, and the carve-505 brief. Base model and implementation: 464ed8674de626470396cc871f3af85a1d489477. Protected rejection #495 is deferred. Preservation is recorded in specs/504-m2-preservation; its refs stay untouched.",
+      "pause": 400
+    },
+    {
+      "text": "Narrow Singular.Model to registration and permanent termination; retain stable wire ordinals and applicable request exits. Singular.M1 and its driver are compatibility names for this single active model.",
+      "pause": 300
+    },
+    {
+      "text": "Use one canonical state/fold/duty pipeline with a fixed pre-approval admission boundary. Remove obsolete production success paths and duplicate broad/restricted modules. Pin witnesses and ordinary CLI recognition to the freshly compiled state identity; refuse unknown or old code.",
+      "pause": 300
+    },
+    {
+      "text": "Keep independently constructed excluded, unknown, mixed and alternate-route controls at the compiled boundary, with both supported positive controls. Demonstrate the checker detects an actual always-accept artifact mutation.",
+      "pause": 300
+    },
+    {
+      "text": "Reuse the packaged ordinary CLI journey. Preserve archived broader evidence, all preservation refs and uncovered consumer rows. Record the exact authorized coverage-baseline disposition without altering the coverage gate. Run targeted checks, one bounded repository gate and exact-head hosted CI, then hand off the concrete candidate for parent acceptance.",
+      "pause": 300
+    },
+    {
+      "text": "Evidence is reported separately for Lean execution/proofs, Aiken evaluation, compiled scripts, connected local ledger journey, extracted artifact and hosted CI. Unreachable absent starting states are explicit fixture limits. KERI model conformance and demonstrated integration remain distinct unmet outcomes. This worker has no merge, release, deployment or public-network transaction authority.",
+      "pause": 400
+    },
+    {
+      "text": "Superseding scope: the later operator ruling abandons registries from earlier releases and withdraws old-deployment compatibility. New fixed identities must still be checked and wrong/unknown identities refused. Protected rejection (#498/#495) follows this carve with its own identity change and remains separate from this carve and its closing conditions. This candidate does not close that milestone. Protected deposit is outside this carve's closing conditions.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "c9e99d3dbf36804400c09c27a80ca6fd98edd4fdb0fc5d133ba3073ddc7c80fc"
+  }
+}

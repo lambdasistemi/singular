@@ -9,6 +9,20 @@
       "pause": 400
     }
   ],
+  "permanent-contract-and-preserved-consumer-evidence": [
+    {
+      "text": "Permanent contract and preserved consumer evidence.",
+      "pause": 500
+    },
+    {
+      "text": "The first milestone's fixed contract admits registration (insertActive) and permanent termination (updateTerminal). All seven edge values remain encodable in request datums and fold redeemers, but witnessTerminal, insertAbsent, updateActive, deleteAbsent and deleteActive fail at the permanent state validator, including independently constructed requests and mixed batches. Application payload updates leave the registry leaf unchanged; they are not the excluded updateActive registry transition.",
+      "pause": 400
+    },
+    {
+      "text": "The seven-edge interface and older receipts below describe the preserved broader consumer contract. They do not establish current permanent-contract successes. Its generic consumer expectations remain recorded, and the new permanent requirement remains uncovered without a bounded live consumer comparison receipt. The candidate evidence separates compiled refusal tests, connected CLI execution and their limits. Defined redeemers, missing CLI commands and setup failures are not evidence of behavioral refusal.",
+      "pause": 400
+    }
+  ],
   "the-contract-and-its-binding": [
     {
       "text": "The contract and its binding.",
@@ -29,7 +43,7 @@
       "pause": 500
     },
     {
-      "text": "conformance/rows.json carries 46 rows, 45 owned: five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
+      "text": "conformance/rows.json carries 47 rows, 46 owned: one permanent contract requirement, five registry identity requirements, twenty-four registry operation requirements, eight serialization requirements, five consumer resolution requirements and three execution-limit requirements, plus the checkpoint and treasury policy (bonds, poison, the juvenility window W, the signature threshold) recorded as out of scope — it belongs to cardano-keri's checkpoint machine and treasury, explicitly never claimed by Singular. list prints the owned denominator separately so the boundary stays visible. Superseded and held rows stay in the denominator and visible to completeness accounting: relabelling a row pays no coverage and shrinks no board.",
       "pause": 400
     },
     {
@@ -411,6 +425,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "9ee4cb73b07341363c8af355adf4dee700ee07ce0fcc83650fbc578594002d44"
+    "sha256": "6c21e86ee1c2e5779cfd1b4049cf5a351404dcbe55e2af816586059a00632afb"
   }
 }

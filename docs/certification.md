@@ -1,6 +1,6 @@
 # Certification and identity binding
 
-**Status.** This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, `Active` and `Over`. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state `Terminal`; where the two differ, registry mode is current. [How a name moves in the registry](naming-demo.md#how-a-name-moves-in-the-registry) shows the seven edges, and the [model ledger](model-ledger.md#the-retirement-map) records what replaced each part of this design.
+**Historical design.** This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only `insertActive` and `updateTerminal`. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. [Current supported behavior](naming-demo.md) describes permanent contract; archived source and evidence remain on `preserve/m2/pre-m1-source-removal`.
 
 Singular recognizes native requests. Applications decide whether the requested application behavior is authorized. Insert needs evidence of application approval because there is no existing representative NFT leaving an application UTxO. Update/Delete use the application's authorization of that NFT's transfer into the exact request.
 

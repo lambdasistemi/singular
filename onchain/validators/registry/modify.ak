@@ -3,7 +3,7 @@
 ////
 //// ## Responsibility
 ////
-//// `validModify` checks, in this order: the continuation output
+//// `validFold` checks, in this order: the continuation output
 //// (`continuation-address`, `state-token`, `state-drain`) and the preserved
 //// pins (`pins-altered`); then runs the fold over the transaction's inputs
 //// (`registry/fold`) and judges its result (`empty-fold`, `surplus-actions`,
@@ -33,8 +33,7 @@
 ////   exactly one user-defined trace for a refused fold.
 //// - Continuation and pin checks precede everything the batch says; the
 ////   fold's own refusal precedes the batch-level checks; every duty is
-////   discharged before any lovelace is settled; custody refunds are settled
-////   before positional refunds, and both before the per-payee sums.
+////   discharged before any lovelace is settled; positional rejected-request refunds precede the per-payee sums.
 //// - The seven non-root state fields are equal before and after every fold,
 ////   and the mint under the three pinned token policies equals the summed
 ////   edge deltas exactly.
@@ -46,17 +45,14 @@ use cardano/transaction.{InlineDatum, Input, Transaction}
 use lib.{exactQuantity}
 use registry/discharge.{dutiesFault}
 use registry/fold.{Fold, mkAction}
-use registry/refusal.{refundShort}
-use registry/settlement.{
-  custodyFault, custodyOwedOf, payeeFault, payeeOwed, refundFault, settlesOf,
-}
+use registry/settlement.{payeeFault, payeeOwed, refundFault, settlesOf}
 use types.{RequestAction, State, StateDatum, TokenId}
 
 /// Why the cage refuses this fold of the state `input` carrying `pins`, or
 /// `None` when it is valid: the continuation, the pins, the fold, the mint
 /// delta, the duties and the payees, checked in that order, first failure
 /// answering.
-pub fn validModify(
+pub fn validFold(
   pins: State,
   input: Input,
   policyId: PolicyId,
@@ -116,7 +112,7 @@ pub fn validModify(
       Some(@"root")
     } else if !mintMatches(pins, folded.minted, mint) {
       // mint-matches-edge-deltas: the transaction's mint under the three pinned token policies
-      // equals the summed seven-admitted-edges column exactly — asset by asset, quantity
+      // equals the summed registration/termination deltas exactly — asset by asset, quantity
       // by quantity — and nothing else moves under them. A mint that
       // adds, omits, doubles or renames one asset is one delta mismatch.
       //
@@ -129,30 +125,14 @@ pub fn validModify(
       expect [_, ..refundOutputs] = outputs
       let cageAddress = input.output.address
       when dutiesFault(pins, cageAddress, folded.duties, tx) is {
-        None ->
-          when custodyOwedOf(pins, cageAddress, folded.duties, inputs) is {
-            None -> refundShort()
-            Some(custodyOwed) -> {
-              let owed = payeeOwed(folded.duties, custodyOwed)
-              if custodyOwed == [] && owed == [] {
-                // A fold that owes no lovelace settles nothing.
-                None
-              } else {
-                let settles =
-                  settlesOf(cageAddress.payment_credential, folded.duties)
-                when custodyFault(outputs, settles, custodyOwed) is {
-                  None ->
-                    when
-                      refundFault(refundOutputs, list.reverse(folded.refunds))
-                    is {
-                      None -> payeeFault(outputs, settles, owed)
-                      refusal -> refusal
-                    }
-                  refusal -> refusal
-                }
-              }
-            }
+        None -> {
+          let owed = payeeOwed(folded.duties)
+          let settles = settlesOf(cageAddress.payment_credential, folded.duties)
+          when refundFault(refundOutputs, list.reverse(folded.refunds)) is {
+            None -> payeeFault(outputs, settles, owed)
+            refusal -> refusal
           }
+        }
         refusal -> refusal
       }
     }

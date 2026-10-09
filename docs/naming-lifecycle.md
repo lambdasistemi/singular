@@ -2,196 +2,153 @@
 
 ## Who this is for
 
-Somebody who wants to witness that a name is free and get their deposit back,
-somebody who wants to book one, and somebody holding a live name who wants to
-change where it receives payments, recover after losing the current control key,
-or end it permanently. Ending a name needs the committed recovery key or the
-retirement quorum, and the active witness moves into completion-only custody
-before it burns.
+A name holder wants to change where a live name receives payments, recover after
+losing the current control key, or end the name permanently. A new participant
+can register an unknown name. Registry transitions are registration and permanent
+termination; application maintenance and recovery preserve the registry root.
 
-This page accompanies the executable candidate. <a href="https://lambdasistemi.github.io/singular/simulator/">Open the simulator</a> and switch the profile to *Naming — the Over witness*: the last panel replays the lifecycle, row by row, as the Lean computed it — moving a payment destination while the registry root stays put, revealing the committed recovery key, and ending a name through either authorization route with the refusals that guard them. It remains a design-time model, not an observed ledger execution.
+[Open the simulator](https://lambdasistemi.github.io/singular/simulator/) and select
+*Naming — permanent retirement*. Its lifecycle panel inspects the rows computed
+by Lean. This is design-time evidence, not an observed ledger execution.
 
 ```mermaid
-flowchart LR
-  Free[Name free] -->|absence witness with a refund address| Absent[Absent]
-  Absent -->|booked by anyone| Active[Active<br/>active witness at the bound destination]
-  Absent -->|witness taken back| Free
-  Free -->|booked directly| Active
-  Active -->|authorized destination maintenance| Active
-  Active -->|reveal committed next controller<br/>and install a fresh commitment| Active
-  Active -->|committed recovery key, or the quorum| Pending[Ending<br/>active witness in completion-only custody]
-  Pending -->|permissionless fold burns the witness| Terminal[Terminal<br/>only the read is admitted]
+flowchart TD
+  Free["Unknown name"] -->|Register| Active["Active name"]
+  Active -->|Authorize| Pending["Retirement pending<br/>Witness in completion custody"]
+  Pending -->|Fold| Terminal["Terminal name<br/>Key stays occupied"]
 ```
 
 ## How a name moves in the registry
 
-Naming is an instance of the registry, not a layer bolted beside it. A name is
-one key in the registry's authenticated map whose value is a single byte —
-Absent, Active or Terminal — and seven requests move a key, each one moving a
-witness token that is what a reader looks at, never the root. The naming
-walkthrough states [the state table, the seven requests and the four witness
-laws](naming-demo.md#how-a-name-moves-in-the-registry) once; this page uses
-them without repeating them.
+A name is one key in the registry's authenticated map. Registration changes an
+unknown key to Active and delivers an active witness to its bound destination.
+Termination burns that witness and changes the key to Terminal permanently.
+The legacy Absent byte remains a raw encoding for invalid-context controls;
+registration cannot create it. The five excluded operations are refused.
 
-Two things are naming's own. Ending a name needs the committed recovery key or
-the retirement quorum, and never the current control key alone. And no
-application script runs at fold time: the naming validator certifies an edge in
-advance by minting one approval whose asset name binds the edge, the key, the
-owner and the destination, and the registry recomputes that name from the
-request itself and refuses anything that does not match. A folder is
-permissionless and can therefore be anyone, which is exactly why the
-destination is bound: without it a folder could route your name to itself.
+The [current registry contract](onchain-validator-owners.md) has a fixed compiled
+admission boundary. Naming certifies each supported edge in advance by minting an
+approval binding the edge, key, owner and destination. The registry recomputes
+that binding. Folding is permissionless; approval prevents the folder from
+substituting another destination. Naming's separate application validator governs
+maintenance, recovery and authorization to retire.
 
 ## Change the payment destination
 
-The active controller may set, replace, or clear the single optional payment destination. The destination is routing data, not an authority credential: it need not belong to the controller. A successful change preserves the registry identity, registry key, active witness, controller, next-control commitment, and retirement quorum.
+The current controller may set, replace or clear one optional payment destination.
+Routing data need not belong to the controller. The successor preserves the
+registry identity, key, active witness, controller, next-control commitment and
+retirement quorum. Missing or wrong controller authorization, multiple destinations
+and altered control fields refuse.
 
 ```mermaid
-sequenceDiagram
-  participant Holder
-  participant App as Naming application output
-  participant Registry
-  Holder->>App: spend with current controller payment-key witness
-  App->>App: set, replace, or clear one destination
-  App->>App: preserve the active witness and the control fields
-  Note over Registry: no registry request, mint, or burn
-  App-->>Holder: successor output with updated destination
+flowchart TD
+  Holder["Current controller"] -->|Sign| App["Naming application<br/>Check preserved fields"]
+  App -->|Maintain| Next["Successor output<br/>Updated payment destination<br/>Same active witness"]
+  Next --> Root["Registry root unchanged<br/>No registry request or mint"]
 ```
-
-The transition refuses a missing or wrong controller witness, more than one destination, and any attempt to alter the controller, committed next controller, quorum, registry binding, or active witness while presenting the action as destination maintenance.
 
 ## Book a name
 
-A booking has no separate claim to stage first and no Withdraw edge to cancel
-one with. It is two things: an approval and a request, and the request waits
-until someone folds it.
-
-Alice mints one approval under the naming policy. Its asset name binds the edge
-she is taking, the key she is taking it on, herself as the owner, and the
-destination — the application's own address together with the hash of the record
-datum her record will carry. Minting it needs her signature, and that signature
-is the only one anybody ever checks for this booking.
-
-She attaches the approval to a registry request and lets go. Whoever folds the
-batch next creates her record: the fold mints the active witness, puts it in the
-one output her approval named, gives that output the datum whose hash she bound,
-and returns the deposit her request carried, less the folder's tip. The folder
-never had a choice about any of it.
+Alice signs the naming policy's approval mint for registration. Its asset name
+binds the key, owner and the application's destination address and datum hash.
+She places the approval and deposit in a registry request. Any folder can then
+fold it. The fold delivers the active witness and booked datum to the approved
+address. The registration deposit accompanies that carrier; it is not a separate
+refund to Alice. A wrong tuple, policy or quantity refuses.
 
 ```mermaid
-sequenceDiagram
-  participant Alice
-  participant App as Naming policy
-  participant Request as Registry request
-  participant Folder as Any folder
-  Alice->>App: mint one approval binding edge, key, owner, destination
-  App-->>Alice: approval, on Alice's signature alone
-  Alice->>Request: request carrying the approval and the deposit
-  Folder->>Request: fold the batch
-  Request-->>Alice: record at the bound address, with the bound datum,<br/>carrying the active witness and the returned deposit
+flowchart TD
+  Alice["Alice signs registration"] --> Policy["Naming policy<br/>Mint bound approval"]
+  Policy --> Request["Registry request<br/>Approval and deposit"]
+  Request -->|Any folder| Fold["Registry fold<br/>Check approval binding"]
+  Fold --> Output["Bound application output<br/>Active witness and datum<br/>Registration deposit"]
 ```
-
-An approval minted for a different edge, key, owner or destination has a
-different asset name, so the fold recomputes it and refuses. An approval under
-any other policy is not an approval at all. A request that changes the key and
-carries no approval is never folded.
 
 ## Recover with the committed next controller
 
-Recovery reveals the complete next controller address, proves that its canonical binary encoding matches the stored commitment, and requires the transaction signer for that address's payment-key credential. The current controller does not need to sign. The successor keeps the active witness, installs the revealed address as controller, and stores a fresh next commitment. The consumed commitment cannot be replayed, and the old controller is no longer authoritative.
+Recovery reveals the complete next controller address, verifies its stored
+commitment and requires its payment-key signer. The current controller need not
+sign. The successor retains the active witness, installs the revealed controller
+and stores a fresh next commitment. The consumed commitment cannot be replayed.
 
 ```mermaid
-sequenceDiagram
-  participant Next as Revealed next controller
-  participant App as Current naming output
-  participant Ledger as Required-signer check
-  participant Successor as Successor naming output
-  Next->>App: reveal canonical base or enterprise address
-  App->>App: recompute domain-separated BLAKE2b-256 commitment
-  App->>Ledger: require revealed payment-key signer
-  Ledger-->>App: transaction signature verified
-  App->>Successor: same active witness, new controller,<br/>fresh next commitment
+flowchart TD
+  Reveal["Reveal next controller"] --> Check["Naming application<br/>Verify address commitment<br/>Require payment-key signer"]
+  Check --> Successor["Successor output<br/>New controller<br/>Fresh next commitment"]
+  Successor --> Same["Same active witness<br/>Registry root unchanged"]
 ```
 
-The commitment is `BLAKE2b-256("singular/naming/next-control/v1" || 0x00 || canonical-address-bytes)`. It covers the whole binary Cardano address, including its header and network, rather than bech32 text or only a key digest. Only canonical base and enterprise addresses with payment-key credentials are supported; script payment credentials cannot authorize recovery. Positive, wrong-domain, wrong-address, and wrong-payment-key vectors belong to the executable contract.
+The commitment is `BLAKE2b-256("singular/naming/next-control/v1" || 0x00 || canonical-address-bytes)`.
+It covers the complete binary Cardano address, including header and network.
+Canonical base and enterprise addresses with payment-key credentials are supported;
+script payment credentials cannot authorize recovery. Wrong-domain, wrong-address
+and wrong-payment-key controls accompany the positive vectors.
 
 ## Retire permanently
 
-Ending a name needs the committed recovery key or the retirement quorum — never
-the current control key alone.
+Termination needs the committed recovery key or a distinct-member retirement
+quorum. The current control key alone cannot authorize it. This preserves the
+holder's recovery remedy if the everyday key is stolen.
 
-That is a deliberate change, and it is worth saying why. A thief who has taken
-Alice's everyday control key and Alice herself look identical to the chain: both
-hold the key, both can sign. If the current key could end the name, the thief
-could end it, and Alice's only remedy — recovering with the key she committed to
-in advance — would arrive too late, because there would be nothing left to
-recover. The recovery key is the one thing the thief does not have. So the
-thief can change where the name pays until Alice recovers, and that is all.
-
-The authorized transaction moves the active witness into completion-only
-custody, mints the terminating approval on the same proof, and creates the
-completion request beside it. Anyone may then fold that request: the custody is
-spent, the witness it holds is exactly the burn the fold's own arithmetic
-demands, and the name's byte becomes Terminal, forever.
+Authorization moves the active witness into completion-only application custody,
+mints a bound terminating approval and creates the completion request. Anyone may
+fold that request: the application custody is spent, the witness is burned and
+the key becomes Terminal. This completion custody is distinct from the removed
+registry Absent-custody implementation.
 
 ```mermaid
-stateDiagram-v2
-  direction LR
-  Active --> RetirementPending: committed recovery key revealed and signing
-  Active --> RetirementPending: distinct-member quorum
-  Active --> Refused: current control key alone
-  RetirementPending --> Terminal: permissionless fold burns the active witness
-  Terminal --> Terminal: only the read is admitted
+flowchart TD
+  Active["Active naming output"] --> Auth["Recovery key or quorum<br/>Current key alone refuses"]
+  Auth --> Pending["Completion custody<br/>Witness and retirement request"]
+  Pending -->|Any folder| Fold["Registry termination<br/>Burn active witness"]
+  Fold --> Terminal["Terminal key<br/>Occupied permanently"]
 ```
 
-A terminal name is not a deleted name. Its key stays in the map at `0x02`, and
-the one request it still admits is the read — which leaves the byte exactly
-where it is and mints a terminal witness the reader can keep. Every request that
-would move the key refuses.
+Terminal witnessing is refused by this contract. A terminal name has no remaining
+supported transition. Retirement prevents name-based resolution but cannot retract
+a raw address someone already saved.
 
-Retirement prevents name-based resolution. It cannot prevent someone from
-sending directly to a previously saved raw Cardano address: the protocol cannot
-retract an address another person already knows.
+## Refused historical encodings
 
-## Witness that a name is free
-
-Carol does not want a name; she wants to say that nobody has one. She mints an
-absence approval — this edge needs no signature from anyone, because saying a
-name is unclaimed asserts no authority — names her own address as the refund,
-and submits a request with a deposit.
-
-The fold puts the absent witness into the cage's own custody, with the key it
-witnesses and Carol's refund address recorded beside it. Whoever books the name
-afterwards spends that custody as part of their booking, and the fold pays
-Carol's deposit back to the address she named. If nobody books it, Carol takes
-her own witness back: the deletion edge is certified by the refund address the
-custody recorded, and by nobody else.
+The wire format retains `insertAbsent`, `updateActive`, `deleteAbsent`,
+`deleteActive` and `witnessTerminal` with their original tags. The current compiled
+registry refuses all five, including mixed batches and caller-constructed contexts.
+The [archived broader design](naming-demo.md) preserves earlier absence, deletion
+and witnessing stories; they are not current supported operations.
 
 ```mermaid
-flowchart LR
-  Free[Name free] -->|Carol's absence witness, with her refund address| Absent[Absent<br/>witness in the cage's custody]
-  Absent -->|anyone books it| Active[Active<br/>Carol's deposit returned to Carol]
-  Absent -->|Carol takes it back| Free
+flowchart TD
+  Encoded["Historical request encoding"] --> Gate["Fixed registry admission"]
+  Gate --> Refuse["Refuse excluded operation<br/>No trie or token effect"]
 ```
-
-Carol's deposit comes back to Carol either way. It is recorded on chain, beside
-the token, at the moment she puts it up — not promised by whoever folds later.
 
 ## Consumer and ledger boundary
 
-The design-time consumer contract is source-bound to `lambdasistemi/cardano-keri` commit `14a64a4681d3e429fab5877062b5c476c2a4bfe2`. It uses Conway inline-datum and required-signer precedents without importing KERI schemas or claiming compiled-script interoperability. Singular publishes explicit constructor indices and field order for its own datums, binds one canonical registry identity to an application, and must reject a second valid seed that tries to initialize a rival registry for the same application.
+The design-time consumer contract is bound to `lambdasistemi/cardano-keri` commit
+`14a64a4681d3e429fab5877062b5c476c2a4bfe2`. It uses Conway inline-datum and
+required-signer precedents without importing KERI schemas or claiming compiled
+interoperability. Singular publishes its constructor indices and field order,
+binds one registry identity to an application and refuses a rival registry seed.
 
-| Boundary | Existing tooling constrains | Singular publishes | Still outside this candidate |
-| --- | --- | --- | --- |
-| Datum transport | Conway `Data`; inline extraction helpers | inline datums, declared constructor indices and frozen field order | compiled-script and ledger interoperability |
-| Controller authorization | transaction required signers / payment-key witnesses | canonical payment-key address and signer binding | wallet or SDK transaction construction |
-| Registry initialization | one mint per chosen seed precedent | one canonical registry identity per application | downstream application integration |
-|  Witness supply | registry transition and witness custody model | one active witness for a live name | deployed validator measurements |
+| Boundary | Published contract | Remaining evidence gap |
+| --- | --- | --- |
+| Datum transport | Inline datums and frozen constructor order | Downstream compiled and ledger interoperability |
+| Controller authorization | Canonical address and payment-key signer binding | Downstream wallet or SDK construction |
+| Registry initialization | One registry identity per application | Downstream integration |
+| Witness supply | One active witness for a live name | Deployed measurements |
 
-The historical Cage types are evidence about encodings and precedents, not an assumed integration. KERI pre-rotation commits to key digests; naming recovery deliberately commits to an entire canonical address.
+The historical Cage types establish encodings and precedents. KERI pre-rotation
+commits to key digests; naming recovery commits to a complete canonical address.
 
 ## Evidence and release status
 
-The page replays maintenance, recovery and both ending routes, including their refusal cases, and each row carries the reason that caused it — an ending that met neither the recovery-key nor the quorum route is refused under the reason reserved for an uncertified retirement, not under the one reserved for delete. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
+The lifecycle panel inspects maintenance, recovery and both termination routes,
+including their computed refusal reasons. The downloadable archive binds model,
+scenarios, replay code, toolchain inputs and identity ledgers with a SHA-256 manifest.
+[Candidate results](../specs/505-permanent-m1/RESULTS.md) distinguish the registry's
+compiled and connected CLI checks from these naming design observations.
 
-This remains an unaccepted executable design candidate. Lean proof, finite replay, source-bound contract evidence, a built archive, and a live preview are distinct from a compiled Cardano validator or observed ledger execution.
+Lean proofs, finite model replay, inspected lifecycle rows, a built archive and
+a live preview do not establish a deployed naming validator or downstream consumer
+acceptance. Uncovered consumer requirements remain visible.

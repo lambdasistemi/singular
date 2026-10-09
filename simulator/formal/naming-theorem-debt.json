@@ -15,7 +15,7 @@
     "name": "Singular.NamingStatements.naming_nm4_admissions",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "9ceae1055a1f5e64cc5f6a70e0b3f602d495b38b7b386da4a9ad367d8a194eed"
+    "statementSha256": "58634bf3e3a405d46b8b2dc725dd568f02f72bc18e0642c945b704d299f6df38"
   },
   {
     "name": "Singular.NamingStatements.naming_control_key_alone_never_retires",
@@ -24,10 +24,10 @@
     "statementSha256": "7d28da09ae9ddefe26a63b2d38b7e8b83757d81e71a9207c9cde3d19ee027721"
   },
   {
-    "name": "Singular.NamingStatements.naming_retract_only_inserter",
+    "name": "Singular.NamingStatements.naming_excluded_encodings_not_certified",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8f7cded95e2061d0cf550914228bd42416d62b0e7093894d568fbf40d81484b4"
+    "statementSha256": "2d77b7aac592fc66e8922bf70fe5e08feb9a6237afffc2bb21531c75db7f3d0b"
   },
   {
     "name": "Singular.NamingStatements.naming_recovery_commitment_binding",

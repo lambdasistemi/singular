@@ -226,7 +226,10 @@
         script-identity =
           pkgs.runCommand "mpf-script-identity-check"
             {
-              nativeBuildInputs = [ pkgs.jq ];
+              nativeBuildInputs = [
+                pkgs.jq
+                pkgs.python3
+              ];
               blueprint = plutus-blueprint;
               manifest = scriptIdentityManifest;
               witnessSource = ./validators/witness.ak;
@@ -298,6 +301,7 @@
                 exit 1
               fi
               echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
+              python3 ${../tools/m1_identity.py} --root ${../.} --blueprint "$blueprint" --check
               echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
               touch $out
             '';
@@ -382,7 +386,29 @@
               touch $out
             '';
 
-        scriptIdentityChecks = { inherit script-identity reference-publication-size; };
+        permanent-boundary = pkgs.stdenv.mkDerivation {
+          pname = "permanent-m1-compiled-boundary";
+          version = "0.1.0";
+          src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [
+            pkgs.aiken
+            pkgs.python3
+          ];
+          buildPhase = ''
+            ${aikenPrelude}
+            aiken check -m 'permanent_boundary.{..}' --seed 505 > contexts.json
+            aiken check -m 'open_datum.{..}' --seed 505 > application-contexts.json
+            python3 ${../tools/m1_boundary.py} \
+              --blueprint ${plutus-blueprint} --contexts contexts.json \
+              --application-contexts application-contexts.json \
+              --aiken ${pkgs.aiken}/bin/aiken --receipts-dir receipts
+          '';
+          installPhase = ''
+            mkdir -p "$out"
+            cp -r receipts contexts.json application-contexts.json "$out/"
+          '';
+        };
+        scriptIdentityChecks = { inherit script-identity reference-publication-size permanent-boundary; };
 
         # The Aiken dev shell, bound once so `default` and the
         # back-compat `aiken` name expose the same shell.

@@ -92,3 +92,7 @@ the nix checks run it against a hash-bound snapshot of `lean/`, `tools/` and thi
 directory. Strict completion additionally requires the release/milestone wiring that the
 root flake and CI own — not yet wired (owner-confirmed scope required); until then
 `completion`'s verdict is the acceptance input, not the release gate itself.
+
+The [scope retirement table](m1-scope-retirement.md) records the operator-authorized
+removal of archived broader-model identities and changed current signatures.
+It adds no coverage credit and removes no consumer requirements.

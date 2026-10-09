@@ -6,14 +6,19 @@ A holder of an active name who has lost the everyday control key and planned ahe
 
 It is also for a holder who wants to end a name permanently, and for the quorum fixed at registration that can end it without the holder. Ending a name needs the committed recovery key or that quorum — the everyday control key alone cannot do it. Either route moves the active witness into completion-only custody, a script with no withdrawal path, and neither route can be turned into a takeover or a payment redirection.
 
+The ledger receipts described below belong to the archived broader source.
+The current two-edge model retains the applicable application maintenance,
+recovery and retirement rules, but those historical receipts do not certify
+the revised compiled candidate. See [current candidate results](../specs/505-permanent-m1/RESULTS.md).
+
 ## How a name moves in the registry
 
 Naming is an instance of the registry, not a layer bolted beside it: a name is
-one key whose value is a single byte — Absent, Active or Terminal — and seven
+one key whose value is a single byte — Absent, Active or Terminal — and two supported registry
 requests move a key, each one moving a witness token. The naming walkthrough
-states [the state table, the seven requests and the four witness
+states [the archived state table and witness
 laws](naming-demo.md#how-a-name-moves-in-the-registry) once; this page shows
-two of those edges, recovery and retirement, executed on a real ledger.
+application recovery and registry retirement as historical ledger evidence.
 
 The rule this page is about is naming's own: ending a name needs the committed
 recovery key or the retirement quorum, and never the current control key alone.

@@ -1,47 +1,18 @@
-//// The fold: one pass over the transaction's inputs that admits each request
-//// of this registry and walks the trie (#157 leaf-codec-and-operations–mint-matches-edge-deltas, request-covers-tip; #183).
-////
 //// ## Responsibility
-////
-//// `mkAction` is the step `foldl` runs over the transaction's inputs, in
-//// order. For each request of this registry it pops the next action, checks
-//// the request's carriage (`tip-coverage`, `deposit-mismatch`), then either
-//// books a rejected row's refund, in any window, or admits an update: the
-//// processing window (`not-phase1`), the edge tag
-//// (`edge-inadmissible`), the approval (`admitted`) and the trie move with
-//// its mint delta and duties (`applyEdge`). The `Fold` accumulator carries
-//// the trie, the remaining actions, the consumed count, the minted delta, the
-//// collected duties and the rejected rows' refunds.
+//// Fold permanent M1 registration and termination requests in input order.
 ////
 //// ## Dependencies
-////
-//// Imports `registry/duty` (collecting duties), `registry/trie` (the trie's
-//// refusals), `shared` (phase windows), `lib` (the edge table, approval name,
-//// mint delta), `types` and the Merkle Patricia Forestry library. Imported by
-//// `registry/modify`, which seeds the fold and judges its result. It checks nothing about outputs: that is the discharge owners'.
+//// Reuses the original approval binding, trie fault, duty and refund owners.
+//// Imported by registry/modify, the single active fold implementation.
 ////
 //// ## Assumptions
-////
-//// - The caller seeds `Fold` with the state's own root, its actions, zero
-////   consumed, a zero mint and no duties or refunds, and folds the inputs in
-////   transaction order.
-//// - The caller refuses an empty fold and surplus actions, and compares the
-////   final root and minted delta; this module does not.
+//// The caller checks state continuation, fixed pins, net mint and settlement.
+//// Requests carry their own public datum and per-request proof.
 ////
 //// ## Invariants
-////
-//// - `refusal` latches the first refusal's reason and every later step is
-////   skipped, so one reason is reported however many rules the transaction
-////   breaks.
-//// - Only requests naming this registry's cage token are folded; any other
-////   input passes through untouched.
-//// - Every refusal raised here is checked before the library call that would
-////   otherwise crash on the same fact: carriage before actions, the edge tag
-////   before approval and proofs, trie faults before `mpf.insert` or
-////   `mpf.update`. A wrong leaf that no named refusal covers still fails
-////   inside the library, as a crash rather than a reason.
-//// - The trie move and its leaf bytes come from the edge table, never from
-////   request bytes; a read leaves the root exactly as it found it.
+//// Only insertActive and updateTerminal advance the trie; no dispatch exists
+//// for the excluded edges. Rejected requests retain original refund obligations.
+//// The first refusal latches and successful actions advance the intermediate root.
 
 use aiken/collection/dict
 use aiken/collection/list.{foldl}
@@ -51,13 +22,11 @@ use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of}
 use cardano/transaction.{InlineDatum, Input}
 use lib.{
-  approvalDestination, approvalName, deltaOf, edgeDeleteAbsent, edgeDeleteActive,
-  edgeInsertAbsent, edgeInsertActive, edgeUpdateActive, edgeUpdateTerminal,
-  edgeWitnessTerminal, kindAbsent, kindActive, leafAbsent, leafActive,
-  leafTerminal,
+  approvalDestination, approvalName, edgeInsertActive, edgeUpdateTerminal,
+  leafActive, leafTerminal,
 }
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
-use registry/trie.{readFault, terminalEdgeRefusal, terminalFault}
+use registry/trie.{terminalFault}
 use shared.{in_phase1}
 use types.{
   CageDatum, Rejected, Request, RequestAction, RequestDatum, State, TokenId,
@@ -80,17 +49,6 @@ pub type Fold {
 /// Latch the fold closed on this refusal's reason.
 fn halt(acc: Fold, reason: String) -> Fold {
   Fold { ..acc, refusal: Some(reason) }
-}
-
-/// The policy that mints a token of this kind, read off the pins's pins.
-fn policyOfKind(pins: State, kind: Int) -> PolicyId {
-  if kind == kindAbsent {
-    pins.absent_policy
-  } else if kind == kindActive {
-    pins.active_policy
-  } else {
-    pins.terminal_policy
-  }
 }
 
 /// Admission by approval (#157 tree-edge-admission-by-approval, approval-asset-binding): the request's UTxO must
@@ -153,7 +111,7 @@ pub fn mkAction(pins: State, tokenId: TokenId, validity_range) {
 }
 
 /// One step of the fold over an edge-only request (#183 slice b, Lean
-/// `Request.edge`). The tag IS the edge: admitted `0..6` before approval
+/// `Request.edge`). The tag IS the edge: only tags 1 and 3 pass before approval
 /// and before any proof, then the same admission and MPF walk every edge
 /// takes. No `tip` field (`tip-mismatch` retired): `held >= state.tip`
 /// (`tip-coverage`) plus `deposit == held - state.tip` (`deposit-mismatch`).
@@ -209,19 +167,12 @@ fn stepRequest(
           UpdateAction(proof) ->
             if !in_phase1(validity_range, submitted_at, pins.process_time) {
               halt(popped, @"not-phase1")
-            } else if tag < 0 || tag > edgeWitnessTerminal {
-              // The tag is the whole shape: outside `0..6` there is no
-              // edge to admit, approve, or walk.
+            } else if tag != edgeInsertActive && tag != edgeUpdateTerminal {
+              // A fixed admission set: only registration and termination.
               halt(popped, @"edge-inadmissible")
             } else {
               let checked =
-                if tag == edgeWitnessTerminal {
-                  // A read does not require an approval and does not check
-                  // its absence (tree-edge-admission-by-approval).
-                  popped
-                } else {
-                  admitted(popped, pins, tag, request, input.output.value)
-                }
+                admitted(popped, pins, tag, request, input.output.value)
               if checked.refusal != None {
                 checked
               } else {
@@ -243,9 +194,8 @@ fn stepRequest(
   }
 }
 
-/// Walk the trie one step and record what the edge owes (#157 read-preserves-intermediate-root, mint-matches-edge-deltas,
-/// token-destinations-and-refunds). The read is verified where it sits in the batch, against the
-/// intermediate root, and leaves the leaf exactly as it found it.
+/// Apply only the two M1 trie transitions. No absent, delete or read code is
+/// reachable through this dispatch, even after a caller supplies arbitrary tags.
 fn applyEdge(
   acc: Fold,
   pins: State,
@@ -256,111 +206,41 @@ fn applyEdge(
   floor: Int,
   proof: mpf.Proof,
 ) -> Fold {
-  // #173 A-006/A-009: an insert on a key the trie already binds is a
-  // fault of the TRIE, refused `key-exists` BEFORE any mint arithmetic
-  // runs.
-  //
-  // `mpf.miss` is the library's own TOTAL exclusion check, so an
-  // occupied key is an attributable refusal instead of a crash inside
-  // `mpf.insert` — and a crash says only that the script died, never
-  // that it refused.
-  let inserting = edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
-  // #177 I177-CHAIN: the same shape, one edge later. A retirement is a
-  // fault of the TRIE when the leaf it names is not `Active`, and the
-  // three ways that happens are the three reasons Lean gives. Read
-  // BEFORE `mpf.update`, because `mpf.update` CRASHES on a leaf that is
-  // not the one the edge moves — and a crash says only that the
-  // script died, never which fact it refused for.
-  //
-  // #183 slice b: the leaf bytes come from the edge table in `types.ak`,
-  // never from request bytes. A tree-changing edge on a terminal leaf
-  // is refused `edge-from-terminal`: the terminal leaf admits the read
-  // and nothing else (N10). Both trie faults answer the same question —
-  // "is the leaf this edge needs the leaf the trie has?" — so they
-  // share one decision and one halt, and the advance below runs only
-  // when neither fires.
-  when
-    if edge == edgeUpdateTerminal {
-      terminalFault(acc.trie, key, proof)
-    } else if inserting && !mpf.miss(acc.trie, key, proof) {
+  let inserting = edge == edgeInsertActive
+  let fault =
+    if inserting && !mpf.miss(acc.trie, key, proof) {
       lib.occupiedRefusal()
-    } else if edge == edgeWitnessTerminal && !mpf.has(
-      acc.trie,
-      key,
-      leafTerminal,
-      proof,
-    ) {
-      readFault(acc.trie, key, proof)
-    } else if (
-      edge == edgeUpdateActive || edge == edgeDeleteAbsent || edge == edgeDeleteActive
-    ) && mpf.has(acc.trie, key, leafTerminal, proof) {
-      terminalEdgeRefusal()
+    } else if !inserting {
+      terminalFault(acc.trie, key, proof)
     } else {
       None
     }
-  is {
+  when fault is {
     Some(reason) -> halt(acc, reason)
-    None -> {
-      let advanced =
-        if edge == edgeWitnessTerminal {
-          // read-preserves-intermediate-root: no new proof code. `mpf.has` is the library's own inclusion
-          // check and is total, so a proof against the wrong root is an
-          // attributable refusal rather than a crash inside the library —
-          // and `readFault` above has already run it and halted with the
-          // fact when it answered false, so inclusion holds here (#183
-          // slice b). The mandated `update(root, key, proof, v, v) == root`
-          // then runs on the verified proof and must leave the root alone.
-          let after =
-            mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
-          if mpf.root(after) == mpf.root(acc.trie) {
-            Some(acc.trie)
-          } else {
-            None
-          }
+    None ->
+      Fold {
+        ..acc,
+        trie: if inserting {
+          mpf.insert(acc.trie, key, leafActive, proof)
         } else {
-          // The trie move named by the edge, with the edge table's own leaf
-          // bytes (`types.ak`): no value bytes travel with the request.
-          Some(
-            if edge == edgeInsertAbsent {
-              mpf.insert(acc.trie, key, leafAbsent, proof)
-            } else if edge == edgeInsertActive {
-              mpf.insert(acc.trie, key, leafActive, proof)
-            } else if edge == edgeUpdateActive {
-              mpf.update(acc.trie, key, proof, leafAbsent, leafActive)
-            } else if edge == edgeUpdateTerminal {
-              mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
-            } else if edge == edgeDeleteAbsent {
-              mpf.delete(acc.trie, key, leafAbsent, proof)
+          mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
+        },
+        minted: assets.merge(
+          acc.minted,
+          from_asset(
+            pins.active_policy,
+            key,
+            if inserting {
+              1
             } else {
-              // `edgeDeleteActive`: admitted `0..6` above and the read is
-              // handled in its own branch, so only edge 5 reaches here.
-              mpf.delete(acc.trie, key, leafActive, proof)
+              -1
             },
-          )
-        }
-      when advanced is {
-        None -> halt(acc, @"read-root")
-        Some(trie) ->
-          Fold {
-            ..acc,
-            trie,
-            minted: foldl(
-              deltaOf(edge),
-              acc.minted,
-              fn(entry, value) {
-                let (kind, quantity) = entry
-                assets.merge(
-                  value,
-                  from_asset(policyOfKind(pins, kind), key, quantity),
-                )
-              },
-            ),
-            duties: pushDuties(
-              acc.duties,
-              dutiesOf(pins, edge, owner, key, destination, floor),
-            ),
-          }
+          ),
+        ),
+        duties: pushDuties(
+          acc.duties,
+          dutiesOf(pins, edge, owner, key, destination, floor),
+        ),
       }
-    }
   }
 }

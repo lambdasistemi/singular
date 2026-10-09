@@ -154,7 +154,7 @@ function renderCorpusAndTheorems() {
 }
 
 function renderNaming() {
-  const j = overWitnessJourney();
+  const j = permanentRetirementJourney();
   rows($('naming-journey'), j.steps, (d) => [
     d.what,
     d.edge,

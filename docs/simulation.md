@@ -9,26 +9,21 @@ that a reader can play what the proofs are about. Where the two disagree the
 Lean is right and the page is a defect — which is exactly what the corpus replay
 on the page is for.
 
+The active engine now mirrors permanent permanent contract. Earlier absence, deletion and terminal-attestation journeys are retired; their encodings are refusal controls.
+
 ## What you can do
 
-**Follow a journey.** Five stories, twenty steps between them. *Book a name* is
-the shortest: one unknown key, one fold, the record holds the active token.
-*Witness an absence, then book it* shows the other order — anyone may record
-that a key is unknown, the absent token waits in the cage, and booking it
-consumes that token and pays the deposit back to whoever funded it, not to
-whoever spent it. *Retire a name and attest it* ends in the state that cannot
-move again, and then attests it twice, because an attestation is a read: it
-changes nothing, so every copy of it is equally true. *What the cage refuses*
-walks four attempts that are turned away, each with its own reason. *Delete
-recreates the key* deletes a booked name and books it again — the same key, not
-a second incarnation, because the registry has no version counter to advance.
+**Follow a journey.** Seven stories: register a name, retire it permanently,
+and refuse each of the five excluded encodings. The retirement story also
+attempts to reuse the terminal key and observes `key-exists`. Registration
+mints an active token; retirement consumes it and leaves the key terminal.
 
 Step with ⏮ ◀ ▶ ⏭. Stepping back unwinds the tokens as well as the leaf, so you
 can watch a witness appear and disappear. Where a story reaches a point that
 admits more than one continuation, the branches are offered and taking one does
 not destroy the other.
 
-**Try it yourself.** Free play gives you the seven edges, a key, an owner, an
+**Try it yourself.** Free play gives you the seven historical encodings: two supported edges and five refusals, a key, an owner, an
 output and a deposit, and a choice of approval: matching, *right policy but
 wrong tuple*, another policy, or none at all. The third and fourth are
 obviously refused. The second is the interesting one — an approval minted under
@@ -36,30 +31,24 @@ the registry's own pinned policy, for a real request, that does not match
 *this* request's edge, key, owner and destination. It is refused, and a model
 that checked only the policy would admit it.
 
-**Read what is refused, by name.** Seven primitives against four possible
-leaves is twenty-eight combinations. Seven of them are the edges; the other
-twenty-one are refusals, and the page lists all twenty-eight so you can see that
-the refusals are the *complement* of the table rather than a separately
-maintained list. Each carries its own reason — `key-exists`, `key-unknown`,
-`already-booked`, `not-booked`, `not-active`, `not-absent`,
-`terminal-immutable`, `read-unknown`, `read-absent`, `read-active` — because a
-single generic failure would hide which rule stopped you.
+**Read what is refused, by name.** Seven encoded operations against four
+possible leaves give twenty-eight combinations. Two are admissible transitions;
+twenty-six are refused. Unsupported tags return `edge-inadmissible` before
+approval or trie effects. Supported tags still check the matching approval,
+leaf and active-token presence. Synthetic absent leaves are unreachable from
+permanent contract genesis and are shown as invalid-context controls.
 
-**See the naming instance.** Switch the profile to *Naming — the Over witness*.
-Naming is an instance of the registry, not a second model: a retired name is
-attested by a folded read, the witness is plural, and burning every copy leaves
-the leaf exactly where it was.
+**See the naming instance.** Switch to *Naming — permanent retirement*.
+The same engine registers and retires a name, then refuses terminal witnessing.
 
 ## What the page proves, and what it does not
 
 ```mermaid
-flowchart LR
-    L["Lean model<br/>42 proved statements"] -->|generates| C["corpus.json<br/>38 replayable cases"]
-    L -->|transcribed by hand| J["core.mjs"]
-    C --> R{"replay in your browser"}
-    J --> R
-    R -->|"38 of 38 agree"| OK["the transcription<br/>matches on these inputs"]
-    R -.->|"any disagreement"| BUG["a defect in the page"]
+flowchart TD
+    L["Lean model<br/>36 proved statements"] -->|Export| C["corpus.json<br/>29 replayable cases"]
+    C --> B["Browser loads corpus<br/>and handwritten core.mjs"]
+    B --> R["Replay and compare<br/>Actual answers with Lean"]
+    R --> Verdict["Agreement: these inputs match<br/>Mismatch: a page defect"]
 ```
 
 Every case in the corpus carries its **input** — the state before and the
@@ -100,11 +89,14 @@ rebuilds the standalone page from its sources and fails if the committed
 `node simulator/gate.mjs` replays the corpus outside the browser and reports
 what it covered:
 
-```json
-{ "corpusCases": 38, "codec": 7, "ada": 2, "complementPairs": 28,
-  "refusedPairs": 21, "storySteps": 20, "controlledLaws": 7,
-  "namingRows": 24, "boundary": 4 }
-```
+The command reports computed row counts and labels each corpus section as
+executed behavior or inspected evidence. Registry cases and codecs are executed;
+request-exit payment rows, composed transaction rows, naming and lifecycle
+observations are inspected Lean evidence. This page has no request-exit engine.
+Five laws have applicable finite transition examples. Terminal immutability and
+terminal-attestation soundness retain Lean proofs but have no admitted-transition
+example with their terminal hypotheses; the page reports them as proved only.
+
 
 `node simulator/gate.mjs --selftest` then seeds a defect and requires the gate
 to reject it. A checker that has never been seen to fail is not evidence, so the
@@ -114,7 +106,7 @@ failing run is part of the passing one.
 `index.html` — every other request returns 404, which is how the page's
 self-containment is checked rather than asserted — plays the journeys, drives
 free play including the wrong-tuple approval, reads the refusal table and
-verifies the naming journey. Twenty-five assertions, and a page error or an
+verifies the naming journey. A page error or an
 outbound network request fails the run.
 
 ## Where the model itself is
@@ -126,7 +118,5 @@ outbound network request fails the run.
 [how the model was read back](LEAN-CLARITY.md).
 
 The page models states, leaves, tokens and approvals. It does not execute
-validators, check signatures, build transactions or hold funds. A deposit in
-the simulator is a number that must come back to the right address; on a ledger
-it is lovelace, and nothing here establishes that the compiled validator agrees
-with the model it was derived from.
+validators, check signatures, build transactions or hold funds. Payment rows are inspected model output; they are not transfers of funds. Nothing
+here establishes that the compiled validator agrees with the model.

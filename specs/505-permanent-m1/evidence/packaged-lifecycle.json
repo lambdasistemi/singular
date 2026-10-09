@@ -1,0 +1,287 @@
+{
+  "boundary": "ordinary CLI on one disposable local ledger, built from an extraction outside the checkout",
+  "candidate": "2a243ef03d556bd6c725e097d67d3d3e6ffdb442",
+  "applicationModelRevision": "de34300540223ccedf1ca85216b131fd09a148b4",
+  "sourceHashes": {
+    "lean/Singular/M1.lean": "e94c1bbc502514a7be7083f56a52b595bd435050cbc868b61fe44a1fe7301a93",
+    "lean/m1-corpus.json": "453d1d6ae078068e56be27c6a62b2c6ead8cfe81ab391ded1cfba03df6ffc2fd",
+    "lean/m1-theorem-debt.json": "4b16d1cbc69caf84ea650c35f2220e365ee5488868b96f2fe2bd8a4905a95d96",
+    "onchain/permanent-contract.json": "7f84476c3ac6edf4ad71af8c69516b88a5a33fb1aa029ac4afbaddb0a8c152eb",
+    "offchain/cli/src/Singular/CLI/Permanent.hs": "0be75105b00186f9cd37c8473d06cba60f48d8e448f4b4232ad1c626ddcc6d9f",
+    "offchain/cli/src/Singular/CLI/Registry.hs": "3840ec51659e7f375edb7af4ef74c4a2ab81d5a4b27f6c766708c46871612324",
+    "onchain/validators/permanent_open_datum.ak": "e99a7c6c9eb85bca00b98e7191289ef504ff625f651afe320fbc640c68ed9dea",
+    "tools/m1_boundary.py": "507afc38fd0664cba7af399fb916581f530bcc8f80d288e7a6adff3299283826"
+  },
+  "permanentContract": {
+    "contract": "permanent-m1",
+    "model": "Singular.M1",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.21+unknown"
+    },
+    "scripts": [
+      {
+        "title": "permanent_state.state",
+        "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+        "compiledCodeSha256": "d89f8ee773ae575cac14ef19096aafde9492a06765643dddadc80a7b534cecc1",
+        "parameters": 0
+      },
+      {
+        "title": "request.request",
+        "hash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+        "compiledCodeSha256": "61c8f44aef8315add51b431c59f923f4b73f6628e54aff09df60678dd0978cb5",
+        "parameters": 2
+      },
+      {
+        "title": "permanent_witness.witness",
+        "hash": "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1",
+        "compiledCodeSha256": "77b4bf5d44ddf2e5cc401b1ec27148c17bcb00f93f3b14752ce8b999d41e0544",
+        "parameters": 2
+      },
+      {
+        "title": "permanent_open_datum.open_datum",
+        "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
+        "compiledCodeSha256": "5e7d5fbaec2b573f97d5211cfd42fb7032815f821d51125fc80154425fed02ae",
+        "parameters": 1
+      }
+    ],
+    "registryEdges": [
+      "insertActive",
+      "updateTerminal"
+    ]
+  },
+  "createdPins": {
+    "pinAbsent": "e84eb8ad29d57e2a726d00eabb659c37295056a7fbd64c091e45f026",
+    "pinActive": "2724eb747636db9a7dedb7bea36dd9f4ca34ba4a45302a612de4bb7b",
+    "pinApplication": "e9d723b64cd7d9c23ce310af5bb8dcb62abf435145b2a4978b01de39",
+    "pinState": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
+    "pinTerminal": "839a3f505133082614b8c4f943a656e114209db0ad6d2ad2ca81b2d3"
+  },
+  "observations": {
+    "registeredLeaf": "active",
+    "rootBeforeApplicationUpdate": "eeb2f9864c5ba47392413a363b2858dc2e696f81eed2536bab892db69827576c",
+    "rootAfterApplicationUpdate": "eeb2f9864c5ba47392413a363b2858dc2e696f81eed2536bab892db69827576c",
+    "applicationUpdateKeptRoot": true,
+    "payloadAfterUpdate": {
+      "constructor": 3,
+      "fields": [
+        {
+          "bytes": "626f62"
+        },
+        {
+          "int": 123456789012345678901234567890
+        }
+      ]
+    },
+    "applicationDatumCborAfterUpdate": "d8799fd8799f01d8799f581c807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa58209d57515277916f006b2a4cacb11bcf830a826fa0f62c9391e3982dcda2c376bcff581c2724eb747636db9a7dedb7bea36dd9f4ca34ba4a45302a612de4bb7b446b657941581cd752d13d2da108ba73adfa6a956f4d292a04e2399378152668b6c73a1a001e8480ffd87c9f43626f62c24d018ee90ff6c373e0ee4e3f0ad2ffff",
+    "lockedDepositAfterUpdate": 2000000,
+    "holdingLovelaceAfterUpdate": 2000000,
+    "permanentlyTerminatedLeaf": "terminal",
+    "holdingAfterTermination": {
+      "absent": "no live output holds key 0x6b657941",
+      "holdings": []
+    },
+    "release": {
+      "edge": "updateTerminal",
+      "released": "6ad245275f12f5eb0ed444062b832d9884f0ec0e16677472b7abd6dab3eca710#0",
+      "deposit": 2000000,
+      "fold": "50a5eb107635af1bf82a204531dfd479ed49276056627be9f541db9fe1c33608"
+    },
+    "rejection": [
+      {
+        "edge": "insertActive",
+        "key": "6b657944",
+        "locked": {
+          "assets": [
+            {
+              "name": "1871e393fbc3c260e38a91d3265597631d1d0421c573d8de7974d82d37710d90",
+              "policy": "e9d723b64cd7d9c23ce310af5bb8dcb62abf435145b2a4978b01de39",
+              "quantity": 1
+            }
+          ],
+          "lovelace": 3000000
+        },
+        "owner": "d752d13d2da108ba73adfa6a956f4d292a04e2399378152668b6c73a",
+        "processingEnds": 1791478414331,
+        "request": "df8fb4a42e35ea126e9d16812663e5922623088fbaf957bd952a00ec99a1cc4a#0",
+        "retractEnds": 1791478444331,
+        "returned": {
+          "index": 1,
+          "lovelace": 2000000,
+          "output": "9f6f9a17ccc95bc124adb03be5dd7506049a361a2c7ba7a32d91ee5d50fc4297#1",
+          "recipient": "addr_test1vrt495fa9kss3wnn4hax49t0f55j5p8z8xfhs9fxdzmvwwsq289gm"
+        },
+        "tip": 1000000,
+        "topUp": 0
+      }
+    ],
+    "ownerReclaim": {
+      "command": "reclaim",
+      "edge": "insertActive",
+      "key": "6b657946",
+      "locked": {
+        "assets": [
+          {
+            "name": "951cd4f4d5cbfb60aa647b45c0c02ad984b7aa3e16ff4dc01b5051d2fd0c0d57",
+            "policy": "e9d723b64cd7d9c23ce310af5bb8dcb62abf435145b2a4978b01de39",
+            "quantity": 1
+          }
+        ],
+        "lovelace": 3000000
+      },
+      "outcome": "success",
+      "owner": "d752d13d2da108ba73adfa6a956f4d292a04e2399378152668b6c73a",
+      "processingEnds": 1791478580551,
+      "processingEndsSlot": 4285,
+      "request": "9f74e8f105899316f2034007cc8c892e9a49f47f38a650550ba2ee0418940159#0",
+      "retract": "32ac1b84cea69fb4bc1daae179755fe8a71e08a9a1815021d8b724ff96c1ac3b",
+      "retractEnds": 1791478610551,
+      "retractEndsSlot": 4585,
+      "returned": {
+        "index": 0,
+        "lovelace": 3000000,
+        "output": "32ac1b84cea69fb4bc1daae179755fe8a71e08a9a1815021d8b724ff96c1ac3b#0",
+        "recipient": "addr_test1vrt495fa9kss3wnn4hax49t0f55j5p8z8xfhs9fxdzmvwwsq289gm",
+        "request": "9f74e8f105899316f2034007cc8c892e9a49f47f38a650550ba2ee0418940159#0",
+        "value": {
+          "assets": [],
+          "lovelace": 3000000
+        }
+      },
+      "root": "fcb65519093597ffb4c08846ab6e244460d1277daafe00667ccd2058ef0c8bed",
+      "tipSlot": 4377,
+      "topUp": 0
+    },
+    "rootBeforeRejection": "bea9b9b6db94eb914f3e629ef2f66793a81979e40419e80763e1123471a522f6",
+    "rootAfterRejection": "bea9b9b6db94eb914f3e629ef2f66793a81979e40419e80763e1123471a522f6",
+    "rootBeforeReclaim": "fcb65519093597ffb4c08846ab6e244460d1277daafe00667ccd2058ef0c8bed",
+    "rootAfterReclaim": "fcb65519093597ffb4c08846ab6e244460d1277daafe00667ccd2058ef0c8bed",
+    "subsequentRegistration": "insertActive"
+  },
+  "receiptDigests": {
+    "bob-fold.genesis.json": "bef8c183529609ef901701557d2f9ab214cd6a311c9f80725206f5c234814406",
+    "bob-fold.json": "9b9c0b63aebf67589467af086733dc0e7fab5a9383c0f49223c67acaf71a7165",
+    "bob-fold.time-source.json": "9577208cc5e6346b6b3440b2f84b0dba76bf3777577ffd6b45718da2ffebbc71",
+    "bob-insert.json": "160ed0cfa99dd1de179720f0e0aff527cfa95b4c69cf2e5494196eed9a758299",
+    "bob-preview.json": "e1845b4c0c04ef0c4fda8de44d7af940705e69853f970b42c7ec007f93ede36d",
+    "bob-terminate-fold.genesis.json": "bef8c183529609ef901701557d2f9ab214cd6a311c9f80725206f5c234814406",
+    "bob-terminate-fold.json": "b15e4eaa7c98271a3a37b43e7271267059fd3b107c4bf0f69f606186af7e568d",
+    "bob-terminate-fold.time-source.json": "2b56ba3f173a379df7dbb10d539765c54ac13ff839af148e1727fd08046badf9",
+    "bob-terminate.json": "f88a6907a451bb4aaa3c8dc5899c21cff1390b9fd82c142b8bbfe9f684cabede",
+    "concurrent-writer.json": "1079f30694c37e6efa6a9a7aa6988d7e14de11bbfebec1e04bcb62a668de6303",
+    "create-after-kill.json": "e7eb33ee82393eb6a2d7b8beef2b9b1196aa06550f9577228405056537481afe",
+    "create-again.json": "a6d3ef9080c5ad59a3d1a2a70c6d8f48481b540495d303af51d4bb07ef303d99",
+    "create-defaults.json": "c5d23f918e65aaca657c834361dd2c294ea17a9170b6afd15dcb8cc549c34fa3",
+    "create-killed.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "create-seed-not-owned.json": "453defcd851e4f27f1b43cc8773ecc58fe2b87714948fccd1c93b571eba6ab2d",
+    "create.json": "48cd19c876d90dab846958f37cd39169db864fe024c33e50b3d0903a09622c4a",
+    "dave-create.json": "bdc5a0437fee3d1664f56661ec9d08fb5d6ad1d7534f42b3954de81ccddaeff8",
+    "dave-preview.json": "80be9768e4e434099643a08645c0c0543be5f11cda0f8859c040031932663a33",
+    "empty-actor-insert.json": "85ceac99cd0c6deaea4bdca16022518d6f6e0bae884c7663f95a43ef6ac5505c",
+    "empty-actor-inspect.json": "f266d7e97687cbdac75f1c4e5fb78f6142e453c4c2d85a7fd48cc25aaa112d84",
+    "empty-reader-inspect.json": "59cef728ea468c543dcc53727d2c59c677aacbef0c83622863d2ce643331092b",
+    "fold-after-insert.genesis.json": "bef8c183529609ef901701557d2f9ab214cd6a311c9f80725206f5c234814406",
+    "fold-after-insert.json": "597d4b90a3ac2e3acf921bbe331c596ed75cbd66e044a09c5dc4b0100bdd9a21",
+    "fold-after-insert.time-source.json": "9fc7522c342df911a7cf5ff0701fa0e4aca65e2406160d2b149fd5402c63c1c2",
+    "fold-after-reclaim.genesis.json": "bef8c183529609ef901701557d2f9ab214cd6a311c9f80725206f5c234814406",
+    "fold-after-reclaim.json": "1dfd904e654bcdd6f90466bfbbdd93e55549588f8c7b2a1c7f344a6d48ef8349",
+    "fold-after-reclaim.time-source.json": "96ffef80b7916b9012afd7c10e7b0ba8c130c16f586188588efa38c34f57819f",
+    "fold-after-reject.json": "59be566685b730c49a9ba8b901d6cfe5e5b4bb01518954e658b41fe29cd89cc7",
+    "fold-bad-funding.json": "1dcd30d1643fb90a182e14b13395713e823838dd780c8c1e2eea62283b9f51e0",
+    "fold-before-reclaim.json": "b137a890d4f339d8cabd61467b97d44af9bf65084f77fe1f8cc2c5f01e9f5902",
+    "fold-late.json": "78dfe9ff8e61dc7770d70efe0a6cc1e55f035a69d4aefc40d1edda59f94028f5",
+    "fold-near.json": "3a85b0afbd880bf5a4272028b6261033b2953c63bb6b406ec5be3ad6495bde78",
+    "fold.genesis.json": "bef8c183529609ef901701557d2f9ab214cd6a311c9f80725206f5c234814406",
+    "fold.json": "395a9245012b951c3c33c4b9b9b0e1165c747496ea99e33a122e8f0b904846b0",
+    "fold.time-source.json": "f41f2b3e66a89c1c9ae8e2ef16de513ebfafc3cd037d97ba8a3ad319348acbf7",
+    "genesis-indexer.json": "1ef76837a8e928e40eb04aa6301dd1a494d25d9b7df0bba7d45ed0dc03919529",
+    "insert-after-reclaim.json": "1240872aa4d9f24f46bad676ee708ed8450c1a0c994204378cce792fe8eba123",
+    "insert-after-reject.json": "23bbbc02cdf1b019b68725184b2c19f4d684907671fde5810f8cbfd375141102",
+    "insert-after-release.json": "1ef91984ba6e46b95b4d81a3d82073552f7ffdce17172f20ee65f5392db05ffa",
+    "insert-bad-key.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-closed-stderr.json": "c98aaf47df6f6c7a2853ec9d49b8b12d8bd70dd85802dd36d49a9c9d486d8964",
+    "insert-deposit-below-minimum.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-deposit-not-integer.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-foreign-release.json": "55132f5c4e08b200b859f938840be45ecb52fc5e4b6adb122e68c9b12bf0db1a",
+    "insert-over-allowance.json": "cbd3c1168339c1bbeb54ea6f42c6cbf3b2d0bfb7c7068fcf37e758d85d5dde3e",
+    "insert-payload-not-data.json": "c98aaf47df6f6c7a2853ec9d49b8b12d8bd70dd85802dd36d49a9c9d486d8964",
+    "insert-preview.json": "b3aa808b59231a9c3d30f143b88b9818fb8a1c011bfba322d6c5a9fd84b7303e",
+    "insert-removed-flag.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-to-reclaim.json": "2d4d979a5f4c6b05459d7225ffe91d00cebb8d574172eb46332a0dd681e09786",
+    "insert-trace-trace-format-unknown.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-trace-trace-to-unknown.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-trace-trace-unknown.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert-unknown-registry.json": "58996aa43b7e8aa6eb0a1db61bed8e9d1f3ca6ac741d03c54eb5aa9f441a0a68",
+    "insert-without-token.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "insert.json": "781b8b2f023fc9bca67f53c8b7747d9eeb708a15f9688176a32e559326971b60",
+    "inspect-1.json": "c7ede370c09b96c2b7ff58724859d3b6af7b286e845e44c9901f0cb6f4171ffc",
+    "inspect-2.json": "9a8887075dbfb87d8356442892fdd33e74ba97913d2771c8e2c96349f37c693c",
+    "inspect-3.json": "99382078559cda7fa31104dc579f90f59bf6d297de24032627912d0073c294c2",
+    "inspect-4.json": "5cef45913f207cfae10531ac28eb38845642ed7765062a30298fb59f7ffc6fe9",
+    "inspect-after-reclaim-fold.json": "55ce35a65ddabe9db7c74d48410d7e614a561cdeedeab4049349cf78ad5e20ca",
+    "inspect-after-reclaim.json": "ed52f9497c251bd8d4e46741a48e41345764dd18250b6e0a282b55ceeca2ea8c",
+    "inspect-after-reject.json": "c2369ab0f7e41cba727800aeda7b7b1d0a1423ce3d8f0a1b192acdf70c978c57",
+    "inspect-before-reclaim.json": "b22cf27e47979cbdbb3463887bbef47f07eb18bcd3194e6a0abe6fe3275c2774",
+    "inspect-before-reject.json": "2b30c1090a1ae631432d3709608a41f53388cd91aa55314b22e45d6f99fe226c",
+    "inspect-bob-booked.json": "6e3dd1f193043645cc35574b79bafd37fe518cfa352bfa9a0e0343af5093050f",
+    "inspect-bob.json": "5b4accca634925f4398d4a6b921f393699a8b2f6e5d45626a18f2bf39e53ec94",
+    "inspect-defaults.json": "0a93a84ac5797c3f7a84f8ac0b4ea89d02dfc2b2e465f03820a8dfbc6273cd4e",
+    "inspect-interrupted-other-token.json": "b6e25c2c73d0dc29722c662cd89d8373d47732e29e3402d4e764f277e8e9b287",
+    "inspect-interrupted.json": "272f9a69743436580bd114f417508434f76642c03f65e523a1071a78bd073961",
+    "inspect-late.json": "2ec6e522d1664138c45d705b74e070a9642898996debc0143758d31d58547747",
+    "inspect-no-node.json": "e5be1e313e7965064a27f3f174f411331808beec5451bd6f9574c2c72cb07ab4",
+    "inspect-pending.json": "864b693417780e1b07abad7bcf04a7a879fd76c2513fb3e47c71ae22f4f71ea2",
+    "inspect-refund.json": "9054684c8cef663bdc98aee8e01a7f2d7be08679a13508782f396c950da310e7",
+    "inspect-rejected.json": "dfb012310c4147f364c3f2a23dbaaf7cd21a9c2df29e600c131898d608bdf712",
+    "inspect-retired-files.json": "1c43126d550988236a0f41ea646fc6f4db3123523d511fb2020f8b199464dbd6",
+    "late-insert.json": "2bcbbd349c11b6556277588ead24988b80b6798b15b3dd3559587f249c718128",
+    "preview-inter.json": "a6f9f5987cb6c55388d42e86b6ffe44ebdb7018680f98cf9d068b6d7dce2335c",
+    "preview-public.json": "0db9a59d586314ac318570554b2246f3d394db6f65d4d8f2eac37945589354ad",
+    "preview.json": "ae7943a194f56a2e1f652ae00759dfa29e1011586fdbfa3f1c0528aab990cb42",
+    "reclaim-closed.json": "6eda15e65191b6594619300c68be44a92300ae315c9752e90f09cea019c7d8b1",
+    "reclaim-early.json": "53c6c80bd0a7a3f754a12a95d509bdb61d70d019338c1a9a2a06e4ed291f2737",
+    "reclaim-not-owner.json": "938f9e8b919640825678dd12b1c2a3a9be3bc3420c2a72f3b76644c67913df9c",
+    "reclaim-not-pending.json": "0e3f4145e135c4ea8968e9b81f59a7712fd504f9a07ab960e732af80e57e4b18",
+    "reclaim-tampered.json": "c49ef64e534ba48a4ca78e676433f7333ff6eb1fd71115bbae458cd91416911f",
+    "reclaim.json": "6a88b425e8ba61ec49c26012391ad333985b342da215e59019c0a7c354582cbb",
+    "reject-bad-funding.json": "6aa592877873d8f6373b171fbc35a9bdc0f488cb6e899bf6bc6c0e06d64f11d3",
+    "reject-early.json": "f40824488d8c9a49b8874e4fc6840bb96241e5975481f2a345d27328f9fdd1b5",
+    "reject-nothing.json": "d0b10b1a3ad4d019dece2635094400d87496c1715f472b62fb43e665da4b65f6",
+    "reject-tampered-index-only.json": "f86e7ce1bcb2ab463e96607227446590bd5a233bd377a46aef88eec68ad174cb",
+    "reject-tampered-index.json": "8f690b1d1e139cce2a27d4aa67e295af0a2994bbf0d38c94b448850463f37deb",
+    "reject-tampered-locked-assets.json": "00819b87044c42fcaa32c15deda2317d28c18271e874f87a26d9db026f2743e1",
+    "reject-tampered-locked.json": "47cfee5867d4e80ca3c9a8da49d1528b7dd24b0782cc9886ea6021658788994d",
+    "reject-tampered-output.json": "0c25571e154e795e59115b31c5f1c14919fb8d616ec6a6d954b1793d52e96602",
+    "reject-tampered-owner.json": "ffa37889b7f7b574207b46d2d68b7d9e910609df83f2920ef5a8d27d98cb67ac",
+    "reject-tampered-returned.json": "03e83b198c7069d66a4baae9ef31dc8290a3cdf6abcbdbb2ba29144d3f0e801a",
+    "reject-tampered-tip.json": "61d3ab061d880088d8909d03832082e0670bc80fcaaef79b1c015e61b669ef94",
+    "reject-tampered-top-up.json": "012333c9c74fa9992a6398c1c8fb50d77b4accf5daca792241eafb317f3e9dee",
+    "reject.json": "2d6c1b249c0fe404d802bb481cb491575719d7895d878c729aa89aca9841afbc",
+    "terminate-killed.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "terminate-not-controller.json": "5a7ef358c8e889bb47821133e4e89ab6fc6d8ff14fc57ec4a77f715ac87e41d8",
+    "terminate-preview.json": "f38e20226248ebb2b1b449270abdcea533ac6e47a3cedae181414ff6b66be593",
+    "trie-local-broken-before.json": "d5f503d35fb5f92a2dee84d58803c99d00a6164dbfe8628ebc10aa2237e58b69",
+    "trie-local-missing-change.json": "4315b2646c1b3831fcd5896c5017d5b053994b5715f67b0bca74dc4000cbdcec",
+    "trie-local-missing-create.json": "9dc81b86e5f720479229becfee3f078ae9ba5244948748039f7cbf0465e2cf2b",
+    "trie-local-undecodable-edge.json": "1af3e6fc4bdb3575d27b6f600fff859f8fd42af98cac055029803216fe010d2b",
+    "trie-local-wrong-after.json": "26f494564850f391cfb688b8d2ce5c663a274d3eceb1e54b7179540c6634de13",
+    "trie-plain-inspect.json": "d4d203ffac149b652380ec12087d0c5d13e7ad68d9c8d2907a3e730948b240fd",
+    "two-create.json": "50afc4b6e9f3c9e0290f4efdc86107a37abc5ee95b61427734d633da0e6e63f9",
+    "two-fold.json": "549f8abcfc4ea75556bf1d0701b6da1bb522de3a2ddf1e3166f2f3892fb1f0e1",
+    "two-insert.json": "f697fcc6293bd2d621468d5c45a77d9c56fb3d25bec2679d52cd9d54b0862102",
+    "two-inspect.json": "499ce9d7a51ee331cbd69982fe88ca4c010b1472600a80a3eb65ce07e1bbbcec",
+    "two-preview.json": "3bff320c115019a8a10208efed1b17a9e55d062a02707f4c518629ce75374454",
+    "update-node-lost.json": "a498a8d2ee7017bf631c820198a5bdf8a6c3efba904b21c94340ee7fe55ae040",
+    "update-not-controller.json": "0b44d07a12b5e804b32aa418d21837fd3a70f57fe175e8101cb0df9aada132a3",
+    "update-preview-not-controller.json": "7e37fb2913592bbd17ccd96791607f29fa6a02521a69e2877caf33588d4cb7f2",
+    "update-preview.json": "21b6bb297b9d612ae17bbedd846b58481807266f02228ad919131fa0caa01ff4",
+    "update.json": "9bdfdc65305f86dd9314ef1c348d3bcc62477e032073bdcad40aab9dd02a032e",
+    "write-after-kill.json": "75522158973d6c0e10a34506afcadea686f7ac66c8646f14ff319f472f83869f"
+  },
+  "limits": [
+    "This is owner execution on a disposable local devnet, not independent audit or public-network acceptance.",
+    "It does not assign the new bounded public conformance row an executed status.",
+    "The application model stamp is distinct from the bounded registry law source digest.",
+    "Later docs and independent CLI-control runner repairs leave these model, production CLI and compiled script sources unchanged."
+  ]
+}

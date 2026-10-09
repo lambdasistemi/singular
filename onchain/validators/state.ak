@@ -1,104 +1,26 @@
-//// The registry's state validator: the cage, in registry mode (#157).
-////
-//// The cage IS the registry. There is no pinned consumer script and no
-//// mandatory withdrawal: every rule the application used to re-walk beside
-//// the fold is checked by this validator, once, from the transaction's own
-//// evidence. This module is its dispatch; the rules live in the
-//// `registry/*` owners named below.
-////
 //// ## Responsibility
-////
-//// Route each script purpose to the owner of its rule: a `Minting` mint to
-//// `registry/genesis`, a spend of an `AbsentCustody` UTxO to
-//// `registry/custody`, and a `Modify` spend of the state UTxO to
-//// `registry/modify`, after identifying the state input's script and token
-//// (`stateIdentity`). The custody arm does not read the spend redeemer:
-//// `registry/custody` decides that spend whatever redeemer it carries. Only
-//// the state UTxO's arm restricts the redeemer, to `Modify`. Every other
-//// mint redeemer, state-UTxO spend redeemer, datum and purpose fails.
-//// `modifyRefusal` exposes the same `Modify` decision to the
-//// Aiken suite, so a test asserting a reason asserts the one this validator
-//// traces.
+//// Boot an ownerless registry and admit only registration and permanent termination.
+//// Rejects retain their original exit.
 ////
 //// ## Dependencies
-////
-//// Imports `registry/genesis`, `registry/custody`, `registry/modify` and
-//// `registry/refusal`, with `lib` and `types`. No registry owner imports
-//// `state`. The owners depend on each other in one direction only:
-////
-//// - `registry/modify` imports `registry/fold`, `registry/discharge`,
-////   `registry/settlement` and `registry/refusal`;
-//// - `registry/fold` imports `registry/duty` and `registry/trie`;
-//// - `registry/discharge` and `registry/settlement` import `registry/duty`,
-////   `registry/custody` and `registry/refusal`;
-//// - `registry/custody` imports `registry/refusal`;
-//// - `registry/genesis`, `registry/duty`, `registry/trie` and
-////   `registry/refusal` import no registry owner.
+//// `registry/genesis` validates creation; `registry/admission` and `registry/modify`
+//// validate the two supported operations and their settlement obligations.
 ////
 //// ## Assumptions
-////
-//// - The validator takes no parameters (the ownerless registry of operator
-////   ruling NOTE-028/A-003): one script holds every registry, and a registry
-////   is told apart by its state token.
-//// - The ledger runs this validator for every input it spends at its address
-////   and for every mint under its policy, so the custody path may rely on the
-////   same transaction's state input being judged by `registry/modify`.
+//// The state input carries its datum and exactly one state token under this script.
+//// Legacy redeemer and datum encodings remain available for refusal controls.
 ////
 //// ## Invariants
-////
-//// What a `Modify` must satisfy, and the owner that checks it:
-////
-//// - **C1/seven-admitted-edges admissibility** — the request's tag is one of the seven seven-admitted-edges
-////   edges (`0..6`), admitted before approval and before any proof is
-////   checked; anything else refuses `edge-inadmissible`. The trie move and
-////   its leaf bytes come from the edge table, never from request bytes.
-////   (`registry/fold`)
-//// - **read-preserves-intermediate-root the read** — edge 6 is verified with the existing verifier at its
-////   own position in the batch, so its proof is checked against the
-////   intermediate root there. The leaf is unchanged. (`registry/fold`,
-////   `registry/trie`)
-//// - **tree-edge-admission-by-approval admission** — a request whose edge changes the trie is folded only
-////   if its UTxO carries exactly one asset under the pins's
-////   `application_policy` whose asset name is the approval binding of that
-////   request. No application script runs at fold time; the cage recomputes
-////   the name rather than trusting it. A read requires no approval: its
-////   admission is skipped, and an approval asset it carries is not checked.
-////   (`registry/fold`)
-//// - **mint-matches-edge-deltas the delta** — the cage sums the token column of seven-admitted-edges over the
-////   requests it consumed, per key, and the transaction's mint under the
-////   three pinned token policies must equal that sum exactly. Nothing else
-////   may move under them. (`registry/fold` sums, `registry/modify` compares)
-//// - **token-destinations-and-refunds destinations** — each minted active or terminal token lands in
-////   exactly one output, the one its request named, carrying the datum it
-////   named and at least the request's value minus the tip. An absent token
-////   lands in the cage's own custody beside the inserter's refund address; a
-////   consumed absent token pays that address back. An edge that delivers no
-////   token (3, 4, 5) and a rejected row pay the request's deposit to
-////   `requestOwner`'s key. Every lovelace obligation of a fold is settled
-////   once per payee, on the summed lovelace of the outputs paying it (#253).
-////   (`registry/duty`, `registry/discharge`, `registry/settlement`)
-//// - **state-datum-fields the pins** — the seven non-root fields are equal before and after
-////   every fold. (`registry/modify`; genesis sets them)
-//// - **request-covers-tip coverage** — every consumed request carries at least its tip.
-////   (`registry/fold`)
-////
-//// Every refusal the `Modify` decision and the custody path name RETURNS
-//// FALSE after emitting exactly one user-defined trace, rather than
-//// crashing: a script that dies inside a library cannot tell anyone why,
-//// and each row of Gate S is bound to the single trace its refusal emits.
-//// That holds for the named refusals only. Genesis, `End`, `Migrating`,
-//// `Burning` and every unmatched arm fail without a reason, and a `Modify`
-//// still crashes on a malformed continuation output or on a wrong leaf or
-//// invalid proof that no named refusal covers.
+//// Admission is fixed for the lifetime of an instance. No parameter or redeemer
+//// can widen it; custody, migration and registry destruction have no spending path.
 
 use aiken/collection/list.{find}
 use cardano/address
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use lib.{exactQuantity, tokenFromPolicy}
-use registry/custody.{validCustodySpend}
+use registry/admission.{validModify}
 use registry/genesis.{validateMint}
-use registry/modify.{validModify}
 use registry/refusal.{traceFalse}
 use types.{
   AbsentCustody, Burning, CageDatum, End, Migrating, MintRedeemer, Minting,
@@ -112,11 +34,11 @@ use types.{
 ///   burning destroy or re-policy an ownerless registry with no
 ///   justification; the constructors stay for the wire shape.
 /// - `spend`: the datum must be present and the spent input found among the
-///   transaction's inputs, or the script crashes. An `AbsentCustody` UTxO is
-///   spent only under `registry/custody`'s rule, which does not read the
-///   redeemer: any redeemer reaches it. The state UTxO, whose
+///   transaction's inputs, or the script crashes. A legacy `AbsentCustody`
+///   UTxO is refused for every redeemer. The state UTxO, whose
 ///   script and one state token `stateIdentity` must establish (it crashes
 ///   otherwise), is spent only with `Modify`: `True` when
+///   `registry/admission` admits registration or termination and
 ///   `registry/modify` finds no refusal, else its one reason is traced and
 ///   the handler answers `False`. The fold is permissionless — there is no
 ///   registry-owner role. On the state UTxO, `End` and every other redeemer
@@ -144,10 +66,8 @@ validator state {
     expect Some(datum) = maybeDatum
     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
     when datum is {
-      // The cage's own custody of an absent token (#157 absent-custody-datum): one
-      // spending path and nothing else. The redeemer is not what
-      // authorizes it — the shape of the fold around it is.
-      AbsentCustody { refund } -> validCustodySpend(refund, input, tx)
+      // Legacy custody datums have no spending path in M1.
+      AbsentCustody { .. } -> fail
       StateDatum(pins) -> {
         let (policyId, cageToken) = stateIdentity(input)
         when redeemer is {

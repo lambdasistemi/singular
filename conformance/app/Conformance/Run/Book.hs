@@ -123,18 +123,8 @@ import Conformance.Mirror
     , require
     )
 
-{- | Book one absence on a row cage's registry (#157 A-009, D-001).
-
-The issue-70 rows used to create a bare request: no destination, no
-approval, and a value the leaf codec does not admit. A request like that is
-not a registry-mode booking at all, and a fold of it could only ever be
-refused. Every row request is now the insertAbsent edge — the one edge that
-needs no signature, because anyone may witness that a name is free — with
-the deposit's refund address as its destination and the approval that
-certifies it riding along.
-
-The key is the row's own; the value is the absent leaf, because that is
-what an absence witness says.
+{- | Book a supported registration on a row cage. Structural-refusal controls
+start from this valid request and differ only in their claimed proof/actions.
 -}
 rowRequestInsert
     :: Env
@@ -145,7 +135,7 @@ rowRequestInsert
 rowRequestInsert env cage key _val = do
     let cfg = rcCfg cage
     tid <- cageTid cage
-    dest <- edgeDestination env edgeInsertAbsent
+    dest <- edgeDestination env edgeInsertActive
     (reqIn, reqOut) <-
         bookEdge
             env
@@ -154,7 +144,7 @@ rowRequestInsert env cage key _val = do
             (genesisAddr env)
             (genesisSignKey env)
             key
-            edgeInsertAbsent
+            edgeInsertActive
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
@@ -207,7 +197,7 @@ as the edge moves it.
 speculativeStep
     :: (Monad m) => CageTrie.Trie m -> ByteString -> Edge -> m [ProofStep]
 speculativeStep trie key edge
-    | edge == edgeInsertAbsent || edge == edgeInsertActive =
+    | edge == edgeInsertActive =
         walkEdge trie key edge
     | otherwise =
         CageTrie.lookup trie key >>= \case
@@ -228,7 +218,7 @@ keyProof trie key =
     CageTrie.getProofSteps trie key >>= \case
         Just inclusion -> pure inclusion
         Nothing -> do
-            exclusion <- walkEdge trie key edgeInsertAbsent
+            exclusion <- walkEdge trie key edgeInsertActive
             _ <- CageTrie.delete trie key
             pure exclusion
 

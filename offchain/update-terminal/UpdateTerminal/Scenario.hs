@@ -23,7 +23,7 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.Runner (withRunner)
 import Singular.Registry.Types (OnChainTokenState (..))
-import UpdateTerminal.Controls (absentRefusal, unknownRefusal)
+import UpdateTerminal.Controls (terminalRefusal, unknownRefusal)
 import UpdateTerminal.Narration (die, hex, say)
 import UpdateTerminal.Observation
     ( Observed (..)
@@ -67,7 +67,7 @@ updateTerminal observedPath = do
         bootState <- bootStateOf story
 
         r <- retireStoryKey story
-        absentDetail <- absentRefusal story
+        terminalDetail <- terminalRefusal story
         unknown <- unknownRefusal unknownReg
 
         writeObservation observedPath $
@@ -82,7 +82,7 @@ updateTerminal observedPath = do
                     , obsBoot = bootObservation cfg (regBootTx story)
                     , obsMint = mintedActive (retRetireTx r) cfg
                     , obsRetirement = r
-                    , obsAbsentDetail = absentDetail
+                    , obsTerminalDetail = terminalDetail
                     , obsUnknown = unknown
                     }
 
