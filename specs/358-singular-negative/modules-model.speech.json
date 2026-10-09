@@ -1,0 +1,76 @@
+{
+  "host-components": [
+    {
+      "text": "Host components.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want the bypass to live in one package that nothing ordinary depends on, so that installing singular never installs it and a reviewer can see that from the build.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The arrow points from the user of a thing to the thing. Nothing points into the host except the arrangement scripts that run it. The ordinary executables point only at the shared sources and the library.",
+      "pause": 400
+    }
+  ],
+  "shared-modules-the-host-reads-and-does-not-change": [
+    {
+      "text": "Shared modules the host reads and does not change.",
+      "pause": 500
+    },
+    {
+      "text": "The host takes Singular.CLI.Command for parsing, Singular.CLI.Attached, Singular.CLI.Live and Singular.CLI.Session for attaching to a registry and for the node session, and Singular.CLI.Root and Singular.CLI.Finish for composition and exit. It builds with Singular.Registry.TxBuilder and Singular.Application.OpenDatum modules.",
+      "pause": 400
+    },
+    {
+      "text": "One finding, recorded for the plan review: Singular.CLI.Plan.planUpdate, planTerminate and the handlers in Singular.CLI.Entry fuse the controller check with planning, so the host cannot reuse them with the check off. It does not need to: the host's own handlers call the library builders directly for the forbidden forms and call the shared attach and session code for everything common. No ordinary module gains a parameter, flag or hook. If the coder finds a shared function without a reachable lower entry point, it stops and the ticket owner asks.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction-and-fences": [
+    {
+      "text": "Dependency direction and fences.",
+      "pause": 500
+    },
+    {
+      "text": "The host depends on shared code; shared code never names the host. The ordinary executables' stanzas stay unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "No host module is copied into the shared sources, and no shared module is copied into the host package; a duplicated module name is a failure.",
+      "pause": 300
+    },
+    {
+      "text": "The host's modules are the only place a refusal is skipped. The other way round, a control reads the built ordinary executables and fails if any host module is in them.",
+      "pause": 300
+    },
+    {
+      "text": "The conformance package is not edited. Its harness keeps its copy of the crafting until the command-line split; the duplication is named as a residual and the gate still proves the shipped ordinary binaries hold no copy and no bypass.",
+      "pause": 300
+    }
+  ],
+  "files-the-slice-touches": [
+    {
+      "text": "Files the slice touches.",
+      "pause": 500
+    },
+    {
+      "text": "Existing files, added lines only, one line each except the inventory (a named desk exception):",
+      "pause": 400
+    },
+    {
+      "text": "All other changes are new files: the package under offchain/negative/, nix/negative-host.nix, tools/negative_host_*.sh with their controls, .github/workflows/negative-host.yml, docs/negative-host.md with its speech companion, and this specification directory. The release archive copies the offchain, tools and conformance partitions whole, so the new files ship without editing the archive definition or its checker. None of the touched or new files is a validator, a Lean file, a fold-builder module, a state-directory or session module, a funding module or any create, inspect or preview module.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "b78dbef80c88805075bee7f861f13b0dc55db69bf7e5686647ebe39e882459ba"
+  }
+}
