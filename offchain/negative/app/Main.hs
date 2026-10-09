@@ -67,9 +67,10 @@ main = do
                 runNegative (koiosEnv tracer) invocation >>= exitWith
 
 {- | Run one negative invocation in the composed environment. The three
-negative forms run through the host handlers; ordinary insert and
-terminate stop as not in this slice; inspect and help run through the
-shared command; create, reject and reclaim are not host commands.
+negative forms run through the host handlers, as do ordinary insert and
+terminate: insert stops as third-slice work while terminate books for any
+signer; inspect and help run through the shared command; create, reject
+and reclaim are not host commands.
 -}
 runNegative :: Env -> NegativeInvocation -> IO ExitCode
 runNegative env = \case

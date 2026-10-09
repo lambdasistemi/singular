@@ -16,9 +16,9 @@ As the person who will run the ticket's commands, I want each piece of work name
 
 ## Second slice: the remaining application pairs
 
-- [ ] tamper-family-pairs: one pair per tampered protected field, each refused by the application spending contract, each beside the controller's honest update.
-- [ ] stranger-termination-booking-pair: the termination booking by a stranger refused by the application at the booking, beside the controller's own booking.
-- [ ] withdraw-pair: the release outside any fold refused by the application, beside the same release inside the honest fold of the booked termination.
+- [x] tamper-family-pairs: one pair per tampered protected field, each refused by the application spending contract, each beside the controller's honest update.
+- [x] stranger-termination-booking-pair: the termination booking by a stranger refused by the application at the booking, beside the controller's own booking.
+- [x] withdraw-pair: the release outside any fold refused by the application, beside the same release inside the honest fold of the booked termination.
 
 ## Third slice: the registry pairs, the sequence, mutants and the page
 
