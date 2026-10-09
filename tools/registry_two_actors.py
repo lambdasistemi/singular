@@ -469,8 +469,10 @@ def fetch_state_fee_bound(
                     try:
                         if kind.endswith("value"):
                             datum = _plutus_json_value(raw_datum)
+                            datum_len = len(json.dumps(raw_datum))
                         else:
                             datum = decode_plutus_datum(raw_datum)
+                            datum_len = len(raw_datum) // 2
                     except ValueError as error:
                         reasons.append(f"a datum did not decode: {error}")
                         continue
@@ -482,7 +484,18 @@ def fetch_state_fee_bound(
                         or not isinstance(datum[2], list)
                         or len(datum[2]) != 8
                     ):
-                        reasons.append("a datum is not the eight-field state datum")
+                        if isinstance(datum, tuple) and datum[0] == "constr":
+                            kinds = ",".join(type(f).__name__ for f in datum[2])
+                            reasons.append(
+                                "a datum is not the eight-field state datum: "
+                                f"constr {datum[1]} of {len(datum[2])} ({kinds}) "
+                                f"at {datum_len} bytes"
+                            )
+                        else:
+                            reasons.append(
+                                "a datum is not the eight-field state datum: "
+                                f"{type(datum).__name__}"
+                            )
                         continue
                     _root, fee, process, retract = datum[2][0:4]
                     if not all(isinstance(v, int) for v in (fee, process, retract)):
