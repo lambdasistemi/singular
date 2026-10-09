@@ -46,13 +46,11 @@ library
     , aeson-pretty
     , base                              >=4.14 && <5
     , base16-bytestring
-    , bech32
     , bytestring                        >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
-    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -60,7 +58,6 @@ library
     , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers                        >=0.6  && <0.8
-    , contra-tracer
     , crypton
     , directory
     , filepath
@@ -72,7 +69,6 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
-    , scientific
     , singular-registry:local-services
     , singular-registry:ledger-kernel
     , text                              >=2.0  && <2.2
@@ -92,14 +88,6 @@ library
     Singular.Application.OpenDatum.Release
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
-    Singular.Provider.Koios.Client
-    Singular.Provider.Koios.Evidence
-    Singular.Provider.Koios.History
-    Singular.Provider.Koios.Provider
-    Singular.Provider.Koios.Runtime
-    Singular.Provider.Koios.State
-    Singular.Provider.Koios.Recorded
-    Singular.Provider.Koios.Wire
     Singular.Registry.AssetName
     Singular.Registry.Blueprint
     Singular.Registry.Blueprint.Load
@@ -398,7 +386,6 @@ executable singular-koios
   build-depends:
     , base                          >=4.14 && <5
     , optparse-applicative
-    , singular-registry
     , singular-registry:koios-http
     , text
 
@@ -413,32 +400,50 @@ library koios-http
   visibility:       public
   hs-source-dirs:   koios-http/src
   exposed-modules:
+    Singular.Provider.Koios.Client
+    Singular.Provider.Koios.Evidence
+    Singular.Provider.Koios.History
     Singular.Provider.Koios.Http
+    Singular.Provider.Koios.Provider
+    Singular.Provider.Koios.Recorded
     Singular.Provider.Koios.Recorder
+    Singular.Provider.Koios.Runtime
+    Singular.Provider.Koios.State
+    Singular.Provider.Koios.Wire
     Singular.Registry.Terminal
     Singular.Registry.Runner
 
   build-depends:
     , aeson
+    , aeson-pretty
     , base                   >=4.14 && <5
     , base16-bytestring
+    , bech32
     , bytestring
     , cardano-crypto-class
+    , cardano-ledger-alonzo
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-slotting
+    , cardano-strict-containers
     , case-insensitive
     , contra-tracer
     , cardano-tx-tools:tx-build
+    , containers
+    , crypton
     , directory
     , filepath
     , http-client
     , http-client-tls
     , http-types
     , microlens
+    , memory
+    , mtl
     , random
+    , scientific
     , singular-registry
     , singular-registry:local-services
     , singular-registry:ledger-kernel
