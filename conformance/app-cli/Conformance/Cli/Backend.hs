@@ -270,7 +270,7 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet (Wallet (..), bech32Address, loadWallet)
 
 import Conformance.Cli.Admission
     ( admit
@@ -863,6 +863,14 @@ walletPartition :: Int -> FilePath -> IO ByteString
 walletPartition magic keyfile =
     addrKeyHashBytes . walletAddr
         <$> loadWallet (fromIntegral magic) keyfile
+
+-- | The primary wallet's public address: what the harness passes its
+-- inspects so they reconcile that wallet's managed partition, as they
+-- reconciled the actor directory before managed state.
+primaryAddress :: Env -> IO String
+primaryAddress env = do
+    let o = envOptions env
+    bech32Address . walletAddr <$> loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
 
 {- | The journal the command journals to: the actor root, the registry token
 and the wallet the command signs with. A fold signs with the second wallet;
@@ -1551,7 +1559,14 @@ commandArgsFor env c actor registry key r = do
                 )
         Inspect -> do
             common <- named
-            pure (["registry", "inspect"] <> common <> keyArg <> node)
+            address <- primaryAddress env
+            pure
+                ( ["registry", "inspect"]
+                    <> common
+                    <> keyArg
+                    <> node
+                    <> ["--wallet-address", address]
+                )
 
 {- | A preview of a create into @dir@ with a wallet: the seed it names. With
 a seed, the preview succeeds only while that seed is an unspent output of
