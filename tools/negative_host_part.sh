@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# negative-host-part (first slice): stranger-updates-the-key from the release archive.
+# negative-host-part (second slice): the application pairs from the release archive.
+# Parts: stranger-updates-the-key (first slice), the controller-signed
+# tamper family (controller-tamper-controller|deposit|token|address|datum),
+# the stranger's termination booking (stranger-terminates-the-key) and the
+# controller-signed release outside any fold
+# (controller-withdraws-outside-a-fold).
 # usage: negative_host_part.sh REPO-ROOT PART
 #
 # For one discovered part: assemble the release archive, extract it outside
@@ -16,7 +21,7 @@ set -euo pipefail
 root="$1"
 part="$2"
 case "$part" in
-  stranger-updates-the-key) ;;
+  stranger-updates-the-key|controller-tamper-controller|controller-tamper-deposit|controller-tamper-token|controller-tamper-address|controller-tamper-datum|stranger-terminates-the-key|controller-withdraws-outside-a-fold) ;;
   *)
     echo "negative-host-part: unknown part: $part" >&2
     exit 2
@@ -183,18 +188,66 @@ run_ok inspect-active "$singular" registry inspect --key alice-1 "${common[@]}" 
   || setup_fail "key is not active after fold"
 say "registry ready: alice-1 active"
 
-# 6. Forbidden stranger update (bob) and accepting controller update (alice) via the host.
+# 6. The pair: the forbidden command refused, its accepting control
+# accepted. The controller signs both sides of the tamper family (her
+# tampered update beside her honest update) and of the withdraw (her
+# release outside any fold beside the same release inside the honest fold
+# of the booked termination, ordinary commands); the termination booking
+# pairs the stranger against the controller. Every refusal is judged below
+# against the registry's own application pin; setup, encoding and client
+# failures are classified and never counted.
 mkdir -p "$work/host-bob" "$work/host-alice"
 forbidden_status=0
-"$host" registry update --key alice-1 --payload "$work/payload-update.json" \
-  --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
-  "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
-  >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
 control_status=0
-"$host" registry update --key alice-1 --payload "$work/payload-update.json" \
-  --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
-  "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
-  >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+case "$part" in
+  stranger-updates-the-key|controller-tamper-controller|controller-tamper-deposit|controller-tamper-token|controller-tamper-address|controller-tamper-datum)
+    forbidden_args=(registry update --key alice-1 --payload "$work/payload-update.json")
+    case "$part" in
+      controller-tamper-controller) forbidden_args+=(--tamper controller) ;;
+      controller-tamper-deposit) forbidden_args+=(--tamper deposit) ;;
+      controller-tamper-token) forbidden_args+=(--tamper token) ;;
+      controller-tamper-address) forbidden_args+=(--tamper address) ;;
+      controller-tamper-datum) forbidden_args+=(--tamper datum) ;;
+    esac
+    signer_skey="$work/bob.skey"
+    [ "$part" = stranger-updates-the-key ] || signer_skey="$work/alice.skey"
+    "$host" "${forbidden_args[@]}" \
+      --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$signer_skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry update --key alice-1 --payload "$work/payload-update.json" \
+      --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    ;;
+  stranger-terminates-the-key)
+    "$host" registry terminate --key alice-1 \
+      --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry terminate --key alice-1 \
+      --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    ;;
+  controller-withdraws-outside-a-fold)
+    "$host" registry withdraw --key alice-1 \
+      --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    run_ok control-book "$singular" registry terminate --key alice-1 \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "control booking failed"
+    run_ok control-fold "$singular" registry fold \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "control fold failed"
+    run_ok control-inspect "$singular" registry inspect --key alice-1 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "control inspect failed"
+    [ "$(jq -er .leaf "$receipts/control-inspect.json")" = terminal ] \
+      || setup_fail "key is not terminal after control fold"
+    ;;
+esac
 
 # Enforce the receipt cap.
 bytes="$(receipt_bytes "$receipts")"
@@ -230,14 +283,23 @@ judge() {
     *) return 2 ;;
   esac
 }
+[ -f "$receipts/forbidden.json" ] || fail "forbidden $part produced no receipt (host exit $forbidden_status): classified client refusal, never counted as a node refusal"
 judge "$receipts/forbidden.json" refused-by-expected \
-  || fail "forbidden update not credited: outcome=$(jq -r .outcome "$receipts/forbidden.json"), failedScripts=$(jq -c .failedScripts "$receipts/forbidden.json"), applicationHash=$(jq -r .applicationHash "$receipts/forbidden.json"), registry pin $pin_app"
+  || fail "forbidden $part not credited: outcome=$(jq -r .outcome "$receipts/forbidden.json"), failedScripts=$(jq -c .failedScripts "$receipts/forbidden.json"), applicationHash=$(jq -r .applicationHash "$receipts/forbidden.json"), registry pin $pin_app"
 [ "$forbidden_status" -eq 11 ] \
   || fail "forbidden exit $forbidden_status, expected 11 (ledger-refusal)"
-judge "$receipts/control.json" accepted \
-  || fail "control update not accepted: outcome=$(jq -r .outcome "$receipts/control.json")"
-[ "$control_status" -eq 0 ] \
-  || fail "control exit $control_status, expected 0"
+if [ "$part" = controller-withdraws-outside-a-fold ]; then
+  judge "$receipts/control-book.json" accepted \
+    || fail "control booking not accepted: outcome=$(jq -r .outcome "$receipts/control-book.json")"
+  judge "$receipts/control-fold.json" accepted \
+    || fail "control fold not accepted: outcome=$(jq -r .outcome "$receipts/control-fold.json")"
+else
+  [ -f "$receipts/control.json" ] || fail "control $part produced no receipt (host exit $control_status): setup failure, never counted"
+  judge "$receipts/control.json" accepted \
+    || fail "control $part not accepted: outcome=$(jq -r .outcome "$receipts/control.json")"
+  [ "$control_status" -eq 0 ] \
+    || fail "control exit $control_status, expected 0"
+fi
 say "judged: forbidden refused by the registry pin $pin_app with reads equal; control accepted"
 
 # 8. Altered-receipt controls: each clause changes its verdict.
