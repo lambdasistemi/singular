@@ -12,6 +12,26 @@ As a requester, I see the model refuse a rejection of my foldable request, whate
 processor supplies, and accept a lawful rejection with its evidence, so that paying for processing
 cannot be turned into a cancellation that collects my tip.
 
+## Rulings this slice implements
+
+The operator's words, verbatim; the rest of the rulings are in the [mandate](../mandate.md).
+
+A lifecycle mismatch permits immediate rejection:
+
+> Authenticated incompatibility with the current lifecycle state permits immediate rejection even
+> when a later transition could make the request eligible.
+
+Expiry follows both windows:
+
+> expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry
+> threshold is therefore submission time plus processing duration plus reclaim duration.
+
+A request naming an excluded edge is rejectable at once:
+
+Epic owner ruling of 9 October 2026, as an application of the first ruling: an excluded edge has no
+successor at any leaf, so a request naming one is incompatible with every current state and is
+rejectable at once with the lifecycle evidence.
+
 ## Seat
 
 | Field | Value |

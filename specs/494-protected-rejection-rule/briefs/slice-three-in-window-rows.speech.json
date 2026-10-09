@@ -29,6 +29,40 @@
       "pause": 400
     }
   ],
+  "rulings-this-slice-implements": [
+    {
+      "text": "Rulings this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, verbatim; the rest of the rulings are in the mandate.",
+      "pause": 400
+    },
+    {
+      "text": "A lifecycle mismatch permits immediate rejection:",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    },
+    {
+      "text": "Expiry follows both windows:",
+      "pause": 400
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    },
+    {
+      "text": "A request naming an excluded edge is rejectable at once:",
+      "pause": 400
+    },
+    {
+      "text": "Epic owner ruling of 9 October 2026, as an application of the first ruling: an excluded edge has no successor at any leaf, so a request naming one is incompatible with every current state and is rejectable at once with the lifecycle evidence.",
+      "pause": 400
+    }
+  ],
   "seat": [
     {
       "text": "Seat.",
@@ -49,7 +83,7 @@
       "pause": 300
     },
     {
-      "text": "The generic session's standing unmet row for rejecting a request while it can still be folded books a foldable registration (not a retired edge) and records each of its three steps as the divergence it now is: the two refund controls refuse for different reasons, the untampered reject is refused by the model and accepted by the chain. Its stated reason and consumer reading change to say that the model refuses and the chain does not; its standing stays unmet. The session's expected-debt assertion keeps naming exactly the same rows.",
+      "text": "The generic session's standing unmet row for rejecting a request while it can still be folded books a foldable registration, an insertion of a key not yet registered (a request naming a retired edge is rejectable at once and would leave the row without its subject), and records each of its three steps as the divergence it now is: the two refund controls refuse for different reasons, the untampered reject is refused by the model and accepted by the chain. Its stated reason and consumer reading change to say that the model refuses and the chain does not; its standing stays unmet. The session's expected-debt assertion keeps naming exactly the same rows.",
       "pause": 300
     },
     {
@@ -97,6 +131,6 @@
   ],
   "_source": {
     "file": "slice-three-in-window-rows.md",
-    "sha256": "e1b7780d68792eb5cbeba4c53906cabb7c871d47369b7f8f05a960fdcec591e7"
+    "sha256": "64213d64313577e09fd5417118b3143c6322aef14de0ecd0b1ed77c28dabac41"
   }
 }

@@ -19,6 +19,32 @@
       "pause": 400
     }
   ],
+  "rulings-this-slice-implements": [
+    {
+      "text": "Rulings this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, verbatim; the rest of the rulings are in the mandate.",
+      "pause": 400
+    },
+    {
+      "text": "Expiry follows both windows, which is why retraction and expiry must read one clock:",
+      "pause": 400
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    },
+    {
+      "text": "A lifecycle mismatch permits immediate rejection:",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    }
+  ],
   "seat": [
     {
       "text": "Seat.",
@@ -109,6 +135,6 @@
   ],
   "_source": {
     "file": "slice-one-booked-clock.md",
-    "sha256": "aacaca18f5300a1d1c6ea8469a99a53b824a8bf56c39f3a88727b58970d8bb1e"
+    "sha256": "36a943557f86d9918bdc5e2a5726864826c436a6a98d00fc6ce02321e412cb6f"
   }
 }

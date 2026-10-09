@@ -45,8 +45,68 @@
       "pause": 500
     },
     {
-      "text": "The three rulings that decide the rule are quoted in full on the decisions page and govern every line of the work. Three readings follow from them and one decision is pending there. The rulings from the epic owner's brief of 9 October 2026 that bound this ticket are quoted here.",
+      "text": "The three rulings that decide the rule are quoted here in full, as the operator gave them, and again in the brief of each slice that implements them. The decisions page gives their stories. The rulings from the epic owner's brief of 9 October 2026 that bound this ticket follow.",
       "pause": 400
+    }
+  ],
+  "a-lifecycle-mismatch-permits-immediate-rejection": [
+    {
+      "text": "A lifecycle mismatch permits immediate rejection.",
+      "pause": 500
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    },
+    {
+      "text": "Refund amounts are unchanged by it, and ticket 361 is not resolved by it.",
+      "pause": 400
+    }
+  ],
+  "expiry-follows-both-windows": [
+    {
+      "text": "Expiry follows both windows.",
+      "pause": 500
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    }
+  ],
+  "a-batch-is-judged-on-the-state-its-earlier-actions-left": [
+    {
+      "text": "A batch is judged on the state its earlier actions left.",
+      "pause": 500
+    },
+    {
+      "text": "Each action is judged against the state left by preceding actions in the same ordered batch. Rejection evidence binds that intermediate registry state/root.",
+      "pause": 400
+    }
+  ],
+  "a-request-naming-an-excluded-edge-is-rejectable-at-once": [
+    {
+      "text": "A request naming an excluded edge is rejectable at once.",
+      "pause": 500
+    },
+    {
+      "text": "Epic owner ruling of 9 October 2026, as an application of the first ruling and not a new operator decision: the first ruling admits rejection on \"authenticated incompatibility with the current lifecycle state\". Singular.transition gives no successor for an excluded edge at any leaf, so such a request is incompatible with every current state and is rejectable at once with the lifecycle evidence.",
+      "pause": 400
+    }
+  ],
+  "only-two-grounds": [
+    {
+      "text": "Only two grounds.",
+      "pause": 500
+    },
+    {
+      "text": "Exactly two grounds authorize rejection, a lifecycle mismatch and expiry. A provider failure, a missing processor-supplied input, an invalid proof and a generic script failure are never evidence of inadmissibility (operator scope confirmation, recorded on the decisions page).",
+      "pause": 400
+    }
+  ],
+  "the-command-line-split-the-datum-the-tag-and-the-staffing": [
+    {
+      "text": "The command-line split, the datum, the tag and the staffing.",
+      "pause": 500
     },
     {
       "text": "the Singular CLI is the registry; the open datum is its own executable built on the Singular library. Build against the library's request and fold, not the open-datum envelope. Desk answer t528 Q-001: singular links no application code; the termination fold moves to the application's executable.",
@@ -141,6 +201,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "e81379dbb68aa084b54d1d04a1ae522a2d5720095f3496953fffe689ccfe70e9"
+    "sha256": "a5602f2802910e20f21e5b7f3a9f10b5c7ec6cb9f205f7c54297495d51af2b41"
   }
 }

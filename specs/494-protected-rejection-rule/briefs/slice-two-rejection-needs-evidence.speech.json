@@ -19,6 +19,40 @@
       "pause": 400
     }
   ],
+  "rulings-this-slice-implements": [
+    {
+      "text": "Rulings this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, verbatim; the rest of the rulings are in the mandate.",
+      "pause": 400
+    },
+    {
+      "text": "A lifecycle mismatch permits immediate rejection:",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    },
+    {
+      "text": "Expiry follows both windows:",
+      "pause": 400
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    },
+    {
+      "text": "A request naming an excluded edge is rejectable at once:",
+      "pause": 400
+    },
+    {
+      "text": "Epic owner ruling of 9 October 2026, as an application of the first ruling: an excluded edge has no successor at any leaf, so a request naming one is incompatible with every current state and is rejectable at once with the lifecycle evidence.",
+      "pause": 400
+    }
+  ],
   "seat": [
     {
       "text": "Seat.",
@@ -103,6 +137,6 @@
   ],
   "_source": {
     "file": "slice-two-rejection-needs-evidence.md",
-    "sha256": "bbe8c502b3f77a1ec57f544e148ea92a8a9e2d0282feacaf2367bae7bdb11cf0"
+    "sha256": "b55c38e86aa9a5626af20787105b981f3f751276917b8a3758f6f38b9c1c58cf"
   }
 }

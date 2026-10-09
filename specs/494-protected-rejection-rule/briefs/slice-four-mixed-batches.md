@@ -13,6 +13,23 @@ of the same key in the same batch, and the model accepts the batch because Carol
 the state Bob's fold left; with Carol's request first the model refuses, because at that point her
 request is still foldable.
 
+## Rulings this slice implements
+
+The operator's words, verbatim; the rest of the rulings are in the [mandate](../mandate.md).
+
+A batch is judged on the state its earlier actions left:
+
+> Each action is judged against the state left by preceding actions in the same ordered batch.
+> Rejection evidence binds that intermediate registry state/root.
+
+The batch rests on the two admission rulings of slice two:
+
+> Authenticated incompatibility with the current lifecycle state permits immediate rejection even
+> when a later transition could make the request eligible.
+
+> expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry
+> threshold is therefore submission time plus processing duration plus reclaim duration.
+
 ## Seat
 
 | Field | Value |

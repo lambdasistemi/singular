@@ -19,6 +19,26 @@ working assumption is the recommended option: Lean first, the divergence publish
 answer is to hold the rule's push until the validators, this slice instead makes the rows assert that
 model and chain both refuse, marks them held for the validator head, and the ticket owner holds the push.
 
+## Rulings this slice implements
+
+The operator's words, verbatim; the rest of the rulings are in the [mandate](../mandate.md).
+
+A lifecycle mismatch permits immediate rejection:
+
+> Authenticated incompatibility with the current lifecycle state permits immediate rejection even
+> when a later transition could make the request eligible.
+
+Expiry follows both windows:
+
+> expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry
+> threshold is therefore submission time plus processing duration plus reclaim duration.
+
+A request naming an excluded edge is rejectable at once:
+
+Epic owner ruling of 9 October 2026, as an application of the first ruling: an excluded edge has no
+successor at any leaf, so a request naming one is incompatible with every current state and is
+rejectable at once with the lifecycle evidence.
+
 ## Seat
 
 | Field | Value |
@@ -40,7 +60,7 @@ attribution. Plain words, no coined abbreviations.
    refunds (one lovelace short, to another key) stay refused by both for the refund reason. Its workflow
    assertions and placement counts follow the row; its name and requirement text are unchanged.
 2. The generic session's standing unmet row for rejecting a request while it can still be folded books a
-   foldable registration (not a retired edge) and records each of its three steps as the divergence it
+   foldable registration, an insertion of a key not yet registered (a request naming a retired edge is rejectable at once and would leave the row without its subject), and records each of its three steps as the divergence it
    now is: the two refund controls refuse for different reasons, the untampered reject is refused by the
    model and accepted by the chain. Its stated reason and consumer reading change to say that the model
    refuses and the chain does not; its standing stays unmet. The session's expected-debt assertion keeps

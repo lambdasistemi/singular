@@ -29,7 +29,7 @@
       "pause": 400
     },
     {
-      "text": "A mismatch names the leaf the key holds. It is admitted exactly when that leaf is the leaf held at the key under the judged root and the request's edge has no successor from it. The unknown leaf, a non-membership proof, and the stored Absent state are different leaves: a request to insert is compatible at unknown and mismatched at Absent, Active and Terminal; a request to terminate is compatible at Active and mismatched elsewhere. A request naming an excluded edge tag (a reading the decisions page records for confirmation) is mismatched at every leaf.",
+      "text": "A mismatch names the leaf the key holds. It is admitted exactly when that leaf is the leaf held at the key under the judged root and the request's edge has no successor from it. The unknown leaf, a non-membership proof, and the stored Absent state are different leaves: a request to insert is compatible at unknown and mismatched at Absent, Active and Terminal; a request to terminate is compatible at Active and mismatched elsewhere. A request naming an excluded edge tag (ruled by the epic owner as an application of the first ruling, see the decisions page) is mismatched at every leaf.",
       "pause": 400
     },
     {
@@ -99,6 +99,6 @@
   ],
   "_source": {
     "file": "rejection-evidence-contract.md",
-    "sha256": "96426b94ca183e3aa80d750c8efb22d5ccd42ac7cd578f3885636aeb4078d16c"
+    "sha256": "58684717ace97ecf8f212dc402f2ddbd8f42acc3e7a592d0e3004c314d8975a5"
   }
 }

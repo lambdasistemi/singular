@@ -11,6 +11,20 @@ As an owner retracting a pending request, I see my window computed from the time
 booked, so that nobody, including me, can move the end of the window by writing a different time
 into the retraction.
 
+## Rulings this slice implements
+
+The operator's words, verbatim; the rest of the rulings are in the [mandate](../mandate.md).
+
+Expiry follows both windows, which is why retraction and expiry must read one clock:
+
+> expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry
+> threshold is therefore submission time plus processing duration plus reclaim duration.
+
+A lifecycle mismatch permits immediate rejection:
+
+> Authenticated incompatibility with the current lifecycle state permits immediate rejection even
+> when a later transition could make the request eligible.
+
 ## Seat
 
 | Field | Value |

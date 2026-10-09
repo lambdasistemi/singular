@@ -19,6 +19,36 @@
       "pause": 400
     }
   ],
+  "rulings-this-slice-implements": [
+    {
+      "text": "Rulings this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, verbatim; the rest of the rulings are in the mandate.",
+      "pause": 400
+    },
+    {
+      "text": "A batch is judged on the state its earlier actions left:",
+      "pause": 400
+    },
+    {
+      "text": "Each action is judged against the state left by preceding actions in the same ordered batch. Rejection evidence binds that intermediate registry state/root.",
+      "pause": 400
+    },
+    {
+      "text": "The batch rests on the two admission rulings of slice two:",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    }
+  ],
   "seat": [
     {
       "text": "Seat.",
@@ -95,6 +125,6 @@
   ],
   "_source": {
     "file": "slice-four-mixed-batches.md",
-    "sha256": "4ebd417ac9cc78b99fbd998201beee4708129eac8f4471d0306ddcebbade117c"
+    "sha256": "d544bd16fc2a6a4f7e83d31cffb46b652d7d84bbda0dc218c1c40d76b888484a"
   }
 }

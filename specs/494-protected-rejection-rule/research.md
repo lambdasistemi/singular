@@ -78,6 +78,6 @@ simulator, coverage and application checks run without one.
 
 ## Open items found
 
-One question is open and blocks only the in-window row: what the public suite shows until the
-validators change. One reading is recorded for confirmation: a request naming an excluded edge is
-rejectable at once. Neither blocks the model design.
+One question is open and blocks only the in-window rows: what the public suite shows until the
+validators change. The reading that a request naming an excluded edge is rejectable at once was
+ruled by the epic owner as an application of the first ruling. Neither blocks the model design.

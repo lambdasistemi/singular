@@ -37,9 +37,41 @@ it and collect its tip without satisfying an explicit rejection rule.
 
 ## Rulings in force
 
-The three rulings that decide the rule are quoted in full on the [decisions](decisions.md) page and
-govern every line of the work. Three readings follow from them and one decision is pending there. The
-rulings from the epic owner's brief of 9 October 2026 that bound this ticket are quoted here.
+The three rulings that decide the rule are quoted here in full, as the operator gave them, and again
+in the brief of each slice that implements them. The [decisions](decisions.md) page gives their
+stories. The rulings from the epic owner's brief of 9 October 2026 that bound this ticket follow.
+
+### A lifecycle mismatch permits immediate rejection
+
+> Authenticated incompatibility with the current lifecycle state permits immediate rejection even
+> when a later transition could make the request eligible.
+
+Refund amounts are unchanged by it, and ticket 361 is not resolved by it.
+
+### Expiry follows both windows
+
+> expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry
+> threshold is therefore submission time plus processing duration plus reclaim duration.
+
+### A batch is judged on the state its earlier actions left
+
+> Each action is judged against the state left by preceding actions in the same ordered batch.
+> Rejection evidence binds that intermediate registry state/root.
+
+### A request naming an excluded edge is rejectable at once
+
+Epic owner ruling of 9 October 2026, as an application of the first ruling and not a new operator
+decision: the first ruling admits rejection on "authenticated incompatibility with the current
+lifecycle state". `Singular.transition` gives no successor for an excluded edge at any leaf, so such a
+request is incompatible with every current state and is rejectable at once with the lifecycle evidence.
+
+### Only two grounds
+
+Exactly two grounds authorize rejection, a lifecycle mismatch and expiry. A provider failure, a
+missing processor-supplied input, an invalid proof and a generic script failure are never evidence of
+inadmissibility (operator scope confirmation, recorded on the decisions page).
+
+### The command-line split, the datum, the tag and the staffing
 
 > the Singular CLI is the registry; the open datum is its own executable built on the Singular
 > library. Build against the library's request and fold, not the open-datum envelope. Desk answer

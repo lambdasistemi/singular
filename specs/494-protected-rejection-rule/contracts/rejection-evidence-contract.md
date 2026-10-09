@@ -27,7 +27,7 @@ A mismatch names the leaf the key holds. It is admitted exactly when that leaf i
 the key under the judged root and the request's edge has no successor from it. The unknown leaf, a
 non-membership proof, and the stored Absent state are different leaves: a request to insert is
 compatible at unknown and mismatched at Absent, Active and Terminal; a request to terminate is
-compatible at Active and mismatched elsewhere. A request naming an excluded edge tag (a reading the decisions page records for confirmation) is
+compatible at Active and mismatched elsewhere. A request naming an excluded edge tag (ruled by the epic owner as an application of the first ruling, see the decisions page) is
 mismatched at every leaf.
 
 An expiry is admitted exactly when the interval's lower bound is at or after the request's booked

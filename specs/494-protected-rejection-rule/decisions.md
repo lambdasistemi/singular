@@ -87,7 +87,7 @@ choose them silently.
 | Reading | What the model states | Status |
 |---|---|---|
 | Mismatch is the model's own transition table | A request is lifecycle-compatible exactly when `Singular.transition` gives a successor for its edge at the key's leaf. Registration is compatible only at an unknown key; termination only at an Active key. Unknown and the stored Absent state are different leaves. | Follows from the first ruling and the base model. |
-| A request naming an excluded edge is incompatible at every leaf | `transition` is empty for the five excluded tags, so a mismatch rejection of such a request is admitted for any leaf. The request can never fold, so waiting for expiry protects nobody. | Recorded for confirmation by the operator; if the stricter reading is wanted (only expiry rejects such a request) one admission case is removed. |
+| A request naming an excluded edge is incompatible at every leaf | `transition` is empty for the five excluded tags, so a mismatch rejection of such a request is admitted for any leaf. The request can never fold, so waiting for expiry protects nobody. | Ruled by the epic owner on 9 October 2026 as an application of the first ruling, not a new operator decision: such a request is incompatible with every current state and is rejectable at once with the lifecycle evidence. |
 | Refusals other than the lifecycle are not grounds | A request with a wrong approval, a short deposit or a missing token is refused by a fold but is not thereby rejectable early; only mismatch and expiry are. | Follows from the scope confirmation. |
 
 ## Decision pending: what the public suite shows until the validators change
