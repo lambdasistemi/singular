@@ -553,6 +553,130 @@ class Journey:
         leg["inspect_after"] = f"{actor}-inspect-after"
         return leg
 
+    def fold_pending(self, party):
+        """Fold the one pending request, discovering it from the chain alone.
+
+        The fold names no `--request` and carries no payload file: the
+        folder reads the pending request on the chain, never a file the
+        booker wrote.
+        """
+        return [
+            "registry",
+            "fold",
+            "--blueprint",
+            self.blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+            "--wallet-skey",
+            str(self.keys / f"{party}.skey"),
+        ]
+
+    def inspect_key(self, key):
+        """Read one key through the state token alone."""
+        return [
+            "registry",
+            "inspect",
+            "--key",
+            key,
+            "--blueprint",
+            self.blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+        ]
+
+    def terminate_leg(self, controller, folder, key):
+        """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
+        direction = f"terminate-{key}-by-{folder}"
+        controller_others = tuple(
+            home for party, home in self.homes.items() if party != controller
+        )
+        folder_others = tuple(
+            home for party, home in self.homes.items() if party != folder
+        )
+        leg = {}
+        status, before = self.run_party(
+            controller,
+            f"{direction}-inspect-before",
+            self.inspect_key(key),
+            controller_others,
+        )
+        require(
+            status == 0 and before.get("outcome") == "success",
+            f"{controller} inspect-before failed: exit {status}, {before}",
+        )
+        require(
+            before.get("leaf") == "active",
+            f"{controller} key {key} is not live: {before.get('leaf')}",
+        )
+        leg["inspect_before"] = f"{direction}-inspect-before"
+        status, booking = self.run_party(
+            controller,
+            f"{direction}-booking",
+            self.book(controller, "terminate", key, direction),
+            controller_others,
+        )
+        require(
+            status == 0 and booking.get("outcome") == "success",
+            f"{controller} terminate failed: exit {status}, {booking}",
+        )
+        require(
+            isinstance(booking.get("request"), str),
+            f"{controller} termination named no request: {booking}",
+        )
+        leg["booking"] = f"{direction}-booking"
+        status, fold = self.run_party(
+            folder,
+            f"{direction}-fold",
+            self.fold_pending(folder),
+            folder_others,
+        )
+        require(
+            status == 0 and fold.get("outcome") == "success",
+            f"{folder} fold failed: exit {status}, {fold}",
+        )
+        require(
+            fold.get("request") == booking["request"],
+            f"{folder} folded another request: {fold.get('request')} "
+            f"!= {booking['request']}",
+        )
+        require(
+            fold.get("edge") == "updateTerminal",
+            f"{folder} folded another edge: {fold.get('edge')}",
+        )
+        require(
+            fold.get("folder") != booking.get("requester"),
+            f"{folder} fold names the booker as folder: {fold.get('folder')}",
+        )
+        require(fold.get("root"), f"{folder} fold named no root: {fold}")
+        leg["fold"] = f"{direction}-fold"
+        for party, slot in ((controller, "inspect_owner"), (folder, "inspect_other")):
+            others = tuple(
+                home for name, home in self.homes.items() if name != party
+            )
+            status, after = self.run_party(
+                party,
+                f"{direction}-inspect-{party}",
+                self.inspect_key(key),
+                others,
+            )
+            require(
+                status == 0 and after.get("outcome") == "success",
+                f"{party} inspect-after failed: exit {status}, {after}",
+            )
+            require(
+                after.get("leaf") == "terminal",
+                f"{party} key {key} is not terminal: {after.get('leaf')}",
+            )
+            require(
+                after.get("root") == fold["root"],
+                f"{party} inspect root {after.get('root')} "
+                f"!= fold root {fold['root']}",
+            )
+            leg[slot] = f"{direction}-inspect-{party}"
+        return leg
+
     def report(self, rows):
         report = {
             "requirements": rows,
@@ -1002,6 +1126,12 @@ class Journey:
                 self.foreign_open()
             for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
                 legs[actor] = self.actor_leg(actor, key)
+            legs["terminate-bob-by-alice"] = self.terminate_leg(
+                "bob", "alice", "bob-1"
+            )
+            legs["terminate-alice-by-bob"] = self.terminate_leg(
+                "alice", "bob", "alice-1"
+            )
             self.removal_check(legs)
             self.cap_check()
             rows = self.compute_rows(legs)
