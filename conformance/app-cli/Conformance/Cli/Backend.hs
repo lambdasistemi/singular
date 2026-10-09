@@ -1436,8 +1436,10 @@ runCommandIn env c actor registry key r = do
             && printedField "outcome" printed == Just (String "success")
         )
         $ unless
-            ( printedField "processTime" printed == Just (Number 45_000)
-                && printedField "retractTime" printed == Just (Number 15_000)
+            ( printedField "processTime" printed
+                == Just (Number (fromIntegral developmentProcessMs))
+                && printedField "retractTime" printed
+                    == Just (Number (fromIntegral developmentRetractMs))
             )
             (fail "the throwaway registry did not read back the short CI windows")
     ls <- journalLines' journal
@@ -1464,10 +1466,22 @@ runCommandIn env c actor registry key r = do
             }
 
 {- | Throwaway CLI registries leave the thirty-second fold guard plus
-fifteen seconds for preparation; retracts have fifteen seconds too.
+ninety seconds for the booking and the fold build; retracts have
+fifteen seconds too.
 -}
+developmentProcessMs :: Integer
+developmentProcessMs = 120_000
+
+developmentRetractMs :: Integer
+developmentRetractMs = 15_000
+
 developmentWindows :: [String]
-developmentWindows = ["--process-time", "45000", "--retract-time", "15000"]
+developmentWindows =
+    [ "--process-time"
+    , show developmentProcessMs
+    , "--retract-time"
+    , show developmentRetractMs
+    ]
 
 -- | The arguments of one ordinary command, writing the files it reads.
 commandArgs
