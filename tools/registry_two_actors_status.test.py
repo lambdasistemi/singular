@@ -392,7 +392,19 @@ def _reject_valid_base(tmp):
     locked = {"lovelace": 3000000, "assets": []}
     tip = 1000000
     returned_lovelace = 2000000
-    alice_wallet = "addr_test1_valid_alice_recipient_000000"
+    # Synthetic test-only seed (arbitrary bytes, never funded); the harness
+    # must derive this same address neutrally from the skey file.
+    alice_seed_hex = bytes(range(32)).hex()
+    alice_wallet = "addr_test1vqn78rgwr835xn3nl0gqr5l7qj6mwemrlz9v6cj7p4mskscud5urh"
+    fee_bound = {
+        "command": "fee-bound",
+        "outcome": "success",
+        "stateToken": "policy.name",
+        "stateMaxFee": 1000000,
+        "processTime": 120000,
+        "retractTime": 120000,
+        "observedTx": "statetx#0",
+    }
     booking_request = "abc123#0"
     owner_hex = "ownerhex000000000000000000000000000000000000000000000001"
     reject_tx = "rejecttx000000000000000000000000000000000000000000000000000001"
@@ -469,6 +481,8 @@ def _reject_valid_base(tmp):
     _write_receipt(tmp, "reject-late", late_reject)
     _write_receipt(tmp, "reject-late-inspect-after", late_after)
     _write_receipt(tmp, "alice-preview", alice_preview)
+    Path(tmp, "alice.skey").write_text(alice_seed_hex + "\n")
+    _write_receipt(tmp, "fee-bound", fee_bound)
     legs = {
         "reject": {
             "booking": "reject-alice-3-booking",
@@ -488,7 +502,9 @@ def _owner_valid_base(tmp):
     retract_time = 120000
     expected_close = deadline + retract_time
     locked = {"lovelace": 2000000, "assets": []}
-    bob_wallet = "addr_test1_valid_bob_recipient_0000000000"
+    # Synthetic test-only seed (arbitrary bytes, never funded).
+    bob_seed_hex = bytes(range(1, 33)).hex()
+    bob_wallet = "addr_test1vqxst3dzgs3gvqu24ufqtf927sdza8pmk8p5jcke3e362pq9ck9xr"
     booking_request = "def456#0"
     owner_hex = "bobownerhex000000000000000000000000000000000000000000000002"
     retract_tx = "retracttx000000000000000000000000000000000000000000000000000002"
@@ -576,6 +592,7 @@ def _owner_valid_base(tmp):
     }
     continue_b = dict(continue_a)
     bob_preview = {"command": "create", "outcome": "success", "wallet": bob_wallet}
+    Path(tmp, "bob.skey").write_text(bob_seed_hex + "\n")
     _write_receipt(tmp, "reclaim-bob-3-booking", booking)
     _write_receipt(tmp, "reclaim-early-inspect-before", early_before)
     _write_receipt(tmp, "reclaim-early-attempt", early_attempt, exit_code=10)
@@ -630,6 +647,24 @@ def test_money_compares_value_and_recipient(mod, tmp):
     _write_receipt(tmp, "reject-late", foreign)
     passed_foreign, _, _ = journey.reject_agreement(legs, receipts)
     cases.append(("foreign", not passed_foreign))
+    correlated_full = _json.loads(raw)
+    correlated_full["rejected"][0]["tip"] = 3000000
+    correlated_full["rejected"][0]["returned"] = dict(
+        correlated_full["rejected"][0]["returned"]
+    )
+    correlated_full["rejected"][0]["returned"]["lovelace"] = 0
+    _write_receipt(tmp, "reject-late", correlated_full)
+    passed_corr_full, _, _ = journey.reject_agreement(legs, receipts)
+    cases.append(("correlated-3M-0", not passed_corr_full))
+    correlated_part = _json.loads(raw)
+    correlated_part["rejected"][0]["tip"] = 2000000
+    correlated_part["rejected"][0]["returned"] = dict(
+        correlated_part["rejected"][0]["returned"]
+    )
+    correlated_part["rejected"][0]["returned"]["lovelace"] = 1000000
+    _write_receipt(tmp, "reject-late", correlated_part)
+    passed_corr_part, _, _ = journey.reject_agreement(legs, receipts)
+    cases.append(("correlated-2M-1M", not passed_corr_part))
     unrelated = _json.loads(raw)
     unrelated["rejected"][0]["request"] = "ffff#0"
     unrelated["rejected"][0]["returned"] = dict(unrelated["rejected"][0]["returned"])
@@ -670,6 +705,35 @@ def test_money_compares_value_and_recipient(mod, tmp):
         "money-compares-value-and-recipient",
         not failed,
         f"tampered money still passed: {failed}" if failed else "",
+    )
+
+
+def test_no_preview_files_needed(mod, tmp):
+    journey = bare(mod, tmp)
+    legs, receipts = _reject_valid_base(tmp)
+    for name in ("alice-preview", "bob-preview"):
+        path = Path(tmp, f"{name}.json")
+        if path.exists():
+            path.unlink()
+        exit_path = Path(tmp, f"{name}.exit")
+        if exit_path.exists():
+            exit_path.unlink()
+    passed_reject, _, _ = journey.reject_agreement(legs, receipts)
+    check(
+        "reject-passes-without-previews",
+        passed_reject,
+        "the reject row needs preview files",
+    )
+    olegs, oreceipts = _owner_valid_base(tmp)
+    for name in ("alice-preview", "bob-preview"):
+        path = Path(tmp, f"{name}.json")
+        if path.exists():
+            path.unlink()
+    passed_owner, _, _ = journey.owner_reclaim_agreement(olegs, oreceipts)
+    check(
+        "owner-passes-without-previews",
+        passed_owner,
+        "the owner row needs preview files",
     )
 
 
@@ -861,6 +925,7 @@ def main():
         test_reject_refusal_is_row_result,
         test_reclaim_refusal_is_row_result,
         test_money_compares_value_and_recipient,
+        test_no_preview_files_needed,
         test_trim_preserves_run_three_predicates,
         test_refusal_compares_pending_set,
         test_window_comes_from_registry,

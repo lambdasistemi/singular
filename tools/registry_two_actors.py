@@ -95,6 +95,294 @@ PROCESS_TIME_MS = 120000
 RETRACT_TIME_MS = 120000
 
 
+# ---------------------------------------------------------------
+# Neutral observations: the harness's own readings, never an actor
+# command and never a receipt under test. Address derivation mirrors
+# Singular.Registry.Wallet.loadWallet (Ed25519 seed, enterprise
+# Testnet address); the fee bound is read from the state datum on the
+# chain through the development network's Koios-shaped provider.
+# ---------------------------------------------------------------
+
+_ED_Q = (1 << 255) - 19
+_ED_L = (1 << 252) + 27742317777372353535851937790883648493
+_ED_D = (-121665 * pow(121666, -1, _ED_Q)) % _ED_Q
+_BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+
+
+def _ed_inv(x):
+    return pow(x, _ED_Q - 2, _ED_Q)
+
+
+def _ed_xrecover(y):
+    xx = (y * y - 1) * _ed_inv(_ED_D * y * y + 1)
+    x = pow(xx, (_ED_Q + 3) // 8, _ED_Q)
+    if (x * x - xx) % _ED_Q != 0:
+        x = (x * pow(2, (_ED_Q - 1) // 4, _ED_Q)) % _ED_Q
+    if x % 2 != 0:
+        x = _ED_Q - x
+    return x
+
+
+def _ed_add(p, q):
+    x1, y1, x2, y2 = p[0], p[1], q[0], q[1]
+    x3 = (x1 * y2 + x2 * y1) * _ed_inv(1 + _ED_D * x1 * x2 * y1 * y2)
+    y3 = (y1 * y2 + x1 * x2) * _ed_inv(1 - _ED_D * x1 * x2 * y1 * y2)
+    return (x3 % _ED_Q, y3 % _ED_Q)
+
+
+def _ed_scalarmult(p, e):
+    q = (0, 1)
+    while e > 0:
+        if e & 1:
+            q = _ed_add(q, p)
+        p = _ed_add(p, p)
+        e >>= 1
+    return q
+
+
+def _ed_base():
+    comp = bytes.fromhex("58" + "66" * 31)
+    y = int.from_bytes(comp, "little") & ~(1 << 255)
+    x = _ed_xrecover(y)
+    if x % 2 != 0:
+        x = _ED_Q - x
+    return (x, y)
+
+
+_ED_G = _ed_base()
+
+
+def _ed_pubkey(seed):
+    digest = hashlib.sha512(seed).digest()
+    a = int.from_bytes(digest[:32], "little")
+    a &= ~(1 | 2 | 4 | (1 << 255))
+    a |= 1 << 254
+    return _ed_encodepoint(*_ed_scalarmult(_ED_G, a))
+
+
+def _ed_encodepoint(x, y):
+    bits = [(y >> i) & 1 for i in range(255)] + [x & 1]
+    return bytes(sum(bits[i * 8 + j] << j for j in range(8)) for i in range(32))
+
+
+def _bech32_polymod(values):
+    generators = [0x3B6A57B2, 0x26508E6D, 0x1EA119FA, 0x3D4233DD, 0x2A1462B3]
+    check = 1
+    for value in values:
+        top = check >> 25
+        check = ((check & 0x1FFFFFF) << 5) ^ value
+        for i in range(5):
+            check ^= generators[i] if ((top >> i) & 1) else 0
+    return check
+
+
+def _bech32_hrp_expand(hrp):
+    return [ord(c) >> 5 for c in hrp] + [0] + [ord(c) & 31 for c in hrp]
+
+
+def _bech32_checksum(hrp, data):
+    values = _bech32_hrp_expand(hrp) + data
+    polymod = _bech32_polymod(values + [0, 0, 0, 0, 0, 0]) ^ 1
+    return [(polymod >> 5 * (5 - i)) & 31 for i in range(6)]
+
+
+def _bech32_convertbits(data, from_bits, to_bits, pad=True):
+    acc, bits, out, maximum = 0, 0, [], (1 << to_bits) - 1
+    for byte in data:
+        acc = (acc << from_bits) | byte
+        bits += from_bits
+        while bits >= to_bits:
+            bits -= to_bits
+            out.append((acc >> bits) & maximum)
+    if pad:
+        if bits:
+            out.append((acc << (to_bits - bits)) & maximum)
+    elif bits >= from_bits or ((acc << (to_bits - bits)) & maximum):
+        return None
+    return out
+
+
+def _bech32_encode(hrp, raw):
+    data = _bech32_convertbits(raw, 8, 5)
+    combined = data + _bech32_checksum(hrp, data)
+    return hrp + "1" + "".join(_BECH32_CHARSET[d] for d in combined)
+
+
+def read_wallet_skey_bytes(path):
+    """The 32 signing-key bytes behind a wallet-key file.
+
+    Mirrors the leniency of Wallet.loadWallet: 32 raw bytes, bare hex,
+    or a JSON text envelope carrying cborHex (5820 plus 32 bytes).
+    """
+    raw = Path(path).read_bytes().strip()
+    if len(raw) == 32 and not all(0x20 <= byte < 0x7F for byte in raw):
+        return bytes(raw)
+    text = raw.decode("utf-8", errors="strict").strip()
+    if text.startswith("{"):
+        parsed = json.loads(text)
+        text = parsed["cborHex"]
+    blob = bytes.fromhex(text)
+    if len(blob) == 34 and blob[:2] == b"\x58\x20":
+        return bytes(blob[2:])
+    if len(blob) == 32:
+        return blob
+    raise ValueError(f"expected 32 key bytes, found {len(blob)}")
+
+
+def derive_wallet_address(skey_bytes):
+    """Key hash hex and enterprise Testnet address for 32 seed bytes."""
+    if len(skey_bytes) != 32:
+        raise ValueError(f"expected 32 seed bytes, found {len(skey_bytes)}")
+    pub = _ed_pubkey(bytes(skey_bytes))
+    key_hash = hashlib.blake2b(pub, digest_size=28).digest()
+    return key_hash.hex(), _bech32_encode("addr_test", b"\x60" + key_hash)
+
+
+def _cbor_item(buf, pos):
+    """One CBOR item from BUF at POS; definite lengths only."""
+    first = buf[pos]
+    major, info = first >> 5, first & 0x1F
+    pos += 1
+    if info < 24:
+        length = info
+    elif info == 24:
+        length = buf[pos]
+        pos += 1
+    elif info == 25:
+        length = int.from_bytes(buf[pos : pos + 2], "big")
+        pos += 2
+    elif info == 26:
+        length = int.from_bytes(buf[pos : pos + 4], "big")
+        pos += 4
+    elif info == 27:
+        length = int.from_bytes(buf[pos : pos + 8], "big")
+        pos += 8
+    else:
+        raise ValueError("indefinite CBOR lengths are not datum")
+    if major == 0:
+        return length, pos
+    if major == 1:
+        return -1 - length, pos
+    if major == 2:
+        return bytes(buf[pos : pos + length]), pos + length
+    if major == 3:
+        return bytes(buf[pos : pos + length]).decode("utf-8"), pos + length
+    if major == 4:
+        items = []
+        for _ in range(length):
+            item, pos = _cbor_item(buf, pos)
+            items.append(item)
+        return items, pos
+    if major == 5:
+        mapping = {}
+        for _ in range(length):
+            key, pos = _cbor_item(buf, pos)
+            try:
+                map_key = json.dumps(key, sort_keys=True)
+            except TypeError:
+                map_key = repr(key)
+            mapping[map_key], pos = _cbor_item(buf, pos)
+        return mapping, pos
+    if major == 6:
+        item, pos = _cbor_item(buf, pos)
+        if 121 <= length <= 127:
+            return ("constr", length - 121, item), pos
+        if 1280 <= length <= 1400:
+            return ("constr", length - 1280 + 7, item), pos
+        return ("tag", length, item), pos
+    raise ValueError(f"unsupported CBOR major type {major}")
+
+
+def decode_plutus_datum(datum_hex):
+    """The top Plutus-Data value of hex datum bytes."""
+    raw = bytes.fromhex(datum_hex)
+    value, pos = _cbor_item(raw, 0)
+    if pos != len(raw):
+        raise ValueError("trailing bytes after the datum")
+    return value
+
+
+def fetch_state_fee_bound(
+    provider_url, policy_hex, name_hex, expect_process_ms, expect_retract_ms
+):
+    """Read the registry's fee bound from its state datum on the chain.
+
+    Queries the Koios-shaped provider for unspent outputs holding the
+    state token, decodes each inline datum, and takes the Constr-0
+    eight-field state datum whose process and retract windows match the
+    independently observed registry windows. Returns the fee bound with
+    its provenance. Raises RuntimeError with a diagnostic otherwise.
+    """
+    import urllib.request
+
+    base = provider_url.rstrip("/")
+    body = json.dumps(
+        {"_asset_list": [[policy_hex, name_hex]], "_extended": True}
+    ).encode()
+    last_error = "no datum decoded"
+    for attempt in range(3):
+        try:
+            request = urllib.request.Request(
+                base + "/asset_utxos",
+                data=body,
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(request, timeout=30) as answer:
+                rows = json.loads(answer.read().decode("utf-8"))
+            if not isinstance(rows, list) or not rows:
+                last_error = "asset_utxos answered no rows for the state token"
+                raise ValueError(last_error)
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                inline = row.get("inline_datum")
+                if not isinstance(inline, dict) or "bytes" not in inline:
+                    continue
+                try:
+                    datum = decode_plutus_datum(inline["bytes"])
+                except ValueError as error:
+                    last_error = f"a datum did not decode: {error}"
+                    continue
+                if (
+                    not isinstance(datum, tuple)
+                    or len(datum) != 3
+                    or datum[0] != "constr"
+                    or datum[1] != 0
+                    or not isinstance(datum[2], list)
+                    or len(datum[2]) != 8
+                ):
+                    continue
+                _root, fee, process, retract = datum[2][0:4]
+                if not all(isinstance(v, int) for v in (fee, process, retract)):
+                    continue
+                if process != expect_process_ms or retract != expect_retract_ms:
+                    last_error = (
+                        f"a state datum carries other windows: {process}/{retract}"
+                    )
+                    continue
+                if fee <= 0:
+                    last_error = "a state datum carries no positive fee"
+                    continue
+                return {
+                    "stateMaxFee": fee,
+                    "processTime": process,
+                    "retractTime": retract,
+                    "observedTx": f"{row.get('tx_hash')}#{row.get('tx_index')}",
+                }
+            last_error = "no row carried the registry state datum"
+            raise ValueError(last_error)
+        except ValueError:
+            if attempt >= 2:
+                break
+            time.sleep(2)
+        except Exception as error:
+            last_error = f"{type(error).__name__}: {error}"
+            if attempt >= 2:
+                break
+            time.sleep(2)
+    raise RuntimeError(f"the fee bound is not established: {last_error}")
+
+
 class SetupFailure(Exception):
     pass
 
@@ -515,34 +803,7 @@ class Journey:
         setup_require(create.get("stateToken"), "create named no state token")
         self.state_token = create["stateToken"]
         print(f"two actors: registry {self.state_token} created", flush=True)
-        for party in ("alice", "bob"):
-            others = tuple(home for name, home in self.homes.items() if name != party)
-            preview_status, party_preview = self.run_party(
-                party,
-                f"{party}-preview",
-                [
-                    "registry",
-                    "create",
-                    "--process-time",
-                    str(PROCESS_TIME_MS),
-                    "--retract-time",
-                    str(RETRACT_TIME_MS),
-                    "--preview",
-                    "--blueprint",
-                    self.blueprint,
-                    *self.node_arguments(),
-                    "--wallet-skey",
-                    str(self.keys / f"{party}.skey"),
-                ],
-                others,
-            )
-            setup_require(
-                preview_status == 0 and party_preview.get("outcome") == "success",
-                f"{party} preview failed: exit {preview_status}, {party_preview}",
-            )
-            setup_require(
-                party_preview.get("wallet"), f"{party} preview named no wallet"
-            )
+        self.fetch_fee_bound()
 
     def foreign_open(self):
         """One real booking with --state-dir at the other actor's root."""
@@ -746,6 +1007,51 @@ class Journey:
             self.state_token,
             *self.node_arguments(),
         ]
+
+    def wallet_address(self, party):
+        """PARTY's enterprise Testnet address, derived neutrally.
+
+        Read from the wallet-key file the harness itself generated
+        outside every home; no actor command runs. Raises SetupFailure
+        when the key is missing or unreadable.
+        """
+        try:
+            skey = read_wallet_skey_bytes(self.keys / f"{party}.skey")
+            _key_hash, address = derive_wallet_address(skey)
+        except (OSError, ValueError) as error:
+            raise SetupFailure(f"{party} wallet address is not derived: {error}")
+        return address
+
+    def fetch_fee_bound(self):
+        """Read the registry's fee bound from its state datum on chain.
+
+        A neutral harness read through the development network's
+        provider (no actor command, no wallet): the unspent output
+        holding the state token carries the eight-field state datum
+        whose second field is the published fee. Stored for the rows
+        beside the command receipts. A missing bound is setup, never a
+        row result.
+        """
+        policy, _, name = self.state_token.partition(".")
+        setup_require(policy and name, "the state token names no asset")
+        try:
+            bound = fetch_state_fee_bound(
+                self.settings["providerUrl"],
+                policy,
+                name,
+                PROCESS_TIME_MS,
+                RETRACT_TIME_MS,
+            )
+        except RuntimeError as error:
+            raise SetupFailure(str(error))
+        bound["command"] = "fee-bound"
+        bound["outcome"] = "success"
+        bound["stateToken"] = self.state_token
+        (self.receipts / "fee-bound.json").write_text(
+            json.dumps(bound, indent=2) + "\n"
+        )
+        print(f"two actors: fee bound {bound['stateMaxFee']}", flush=True)
+        return bound
 
     def now_ms(self):
         """The host clock in POSIX milliseconds."""
@@ -1885,8 +2191,14 @@ class Journey:
         ):
             return False, list(leg.values()), "the locked value"
         tip = row.get("tip")
-        if not isinstance(tip, int) or tip <= 0:
-            return False, list(leg.values()), "the tip"
+        fee_bound = self.load_receipt("fee-bound", receipts)
+        if fee_bound is None or not isinstance(fee_bound.get("stateMaxFee"), int):
+            return False, [], "the fee bound"
+        bound = fee_bound["stateMaxFee"]
+        if bound <= 0:
+            return False, [], "the fee bound"
+        if tip != bound:
+            return False, list(leg.values()), "the authorized tip"
         returned = row.get("returned")
         if not isinstance(returned, dict):
             return False, list(leg.values()), "the owner refund"
@@ -1896,18 +2208,15 @@ class Journey:
             returned_lovelace, int
         ):
             return False, list(leg.values()), "the refund lovelace"
-        if returned_lovelace != locked_lovelace - tip:
-            return False, list(leg.values()), "the refund net of the tip"
-        if row.get("topUp", 0) != returned_lovelace - (locked_lovelace - tip):
+        if returned_lovelace != locked_lovelace - bound:
+            return False, list(leg.values()), "the refund net of the fee bound"
+        if row.get("topUp", 0) != 0:
             return False, list(leg.values()), "the top-up"
         if row.get("processingEnds") != deadline_ms:
             return False, list(leg.values()), "the processing end"
         if row.get("retractEnds") != expected_close:
             return False, list(leg.values()), "the retract close"
-        alice_preview = self.load_receipt("alice-preview", receipts)
-        if alice_preview is None or not isinstance(alice_preview.get("wallet"), str):
-            return False, [], "the alice preview wallet"
-        if returned.get("recipient") != alice_preview["wallet"]:
+        if returned.get("recipient") != self.wallet_address("alice"):
             return False, list(leg.values()), "the owner recipient"
         if returned.get("index") != 1:
             return False, list(leg.values()), "the designated output"
@@ -2112,10 +2421,7 @@ class Journey:
             return False, list(leg.values()), "the return net of the top-up"
         if returned_lovelace <= 0:
             return False, list(leg.values()), "the returned lovelace"
-        bob_preview = self.load_receipt("bob-preview", receipts)
-        if bob_preview is None or not isinstance(bob_preview.get("wallet"), str):
-            return False, [], "the bob preview wallet"
-        if returned.get("recipient") != bob_preview["wallet"]:
+        if returned.get("recipient") != self.wallet_address("bob"):
             return False, list(leg.values()), "the owner recipient"
         if returned.get("index") != 0:
             return False, list(leg.values()), "the designated output"
