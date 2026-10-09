@@ -59,6 +59,7 @@ def projected_loss:
  next:($next[0] | {outcome, reconciled: {observed: .reconciled.observed}}),
  inspect:($inspect[0] | {outcome, leaf, root}),
  booked:($booked | lines), held:($held | lines), after:($after | lines),
+ reconciled:($reconciled | lines),
  roots:{before:$beforeRoot,booked:$bookedRoot,held:$heldRoot,after:$afterRoot}}'
 # Fixture entries for the receipt-size check. Neither starts a node.
 if [ "${1:-}" = "--project-evidence" ]; then
@@ -542,6 +543,7 @@ run bob-preview registry create --process-time 120000 --retract-time 15000 --pre
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
+bob_addr="$(field bob-preview .wallet)"
 
 # ------------------------------------------------------------------
 
@@ -883,31 +885,50 @@ if [ "$cross_any" -eq 1 ]; then
     # Alice's updates journal to her partition again.
     journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     refusals_clean=0
+    # Her ordinary write proceeds independently while another wallet's fold
+    # is unresolved: her journal is clean, so nothing names that fold and
+    # only her own four phases move her journal.
+    run "$cross-next" registry update --key-hex "$next_key" --payload "$work/payload.json" \
+      "${common[@]}" "${node[@]}" "${alice[@]}"
+    outcome_is "$cross-next" success || refusals_clean=1
+    cross_update="$(submission_tx "$cross-next" update)"
+    # Her update journals exactly its own four phases; nothing of it touches
+    # another wallet's fold, which her journal never names.
+    cross_update_phases="$(jq -s -r --arg t "$cross_update" '[.[] | select(.journalTxId == $t) | .journalEvent] | sort | join(",")' "$journal")"
+    [ "$cross_update_phases" = "confirmed,observed,prepared,submitted" ] \
+      || { say "$control: her update journalled [$cross_update_phases], not its four phases"; refusals_clean=1; }
+    cross_fold_alice="$(jq -s --arg t "$cross_fold" '[.[] | select(.journalTxId == $t)] | length' "$journal")"
+    [ "$cross_fold_alice" = 0 ] \
+      || { say "$control: her journal names the other wallet's fold $cross_fold"; refusals_clean=1; }
+    # Bob's reconcile observes his own fold once it is on chain, submitting
+    # nothing: the case's readback inspect carries his address, so the one
+    # read reconciles his partition alone while reading the folded key back.
+    bob_journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+    journal="$bob_journal"
+    event_count_bob() { event_count "$1" "$2"; }
     for i in $(seq 1 40); do
-      snap "$cross-try-$i"
-      run "$cross-next" registry update --key-hex "$next_key" --payload "$work/payload.json" \
-        "${common[@]}" "${node[@]}" "${alice[@]}"
-      outcome_is "$cross-next" partial || break
-      if ! journal_same "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" || ! trie_files_absent "$cross-try-$i" \
-        || [ "$(field "$cross-next" .unresolved.tx)" != "$cross_fold" ]; then refusals_clean=1; fi
-      # Retain every refusal; the next run otherwise reuses the receipt name.
-      cp "$receipts/$cross-next.json" "$receipts/$cross-refused-$i.json"
-      # The comparison has been recorded. The copy is a full journal.
-      rm -f "$snaps/$cross-try-$i.jsonl"
+      run "$cross-inspect" registry inspect --key-hex "$key" \
+        "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
+      outcome_is "$cross-inspect" success || break
+      [ "$(event_count_bob "$cross_fold" observed)" = 1 ] && break
       sleep 2
     done
+    snap "$cross-reconciled"
+    # Alice's updates journal to her partition again.
+    journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     snap "$cross-next"
-    run "$cross-inspect" registry inspect --key-hex "$key" "${common[@]}" "${node[@]}"
     loss=null
     if [[ "$cross_case" == *:lost-answer ]]; then loss="$(cat "$receipts/$cross-fold.json")"; fi
     cross_evidence="$receipts/$cross-evidence.json"
+    cross_signers="$(journal="$(managed_journal "$reg" "$state_token" "$bobkey")"; signers_of "$cross_fold" | jq -Rsc 'split("\n") | map(select(. != ""))')"
     jq -n --arg fold "$cross_fold" --arg key "$key" --arg point "$point" --argjson reached "$reached" \
-      --arg folder "$bobkey" --argjson signers "$(signers_of "$cross_fold" | jq -Rsc 'split("\n") | map(select(. != ""))')" \
+      --arg folder "$bobkey" --argjson signers "$cross_signers" \
       --argjson clean "$refusals_clean" --argjson exit "$(cat "$receipts/$cross-next.exit")" --argjson loss "$loss" \
       --slurpfile booking "$receipts/$cross-book.json" --slurpfile next "$receipts/$cross-next.json" \
       --slurpfile inspect "$receipts/$cross-inspect.json" \
       --slurpfile booked "$snaps/$cross-booked.jsonl" --slurpfile held "$snaps/$cross-held.jsonl" \
       --slurpfile after "$snaps/$cross-next.jsonl" \
+      --slurpfile reconciled "$snaps/$cross-reconciled.jsonl" \
       --arg beforeRoot "$(cat "$snaps/$cross-before.root")" --arg bookedRoot "$(cat "$snaps/$cross-booked.root")" \
       --arg heldRoot "$(cat "$snaps/$cross-held.root")" --arg afterRoot "$(root_now)" \
       "$cross_evidence_filter" >"$cross_evidence"
@@ -940,30 +961,30 @@ if [ "$cross_any" -eq 1 ]; then
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalEdge = 3 else . end)' \
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootBefore += "tampered" else . end)' \
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootAfter = .journalRootBefore else . end)'
-    cross_clause "the next ordinary write proceeds, and any pending refusals name the fold and move nothing" \
-      '.exit == 0 and .next.outcome == "success" and .clean == 0' \
+    cross_clause "an unrelated wallet's write proceeds without touching the fold" \
+      '.exit == 0 and .next.outcome == "success" and .clean == 0 and .inspect.outcome == "success"' \
       '.next.outcome = "partial"' '.exit = 15' '.clean = 1'
     cross_clause "the public lineage reaches the confirmed fold's recorded after-root" \
       '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")][0].journalRootAfter == .roots.after' \
       '.roots.after += "tampered"' \
       '. as $e | .held |= map(if .journalTxId == $e.fold then .journalRootAfter += "tampered" else . end)'
-    cross_clause "the fold is confirmed and observed exactly once, by the requester's next write when needed" \
-      '. as $e | .next.reconciled.observed == [.fold]
-      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 1
-      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "observed") | .journalCommand] == ["update"])
+    cross_clause "the fold is confirmed and observed exactly once, by the folder's reconcile" \
+      '. as $e | ([.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 1
+      and ([.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "observed") | .journalCommand] == ["inspect"])
+      and ([.after[] | select(.journalTxId == $e.fold)] | length) == 0
       and (if ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")] | length) == 0
-           then [.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed") | .journalCommand] == ["update"] else true end)' \
-      '.next.reconciled.observed += [.fold]' \
-      '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")]' \
-      '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "observed")]'
+           then [.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed") | .journalCommand] == ["inspect"] else true end)' \
+      '. as $e | .reconciled += [.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "confirmed")]' \
+      '. as $e | .reconciled += [.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "observed")]'
     cross_clause "there is no second preparation or submission of the fold or its request" \
-      '. as $e | ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")] | length) == 1
-      and ([.after[] | select(.journalTxId == $e.fold and .journalEvent == "submitted")] | length)
+      '. as $e | ([.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")] | length) == 1
+      and ([.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "submitted")] | length)
         == ([.held[] | select(.journalTxId == $e.fold and .journalEvent == "submitted")] | length)
-      and ([.after[] | select(.journalStep == "fold" and .journalEvent == "prepared" and (.journalInputs | index($e.booking.request)) != null)] | length) == 1' \
-      '. as $e | .after += [.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")]' \
-      '. as $e | .after += [(.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalEvent = "submitted")]' \
-      '. as $e | .after += [(.after[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalTxId = "second-fold")]'
+      and ([.reconciled[] | select(.journalStep == "fold" and .journalEvent == "prepared" and (.journalInputs | index($e.booking.request)) != null)] | length) == 1
+      and ([.after[] | select(.journalTxId == $e.fold)] | length) == 0' \
+      '. as $e | .reconciled += [.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")]' \
+      '. as $e | .reconciled += [(.reconciled[] | select(.journalTxId == $e.fold and .journalEvent == "prepared") | .journalEvent = "submitted")]' \
+      '. as $e | .after += [(.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared"))]'
     cross_clause "the ledger and local files agree at the folded key and root" \
       '. as $e | [.held[] | select(.journalTxId == $e.fold and .journalEvent == "prepared")][0] as $p
       | .inspect.outcome == "success" and .inspect.leaf == "active"
@@ -977,7 +998,9 @@ if [ "$cross_any" -eq 1 ]; then
       clause "at the send the bound body and prepared phase were already saved" \
         is_equal "$(jq -sr --arg t "$cross_fold" '[.[] | select(.journalTxId == $t) | .journalEvent] | join(",")' "$snaps/$cross-sent.jsonl")" prepared
     fi
+    journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
     clause "the saved signed body is bound to its prepared line" body_bound "$cross_fold"
+    journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     clause "the journal was only appended to and no saved body changed" appended_only "$cross-before"
     rm -f "$snaps/$cross"-*.jsonl
   done
