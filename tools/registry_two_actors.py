@@ -930,6 +930,89 @@ class Journey:
         leg["late_inspect_after"] = "reject-late-inspect-after"
         return leg
 
+    def reclaim_wrong_leg(self, owner, foreign, key):
+        """FOREIGN attempts OWNER's KEY; refused as not-owner.
+
+        OWNER books an insertion; FOREIGN's reclaim of it is refused by
+        name with the not-owner class and a non-zero exit, and inspect
+        shows the request still pending and the root unchanged.
+        """
+        owner_others = tuple(
+            home for party, home in self.homes.items() if party != owner
+        )
+        foreign_others = tuple(
+            home for party, home in self.homes.items() if party != foreign
+        )
+        leg = {}
+        status, booking = self.run_party(
+            owner,
+            "reclaim-bob-3-booking",
+            self.book(owner, "insert", key, "reclaim-bob-3"),
+            owner_others,
+        )
+        require(
+            status == 0 and booking.get("outcome") == "success",
+            f"{owner} reclaim booking failed: exit {status}, {booking}",
+        )
+        require(
+            isinstance(booking.get("request"), str),
+            f"{owner} reclaim booking named no request: {booking}",
+        )
+        leg["booking"] = "reclaim-bob-3-booking"
+        status, before = self.run_party(
+            foreign,
+            "reclaim-wrong-inspect-before",
+            self.inspect_key(key),
+            foreign_others,
+        )
+        require(
+            status == 0 and before.get("outcome") == "success",
+            f"{foreign} wrong inspect-before failed: exit {status}, {before}",
+        )
+        leg["inspect_before"] = "reclaim-wrong-inspect-before"
+        status, attempt = self.run_party(
+            foreign,
+            "reclaim-wrong-attempt",
+            self.reclaim_command(foreign, booking["request"]),
+            foreign_others,
+        )
+        require(
+            status == 10
+            and attempt.get("outcome") == "client-refusal"
+            and "retract-owner" in attempt.get("reason", ""),
+            f"{foreign} reclaim was not refused as not-owner: exit {status}, {attempt}",
+        )
+        leg["attempt"] = "reclaim-wrong-attempt"
+        status, after = self.run_party(
+            foreign,
+            "reclaim-wrong-inspect-after",
+            self.inspect_key(key),
+            foreign_others,
+        )
+        require(
+            status == 0 and after.get("outcome") == "success",
+            f"{foreign} wrong inspect-after failed: exit {status}, {after}",
+        )
+        require(
+            after.get("root") == before.get("root"),
+            f"{foreign} root moved under a refused reclaim: "
+            f"{before.get('root')} -> {after.get('root')}",
+        )
+        require(
+            after.get("pendingRequests") == before.get("pendingRequests"),
+            f"{foreign} pending moved under a refused reclaim",
+        )
+        pending = before.get("pendingRequests") or []
+        require(
+            any(
+                isinstance(entry, dict) and entry.get("request") == booking["request"]
+                for entry in pending
+            ),
+            f"{foreign} reclaimed request is not still pending",
+        )
+        leg["inspect_after"] = "reclaim-wrong-inspect-after"
+        return leg
+
     def terminate_leg(self, controller, folder, key):
         """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
         direction = f"terminate-{key}-by-{folder}"
@@ -1976,6 +2059,7 @@ class Journey:
                 "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
             }
             legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
+            legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
             legs["fold_roots"] = getattr(self, "fold_records", [])
             self.removal_check(legs)
             self.cap_check()
