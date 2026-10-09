@@ -1,0 +1,82 @@
+{
+  "pairs-verdicts-and-readbacks": [
+    {
+      "text": "Pairs, verdicts and readbacks.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want every forbidden move tied to the script that must refuse it and to the accepting control that differs from it in one thing, so that a pass cannot come from a different failure.",
+      "pause": 400
+    }
+  ],
+  "the-pairs": [
+    {
+      "text": "The pairs.",
+      "pause": 500
+    },
+    {
+      "text": "Each row is one forbidden move and its accepting control. The command spellings are the ticket's own; the last column says where each pair is delivered. The model statements are those of the open-datum application model.",
+      "pause": 400
+    },
+    {
+      "text": "The last pair is one connected sequence over one request: the termination is booked and left unfolded (registry terminate without --fold, which stops at the pending request), the short fold is refused with the request still pending and the deposit held, and the honest fold of that same request then burns the token, leaves the key terminal and pays the controller in full. It stands for rows 11, 12 and 12b of the preprod demonstration.",
+      "pause": 400
+    },
+    {
+      "text": "An insertion refused at its fold leaves its booking pending; its owner reclaims it inside the retract window with the ordinary command.",
+      "pause": 400
+    }
+  ],
+  "reachability-on-the-permanent-contract": [
+    {
+      "text": "Reachability on the permanent contract.",
+      "pause": 500
+    },
+    {
+      "text": "The permanent two-edge contract has merged (constitution 1.14.0): the single active model admits only registration (insertActive) and permanent termination (updateTerminal). Every pair uses only those two registry edges or an application spend, so all nine pairs are reachable on it, none drops, and the model statements above stand. The refusal of the five excluded edges belongs to that contract's own controls, not to a pair here. The host reads the expected script from the registry it opens, so no code depends on which contract the generated node was created with, and every pair runs on the permanent contract.",
+      "pause": 400
+    },
+    {
+      "text": "Rejection pairs: none exists in the ticket's table. Any that protected rejection creates enters as pending #498/#529.",
+      "pause": 400
+    }
+  ],
+  "verdicts": [
+    {
+      "text": "Verdicts.",
+      "pause": 500
+    },
+    {
+      "text": "A host run ends in exactly one outcome per command.",
+      "pause": 400
+    },
+    {
+      "text": "The expected script is a role (registry state validator, application spending contract, application at the fold) resolved to the script hash of the registry the command opened, never a literal typed into the check.",
+      "pause": 400
+    }
+  ],
+  "readbacks": [
+    {
+      "text": "Readbacks.",
+      "pause": 500
+    },
+    {
+      "text": "After every refusal the host reads the registry state output, the key's holding and the wallet's outputs again. The pair's receipt carries both reads; the check passes only when the state root, the holding's output reference, value and datum, and the wallet's outputs are equal before and after.",
+      "pause": 400
+    }
+  ],
+  "mutants": [
+    {
+      "text": "Mutants.",
+      "pause": 500
+    },
+    {
+      "text": "For each pair one mutant validator removes exactly the rule that refuses it. Running the pair against the mutant must make the forbidden check report failure because the node accepted what the rule refuses, while every other pair on the same mutant is unchanged. A mutant that changes nothing must leave the row green, which the check treats as its own failure.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "b687adaa8c8e87394a52854f9d8bf8297d0a5b5112f08887982659395fedb518"
+  }
+}

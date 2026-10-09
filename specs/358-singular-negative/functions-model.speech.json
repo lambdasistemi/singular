@@ -1,0 +1,60 @@
+{
+  "host-interfaces": [
+    {
+      "text": "Host interfaces.",
+      "pause": 500
+    },
+    {
+      "text": "As a coder, I want the new functions named with their arguments and results, so that the host and its judge are written against one contract and nothing is invented in the shared sources.",
+      "pause": 400
+    }
+  ],
+  "command-surface": [
+    {
+      "text": "Command surface.",
+      "pause": 500
+    },
+    {
+      "text": "The host accepts registry insert, update, terminate, withdraw, fold and inspect, with the shared flag group unchanged: state directory, blueprint, state token, Koios URL, network magic, wallet key file, receipt file, funding limits. It adds three forms and no flag to any other command:",
+      "pause": 400
+    },
+    {
+      "text": "registry terminate without --fold books the termination and stops at the pending request, as the ordinary command does. create, reject and reclaim are not host commands; the registry is created and a stranded booking reclaimed with the ordinary singular. inspect is the shared read, unchanged, since a read carries no bypass.",
+      "pause": 400
+    }
+  ],
+  "new-functions": [
+    {
+      "text": "New functions.",
+      "pause": 500
+    },
+    {
+      "text": "Submission itself is the shared one: the host's handlers submit through the session module's submitBuiltIn, so the host adds no submit function of its own. It adds the record of the node's answer and the failed-script roles below, and its handlers return a receipt whose outcome is exactly one of accepted, refused (with the failed scripts), client refusal, encoding failure or setup failure.",
+      "pause": 400
+    }
+  ],
+  "judge-and-arrangement-contract": [
+    {
+      "text": "Judge and arrangement contract.",
+      "pause": 500
+    },
+    {
+      "text": "The judge is not a host function. It reads a pair's receipts only and, given the expected script role, answers per clause: refused by the expected script, refused by another script, client refusal, encoding failure, setup failure or accepted; and whether the reads before and after are equal. A typed result never enters a clause; a missing or altered receipt changes the verdict.",
+      "pause": 400
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Constraints.",
+      "pause": 500
+    },
+    {
+      "text": "No new function appears in the shared sources. The shared parser keeps its signatures. Exit codes follow the ordinary executable's classes and add one for a node refusal; a setup failure never exits as a refusal. A key is read from its file path and never printed, including in error text.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f0d6ffa323c1655ef787dbf0c139f5d3ce9655e16f9882d13af780fc45a21c86"
+  }
+}

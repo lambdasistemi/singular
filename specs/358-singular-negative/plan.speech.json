@@ -1,0 +1,84 @@
+{
+  "deliver-the-host-in-three-slices": [
+    {
+      "text": "Deliver the host in three slices.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I want the host delivered in cuts that each close within an afternoon and each leave the repository releasable, so that the first pair runs from the release archive early and the rest follow on the same host.",
+      "pause": 400
+    }
+  ],
+  "bound-facts": [
+    {
+      "text": "Bound facts.",
+      "pause": 500
+    },
+    {
+      "text": "Worktree /code/singular-issue-358, branch feat/358-singular-adversary, base: origin/main at the merge of the permanent two-edge contract (the branch was rebased onto it once, without conflict). Constitution 1.14.0. The ordinary singular is one executable built from offchain/cli/src, which is not a library. The crafted forbidden transactions exist today only in the conformance harness (conformance/app-cli/Conformance/Cli/Backend.hs); no command line reaches them.",
+      "pause": 400
+    },
+    {
+      "text": "A build check in a scratch copy shows the shape works: a second package whose source directories are its own app and the shared ../cli/src, depending on the registry library, builds under the project's Nix Haskell setup, and the executable prints the shared parser's usage. Naming the package in offchain/cabal.project would break the conformance build, which derives its merged project by rewriting only the line . of that file, so the package is named from the Nix project instead. The cost in shared files is one line in offchain/nix/project.nix and one line in offchain/flake.nix.",
+      "pause": 400
+    },
+    {
+      "text": "Each box is one pull request on this branch, merged with a merge commit in the desk's queue (slot 7) once every checkpoint is approved and the exact head's hosted checks are green, including the end-to-end Demo 1 jobs.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "A slice that will not close within an afternoon of coder time is cut again before dispatch and the cut is asked as a question. Rejection pairs are not in any slice; they are named pending until protected rejection lands.",
+      "pause": 400
+    }
+  ],
+  "verification-and-delivery": [
+    {
+      "text": "Verification and delivery.",
+      "pause": 500
+    },
+    {
+      "text": "The frozen gate is the table of commands in the gate record, bound to the CI that exists plus the CI this ticket adds in its own new files. The commit owner runs, per candidate, the narrow legs: the host's incremental build, the off-chain lint and format checks, the whole-repository lint for the new shell, Nix and YAML files, the command-run examples of the ordinary suite, the ordinary-executables app and the documentation check. It runs the aggregate just ci once, on the final candidate of a slice. The archive pair jobs and the mutant job are hosted-only; a hosted failure is one repair commit.",
+      "pause": 400
+    },
+    {
+      "text": "Only reviewed candidates are pushed; specification commits travel with the first candidate. The pull request is created as a draft, labeled and assigned, and its body describes the diff and its limits in the template's four sections. Commits carry no attribution of any kind; the range is searched for trailers before every push. The pull request is a patch stack with no journey commits.",
+      "pause": 400
+    }
+  ],
+  "evidence-the-ticket-produces": [
+    {
+      "text": "Evidence the ticket produces.",
+      "pause": 500
+    },
+    {
+      "text": "Per pair: the forbidden receipt naming the refusing script by hash and role, the control's accepted receipt, and the two reads. Per slice: the hosted run of each part on the exact head. For the third slice: the mutant runs, one per pair. Left uncovered and named in the pull request: rejection pairs; the harness copy of the crafting; the pairs on the permanent contract until it lands; any pair the model cannot state.",
+      "pause": 400
+    }
+  ],
+  "budget-and-staffing": [
+    {
+      "text": "Budget and staffing.",
+      "pause": 500
+    },
+    {
+      "text": "One team for this epic: the ticket owner, one commit owner (Muse through the pi harness) given the whole slice with a terminal condition of green, blocked or at capacity, and one mute persistent auditor (GLM through the pi harness) launched beside it. No nudges, no run counting, no extra seat, no draft tool. If the permanent-contract branch or the command-line split changes the layout under this branch, the ticket owner follows the desk's order and rebases only at a safe boundary.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "0b81067f639f427d455066539ce3a9409213442cfa1dbfabf5a872ea136086af"
+  }
+}
