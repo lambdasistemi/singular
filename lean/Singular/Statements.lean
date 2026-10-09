@@ -1488,10 +1488,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt, registryId⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt, registryId⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1681,14 +1681,14 @@ theorem retract_admitted_iff (s : RegistryState) (r : Request) (w : RetractWitne
     (∃ t, admittedExitStep s .retract r w = .ok t) ↔
       (r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) ∧
       r.owner ∈ w.signatories ∧
-      w.submittedAt + s.config.processTime ≤ w.validFrom ∧
-      w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime := by
+      r.submittedAt + s.config.processTime ≤ w.validFrom ∧
+      w.validTo ≤ r.submittedAt + s.config.processTime + s.config.retractTime := by
   have hr := retractableEdge_iff r.edge
-  have hp := inPhase2_iff s.config w
+  have hp := inPhase2_iff s.config r w
   simp only [admittedExitStep, exitAdmission, retractAdmission, exitStep]
   cases h1 : retractableEdge r.edge <;>
     cases h2 : w.signatories.contains r.owner <;>
-    cases h3 : inPhase2 s.config w <;> simp_all
+    cases h3 : inPhase2 s.config r w <;> simp_all
 
 /-- Why a retraction is refused: the first check it fails, in the request
 script's order.
@@ -1706,11 +1706,11 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
       admittedExitStep s .retract r w = .error "retract-owner") ∧
     ((r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) →
       r.owner ∈ w.signatories →
-      ¬ (w.submittedAt + s.config.processTime ≤ w.validFrom ∧
-        w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime) →
+      ¬ (r.submittedAt + s.config.processTime ≤ w.validFrom ∧
+        w.validTo ≤ r.submittedAt + s.config.processTime + s.config.retractTime) →
       admittedExitStep s .retract r w = .error "not-phase2") := by
   have hr := retractableEdge_iff r.edge
-  have hp := inPhase2_iff s.config w
+  have hp := inPhase2_iff s.config r w
   refine ⟨?_, ?_, ?_⟩
   · intro n1 n2 n3
     have e1 : retractableEdge r.edge = false := by
@@ -1723,30 +1723,20 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO]
   · intro hR hO hW
     have e1 : retractableEdge r.edge = true := hr.mpr hR
-    have e3 : inPhase2 s.config w = false := by
-      cases h : inPhase2 s.config w
+    have e3 : inPhase2 s.config r w = false := by
+      cases h : inPhase2 s.config r w
       · rfl
       · exact absurd (hp.mp h) hW
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO, e3]
 
-/-- An admitted retraction is the retract exit, and admission changes no other exit.
-
-For every state, exit, request, witness and lovelace: when the exit is not a
-retract, or it is a retract its admission lets through, the admitted step is
-exactly `exitStep` and the admitted transaction exactly `txOfExit` — what the
-retraction pays, what it leaves of the registry and who must sign its
-transaction are the retract exit's own, whatever the witness says. -/
+/-- Admission controls permission, not effects: every exit that passes its
+admission has exactly the existing exit's state, mint, payments and transaction. -/
 theorem admitted_exit_is_the_exit (s : RegistryState) (exit : Exit) (r : Request)
-    (w : RetractWitness) (lovelace : Nat)
-    (admitted : exit ≠ .retract ∨ retractAdmission s.config r w = none) :
-    admittedExitStep s exit r w = exitStep s exit r ∧
-      admittedTxOfExit s exit r w lovelace = txOfExit s exit r lovelace := by
-  have none : exitAdmission s.config exit r w = none := by
-    cases exit with
-    | retract => simpa using admitted
-    | fold e => rfl
-    | reject => rfl
-  simp [admittedExitStep, admittedTxOfExit, none]
+    (w : RetractWitness) (lovelace : Nat) (rejection : Option RejectWitness)
+    (admitted : exitAdmission s exit r w rejection = none) :
+    admittedExitStep s exit r w rejection = exitStep s exit r ∧
+      admittedTxOfExit s exit r w lovelace rejection = txOfExit s exit r lovelace := by
+  simp [admittedExitStep, admittedTxOfExit, admitted]
 
 /-- **#304** — a fold's transaction describes a destination output exactly when
 the fold routes a token to the requester.
@@ -1855,33 +1845,22 @@ example (s : RegistryState) (k : Key) :
       { edge := .insertActive, key := k }).length = 1 := by
   simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
-/-- Admission refuses before what a retraction spends or pays is judged.
-
-For every state, exit, request, witness and lovelace: a retraction its admission
-refuses builds no transaction and is refused with admission's reason whatever the
-transaction spends and pays — a retraction beside a state token, or paying its
-owner nothing, still names the admission check it failed. Any other exit, and a
-retraction admission lets through, is judged exactly as before: what it spends
-(`spendRefusal`), then what it pays (`settle`). -/
+/-- An admission refusal precedes spending and settlement for every exit;
+a successfully admitted exit is judged by those existing obligations. -/
 theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
-    (w : RetractWitness) (lovelace : Nat) :
-    (∀ why, retractAdmission s.config r w = some why →
-      admittedTxOfExit s .retract r w lovelace = .error why ∧
-      ∀ inputs outputs, exitRefusal s.config .retract r w inputs outputs = some why) ∧
-    ((exit ≠ .retract ∨ retractAdmission s.config r w = none) →
-      ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs =
+    (w : RetractWitness) (lovelace : Nat) (rejection : Option RejectWitness) :
+    (∀ why, exitAdmission s exit r w rejection = some why →
+      admittedTxOfExit s exit r w lovelace rejection = .error why ∧
+      ∀ inputs outputs, exitRefusal s exit r w inputs outputs rejection = some why) ∧
+    (exitAdmission s exit r w rejection = none →
+      ∀ inputs outputs, exitRefusal s exit r w inputs outputs rejection =
         (spendRefusal exit inputs).orElse fun _ => settle (obligations exit r) outputs) := by
-  refine ⟨?_, ?_⟩
+  constructor
   · intro why refused
-    exact ⟨by simp [admittedTxOfExit, exitAdmission, refused],
-      fun _ _ => by simp [exitRefusal, exitAdmission, refused]⟩
+    exact ⟨by simp [admittedTxOfExit, refused],
+      fun _ _ => by simp [exitRefusal, refused]⟩
   · intro admitted inputs outputs
-    have none : exitAdmission s.config exit r w = none := by
-      cases exit with
-      | retract => simpa using admitted
-      | fold e => rfl
-      | reject => rfl
-    simp [exitRefusal, none]
+    simp [exitRefusal, admitted]
 
 /-- **#344, a batch of one folds as its step** — for one request whose claimed
 mint is the delta of its own edge, the batch fold is exactly the single step:
@@ -2021,6 +2000,180 @@ example :
        , config := none, commitment := none, assets := [], lovelace := 2 }]
       = some "destination" := by
   decide
+
+/-- #494: rejection is admitted exactly for identity-bound evidence and one of
+its two positive conditions. The root check uses the model's logical map. -/
+theorem rejection_admitted_iff (s : RegistryState) (r : Request) (w : RejectWitness) :
+    rejectAdmission s r (some w) = none ↔
+      w.evidence.registryId = s.config.registryId ∧ r.registryId = s.config.registryId ∧
+      w.evidence.registry = s.config ∧
+      s.config.root = rootOf s.trie ∧
+      w.evidence.request = r ∧
+      w.validFrom < w.validTo ∧
+      (match w.evidence.reason with
+       | .mismatch leaf => leaf = trieGet s.trie r.key ∧ transition r.edge leaf = none
+       | .expired => r.submittedAt + s.config.processTime + s.config.retractTime ≤ w.validFrom) := by
+  unfold rejectAdmission
+  cases h : w.evidence.reason <;>
+    simp only [h] <;>
+    (repeat' split <;> simp_all [bne, Bool.or_eq_true, Nat.not_le, Option.isSome_iff_ne_none])
+  all_goals grind
+
+/-- #494: a lifecycle-compatible request cannot be rejected before expiry,
+regardless of the evidence the processor chooses to supply. -/
+theorem live_compatible_request_protected (s : RegistryState) (r : Request) (w : RejectWitness)
+    (compatible : transition r.edge (trieGet s.trie r.key) ≠ none)
+    (live : w.validFrom < r.submittedAt + s.config.processTime + s.config.retractTime) :
+    rejectAdmission s r (some w) ≠ none := by
+  intro admitted
+  obtain ⟨_, _, _, _, _, _, condition⟩ := (rejection_admitted_iff s r w).mp admitted
+  cases h : w.evidence.reason with
+  | mismatch leaf =>
+    simp only [h] at condition
+    obtain ⟨same, refused⟩ := condition
+    rw [same] at refused
+    exact compatible refused
+  | expired =>
+    simp only [h] at condition
+    omega
+
+/-- #494: a missing proof never authorizes rejection, even when refunds are paid. -/
+theorem rejection_without_evidence (s : RegistryState) (r : Request) (w : RetractWitness)
+    (lovelace : Nat) (inputs : List TxInput) (outputs : List TxOutput) :
+    admittedExitStep s .reject r w = .error "reject-evidence-missing" ∧
+    admittedTxOfExit s .reject r w lovelace = .error "reject-evidence-missing" ∧
+    exitRefusal s .reject r w inputs outputs = some "reject-evidence-missing" := by
+  simp [admittedExitStep, admittedTxOfExit, exitRefusal, exitAdmission, rejectAdmission]
+
+/-- #494: every admitted rejection preserves the full intermediate state, mints
+nothing, and pays the existing deposit obligation. Admission changes no refund rule. -/
+theorem protected_rejection_effects (s : RegistryState) (r : Request) (w : RetractWitness)
+    (e : Option RejectWitness) (t : Result)
+    (h : admittedExitStep s .reject r w e = .ok t) :
+    t.state = s ∧ t.mint = [] ∧ t.paid = [(r.owner, r.deposit)] := by
+  unfold admittedExitStep at h
+  split at h
+  · cases h
+  · simp [exitStep, emptyResult, obligations, paymentPaid] at h
+    cases h
+    exact ⟨rfl, rfl, rfl⟩
+
+/-- #494: batch effects are threaded through the actual processor, never reset
+back to the transaction's initial root. -/
+theorem process_actions_cons (s : RegistryState) (lo hi : Nat) (a : ProcessAction)
+    (rest : List ProcessAction) (first : Result)
+    (h : processAction s lo hi a = .ok first) :
+    processActions s lo hi (a :: rest) = (do
+      let later ← processActions first.state lo hi rest
+      pure (combineResults first later)) := by
+  simp [processActions, h, bind, Except.bind]
+
+/-- #494: an empty batch is refused rather than vacuously proving protection. -/
+theorem process_batch_nonempty (s : RegistryState) (lo hi : Nat) :
+    processBatch s lo hi [] = .error "empty-process-batch" := by
+  rfl
+
+/-- R2: an admitted expiry rejection begins after every admitted retraction's
+excluded upper bound for the same booked request, regardless of witness time. -/
+theorem expiry_after_reclaim (s : RegistryState) (r : Request)
+    (rw : RetractWitness) (jw : RejectWitness) (t : Result)
+    (retracted : admittedExitStep s .retract r rw = .ok t)
+    (rejected : rejectAdmission s r (some jw) = none)
+    (expired : jw.evidence.reason = .expired) :
+    rw.validTo ≤ jw.validFrom := by
+  have reclaim := (retract_admitted_iff s r rw).mp ⟨t, retracted⟩
+  have expiry := (rejection_admitted_iff s r jw).mp rejected
+  simp only [expired] at expiry
+  omega
+
+/-- A successful action list has an executable prefix and a suffix starting
+at precisely that prefix's resulting state. -/
+theorem process_actions_split (s : RegistryState) (lo hi : Nat)
+    (before suffix : List ProcessAction) (t : Result)
+    (h : processActions s lo hi (before ++ suffix) = .ok t) :
+    ∃ first last, processActions s lo hi before = .ok first ∧
+      processActions first.state lo hi suffix = .ok last := by
+  induction before generalizing s t with
+  | nil => exact ⟨emptyResult s, t, rfl, h⟩
+  | cons a before ih =>
+    cases ha : processAction s lo hi a with
+    | error why => simp [processActions, ha, bind, Except.bind, Functor.map, Except.map, pure, Except.pure] at h
+    | ok first =>
+      cases hb : processActions first.state lo hi (before ++ suffix) with
+      | error why => simp [processActions, ha, hb, bind, Except.bind, Functor.map, Except.map, pure, Except.pure] at h
+      | ok rest =>
+        obtain ⟨middle, last, hm, hl⟩ := ih first.state rest hb
+        refine ⟨combineResults first middle, last, ?_, hl⟩
+        simp [processActions, ha, hm, bind, Except.bind, Functor.map, Except.map, pure, Except.pure]
+
+/-- Every rejection in a successful action list passed admission at its prefix state. -/
+theorem process_actions_reject_admitted (s : RegistryState) (lo hi : Nat)
+    (before suffix : List ProcessAction) (r : Request) (e : Option RejectEvidence)
+    (t : Result)
+    (h : processActions s lo hi (before ++ .reject r e :: suffix) = .ok t) :
+    ∃ first, processActions s lo hi before = .ok first ∧
+      rejectAdmission first.state r
+        (e.map fun evidence => { evidence, validFrom := lo, validTo := hi }) = none := by
+  obtain ⟨first, last, hf, hl⟩ := process_actions_split s lo hi before
+    (.reject r e :: suffix) t h
+  refine ⟨first, hf, ?_⟩
+  cases ha : rejectAdmission first.state r
+      (e.map fun evidence => { evidence, validFrom := lo, validTo := hi }) with
+  | none => rfl
+  | some why =>
+    simp [processActions, processAction, ProcessAction.exit, ProcessAction.request,
+      admittedExitStep, exitAdmission, ha, bind, Except.bind, Functor.map, Except.map,
+      pure, Except.pure] at hl
+
+/-- Every rejection in an accepted mixed batch passed admission at the state
+produced by its entire preceding prefix. -/
+theorem process_batch_reject_admitted (s : RegistryState) (lo hi : Nat)
+    (before suffix : List ProcessAction) (r : Request) (e : Option RejectEvidence)
+    (t : Result)
+    (h : processBatch s lo hi (before ++ .reject r e :: suffix) = .ok t) :
+    ∃ first, processActions s lo hi before = .ok first ∧
+      rejectAdmission first.state r
+        (e.map fun evidence => { evidence, validFrom := lo, validTo := hi }) = none := by
+  simp only [processBatch, bind, Except.bind, pure, Except.pure] at h
+  split at h
+  · contradiction
+  · split at h
+    · contradiction
+    · cases hp : processActions s lo hi (before ++ .reject r e :: suffix) with
+      | error why => simp [hp, bind, Except.bind, Functor.map, Except.map, pure, Except.pure] at h
+      | ok all => exact process_actions_reject_admitted s lo hi before suffix r e all hp
+
+/-- The all-reject driver is bound to the same proven action execution; it
+cannot provide a second admission implementation. -/
+theorem reject_batch_execution (s : RegistryState) (requests : List Request)
+    (ws : List (Option RejectWitness)) (t : Result)
+    (h : Driver.rejectBatchStep s requests ws = .ok t) :
+    let interval := (Driver.rejectBatchIntervals ws).headD (0, 0)
+    processActions s interval.1 interval.2 (Driver.rejectBatchActions requests ws) = .ok t := by
+  simp only [Driver.rejectBatchStep, bind, Except.bind, pure, Except.pure] at h
+  split at h
+  · contradiction
+  · split at h
+    · contradiction
+    · exact h
+
+/-- R3 lifts single-request protection to every position of an accepted batch:
+a lifecycle-compatible rejected request must already have expired there. -/
+theorem process_batch_live_compatible_protected (s : RegistryState) (lo hi : Nat)
+    (before suffix : List ProcessAction) (r : Request) (e : Option RejectEvidence)
+    (first t : Result) (hp : processActions s lo hi before = .ok first)
+    (compatible : transition r.edge (trieGet first.state.trie r.key) ≠ none)
+    (live : lo < r.submittedAt + first.state.config.processTime + first.state.config.retractTime) :
+    processBatch s lo hi (before ++ .reject r e :: suffix) ≠ .ok t := by
+  intro h
+  obtain ⟨prior, hprior, admitted⟩ := process_batch_reject_admitted s lo hi before suffix r e t h
+  rw [hp] at hprior
+  cases hprior
+  cases e with
+  | none => simp [rejectAdmission] at admitted
+  | some evidence =>
+    exact live_compatible_request_protected first.state r
+      { evidence, validFrom := lo, validTo := hi } compatible live admitted
 
 end Statements
 end Singular

@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 58 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 79 in total, each with its own manifest and its own compiled gate.",
       "pause": 400
     }
   ],
@@ -69,8 +69,24 @@
       "pause": 400
     }
   ],
+  "protected-rejection": [
+    {
+      "text": "Protected rejection.",
+      "pause": 500
+    }
+  ],
+  "review-follow-up-expiry-and-batch-protection": [
+    {
+      "text": "Review follow-up: expiry and batch protection.",
+      "pause": 500
+    },
+    {
+      "text": "The model now uses the booked request timestamp for both retraction and expiry. The shared action engine serves mixed and all-reject batches. These additional statements bind the interval and composition guarantees:",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "702d6e5ddf3f8023cf905f87383e831cb13891fcc284b4d0db6c56e829b05b28"
+    "sha256": "3c3bb497c59ba4ba2100bb4b239ad3fbab4750412e61ca392d4815f1656ef586"
   }
 }

@@ -1,0 +1,2 @@
+REPRODUCED: foldable insertion rejected without signers; state unchanged; deposit refunded; tip remains outside modeled outputs.
+LIMIT: model evidence only; no ledger fees, submission, or compiled-validator execution.

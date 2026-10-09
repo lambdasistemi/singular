@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 67 proved declarations — 46 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "051fd92c1302"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 79 proved declarations — 58 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "e17f38eb6582"
    },
    {
     "index": 2,
@@ -7998,6 +7998,31 @@
     "v": "42ec54f7afbb"
    }
   ],
+  "protected-rejection": [
+   {
+    "index": 0,
+    "name": "docs-theorems/protected-rejection-00",
+    "pause_ms": 500,
+    "text": "Protected rejection.",
+    "v": "a35d3f6faba4"
+   }
+  ],
+  "review-follow-up-expiry-and-batch-protection": [
+   {
+    "index": 0,
+    "name": "docs-theorems/review-follow-up-expiry-and-batch-protection-00",
+    "pause_ms": 500,
+    "text": "Review follow-up: expiry and batch protection.",
+    "v": "df67c3f9018c"
+   },
+   {
+    "index": 1,
+    "name": "docs-theorems/review-follow-up-expiry-and-batch-protection-01",
+    "pause_ms": 400,
+    "text": "The model now uses the booked request timestamp for both retraction and expiry. The shared action engine serves mixed and all-reject batches. These additional statements bind the interval and composition guarantees:",
+    "v": "897f9b438b84"
+   }
+  ],
   "theorem-manifest": [
    {
     "index": 0,
@@ -8017,8 +8042,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 46 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 67 in total, each with its own manifest and its own compiled gate.",
-    "v": "fc095f16e90b"
+    "text": "All 58 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 79 in total, each with its own manifest and its own compiled gate.",
+    "v": "040e27c76d43"
    }
   ],
   "what-the-eleven-promises-are": [

@@ -213,19 +213,19 @@
     "name": "Singular.Statements.retract_admitted_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+    "statementSha256": "30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c"
   },
   {
     "name": "Singular.Statements.retract_refusal_first_failing",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+    "statementSha256": "a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71"
   },
   {
     "name": "Singular.Statements.admitted_exit_is_the_exit",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
+    "statementSha256": "ef8187d635d0ed65365eae4fbdfe85c44fa423a8fa5ebcc03d3e95f4886762fd"
   },
   {
     "name": "Singular.Statements.destination_output_iff_delivers",
@@ -243,7 +243,7 @@
     "name": "Singular.Statements.admission_refuses_first",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7"
+    "statementSha256": "a021ed02814e177fa37fa6996054ca8a5ed0413e8a3093129e7be5960b0010eb"
   },
   {
     "name": "Singular.Statements.fold_batch_of_one_is_step",
@@ -274,5 +274,77 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
+  },
+  {
+    "name": "Singular.Statements.rejection_admitted_iff",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f43e7df507ef67029d5f31885584cc360344bfe6fab9af5f38d3fddac08c577c"
+  },
+  {
+    "name": "Singular.Statements.live_compatible_request_protected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047"
+  },
+  {
+    "name": "Singular.Statements.rejection_without_evidence",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "56e1fe9ed8e1ee23a77d9fe19e42d7ec9e6963993637860464727e96df5d1d1c"
+  },
+  {
+    "name": "Singular.Statements.protected_rejection_effects",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "91c17bc708609880f867eb88efca930630f4eb91d2d25c618686a81b1a32e66f"
+  },
+  {
+    "name": "Singular.Statements.process_actions_cons",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a8e0db5aa39b1e5f1900b21720d60ce544af13242a846fec27c25b38b4c7721a"
+  },
+  {
+    "name": "Singular.Statements.process_batch_nonempty",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3de6b5dfb19a3c904034d8f6952a4d6296320e2b0ec9cbb69e543043ece9e34e"
+  },
+  {
+    "name": "Singular.Statements.expiry_after_reclaim",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952"
+  },
+  {
+    "name": "Singular.Statements.process_actions_split",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2209f4ab9a23e7a721295e7c079a18cfb27a1eb8883ad372c37a89c5c23349c4"
+  },
+  {
+    "name": "Singular.Statements.process_actions_reject_admitted",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "de99e018ec3dd53427000de322b3dccef989d54c2b4f98c4aab5f8c4e1eeed30"
+  },
+  {
+    "name": "Singular.Statements.process_batch_reject_admitted",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f023ed29763706e628c189f1cc204515e0cd344371c9e815247d78dca59c89d9"
+  },
+  {
+    "name": "Singular.Statements.reject_batch_execution",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "78e51e5d82e2be360aedb63f1c3ad8c874057830532b22de6c1624d5c6a5ddb1"
+  },
+  {
+    "name": "Singular.Statements.process_batch_live_compatible_protected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e93922632ccbf089366c929a05378c539e4403f897dcf9c9b96eb2df2891234c"
   }
 ]

@@ -1,0 +1,10 @@
+{
+  "rowsReplayed": 83,
+  "admissionBeforeSettlement": true,
+  "requiredMetadataControls": 14,
+  "rejectWitnessOnFoldRefused": true,
+  "sha256": {
+    "conformance/lean/DriverTransport.lean": "552f51cd8719e66478934cb0db63d683c79fe0a359ee2bb8d3718b38495f9cc8",
+    "lean/driver-corpus.json": "59680c3519268076e07c2af39e53fa1cf41bc295e63be66005fe5a280f1978fe"
+  }
+}

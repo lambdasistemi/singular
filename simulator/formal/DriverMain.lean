@@ -90,10 +90,10 @@ def onlyRetractOwesTheTipDigest : String :=
   "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
 def retractAdmittedIff : String := "Singular.Statements.retract_admitted_iff"
 def retractAdmittedIffDigest : String :=
-  "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+  "30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c"
 def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
 def retractRefusalFirstFailingDigest : String :=
-  "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+  "a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71"
 def deliveredDatumIsRequestDatum : String :=
   "Singular.Statements.delivered_datum_is_request_datum"
 def deliveredDatumIsRequestDatumDigest : String :=
@@ -136,7 +136,8 @@ def registerTaken : Request := { request .insertActive 42 43 556 0 55 with tip :
 
 /-- A registration of key 7 by owner 77 with deposit 55 and tip 7, retracted by
 its owner: everything it held, deposit and tip, goes back. -/
-def registerRetracted : Request := { request .insertActive 7 77 777 0 55 with tip := 7 }
+def registerRetracted : Request :=
+  { request .insertActive 7 77 777 0 55 with tip := 7, submittedAt := 10000 }
 
 /-- The retraction of a request submitted at 10000 by its owner 77 and a second
 party 3, valid over the whole of phase 2 under `sTimed`: from 11000, included, to
@@ -146,7 +147,8 @@ def retractionWitness : RetractWitness :=
 
 /-- An update of key 7 by owner 77: pending like the registration, and not one its
 owner can take back. -/
-def updateRetracted : Request := { request .updateActive 7 77 777 0 55 with tip := 7 }
+def updateRetracted : Request :=
+  { request .updateActive 7 77 777 0 55 with tip := 7, submittedAt := 10000 }
 
 /-- A request claiming exactly the mint its own edge makes: the lawful claim a
 batch's mint guard compares with what the batch folds. -/
@@ -199,6 +201,107 @@ def carrierlessDelivery : Scenario :=
 #guard [foreignDatumDelivery, carrierlessDelivery].all fun sc =>
   judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
+/-- Explicit producer evidence; the driver itself never creates a proof. -/
+def rejectionFor (s : RegistryState) (r : Request) (reason : RejectReason)
+    (lo : Nat := 10001) (hi : Nat := 10002) : RejectWitness :=
+  { evidence := { registry := s.config, registryId := s.config.registryId, request := r, reason := reason }
+  , validFrom := lo, validTo := hi }
+
+def registered : RegistryState := (runSetup sTimed [registerActive]).2.1
+
+def rejectTheorem : String := "Singular.Statements.rejection_admitted_iff"
+def rejectDigest : String := "f43e7df507ef67029d5f31885584cc360344bfe6fab9af5f38d3fddac08c577c"
+def processTheorem : String := "Singular.Statements.process_actions_cons"
+def processDigest : String := "a8e0db5aa39b1e5f1900b21720d60ce544af13242a846fec27c25b38b4c7721a"
+
+def protectedRequest : Request := { registerTaken with submittedAt := 10000 }
+
+def protectedScenario (id : String) (r : Request) (setup : List Request)
+    (rejection : Option RejectWitness) : Scenario :=
+  { id, theoremName := rejectTheorem, statementSha256 := rejectDigest
+  , kind := "witness", mutates := none, requiresReachableState := !setup.isEmpty
+  , start := sTimed, setup, exit := .reject, request := r, lovelace := r.deposit + r.tip
+  , rejection }
+
+/-- All 28 edge/leaf pairs, reached by real setup transitions. -/
+def rejectionTable : List (Scenario × Bool) :=
+  let edges := [Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal,
+                .deleteAbsent, .deleteActive, .witnessTerminal]
+  let states : List (String × List Request × Leaf) :=
+    [("unknown", [], .unknown),
+     ("absent", [request .insertAbsent 42 91 0 91 55], .known .absent),
+     ("active", [registerActive], .known .active),
+     ("terminal", [registerActive, retireRegistered], .known .terminal)]
+  edges.flatMap fun edge => states.map fun (name, setup, leaf) =>
+    let r := { request edge 42 43 556 91 55 with submittedAt := 10000 }
+    let state := (runSetup sTimed setup).2.1
+    let sc := protectedScenario ("PR-table-" ++ edgeName edge ++ "-" ++ name) r setup
+      (some (rejectionFor state r (.mismatch leaf)))
+    -- Expectations are the seven-edge contract, separately stated from transition.
+    let compatible := match edge, leaf with
+      | .insertAbsent, .unknown | .insertActive, .unknown
+      | .updateActive, .known .absent | .deleteAbsent, .known .absent
+      | .updateTerminal, .known .active | .deleteActive, .known .active
+      | .witnessTerminal, .known .terminal => true
+      | _, _ => false
+    (sc, !compatible)
+
+/-- Positive and adversarial cases at the admission boundary. -/
+def rejectionControls : List (Scenario × Option String) :=
+  let r := protectedRequest
+  let good := rejectionFor registered r (.mismatch (.known .active))
+  let live := { registerActive with submittedAt := 10000 }
+  let expiry := rejectionFor sTimed live .expired 11500 11501
+  [ (protectedScenario "PR-mismatch" r [registerActive] (some good), none)
+  , (protectedScenario "PR-missing" r [registerActive] none, some "reject-evidence-missing")
+  , (protectedScenario "PR-wrong-root" r [registerActive]
+      (some { good with evidence := { good.evidence with registry := sTimed.config } }),
+      some "reject-registry-mismatch")
+  , (protectedScenario "PR-wrong-registry" r [registerActive]
+      (some { good with evidence := { good.evidence with
+        registry := { registered.config with activePolicy := 88 } } }),
+      some "reject-registry-mismatch")
+  , (protectedScenario "PR-wrong-registry-identity" r [registerActive]
+      (some { good with evidence := { good.evidence with registryId := 9 } }),
+      some "reject-registry-mismatch")
+  , (protectedScenario "PR-wrong-request" r [registerActive]
+      (some { good with evidence := { good.evidence with request := { r with reference := 99 } } }),
+      some "reject-request-mismatch")
+  , (protectedScenario "PR-foreign-request-registry" { r with registryId := 9 } [registerActive]
+      (some (rejectionFor registered { r with registryId := 9 } (.mismatch (.known .active)))),
+      some "reject-registry-mismatch")
+  , (protectedScenario "PR-forged-leaf" r [registerActive]
+      (some { good with evidence := { good.evidence with reason := .mismatch .unknown } }),
+      some "reject-leaf-mismatch")
+  , (protectedScenario "PR-live-compatible" live []
+      (some (rejectionFor sTimed live (.mismatch .unknown))), some "reject-compatible")
+  , (protectedScenario "PR-expiry-boundary" live [] (some expiry), none)
+  , (protectedScenario "PR-expiry-before" live []
+      (some { expiry with validFrom := 11499 }), some "reject-not-expired")
+  , (protectedScenario "PR-expiry-processing-end" live []
+      (some { expiry with validFrom := 11000 }), some "reject-not-expired")
+  , (protectedScenario "PR-expiry-empty-interval" live []
+      (some { expiry with validTo := 11500 }), some "reject-invalid-interval")
+  , (protectedScenario "PR-expiry-reversed-interval" live []
+      (some { expiry with validTo := 11499 }), some "reject-invalid-interval")
+  , (protectedScenario "PR-forged-submission" live []
+      (some { expiry with evidence := { expiry.evidence with
+        request := { live with submittedAt := 0 } }, validFrom := 11000 }),
+      some "reject-request-mismatch")
+  , (protectedScenario "PR-operational-no-approval" { live with approval := none } []
+      (some (rejectionFor sTimed { live with approval := none } (.mismatch .unknown))),
+      some "reject-compatible") ]
+
+#guard rejectionTable.length == 28
+#guard rejectionTable.all fun (sc, expected) =>
+  let result := (runSurface sc).2
+  result.premiseChecked && result.outcome == (if expected then .accepted else .refused) &&
+    result.reason == (if expected then none else some "reject-compatible")
+#guard rejectionControls.all fun (sc, reason) =>
+  let result := (runSurface sc).2
+  result.premiseChecked && result.reason == reason &&
+    result.outcome == (if reason.isNone then .accepted else .refused)
+
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
     , theoremName := insertAbsentTheorem, statementSha256 := insertAbsentDigest
@@ -237,7 +340,9 @@ def scenarios : List Scenario :=
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive]
-    , exit := .reject, request := registerTaken, lovelace := lovelace }
+    , exit := .reject, request := registerTaken, lovelace := lovelace
+    , rejection := some (rejectionFor ((runSetup s0 [registerActive]).2.1)
+        registerTaken (.mismatch (.known .active))) }
   , { id := "DR08-retract-registration"
     , theoremName := onlyRetractOwesTheTip, statementSha256 := onlyRetractOwesTheTipDigest
     , kind := "witness", mutates := none, requiresReachableState := false
@@ -281,6 +386,19 @@ def scenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validTo := 11501 } }
+  , { id := "PR-retract-forged-time"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with submittedAt := 11000, validFrom := 12000, validTo := 12001 } }
+  , { id := "PR-retract-ignores-witness-time"
+    , theoremName := retractAdmittedIff, statementSha256 := retractAdmittedIffDigest
+    , kind := "witness", mutates := none
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with submittedAt := 0 } }
     -- The active registration claiming the token its edge mints: the single step a
     -- one-request batch must fold exactly as.
   , { id := "DR14-register-active-claimed"
@@ -299,14 +417,14 @@ def scenarios : List Scenario :=
     , lovelace := lovelace }
   , foreignDatumDelivery
   , carrierlessDelivery
-  ]
+  ] ++ rejectionTable.map Prod.fst ++ rejectionControls.map Prod.fst
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a
 crossed claim, an empty batch, a later request the law refuses — a batch of one
 beside the single step it preserves; two rejects judged paid, short, and short in
 sum for one owner, a reject of one beside the single reject, and the batches the
 driver does not answer. -/
-def batchScenarios : List BatchScenario :=
+def legacyBatchScenarios : List BatchScenario :=
   [ { id := "BR01-fold-two-registrations"
     , theoremName := bookedAtMostOnce, statementSha256 := bookedAtMostOnceDigest
     , kind := "witness", mutates := none, requiresReachableState := false
@@ -381,6 +499,67 @@ def batchScenarios : List BatchScenario :=
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.retract, registerTaken)] }
   ]
+
+def mixedBatch (id : String) (actions : List ProcessAction) : BatchScenario :=
+  { id, theoremName := processTheorem, statementSha256 := processDigest
+  , kind := "witness", mutates := none, requiresReachableState := false
+  , start := sTimed, setup := [], question := .processBatch 10001 10002 actions }
+
+def mixedControls : List (BatchScenario × Option String) :=
+  let proof := (rejectionFor registered protectedRequest (.mismatch (.known .active))).evidence
+  [ (mixedBatch "PR-batch-fold-then-reject"
+      [.fold registerActiveClaimed, .reject protectedRequest (some proof)], none)
+  , (mixedBatch "PR-batch-stale-root"
+      [.fold registerActiveClaimed, .reject protectedRequest
+        (some { proof with registry := sTimed.config })], some "reject-registry-mismatch")
+  , (mixedBatch "PR-batch-reversed-actions"
+      [.reject protectedRequest (some proof), .fold registerActiveClaimed],
+      some "reject-registry-mismatch")
+  , (mixedBatch "PR-batch-reject-then-fold"
+      [.fold registerActiveClaimed, .reject protectedRequest (some proof),
+       .fold (claiming retireRegistered)], none)
+  , (mixedBatch "PR-batch-protect-compatible"
+      [.reject registerActiveClaimed (some
+        (rejectionFor sTimed registerActiveClaimed (.mismatch .unknown)).evidence)],
+      some "reject-compatible")
+  , (mixedBatch "PR-batch-wrong-mint"
+      [.fold { registerActiveClaimed with claimed := [] }], some "net-mint-mismatch")
+  , (mixedBatch "PR-batch-empty" [], some "empty-process-batch") ]
+
+#guard scenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
+  (runSurface sc).2.reason == some "not-phase2"
+#guard scenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
+  (runSurface sc).2.outcome == .accepted
+
+#guard mixedControls.all fun (sc, reason) =>
+  match sc.question with
+  | .processBatch lo hi actions =>
+    let result := (runProcessBatch sc.start sc.setup lo hi actions).2
+    result.reason == reason && result.outcome == (if reason.isNone then .accepted else .refused)
+  | _ => false
+
+/-- All rejects in one transaction must use its one validity interval. -/
+def inconsistentRejectIntervals : BatchScenario :=
+  { id := "PR-reject-inconsistent-intervals", theoremName := rejectTheorem
+  , statementSha256 := rejectDigest, kind := "witness", mutates := none
+  , requiresReachableState := true, start := sTimed, setup := [registerActive]
+  , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenAgain)]
+  , rejections :=
+      [some (rejectionFor registered registerTaken (.mismatch (.known .active)))
+      , some (rejectionFor registered registerTakenAgain (.mismatch (.known .active)) 10002 10003)] }
+
+#guard (runRejectBatch sTimed [registerActive]
+  [(.reject, registerTaken), (.reject, registerTakenAgain)]
+  inconsistentRejectIntervals.rejections).2.reason == some "reject-batch-interval-mismatch"
+
+def batchScenarios : List BatchScenario :=
+  legacyBatchScenarios.map (fun sc =>
+    match sc.question with
+    | .rejectBatch rs =>
+      let state := (runSetup sc.start sc.setup).2.1
+      { sc with rejections := rs.map (fun (_, r) =>
+          some (rejectionFor state r (.mismatch (trieGet state.trie r.key)))) }
+    | _ => sc) ++ mixedControls.map Prod.fst ++ [inconsistentRejectIntervals]
 
 /-- The digest the surface carries is over the declared names themselves, so a
 silently widened or narrowed surface changes it. -/

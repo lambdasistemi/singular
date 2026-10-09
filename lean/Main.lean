@@ -851,7 +851,7 @@ def exitState : RegistryState := witnessed (booked (booked s0 3) 4) 6
 
 /-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
 def exitStepRequest (e : Edge) (k : Nat) : Request :=
-  { req e k 42 99 with deposit := 55, tip := 7 }
+  { req e k 42 99 with deposit := 55, tip := 7, submittedAt := 100 }
 
 /-- The keys the rows range over: active, absent, and unbound. -/
 def exitKeys : List Nat := [4, 6, 9]
@@ -984,13 +984,13 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 
 -- The driver's operations are the nine exits: the seven edges by their own
 -- names, then reject and retract. It judges what a transaction spends, then what
--- it pays, and answers two batch questions, neither observing a transaction;
+-- it pays, and answers three batch questions, none observing a transaction;
 -- the surface's protocol moved for each, and again when a request came to carry
 -- its datum.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 6
+#guard surface.protocolVersion == 7
 #guard surface.judgements == ["spend", "settle"]
-#guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
+#guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch", "processBatch"]
 #guard surface.batchQuestions.all fun q => !q.2.contains "tx"
 
 /-- The scenario a caller asks the driver to judge a settle case's outputs for:
@@ -1114,11 +1114,11 @@ def admissionFailures : List String :=
 phase 2. -/
 def failingWitness : RetractWitness := retractWitness [] 0 1000
 
-/-- Admission changes no other exit: under a witness every retraction fails, each
-fold and a reject step and build exactly as `exitStep` and `txOfExit` do; and an
+/-- Retraction admission does not change folds: under a failing retraction
+witness each fold steps and builds as before; and an
 admitted retraction steps and builds exactly as the retract exit. -/
 def admittedExitFailures : List String :=
-  let others := (allExits.filter (· != .retract)).flatMap fun x =>
+  let others := (exitEdges.map Exit.fold).flatMap fun x =>
     exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
       let r := exitStepRequest e k
       if sameStep (admittedExitStep paidState x r failingWitness) (exitStep paidState x r)
@@ -1152,13 +1152,13 @@ def judgementRows : List (String × Exit × Request × RetractWitness × List Tx
   , ("RJ05-admitted-paid-short", .retract, r, signed, spent, short, some "deposit-returned")
   , ("RJ06-admitted-as-built", .retract, r, signed, spent, paid, none)
   , ("RJ07-reject-under-a-failing-witness", .reject, r, failingWitness,
-      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), none)
+      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), some "reject-evidence-missing")
   , ("RJ08-fold-under-a-failing-witness", .fold .insertActive, r, failingWitness,
       txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), none) ]
 
 def judgementFailures : List String :=
   judgementRows.flatMap fun (id, x, r, w, inputs, outputs, expected) =>
-    let got := exitRefusal exitState.config x r w inputs outputs
+    let got := exitRefusal exitState x r w inputs outputs
     if got == expected then [] else [s!"{id}: judged {got}, expected {expected}"]
 
 -- The judgement rows are not vacuous: the retraction and the exits under a

@@ -1,0 +1,116 @@
+{
+  "focused-opus-re-review-494-protected-rejection-repair": [
+    {
+      "text": "Focused Opus re-review: #494 protected-rejection repair.",
+      "pause": 500
+    },
+    {
+      "text": "This was one read-only pass over repair.diff and the definitions it depends on. I did not build, prove, replay, run mutants or recompute hashes. All execution results below are the author's.",
+      "pause": 400
+    }
+  ],
+  "remaining-blockers": [
+    {
+      "text": "Remaining blockers.",
+      "pause": 500
+    },
+    {
+      "text": "None under the brief's rulings. One new issue needs to be stated explicitly before external review:",
+      "pause": 400
+    }
+  ],
+  "n1-medium-the-f1-fix-newly-breaks-the-existing-live-retraction-comparison": [
+    {
+      "text": "N1: Medium. The F1 fix newly breaks the existing live retraction comparison.",
+      "pause": 500
+    },
+    {
+      "text": "Where: the decoder now requires booking metadata on retraction requests (candidate/conformance/lean/DriverTransport.lean:194-195). Retraction now reads r.submittedAt (candidate/lean/Singular/Model.lean:1291).",
+      "pause": 300
+    },
+    {
+      "text": "Who is affected: the live harness builds the request in candidate/conformance/app/Conformance/Run/Live.hs:2192-2206. It sends no submittedAt or registryId; the booking time travels only in the witness (Live.hs:1960-1967). askModel (Live.hs:3220-3236) sends that request with exit retract.",
+      "pause": 300
+    },
+    {
+      "text": "Trigger: any live retraction story, including the retract-outside-window receipt. Its question now fails decoding. If the decoder were loosened instead, the request time would default to 0 and a chain-accepted retraction would be answered not-phase2.",
+      "pause": 300
+    },
+    {
+      "text": "What the documents claim: the constitution's retract row still describes the live witness as carrying submitted_at and points to the live retract receipt. The general limit (\"Live protocol-6 callers require explicit migration\", constitution lines 26-28) covers this only implicitly. README:99-110 and the review-followup F2 entry talk about reject callers, not the previously working retraction path.",
+      "pause": 300
+    },
+    {
+      "text": "Ruling: the brief defers live caller migration, so this does not block. But this change breaks a live comparison that #494 never touched before, and no document says so.",
+      "pause": 300
+    },
+    {
+      "text": "Fix (either):",
+      "pause": 300
+    },
+    {
+      "text": "add to README and review-followup that live retraction comparisons are held until the request encoder is migrated; or",
+      "pause": 300
+    },
+    {
+      "text": "make the small consumer change: emit submittedAt (already computed by requestDatumOf) and registryId in the Live.hs request object.",
+      "pause": 300
+    }
+  ],
+  "prior-findings": [
+    {
+      "text": "Prior findings.",
+      "pause": 500
+    }
+  ],
+  "minor-notes-not-blockers": [
+    {
+      "text": "Minor notes (not blockers).",
+      "pause": 500
+    },
+    {
+      "text": "The 14 metadata controls in check_transport.py accept any stderr containing \"expected\", \"not found\" or \"unknown field\". So they show that decoding fails, not which check failed. That is acceptable, because the explicit require* calls run before the field defaults could apply.",
+      "pause": 300
+    },
+    {
+      "text": "The simulator mirror has the same new signatures and definitions at the points I grepped (simulator/formal/Model.lean:1279, 1328, Driver.lean:473-479, Statements.lean:2093-2164). I did not diff the whole mirror.",
+      "pause": 300
+    }
+  ],
+  "ready-for-external-review": [
+    {
+      "text": "Ready for external review?.",
+      "pause": 500
+    },
+    {
+      "text": "Yes, for the model-only slice, provided N1 is disclosed or the live encoder is fixed. In the source I read, every requested property holds: - the booked timestamp decides both exits; - expiry_after_reclaim; - protection after an arbitrary prefix; - the all-reject batch shares the same engine; - structural evidence binding; - missing or null metadata is refused.",
+      "pause": 400
+    }
+  ],
+  "coverage-and-limits": [
+    {
+      "text": "Coverage and limits.",
+      "pause": 500
+    },
+    {
+      "text": "Read: brief.md, prior-review.md, all of repair.diff; the candidate Model.lean definitions for Result, Config JSON decoding, retraction, rejection, processAction(s) and processBatch; Driver.lean:455-555; the rejection_admitted_iff and live_compatible_request_protected proofs; DriverTransport.lean:30-310; the README limits; the constitution's sync report; the DriverMain fixtures; and the retraction and model-question paths in Live.hs.",
+      "pause": 300
+    },
+    {
+      "text": "Not read: AGENTS.md, decisions.md beyond the diff, the corpus JSON bodies, manifest.json hashes, and hosted CI configuration.",
+      "pause": 300
+    },
+    {
+      "text": "Not executed: anything. Whether grind, simp_all and omega close the goals rests on the author's green lake build and their 79-declaration standard-axiom audit. Pass counts for the mutants, the 83 rows and the 14 controls are the author's receipts.",
+      "pause": 300
+    },
+    {
+      "text": "Not inferred: merge, CI or live acceptance. #361, #500 and the declared non-goals are out of scope.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "opus-review.md",
+    "sha256": "5a70b1a5417a60e09c7bb67de41d10fd9b1d0ff4064f8784354179c801150ecc"
+  }
+}

@@ -70,6 +70,7 @@ scenarioQuestion row =
                     , "request"
                     , "lovelace"
                     , "witness"
+                    , "rejection"
                     ]
                     row
                 )
@@ -89,6 +90,9 @@ batchQuestion row =
                     , "start"
                     , "requests"
                     , "outputs"
+                    , "rejections"
+                    , "validFrom"
+                    , "validTo"
                     ]
                     row
                 )
@@ -135,7 +139,11 @@ spec = describe "Appendix — the transport answers as the driver did" $ do
         scenarios `shouldSatisfy` (not . null)
         batches `shouldSatisfy` (not . null)
         questions
-            `shouldSatisfy` (\qs -> all (`elem` qs) [String "foldBatch", String "rejectBatch"])
+            `shouldSatisfy` ( \qs ->
+                                all
+                                    (`elem` qs)
+                                    [String "foldBatch", String "rejectBatch", String "processBatch"]
+                            )
     forM_ scenarios $ \row ->
         it ("answers the single-request row " <> show (field "id" row)) $ do
             answer <-

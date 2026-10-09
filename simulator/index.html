@@ -721,6 +721,7 @@ const approval = {
 };
 const configSchema = {
   root: [N],
+  registryId: N,
   maxFee: N,
   processTime: N,
   retractTime: N,
@@ -747,6 +748,8 @@ const requestSchema = {
   deposit: N,
   tip: N,
   reference: N,
+  submittedAt: N,
+  registryId: N,
   output: N,
   datum: { $option: N },
   approval: { $option: approval },
@@ -1116,6 +1119,7 @@ function view(s, key) {
 const initial = (config) => ({
   config: {
     root: rootOf([]),
+    registryId: 0,
     maxFee: 1,
     processTime: 2,
     retractTime: 3,
@@ -1164,6 +1168,8 @@ const request = (edge, key, opts = {}) => ({
   deposit: opts.deposit ?? 0,
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
+  submittedAt: opts.submittedAt ?? 0,
+  registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
   approval: null,
@@ -1571,7 +1577,9 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -1601,7 +1609,9 @@ const STORIES=[
         "assetName": 1604014105,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "key-exists"
      }
@@ -1635,7 +1645,9 @@ const STORIES=[
       "assetName": 3021472884,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -1660,7 +1672,9 @@ const STORIES=[
       "assetName": 84686170,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -1690,7 +1704,9 @@ const STORIES=[
         "assetName": 2709712832,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "accept"
      }
@@ -1724,7 +1740,9 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -1749,7 +1767,9 @@ const STORIES=[
       "assetName": 2958227895,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -1766,7 +1786,9 @@ const STORIES=[
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -1783,7 +1805,9 @@ const STORIES=[
      "output": 701,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -1813,7 +1837,9 @@ const STORIES=[
         "assetName": 1831697717,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "terminal-immutable"
      }
@@ -1839,7 +1865,9 @@ const STORIES=[
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "read-unknown"
    },
@@ -1864,7 +1892,9 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -1881,7 +1911,9 @@ const STORIES=[
      "output": 700,
      "datum": null,
      "approval": null,
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "read-active"
    },
@@ -1906,7 +1938,9 @@ const STORIES=[
       "assetName": 2502960376,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "key-unknown"
    }
@@ -1936,7 +1970,9 @@ const STORIES=[
         "assetName": 2502960376,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "approval-mismatch"
      }
@@ -1966,7 +2002,9 @@ const STORIES=[
         "assetName": 2958227895,
         "signatures": []
        },
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "no-approval"
      }
@@ -1988,7 +2026,9 @@ const STORIES=[
        "output": 555,
        "datum": null,
        "approval": null,
-       "claimed": []
+       "claimed": [],
+       "submittedAt": 0,
+       "registryId": 0
       },
       "expect": "no-approval"
      }
@@ -2022,7 +2062,9 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -2047,7 +2089,9 @@ const STORIES=[
       "assetName": 1831697717,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    },
@@ -2072,7 +2116,9 @@ const STORIES=[
       "assetName": 1604014105,
       "signatures": []
      },
-     "claimed": []
+     "claimed": [],
+     "submittedAt": 0,
+     "registryId": 0
     },
     "expect": "accept"
    }
@@ -2116,6 +2162,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2125,6 +2173,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             163,
@@ -2165,6 +2214,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               221,
@@ -2225,6 +2275,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2234,6 +2286,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -2263,6 +2316,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2315,6 +2369,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2324,6 +2380,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2364,6 +2421,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2416,6 +2474,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2425,6 +2485,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2466,6 +2527,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2511,6 +2573,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2520,6 +2584,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2560,6 +2625,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -2600,6 +2666,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2609,6 +2677,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2650,6 +2719,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -2682,6 +2752,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2691,6 +2763,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2725,6 +2798,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -2777,6 +2851,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2786,6 +2862,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2844,6 +2921,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2853,6 +2932,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2911,6 +2991,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2920,6 +3002,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -2971,6 +3054,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -2980,6 +3065,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3031,6 +3117,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3040,6 +3128,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3097,6 +3186,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3106,6 +3197,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -3152,6 +3244,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3161,6 +3255,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3219,6 +3314,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3228,6 +3325,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3279,6 +3377,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3288,6 +3388,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -3334,6 +3435,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3343,6 +3446,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3400,6 +3504,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3409,6 +3515,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3460,6 +3567,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3469,6 +3578,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -3515,6 +3625,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3524,6 +3636,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3582,6 +3695,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3591,6 +3706,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3642,6 +3758,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3651,6 +3769,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -3697,6 +3816,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3706,6 +3827,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3763,6 +3885,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3772,6 +3896,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3823,6 +3948,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3832,6 +3959,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3890,6 +4018,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3899,6 +4029,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -3956,6 +4087,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -3965,6 +4098,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -4003,6 +4137,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4012,6 +4148,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -4058,6 +4195,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4067,6 +4206,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -4113,6 +4253,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4122,6 +4264,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -4160,6 +4303,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4169,6 +4314,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4203,6 +4349,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -4247,6 +4394,8 @@ const STORIES=[
         "owner": 0,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4256,6 +4405,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             203,
@@ -4302,6 +4452,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4311,6 +4463,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4362,6 +4515,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4371,6 +4526,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4422,6 +4578,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4431,6 +4589,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4471,6 +4630,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               26,
@@ -4523,6 +4683,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4532,6 +4694,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4572,6 +4735,7 @@ const STORIES=[
             "applicationPolicy": 7,
             "maxFee": 1,
             "processTime": 2,
+            "registryId": 0,
             "retractTime": 3,
             "root": [
               203,
@@ -4612,6 +4776,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4621,6 +4787,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4672,6 +4839,8 @@ const STORIES=[
         "owner": 42,
         "reference": 0,
         "refundAddress": 0,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "before": {
@@ -4681,6 +4850,7 @@ const STORIES=[
           "applicationPolicy": 7,
           "maxFee": 1,
           "processTime": 2,
+          "registryId": 0,
           "retractTime": 3,
           "root": [
             26,
@@ -4775,7 +4945,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+  "corpusSourceSha256": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4891,6 +5061,7 @@ const STORIES=[
     "applicationPolicy": 7,
     "maxFee": 1,
     "processTime": 2,
+    "registryId": 0,
     "retractTime": 3,
     "root": [
       203,
@@ -4904,20 +5075,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
-  "payloadSha256": "4bf3fe8346d9947b3744bf67b3b36b241967188b50647c7e7f475edd33bec2e5",
+  "modelSha256": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
+  "payloadSha256": "f1a890e99852efd50e705fdcdc77092914652341b997b39f25a7088e913078ed",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+    "lean/Main.lean": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
-    "lean/Singular/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
-    "lean/Singular/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+    "lean/Singular/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "lean/Singular/Lemmas.lean": "17144597fc2b0e429976a9932abf61de147162a23a0b658b43dcb00a69408fe0",
+    "lean/Singular/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
+    "lean/Singular/Statements.lean": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049"
   },
-  "statementsSha256": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa",
-  "theoremManifestSha256": "a1d45185a64b6e839bae677f252093a2c11cbad113c6b99ec00fa252ed00c11d",
+  "statementsSha256": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049",
+  "theoremManifestSha256": "f6b2f0c073e4aaa48da73ec763947f56fe5dce7faf750fc2a3d31e764d6f6a48",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4998,6 +5169,7 @@ const STORIES=[
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,
@@ -5090,6 +5262,8 @@ const STORIES=[
         "owner": 91,
         "reference": 0,
         "refundAddress": 91,
+        "registryId": 0,
+        "submittedAt": 0,
         "tip": 0
       },
       "rootMatchesTrie": true,
@@ -5139,6 +5313,7 @@ const STORIES=[
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,
@@ -5315,6 +5490,7 @@ const STORIES=[
               "applicationPolicy": 7,
               "maxFee": 1,
               "processTime": 2,
+              "registryId": 0,
               "retractTime": 3,
               "root": [
                 26,
@@ -5573,19 +5749,19 @@ const STORIES=[
     "name": "Singular.Statements.retract_admitted_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+    "statementSha256": "30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c"
   },
   {
     "name": "Singular.Statements.retract_refusal_first_failing",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+    "statementSha256": "a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71"
   },
   {
     "name": "Singular.Statements.admitted_exit_is_the_exit",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
+    "statementSha256": "ef8187d635d0ed65365eae4fbdfe85c44fa423a8fa5ebcc03d3e95f4886762fd"
   },
   {
     "name": "Singular.Statements.destination_output_iff_delivers",
@@ -5603,7 +5779,7 @@ const STORIES=[
     "name": "Singular.Statements.admission_refuses_first",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7"
+    "statementSha256": "a021ed02814e177fa37fa6996054ca8a5ed0413e8a3093129e7be5960b0010eb"
   },
   {
     "name": "Singular.Statements.fold_batch_of_one_is_step",
@@ -5634,6 +5810,78 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
+  },
+  {
+    "name": "Singular.Statements.rejection_admitted_iff",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f43e7df507ef67029d5f31885584cc360344bfe6fab9af5f38d3fddac08c577c"
+  },
+  {
+    "name": "Singular.Statements.live_compatible_request_protected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047"
+  },
+  {
+    "name": "Singular.Statements.rejection_without_evidence",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "56e1fe9ed8e1ee23a77d9fe19e42d7ec9e6963993637860464727e96df5d1d1c"
+  },
+  {
+    "name": "Singular.Statements.protected_rejection_effects",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "91c17bc708609880f867eb88efca930630f4eb91d2d25c618686a81b1a32e66f"
+  },
+  {
+    "name": "Singular.Statements.process_actions_cons",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a8e0db5aa39b1e5f1900b21720d60ce544af13242a846fec27c25b38b4c7721a"
+  },
+  {
+    "name": "Singular.Statements.process_batch_nonempty",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3de6b5dfb19a3c904034d8f6952a4d6296320e2b0ec9cbb69e543043ece9e34e"
+  },
+  {
+    "name": "Singular.Statements.expiry_after_reclaim",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952"
+  },
+  {
+    "name": "Singular.Statements.process_actions_split",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2209f4ab9a23e7a721295e7c079a18cfb27a1eb8883ad372c37a89c5c23349c4"
+  },
+  {
+    "name": "Singular.Statements.process_actions_reject_admitted",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "de99e018ec3dd53427000de322b3dccef989d54c2b4f98c4aab5f8c4e1eeed30"
+  },
+  {
+    "name": "Singular.Statements.process_batch_reject_admitted",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f023ed29763706e628c189f1cc204515e0cd344371c9e815247d78dca59c89d9"
+  },
+  {
+    "name": "Singular.Statements.reject_batch_execution",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "78e51e5d82e2be360aedb63f1c3ad8c874057830532b22de6c1624d5c6a5ddb1"
+  },
+  {
+    "name": "Singular.Statements.process_batch_live_compatible_protected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e93922632ccbf089366c929a05378c539e4403f897dcf9c9b96eb2df2891234c"
   }
 ]
 ;const IDENTITY={
@@ -5653,12 +5901,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "formal/DriverMain.lean": "f390c1f484e8a62e9e1efee7b77b18ac87d5f403d423ef7a77ca852ace79275b",
-    "formal/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
+    "formal/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "formal/DriverMain.lean": "7a26ccce7be79ae6bc76790d565ebc9d9de537c69ed8073bd83c4441d8b49840",
+    "formal/Lemmas.lean": "17144597fc2b0e429976a9932abf61de147162a23a0b658b43dcb00a69408fe0",
     "formal/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "formal/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
-    "formal/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+    "formal/Main.lean": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
+    "formal/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
     "formal/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5671,19 +5919,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa",
+    "formal/Statements.lean": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "a1d45185a64b6e839bae677f252093a2c11cbad113c6b99ec00fa252ed00c11d",
+    "formal/theorem-debt.json": "f6b2f0c073e4aaa48da73ec763947f56fe5dce7faf750fc2a3d31e764d6f6a48",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "da134c24046dd62a125ef8cad98101d8e028acae729cb0e1b492999ae217999b"
+    "corpus.json": "acdd366b6a306a7b39b32c58c9700d6d4ca7f8179c82c100da7d1504769252af"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 46,
+  "theorems": 58,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -5725,9 +5973,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+  "modelSha256": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
   "namingStatementsSha256": "57fdbf3333522ca971a035f1cba7c0df9f074d1b8dc8b3a95fb570c543253d70",
-  "payloadSha256": "e34713c08d18cc3d1a77a1effc1cab6df8e9debf1b6a8dd1cd54114655a7c931",
+  "payloadSha256": "9d01cfb47ecc01b7a61ee2d6156d0aac7da1123a68111989820654f9a1eee996",
   "queues": [
     {
       "actual": true,
@@ -5817,15 +6065,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "f390c1f484e8a62e9e1efee7b77b18ac87d5f403d423ef7a77ca852ace79275b",
+    "lean/DriverMain.lean": "7a26ccce7be79ae6bc76790d565ebc9d9de537c69ed8073bd83c4441d8b49840",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+    "lean/Main.lean": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
     "lean/NamingMain.lean": "09945659c24ea4ac7601e509ae66dbf26d7c0bcc8dc3b2716a3ecf015e159ec9",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
-    "lean/Singular/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+    "lean/Singular/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "lean/Singular/Lemmas.lean": "17144597fc2b0e429976a9932abf61de147162a23a0b658b43dcb00a69408fe0",
+    "lean/Singular/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
     "lean/Singular/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5836,7 +6084,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+    "lean/Singular/Statements.lean": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049"
   },
   "spellings": [
     {
@@ -5954,7 +6202,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "46740419fe4423e5bd3cc2e3f01e358dc7db00bf34946eae64fc99a32d10925c",
+  "payloadSha256": "ae64b6f60d7774c006e41170ab9aaef5fce63754a3d16683acf6b1803f8fedfb",
   "recovery": [
     {
       "detail": true,
@@ -6025,15 +6273,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "f390c1f484e8a62e9e1efee7b77b18ac87d5f403d423ef7a77ca852ace79275b",
+    "lean/DriverMain.lean": "7a26ccce7be79ae6bc76790d565ebc9d9de537c69ed8073bd83c4441d8b49840",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/Main.lean": "b4872d1802ed1a8d97656a324eaa6671bbd2a83d922e2a9adcd62e66c84f270a",
+    "lean/Main.lean": "5f2c4db0f53c7fd95efa64cee896f30326ffed638e69a4da898c5e0f4210b9c1",
     "lean/NamingMain.lean": "09945659c24ea4ac7601e509ae66dbf26d7c0bcc8dc3b2716a3ecf015e159ec9",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "9a8262e2004c42fa1a16bcf67beb684ae973258b6ca2be09e57627d06055aeb5",
-    "lean/Singular/Model.lean": "a0358a9bcf5ed58678d8b42005965eaf41de370a8a0f8268cd854ca3b45a43e8",
+    "lean/Singular/Driver.lean": "7972283c54a2168c92d1b9976630ebcf61cc34706588abbe864117fd1032b342",
+    "lean/Singular/Lemmas.lean": "17144597fc2b0e429976a9932abf61de147162a23a0b658b43dcb00a69408fe0",
+    "lean/Singular/Model.lean": "d8aac373c739029eb80fb1d5bddaceaa0a8009d2cc851351863a075bf75a4d14",
     "lean/Singular/Naming.lean": "1dfaa161823b413f43f6ddf31c99c508a61265decf99a50da26c7c765e6c9a56",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -6044,7 +6292,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "5ff8e9942bf6f86c0da59f4535c6fd6921e0f414aef89a7a2b31986b1ec83bfa"
+    "lean/Singular/Statements.lean": "2aa08a70baa926cc944a86ecb8e5590ba54bf9986cb9b4a8458036dcb80f1049"
   },
   "steps": [
     {

@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 46 declarations of the registry's own statement module are **PROVED**
+All 58 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **67** in total, each with its own
+and its wire encoding 5, for **79** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -41,8 +41,8 @@ consequences rather than as separate arguments.
 | --- | --- | --- | --- |
 | `Singular.Statements.absent_witness_unique` | absent-witness-unique — the absent witness is unique | `968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a` | PROVED |
 | `Singular.Statements.active_witness_unique` | active-witness-unique — the active witness is unique | `76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | PROVED |
-| `Singular.Statements.admission_refuses_first` | Retraction, before anything is paid — a retraction its admission refuses builds no transaction and is refused with admission's reason whatever it spends and pays: beside a state token, or paying its owner nothing, it still names the admission check it failed; any other exit, and an admitted retraction, is judged as before, by what it spends (`retract-state-spent`) and then what it pays | `c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7` | PROVED |
-| `Singular.Statements.admitted_exit_is_the_exit` | Retraction, once admitted — an admitted retraction is the retract exit itself: its step and its transaction are exactly the exit's, so it pays what the exit owes, leaves the registry as it was and requires the owner's signature alone; a fold or a reject is unchanged whatever the retraction witness says | `3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38` | PROVED |
+| `Singular.Statements.admission_refuses_first` | An admission refusal prevents construction and precedes spending/settlement for any exit; admitted exits retain their existing obligations | `a021ed02814e177fa37fa6996054ca8a5ed0413e8a3093129e7be5960b0010eb` | PROVED |
+| `Singular.Statements.admitted_exit_is_the_exit` | Every exit that passes its admission has exactly the lower-level exit effects and transaction | `ef8187d635d0ed65365eae4fbdfe85c44fa423a8fa5ebcc03d3e95f4886762fd` | PROVED |
 | `Singular.Statements.biconditional_supply_sync` | supply-matches-leaf-state — sync: biconditional supply is 1 iff the key is in that token's state | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | PROVED |
 | `Singular.Statements.booked_at_most_once` | request-spent-once-in-order — a key is booked at most once at a time; the batch is atomic; a request is spent once | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | PROVED |
 | `Singular.Statements.built_transaction_settles` | Every transaction an exit builds pays what the exit owes: for every state, exit, request and lovelace, a transaction the model builds settles the exit's obligations — the deposit at the cage, the named destination or the owner, and a retract's tip | `b5b45e560df2c4d3050466fd00b895dd61280d5b89c834bb2612c52c9b104796` | PROVED |
@@ -71,9 +71,9 @@ consequences rather than as separate arguments.
 | `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
 | `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
 | `Singular.Statements.reject_batch_of_one_is_reject` | A batch of one reject judges as the reject — the driver's judgement of a one-request batch of rejects, `settle` over its concatenated obligations, is exactly its judgement of the single reject's transaction over the same outputs, whatever inputs that transaction spends | `9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c` | PROVED |
-| `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. The request script names this rule's refusal `not-phase2`: its exact-outcome tests admit the two endpoints themselves and refuse with that name one unit before the lower bound and one unit past the upper, and for an open interval alike | `6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57` | PROVED |
+| `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. The request script names this rule's refusal `not-phase2`: its exact-outcome tests admit the two endpoints themselves and refuse with that name one unit before the lower bound and one unit past the upper, and for an open interval alike | `30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c` | PROVED |
 | `Singular.Statements.retract_pays_exactly_its_obligations` | An executed retract pays exactly what it owes: for every registry state and request, the retract leaves the state as it was, mints nothing, and pays exactly its obligations, the deposit and the tip to the owner through an output bound to the request; nothing the state holds enters its payments | `a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390` | PROVED |
-| `Singular.Statements.retract_refusal_first_failing` | Retraction, why not — a refused retraction names the first check it fails, in the request script's order: `withdraw-insert-only` for an update or delete request whoever signed and whenever, then `retract-owner` without the owner's signature inside phase 2 or not, then `not-phase2` | `506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc` | PROVED |
+| `Singular.Statements.retract_refusal_first_failing` | Retraction, why not — a refused retraction names the first check it fails, in the request script's order: `withdraw-insert-only` for an update or delete request whoever signed and whenever, then `retract-owner` without the owner's signature inside phase 2 or not, then `not-phase2` | `a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71` | PROVED |
 | `Singular.Statements.terminal_attestation_permanent` | terminal-attestation-permanent — permanence: an attestation holds in every later state | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | PROVED |
 | `Singular.Statements.terminal_attestation_sound` | terminal-attestation-sound — soundness: no attestation of an Active, Absent or Unknown key exists | `9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef` | PROVED |
 | `Singular.Statements.terminal_mint_only_by_read` | terminal-attestation-sound — provenance: a terminal token is minted only by a folded, verified read | `287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639` | PROVED |
@@ -138,3 +138,29 @@ are compiled without traces, so this run's live refusals expose no name: they
 are attributed to the applied request script, and the name itself is never
 described as a live observation
 (#287).
+
+## Protected rejection
+
+| Statement | Property | Digest | Status |
+| --- | --- | --- | --- |
+| `Singular.Statements.rejection_admitted_iff` | Rejection succeeds exactly for matching registry/request evidence, a nonempty interval, and either a verified lifecycle mismatch or expiry after both windows | `f43e7df507ef67029d5f31885584cc360344bfe6fab9af5f38d3fddac08c577c` | PROVED |
+| `Singular.Statements.rejection_without_evidence` | Missing evidence refuses the step and construction before any spending or settlement judgement | `56e1fe9ed8e1ee23a77d9fe19e42d7ec9e6963993637860464727e96df5d1d1c` | PROVED |
+| `Singular.Statements.protected_rejection_effects` | Every admitted rejection preserves the complete state, mints nothing and pays the existing deposit obligation | `91c17bc708609880f867eb88efca930630f4eb91d2d25c618686a81b1a32e66f` | PROVED |
+| `Singular.Statements.process_actions_cons` | The actual processor threads each successful action result into the next action | `a8e0db5aa39b1e5f1900b21720d60ce544af13242a846fec27c25b38b4c7721a` | PROVED |
+| `Singular.Statements.process_batch_nonempty` | An empty processing batch is refused | `3de6b5dfb19a3c904034d8f6952a4d6296320e2b0ec9cbb69e543043ece9e34e` | PROVED |
+| `Singular.Statements.live_compatible_request_protected` | No supplied evidence can authorize rejection of a lifecycle-compatible request before expiry | `bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047` | PROVED |
+
+## Review follow-up: expiry and batch protection
+
+The model now uses the booked request timestamp for both retraction and expiry.
+The shared action engine serves mixed and all-reject batches. These additional
+statements bind the interval and composition guarantees:
+
+| Statement | Statement SHA-256 |
+| --- | --- |
+| `Singular.Statements.expiry_after_reclaim` | `f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952` |
+| `Singular.Statements.process_actions_split` | `2209f4ab9a23e7a721295e7c079a18cfb27a1eb8883ad372c37a89c5c23349c4` |
+| `Singular.Statements.process_actions_reject_admitted` | `de99e018ec3dd53427000de322b3dccef989d54c2b4f98c4aab5f8c4e1eeed30` |
+| `Singular.Statements.process_batch_reject_admitted` | `f023ed29763706e628c189f1cc204515e0cd344371c9e815247d78dca59c89d9` |
+| `Singular.Statements.reject_batch_execution` | `78e51e5d82e2be360aedb63f1c3ad8c874057830532b22de6c1624d5c6a5ddb1` |
+| `Singular.Statements.process_batch_live_compatible_protected` | `e93922632ccbf089366c929a05378c539e4403f897dcf9c9b96eb2df2891234c` |

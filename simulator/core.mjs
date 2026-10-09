@@ -43,6 +43,7 @@ const approval = {
 };
 const configSchema = {
   root: [N],
+  registryId: N,
   maxFee: N,
   processTime: N,
   retractTime: N,
@@ -69,6 +70,8 @@ const requestSchema = {
   deposit: N,
   tip: N,
   reference: N,
+  submittedAt: N,
+  registryId: N,
   output: N,
   datum: { $option: N },
   approval: { $option: approval },
@@ -438,6 +441,7 @@ export function view(s, key) {
 export const initial = (config) => ({
   config: {
     root: rootOf([]),
+    registryId: 0,
     maxFee: 1,
     processTime: 2,
     retractTime: 3,
