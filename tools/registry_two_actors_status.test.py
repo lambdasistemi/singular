@@ -368,9 +368,7 @@ def test_record_tamper_is_detected(mod, tmp):
     tampered_hash = _json.dumps(
         _json.loads(good.decode()) | {"rawSha256": "zz"}
     ).encode()
-    tampered_size = _json.dumps(
-        _json.loads(good.decode()) | {"rawBytes": 12}
-    ).encode()
+    tampered_size = _json.dumps(_json.loads(good.decode()) | {"rawBytes": 12}).encode()
     check(
         "record-tamper-is-detected",
         check_record("good.json", good) is None
