@@ -239,7 +239,7 @@ def derive_wallet_address(skey_bytes):
 
 
 def _cbor_item(buf, pos):
-    """One CBOR item from BUF at POS; definite lengths only."""
+    """One CBOR item from BUF at POS; definite and indefinite lengths."""
     if pos >= len(buf):
         raise ValueError("truncated datum")
     first = buf[pos]
@@ -248,38 +248,94 @@ def _cbor_item(buf, pos):
     if info < 24:
         length = info
     elif info == 24:
+        if pos >= len(buf):
+            raise ValueError("truncated datum")
         length = buf[pos]
         pos += 1
     elif info == 25:
+        if pos + 2 > len(buf):
+            raise ValueError("truncated datum")
         length = int.from_bytes(buf[pos : pos + 2], "big")
         pos += 2
     elif info == 26:
+        if pos + 4 > len(buf):
+            raise ValueError("truncated datum")
         length = int.from_bytes(buf[pos : pos + 4], "big")
         pos += 4
     elif info == 27:
+        if pos + 8 > len(buf):
+            raise ValueError("truncated datum")
         length = int.from_bytes(buf[pos : pos + 8], "big")
         pos += 8
+    elif info == 31:
+        length = None
     else:
-        raise ValueError("indefinite CBOR lengths are not datum")
+        raise ValueError("reserved CBOR length")
+    if info == 31 and major not in (2, 3, 4, 5):
+        raise ValueError("indefinite length outside bytes, text, array or map")
     if major == 0:
         return length, pos
     if major == 1:
         return -1 - length, pos
     if major == 2:
+        if info == 31:
+            chunks = []
+            while True:
+                if pos >= len(buf):
+                    raise ValueError("truncated datum")
+                if buf[pos] == 0xFF:
+                    return b"".join(chunks), pos + 1
+                chunk, pos = _cbor_item(buf, pos)
+                if not isinstance(chunk, bytes):
+                    raise ValueError("an indefinite byte string holds a chunk")
+                chunks.append(chunk)
         if pos + length > len(buf):
             raise ValueError("truncated datum")
         return bytes(buf[pos : pos + length]), pos + length
     if major == 3:
+        if info == 31:
+            chunks = []
+            while True:
+                if pos >= len(buf):
+                    raise ValueError("truncated datum")
+                if buf[pos] == 0xFF:
+                    return "".join(chunks), pos + 1
+                chunk, pos = _cbor_item(buf, pos)
+                if not isinstance(chunk, str):
+                    raise ValueError("an indefinite text holds a chunk")
+                chunks.append(chunk)
         if pos + length > len(buf):
             raise ValueError("truncated datum")
         return bytes(buf[pos : pos + length]).decode("utf-8"), pos + length
     if major == 4:
+        if info == 31:
+            items = []
+            while True:
+                if pos >= len(buf):
+                    raise ValueError("truncated datum")
+                if buf[pos] == 0xFF:
+                    return items, pos + 1
+                item, pos = _cbor_item(buf, pos)
+                items.append(item)
         items = []
         for _ in range(length):
             item, pos = _cbor_item(buf, pos)
             items.append(item)
         return items, pos
     if major == 5:
+        if info == 31:
+            mapping = {}
+            while True:
+                if pos >= len(buf):
+                    raise ValueError("truncated datum")
+                if buf[pos] == 0xFF:
+                    return mapping, pos + 1
+                key, pos = _cbor_item(buf, pos)
+                try:
+                    map_key = json.dumps(key, sort_keys=True)
+                except TypeError:
+                    map_key = repr(key)
+                mapping[map_key], pos = _cbor_item(buf, pos)
         mapping = {}
         for _ in range(length):
             key, pos = _cbor_item(buf, pos)

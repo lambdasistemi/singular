@@ -950,8 +950,8 @@ def _cbor_tag(number, item):
     return bytes([216, number]) + item
 
 
-def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
-    fields = [
+def _synthetic_state_fields(fee=1000000, process=120000, retract=120000):
+    return [
         _cbor_bstr(bytes(range(32))),
         _cbor_uint(fee),
         _cbor_uint(process),
@@ -961,7 +961,16 @@ def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
         _cbor_bstr(bytes([3]) * 28),
         _cbor_bstr(bytes([4]) * 28),
     ]
+
+
+def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
+    fields = _synthetic_state_fields(fee, process, retract)
     return (_cbor_tag(121, _cbor_array(fields))).hex()
+
+
+def _synthetic_state_datum_indefinite_hex():
+    fields = _synthetic_state_fields()
+    return (_cbor_tag(121, b"\x9f" + b"".join(fields) + b"\xff")).hex()
 
 
 def test_cbor_decoder_synthetic(mod, tmp):
@@ -981,6 +990,22 @@ def test_cbor_decoder_synthetic(mod, tmp):
         and datum[2][3] == 120000
     )
     check("cbor-decoder-synthetic", ok, "a hand-built state datum misdecoded")
+    try:
+        indefinite = decode(_synthetic_state_datum_indefinite_hex())
+    except Exception as error:
+        check(
+            "cbor-decoder-indefinite",
+            False,
+            f"an indefinite-length datum did not decode: {type(error).__name__}",
+        )
+    else:
+        check(
+            "cbor-decoder-indefinite",
+            isinstance(indefinite, tuple)
+            and indefinite[0] == "constr"
+            and indefinite[2][1] == 1000000,
+            "an indefinite-length state datum misdecoded",
+        )
     try:
         decode("d8798800")
         check("cbor-decoder-rejects-short", False, "a truncated datum decoded")
