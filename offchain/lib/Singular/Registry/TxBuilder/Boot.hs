@@ -65,7 +65,7 @@ import Cardano.Ledger.BaseTypes (Inject (inject), StrictMaybe (..))
 import Cardano.Ledger.Conway.Scripts
     ( ConwayPlutusPurpose (..)
     )
-import Cardano.Ledger.Core (TxOut, hashScript)
+import Cardano.Ledger.Core (TxOut)
 import Cardano.Ledger.Mary.Value
     ( MaryValue (..)
     , MultiAsset (..)
@@ -88,6 +88,7 @@ import Singular.Registry.Surface
     , ConwayEra
     , NoWitness
     , Session
+    , carriesReference
     , parameters
     , readOutputsAt
     )
@@ -124,12 +125,7 @@ lookupStateRef
     :: CageConfig
     -> [(TxIn, TxOut ConwayEra)]
     -> Maybe (TxIn, TxOut ConwayEra)
-lookupStateRef cfg =
-    find
-        ( \(_, out) -> case out ^. referenceScriptTxOutL of
-            SJust s -> hashScript s == cfgScriptHash cfg
-            SNothing -> False
-        )
+lookupStateRef cfg = find (carriesReference (cfgScriptHash cfg) . snd)
 
 {- | Why a boot is refused before any transaction is built.
 

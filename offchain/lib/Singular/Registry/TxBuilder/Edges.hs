@@ -142,6 +142,7 @@ import Singular.Registry.Surface
     , Session
     , TokenId
     , WalletOutputs
+    , carriesReference
     , fundableOutputsAt
     , fundingOutputs
     , parameters
@@ -442,8 +443,7 @@ stateRefIn
 stateRefIn cfg utxos =
     case [ u
          | u@(_, out) <- utxos
-         , SJust s <- [out ^. referenceScriptTxOutL]
-         , hashScript s == hashScript (mkCageScript cfg)
+         , carriesReference (hashScript (mkCageScript cfg)) out
          ] of
         (u : _) -> Just u
         [] -> Nothing

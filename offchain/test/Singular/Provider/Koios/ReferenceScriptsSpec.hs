@@ -74,7 +74,7 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.LedgerProvider
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
-import Singular.Registry.StateToken (carriesReference)
+import Singular.Registry.Surface (carriesReference)
 import Singular.Registry.TimeSource (TimeSource (..))
 import Singular.Registry.TxBuilder.Internal (txInToRef)
 

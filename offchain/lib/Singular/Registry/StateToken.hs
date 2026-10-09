@@ -43,7 +43,6 @@ module Singular.Registry.StateToken
 
       -- * References found by hash
     , ReferenceRefusal (..)
-    , carriesReference
     , findReferences
     , missingReferences
     , renderReferenceRefusal
@@ -74,10 +73,8 @@ import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
-    , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script, hashScript)
@@ -119,6 +116,7 @@ import Singular.Registry.Surface
     , Network (..)
     , ReadFailure (..)
     , Session
+    , carriesReference
     , mintRecordOf
     , outputsAtAddress
     , outputsCarrying
@@ -491,14 +489,6 @@ data ReferenceRefusal
     | -- | The rebuilt script hashes to another hash: role, expected, actual
       ReferenceScriptMismatch ReferenceRole ScriptHash ScriptHash
     deriving stock (Eq, Show)
-
-{- | Whether the output carries a reference script whose hash, computed here
-from the script itself, is the expected one.
--}
-carriesReference :: ScriptHash -> TxOut ConwayEra -> Bool
-carriesReference expected output = case output ^. referenceScriptTxOutL of
-    SJust script -> hashScript script == expected
-    SNothing -> False
 
 {- | Find a carrier for each needed role: from the provider's existence
 query, then the actor's wallet, read only when the provider carries none

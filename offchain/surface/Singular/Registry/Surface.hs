@@ -69,6 +69,7 @@ module Singular.Registry.Surface
     , SeedRefusal (..)
     , seedOf
     , carriersOf
+    , carriesReference
     , burnCandidates
 
       -- * Wallet holding (Singular.Registry.Wallet)
@@ -248,6 +249,7 @@ import Singular.Registry.WalletOutputs
     , WalletOutputs
     , burnCandidates
     , carriersOf
+    , carriesReference
     , chosenFunding
     , covering
     , coveringFunding

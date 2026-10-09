@@ -35,6 +35,7 @@ module Singular.Registry.WalletOutputs
     , SeedRefusal (..)
     , seedOf
     , carriersOf
+    , carriesReference
     , burnCandidates
     ) where
 
@@ -249,16 +250,20 @@ seedOf seed w = case [u | u@(i, _) <- held w, i == seed] of
             Right (u, w{withheld = Set.insert seed (withheld w)})
         | otherwise -> Left SeedNotFundable
 
+{- | Whether the output carries a reference script whose hash, computed here
+from the script itself, is the expected one.
+-}
+carriesReference :: ScriptHash -> TxOut ConwayEra -> Bool
+carriesReference expected output = case output ^. referenceScriptTxOutL of
+    SJust script -> hashScript script == expected
+    SNothing -> False
+
 {- | The outputs whose own reference script hashes to this hash, computed
 here from the script each carries.
 -}
 carriersOf :: ScriptHash -> WalletOutputs -> [(TxIn, TxOut ConwayEra)]
 carriersOf expected w =
-    [ u
-    | u@(_, out) <- held w
-    , SJust script <- [out ^. referenceScriptTxOutL]
-    , hashScript script == expected
-    ]
+    [u | u@(_, out) <- held w, carriesReference expected out]
 
 {- | The outputs holding any quantity of this asset: the candidates a fold
 burning it may spend, which the fold narrows to the one holding exactly

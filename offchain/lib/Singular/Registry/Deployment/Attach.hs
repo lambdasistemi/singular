@@ -63,7 +63,6 @@ import Singular.Registry.Deployment.Manifest
     )
 import Singular.Registry.StateToken
     ( ReferenceRefusal (..)
-    , carriesReference
     , findReferences
     , parseRole
     , renderReferenceRefusal
@@ -75,6 +74,7 @@ import Singular.Registry.Surface
     , NoWitness
     , Session
     , TokenId (..)
+    , carriesReference
     , outputsCarrying
     , readOutputsAt
     , value

@@ -58,6 +58,7 @@ import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.StateToken
 import Singular.Registry.StateTokenFixture
+import Singular.Registry.Surface (carriesReference)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , cageAddrFromCfg
