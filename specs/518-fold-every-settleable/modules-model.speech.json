@@ -1,0 +1,28 @@
+{
+  "modules-model": [
+    {
+      "text": "Modules model.",
+      "pause": 500
+    },
+    {
+      "text": "Responsibilities, dependency direction and promotion. Names and fields are in the data model, signatures in the functions model. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "components": [
+    {
+      "text": "Components.",
+      "pause": 500
+    }
+  ],
+  "rules": [
+    {
+      "text": "Rules.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "20f0391603c6c64c7fc0f7e1af98ff979acb1d1519cd813dc9a7f6a44587e9b4"
+  }
+}
