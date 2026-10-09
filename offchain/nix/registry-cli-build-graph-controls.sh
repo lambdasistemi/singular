@@ -19,22 +19,37 @@ set -euo pipefail
 
 root="${1:-$PWD}"
 check="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/registry-cli-build-graph-check.sh"
-[ -x "$check" ] || { echo "registry-cli-build-graph-controls: check not executable: $check" >&2; exit 2; }
-[ -f "$root/singular-registry.cabal" ] || { echo "registry-cli-build-graph-controls: no singular-registry.cabal under $root" >&2; exit 2; }
-[ -f "$root/cabal.project" ] || { echo "registry-cli-build-graph-controls: no cabal.project under $root" >&2; exit 2; }
-[ -d "$root/cli/src" ] || { echo "registry-cli-build-graph-controls: no cli/src under $root" >&2; exit 2; }
-[ -d "$root/dist-newstyle/src" ] || { echo "registry-cli-build-graph-controls: no dist-newstyle/src under $root (the pinned git sources the offline solver reads)" >&2; exit 2; }
+[ -x "$check" ] || {
+  echo "registry-cli-build-graph-controls: check not executable: $check" >&2
+  exit 2
+}
+[ -f "$root/singular-registry.cabal" ] || {
+  echo "registry-cli-build-graph-controls: no singular-registry.cabal under $root" >&2
+  exit 2
+}
+[ -f "$root/cabal.project" ] || {
+  echo "registry-cli-build-graph-controls: no cabal.project under $root" >&2
+  exit 2
+}
+[ -d "$root/cli/src" ] || {
+  echo "registry-cli-build-graph-controls: no cli/src under $root" >&2
+  exit 2
+}
+[ -d "$root/dist-newstyle/src" ] || {
+  echo "registry-cli-build-graph-controls: no dist-newstyle/src under $root (the pinned git sources the offline solver reads)" >&2
+  exit 2
+}
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
 copy_tree() {
-    mkdir -p "$work/$1"
-    cp "$root/singular-registry.cabal" "$root/cabal.project" "$work/$1/"
-    mkdir -p "$work/$1/cli"
-    cp -r "$root/cli/src" "$work/$1/cli/src"
-    mkdir -p "$work/$1/dist-newstyle"
-    cp -r "$root/dist-newstyle/src" "$work/$1/dist-newstyle/src"
+  mkdir -p "$work/$1"
+  cp "$root/singular-registry.cabal" "$root/cabal.project" "$work/$1/"
+  mkdir -p "$work/$1/cli"
+  cp -r "$root/cli/src" "$work/$1/cli/src"
+  mkdir -p "$work/$1/dist-newstyle"
+  cp -r "$root/dist-newstyle/src" "$work/$1/dist-newstyle/src"
 }
 
 # Plant 1: a cli/src source directory in a suite that must never list it.
@@ -44,20 +59,27 @@ copy_tree() {
 copy_tree plant-suite-dirs
 sed -i 's|record-value-test test-tags|record-value-test test-tags cli/src|' "$work/plant-suite-dirs/singular-registry.cabal"
 grep -q 'record-value-test test-tags cli/src' "$work/plant-suite-dirs/singular-registry.cabal" \
-    || { echo "registry-cli-build-graph-controls: suite-dirs plant did not apply" >&2; exit 2; }
+  || {
+    echo "registry-cli-build-graph-controls: suite-dirs plant did not apply" >&2
+    exit 2
+  }
 code=0
 out=$(bash "$check" "$work/plant-suite-dirs" 2>&1) || code=$?
 if [ "$code" -eq 0 ]; then
-    echo "registry-cli-build-graph-controls: check MISSED the planted suite source directory" >&2
-    exit 1
+  echo "registry-cli-build-graph-controls: check MISSED the planted suite source directory" >&2
+  exit 1
 fi
 if [ "$code" -ne 1 ]; then
-    echo "registry-cli-build-graph-controls: check errored instead of naming the plant (exit $code):" >&2
-    printf '%s\n' "$out" >&2
-    exit 2
+  echo "registry-cli-build-graph-controls: check errored instead of naming the plant (exit $code):" >&2
+  printf '%s\n' "$out" >&2
+  exit 2
 fi
 printf '%s\n' "$out" | grep -q 'test:record-value-tests' \
-    || { echo "registry-cli-build-graph-controls: check failed but did not name the planted suite:" >&2; printf '%s\n' "$out" >&2; exit 1; }
+  || {
+    echo "registry-cli-build-graph-controls: check failed but did not name the planted suite:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
 echo "registry-cli-build-graph-controls: planted suite source directory caught" >&2
 
 # Plant 2: a command-line module compiled by the test suite, which compiles
@@ -67,23 +89,33 @@ echo "registry-cli-build-graph-controls: planted suite source directory caught" 
 # the base and on the compliant tree.
 copy_tree plant-suite-module
 anchor_at=$(grep -n '^    Singular.CLI.CommandRunSpec$' "$work/plant-suite-module/singular-registry.cabal" | cut -d: -f1)
-[ -n "$anchor_at" ] || { echo "registry-cli-build-graph-controls: no Singular.CLI.CommandRunSpec anchor in the suite stanza" >&2; exit 2; }
+[ -n "$anchor_at" ] || {
+  echo "registry-cli-build-graph-controls: no Singular.CLI.CommandRunSpec anchor in the suite stanza" >&2
+  exit 2
+}
 sed -i "${anchor_at}a\\    Singular.CLI.PlantProbe" "$work/plant-suite-module/singular-registry.cabal"
 grep -q 'Singular.CLI.PlantProbe' "$work/plant-suite-module/singular-registry.cabal" \
-    || { echo "registry-cli-build-graph-controls: suite-module plant did not apply" >&2; exit 2; }
+  || {
+    echo "registry-cli-build-graph-controls: suite-module plant did not apply" >&2
+    exit 2
+  }
 code=0
 out=$(bash "$check" "$work/plant-suite-module" 2>&1) || code=$?
 if [ "$code" -eq 0 ]; then
-    echo "registry-cli-build-graph-controls: check MISSED the planted suite module" >&2
-    exit 1
+  echo "registry-cli-build-graph-controls: check MISSED the planted suite module" >&2
+  exit 1
 fi
 if [ "$code" -ne 1 ]; then
-    echo "registry-cli-build-graph-controls: check errored instead of naming the plant (exit $code):" >&2
-    printf '%s\n' "$out" >&2
-    exit 2
+  echo "registry-cli-build-graph-controls: check errored instead of naming the plant (exit $code):" >&2
+  printf '%s\n' "$out" >&2
+  exit 2
 fi
 printf '%s\n' "$out" | grep -q 'Singular.CLI.PlantProbe' \
-    || { echo "registry-cli-build-graph-controls: check failed but did not name the planted module:" >&2; printf '%s\n' "$out" >&2; exit 1; }
+  || {
+    echo "registry-cli-build-graph-controls: check failed but did not name the planted module:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
 echo "registry-cli-build-graph-controls: planted suite module caught" >&2
 
 echo "registry-cli-build-graph-controls: planted suite source directory and suite module both caught"
