@@ -91,6 +91,10 @@ WAITING_ON = {
 }
 
 
+PROCESS_TIME_MS = 120000
+RETRACT_TIME_MS = 120000
+
+
 class SetupFailure(Exception):
     pass
 
@@ -461,9 +465,9 @@ class Journey:
                 "registry",
                 "create",
                 "--process-time",
-                "120000",
+                str(PROCESS_TIME_MS),
                 "--retract-time",
-                "30000",
+                str(RETRACT_TIME_MS),
                 "--preview",
                 "--blueprint",
                 self.blueprint,
@@ -485,9 +489,9 @@ class Journey:
                 "registry",
                 "create",
                 "--process-time",
-                "120000",
+                str(PROCESS_TIME_MS),
                 "--retract-time",
-                "30000",
+                str(RETRACT_TIME_MS),
                 "--seed",
                 preview["seed"],
                 "--blueprint",
@@ -708,6 +712,223 @@ class Journey:
             self.state_token,
             *self.node_arguments(),
         ]
+
+    def now_ms(self):
+        """The host clock in POSIX milliseconds."""
+        return int(time.time() * 1000)
+
+    def sleep_until_ms(self, target_ms):
+        """Sleep until the host clock reaches TARGET_MS.
+
+        The target is always a receipt deadline plus a margin, never a
+        guessed duration: the booking receipt's fold deadline and the
+        creator's retract window decide when a window opens and closes.
+        """
+        now = self.now_ms()
+        if target_ms > now:
+            print(
+                f"two actors: waiting {(target_ms - now) // 1000}s until {target_ms}",
+                flush=True,
+            )
+            time.sleep((target_ms - now) / 1000.0)
+
+    def reject_command(self, party):
+        """Reject every pending request with PARTY's wallet."""
+        return [
+            "registry",
+            "reject",
+            "--blueprint",
+            self.blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+            "--wallet-skey",
+            str(self.keys / f"{party}.skey"),
+        ]
+
+    def reclaim_command(self, party, request):
+        """Take back PARTY's named pending request."""
+        return [
+            "registry",
+            "reclaim",
+            "--request",
+            request,
+            "--blueprint",
+            self.blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+            "--wallet-skey",
+            str(self.keys / f"{party}.skey"),
+        ]
+
+    def reject_leg(self, booker, rejector, key):
+        """BOOKER books KEY; REJECTOR rejects it once expired.
+
+        The booking receipt's fold deadline plus the creator's retract
+        window decides the waits, never a guessed sleep. The early reject
+        while the retract window is still open is refused by name with the
+        request still pending; the late reject once it has closed succeeds
+        with the refund bound to the request and the root unchanged.
+        """
+        booker_others = tuple(
+            home for party, home in self.homes.items() if party != booker
+        )
+        rejector_others = tuple(
+            home for party, home in self.homes.items() if party != rejector
+        )
+        leg = {}
+        status, booking = self.run_party(
+            booker,
+            "reject-alice-3-booking",
+            self.book(booker, "insert", key, "reject-alice-3"),
+            booker_others,
+        )
+        require(
+            status == 0 and booking.get("outcome") == "success",
+            f"{booker} reject booking failed: exit {status}, {booking}",
+        )
+        require(
+            isinstance(booking.get("request"), str),
+            f"{booker} reject booking named no request: {booking}",
+        )
+        require(
+            isinstance(booking.get("foldDeadline"), dict)
+            and isinstance(booking["foldDeadline"].get("posixMs"), int),
+            f"{booker} booking named no fold deadline: {booking}",
+        )
+        leg["booking"] = "reject-alice-3-booking"
+        deadline_ms = booking["foldDeadline"]["posixMs"]
+        retract_ends = deadline_ms + RETRACT_TIME_MS
+        self.sleep_until_ms(deadline_ms + 5000)
+        status, early_before = self.run_party(
+            rejector,
+            "reject-early-inspect-before",
+            self.inspect_key(key),
+            rejector_others,
+        )
+        require(
+            status == 0 and early_before.get("outcome") == "success",
+            f"{rejector} early inspect-before failed: exit {status}, {early_before}",
+        )
+        leg["early_inspect_before"] = "reject-early-inspect-before"
+        status, early_reject = self.run_party(
+            rejector,
+            "reject-early",
+            self.reject_command(rejector),
+            rejector_others,
+        )
+        require(
+            status == 10
+            and early_reject.get("outcome") == "client-refusal"
+            and "still inside a window" in early_reject.get("reason", "")
+            and booking["request"] in early_reject.get("reason", ""),
+            f"{rejector} early reject was not refused by window: "
+            f"exit {status}, {early_reject}",
+        )
+        leg["early_reject"] = "reject-early"
+        status, early_after = self.run_party(
+            rejector,
+            "reject-early-inspect-after",
+            self.inspect_key(key),
+            rejector_others,
+        )
+        require(
+            status == 0 and early_after.get("outcome") == "success",
+            f"{rejector} early inspect-after failed: exit {status}, {early_after}",
+        )
+        require(
+            early_after.get("root") == early_before.get("root"),
+            f"{rejector} root moved under a refused reject: "
+            f"{early_before.get('root')} -> {early_after.get('root')}",
+        )
+        require(
+            early_after.get("pendingRequests") == early_before.get("pendingRequests"),
+            f"{rejector} pending moved under a refused reject",
+        )
+        leg["early_inspect_after"] = "reject-early-inspect-after"
+        self.sleep_until_ms(retract_ends + 5000)
+        status, late_before = self.run_party(
+            rejector,
+            "reject-late-inspect-before",
+            self.inspect_key(key),
+            rejector_others,
+        )
+        require(
+            status == 0 and late_before.get("outcome") == "success",
+            f"{rejector} late inspect-before failed: exit {status}, {late_before}",
+        )
+        leg["late_inspect_before"] = "reject-late-inspect-before"
+        status, late_reject = self.run_party(
+            rejector,
+            "reject-late",
+            self.reject_command(rejector),
+            rejector_others,
+        )
+        require(
+            status == 0 and late_reject.get("outcome") == "success",
+            f"{rejector} reject failed: exit {status}, {late_reject}",
+        )
+        require(
+            isinstance(late_reject.get("reject"), str),
+            f"{rejector} reject named no transaction: {late_reject}",
+        )
+        rejected = late_reject.get("rejected")
+        require(
+            isinstance(rejected, list) and len(rejected) == 1,
+            f"{rejector} reject named no single request: {late_reject}",
+        )
+        require(
+            rejected[0].get("request") == booking["request"],
+            f"{rejector} rejected another request: {rejected[0].get('request')} "
+            f"!= {booking['request']}",
+        )
+        require(
+            rejected[0].get("owner") == booking.get("requester"),
+            f"{rejector} reject names another owner: {rejected[0].get('owner')}",
+        )
+        require(
+            rejected[0].get("returned"),
+            f"{rejector} reject names no refund: {late_reject}",
+        )
+        require(
+            late_reject.get("root"),
+            f"{rejector} reject named no root: {late_reject}",
+        )
+        leg["late_reject"] = "reject-late"
+        status, late_after = self.run_party(
+            rejector,
+            "reject-late-inspect-after",
+            self.inspect_key(key),
+            rejector_others,
+        )
+        require(
+            status == 0 and late_after.get("outcome") == "success",
+            f"{rejector} late inspect-after failed: exit {status}, {late_after}",
+        )
+        require(
+            late_after.get("root")
+            == late_before.get("root")
+            == late_reject.get("root"),
+            f"{rejector} root moved during a reject: "
+            f"{late_before.get('root')} -> {late_after.get('root')} "
+            f"vs {late_reject.get('root')}",
+        )
+        require(
+            late_after.get("leaf") == "unknown",
+            f"{rejector} rejected key is not unknown: {late_after.get('leaf')}",
+        )
+        late_after_pending = late_after.get("pendingRequests") or []
+        require(
+            not any(
+                isinstance(entry, dict) and entry.get("request") == booking["request"]
+                for entry in late_after_pending
+            ),
+            f"{rejector} rejected request is still pending: "
+            f"{late_after.get('pendingRequests')}",
+        )
+        leg["late_inspect_after"] = "reject-late-inspect-after"
+        return leg
 
     def terminate_leg(self, controller, folder, key):
         """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
@@ -1754,6 +1975,7 @@ class Journey:
                 "alice-books": self.cross_insert_leg("alice", "bob", "alice-2"),
                 "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
             }
+            legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
             legs["fold_roots"] = getattr(self, "fold_records", [])
             self.removal_check(legs)
             self.cap_check()
