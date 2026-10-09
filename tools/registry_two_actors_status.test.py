@@ -276,6 +276,124 @@ def test_real_stop_needs_its_tools(mod, tmp):
             check("real-stop-needs-its-tools", False, "unverified stop claimed clean")
 
 
+def test_refusal_is_row_result(mod, tmp):
+    journey = party(mod, tmp)
+    fake = fake_run(
+        trace_text="trace-line\n",
+        receipt_text=(
+            '{"outcome": "client-refusal", "reason": "the envelope\'s '
+            'controller is 0x11 but this command signs as 0x22"}'
+        ),
+        code=10,
+    )
+    with mock.patch.object(mod.subprocess, "run", fake):
+        try:
+            status, receipt = journey.run_party(
+                "actor", "step", ["registry", "terminate"], ()
+            )
+        except mod.SetupFailure as error:  # noqa: BLE001 - see above
+            check(
+                "refusal-is-row-result",
+                False,
+                f"a controller refusal mapped to setup: {error}",
+            )
+        except Exception as error:  # noqa: BLE001 - see above
+            check(
+                "refusal-is-row-result",
+                False,
+                f"mapped to {type(error).__name__}, want the receipt",
+            )
+        else:
+            check(
+                "refusal-is-row-result",
+                status == 10 and receipt.get("outcome") == "client-refusal",
+                f"status={status} outcome={receipt.get('outcome')}",
+            )
+
+
+def test_trim_keeps_predicate_fields(mod, tmp):
+    trim = getattr(mod, "trim_record", None)
+    threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
+    if trim is None:
+        check("trim-keeps-predicate-fields", False, "trim_record is absent")
+        return
+    import hashlib as _hashlib
+    import json as _json
+
+    receipt = {
+        "command": "inspect",
+        "outcome": "success",
+        "leaf": "active",
+        "root": "ab" * 32,
+        "pendingRequests": [],
+        "sessionEvidence": "x" * (threshold + 1),
+    }
+    raw = _json.dumps(receipt)
+    record = _json.loads(trim("inspect", 0, raw))
+    check(
+        "trim-keeps-predicate-fields",
+        record.get("outcome") == "success"
+        and record.get("leaf") == "active"
+        and record.get("root") == "ab" * 32
+        and record.get("pendingRequests") == []
+        and "sessionEvidence" not in record
+        and record.get("rawSha256") == _hashlib.sha256(raw.encode()).hexdigest()
+        and record.get("rawBytes") == len(raw.encode())
+        and record.get("command") == "inspect"
+        and record.get("exit") == 0,
+        "the record lost a predicate field or kept the snapshot",
+    )
+
+
+def test_record_tamper_is_detected(mod, tmp):
+    check_record = getattr(mod, "check_record", None)
+    threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
+    if check_record is None:
+        check("record-tamper-is-detected", False, "check_record is absent")
+        return
+    import json as _json
+
+    good = _json.dumps(
+        {
+            "command": "inspect",
+            "outcome": "success",
+            "leaf": "active",
+            "root": "ab" * 32,
+            "pendingRequests": [],
+            "exit": 0,
+            "rawSha256": "ab" * 32,
+            "rawBytes": threshold + 1,
+        }
+    ).encode()
+    tampered_hash = _json.dumps(
+        _json.loads(good.decode()) | {"rawSha256": "zz"}
+    ).encode()
+    tampered_size = _json.dumps(
+        _json.loads(good.decode()) | {"rawBytes": 12}
+    ).encode()
+    check(
+        "record-tamper-is-detected",
+        check_record("good.json", good) is None
+        and check_record("tampered-hash.json", tampered_hash) is not None
+        and check_record("tampered-size.json", tampered_size) is not None,
+        "a tampered record passed verification",
+    )
+
+
+def test_oversize_untrimmed_is_detected(mod, tmp):
+    check_record = getattr(mod, "check_record", None)
+    threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
+    if check_record is None:
+        check("oversize-untrimmed-is-detected", False, "check_record is absent")
+        return
+    raw = b"{" + b"x" * (threshold + 1) + b"}"
+    check(
+        "oversize-untrimmed-is-detected",
+        check_record("big.json", raw) is not None,
+        "an untrimmed receipt over the threshold passed",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -289,6 +407,10 @@ def main():
         test_empty_trace_is_setup,
         test_command_timeout_is_setup,
         test_provider_loss_is_setup,
+        test_refusal_is_row_result,
+        test_trim_keeps_predicate_fields,
+        test_record_tamper_is_detected,
+        test_oversize_untrimmed_is_detected,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
