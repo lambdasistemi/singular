@@ -1,0 +1,106 @@
+{
+  "publication-and-funding-functions-model": [
+    {
+      "text": "Publication and funding: functions model.",
+      "pause": 500
+    },
+    {
+      "text": "Only changed interfaces are listed. Scope/binding: plan.md. Fields: data-model.md. Closed wallet/read signatures: wallet-functions-model.md, retained from the accepted technical packet. Other necessary signature changes return to the delivery owner before reliance.",
+      "pause": 400
+    }
+  ],
+  "shared-release-and-discovery": [
+    {
+      "text": "Shared release and discovery.",
+      "pause": 500
+    },
+    {
+      "text": "In Singular.Registry.StateToken:",
+      "pause": 400
+    },
+    {
+      "text": "referenceScripts :: Release -> Asset -> Map ReferenceRole (Script ConwayEra)",
+      "pause": 300
+    },
+    {
+      "text": "Arguments: release, stateToken. Total over the six existing roles.",
+      "pause": 300
+    },
+    {
+      "text": "checkedScript :: Release -> Asset -> ReferenceRole -> Either ReferenceRefusal (Script ConwayEra)",
+      "pause": 300
+    },
+    {
+      "text": "Arguments: release, stateToken, role. Built hash must equal the expected role hash. Mismatch refuses before building/signing/writing; an independent altered-script control is required.",
+      "pause": 300
+    },
+    {
+      "text": "missingReferences :: Monad m => Session w m -> Maybe Addr -> Map ReferenceRole ScriptHash -> Set ReferenceRole -> m (Either ReferenceRefusal (Map ReferenceRole (TxIn, TxOut ConwayEra), Set ReferenceRole))",
+      "pause": 300
+    },
+    {
+      "text": "Arguments: session, walletAddress, expected, needed. Shares existing deferred provider-first discovery and local candidate admission. Returns found carriers and missing roles without a missing-role refusal; findReferences adds that refusal to the same search.",
+      "pause": 300
+    },
+    {
+      "text": "fundable :: TxOut ConwayEra -> Bool",
+      "pause": 300
+    },
+    {
+      "text": "Argument: output. Re-export of the one wallet predicate, never a second implementation.",
+      "pause": 300
+    }
+  ],
+  "publication-builder": [
+    {
+      "text": "Publication builder.",
+      "pause": 500
+    },
+    {
+      "text": "In Singular.Registry.TxBuilder.Edges:",
+      "pause": 400
+    },
+    {
+      "text": "publishReferencesTx :: Session NoWitness IO -> Addr -> WalletOutputs -> [Script ConwayEra] -> IO (ConwayTx, [TxOut ConwayEra])",
+      "pause": 300
+    },
+    {
+      "text": "Arguments: session, payerAddress, walletOutputs, scripts. One transaction creates one ledger-minimum-ADA output per checked script at the payer address, using permitted funding.",
+      "pause": 300
+    }
+  ],
+  "command-composition": [
+    {
+      "text": "Command composition.",
+      "pause": 500
+    },
+    {
+      "text": "In Singular.CLI.References / Command:",
+      "pause": 400
+    },
+    {
+      "text": "PublishReferences PublishArgs uses token, blueprint, actor wallet/directory, current write settings, preview, receipt and applicable fund-input/max-outlay controls. Publish has repeatable --role ROLE; no selection considers all six missing roles.",
+      "pause": 300
+    },
+    {
+      "text": "--publish-references on insert/update/terminate/fold/reject/reclaim explicitly restores exactly missing command-needed roles, reads new outputs back, then continues. Without it, existing missing-reference refusal remains. Demo2's separate no-auto policy is preserved.",
+      "pause": 300
+    },
+    {
+      "text": "neededRoles keeps each transaction-building command's existing role set. Explicit publication searches the requested roles; an empty needed set causes no discovery read.",
+      "pause": 300
+    },
+    {
+      "text": "Existing Session services preserve current parameters, tip/time, mint record, confirmation, script registration, reconstruction and tracing result shapes. Builders receive only named reads and opaque funding. Exact command recovery and preview composition is inherited; no generic query escape hatch or new recovery policy is introduced.",
+      "pause": 400
+    },
+    {
+      "text": "Existing-command reclaim retains the named request plus fundable selected fee inputs. New retireReferencesTx/RetireReferences and describe/page signatures stay deferred to #502/#503.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "06c4092a619b2092a16374413ff4aef796723f3c3902ac8baabff12bc659fddc"
+  }
+}
