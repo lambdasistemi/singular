@@ -1,0 +1,84 @@
+{
+  "refusal-controls-a-registry-window-that-survives-a-slow-runner": [
+    {
+      "text": "Refusal controls: a registry window that survives a slow runner.",
+      "pause": 500
+    },
+    {
+      "text": "The Demo 1 ordinary CLI refusal controls create a throwaway registry with a forty-five second processing window. A slow runner turned one healthy insertion into a partial outcome. This page records the cause, the fix and how it is proved.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a developer merging to main, I see the job Demo 1 ordinary CLI refusal controls fail only for real defects. A slow runner no longer stops step one hundred thirty-five, the insert with fold after the lock is released, partial, because the fold build had only fifteen seconds inside a forty-five second registry window.",
+      "pause": 500
+    }
+  ],
+  "what-is-established": [
+    {
+      "text": "What is established.",
+      "pause": 500
+    },
+    {
+      "text": "The command line tool signs a fold only while the host clock stays thirty seconds clear of the request's processing deadline, checked before and again after the build. With a forty-five second window that leaves fifteen seconds from the booking's submission to the end of the fold build. Step one hundred thirty-five used fifteen and a half seconds, so the tool refused to sign and the combined command reported partial. The lock was not involved, the tree was identical to the green pull request run, and the product rule did what it says.",
+      "pause": 500
+    },
+    {
+      "text": "On the investigation's side, the whole story with the client slowed only for that step gave partial with the hosted wording. The single command with twelve busy processes on one core gave three partial of four at forty-five seconds and four successes of four at one hundred twenty seconds.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "The throwaway registry the controls story creates, and its preview, has a one hundred twenty thousand millisecond processing window and an unchanged fifteen thousand millisecond retract window, so the budget from a booking to the post-build clock becomes ninety seconds. The readback after create agrees with the new values and is not weakened. The arguments and the expected values come from one definition. No product code changes and the thirty second fold margin stays. After the change the clause counts equal the base's, with nothing newly retired, waived or uncovered.",
+      "pause": 500
+    }
+  ],
+  "the-window-choice-and-its-measured-cost": [
+    {
+      "text": "The window choice and its measured cost.",
+      "pause": 500
+    },
+    {
+      "text": "The constant is shared by five call sites. The one cost of a longer processing window is in the reclaim step, which waits for the window to end: seventy-five seconds more per reclaim. The only reclaim action is inside the attach take, which runs against a registry its own script creates with its own windows. The controls story reclaims nothing, with zero reclaim receipts in one hundred thirty-nine. No story that creates its registry with the shared constant reclaims, so the added wall time is zero seconds, and the shared constant is widened.",
+      "pause": 500
+    },
+    {
+      "text": "One hundred twenty seconds is thirty seconds of margin plus the worst observed build use of fifteen and a half seconds, with almost six times headroom, and matches the window the cross-wallet recovery harness moved to for the same reason.",
+      "pause": 500
+    }
+  ],
+  "verification": [
+    {
+      "text": "Verification.",
+      "pause": 500
+    },
+    {
+      "text": "The slowed-client run of the check script is partial on the base and success after the change. The controls job command passes on the final head with the base's clause counts. The format and lint checks, the conformance unit suite and the aggregate pass once at the end, and hosted continuous integration passes on the exact pushed head.",
+      "pause": 500
+    }
+  ],
+  "limits": [
+    {
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "The fifteen and a half second use is one hosted observation, and why that runner was slow is not established. Other jobs on a forty-five second window are not examined or changed. Issue five hundred seventeen is separate. The earlier create-windows record still says CI uses forty-five seconds; it is outside this ticket's fence. The release guide DEMO1 lines three hundred fifty-three to three hundred fifty-five say CI uses forty-five seconds, and already disagree with the journey and the attach take; it is reported, not changed.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "61517ecec5e5bb5cc0260db9febfa09c9718d799a45421a212b24b4c1b90605c"
+  }
+}

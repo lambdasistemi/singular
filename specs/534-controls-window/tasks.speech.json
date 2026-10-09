@@ -1,0 +1,26 @@
+{
+  "refusal-controls-window-tasks": [
+    {
+      "text": "Refusal controls window: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Story, requirements, the window choice and its measured cost are in the spec.",
+      "pause": 500
+    }
+  ],
+  "slice-widen-the-controls-registry-window": [
+    {
+      "text": "Slice: widen the controls registry window.",
+      "pause": 500
+    },
+    {
+      "text": "One definition of the throwaway registry windows used by every create and preview call and by the readback. The slowed-client run is partial on the base and success after the change. The controls job command passes with the base's clause counts. Format, lint, the conformance unit suite and the aggregate pass on the final head.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "34620859a60568a6bd1014260f3fc5142a992cf26c941d8e4925e1beef451353"
+  }
+}

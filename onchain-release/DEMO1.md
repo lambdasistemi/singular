@@ -350,8 +350,8 @@ milliseconds and a retract window of 300 000 milliseconds (ten and five
 minutes); `registry create --process-time MS --retract-time MS` chooses
 positive integer millisecond values instead. The windows are fixed for the
 life of the registry, so attaching to an existing preprod registry does not
-change them. CI creates its throwaway registry with 45 000 and 15 000
-milliseconds, leaving the client's thirty-second fold guard plus fifteen
+change them. The refusal controls create their throwaway registry with 120 000 and 15 000
+milliseconds, leaving the client's thirty-second fold guard plus ninety
 seconds for preparation. The retraction returns the bond and
 costs its fee; the verdict requires the wallet to hold exactly that. A
 refusal's submission is refused by the node and its receipt says so; whether a
