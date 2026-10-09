@@ -40,8 +40,7 @@ def bare(mod, tmp):
     journey.work = Path(tmp)
     journey.receipts = Path(tmp)
     journey.homes = {
-        party: Path(tmp) / f"{party}-home"
-        for party in ("creator", "alice", "bob")
+        party: Path(tmp) / f"{party}-home" for party in ("creator", "alice", "bob")
     }
     journey.appendix = []
     journey.node = None
@@ -274,9 +273,7 @@ def test_real_stop_needs_its_tools(mod, tmp):
                 f"mapped to {type(error).__name__}, want SetupFailure",
             )
         else:
-            check(
-                "real-stop-needs-its-tools", False, "unverified stop claimed clean"
-            )
+            check("real-stop-needs-its-tools", False, "unverified stop claimed clean")
 
 
 def main():

@@ -170,9 +170,7 @@ class Journey:
 
     def environment(self, party):
         environment = os.environ.copy()
-        environment.update(
-            HOME=str(self.homes[party]), TMPDIR=str(self.tmp / party)
-        )
+        environment.update(HOME=str(self.homes[party]), TMPDIR=str(self.tmp / party))
         (self.tmp / party).mkdir(exist_ok=True)
         environment.pop("SINGULAR_NODE_SOCKET", None)
         environment.pop("SINGULAR_STATE_TOKEN", None)
@@ -233,9 +231,7 @@ class Journey:
             except OSError as error:
                 raise SetupFailure(f"{party} {name} did not start: {error}")
         trace_text = trace.read_text() if trace.exists() else ""
-        setup_require(
-            trace_text != "", f"{party} {name} left no access trace"
-        )
+        setup_require(trace_text != "", f"{party} {name} left no access trace")
         check_access(trace_text, forbidden)
         try:
             receipt = json.loads(stdout.read_text())
@@ -244,9 +240,7 @@ class Journey:
                 f"{party} {name} printed no JSON receipt "
                 f"(exit {result.returncode}): {error}"
             )
-        self.appendix.append(
-            {"process": f"{party} {name}", "accessTrace": str(trace)}
-        )
+        self.appendix.append({"process": f"{party} {name}", "accessTrace": str(trace)})
         if result.returncode == 12 or receipt.get("outcome") == "node-unavailable":
             raise SetupFailure(
                 f"{party} {name} lost the provider: exit "
@@ -314,9 +308,7 @@ class Journey:
                     self.settings = None
                 if self.settings is not None:
                     break
-            setup_require(
-                self.node.poll() is None, "development source exited"
-            )
+            setup_require(self.node.poll() is None, "development source exited")
             time.sleep(1)
         setup_require(
             self.settings is not None,
@@ -438,11 +430,7 @@ class Journey:
 
     def actor_leg(self, actor, key):
         """One actor proves a key absent, books it, folds it, reads it back."""
-        others = tuple(
-            home
-            for party, home in self.homes.items()
-            if party != actor
-        )
+        others = tuple(home for party, home in self.homes.items() if party != actor)
         leg = {}
         status, before = self.run_party(
             actor,
@@ -552,8 +540,7 @@ class Journey:
         )
         require(
             after.get("root") == fold["root"],
-            f"{actor} inspect root {after.get('root')} != "
-            f"fold root {fold['root']}",
+            f"{actor} inspect root {after.get('root')} != fold root {fold['root']}",
         )
         leg["inspect_after"] = f"{actor}-inspect-after"
         return leg
@@ -563,9 +550,7 @@ class Journey:
             "requirements": rows,
             "harnessAppendix": self.appendix,
         }
-        (self.work / "journey.json").write_text(
-            json.dumps(report, indent=2) + "\n"
-        )
+        (self.work / "journey.json").write_text(json.dumps(report, indent=2) + "\n")
         for row in rows:
             waiting = (
                 f" waiting on {row['waitingOn']}"
@@ -587,9 +572,7 @@ class Journey:
             return None
 
     def directory_bytes(self, path):
-        return sum(
-            entry.stat().st_size for entry in path.rglob("*") if entry.is_file()
-        )
+        return sum(entry.stat().st_size for entry in path.rglob("*") if entry.is_file())
 
     def removal_check(self, legs):
         """One receipt removed must turn its row pending, on a scratch copy."""
@@ -598,9 +581,7 @@ class Journey:
             shutil.rmtree(scratch)
         shutil.copytree(self.receipts, scratch)
         (scratch / "alice-fold.json").unlink()
-        passed, _, _ = self.run_one_agreement(
-            "alice", legs["alice"], scratch
-        )
+        passed, _, _ = self.run_one_agreement("alice", legs["alice"], scratch)
         require(
             not passed,
             "the receipt-removal control did not turn the row pending",
@@ -718,9 +699,7 @@ class Journey:
                         "state": "pending",
                         "receipts": [],
                         "dependencies": [],
-                        "waitingOn": (
-                            "the actor's inspect, booking and fold receipts"
-                        ),
+                        "waitingOn": ("the actor's inspect, booking and fold receipts"),
                     }
                 )
             else:
@@ -779,8 +758,7 @@ class Journey:
             # as setup and never escapes without teardown and a report.
             status = 1
             print(
-                f"two actors: FAIL: internal error: "
-                f"{type(failed).__name__}: {failed}",
+                f"two actors: FAIL: internal error: {type(failed).__name__}: {failed}",
                 flush=True,
             )
             try:
