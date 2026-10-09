@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""Prepare Demo 1's private creator and two empty users; retain pending coverage.
+"""Run one of Demo 1's independent-user journey (#381): token-only actors.
 
-The creator's real CLI receipts establish fixture creation only. No actor is
-configured from a creator file. Token joining and every later CLI step await
-#437. Requests already carry insertion datums publicly under merged #419. Access traces and
-directory hashes are harness evidence, recorded separately from product rows.
+The creator makes the registry with `registry create` and no directory
+option. Alice and Bob each run from a fresh home on the state token alone,
+with their own wallet key and the development network's provider, magic,
+time source and public blueprint. Every actor command carries
+`--state-token` and none carries `--registry` or `--state-dir`. No
+assertion reads a home or a state root: fresh homes are empty by
+construction, and "nothing was submitted" is an `inspect` before and
+after. Every party process is traced; a traced path under another party's
+home fails the journey at the guard with status 2.
+
+Exit statuses: 0 when every row that waits on no other ticket is passed;
+1 when one such row is not passed; 2 when the access guard fired;
+3 when setup failed. `SINGULAR_TWO_ACTOR_CONTROL=foreign-open` runs one
+real booking with `--state-dir` aimed at the other actor's state root and
+must end at status 2 with the guard diagnostic naming the path.
 """
 
-import hashlib
 import json
 import os
 from pathlib import Path
 import secrets
+from shutil import which
 import signal
 import subprocess
 import sys
 import time
 
 
-JOIN_ISSUE = "https://github.com/lambdasistemi/singular/issues/437"
+ISSUE_503 = "https://github.com/lambdasistemi/singular/issues/503"
+ISSUE_381 = "https://github.com/lambdasistemi/singular/issues/381"
+RECEIPT_CAP_BYTES = 52428800
 REQUIREMENTS = (
     "Alice reads the registry page and joins by state token",
     "Bob reads the registry page and joins by state token",
@@ -35,70 +48,137 @@ REQUIREMENTS = (
     "An altered request edge refuses RootDoesNotChain without a trie",
     "Another actor folds an insertion",
 )
+PAGE_ROWS = REQUIREMENTS[0:2]
+RUN_ONE_ROWS = REQUIREMENTS[2:4]
+# Later runs own the rest; in run one they wait on those runs' legs.
+WAITING_ON = {
+    "Alice folds Bob's termination from her own public replay": (
+        "run two legs of the mandate (terminate-and-fold)"
+    ),
+    "Bob folds Alice's termination from his own public replay": (
+        "run two legs of the mandate (terminate-and-fold)"
+    ),
+    "Bob rejects Alice's expired request": "run three legs of the mandate",
+    "Alice cannot reclaim Bob's request": "run three legs of the mandate",
+    "Bob reclaims his request during its retract window": (
+        "run three legs of the mandate"
+    ),
+    "Another controller cannot update or terminate a key": (
+        "run two legs of the mandate (controller refusals)"
+    ),
+    "Both users inspect the fold's state root after every fold": (
+        "run two legs of the mandate (fold roots)"
+    ),
+    "Withheld fold history refuses HistoryIncomplete without a trie": (
+        "run four legs of the mandate (history faults)"
+    ),
+    "An altered request edge refuses RootDoesNotChain without a trie": (
+        "run four legs of the mandate (history faults)"
+    ),
+    "Another actor folds an insertion": (
+        "run two legs of the mandate (cross-actor folds)"
+    ),
+}
+
+
+class SetupFailure(Exception):
+    pass
+
+
+class GuardFired(Exception):
+    def __init__(self, path):
+        super().__init__(path)
+        self.path = path
+
+
+class JourneyFailure(Exception):
+    pass
 
 
 def require(condition, message):
     if not condition:
-        raise AssertionError(message)
-
-
-def digest(directory):
-    value = hashlib.sha256()
-    for path in sorted(directory.rglob("*")):
-        value.update(str(path.relative_to(directory)).encode())
-        if path.is_file():
-            value.update(path.read_bytes())
-    return value.hexdigest()
+        raise JourneyFailure(message)
 
 
 def check_access(trace, forbidden):
+    """Fail the journey at the guard when a trace names another home."""
     for line in trace.splitlines():
         if any(call in line for call in ("open(", "openat(", "openat2(")):
             for directory in forbidden:
-                require(
-                    str(directory) not in line,
-                    f"process attempted another actor's directory: {line}",
-                )
+                if str(directory) in line:
+                    raise GuardFired(line.strip())
 
 
 class Journey:
     def __init__(self, singular, devnet, blueprint, work):
         self.singular, self.devnet, self.blueprint = singular, devnet, blueprint
-        self.work = Path(work).resolve()
+        self.work = Path(work)
+        # Fresh by construction: a rerun at the same path refuses to start.
         self.work.mkdir(parents=True, exist_ok=False)
-        self.creator = self.work / "creator"
-        self.creator.mkdir()
-        self.home = self.creator / "home"
-        self.home.mkdir()
-        self.temporary = self.creator / "temporary"
-        self.temporary.mkdir()
-        self.reg = self.creator / "registry"
-        self.receipts = self.creator / "receipts"
+        self.neutral = self.work / "devnet"
+        self.neutral.mkdir()
+        self.homes = {}
+        for party in ("creator", "alice", "bob"):
+            home = self.work / f"{party}-home"
+            home.mkdir(exist_ok=False)
+            self.homes[party] = home
+        self.receipts = self.work / "receipts"
         self.receipts.mkdir()
-        # The generated key belongs only to this private development fixture.
-        (self.home / "payment.skey").write_text(secrets.token_hex(32))
-        self.actors = {}
-        for actor in ("alice", "bob"):
-            self.actors[actor] = (
-                self.work / f"{actor}-home",
-                self.work / f"{actor}-registry",
-            )
-            for directory in self.actors[actor]:
-                directory.mkdir()
-                require(list(directory.iterdir()) == [], "actor did not start empty")
-        self.forbidden = tuple(
-            path for directories in self.actors.values() for path in directories
-        )
-        self.initial = {str(path): digest(path) for path in self.forbidden}
+        self.keys = self.receipts / "keys"
+        self.keys.mkdir()
+        for party in ("creator", "alice", "bob"):
+            # Development-fixture wallet keys live outside every home.
+            (self.keys / f"{party}.skey").write_text(secrets.token_hex(32))
+        self.payloads = self.receipts / "payloads"
+        self.payloads.mkdir()
+        self.tmp = self.work / "tmp"
+        self.tmp.mkdir()
         self.settings = None
+        self.state_token = None
         self.node = None
         self.appendix = []
-        self.fixture_receipts = []
 
-    def environment(self):
+    def payload(self, name):
+        """Write one insert payload outside every home; return its path."""
+        path = self.payloads / f"{name}.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "map": [
+                        {
+                            "k": {"bytes": "6e616d65"},
+                            "v": {
+                                "list": [
+                                    {"int": -7},
+                                    {"bytes": "616c696365"},
+                                    {"constructor": 2, "fields": []},
+                                ]
+                            },
+                        }
+                    ]
+                }
+            )
+            + "\n"
+        )
+        return path
+
+    def environment(self, party):
         environment = os.environ.copy()
-        environment.update(HOME=str(self.home), TMPDIR=str(self.temporary))
+        environment.update(
+            HOME=str(self.homes[party]), TMPDIR=str(self.tmp / party)
+        )
+        (self.tmp / party).mkdir(exist_ok=True)
         environment.pop("SINGULAR_NODE_SOCKET", None)
+        environment.pop("SINGULAR_STATE_TOKEN", None)
+        environment.pop("XDG_STATE_HOME", None)
+        return environment
+
+    def neutral_environment(self):
+        environment = os.environ.copy()
+        environment.update(HOME=str(self.neutral), TMPDIR=str(self.neutral))
+        environment.pop("SINGULAR_NODE_SOCKET", None)
+        environment.pop("SINGULAR_STATE_TOKEN", None)
+        environment.pop("XDG_STATE_HOME", None)
         return environment
 
     def traced(self, trace, command):
@@ -114,264 +194,316 @@ class Journey:
             str(trace),
         ] + command
 
-    def unchanged(self):
-        for path in self.forbidden:
-            require(digest(path) == self.initial[str(path)], f"creator changed {path}")
-            require(
-                list(path.iterdir()) == [], f"actor directory no longer empty: {path}"
-            )
-
-    def actor_paths(self, actor):
-        """Return a user's HOME and registry paths, without configuring a join."""
-        home, registry = self.actors[actor]
-        return {"home": home, "registry": registry}
-
-    def run_actor(self, actor, name, arguments, outcome="success", status=0):
-        """Run caller-supplied CLI arguments after the real #437 integration.
-
-        The caller supplies the actual token/page/provider interface and its own
-        wallet inputs. This seam adds no identity, join, request selection or
-        private creator material. It returns the subject's parsed JSON receipt.
-        """
-        home, registry = self.actors[actor]
-        foreign = (self.creator,) + tuple(
-            path
-            for other, paths in self.actors.items()
-            if other != actor
-            for path in paths
-        )
-        before = {str(path): digest(path) for path in foreign}
-        trace = self.work / f"{actor}-{name}.access"
-        stdout, stderr = (
-            self.work / f"{actor}-{name}.json",
-            self.work / f"{actor}-{name}.err",
-        )
-        environment = os.environ.copy()
-        environment.update(HOME=str(home), TMPDIR=str(home))
-        environment.pop("SINGULAR_NODE_SOCKET", None)
-        with stdout.open("w") as output, stderr.open("w") as error:
-            result = subprocess.run(
-                self.traced(trace, [self.singular] + list(arguments)),
-                env=environment,
-                cwd=home,
-                stdout=output,
-                stderr=error,
-                check=False,
-                timeout=600,
-            )
-        check_access(trace.read_text(), foreign)
-        after = {str(path): digest(path) for path in foreign}
-        require(after == before, f"{actor} changed a foreign directory")
-        receipt = json.loads(stdout.read_text())
-        require(
-            result.returncode == status and receipt["outcome"] == outcome,
-            f"{actor} {name}: exit {result.returncode}, receipt {receipt}",
-        )
-        self.appendix.append(
-            {
-                "process": f"{actor} {name}",
-                "accessTrace": str(trace),
-                "foreignDirectoriesBefore": before,
-                "foreignDirectoriesAfter": after,
-            }
-        )
-        return receipt
-
-    def book(
-        self, actor, command, arguments, name="booking", outcome="success", status=0
-    ):
-        """Book insert/terminate using explicit caller arguments; return its receipt."""
-        require(
-            command in ("insert", "terminate"), "booking must be insert or terminate"
-        )
-        return self.run_actor(
-            actor, name, ["registry", command] + list(arguments), outcome, status
-        )
-
-    def fold(self, actor, arguments, name="fold", outcome="success", status=0):
-        """Fold using explicit caller arguments; impose no pending-request count."""
-        return self.run_actor(
-            actor, name, ["registry", "fold"] + list(arguments), outcome, status
-        )
-
-    def run_creator(self, name, arguments):
-        self.unchanged()
-        trace = self.receipts / f"{name}.access"
-        command = [self.singular, "registry"] + arguments
-        command += [
-            "--blueprint",
-            self.blueprint,
+    def node_arguments(self):
+        return [
             "--koios-url",
             self.settings["providerUrl"],
             "--network-magic",
             str(self.settings["networkMagic"]),
             "--network-time",
             self.settings["networkTimeDirectory"],
-            "--wallet-skey",
-            str(self.home / "payment.skey"),
         ]
-        stdout, stderr = self.receipts / f"{name}.json", self.receipts / f"{name}.err"
+
+    def run_party(self, party, name, arguments, forbidden):
+        """Run one real command as PARTY; return its parsed JSON receipt."""
+        trace = self.receipts / f"{name}.access"
+        stdout, stderr = (
+            self.receipts / f"{name}.json",
+            self.receipts / f"{name}.err",
+        )
         with stdout.open("w") as output, stderr.open("w") as error:
             result = subprocess.run(
-                self.traced(trace, command),
-                env=self.environment(),
-                cwd=self.home,
+                self.traced(trace, [self.singular] + list(arguments)),
+                env=self.environment(party),
+                cwd=self.homes[party],
                 stdout=output,
                 stderr=error,
                 check=False,
                 timeout=600,
             )
-        check_access(trace.read_text(), self.forbidden)
-        self.unchanged()
-        receipt = json.loads(stdout.read_text())
-        require(
-            result.returncode == 0 and receipt["outcome"] == "success",
-            f"creator {name}: exit {result.returncode}, receipt {receipt}",
-        )
-        self.fixture_receipts.append(
-            {"receipt": str(stdout), "outcome": receipt["outcome"]}
-        )
+        trace_text = trace.read_text() if trace.exists() else ""
+        require(trace_text != "", f"SETUP: {party} {name} left no access trace")
+        check_access(trace_text, forbidden)
+        try:
+            receipt = json.loads(stdout.read_text())
+        except json.JSONDecodeError as error:
+            raise SetupFailure(
+                f"{party} {name} printed no JSON receipt "
+                f"(exit {result.returncode}): {error}"
+            )
         self.appendix.append(
-            {
-                "process": f"creator {name}",
-                "accessTrace": str(trace),
-                "actorDirectories": self.initial,
-            }
+            {"process": f"{party} {name}", "accessTrace": str(trace)}
         )
-        return receipt
+        return result.returncode, receipt
 
-    def controlled_open(self):
-        """A real subject command aimed at a foreign directory must fail the guard."""
-        trace = self.receipts / "foreign-open.access"
-        command = [
-            self.singular,
-            "registry",
-            "inspect",
-            "--registry",
-            str(self.forbidden[0]),
+    def book(self, party, command, key, name):
+        """Book one request; every booking command is assembled here alone.
+
+        `insert` and `terminate` are the commands that book a request, so
+        the command-line split moves them by changing this one place.
+        """
+        require(
+            command in ("insert", "terminate"), "booking must be insert or terminate"
+        )
+        arguments = ["registry", command, "--key", key]
+        if command == "insert":
+            arguments += ["--payload", str(self.payload(name))]
+        arguments += [
             "--blueprint",
             self.blueprint,
-            "--key",
-            "guard-control",
-            "--koios-url",
-            self.settings["providerUrl"],
-            "--network-magic",
-            "42",
-            "--network-time",
-            self.settings["networkTimeDirectory"],
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+            "--wallet-skey",
+            str(self.keys / f"{party}.skey"),
         ]
-        with (self.receipts / "foreign-open.json").open("w") as output:
-            subprocess.run(
-                self.traced(trace, command),
-                env=self.environment(),
-                cwd=self.home,
-                stdout=output,
-                stderr=subprocess.DEVNULL,
-                check=False,
-                timeout=60,
-            )
-        # With the control requested, this deliberately fails from subject access.
-        check_access(trace.read_text(), self.forbidden)
-        raise AssertionError("foreign-open control did not reach the access guard")
+        return arguments
 
-    def report(self):
-        # None of these rows has a subject receipt until the #437 integration runs.
-        rows = [
-            {
-                "requirement": name,
-                "receipts": [],
-                "dependencies": [JOIN_ISSUE],
-            }
-            for name in REQUIREMENTS
-        ]
-        for row in rows:
-            row["state"] = "passed" if row["receipts"] else "pending"
+    def start_devnet(self):
+        trace = self.neutral / "devnet.access"
+        with (
+            (self.neutral / "devnet.out").open("w") as output,
+            (self.neutral / "devnet.err").open("w") as error,
+        ):
+            command = [
+                self.devnet,
+                "--fund-outputs",
+                "8",
+                "--fund-lovelace",
+                "2000000000",
+                "--fund-skey",
+                str(self.keys / "creator.skey"),
+                "--fund-skey",
+                str(self.keys / "alice.skey"),
+                "--fund-skey",
+                str(self.keys / "bob.skey"),
+            ]
+            self.node = subprocess.Popen(
+                self.traced(trace, command),
+                env=self.neutral_environment(),
+                cwd=self.neutral,
+                stdout=output,
+                stderr=error,
+                start_new_session=True,
+            )
+        deadline = time.monotonic() + 900
+        while time.monotonic() < deadline:
+            lines = (self.neutral / "devnet.out").read_text().splitlines()
+            if lines:
+                try:
+                    self.settings = json.loads(lines[0])
+                except json.JSONDecodeError:
+                    self.settings = None
+                if self.settings is not None:
+                    break
+            require(
+                self.node.poll() is None, "SETUP: development source exited"
+            )
+            time.sleep(1)
+        require(
+            self.settings is not None,
+            "SETUP: development source did not print settings",
+        )
+        for field in ("providerUrl", "networkMagic", "networkTimeDirectory"):
+            require(
+                self.settings.get(field),
+                f"SETUP: development settings lack {field}",
+            )
+
+    def stop_devnet(self):
+        if self.node is not None:
+            try:
+                os.killpg(self.node.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            self.node.wait(timeout=60)
+            self.node = None
+        if which("pkill"):
+            subprocess.run(
+                ["pkill", "-f", f"cardano-node run --config {self.neutral}/"],
+                check=False,
+            )
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                probe = subprocess.run(
+                    ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
+                    check=False,
+                )
+                if probe.returncode != 0:
+                    break
+                time.sleep(0.5)
+            probe = subprocess.run(
+                ["pgrep", "-f", f"cardano-node run --config {self.neutral}/"],
+                check=False,
+            )
+            require(probe.returncode != 0, "SETUP: a node of this run survives")
+        print("two actors: owned processes: none", flush=True)
+
+    def fixture(self):
+        """Start the network and let the creator make the registry alone."""
+        self.start_devnet()
+        forbidden = (self.homes["alice"], self.homes["bob"])
+        preview_status, preview = self.run_party(
+            "creator",
+            "preview",
+            [
+                "registry",
+                "create",
+                "--process-time",
+                "120000",
+                "--retract-time",
+                "30000",
+                "--preview",
+                "--blueprint",
+                self.blueprint,
+                *self.node_arguments(),
+                "--wallet-skey",
+                str(self.keys / "creator.skey"),
+            ],
+            forbidden,
+        )
+        require(
+            preview_status == 0 and preview.get("outcome") == "success",
+            f"SETUP: creator preview failed: exit {preview_status}, {preview}",
+        )
+        require(preview.get("seed"), "SETUP: creator preview named no seed")
+        create_status, create = self.run_party(
+            "creator",
+            "create",
+            [
+                "registry",
+                "create",
+                "--process-time",
+                "120000",
+                "--retract-time",
+                "30000",
+                "--seed",
+                preview["seed"],
+                "--blueprint",
+                self.blueprint,
+                *self.node_arguments(),
+                "--wallet-skey",
+                str(self.keys / "creator.skey"),
+            ],
+            forbidden,
+        )
+        require(
+            create_status == 0 and create.get("outcome") == "success",
+            f"SETUP: creator create failed: exit {create_status}, {create}",
+        )
+        require(create.get("stateToken"), "SETUP: create named no state token")
+        self.state_token = create["stateToken"]
+        print(f"two actors: registry {self.state_token} created", flush=True)
+
+    def foreign_open(self):
+        """One real booking with --state-dir at the other actor's root."""
+        print("two actors: foreign-open control is on", flush=True)
+        bob_root = self.homes["bob"] / ".local" / "state" / "singular"
+        status, receipt = self.run_party(
+            "creator",
+            "foreign-open",
+            [
+                *self.book("creator", "insert", "control-key", "control"),
+                "--state-dir",
+                str(bob_root),
+            ],
+            (self.homes["alice"], self.homes["bob"]),
+        )
+        raise JourneyFailure(
+            "the foreign-open control passed without reaching the guard: "
+            f"exit {status}, {receipt}"
+        )
+
+    def report(self, rows):
         report = {
             "requirements": rows,
-            "fixtureCreation": self.fixture_receipts,
             "harnessAppendix": self.appendix,
         }
-        (self.work / "journey.json").write_text(json.dumps(report, indent=2) + "\n")
+        (self.work / "journey.json").write_text(
+            json.dumps(report, indent=2) + "\n"
+        )
         for row in rows:
+            waiting = (
+                f" waiting on {row['waitingOn']}"
+                if row["state"] == "pending" and row.get("waitingOn")
+                else ""
+            )
             print(
-                f"two actors: {row['requirement']}: {row['state']} ({', '.join(row['dependencies'])})",
+                f"two actors: {row['requirement']}: {row['state']}{waiting}",
                 flush=True,
             )
 
-    def execute(self):
-        trace = self.creator / "devnet.access"
-        try:
-            with (
-                (self.creator / "devnet.out").open("w") as output,
-                (self.creator / "devnet.err").open("w") as error,
-            ):
-                command = [
-                    self.devnet,
-                    "--fund-outputs",
-                    "8",
-                    "--fund-lovelace",
-                    "2000000000",
-                    "--fund-skey",
-                    str(self.home / "payment.skey"),
-                ]
-                self.node = subprocess.Popen(
-                    self.traced(trace, command),
-                    env=self.environment(),
-                    cwd=self.home,
-                    stdout=output,
-                    stderr=error,
-                    start_new_session=True,
-                )
-            deadline = time.monotonic() + 900
-            while time.monotonic() < deadline:
-                lines = (self.creator / "devnet.out").read_text().splitlines()
-                if lines:
-                    self.settings = json.loads(lines[0])
-                    break
-                require(
-                    self.node.poll() is None, "SETUP: creator development source exited"
-                )
-                time.sleep(1)
-            require(
-                self.settings is not None,
-                "SETUP: creator development source did not start",
-            )
-            preview = self.run_creator(
-                "preview", ["create", "--preview", "--registry", str(self.reg)]
-            )
-            self.run_creator(
-                "create",
-                [
-                    "create",
-                    "--seed",
-                    preview["seed"],
-                    "--registry",
-                    str(self.reg),
-                    "--process-time",
-                    "90000",
-                    "--retract-time",
-                    "30000",
-                ],
-            )
-            if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
-                self.controlled_open()
-        finally:
-            if self.node:
-                try:
-                    os.killpg(self.node.pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-                self.node.wait(timeout=30)
-                check_access(trace.read_text(), self.forbidden)
-                self.unchanged()
-                self.appendix.append(
+    def pending_report(self):
+        rows = []
+        for name in REQUIREMENTS:
+            if name in PAGE_ROWS:
+                rows.append(
                     {
-                        "process": "creator development source",
-                        "accessTrace": str(trace),
-                        "actorDirectories": self.initial,
+                        "requirement": name,
+                        "state": "pending",
+                        "receipts": [],
+                        "dependencies": [ISSUE_503],
+                        "waitingOn": ISSUE_503,
                     }
                 )
-            self.report()
+            elif name in RUN_ONE_ROWS:
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "pending",
+                        "receipts": [],
+                        "dependencies": [],
+                        "waitingOn": (
+                            "the actor's inspect, booking and fold receipts"
+                        ),
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "pending",
+                        "receipts": [],
+                        "dependencies": [ISSUE_381],
+                        "waitingOn": WAITING_ON[name],
+                    }
+                )
+        return rows
+
+    def exit_for(self, rows):
+        if all(
+            row["state"] == "passed"
+            for row in rows
+            if row["requirement"] not in PAGE_ROWS
+        ):
+            return 0
+        return 1
+
+    def execute(self):
+        try:
+            self.fixture()
+            if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
+                self.foreign_open()
+        except GuardFired as fired:
+            print(f"two actors: GUARD: {fired.path}", flush=True)
+            try:
+                self.report(self.pending_report())
+            finally:
+                self.stop_devnet()
+            return 2
+        except SetupFailure as failed:
+            print(f"two actors: SETUP: {failed}", flush=True)
+            try:
+                self.report(self.pending_report())
+            finally:
+                self.stop_devnet()
+            return 3
+        try:
+            rows = self.pending_report()
+            self.report(rows)
+        finally:
+            self.stop_devnet()
+        return self.exit_for(rows)
 
 
 if __name__ == "__main__":
@@ -379,4 +511,8 @@ if __name__ == "__main__":
         len(sys.argv) == 5,
         "usage: registry_two_actors.py SINGULAR DEVNET BLUEPRINT WORKDIR",
     )
-    Journey(*sys.argv[1:]).execute()
+    try:
+        sys.exit(Journey(*sys.argv[1:]).execute())
+    except JourneyFailure as failed:
+        print(f"two actors: FAIL: {failed}", flush=True)
+        sys.exit(1)
