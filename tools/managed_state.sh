@@ -58,10 +58,6 @@ managed_body() {
   [ "${#matches[@]}" -eq 1 ] || return 1
   printf '%s\n' "${matches[0]}"
 }
-managed_find() {
-  find "$1" -name "$2" -type f | sort
-}
-
 # journal_lines_root ROOT: total journal lines over every partition under ROOT.
 journal_lines_root() {
   local total=0 f n

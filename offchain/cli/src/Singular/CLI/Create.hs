@@ -23,8 +23,11 @@ validator from that reference; the request validator, the three witness
 policies and the applied application are published as reference outputs to
 the creator's wallet. The receipt names the state token, which is the
 registry: no identity file is written, and the pending identity recorded
-for an interrupted create is removed once it finishes. A directory that
-holds a journal or a pending create is refused before a node is contacted.
+for an interrupted create is removed once it finishes. The seed is selected
+from one view of the wallet's outputs first, so a provider failure during
+selection is reported as node-unavailable; the existing-state refusal then
+happens under the target's lock, after seed selection and before any
+submission.
 -}
 module Singular.CLI.Create (runCreate) where
 
