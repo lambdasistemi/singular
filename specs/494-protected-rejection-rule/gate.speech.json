@@ -1,0 +1,80 @@
+{
+  "gate-the-existing-ci-commands-that-prove-each-slice": [
+    {
+      "text": "Gate: the existing CI commands that prove each slice.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the frozen gate for ticket 494. It is the union of two tables written independently from the specification and its acceptance lines, one by the ticket owner and one by a GLM gate author who never saw the first, synthesized once here. Every command is an existing step of .github/workflows/ci.yml or .github/workflows/conformance.yml at base e3c9ab01; nothing is invented. Hosted checks on the exact pushed head are the net for every row.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the auditor judging a slice, I read which commands decide it, which of them run on every candidate and which once before the push, and which acceptance lines have no command at all, so that I trust a green gate for exactly what it proves and no more.",
+      "pause": 400
+    }
+  ],
+  "provenance": [
+    {
+      "text": "Provenance.",
+      "pause": 500
+    },
+    {
+      "text": "Conflicts, resolved by the workflow line that decides them. The author listed the retire-active-key row as re-based onto evidenced rejection; the workflow (conformance.yml:266-306) runs a row with no rejection step, so it stays a guard that a fold's question did not change. The author listed the batch row under slice four; the batch harness story is re-based in slice two and only re-run in slice four. The author's rows for the release assembly, the build gate and the off-chain lint reach no file of this ticket and are left to the hosted checks. One row is the ticket owner's alone: the repository's aggregate run once on each final candidate.",
+      "pause": 400
+    }
+  ],
+  "the-rows": [
+    {
+      "text": "The rows.",
+      "pause": 500
+    },
+    {
+      "text": "Commands run from the repository root unless a working directory is given. \"Candidate\" means every candidate of the named slices; \"final\" means once on the final candidate of a slice before the push; \"hosted\" means only the hosted check on the pushed head. Minutes are estimates from the last green runs. The red run column is the earlier attempt's hosted run (a7224021, run 37757702122 or 37757702153, or 4ee2082b, run 37755208632) that shows the command can fail.",
+      "pause": 400
+    }
+  ],
+  "budget-per-candidate": [
+    {
+      "text": "Budget per candidate.",
+      "pause": 500
+    },
+    {
+      "text": "The repository aggregate already runs the model, application, simulator, browser, documents, inventory, format and lint rows locally, so a final run is the aggregate plus the rows it does not cover: the coverage gate, the strict coverage report, the release check and the slice's devnet rows.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run in parallel where independent. A candidate over budget has its devnet rows moved to the hosted checks or the slice is cut again; nobody waits on a gate. A hosted failure is one repair commit, never a local rerun of the hosted job list.",
+      "pause": 400
+    }
+  ],
+  "acceptance-lines-with-no-command": [
+    {
+      "text": "Acceptance lines with no command.",
+      "pause": 500
+    },
+    {
+      "text": "Two lines have no CI job: that the rulings and the truth table are recorded, and that the evidence contract and its release record exist. The truth table is also exported as corpus rows that the model check replays, which covers its content; the pages render under the documents row, which covers their existence. Nothing asserts the rulings' wording or the release record's fields. This is a missing CI job, reported to the epic owner; no local check is invented. Until it is answered the persistent auditor reads those pages at the pre-push checkpoint. The clause \"published unmet as the ruling directs\" has no job either, but its carrier is the generic rows' expected-debt assertion, a CI change in slice three.",
+      "pause": 400
+    }
+  ],
+  "falsification": [
+    {
+      "text": "Falsification.",
+      "pause": 500
+    },
+    {
+      "text": "A single green proves nothing. The slice's own failing control is committed first and must fail for the right reason: slice one's retraction scenarios, slice two's historical scenario accepted on the base, slice four's two-batch scenarios. Each failure class a row covers has a cited red run above; a row with none found is covered by that control or by the aggregate. Falsifying the unchanged guard rows (retire-active-key, wrong-reason) is their hosted reds on the earlier attempt.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "6ca90a294e7246b007a3a57520998522d5b560dcae6f7f10f0e3b524b4f966b8"
+  }
+}

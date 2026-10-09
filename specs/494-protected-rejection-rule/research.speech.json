@@ -1,0 +1,84 @@
+{
+  "research-pull-request-508-its-eight-red-checks-and-the-consumers-of-the-model": [
+    {
+      "text": "Research: pull request 508, its eight red checks, and the consumers of the model.",
+      "pause": 500
+    },
+    {
+      "text": "This page holds the evidence the plan summarizes. Everything here was read from hosted logs, downloaded receipts and the repository at the commits named; nothing was run locally. Job numbers are GitHub Actions job ids in lambdasistemi/singular.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the reviewer of this plan, I check that every one of the eight red checks is explained by a failing assertion I can find in a log, that none is called flaky, and that I know which files a change to the model reaches, so that no coder is surprised by a consumer nobody listed.",
+      "pause": 400
+    }
+  ],
+  "pull-request-508-and-the-tree-it-started-from": [
+    {
+      "text": "Pull request 508 and the tree it started from.",
+      "pause": 500
+    }
+  ],
+  "the-eight-red-checks": [
+    {
+      "text": "The eight red checks.",
+      "pause": 500
+    },
+    {
+      "text": "All eight are required by the repository ruleset on main. All eight are green on the pull request's own base (hosted runs 37689074674 and 37689074644 at 23964e66) and on main at e3c9ab01 (runs 37916595037 and 37916594763), so none is flaky and none is red on main: the candidate introduced each failure.",
+      "pause": 400
+    },
+    {
+      "text": "The receipts of the retire-active-key and refund runs were downloaded from the run's artifacts and the assertion clauses evaluated locally with jq; only the clause named above failed.",
+      "pause": 400
+    }
+  ],
+  "what-the-model-change-reaches": [
+    {
+      "text": "What the model change reaches.",
+      "pause": 500
+    },
+    {
+      "text": "Reading the earlier candidate's diff against the base and searching the current tree for every user of the names it changes gives this inventory. The touch list assigns each to a slice.",
+      "pause": 400
+    }
+  ],
+  "facts-that-shape-the-plan": [
+    {
+      "text": "Facts that shape the plan.",
+      "pause": 500
+    },
+    {
+      "text": "The conformance suite already has a recorded state unmet-by-ruling, used for the consumer requirement that a folder must not reject a request during its processing window. That row says the chain accepts the reject and the consuming project requires it refused. The model after this ticket sides with the consumer; the chain does not until ticket 495. That is the precedent the pending question relies on.",
+      "pause": 400
+    },
+    {
+      "text": "The earlier ticket 395 recorded that the model \"reads no time for a reject\" and that a validator property admits a reject under every validity range. Those statements describe the base and become historical; they are not edited, because history is not rewritten.",
+      "pause": 400
+    },
+    {
+      "text": "Hosted checks run the six devnet rows on a real node, each taking several minutes; the model, simulator, coverage and application checks run without one.",
+      "pause": 400
+    }
+  ],
+  "open-items-found": [
+    {
+      "text": "Open items found.",
+      "pause": 500
+    },
+    {
+      "text": "One question is open and blocks only the in-window row: what the public suite shows until the validators change. One reading is recorded for confirmation: a request naming an excluded edge is rejectable at once. Neither blocks the model design.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "research.md",
+    "sha256": "fe9fec0c796f19172138d353d4a02884c90dbf3a183de2f102565b5618832962"
+  }
+}

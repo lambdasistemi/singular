@@ -1,0 +1,74 @@
+{
+  "touch-list-every-file-the-coding-slices-may-touch": [
+    {
+      "text": "Touch list: every file the coding slices may touch.",
+      "pause": 500
+    },
+    {
+      "text": "This page lists each file or group of files the four slices change, whether it is written by hand or regenerated, which shared surface it belongs to, and which other lane owns that surface and in which order. A coder who needs a file not listed here, or finds another lane's change in a listed one, stops and asks the ticket owner before continuing (merge queue rule five). The base is e3c9ab01. Slice numbers follow the plan.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the desk granting merge slots, I read which surfaces this ticket shares with which lanes, so that I can order it behind the lanes it would collide with and tell every lane which of its files this ticket regenerates.",
+      "pause": 400
+    }
+  ],
+  "the-shared-surfaces-and-who-else-owns-them": [
+    {
+      "text": "The shared surfaces and who else owns them.",
+      "pause": 500
+    }
+  ],
+  "files-written-by-hand": [
+    {
+      "text": "Files written by hand.",
+      "pause": 500
+    }
+  ],
+  "files-regenerated-never-edited": [
+    {
+      "text": "Files regenerated, never edited.",
+      "pause": 500
+    }
+  ],
+  "files-this-ticket-must-not-touch": [
+    {
+      "text": "Files this ticket must not touch.",
+      "pause": 500
+    },
+    {
+      "text": "The pinned model revision file conformance/model-revision (moving it to the merge commit is a follow-up the release record names, because a commit cannot contain its own hash). Everything under onchain/, offchain/, naming-onchain/, onchain-release/, release-review/, nix/ and the root flake.nix; the state-directory, funding and fold-builder layers; every CLI module; specs/320-early-request-rejection/ and specs/395-reject-lower-bound/ (history); the branch feat/protected-rejection and pull request 508.",
+      "pause": 400
+    }
+  ],
+  "collision-check-done-at-planning-time": [
+    {
+      "text": "Collision check done at planning time.",
+      "pause": 500
+    },
+    {
+      "text": "Open pull requests were searched for the paths above. Only pull request 525 (two conformance files), pull request 433 (the narration index and manifest) and the pull request being superseded (508) share any. Lanes that have no pull request yet (concurrent booking, creation, recovery, forbidden actions, 495, 529, 506) are ordered by the queue, not by files, and are re-checked by the ticket owner at each rebase.",
+      "pause": 400
+    }
+  ],
+  "surfaces-of-ticket-532-named-and-owned-by-other-children": [
+    {
+      "text": "Surfaces of ticket 532, named and owned by other children.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket 532 reports that a reject pays the request's approval to the folder's change instead of the owner's refund. None of these files is touched by the four slices; they are listed so that no slice edits them by accident and so that the owning child is named.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "9dc45015a39b79f47b8e3b7fd6a9e53370e41b594d065ca2320c2766050e803a"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "plan-protected-rejection-in-the-lean-model-in-four-slices": [
+    {
+      "text": "Plan: protected rejection in the Lean model, in four slices.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket 494 under epic 498. Base e3c9ab01, branch feat/494-protected-rejection-rule, worktree /code/singular-issue-494. Read the specification for what must hold, the rulings for why, the research for the evidence behind the tables below, and the touch list for the files. Planning only: no coding starts before the command-line split (528) merges and the desk grants a slot.",
+      "pause": 400
+    }
+  ],
+  "status": [
+    {
+      "text": "Status.",
+      "pause": 500
+    },
+    {
+      "text": "Planning artifacts written and committed locally. One question is open (what the public suite shows for an in-window rejection until the validators change); it blocks slice three and the frozen gate's last rows only. The gate has two independent authors, synthesized once in the gate.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the person accepting this ticket, I read one page and learn what changes in which order, what the eight red checks of the earlier attempt mean, what happens to that attempt, and where the work can collide with other lanes, so that I can approve the plan without reading the model.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The earlier attempt put the whole rule, its batch semantics and every consumer into one change on a tree that has since lost five of its seven edges. This plan ports the same reviewed design onto the two-edge model in four vertical slices. Each slice leaves the repository green by regenerating the copies its own change moves, and each ends in something a person can run: the model runner, a conformance row, or the public page.",
+      "pause": 400
+    },
+    {
+      "text": "Slices three and four are independent after slice two. The rule is pushed for hosted checks after slice one, after slice three (which completes the rejection rule) and after slice four.",
+      "pause": 400
+    }
+  ],
+  "the-four-slices": [
+    {
+      "text": "The four slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice is sized for one commit owner run, with the inner loop on lake build of the changed modules and the gate's own commands run once per candidate. A slice that runs for hours without a product commit is cut again, not supervised harder.",
+      "pause": 400
+    },
+    {
+      "text": "Slice one is the smallest and is independent of the pending question. Slice two carries the weight of the proofs and is where the historical scenario is run before and after.",
+      "pause": 400
+    }
+  ],
+  "the-eight-red-checks-of-the-earlier-attempt": [
+    {
+      "text": "The eight red checks of the earlier attempt.",
+      "pause": 500
+    },
+    {
+      "text": "Each check failed at a7224021 on an assertion found in the hosted log (see the research page for the line). Each was green at the attempt's own base 23964e66 and on main at e3c9ab01, so the attempt introduced it and none is flaky. The classes are named for what they mean, with the epic owner's letter in parentheses: moves-with-the-model (a), where the model change contradicts an expectation that must move with it in this ticket; needs-the-validators (b), where the expectation can only hold once ticket 495 changes the validators; stale-against-main (c), fixed by re-deriving on e3c9ab01; and other (d). The table says which slice cures each.",
+      "pause": 400
+    },
+    {
+      "text": "Only the early-rejection row cannot be made to agree by this ticket. That is the pending question.",
+      "pause": 400
+    }
+  ],
+  "what-happens-to-pull-request-508": [
+    {
+      "text": "What happens to pull request 508.",
+      "pause": 500
+    },
+    {
+      "text": "Recommendation to the epic owner, for a decision when coding is released; nothing is closed now: re-derive the change on this branch and close 508 as superseded when this branch opens its pull request. The reasons: its base is 74 commits and 514 files behind and models seven edges; a rebase would conflict in every Lean file and every generated corpus, and the corpus is regenerated anyway; its constitution amendment collides in number and content with the one on main; and its design is not lost, because this plan ports it name for name (the data model lists the one difference) and its two source reviews stay in the epic's record as evidence for the design, not for the new code. The branch feat/protected-rejection is kept, never deleted, as historical evidence.",
+      "pause": 400
+    }
+  ],
+  "ordering-and-the-other-lanes": [
+    {
+      "text": "Ordering and the other lanes.",
+      "pause": 500
+    },
+    {
+      "text": "This ticket sits in the validators-and-Lean surface of the merge queue: after 505 (merged), before 495, 529 and 506, which stay strictly serial behind it. It follows the command-line split (528) and the logic lanes the desk orders before it. It rebases only at a safe boundary after each merge and never under a running coder. The touch list names the shared surfaces, which lane owns each, and the one open pull request (525) that touches the conformance cabal file and its test entry point.",
+      "pause": 400
+    }
+  ],
+  "a-neighbouring-defect-the-approval-a-reject-returns": [
+    {
+      "text": "A neighbouring defect: the approval a reject returns.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket 532 reports that a reject sends the request's approval to the folder's change, not the owner's refund. The base model states otherwise: a rejection's owner output commits to the request's approval asset name, and the rule of this ticket keeps that exactly, because an admitted rejection is proved equal to the base exit. The comparison row that would expose the builder is placed with ticket 496, not here. Reason: the defect is in the builder, so such a row fails on every reject the suite builds until 496 lands, which would put one builder defect on every reject row of slices two and three and tie this ticket's gate to a repair it cannot make; the row and its fix belong in one change so the row's tripwire is the fix. If the epic owner wants the row here, it is a fifth slice that makes the reject comparison read the approval and records each reject row as a divergence until 496.",
+      "pause": 400
+    }
+  ],
+  "pending-question-and-what-it-changes": [
+    {
+      "text": "Pending question and what it changes.",
+      "pause": 500
+    },
+    {
+      "text": "The question file asks what the suite shows for the in-window row until the validators change. Option B (recommended) rewrites the row into a lawful mismatch rejection that both sides accept and adds an unmet row with a tripwire that ticket 495 must flip. Option A holds the rule's push until 495. Option C is refused. Until it is answered the plan treats B as the working assumption and marks slice three and the last gate rows \"pending the question\".",
+      "pause": 400
+    }
+  ],
+  "budget-and-ceilings": [
+    {
+      "text": "Budget and ceilings.",
+      "pause": 500
+    },
+    {
+      "text": "One team per epic at a time: the coder is Muse and the persistent auditor GLM, both launched only at coding release. The operator is on credits; no seat beyond those named is authorized.",
+      "pause": 400
+    }
+  ],
+  "risks": [
+    {
+      "text": "Risks.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "5a3cefc06f1a96d408966a951fc284a1d9a3cfc8045fa64963a2da2937749407"
+  }
+}

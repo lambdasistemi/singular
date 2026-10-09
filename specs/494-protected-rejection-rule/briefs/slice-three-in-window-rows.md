@@ -1,0 +1,70 @@
+# Coder brief, slice three: the in-window rows
+
+The whole of slice three for the commit owner, with its terminal condition. This slice is not
+dispatched until the pending question about the public suite is answered; the answer is copied into
+the top of this page as "Direction" before dispatch. The binding and limits are in the
+[mandate](../mandate.md); the proof is the [gate](../gate.md). Slices one and two are on the branch.
+
+## Story
+
+As a reader of the public conformance suite, I see the rows about rejecting a request inside its
+windows say exactly what is true until the validators change: which rejection the model and the chain
+both accept, which one the model refuses while the chain still accepts it, labelled unmet and never as a
+pass, and what will turn that label into agreement.
+
+## Direction
+
+To be filled by the ticket owner from the answer to the pending question before dispatch. Until then the
+working assumption is the recommended option: Lean first, the divergence published as unmet. If the
+answer is to hold the rule's push until the validators, this slice instead makes the rows assert that
+model and chain both refuse, marks them held for the validator head, and the ticket owner holds the push.
+
+## Seat
+
+| Field | Value |
+|---|---|
+| Role | commit owner for slice three, launched only at coding release |
+| Launcher | `/home/paolino/.local/bin/muse --approve`, working directory `/code/singular-issue-494` |
+| Runtime root | `<ticket owner root>/commit-owner-3`; your journal is its `STATUS.md` |
+| Auditor | GLM, mute, beside you; you never address it |
+| Commit authority | Local commits only, one patch with `stg`; no push, no rebase, no comment on GitHub |
+
+You are not alone in the codebase; do not revert edits made by others. No `Co-Authored-By`, no
+attribution. Plain words, no coined abbreviations.
+
+## The task, under the recommended option
+
+1. The dedicated early-rejection row ("early rejection inside the windows") becomes a lawful rejection
+   that model and chain both accept inside the windows: a request to register a key that is already
+   Active, rejected at once with the lifecycle evidence, the owner refunded the deposit. Its tampered
+   refunds (one lovelace short, to another key) stay refused by both for the refund reason. Its workflow
+   assertions and placement counts follow the row; its name and requirement text are unchanged.
+2. The generic session's standing unmet row for rejecting a request while it can still be folded books a
+   foldable registration (not a retired edge) and records each of its three steps as the divergence it
+   now is: the two refund controls refuse for different reasons, the untampered reject is refused by the
+   model and accepted by the chain. Its stated reason and consumer reading change to say that the model
+   refuses and the chain does not; its standing stays unmet. The session's expected-debt assertion keeps
+   naming exactly the same rows.
+3. The tripwire: the row's expected list stops matching, and the session goes red, on the day the chain
+   refuses the untampered reject. Prove it with a seeded control in the same way the neighbouring rows
+   prove theirs, or say in the receipt why the existing control already covers it.
+4. The consumer record, the book and the evidence page say the same, including the history of ticket
+   320's early rejection. History is not edited; add a dated note, do not rewrite.
+5. Regenerate what the prose moves: speech companions and audio of the edited pages, the row inventory.
+
+## Checkpoints
+
+Journal `REVIEW-REQUESTED` with commit and evidence path, and continue, at: the red-for-the-right-reason
+control (the rows as they stand fail against the changed model); the dedicated row green; the unmet row
+recorded; the final head.
+
+## Gate
+
+The slice-three rows of the [gate](../gate.md): the two devnet rows locally once each, the non-devnet
+conformance commands, format and lint, the workflow lint and the documents check.
+
+## Terminal condition
+
+Stop at the first of: every slice-three gate command exits as the gate states on a clean committed head
+(`CANDIDATE-GREEN`); a question the mandate cannot decide (user story per option, `BLOCKED`); capacity
+(`COMPLETE capacity-limit` with a handoff). Touch nothing under the files this ticket must not touch.

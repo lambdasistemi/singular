@@ -1,0 +1,226 @@
+{
+  "protected-rejection-in-the-lean-model-stories-and-requirements": [
+    {
+      "text": "Protected rejection in the Lean model: stories and requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket 494, child of epic 498. Base: main e3c9ab01 (the two-edge model, constitution 1.14.0). The rulings are in decisions; the technical route is in plan. This ticket changes the Lean model and everything that consumes it. It changes no validator, no off-chain builder and no shipped command; those belong to the neighbouring tickets named under out of scope.",
+      "pause": 400
+    }
+  ],
+  "the-paramount-story": [
+    {
+      "text": "The paramount story.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I book a valid request and observe that a permissionless processor cannot cancel it and collect its tip without satisfying an explicit rejection rule.",
+      "pause": 400
+    },
+    {
+      "text": "This ticket touches no shipped command line. The requester sees the rule today only through the model runner (lake exe of the driver, run in CI by nix run .#model-check) and through the public conformance suite; the rule reaches a command only when ticket 495 and ticket 496 build on the model revision this ticket releases.",
+      "pause": 400
+    }
+  ],
+  "other-stories": [
+    {
+      "text": "Other stories.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester whose request cannot fold because its key is in the wrong lifecycle state, I see a processor reject it at once with proof of the mismatch and I get my deposit back, so that a dead request does not sit at the cage until it expires.",
+      "pause": 400
+    },
+    {
+      "text": "As a requester whose request has outlived both its processing and its reclaim window, I see a processor reject it with proof of the expiry, so that abandoned requests can be cleared by anyone without my consent being needed after I had my chance to reclaim.",
+      "pause": 400
+    },
+    {
+      "text": "As a processor building one batch, I fold Bob's insertion of a fresh key and reject Carol's insertion of the same key in the same batch, and the model accepts the batch because Carol's request is judged on the state Bob's fold left. Reversed, with Carol's request first, the model refuses it, because at that point her request is still foldable.",
+      "pause": 400
+    },
+    {
+      "text": "As an owner retracting a pending request, I see my window computed from the time my request was booked, not from a time written into the retraction, so that a retraction and a rejection of the same request can never disagree about when the windows end.",
+      "pause": 400
+    },
+    {
+      "text": "As the author of the validators (ticket 495) or the builders (ticket 496), I receive one exact model revision and one written evidence contract, so that I implement the rule the model proves instead of inferring it.",
+      "pause": 400
+    },
+    {
+      "text": "As a reader of the public conformance suite, I see which rejections the model allows and the chain accepts today, and which it forbids while the chain still accepts them, labelled as unmet until the validators change; I never see a forbidden rejection presented as a pass.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram is the whole admission for one request. A batch applies it to each action in order, on the state the actions before it left.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Each requirement has a descriptive name; the plan and the tasks use the same names.",
+      "pause": 400
+    }
+  ],
+  "rejection-needs-evidence": [
+    {
+      "text": "Rejection needs evidence.",
+      "pause": 500
+    },
+    {
+      "text": "The model refuses every rejection that carries no evidence, whatever the request, the state or the refund. A missing proof is never an inadmissibility proof. (rejection-needs-evidence)",
+      "pause": 400
+    }
+  ],
+  "evidence-is-bound": [
+    {
+      "text": "Evidence is bound.",
+      "pause": 500
+    },
+    {
+      "text": "Admitted evidence names the registry's abstract identity, carries the complete registry configuration including its root as it stands at that action, carries the complete request, and arrives with a non-empty finite validity interval, lower bound included and upper bound excluded. Evidence for another registry, another configuration or root, another request, or an empty or reversed interval is refused with a reason that names which binding failed. (evidence-is-bound)",
+      "pause": 400
+    }
+  ],
+  "two-grounds-only": [
+    {
+      "text": "Two grounds only.",
+      "pause": 500
+    },
+    {
+      "text": "Evidence is admitted exactly on a lifecycle mismatch or on expiry. Mismatch means the leaf the evidence names is the leaf the state holds at the request's key, and the model's own transition table gives the request's edge no successor from it; the unknown leaf and the stored Absent state are different leaves. Expiry means the interval's lower bound is at or after the booked submission time plus the processing duration plus the reclaim duration. No other reason is admitted. (two-grounds-only, mismatch-means-no-transition, expiry-follows-both-windows)",
+      "pause": 400
+    }
+  ],
+  "a-foldable-request-is-protected": [
+    {
+      "text": "A foldable request is protected.",
+      "pause": 500
+    },
+    {
+      "text": "For any request whose edge has a successor at the key's current leaf, no evidence at all makes a rejection admissible while the interval begins before expiry. (foldable-request-is-protected)",
+      "pause": 400
+    }
+  ],
+  "rejection-changes-nothing-but-the-queue": [
+    {
+      "text": "Rejection changes nothing but the queue.",
+      "pause": 500
+    },
+    {
+      "text": "An admitted rejection leaves the registry state as it was, mints nothing, and owes the owner exactly the deposit it owed before this ticket. The base model also returns the request's approval in the owner's refund output of a rejection; that stays exactly as it is, and the statement that an admitted exit is the base exit proves it unchanged. Refund amounts and the unresolved refund discrepancy of ticket 361 are unchanged. (rejection-effects-unchanged)",
+      "pause": 400
+    }
+  ],
+  "retraction-and-rejection-share-one-clock": [
+    {
+      "text": "Retraction and rejection share one clock.",
+      "pause": 500
+    },
+    {
+      "text": "Retraction and expiry both read the request's booked submission time. The legacy field carried in a retraction witness stays on the wire and is ignored by admission. For one request the earliest instant an expiry rejection may start is never before the latest instant an admitted retraction may end. (one-booked-clock)",
+      "pause": 400
+    }
+  ],
+  "a-batch-is-judged-action-by-action": [
+    {
+      "text": "A batch is judged action by action.",
+      "pause": 500
+    },
+    {
+      "text": "An ordered batch of folds and evidenced rejections is judged action by action; each action sees the state left by those before it, a rejection leaves that state unchanged, and each rejection's evidence binds the intermediate state's configuration and root. An empty batch is refused. A batch with any refused action is refused whole, with no partial result. An all-reject batch is judged by the same engine as a mixed batch. A foldable request cannot be rejected at any position of an admitted batch. (batch-judged-action-by-action)",
+      "pause": 400
+    }
+  ],
+  "folds-and-retractions-are-not-weakened": [
+    {
+      "text": "Folds and retractions are not weakened.",
+      "pause": 500
+    },
+    {
+      "text": "An exit that passes its admission is exactly the exit the model had before; admission adds permission checks and changes no payment, mint or state effect. A fold, and a retraction its own admission lets through, behave as on the base. (admission-changes-no-effect)",
+      "pause": 400
+    }
+  ],
+  "the-model-states-everything-it-relies-on": [
+    {
+      "text": "The model states everything it relies on.",
+      "pause": 500
+    },
+    {
+      "text": "The constitution's model driver translation, the declared driver surface, the theorem register and its statement digests, the exported corpora and the simulator's mirror of the model all state the rule and agree with the Lean source. (consumers-state-the-rule)",
+      "pause": 400
+    }
+  ],
+  "nothing-is-passed-that-was-not-shown": [
+    {
+      "text": "Nothing is passed that was not shown.",
+      "pause": 500
+    },
+    {
+      "text": "The public suite keeps every unmet requirement visible. A row whose subject is a forbidden rejection that the chain still accepts is published as unmet and never as a pass. Behavior the base left uncovered stays uncovered. (unmet-stays-unmet)",
+      "pause": 400
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "Every item must hold on the exact head that is handed to review. The mandate names the proving check of each item and the plan names the slice that delivers it.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] The three rulings and the historical counterexample are recorded, with concrete request stories and a truth table over the seven edge tags, the four leaf states, the time boundaries and both grounds.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The historical scenario is run against the base model and reports the unguarded rejection accepted; it is preserved as historical behavior and, against the changed model, the same scenario is refused.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Rejection evidence and admission are defined in Lean with exact binding to request, registry, intermediate root and interval; unknown and Absent are distinguished.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Every requirement above is a proved statement; the protection and permitted-rejection statements are exported as runnable accepting and refusing cases through the existing model runner; invalid evidence never counts as inadmissibility evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Batch ordering and root semantics are defined and proved, with refund, tip and state continuation effects unchanged; ticket 361's refund rule is not chosen.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The constitution mapping, theorem and corpus bindings, the consumer compatibility record and the history of ticket 320's early rejection are updated; uncovered behavior stays uncovered.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The eight required checks that failed on pull request 508 are green on the exact head, or the one that cannot be is published unmet as the pending decision on the decisions page directs.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] An exact accepted model revision and the written evidence contract are released for the validator and builder tickets.",
+      "pause": 300
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "The coding slices touch nothing owned by these tickets, and a coder who finds a reason to touch one stops and reports it instead.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "010bcfaebcadef7e0ae4aa59c54d8b83117f366da8c84f1384090470ea929eda"
+  }
+}

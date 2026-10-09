@@ -1,0 +1,146 @@
+{
+  "mandate-ticket-494-protected-rejection-in-the-lean-model": [
+    {
+      "text": "Mandate: ticket 494, protected rejection in the Lean model.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the whole contract a coder and an auditor are given for ticket 494. It binds the work to an exact tree, quotes the rulings that govern it, lists the acceptance items with the check that proves each, names what is out of scope, and states the evidence the pull request will carry before any work starts. Planning only: the coder and the auditor named below are launched at coding release, never before.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the epic owner reviewing this mandate, I read one page and find every fact a coder needs and every limit a coder must respect, so that no coder wanders into a neighbouring ticket and no auditor judges against a stale tree.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket touches no shipped command line. It changes the Lean model and everything generated from or checked against it; the operator command that will one day carry the rule belongs to tickets 495 and 496.",
+      "pause": 400
+    }
+  ],
+  "the-paramount-story": [
+    {
+      "text": "The paramount story.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I book a valid request and observe that a permissionless processor cannot cancel it and collect its tip without satisfying an explicit rejection rule.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "The three rulings that decide the rule are quoted in full on the decisions page and govern every line of the work. Three readings follow from them and one decision is pending there. The rulings from the epic owner's brief of 9 October 2026 that bound this ticket are quoted here.",
+      "pause": 400
+    },
+    {
+      "text": "the Singular CLI is the registry; the open datum is its own executable built on the Singular library. Build against the library's request and fold, not the open-datum envelope. Desk answer t528 Q-001: singular links no application code; the termination fold moves to the application's executable.",
+      "pause": 400
+    },
+    {
+      "text": "the request keeps carrying its datum inline and the application decides its size.",
+      "pause": 400
+    },
+    {
+      "text": "The inline datum has no size cap (operator, 9 October 2026). Nothing in this ticket adds one.",
+      "pause": 400
+    },
+    {
+      "text": "every request carries a tag minted by Singular's request policy; the bond at mint and forfeit on rejection are specified in #529; #494's rule is what makes a heavy forfeit safe. #494 does not model the tag or the bond; name where it hands off.",
+      "pause": 400
+    },
+    {
+      "text": "The handoff is the \"What a rejection does\" and \"What a batch binds\" sections of the evidence contract: an admitted rejection leaves the state, mints nothing and owes the deposit; ticket 529 attaches the bond forfeit to an admitted rejection and nothing earlier.",
+      "pause": 400
+    },
+    {
+      "text": "Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.",
+      "pause": 400
+    },
+    {
+      "text": "Applied: ticket owner Claude Sonnet 5.5 at extra-high effort; commit owner Muse (muse --approve); mute persistent auditor GLM (/code/llm-settings/pi/glm --approve) in a read-only audit worktree; gate authors are the ticket owner and one GLM seat; no draft tool.",
+      "pause": 400
+    },
+    {
+      "text": "One merge into main at a time, in the order the desk publishes. Nobody rebases, retargets or merges without a slot.",
+      "pause": 400
+    },
+    {
+      "text": "Applied: validators and Lean (505, 494, 495, 529, 506) are one surface and strictly serial in that order; this ticket waits for the command-line split (528) and for the desk's slot, and rebases only at a safe boundary.",
+      "pause": 400
+    }
+  ],
+  "acceptance-each-item-with-the-check-that-proves-it": [
+    {
+      "text": "Acceptance, each item with the check that proves it.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the existing CI commands in the gate, frozen before any coder runs, written by the ticket owner and an independent author and synthesized once. Hosted checks on the exact head are the net for every item.",
+      "pause": 400
+    }
+  ],
+  "out-of-scope-by-number": [
+    {
+      "text": "Out of scope, by number.",
+      "pause": 500
+    },
+    {
+      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the request tag, bond and forfeit), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
+      "pause": 400
+    }
+  ],
+  "the-coders-brief-and-the-auditor": [
+    {
+      "text": "The coder's brief and the auditor.",
+      "pause": 500
+    },
+    {
+      "text": "The coder receives one brief per slice, each the whole of that slice with a terminal condition of green, blocked or at capacity: slice one, slice two, slice three and slice four. No run is counted and no nudge is sent. The auditor is launched beside the coder from its first run, reads commits and receipts only, and is mute toward the coder; the ticket owner carries one-line pointers between them. The push waits for every checkpoint approved.",
+      "pause": 400
+    }
+  ],
+  "evidence-the-pull-request-will-carry-and-what-stays-uncovered": [
+    {
+      "text": "Evidence the pull request will carry, and what stays uncovered.",
+      "pause": 500
+    },
+    {
+      "text": "The pull request body is a fill-in of this table; no essay is written at the end.",
+      "pause": 400
+    },
+    {
+      "text": "Left uncovered by this ticket, and stated as such in the body: the validators (495); evidence construction and every builder (496); any ledger acceptance of protected rejection (497); a concrete proof format and its verifier; a live mixed batch, since no mixed transaction is built; the refund discrepancy (361); address pollution (500); the tip's routing; and, until the validators change, the chain's acceptance of a rejection the model refuses, published as unmet. Fold-time admission is unchanged.",
+      "pause": 400
+    }
+  ],
+  "budget": [
+    {
+      "text": "Budget.",
+      "pause": 500
+    },
+    {
+      "text": "One team per epic at a time. Each slice is one coder run and is cut again if it will run for hours. The operator is on credits: the coder is Muse, the auditor is GLM, and no further seat is authorized.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "mandate.md",
+    "sha256": "e81379dbb68aa084b54d1d04a1ae522a2d5720095f3496953fffe689ccfe70e9"
+  }
+}
