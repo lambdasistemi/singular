@@ -1,0 +1,5 @@
+# Correction: connected cancellation also requires distinct withdrawal approval
+
+A source-bound handback after A-003 identified NamingLifecycleStatements.insert_attestation_alone_cannot_cancel: the real pending Insert cannot cancel until Model.step .mintWithdraw records a DISTINCT withdrawal approval. Its failure without that approval is expected behavior, not a model contradiction. The missing deliverable is the real connected approval-and-cancellation sequence. This corrects any reading of A-003 as permitting Insert approval alone to cancel.
+
+M4 A-004 now permits a checked composition of existing .mintWithdraw and .withdraw in one transaction, with actual distinct request/refund-bound approval and existing issuer authorization. No model/theorem/expectation is removed; burning the Insert token alone cannot count as the withdrawal certificate. Required refusal without the distinct approval remains. Existing technical refinements proceed with this complete mapping; old-deployment limitation, M1 #110 ownership and no preprod/migration grant remain unchanged. #117 owner must update evidence narrative and PR mapping before acceptance.

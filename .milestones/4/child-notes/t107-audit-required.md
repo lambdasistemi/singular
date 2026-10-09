@@ -1,0 +1,3 @@
+# #107 audit requirement
+
+Candidate112d20c/PR116 has all owner-side local and remote checks green, but is not accepted. Audit triggers apply: follower changes replay/checkpoint behavior, claims a cross-ticket manifest→mirror→folder lifecycle, and carries root-mismatch mutation/refusal controls. Commission a fresh detached read-only commit audit with the exact candidate/base, frozen acceptance, gate commands, evidence paths and finite changed-boundary denominator. Inspect gate implementation and tests, not only outputs. No merge/release/preprod assignment until audit terminal verdict and desk decision.
