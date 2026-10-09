@@ -65,6 +65,7 @@ import Singular.CLI.Trace
     , What (EdgeStarted, Reclaimed, RequestSeen, RootSeen)
     , report
     )
+import Singular.Registry.Application (neutralApplication)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.SessionIO qualified as Services
@@ -99,6 +100,7 @@ runReclaim env a = do
             (accessToken (reclaimAccess a))
             (writeWalletKey ws)
     attached
+        neutralApplication
         env
         dir
         (reclaimBlueprint a)

@@ -83,6 +83,7 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
+import Singular.Registry.Application (neutralApplication)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -147,6 +148,7 @@ runReject env a = do
             (accessToken (rejectAccess a))
             (writeWalletKey ws)
     attached
+        neutralApplication
         env
         dir
         (rejectBlueprint a)

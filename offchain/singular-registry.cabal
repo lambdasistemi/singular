@@ -969,6 +969,7 @@ test-suite cage-tests
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
     Singular.Registry.ApplicationSpec
+    Singular.Registry.NeutralValueSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.ContractMemory

@@ -47,6 +47,7 @@ import Singular.CLI.Reconcile
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
 import Singular.CLI.Trace (Scope (..), What (..), report, within)
+import Singular.Registry.Application (Application)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -77,7 +78,8 @@ transaction the write then builds reads the chain again, from a view of
 its own. The receipt says what the reconciliation did.
 -}
 attached
-    :: Env
+    :: Application
+    -> Env
     -> FilePath
     -> FilePath
     -> RegistryAccess
@@ -87,9 +89,10 @@ attached
     -> Text
     -> (Attached -> IO Value)
     -> IO Value
-attached env dir blueprint access roles ws command body = do
+attached app env dir blueprint access roles ws command body = do
     release <-
-        envLoadRelease env blueprint >>= either (failWith ClientRefusal) pure
+        envLoadRelease env app blueprint
+            >>= either (failWith ClientRefusal) pure
     withWrite env dir command ws $ \connected -> do
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below: the name is what
@@ -107,6 +110,7 @@ attached env dir blueprint access roles ws command body = do
             $ \v -> do
                 saved <-
                     resolveSaved
+                        app
                         dir
                         release
                         access
@@ -119,7 +123,7 @@ attached env dir blueprint access roles ws command body = do
                         (wcSource wc)
                         ["journal transactions", "state"]
                         $ do
-                            r <- reconcile command dir saved v
+                            r <- reconcile app command dir saved v
                             refuseUnreconciled r
                             (,) r <$> attachLive v saved
                 context <- openTrie saved

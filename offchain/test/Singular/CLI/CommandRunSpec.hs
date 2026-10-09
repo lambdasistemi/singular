@@ -109,6 +109,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Data.Word (Word64)
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI (runCommand)
 import Singular.CLI.Command (Command (..), parseCommand)
 import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
@@ -169,7 +170,7 @@ permanentRecognition = describe "Permanent contract recognition"
         "refuses a caller supplied blueprint whose script identities are unknown"
     $ withRig
     $ \rig -> do
-        loaded <- loadRelease (rigBlueprint rig)
+        loaded <- loadRelease openDatumApplication (rigBlueprint rig)
         case loaded of
             Left _ -> pure ()
             Right _ ->
@@ -652,6 +653,7 @@ packagedWrites at flags = do
             captured
                 ( runPackagedVia
                     (\tracer -> (envOf rig){envTracer = tracer})
+                    openDatumApplication
                     (pure (Just h))
                     (commandLine rig registry args <> flags)
                     []
@@ -1216,7 +1218,8 @@ runVia rig env registry label args = do
             (fail . show)
             pure
             (parseCommand (commandLine rig registry args))
-    (code, out, _) <- captured (runCommand env command)
+    (code, out, _) <-
+        captured (runCommand openDatumApplication env command)
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))

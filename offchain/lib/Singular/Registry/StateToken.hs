@@ -206,25 +206,35 @@ application pin and the token alone. The state hash is the release's
 state script; every other role is the release's script for it applied to
 the registry identity, state policy then token name. A pin read from
 state arrives as 'PinByHash' of the datum's pin: 'resolveRegistry'
-reads the datum first.
+reads the datum first. A hash pin publishes no application reference
+(slice 2: its script bytes do not exist), so it omits that role; a script
+or compiled pin lists it as today.
 -}
 expectedReferences
     :: ApplicationPin -> Release -> Asset -> Map ReferenceRole ScriptHash
 expectedReferences pinForm release (_, AssetName name) =
     Map.fromList
-        [ (RoleState, stateHash)
-        , (RoleRequest, computeScriptHash requestBytes)
-        , (RoleWitnessAbsent, pinHash absentPin)
-        , (RoleWitnessActive, pinHash activePin)
-        , (RoleWitnessTerminal, pinHash terminalPin)
-        , (RoleApplication, pinHash applicationPin)
-        ]
+        ( [ (RoleState, stateHash)
+          , (RoleRequest, computeScriptHash requestBytes)
+          , (RoleWitnessAbsent, pinHash absentPin)
+          , (RoleWitnessActive, pinHash activePin)
+          , (RoleWitnessTerminal, pinHash terminalPin)
+          ]
+            <> [(RoleApplication, pinHash applicationPin) | hasApplication]
+        )
   where
     stateHash = computeScriptHash (releaseState release)
     registryId = scriptHashBytes stateHash <> SBS.fromShort name
     (applicationPin, pinned) = applyPin pinForm registryId (releaseCodes release)
     (_, absentPin, activePin, terminalPin) =
         namingPins pinned registryId
+    -- A hash pin (including a pin read from state, which arrives as one)
+    -- publishes no application reference; a script or compiled pin does.
+    hasApplication = case pinForm of
+        PinByHash _ -> False
+        PinFromState -> False
+        PinByScript _ -> True
+        PinAsCompiled _ -> True
     requestBytes =
         applyRequestParams
             (scriptHashBytes stateHash)
@@ -293,7 +303,7 @@ datum, and the three witness pins are compared as always.
 -}
 resolveRegistry
     :: (Monad m)
-    => Application decoder holding
+    => Application
     -> Release
     -> Asset
     -> Session w m

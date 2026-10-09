@@ -12,11 +12,11 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## commands-through-the-value
 
-- [ ] create-pins-through-the-value-or-a-hash
-- [ ] fold-and-live-reach-the-application-only-through-the-value
-- [ ] reconcile-matches-by-datum-hash
-- [ ] inspect-decodes-only-through-the-value
-- [ ] neutral-value-specs
+- [x] create-pins-through-the-value-or-a-hash
+- [x] fold-and-live-reach-the-application-only-through-the-value
+- [x] reconcile-matches-by-datum-hash
+- [x] inspect-decodes-only-through-the-value
+- [x] neutral-value-specs
 
 ## registry-cli-library
 

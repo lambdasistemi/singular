@@ -56,6 +56,7 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxIn (..))
 import Data.Foldable (toList)
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command
 import Singular.CLI.Live (Saved (..), resolveSaved)
 import Singular.CLI.Registry
@@ -493,6 +494,7 @@ directories = describe "the actor's directory" $ do
                         ]
                     }
         resolveSaved
+            openDatumApplication
             dir
             release
             ours

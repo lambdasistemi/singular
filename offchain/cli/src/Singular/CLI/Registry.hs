@@ -78,7 +78,10 @@ import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
 
 import Singular.CLI.Permanent (knownScripts)
-import Singular.Registry.Application (Application (..))
+import Singular.Registry.Application
+    ( Application (..)
+    , ApplicationPin (..)
+    )
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
     , extractCompiledCode
@@ -119,18 +122,20 @@ instance FromJSON Pins where
 -- The release a command brings
 -- ---------------------------------------------------------
 
--- | Read the registry blueprint a command was given.
-loadRelease :: FilePath -> IO (Either String Release)
-loadRelease = loadReleaseWith True
+-- | Read the registry blueprint a command was given, for the application it pins.
+loadRelease :: Application -> FilePath -> IO (Either String Release)
+loadRelease app = loadReleaseWith app True
 
 {- | Read code for an explicitly supplied implementation fixture. This makes
 no recognition claim; the shipping environment always uses 'loadRelease'.
 -}
-loadReleaseCodes :: FilePath -> IO (Either String Release)
-loadReleaseCodes = loadReleaseWith False
+loadReleaseCodes
+    :: Application -> FilePath -> IO (Either String Release)
+loadReleaseCodes app = loadReleaseWith app False
 
-loadReleaseWith :: Bool -> FilePath -> IO (Either String Release)
-loadReleaseWith recognize path = do
+loadReleaseWith
+    :: Application -> Bool -> FilePath -> IO (Either String Release)
+loadReleaseWith app recognize path = do
     loaded <- loadBlueprint path
     pure $ do
         bp <-
@@ -158,7 +163,13 @@ loadReleaseWith recognize path = do
                 knownScripts
         state <- code "state.state"
         request <- code "request.request"
-        application <- code "open_datum.open_datum"
+        -- The application code the pin names, or none when the pin is a hash
+        -- or read from state (slice 2: its script bytes do not exist there).
+        application <- case appPin app of
+            PinByHash _ -> pure SBS.empty
+            PinFromState -> pure SBS.empty
+            PinByScript title -> code (T.unpack title)
+            PinAsCompiled title -> code (T.unpack title)
         witness <- code "witness.witness"
         pure
             ( Release
@@ -182,7 +193,7 @@ applied to the registry identity the seed determines, and
 @witness(kind, registry)@ at kinds 0, 1 and 2.
 -}
 registryConfigFor
-    :: Application decoder holding
+    :: Application
     -> Release
     -> RegistryEconomics
     -> OnChainTxOutRef

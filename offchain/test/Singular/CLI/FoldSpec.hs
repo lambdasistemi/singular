@@ -52,16 +52,35 @@ import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , StateAsset (..)
+    , envelopeHash
     , envelopeToData
     , envelopeVersion
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.CLI.Fold (neutralTerminationRefusal)
 import Singular.CLI.FoldRules
+import Singular.Registry.Application
+    ( Application (..)
+    , ApplicationPin (..)
+    , datumFromJson
+    , datumHash
+    , datumToJson
+    , neutralApplication
+    )
+import Singular.Registry.Config.Application (configForApplication)
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.SessionIO (outputsAt)
+import Singular.Registry.StateToken (Release (..))
+import Singular.Registry.StateTokenFixture
+    ( bootEconomics
+    , release
+    , seedIn
+    )
 import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , policyIdFromPin
+    , txInToRef
     )
 import Singular.Registry.Types
     ( OnChainRequest (..)
@@ -86,6 +105,7 @@ spec = describe "registry fold" $ do
     kinds
     funding
     carried
+    neutralFold
 
 -- ---------------------------------------------------------
 -- The processing window
@@ -355,22 +375,41 @@ genPayload :: Gen PLC.Data
 genPayload = PLC.I <$> chooseInteger (-1_000_000, 1_000_000)
 
 carried :: Spec
-carried = describe "the envelope an insertion's request carries" $ do
+carried = describe "the datum an insertion's request carries" $ do
     it
-        "is the envelope the booking wrote into the request, for any payload"
+        "is the envelope the booking wrote into the request, for any payload (open datum)"
         $ property
         $ forAll genPayload
         $ \p ->
             let e = envelopeWith p
-            in  carriedEnvelope (requestCarrying (Just (envelopeToData e)))
-                    === Right e
-    it "is refused, by name, when the request carries no envelope" $
-        carriedEnvelope (requestCarrying Nothing)
+            in  checkCarriedDatum
+                    openDatumApplication
+                    (requestCarrying (Just (envelopeToData e)))
+                    === Right (envelopeToData e)
+    it
+        "is refused, by name, when the request carries no envelope (open datum)"
+        $ checkCarriedDatum openDatumApplication (requestCarrying Nothing)
             `shouldSatisfy` either (isInfixOf "carries no envelope") (const False)
     it
-        "is refused, by name, when what the request carries is not an envelope"
-        $ carriedEnvelope (requestCarrying (Just (PLC.B "not an envelope")))
+        "is refused, by name, when what the request carries is not an envelope (open datum)"
+        $ checkCarriedDatum
+            openDatumApplication
+            (requestCarrying (Just (PLC.B "not an envelope")))
             `shouldSatisfy` either (isInfixOf "cannot be read") (const False)
+    it "is the request's own datum unchanged, decoding nothing (neutral)" $
+        property $
+            forAll genPayload $ \p ->
+                checkCarriedDatum neutralApplication (requestCarrying (Just p))
+                    === Right p
+    it
+        "takes a non-envelope datum unchanged without decoding it (neutral failing control)"
+        $ checkCarriedDatum
+            neutralApplication
+            (requestCarrying (Just (PLC.B "not an envelope")))
+            `shouldBe` Right (PLC.B "not an envelope")
+    it "is refused, by name, when the request carries no datum (neutral)" $
+        checkCarriedDatum neutralApplication (requestCarrying Nothing)
+            `shouldSatisfy` either (isInfixOf "carries no datum") (const False)
   where
     requestCarrying datum =
         OnChainRequest
@@ -382,6 +421,60 @@ carried = describe "the envelope an insertion's request carries" $ do
             , requestSubmittedAt = 0
             , requestDestination = ("address", datum)
             }
+
+-- ---------------------------------------------------------
+-- Through the value: datum hashes and the neutral refusal
+-- ---------------------------------------------------------
+
+neutralFold :: Spec
+neutralFold = describe "the fold through the application value" $ do
+    it "hashes a datum like the envelope hash it carries (open datum)" $
+        property $
+            forAll genPayload $ \p ->
+                let e = envelopeWith p
+                in  datumHash (envelopeToData e) === envelopeHash e
+    it
+        "refuses a neutral termination naming the pinned policy and the application's own executable"
+        $ do
+            let policy = SBS.toShort (BS.replicate 28 7)
+                (cfg, _) =
+                    configForApplication
+                        (PinByHash policy)
+                        (releaseCodes release)
+                        (releaseState release)
+                        (releaseRequest release)
+                        bootEconomics
+                        Testnet
+                        (txInToRef seedIn)
+                why = neutralTerminationRefusal neutralApplication cfg
+            why `shouldSatisfy` isInfixOf "application policy"
+            why `shouldSatisfy` isInfixOf "own executable"
+    it "names the value's executable when present (failing control)" $ do
+        let policy = SBS.toShort (BS.replicate 28 7)
+            (cfg, _) =
+                configForApplication
+                    (PinByHash policy)
+                    (releaseCodes release)
+                    (releaseState release)
+                    (releaseRequest release)
+                    bootEconomics
+                    Testnet
+                    (txInToRef seedIn)
+            why = neutralTerminationRefusal openDatumApplication cfg
+        why `shouldSatisfy` isInfixOf "open-datum"
+    it
+        "decodes only through the value's decoder (open datum has one, neutral has none)"
+        $ do
+            appDecoder openDatumApplication `shouldSatisfy` isJust
+            appDecoder neutralApplication `shouldBe` Nothing
+            appHolding openDatumApplication `shouldSatisfy` isJust
+            appHolding neutralApplication `shouldBe` Nothing
+    it
+        "round-trips any datum through detailed-schema JSON (generic, byte-identical to the envelope's)"
+        $ property
+        $ forAll genPayload
+        $ \p ->
+            datumFromJson (datumToJson p) === Right p
 
 -- ---------------------------------------------------------
 -- Which funding

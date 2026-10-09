@@ -34,6 +34,7 @@ import System.FilePath (splitDirectories, (</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command
     ( CLIError (..)
     , CreateArgs (..)
@@ -303,7 +304,12 @@ noWeakening = describe "no refusal is weakened" $ do
                 createDirectoryIfMissing True dir
                 writeFile (dir </> "journal.jsonl") "{}\n"
                 outcome <-
-                    try (runCreate noChainEnv (earlyArgs root keyPath magic))
+                    try
+                        ( runCreate
+                            openDatumApplication
+                            noChainEnv
+                            (earlyArgs root keyPath magic)
+                        )
                         :: IO (Either CommandFailure Value)
                 outcome `shouldSatisfy` isExistingStateRefusal
   where
@@ -341,7 +347,7 @@ noWeakening = describe "no refusal is weakened" $ do
         Env
             { envTracer = Tracer (\_ -> pure ())
             , envSource = "test"
-            , envLoadRelease = \_ -> pure (Right release)
+            , envLoadRelease = \_ _ -> pure (Right release)
             , envReads =
                 \_ _ ->
                     fail

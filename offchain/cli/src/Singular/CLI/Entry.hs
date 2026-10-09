@@ -54,18 +54,22 @@ import Data.Text (Text)
 import Data.Text qualified as T
 
 import Cardano.Ledger.Api.Tx (txIdTx)
+import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Ledger (ConwayEra)
 
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     , dataFromJson
     , dataToJson
+    , envelopeFromData
     , envelopeHash
     , envelopeToJson
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
@@ -105,6 +109,7 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
+import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
@@ -229,10 +234,19 @@ pendingFields requester booking deadline =
     , ("foldDeadline", deadlineJson deadline)
     ]
 
+-- | A holding view as the envelope the entry commands still print (B shim).
+toEnvelopeHolding
+    :: ((TxIn, TxOut ConwayEra), DecodedHolding)
+    -> Either String ((TxIn, TxOut ConwayEra), Envelope)
+toEnvelopeHolding (u, dh) = case envelopeFromData (dhDatumData dh) of
+    Left why -> Left why
+    Right e -> Right (u, e)
+
 -- | The fold a combined command runs after its own booking.
 foldAfter :: Attached -> EntryArgs -> ConwayTx -> IO Folded
 foldAfter at a booking =
     foldPending
+        openDatumApplication
         at
         FoldSpec
             { fsOrigin = Combined booking
@@ -259,12 +273,13 @@ managedEntryDir a ws =
 
 runInsert :: Env -> EntryArgs -> IO Value
 runInsert env a = case entryMode a of
-    Preview node addr -> runPreview env KInsert a node addr
+    Preview node addr -> runPreview openDatumApplication env KInsert a node addr
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
         dir <- managedEntryDir a ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint a)
@@ -285,18 +300,21 @@ runInsert env a = case entryMode a of
                     then do
                         folded <- foldAfter at a booking
                         pure $ case fdDelivery folded of
-                            Delivered liveIn seen ->
-                                receipt
-                                    "insert"
-                                    Success
-                                    ( keyFields key
-                                        <> [ ("booking", toJSON (txIdHex booking))
-                                           , ("fold", toJSON (txIdHex (fdTx folded)))
-                                           , ("liveOutput", toJSON (txInText liveIn))
-                                           , ("envelope", envelopeToJson seen)
-                                           , ("root", toJSON (hexT (fdRoot folded)))
-                                           ]
-                                    )
+                            Delivered liveIn holding -> case envelopeFromData (dhDatumData holding) of
+                                Right seen ->
+                                    receipt
+                                        "insert"
+                                        Success
+                                        ( keyFields key
+                                            <> [ ("booking", toJSON (txIdHex booking))
+                                               , ("fold", toJSON (txIdHex (fdTx folded)))
+                                               , ("liveOutput", toJSON (txInText liveIn))
+                                               , ("envelope", envelopeToJson seen)
+                                               , ("root", toJSON (hexT (fdRoot folded)))
+                                               ]
+                                        )
+                                Left why -> error ("Entry: folded holding is not an envelope: " <> why)
+                            DeliveredDatum{} -> receipt "insert" Success []
                             Released{} -> receipt "insert" Success []
                     else
                         pure $
@@ -315,7 +333,7 @@ runInsert env a = case entryMode a of
 
 runUpdate :: Env -> EntryArgs -> IO Value
 runUpdate env a = case entryMode a of
-    Preview node addr -> runPreview env KUpdate a node addr
+    Preview node addr -> runPreview openDatumApplication env KUpdate a node addr
     Submit ws -> do
         let Key key = entryKey a
         path <-
@@ -327,6 +345,7 @@ runUpdate env a = case entryMode a of
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
         dir <- managedEntryDir a ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint a)
@@ -358,8 +377,13 @@ runUpdate env a = case entryMode a of
                         )
                         ( \building v -> do
                             live <- attachLive v s
-                            outs <- liveOutputs v s
-                            (holding, envelope) <- planUpdate live (callerKey at) key outs
+                            outs <- liveOutputs openDatumApplication v s
+                            (holding, dh) <- planUpdate live (callerKey at) key outs
+                            envelope <-
+                                either
+                                    (failWith ClientRefusal)
+                                    pure
+                                    (envelopeFromData (dhDatumData dh))
                             place building placed (EdgeStarted Updating)
                             unsigned <-
                                 buildUpdate v live addr (entryFund a) holding payload
@@ -367,9 +391,19 @@ runUpdate env a = case entryMode a of
                             pure (unsigned, envelope)
                         )
                 after <-
-                    readingBack at "update" signed ["key outputs"] (`liveOutputs` s)
+                    readingBack
+                        at
+                        "update"
+                        signed
+                        ["key outputs"]
+                        (\v -> liveOutputs openDatumApplication v s)
+                decodedAfter <-
+                    either
+                        (failWith Partial)
+                        pure
+                        (liveOutputFor openDatumApplication s key after)
                 ((liveIn, _), seen) <-
-                    either (failWith Partial) pure (liveOutputFor s key after)
+                    either (failWith Partial) pure (toEnvelopeHolding decodedAfter)
                 unless (seen == envelope{envPayload = payload}) $
                     failWith
                         Partial
@@ -406,11 +440,12 @@ runUpdate env a = case entryMode a of
 
 runTerminate :: Env -> EntryArgs -> IO Value
 runTerminate env a = case entryMode a of
-    Preview node addr -> runPreview env KTerminate a node addr
+    Preview node addr -> runPreview openDatumApplication env KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
         dir <- managedEntryDir a ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint a)
@@ -424,8 +459,13 @@ runTerminate env a = case entryMode a of
                 -- booking's own view, with the state the approval binds.
                 (booking, ((liveIn, _), envelope), deadline) <-
                     book at a key $ \v live -> do
-                        outs <- liveOutputs v s
-                        (b, holding, envelope) <- planTerminate live (callerKey at) key outs
+                        outs <- liveOutputs openDatumApplication v s
+                        (b, holding, dh) <- planTerminate live (callerKey at) key outs
+                        envelope <-
+                            either
+                                (failWith ClientRefusal)
+                                pure
+                                (envelopeFromData (dhDatumData dh))
                         pure (b, (holding, envelope))
                 let c = envControl envelope
                 if entryFold a
@@ -445,6 +485,7 @@ runTerminate env a = case entryMode a of
                                            ]
                                     )
                             Delivered{} -> receipt "terminate" Success []
+                            DeliveredDatum{} -> receipt "terminate" Success []
                     else
                         pure $
                             receipt

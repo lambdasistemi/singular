@@ -41,23 +41,23 @@
       "pause": 500
     },
     {
-      "text": "[ ] create-pins-through-the-value-or-a-hash",
+      "text": "[x] create-pins-through-the-value-or-a-hash",
       "pause": 300
     },
     {
-      "text": "[ ] fold-and-live-reach-the-application-only-through-the-value",
+      "text": "[x] fold-and-live-reach-the-application-only-through-the-value",
       "pause": 300
     },
     {
-      "text": "[ ] reconcile-matches-by-datum-hash",
+      "text": "[x] reconcile-matches-by-datum-hash",
       "pause": 300
     },
     {
-      "text": "[ ] inspect-decodes-only-through-the-value",
+      "text": "[x] inspect-decodes-only-through-the-value",
       "pause": 300
     },
     {
-      "text": "[ ] neutral-value-specs",
+      "text": "[x] neutral-value-specs",
       "pause": 300
     }
   ],
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "9a9eb6c9f8df60424a40b996716211c5ff22d7bf2a7d4bbf7d602515c64a5864"
+    "sha256": "9d12b937361fec988990dc4697446491a779aa42a4ce12fd47da6767ca0db24c"
   }
 }

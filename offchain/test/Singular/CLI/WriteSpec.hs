@@ -130,6 +130,7 @@ import Singular.Registry.AssetName (deriveAssetName)
 
 import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson.KeyMap qualified as KeyMap
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Attached (Attached (..))
 import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
 import Singular.CLI.Live
@@ -362,6 +363,7 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
                                 }
                         action =
                             foldPending
+                                openDatumApplication
                                 (Attached ctx live mirror)
                                 FoldSpec
                                     { fsOrigin = if combined then Combined boot else Standalone
@@ -1290,6 +1292,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
                 result <-
                     try @CommandFailure $
                         foldPending
+                            openDatumApplication
                             (Attached ctx live mirror)
                             FoldSpec
                                 { fsOrigin = Standalone

@@ -156,7 +156,7 @@ pinEquivalence =
 neutralValue :: Spec
 neutralValue =
     it "neutral value has no name, executable, decoder or holding rules" $ do
-        let neutral = neutralApplication :: Application () ()
+        let neutral = neutralApplication
         appName neutral `shouldBe` Nothing
         appExecutable neutral `shouldBe` Nothing
         appDecoder neutral `shouldSatisfy` isNothing
@@ -170,7 +170,7 @@ hashPinned =
         "hash-pinned form pins the given hash and carries no application script"
         $ do
             let policy = SBS.toShort (BS.replicate 28 7)
-                app = hashPinnedApplication policy :: Application () ()
+                app = hashPinnedApplication policy
                 (cfg, codes) =
                     configForApplication
                         (appPin app)
@@ -194,7 +194,7 @@ neutralResolution =
             logRef <- newIORef []
             result <-
                 resolveRegistry
-                    (neutralApplication :: Application () ())
+                    neutralApplication
                     release
                     token
                     (chainSession logRef honestChain)
