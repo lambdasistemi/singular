@@ -131,6 +131,12 @@ RECORD_KEPT_FIELDS = (
     "owner",
     "key",
     "tip",
+    "foldDeadline",
+    "retractTime",
+    "processTime",
+    "processingEnds",
+    "retractEnds",
+    "wallet",
 )
 
 
@@ -509,6 +515,34 @@ class Journey:
         setup_require(create.get("stateToken"), "create named no state token")
         self.state_token = create["stateToken"]
         print(f"two actors: registry {self.state_token} created", flush=True)
+        for party in ("alice", "bob"):
+            others = tuple(home for name, home in self.homes.items() if name != party)
+            preview_status, party_preview = self.run_party(
+                party,
+                f"{party}-preview",
+                [
+                    "registry",
+                    "create",
+                    "--process-time",
+                    str(PROCESS_TIME_MS),
+                    "--retract-time",
+                    str(RETRACT_TIME_MS),
+                    "--preview",
+                    "--blueprint",
+                    self.blueprint,
+                    *self.node_arguments(),
+                    "--wallet-skey",
+                    str(self.keys / f"{party}.skey"),
+                ],
+                others,
+            )
+            setup_require(
+                preview_status == 0 and party_preview.get("outcome") == "success",
+                f"{party} preview failed: exit {preview_status}, {party_preview}",
+            )
+            setup_require(
+                party_preview.get("wallet"), f"{party} preview named no wallet"
+            )
 
     def foreign_open(self):
         """One real booking with --state-dir at the other actor's root."""
@@ -799,7 +833,6 @@ class Journey:
         )
         leg["booking"] = "reject-alice-3-booking"
         deadline_ms = booking["foldDeadline"]["posixMs"]
-        retract_ends = deadline_ms + RETRACT_TIME_MS
         self.sleep_until_ms(deadline_ms + 5000)
         status, early_before = self.run_party(
             rejector,
@@ -812,6 +845,11 @@ class Journey:
             f"{rejector} early inspect-before failed: exit {status}, {early_before}",
         )
         leg["early_inspect_before"] = "reject-early-inspect-before"
+        require(
+            isinstance(early_before.get("retractTime"), int),
+            f"{rejector} early inspect named no retract time: {early_before}",
+        )
+        retract_ends = deadline_ms + early_before["retractTime"]
         status, early_reject = self.run_party(
             rejector,
             "reject-early",
@@ -1562,8 +1600,23 @@ class Journey:
         )
         if not isinstance(booking.get("request"), str):
             return False, list(leg.values()), "the reject booking request"
-        if not isinstance(booking.get("foldDeadline"), dict):
+        deadline = booking.get("foldDeadline")
+        if not isinstance(deadline, dict) or not isinstance(
+            deadline.get("posixMs"), int
+        ):
             return False, list(leg.values()), "the booking fold deadline"
+        deadline_ms = deadline["posixMs"]
+        for slot in ("early_inspect_before", "late_inspect_before"):
+            inspect = docs[slot]
+            if not isinstance(inspect.get("retractTime"), int):
+                return False, list(leg.values()), "the registry retract time"
+            if inspect["retractTime"] != RETRACT_TIME_MS:
+                return False, list(leg.values()), "the fixture window"
+        expected_close = deadline_ms + docs["early_inspect_before"]["retractTime"]
+        if docs["late_inspect_before"].get("retractTime") != docs[
+            "early_inspect_before"
+        ].get("retractTime"):
+            return False, list(leg.values()), "the registry retract time"
         if self.load_exit(leg["early_reject"], receipts) != 10:
             return False, list(leg.values()), "the early reject refusal exit"
         if early_reject.get("outcome") != "client-refusal":
@@ -1596,8 +1649,54 @@ class Journey:
             return False, list(leg.values()), "the rejected request"
         if row.get("owner") != booking.get("requester"):
             return False, list(leg.values()), "the rejected owner"
-        if not row.get("returned"):
+        late_pending_entry = next(
+            (
+                entry
+                for entry in (late_before.get("pendingRequests") or [])
+                if isinstance(entry, dict)
+                and entry.get("request") == booking["request"]
+            ),
+            None,
+        )
+        if late_pending_entry is None:
+            return False, list(leg.values()), "the pending request before reject"
+        expected_locked = late_pending_entry.get("locked")
+        if (
+            not isinstance(expected_locked, dict)
+            or row.get("locked") != expected_locked
+        ):
+            return False, list(leg.values()), "the locked value"
+        tip = row.get("tip")
+        if not isinstance(tip, int) or tip <= 0:
+            return False, list(leg.values()), "the tip"
+        returned = row.get("returned")
+        if not isinstance(returned, dict):
             return False, list(leg.values()), "the owner refund"
+        if returned.get("request") != booking["request"]:
+            return False, list(leg.values()), "the return bound to the request"
+        locked_lovelace = expected_locked.get("lovelace")
+        returned_lovelace = returned.get("lovelace")
+        if not isinstance(locked_lovelace, int) or not isinstance(
+            returned_lovelace, int
+        ):
+            return False, list(leg.values()), "the refund lovelace"
+        if returned_lovelace != locked_lovelace - tip:
+            return False, list(leg.values()), "the refund net of the tip"
+        if row.get("topUp", 0) != returned_lovelace - (locked_lovelace - tip):
+            return False, list(leg.values()), "the top-up"
+        if row.get("processingEnds") != deadline_ms:
+            return False, list(leg.values()), "the processing end"
+        if row.get("retractEnds") != expected_close:
+            return False, list(leg.values()), "the retract close"
+        alice_preview = self.load_receipt("alice-preview", receipts)
+        if alice_preview is None or not isinstance(alice_preview.get("wallet"), str):
+            return False, [], "the alice preview wallet"
+        if returned.get("recipient") != alice_preview["wallet"]:
+            return False, list(leg.values()), "the owner recipient"
+        if returned.get("index") != 1:
+            return False, list(leg.values()), "the designated output"
+        if returned.get("output") != f"{late_reject.get('reject')}#1":
+            return False, list(leg.values()), "the designated output"
         if not late_reject.get("root"):
             return False, list(leg.values()), "the reject root"
         if late_before.get("root") != late_after.get("root"):
@@ -1717,8 +1816,23 @@ class Journey:
         )
         if not isinstance(booking.get("request"), str):
             return False, list(leg.values()), "the reclaim booking request"
-        if not isinstance(booking.get("foldDeadline"), dict):
+        deadline = booking.get("foldDeadline")
+        if not isinstance(deadline, dict) or not isinstance(
+            deadline.get("posixMs"), int
+        ):
             return False, list(leg.values()), "the booking fold deadline"
+        deadline_ms = deadline["posixMs"]
+        for slot in ("early_inspect_before", "window_inspect_before"):
+            inspect = docs[slot]
+            if not isinstance(inspect.get("retractTime"), int):
+                return False, list(leg.values()), "the registry retract time"
+            if inspect["retractTime"] != RETRACT_TIME_MS:
+                return False, list(leg.values()), "the fixture window"
+        if docs["window_inspect_before"].get("retractTime") != docs[
+            "early_inspect_before"
+        ].get("retractTime"):
+            return False, list(leg.values()), "the registry retract time"
+        expected_close = deadline_ms + docs["early_inspect_before"]["retractTime"]
         if self.load_exit(leg["early_attempt"], receipts) != 10:
             return False, list(leg.values()), "the early reclaim refusal exit"
         if early_attempt.get("outcome") != "client-refusal":
@@ -1731,6 +1845,8 @@ class Journey:
             return False, list(leg.values()), "the early reclaim refusal name"
         if early_before.get("root") != early_after.get("root"):
             return False, list(leg.values()), "the unchanged root"
+        if early_before.get("pendingRequests") != early_after.get("pendingRequests"):
+            return False, list(leg.values()), "the unchanged pending requests"
         early_pending = early_before.get("pendingRequests") or []
         if not any(
             isinstance(entry, dict) and entry.get("request") == booking["request"]
@@ -1745,15 +1861,54 @@ class Journey:
             return False, list(leg.values()), "the retractable edge"
         if success.get("owner") != booking.get("requester"):
             return False, list(leg.values()), "the reclaim owner"
-        if not success.get("locked"):
+        window_pending_entry = next(
+            (
+                entry
+                for entry in (window_before.get("pendingRequests") or [])
+                if isinstance(entry, dict)
+                and entry.get("request") == booking["request"]
+            ),
+            None,
+        )
+        if window_pending_entry is None:
+            return False, list(leg.values()), "the pending request before reclaim"
+        expected_locked = window_pending_entry.get("locked")
+        if (
+            not isinstance(expected_locked, dict)
+            or success.get("locked") != expected_locked
+        ):
             return False, list(leg.values()), "the locked value"
         returned = success.get("returned")
         if not isinstance(returned, dict):
             return False, list(leg.values()), "the owner return"
         if returned.get("request") != booking["request"]:
             return False, list(leg.values()), "the return bound to the request"
-        if not isinstance(returned.get("lovelace"), int):
+        locked_lovelace = expected_locked.get("lovelace")
+        returned_lovelace = returned.get("lovelace")
+        if not isinstance(locked_lovelace, int) or not isinstance(
+            returned_lovelace, int
+        ):
             return False, list(leg.values()), "the returned lovelace"
+        top_up = success.get("topUp", 0)
+        if not isinstance(top_up, int) or top_up < 0:
+            return False, list(leg.values()), "the top-up"
+        if returned_lovelace != locked_lovelace + top_up:
+            return False, list(leg.values()), "the return net of the top-up"
+        if returned_lovelace <= 0:
+            return False, list(leg.values()), "the returned lovelace"
+        bob_preview = self.load_receipt("bob-preview", receipts)
+        if bob_preview is None or not isinstance(bob_preview.get("wallet"), str):
+            return False, [], "the bob preview wallet"
+        if returned.get("recipient") != bob_preview["wallet"]:
+            return False, list(leg.values()), "the owner recipient"
+        if returned.get("index") != 0:
+            return False, list(leg.values()), "the designated output"
+        if returned.get("output") != f"{success.get('retract')}#0":
+            return False, list(leg.values()), "the designated output"
+        if success.get("processingEnds") != deadline_ms:
+            return False, list(leg.values()), "the processing end"
+        if success.get("retractEnds") != expected_close:
+            return False, list(leg.values()), "the retract close"
         if not success.get("root"):
             return False, list(leg.values()), "the reclaim root"
         if window_before.get("root") != window_after.get("root"):
