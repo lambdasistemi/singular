@@ -1,12 +1,12 @@
 {- |
 Module      : Conformance.Rows
-Description : The 46-row consumer inventory and its validation
+Description : The 48-row consumer inventory and its validation
 License     : Apache-2.0
 
 The complete consumer-row inventory from @rows.json@: id, group,
 requirement, source, expected outcome and declared plan. @list@
-prints it; @validateInventory@ enforces the denominator — 46 rows,
-45 owned — so a truncated inventory fails loudly instead of printing
+prints it; @validateInventory@ enforces the denominator — 48 rows,
+47 owned — so a truncated inventory fails loudly instead of printing
 a smaller-but-plausible table.
 
 @executed@ is not a value @rows.json@ can carry: the declared field
