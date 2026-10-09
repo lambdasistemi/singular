@@ -64,18 +64,12 @@ def request (e : Edge) (key owner out refund deposit : Nat) (approved : Bool := 
 
 def lovelace : Nat := 5
 
-def insertAbsentTheorem : String := "Singular.Statements.insert_absent_transaction_row"
-def insertAbsentDigest : String :=
-  "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
   "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
   "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
-def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
-def insertAbsentInversionDigest : String :=
-  "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
   "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"
@@ -84,7 +78,7 @@ def updateTerminalInversionDigest : String :=
   "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
 def noExitStrandsTheDeposit : String := "Singular.Statements.no_exit_strands_the_deposit"
 def noExitStrandsTheDepositDigest : String :=
-  "d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5"
+  "a2e9655f8a61d303518851ef9907dcfca817d1d05a8071f7104974c2c522230a"
 def onlyRetractOwesTheTip : String := "Singular.Statements.only_retract_owes_the_tip"
 def onlyRetractOwesTheTipDigest : String :=
   "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
@@ -100,7 +94,7 @@ def deliveredDatumIsRequestDatumDigest : String :=
   "76247fab5884aefffb7639b05675206c16b48c191fb0bd8c63ce87afba58c4a5"
 def foldRefusesForeignDatum : String := "Singular.Statements.fold_refuses_foreign_datum"
 def foldRefusesForeignDatumDigest : String :=
-  "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
+  "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
 def bookedAtMostOnce : String := "Singular.Statements.booked_at_most_once"
 def bookedAtMostOnceDigest : String :=
   "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
@@ -200,12 +194,7 @@ def carrierlessDelivery : Scenario :=
   judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
 def scenarios : List Scenario :=
-  [ { id := "DR01-register-absent"
-    , theoremName := insertAbsentTheorem, statementSha256 := insertAbsentDigest
-    , kind := "witness", mutates := none, requiresReachableState := false
-    , start := s0, setup := [], exit := .fold .insertAbsent
-    , request := request .insertAbsent 5 91 0 91 55, lovelace := lovelace }
-  , { id := "DR02-register-active"
+  [ { id := "DR02-register-active"
     , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := [], exit := .fold .insertActive
@@ -215,13 +204,6 @@ def scenarios : List Scenario :=
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive], exit := .fold .updateTerminal
     , request := retireRegistered, lovelace := lovelace }
-  , { id := "DR04-register-absent-unapproved"
-    , theoremName := insertAbsentInversion, statementSha256 := insertAbsentInversionDigest
-    , kind := "mutant", mutates := some "DR01-register-absent"
-    , requiresReachableState := false, start := s0, setup := []
-    , exit := .fold .insertAbsent
-    , request := request .insertAbsent 5 91 0 91 55 (approved := false)
-    , lovelace := lovelace }
   , { id := "DR05-register-active-twice"
     , theoremName := insertActiveInversion, statementSha256 := insertActiveInversionDigest
     , kind := "mutant", mutates := some "DR02-register-active"
@@ -312,7 +294,7 @@ def batchScenarios : List BatchScenario :=
     , kind := "witness", mutates := none, requiresReachableState := false
     , start := s0, setup := []
     , question := .foldBatch
-        [registerActiveClaimed, claiming (request .insertAbsent 5 91 0 91 55)] }
+        [registerActiveClaimed, claiming (request .insertActive 5 91 556 0 55)] }
     -- Two registrations whose claims balance per kind and cross per key: key 42
     -- claims both active tokens, key 43 none.
   , { id := "BR02-fold-crossed-claim"

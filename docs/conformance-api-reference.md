@@ -12,6 +12,18 @@ identifiers and modules that belong to other packages are visible in the
 generated pages but are not clickable, because their documentation is not
 bundled with this site.
 
+## Which contract a story describes
+
+`Conformance.Edge.Permanent` describes the first milestone's registration and
+permanent termination, refusal of the five other encoded registry actions, and
+refusal of a mixed batch containing an excluded action. Its public requirement
+remains uncovered until a bounded live consumer comparison receipt establishes
+it. Compiled refusal tests passing does not assign that product status.
+Other seven-edge story modules retain the broader contract's descriptions;
+their historical successes do not establish support in the permanent contract.
+The [consumer record](consumer-conformance.md) keeps that distinction and the
+uncovered rows visible.
+
 ## What this reference contains
 
 Every module of the Conformance library is listed below. Each entry links

@@ -98,7 +98,6 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     , RequestDestination
-    , edgeInsertAbsent
     , edgeInsertActive
     , edgeUpdateTerminal
     )
@@ -235,74 +234,12 @@ updateTerminalSpec stateBytes requestBytes = do
                         \the trie does not bind — reported, not relabelled"
                 Left _ -> pure ()
 
-    it
-        "refuses updateTerminal for an Absent key while accepting an active key"
-        $ withBootedCage id stateBytes requestBytes
-        $ \cfg prov submit tm reg -> do
-            let tokenId = Driver.registryTokenId reg
-            refs <- publishCageRefs cfg prov submit tokenId
-            codes <- loadRegistryCodesFromEnv
-            -- The control, again first and in this same cage.
-            _ <-
-                book
-                    cfg
-                    codes
-                    prov
-                    submit
-                    tokenId
-                    storyKey
-                    insertActive
-                    walletDestination
-            _ <-
-                foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            _ <-
-                book cfg codes prov submit tokenId storyKey retire retireDestination
-            control <-
-                tryOutcome
-                    (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
-            case control of
-                Left e ->
-                    expectationFailure
-                        ( "I177-end-to-end control: a key that IS Active was refused \
-                          \retirement, so the not-booked refusal below would \
-                          \prove nothing about the leaf: "
-                            <> show e
-                        )
-                Right _ -> pure ()
-
-            -- The refusal. This key IS bound — it was witnessed absent
-            -- by a real `insertAbsent` fold — and the only thing that
-            -- differs from the control is the leaf it is bound to.
-            _ <-
-                book
-                    cfg
-                    codes
-                    prov
-                    submit
-                    tokenId
-                    absentKey
-                    insertAbsent
-                    walletDestination
-            _ <-
-                foldAndMirror cfg prov submit tm tokenId refs absentKey insertAbsent
-            _ <-
-                book cfg codes prov submit tokenId absentKey retire retireDestination
-            outcome <-
-                tryOutcome (foldOnce cfg prov submit tm tokenId refs)
-            case outcome of
-                Right _ ->
-                    expectationFailure
-                        "I177-end-to-end: the chain ACCEPTED updateTerminal on a key \
-                        \witnessed Absent — reported, not relabelled"
-                Left _ -> pure ()
-
 -- ---------------------------------------------------------
 -- The three edges this spec books
 -- ---------------------------------------------------------
 
-insertActive, insertAbsent, retire :: Edge
+insertActive, retire :: Edge
 insertActive = edgeInsertActive
-insertAbsent = edgeInsertAbsent
 retire = edgeUpdateTerminal
 
 -- | Book one edge at an explicitly named destination.
@@ -449,10 +386,6 @@ storyKey = "t177-update-terminal"
 -- | A key nothing ever inserted: the trie does not bind it at all.
 unknownKey :: ByteString
 unknownKey = "t177-update-terminal-unknown"
-
--- | A key witnessed ABSENT and never booked.
-absentKey :: ByteString
-absentKey = "t177-update-terminal-absent"
 
 {- | The destination the open story names: the requester's own wallet.
 `Edges.edgeDestinationOf` would route to the APPLICATION's script

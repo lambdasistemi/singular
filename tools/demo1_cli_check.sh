@@ -145,9 +145,9 @@ jq -e '
     and ($r.unknown.detail | text)
     and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
     and ($r.unknown.controlTxid | txid)
-    and ($r.absent.detail | text)
-    and ($r.absent.trace == null or $r.absent.trace == "not-booked")
-    and ($r.absent.controlTxid | txid)
+    and ($r.terminal.detail | text)
+    and ($r.terminal.trace == null or $r.terminal.trace == "terminal-immutable")
+    and ($r.terminal.controlTxid | txid)
   )
 ' "$observed" >/dev/null || fail "update-terminal observation moved"
 

@@ -317,20 +317,10 @@ pub const kindTerminal: Int = 2
 /// `(kind, quantity)` pairs the fold sums per key and the mint must then
 /// equal exactly. An unknown edge moves nothing.
 pub fn deltaOf(edge: Int) -> List<(Int, Int)> {
-  if edge == edgeInsertAbsent {
-    [(kindAbsent, 1)]
-  } else if edge == edgeInsertActive {
+  if edge == edgeInsertActive {
     [(kindActive, 1)]
-  } else if edge == edgeUpdateActive {
-    [(kindAbsent, -1), (kindActive, 1)]
   } else if edge == edgeUpdateTerminal {
     [(kindActive, -1)]
-  } else if edge == edgeDeleteAbsent {
-    [(kindAbsent, -1)]
-  } else if edge == edgeDeleteActive {
-    [(kindActive, -1)]
-  } else if edge == edgeWitnessTerminal {
-    [(kindTerminal, 1)]
   } else {
     []
   }

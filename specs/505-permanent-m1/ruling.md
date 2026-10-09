@@ -30,5 +30,22 @@ Sources read in full: the bounded permanent contract answer
 `NOTE-M1-20261008-old-registries-abandoned.md`, including its addendum.
 The subsequent `NOTE-002-protected-rejection-after-carve.md` and parent
 `NOTE-M1-20261008-correction-498-is-m1.md` were also read in full.
+The subsequent `NOTE-003-excluded-redeemers-and-docs.md` clarifies that shared
+representations may remain: defining or encoding a redeemer does not support
+its action. The five excluded actions must fail against the permanent contract,
+including independently constructed requests, alternate admission paths and
+mixed batches. Refusal tests pass by observing that failure, with setup and
+unreachable-state limits retained. That clarification did not require source deletion. NOTE-005 subsequently supersedes it with an explicit source-removal authorization.
+
 These are operator scope decisions, not evidence of KERI integration, ledger
 acceptance, merge or release. The parent owns acceptance and publication.
+
+The subsequent NOTE-005, "ok, now, big delete", authorizes one active two-edge
+model, implementation and test surface, removing obsolete success implementations
+and their direct support. The seven historical edge tags retain their original
+numbers; five are represented only to prove refusal. Recovery branch
+`preserve/m2/pre-m1-source-removal` was remotely verified at `a098408e` before
+removal and remains untouched. Every prior a098 receipt is historical for the
+revised candidate. A-003 authorizes the repository's existing isolated coverage
+baseline-move process for exactly retired declarations and moved signatures,
+with no gate change, no coverage credit and a live extra-deletion fault control.

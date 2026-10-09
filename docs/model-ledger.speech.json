@@ -5,6 +5,20 @@
       "pause": 500
     },
     {
+      "text": "As a reader of current permanent contract, I can register a fresh key and terminate it permanently. The active model and compiled state support exactly tags 1 (insertActive) and 3 (updateTerminal); tags 0, 2, 4, 5 and 6 are explicitly refused, including caller-constructed and mixed requests. Application payload maintenance is separate. Current sources and receipts must be bound to the revised candidate.",
+      "pause": 400
+    },
+    {
+      "text": "The detailed walkthrough and measurements below are archived broader model evidence, retained to explain the earlier contract; their broader success claims do not apply to permanent contract. Historical sources are retained on preserve/m2/pre-m1-source-removal. The active theorem manifest and the exact scope-retirement record explain the changed law and denominator. Unmet consumer requirements stay uncovered.",
+      "pause": 400
+    }
+  ],
+  "archived-broader-model-evidence": [
+    {
+      "text": "Archived broader model evidence.",
+      "pause": 500
+    },
+    {
       "text": "As a reviewer deciding how far to trust this model, use this page to see what it covers, what it deliberately abstracts, and — because this revision replaced the model wholesale — what happened to every guarantee the previous one made.",
       "pause": 400
     },
@@ -73,6 +87,6 @@
   ],
   "_source": {
     "file": "model-ledger.md",
-    "sha256": "02574b0423de31c10eed65fb49b3276bbfb1a73e06326855ac0e7afda6a546c4"
+    "sha256": "f590f7b5a597a88439142d2e654ea016784506c3b26531c296f80a850e42aee1"
   }
 }

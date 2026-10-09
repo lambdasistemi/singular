@@ -5,6 +5,23 @@ permanently. The fixed contract refuses every other registry edge. The ordinary
 CLI selects the known new scripts and refuses unknown supplied code. Old
 registries are abandoned, with no migration or compatibility recognition.
 
+## Active source-removal candidate
+
+The operator subsequently authorized removing obsolete active success paths.
+`Singular.Model` now owns the two supported transitions, with compatibility
+aliases in `Singular.M1`; canonical validators and builders implement that law.
+The [retired scope table](https://github.com/lambdasistemi/singular/blob/feat/505-permanent-m1/conformance/coverage/m1-scope-retirement.md) records
+exact archived identities and changed signatures without consumer coverage credit.
+Fresh candidate verification is in progress; the table below certifies only the
+historical preserved revision, not the changed source.
+
+## Archived evidence before source removal
+
+Everything in this section is historical evidence for preserved revision
+`a098408e58c150b9ebf83c3fd1dff1704599c01f`, available on
+`preserve/m2/pre-m1-source-removal`. Its source identities and receipts do not
+certify the active source-removal candidate.
+
 The broader model remains bound to base `464ed8674de626470396cc871f3af85a1d489477`.
 The new law is `Singular.M1`, source SHA-256
 `e94c1bbc502514a7be7083f56a52b595bd435050cbc868b61fe44a1fe7301a93`. Its audited statement manifest

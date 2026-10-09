@@ -16,19 +16,19 @@ import Data.Text (Text)
 knownScripts :: [(Text, Text)]
 knownScripts =
     [
-        ( "permanent_state.state"
-        , "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa"
+        ( "state.state"
+        , "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
         )
     ,
         ( "request.request"
         , "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320"
         )
     ,
-        ( "permanent_witness.witness"
-        , "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1"
+        ( "witness.witness"
+        , "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575"
         )
     ,
-        ( "permanent_open_datum.open_datum"
-        , "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03"
+        ( "open_datum.open_datum"
+        , "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
         )
     ]

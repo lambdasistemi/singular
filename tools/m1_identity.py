@@ -8,10 +8,10 @@ from pathlib import Path
 
 
 TITLES = [
-    "permanent_state.state.spend",
+    "state.state.spend",
     "request.request.spend",
-    "permanent_witness.witness.mint",
-    "permanent_open_datum.open_datum.mint",
+    "witness.witness.mint",
+    "open_datum.open_datum.mint",
 ]
 
 

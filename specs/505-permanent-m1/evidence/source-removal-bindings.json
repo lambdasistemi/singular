@@ -1,0 +1,41 @@
+{
+  "behavioralAuthority": "Singular.Model; Singular.M1 and Singular.M1Driver are compatibility aliases",
+  "authority": "NOTE-005 operator two-edge source removal; A-003 exact coverage baseline disposition",
+  "allowedTags": {
+    "insertActive": 1,
+    "updateTerminal": 3
+  },
+  "excludedTags": {
+    "insertAbsent": 0,
+    "updateActive": 2,
+    "deleteAbsent": 4,
+    "deleteActive": 5,
+    "witnessTerminal": 6
+  },
+  "sourceSha256": {
+    "lean/Singular/Model.lean": "af220eec1be2733a7930c7fc047da63737ae26667049386eaee7af8a6559907b",
+    "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
+    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
+    "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
+    "lean/Singular/Naming.lean": "7a3cf3d6914af5e0ca52fef453ed90a70c37af15f533c91dcaaed2fae36f1baf",
+    "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
+    "lean/theorem-debt.json": "ee333e65a3a73433e7c1de466e6a59e868650efbfaf2421ab7dfd2c933d7aa31",
+    "lean/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
+    "onchain/permanent-contract.json": "0393fc84f2f91e6811a83a5a5cc4c75af67584704ef614f0a4a9a45e9468e26a",
+    "onchain/script-identity.json": "824ee61c4667b10c725fe27e8e10752a256e5ddd94155088184f611bd0a47328",
+    "naming-onchain/script-identity.json": "47f4bc1005fd831da4885078debf3576deb95836af3cbfd36d42cf309420ef40"
+  },
+  "auditedDeclarationCounts": {
+    "lean/theorem-debt.json": 36,
+    "lean/naming-theorem-debt.json": 7,
+    "lean/lifecycle-theorem-debt.json": 9,
+    "lean/wire-theorem-debt.json": 5,
+    "lean/m1-theorem-debt.json": 10
+  },
+  "recoveryRevision": "a098408e58c150b9ebf83c3fd1dff1704599c01f",
+  "limits": [
+    "Source and audited-declaration binding; compiled, model execution and connected ledger evidence have separate receipts.",
+    "The public bounded consumer story remains uncovered; retired scope receives no coverage credit.",
+    "Protected rejection and pre-existing timing discrepancies remain separate affected acceptance boundaries."
+  ]
+}

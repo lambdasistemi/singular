@@ -1,30 +1,9 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-{- |
-Module      : Singular.Registry.TxBuilder.BookEdgeSpec
-Description : #240 — a Terminal read is booked without an approval
-License     : Apache-2.0
-
-`bookEdge` is how every consumer puts one registry edge on chain. The
-naming application certifies the six tree edges and refuses to certify
-`witnessTerminal` (edge 6) at all (`open.ak`, @approval-edge@): the
-model admits a read without an approval and the cage never looks for
-one on it. A booking that mints an approval for edge 6 is therefore a
-transaction the node can only reject.
-
-These rows run the builder itself against a provider serving one
-ada-only wallet output and a submitter that keeps what it is handed,
-then read the transaction the builder produced — what it mints, which
-redeemers, script witness, collateral and script-integrity hash it
-carries, and what the request output holds. Every expected value is the
-design's own derivation evaluated here: the application policy from the
-registry's naming pins, the approval name, the destination the builder
-is given. Nothing is copied from the builder's output.
-
-On the base, every booking mints an approval, so the `witnessTerminal`
-rows are red for that named reason; the six tree-edge rows are their
-control and must pass unchanged.
+{- | The public builder books registration and permanent retirement with
+exactly their tuple-bound approvals. The other five historical wire tags
+must be refused before a transaction is submitted.
 -}
 module Singular.Registry.TxBuilder.BookEdgeSpec (spec) where
 
@@ -36,7 +15,6 @@ import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
-import Data.Text qualified as T
 import Lens.Micro ((^.))
 import Test.Hspec
 
@@ -93,7 +71,6 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Types
     ( Edge
-    , edgeWitnessTerminal
     )
 
 {- | A wallet holding one ada-only output, and nothing else to say. The
@@ -199,42 +176,6 @@ setS SNothing = False
 -- The rows
 -- ---------------------------------------------------------
 
-{- | DM-1b, absent row: edge 6 carries nothing at all. Every violation
-is named — the row's failure message reports what it found, so a red
-names the mint or the redeemer it caught.
--}
-carriesNothing :: ConwayTx -> IO ()
-carriesNothing tx = do
-    holds <- requestHolds tx
-    let mint = mintOf tx
-        redeemers = redeemersOf tx
-        witness = witnessOf tx
-        collateral = tx ^. bodyTxL . collateralInputsTxBodyL
-        integrity = tx ^. bodyTxL . scriptIntegrityHashTxBodyL
-        findings =
-            concat
-                [ ["it mints " <> T.pack (show mint) | not (Map.null mint)]
-                , [ "it carries redeemers " <> T.pack (show redeemers)
-                  | not (null redeemers)
-                  ]
-                , [ "it carries a script witness " <> T.pack (show witness)
-                  | not (null witness)
-                  ]
-                , [ "it carries collateral " <> T.pack (show collateral)
-                  | not (Set.null collateral)
-                  ]
-                , ["it carries a script-integrity hash" | setS integrity]
-                , [ "its request output holds " <> T.pack (show holds)
-                  | not (Map.null holds)
-                  ]
-                ]
-    case findings of
-        [] -> pure ()
-        found ->
-            expectationFailure $
-                "the booking certifies a read that needs no approval: "
-                    <> T.unpack (T.intercalate "; " found)
-
 {- | DM-1b, present row: a tree-edge booking mints exactly its bound
 approval under the application policy and nothing under any other,
 names it with one @Approve@ redeemer, carries the application script as
@@ -264,12 +205,12 @@ spec =
         $ forM_ keys
         $ \key ->
             forM_ edges $ \(edge, name) ->
-                if edge == edgeWitnessTerminal
+                if edge `elem` [1, 3]
                     then
-                        it
-                            (name <> " on " <> show key <> " carries nothing under the application")
-                            (carriesNothing =<< booked edge key)
-                    else
                         it
                             (name <> " on " <> show key <> " carries exactly its bound approval")
                             (carriesItsApproval edge key =<< booked edge key)
+                    else
+                        it
+                            (name <> " on " <> show key <> " is refused before submission")
+                            (booked edge key `shouldThrow` anyException)

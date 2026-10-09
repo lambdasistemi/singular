@@ -909,7 +909,7 @@ setupRetractBatch wallet prov submit tm stateBytes requestBytes consumerBytes = 
             cfg
             tok
             "rb-key"
-            edgeInsertAbsent
+            edgeInsertActive
             (walletAddr wallet)
     setupReqs <- pendingRequests prov cfg tok
     folded <-
@@ -1500,10 +1500,11 @@ wrongDepositRefused wallet prov submit tm cfg tok = do
                         "WRONG-DEPOSIT FAILURE: a mismatched-deposit fold was ACCEPTED"
                         >> pure False
 
-{- | Submit one request at a seven-admitted-edges edge (#183), from the given address.
+{- | Submit one raw encoded request from the given address.
 
 The three shapes this journey used to need — insert, update, delete —
-differ only in the edge now, so they are one function. The datum's
+differ only in the edge. Unsupported encodings are retained here solely
+for request-exit refusal controls, never as successful folds. The datum's
 deposit is the locked lovelace less the tip, which is what the fold
 checks.
 -}

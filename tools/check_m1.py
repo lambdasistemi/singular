@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bind the permanent contract's executed receipts to sources and audited proofs.
 
-The broader corpus remains unchanged. M1 receipts name their own law and retain
+The active corpus governs M1. M1 receipts name their own law and retain
 the broader driver's observation vocabulary and its independently derived state
 and mint checks. Controlled alterations must be noticed before publication.
 """
@@ -28,9 +28,9 @@ from check_model import (
 
 
 def check(corpus, root):
-    source = (root / "lean/Singular/M1.lean").read_text()
-    body = source.split("def allowed ", 1)[1].split("\ndef step ", 1)[0]
-    allowed = set(re.findall(r"edge == \.(\w+)", body))
+    source = (root / "lean/Singular/Model.lean").read_text()
+    body = source.split("def allowed ", 1)[1].split("\ndef delta ", 1)[0]
+    allowed = set(re.findall(r"e == \.(\w+)", body))
     assert allowed == {"insertActive", "updateTerminal"}, "permanent admission moved"
     assert len(corpus["scenarios"]) == 10 and len(corpus["batches"]) == 4
     exclusions = set()
@@ -133,7 +133,7 @@ def main():
     )
     corpus["limits"] = [
         "abstract model execution, not ledger acceptance",
-        "unchanged broader observation and unobservable vocabulary",
+        "retained observation and unobservable vocabulary",
         "excluded setup is unsupported, not an executed refusal",
     ]
     corpus["payloadSha256"] = digest(

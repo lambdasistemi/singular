@@ -45,14 +45,14 @@ import Singular.Registry.TxBuilder.Internal
     , evalScriptHash
     , extractCageDatum
     , findStateUtxo
-    , leafAbsent
+    , leafActive
     , scriptHashBytes
     )
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , edgeInsertAbsent
+    , edgeInsertActive
     )
 import Singular.Registry.Wait (tryOutcome)
 
@@ -102,7 +102,7 @@ import Singular.Registry.Trie
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
 spec :: Blueprint -> Spec
-spec bp = describe "Inserting an absent key through a single trie fork" $ do
+spec bp = describe "Inserting an active key through a single trie fork" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
@@ -126,7 +126,7 @@ fork81Spec stateBytes requestBytes = do
             reg <-
                 bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
             let tokenId = registryTokenId reg
-                foldInsert k = void (foldEdge reg k edgeInsertAbsent)
+                foldInsert k = void (foldEdge reg k edgeInsertActive)
             foldInsert "cs07-fork-A"
             foldInsert "cs07-fork-B1294"
             -- The previously-refused fold (proof-step-constructor-witnesses): its proof's sole step
@@ -136,9 +136,7 @@ fork81Spec stateBytes requestBytes = do
             -- independent {A,B,C} recompute, and an inclusion proof for
             -- C built from the independent trie must fold to the chain
             -- root (C provably present with value vc).
-            -- The cage address also holds the custody each absence
-            -- insertion created (#157 token-destinations-and-refunds), so the state UTxO is the
-            -- one carrying the registry policy token, not the only one.
+            -- Identify the state UTxO by its registry policy token.
             let stateAddr = cageAddrFromCfg cfg Testnet
             stateUtxos <- Cage.withLatest prov (`Cage.outputsAt` stateAddr)
             chainRoot <-
@@ -151,9 +149,9 @@ fork81Spec stateBytes requestBytes = do
                         error "fork81: no state UTxO carrying the policy token"
             ref <- newIORef emptyMPFInMemoryDB
             let trie = mkPureTrieFromRef ref
-            _ <- insert trie "cs07-fork-A" leafAbsent
-            _ <- insert trie "cs07-fork-B1294" leafAbsent
-            _ <- insert trie "cs07-fork-C11" leafAbsent
+            _ <- insert trie "cs07-fork-A" leafActive
+            _ <- insert trie "cs07-fork-B1294" leafActive
+            _ <- insert trie "cs07-fork-C11" leafActive
             recomputed <- getRoot trie
             unRoot recomputed `shouldBe` chainRoot
             db <- readIORef ref
@@ -179,7 +177,7 @@ fork81Spec stateBytes requestBytes = do
                 codes <- loadRegistryCodesFromEnv
                 reg <-
                     bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
-                let foldInsert k = void (foldEdge reg k edgeInsertAbsent)
+                let foldInsert k = void (foldEdge reg k edgeInsertActive)
                 foldInsert "cs07-fork-A"
                 foldInsert "cs07-fork-B1294"
                 foldInsert "cs07-fork-C11"
@@ -189,7 +187,7 @@ fork81Spec stateBytes requestBytes = do
                 -- Through the driver, so the refusal observed is the one a
                 -- production caller meets: the driver books, finds the
                 -- manager in step, builds, and the cage refuses the build.
-                res <- tryOutcome (foldEdge reg "cs07-fork-C11" edgeInsertAbsent)
+                res <- tryOutcome (foldEdge reg "cs07-fork-C11" edgeInsertActive)
                 case res of
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"

@@ -10,17 +10,16 @@ use cardano/script_context.{Minting, ScriptContext, Spending}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, Spend, Transaction,
 }
-use permanent_state as m1
-use permanent_witness
 use registry_fixtures as fx
 use request
-use state
+use state as m1
 use types.{Contribute, End, Modify, Rejected, StateDatum, UpdateAction}
+use witness
 
 /// Independently constructed complete folds, including a valid approval for
 /// every tree-changing edge. Absent and terminal roots are component fixtures,
-/// not evidence that M1 can reach those states. The broader validator must
-/// accept each control before its bounded counterpart's refusal is credited.
+/// not evidence that M1 can reach those states. Allowed registration and
+/// termination controls must succeed beside the excluded-edge refusals.
 fn edgeTransaction(edge: Int) -> (ByteArray, Transaction) {
   let root =
     if edge == 0 || edge == 1 {
@@ -140,12 +139,9 @@ test permanent_boundary(edge via fuzz.int_between(0, 6)) {
   let (root, tx) = edgeTransaction(edge)
   let actions = [UpdateAction([])]
   let datum = Some(StateDatum(fx.stateOf(root)))
-  and {
-    state.state.spend(datum, Modify(actions), fx.stateRef, tx),
-    m1.state.spend(datum, Modify(actions), fx.stateRef, tx) == (
-      edge == 1 || edge == 3
-    ),
-  }
+  m1.state.spend(datum, Modify(actions), fx.stateRef, tx) == (
+    edge == 1 || edge == 3
+  )
 }
 
 test excluded_reason_before_approval_or_proof(edge via fuzz.int_between(0, 6)) {
@@ -291,10 +287,7 @@ fn mixedActions() {
 test mixed_batch_refuses_the_excluded_member() {
   let (root, tx) = mixedTransaction()
   let datum = Some(StateDatum(fx.stateOf(root)))
-  and {
-    state.state.spend(datum, Modify(mixedActions()), fx.stateRef, tx),
-    !m1.state.spend(datum, Modify(mixedActions()), fx.stateRef, tx),
-  }
+  !m1.state.spend(datum, Modify(mixedActions()), fx.stateRef, tx)
 }
 
 fn exportExtra(label: Int, root: ByteArray, tx: Transaction, redeemer: Data) {
@@ -346,7 +339,7 @@ test export_request_and_mint_routes() {
     list.range(0, 6),
     fn(edge) {
       let (root, original) = edgeTransaction(edge)
-      let pin = permanent_witness.registryStateHash
+      let pin = witness.registryStateHash
       let state = fx.stateInput(root)
       let value =
         merge(
@@ -455,7 +448,7 @@ test export_request_and_mint_routes() {
           fx.requestRef(0),
           tx,
         ),
-        permanent_witness.witness.mint(
+        witness.witness.mint(
           kind,
           bytearray.concat(pin, fx.cageTokenName()),
           mintRedeemer,

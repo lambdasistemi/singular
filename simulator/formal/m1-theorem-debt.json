@@ -30,10 +30,10 @@
     "statementSha256": "d2f874adef6beea6c8bdbc551d4e6709fcc97e609aaa537a2a8979720aecd78c"
   },
   {
-    "name": "Singular.M1.Statements.reachable_preserves_broader_laws",
+    "name": "Singular.M1.Statements.reachable_uses_active_model",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "d4be60d90d34eda937bef8a1adece030b42d638c237c241cc3f801eb16558ca7"
+    "statementSha256": "cebc4bd2785c5beb3304ef62abae735dba355083b929f0222a2d8c9335f46897"
   },
   {
     "name": "Singular.M1.Statements.excluded_fold",

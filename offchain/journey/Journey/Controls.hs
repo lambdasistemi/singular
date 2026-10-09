@@ -74,7 +74,7 @@ import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , extractCageDatum
-    , leafAbsent
+    , leafActive
     , requestAddrFromCfg
     , scriptHashBytes
     , txInToRef
@@ -84,7 +84,7 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , edgeInsertAbsent
+    , edgeInsertActive
     )
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -146,7 +146,7 @@ stepReject wallet cfg codes prov caps tm tid refs stateBeforeRejects = do
             (walletAddr wallet)
             tid
             negativeKey
-            edgeInsertAbsent
+            edgeInsertActive
     reqUtxos <- Cage.withLatest prov (`Cage.outputsAt` reqAddr)
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1
@@ -317,7 +317,7 @@ negativeKey :: ByteString
 negativeKey = "negative"
 
 negativeValue :: ByteString
-negativeValue = leafAbsent
+negativeValue = leafActive
 
 -- | The root the valid update writes into its state output.
 baseTxStateRoot :: ConwayTx -> IO OnChainRoot

@@ -63,7 +63,7 @@ export const checks = {
     law: (_before, action, after) => trieGet(after.trie, action.key) === 'terminal',
   },
   occupancy: {
-    applies: (_before, action) => ['insertActive', 'updateActive'].includes(action.edge),
+    applies: (_before, action) => ['insertActive'].includes(action.edge),
     law: (before, action, after) => {
       const was = trieGet(before.trie, action.key);
       return was !== 'active' && was !== 'terminal' && trieGet(after.trie, action.key) === 'active';
@@ -99,7 +99,7 @@ export function theoremReport(manifest, corpus) {
     rows.push({
       name: decl.name,
       status: `${decl.status} / ${decl.debt}`,
-      coverage: entry ? 'controlled-check' : 'proved-only',
+      coverage: entry && applicable > 0 ? 'controlled-check' : 'proved-only',
       applicable,
       held,
       vacuous,

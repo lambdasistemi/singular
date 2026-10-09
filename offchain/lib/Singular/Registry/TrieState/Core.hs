@@ -52,7 +52,7 @@ walkNodes who db moves
   where
     step (before, proofs) (key, edge) = do
         let (proof, after) = runState (walkEdge stateTrie key edge) before
-            proofNodes = if edge < 2 then after else before
+            proofNodes = if edge == 1 then after else before
         -- A singleton's legitimate proof has zero steps. Check the actual
         -- producer's Maybe instead of treating every empty list as missing.
         case membershipFromDb proofNodes key of

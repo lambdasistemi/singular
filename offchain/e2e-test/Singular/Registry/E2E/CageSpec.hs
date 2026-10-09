@@ -35,6 +35,7 @@ import Test.Hspec
     , shouldSatisfy
     )
 
+import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx
     ( bodyTxL
     , txIdTx
@@ -135,7 +136,6 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef
-    , edgeInsertAbsent
     , edgeInsertActive
     )
 
@@ -185,10 +185,7 @@ cageFlowSpec stateBytes requestBytes = do
                         tokenId
                         Testnet
 
-            -- #157 seven-admitted-edges: an insert takes an edge only when its value is a
-            -- leaf. This row books the witnessed absence of "hello"
-            -- (edge 0), carrying the approval the cage demands of every
-            -- processed request, and folds it.
+            -- Register an unknown key with its tuple-bound approval.
             refs <- publishCageRefs cfg prov submit tokenId
             reqTxIn <-
                 bookEdge
@@ -197,7 +194,7 @@ cageFlowSpec stateBytes requestBytes = do
                     submit
                     tokenId
                     "hello"
-                    edgeInsertAbsent
+                    edgeInsertActive
             reqUtxosBefore <-
                 Cage.withLatest prov (`Cage.outputsAt` requestAddr)
             length reqUtxosBefore
@@ -211,11 +208,11 @@ cageFlowSpec stateBytes requestBytes = do
             assertConsumedRequest reqTxIn reqUtxosBefore unsignedUpdate
             let updateBody = unsignedUpdate ^. bodyTxL
                 updateOutputs = toList (updateBody ^. outputsTxBodyL)
-                expectedAbsent =
+                expectedActive =
                     MultiAsset $
                         Map.singleton
                             ( policyIdFromPin
-                                (SBS.toShort (fromBuiltin (stateAbsentPolicy oldState)))
+                                (SBS.toShort (fromBuiltin (stateActivePolicy oldState)))
                             )
                             (Map.singleton (AssetName (SBS.toShort (requestKey request))) 1)
             -- Singular.txOfExit: the fold also spends its state.
@@ -225,7 +222,7 @@ cageFlowSpec stateBytes requestBytes = do
                 (Set.member (fst stateBefore) (updateBody ^. inputsTxBodyL))
             newStateOut <- stateContinuation cfg tokenId updateOutputs
             newState <- observedState newStateOut
-            -- Singular.step (.insertAbsent): only the root changes.
+            -- Singular.step (.insertActive): only the root changes.
             assertEqual
                 "update state datum except root"
                 oldState
@@ -237,30 +234,26 @@ cageFlowSpec stateBytes requestBytes = do
                 "update state value"
                 (snd stateBefore ^. valueTxOutL)
                 (newStateOut ^. valueTxOutL)
-            -- Singular.delta / applyEdge (.insertAbsent).
-            assertEqual "update mint" expectedAbsent (updateBody ^. mintTxBodyL)
-            -- Singular.txCageOutputs / obligations (.fold .insertAbsent).
-            (custodyOut, custodyRefund) <-
+            -- Singular.delta / applyEdge (.insertActive).
+            assertEqual "update mint" expectedActive (updateBody ^. mintTxBodyL)
+            -- The active token and deposit land at the request's destination.
+            activeOut <-
                 exactlyOne
-                    "update custody output"
-                    [ (out, refund)
+                    "update active carrier"
+                    [ out
                     | out <- updateOutputs
-                    , Just (AbsentCustody refund) <- [extractCageDatum out]
+                    , let MaryValue _ assets = out ^. valueTxOutL
+                    , assets == expectedActive
                     ]
-            let MaryValue custodyCoin custodyAssets = custodyOut ^. valueTxOutL
-            assertEqual "update custody token" expectedAbsent custodyAssets
+            let MaryValue activeCoin _ = activeOut ^. valueTxOutL
             assertEqual
-                "update custody address"
-                (cageAddrFromCfg cfg (network cfg))
-                (custodyOut ^. addrTxOutL)
-            assertAtLeast
-                "update custody deposit"
-                (Coin (requestDeposit request))
-                custodyCoin
-            assertEqual
-                "update custody refund address"
+                "update destination"
                 (fst (requestDestination request))
-                custodyRefund
+                (serialiseAddr (activeOut ^. addrTxOutL))
+            assertAtLeast
+                "update delivery deposit"
+                (Coin (requestDeposit request))
+                activeCoin
             signedUpdate <- submitWithGenesis submit unsignedUpdate
 
             reqUtxosAfter <-
@@ -275,7 +268,7 @@ cageFlowSpec stateBytes requestBytes = do
             stateAfter <- currentState cfg prov tokenId
             assertEqual "update observed state" newStateOut (snd stateAfter)
             assertLandedOutput prov signedUpdate newStateOut
-            assertLandedOutput prov signedUpdate custodyOut
+            assertLandedOutput prov signedUpdate activeOut
 
     it "retracts a phase-2 request"
         $ withBootedCage

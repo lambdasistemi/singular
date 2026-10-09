@@ -22,21 +22,21 @@ issues #505/#506, and the carve-505 brief. Base model and implementation:
 `464ed8674de626470396cc871f3af85a1d489477`. Protected rejection #495 is deferred.
 Preservation is recorded in `specs/504-m2-preservation`; its refs stay untouched.
 
-1. Define `Singular.M1` as a fixed restriction of the existing model, with
-   allowed outcomes delegated unchanged, excluded folds refused, atomic batches,
-   original request exits, executable driver cases and proofs.
-2. Give the bounded state validator a distinct compiled identity. Its fold
-   checks every updating request before approval or trie execution. Keep the
-   broader state validator and its evidence separate. Bind bounded witnesses
-   to the bounded state hash, and select both explicitly in ordinary CLI creation
-   and recognition. Do not introduce mutable admission configuration.
-3. Exercise allowed lifecycle controls and independently constructed excluded,
-   unknown and mixed requests at the validator boundary. Check a deliberately
-   broader contract against the boundary checker to demonstrate detection.
-4. Reuse the packaged Demo1 journey and existing conformance description
-   language; retain broader evidence and uncovered rows. Run targeted checks,
-   then one bounded full repository gate and exact-head hosted CI. Submit one
-   draft PR and the precise receipt/limit manifest to the parent for acceptance.
+1. Narrow `Singular.Model` to registration and permanent termination;
+   retain stable wire ordinals and applicable request exits. `Singular.M1`
+   and its driver are compatibility names for this single active model.
+2. Use one canonical state/fold/duty pipeline with a fixed pre-approval
+   admission boundary. Remove obsolete production success paths and duplicate
+   broad/restricted modules. Pin witnesses and ordinary CLI recognition to
+   the freshly compiled state identity; refuse unknown or old code.
+3. Keep independently constructed excluded, unknown, mixed and alternate-route
+   controls at the compiled boundary, with both supported positive controls.
+   Demonstrate the checker detects an actual always-accept artifact mutation.
+4. Reuse the packaged ordinary CLI journey. Preserve archived broader evidence,
+   all preservation refs and uncovered consumer rows. Record the exact authorized
+   coverage-baseline disposition without altering the coverage gate. Run targeted
+   checks, one bounded repository gate and exact-head hosted CI, then hand off
+   the concrete candidate for parent acceptance.
 
 Evidence is reported separately for Lean execution/proofs, Aiken evaluation,
 compiled scripts, connected local ledger journey, extracted artifact and hosted
@@ -48,5 +48,5 @@ Superseding scope: [the later operator ruling](ruling.md) abandons registries
 from earlier releases and withdraws old-deployment compatibility. New fixed
 identities must still be checked and wrong/unknown identities refused. Protected
 rejection (#498/#495) follows this carve with its own identity change and remains
-a first-milestone closing condition. This candidate does not close that milestone. Protected deposit
+separate from this carve and its closing conditions. This candidate does not close that milestone. Protected deposit
 is outside this carve's closing conditions.

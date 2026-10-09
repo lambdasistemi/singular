@@ -1,3 +1,7 @@
+//// Witness policies bound to the permanent M1 state identity.
+//// The state's fixed fold boundary controls every mint and active burn.
+//// Pure terminal burns retain the broader model rule and enable no edge.
+
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{find, length}
 use aiken/collection/pairs
@@ -26,7 +30,7 @@ use types.{Modify, UpdateRedeemer}
 /// so a stale pin is a red identity check on every commit rather than
 /// a red devnet row on whichever ticket next moves a token.
 pub const registryStateHash: ByteArray =
-  #"270c5782548e6e339668b8492ee0c8fab342f704f68fe5f55197cd93"
+  #"68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
 
 /// The three token policies of a registry instance (#157 N1).
 ///
@@ -44,22 +48,23 @@ pub const registryStateHash: ByteArray =
 /// so. Splitting it that way is the point: two scripts cannot disagree
 /// about a quantity neither of them invents twice.
 ///
-/// **The terminal instance is freely burnable** (terminal-witnesses-plural). A terminal witness
-/// says a name is over, forever; letting its holder destroy their own
-/// copy costs the registry nothing, and the leaf it attests to does not
-/// move. Minting one still needs the fold, because that is where the
-/// read is verified.
+/// **Terminal witnessing is excluded by the permanent state contract.**
+/// The kind `2` policy representation remains defined, but a `witnessTerminal`
+/// request cannot pass the co-present permanent state validator. Co-presence
+/// alone in this policy is not transaction acceptance: the state validator
+/// refuses that edge, including beside an allowed request in a mixed batch.
+/// The terminal instance retains the broader pure-burn rule, which changes
+/// no leaf. Terminal holdings cannot arise from this contract's genesis;
+/// a fixture seeded with one establishes the burn rule, not reachability.
 ///
 /// The `registry` parameter is the full native asset identity of the
 /// cage token — the state policy id followed by the token name — so an
 /// instance is bound to one registry and cannot be reused against
 /// another.
 ///
-/// #173 I2: this validator MOVED here from `naming-onchain/validators/`
-/// with its decision table unchanged. Only its reading of the fold
-/// redeemer changed: it now decodes the registry's own
-/// `types.UpdateRedeemer` instead of naming's structural mirror of it,
-/// so no naming module participates in a registry fold.
+/// This policy retains the broader witness decision table and decodes
+/// `types.UpdateRedeemer`. Its distinct fixed state pin supplies the permanent
+/// admission boundary; it does not enable broader witness operations.
 validator witness(kind: Int, registry: ByteArray) {
   mint(_redeemer: Data, policy_id: PolicyId, tx: Transaction) {
     if kind == 2 && pureBurn(policy_id, tx.mint) {

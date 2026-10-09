@@ -1,4 +1,20 @@
 {
+  "ending-a-name": [
+    {
+      "text": "Ending a name.",
+      "pause": 500
+    },
+    {
+      "text": "The current contract permits registration and permanent retirement only. The retained command now checks an unknown key and an already terminal key against real accepting controls. Absent leaves cannot be created from permanent contract genesis; their retirement refusal is a synthetic compiled-context check. The following broader-model story and receipts are archived evidence, not current deployment support. See current candidate results.",
+      "pause": 400
+    }
+  ],
+  "archived-broader-model-retirement-evidence": [
+    {
+      "text": "Archived broader-model retirement evidence.",
+      "pause": 500
+    }
+  ],
   "who-this-is-for": [
     {
       "text": "Who this is for.",
@@ -111,6 +127,6 @@
   ],
   "_source": {
     "file": "retirement.md",
-    "sha256": "9d701d0823291791ab050bdb64ee5741c46ef437871481ca408b0c73ee356e8b"
+    "sha256": "faa7b841f08d3d770b542e50c1f8378053286ddb8cf477cbf287f6b6bddddaf3"
   }
 }

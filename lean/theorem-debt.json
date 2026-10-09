@@ -1,15 +1,9 @@
 [
   {
-    "name": "Singular.Statements.readAt_true_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916"
-  },
-  {
     "name": "Singular.Statements.no_tree_change_without_approval",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b"
+    "statementSha256": "675ac9aa1522c14f7f620861bbea5194b21721f612e594c6aa48fe9b753f248b"
   },
   {
     "name": "Singular.Statements.booked_at_most_once",
@@ -22,12 +16,6 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef"
-  },
-  {
-    "name": "Singular.Statements.terminal_mint_only_by_read",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639"
   },
   {
     "name": "Singular.Statements.terminal_attestation_permanent",
@@ -45,7 +33,7 @@
     "name": "Singular.Statements.occupancy",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876"
+    "statementSha256": "b6760b43f9a243015d269f18ac4932eaf9a3887571df7d6637ef63bb4a7e4b40"
   },
   {
     "name": "Singular.Statements.occupancy_free_key_succeeds",
@@ -57,7 +45,7 @@
     "name": "Singular.Statements.termination",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027"
+    "statementSha256": "99a39dc2ba8581b8d2ea5d9c5dfad152d1a506551706eedf14ec36087e1e8bc2"
   },
   {
     "name": "Singular.Statements.active_witness_unique",
@@ -72,22 +60,10 @@
     "statementSha256": "968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a"
   },
   {
-    "name": "Singular.Statements.terminal_witness_plural",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "68beea77527a148a61f7f055d065aec3d1d2c3acdb25231c5c8db851a747efff"
-  },
-  {
     "name": "Singular.Statements.witness_kinds_exclude",
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a"
-  },
-  {
-    "name": "Singular.Statements.insert_absent_inversion",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
   },
   {
     "name": "Singular.Statements.insert_active_inversion",
@@ -96,34 +72,10 @@
     "statementSha256": "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"
   },
   {
-    "name": "Singular.Statements.update_active_inversion",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "038b9a1c9fb903c12d79f42f263709291ecd1573919f33b85906ae5a2ed78bae"
-  },
-  {
     "name": "Singular.Statements.update_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
-  },
-  {
-    "name": "Singular.Statements.delete_absent_inversion",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "b040a97d18406c2a0be100516a5f9f5ea3f7c1bcc606a0c26eab4eb38828bce5"
-  },
-  {
-    "name": "Singular.Statements.delete_active_inversion",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "39b91a52340027b5062725a24c38ee9cb5e568518b6c44727946556be0a903f8"
-  },
-  {
-    "name": "Singular.Statements.witness_terminal_inversion",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "744464d451c58730a0619747bab570700e5ad4bf29e005e36f8302b980d3cabf"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
@@ -136,18 +88,6 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
-  },
-  {
-    "name": "Singular.Statements.read_changes_nothing",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120"
-  },
-  {
-    "name": "Singular.Statements.insert_absent_transaction_row",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
@@ -183,7 +123,7 @@
     "name": "Singular.Statements.no_exit_strands_the_deposit",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5"
+    "statementSha256": "a2e9655f8a61d303518851ef9907dcfca817d1d05a8071f7104974c2c522230a"
   },
   {
     "name": "Singular.Statements.only_retract_owes_the_tip",
@@ -273,6 +213,6 @@
     "name": "Singular.Statements.fold_refuses_foreign_datum",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "959f43d652876b9ea5eff3f9772344ffbc09fa3162f669e03fe1946a3e100600"
+    "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
   }
 ]

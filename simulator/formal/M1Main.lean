@@ -1,3 +1,4 @@
+import Singular.M1
 import Singular.M1Driver
 
 open Lean Singular Singular.Driver

@@ -17,9 +17,8 @@
 ////
 //// ## Assumptions
 ////
-//// - `dutiesOf` is called only for an edge the fold admitted (`0..6`) and
-////   that is not a rejected row; any edge outside the ones it names is
-////   treated as `deleteActive` (edge 5).
+//// - `dutiesOf` is called only for an edge the fold admitted (tags 1 and 3) and
+////   that is not a rejected row; every other tag creates no duties and is refused by admission.
 //// - `floor` is the request's deposit: its lovelace less the pinned tip.
 ////
 //// ## Invariants
@@ -34,10 +33,7 @@
 
 use aiken/crypto.{VerificationKeyHash}
 use cardano/assets.{PolicyId}
-use lib.{
-  edgeDeleteAbsent, edgeInsertAbsent, edgeInsertActive, edgeUpdateActive,
-  edgeUpdateTerminal, edgeWitnessTerminal,
-}
+use lib.{edgeInsertActive, edgeUpdateTerminal}
 use types.{State}
 
 /// What one consumed request still owes the transaction once its edge is
@@ -45,11 +41,10 @@ use types.{State}
 /// the trie walk and the value walk stay separate and each names its own
 /// reason.
 pub type Duty {
-  /// A minted active or terminal token must land in exactly one output,
+  /// A minted active token must land in exactly one output,
   /// the one the request named, holding at least `floor` lovelace.
   ///
-  /// Two requests in one batch can mint the same `(policy, key)` — two
-  /// reads of one terminal name — and one asset cannot be in two
+  /// Two requests in one batch can mint the same `(policy, key)` — repeated deliveries — and one asset cannot be in two
   /// outputs at once, so their duties MERGE rather than stack: `count`
   /// is how many tokens the single carrier must hold and `floor` the SUM
   /// of the deposits it owes, so a folder cannot return one deposit and
@@ -63,43 +58,24 @@ pub type Duty {
     count: Int,
     agreed: Bool,
   }
-  /// A minted absent token must land in the cage's own custody, beside
-  /// its key and the refund address the request named.
-  LockCustody { key: ByteArray, refund: ByteArray, floor: Int }
-  /// A consumed absent token's custody UTxO must be spent here, and its
-  /// lovelace paid to the address that custody recorded — summed with
-  /// every other custody refund to that address, and with every other
-  /// obligation to its payment credential (#253, `payeeFault`).
-  SpendCustody { key: ByteArray }
   /// A burned active token must actually be an input; the cage does not
   /// care where it came from — the application's custody does.
   ///
-  /// `sole` is what #177 added, and it is the difference between the
-  /// two burning edges. `deleteActive` (edge 5) asks only that SOME
-  /// input carries the asset, and traces `burn-from-input`; the
-  /// RETIREMENT asks that the transaction present THIS key's one
-  /// witness — exactly one input carrying exactly one — and traces
-  /// Lean's `token-missing`. Sharing one constructor keeps edge 5's
-  /// decision table and trace exactly where they were.
-  ///
-  /// That one fact also settles the Lean row's `kindCount t.state
-  /// .active r.key = 0`: with one unit on an input and the mint pinned
-  /// at `-1` by mint-matches-edge-deltas, ledger conservation leaves the outputs carrying
-  /// none. No separate output rule is added for the two to disagree
-  /// over.
-  BurnFromInput { policy: PolicyId, key: ByteArray, sole: Bool }
+  /// Exactly one input must carry exactly one unit of the active witness.
+  /// With the pinned burn of one, ledger conservation leaves none in outputs.
+  BurnFromInput { policy: PolicyId, key: ByteArray }
   /// Lovelace owed to an owner's key (#253): the deposit of a fold that
-  /// delivers nothing (edges 3, 4 and 5) and the refund of a rejected
+  /// delivers nothing (termination) and the refund of a rejected
   /// row. `payeeOwed` sums them per key, and each key is settled with every
   /// other obligation to it
-  /// — custody refunds included — on the summed lovelace of the outputs
+  ///  on the summed lovelace of the outputs
   /// paying it (`payeeFault`): one output cannot pay two obligations.
   ReturnDeposit { owner: VerificationKeyHash, floor: Int }
 }
 
 /// The duties an admitted edge creates (#157 token-destinations-and-refunds). Read off the edge and
 /// the request, never off anything the folder declares. An edge that
-/// delivers no token (3, 4, 5) owes its deposit to the request's owner
+/// delivers no token (3) owes its deposit to the request's owner
 /// (#253); the others owe it with the token they deliver.
 pub fn dutiesOf(
   pins: State,
@@ -109,25 +85,8 @@ pub fn dutiesOf(
   destination: (ByteArray, Option<Data>),
   floor: Int,
 ) -> List<Duty> {
-  let (refund, _) = destination
-  // Note: the merge fields start at one duty; `pushDuties` folds a second
-  // request for the same token into the same carrier.
-  if edge == edgeInsertAbsent {
-    [LockCustody { key, refund, floor }]
-  } else if edge == edgeInsertActive {
+  if edge == edgeInsertActive {
     [
-      DeliverToken {
-        policy: pins.active_policy,
-        key,
-        destination,
-        floor,
-        count: 1,
-        agreed: True,
-      },
-    ]
-  } else if edge == edgeUpdateActive {
-    [
-      SpendCustody { key },
       DeliverToken {
         policy: pins.active_policy,
         key,
@@ -139,30 +98,11 @@ pub fn dutiesOf(
     ]
   } else if edge == edgeUpdateTerminal {
     [
-      BurnFromInput { policy: pins.active_policy, key, sole: True },
+      BurnFromInput { policy: pins.active_policy, key },
       ReturnDeposit { owner, floor },
-    ]
-  } else if edge == edgeDeleteAbsent {
-    [SpendCustody { key }, ReturnDeposit { owner, floor }]
-  } else if edge == edgeWitnessTerminal {
-    [
-      DeliverToken {
-        policy: pins.terminal_policy,
-        key,
-        destination,
-        floor,
-        count: 1,
-        agreed: True,
-      },
     ]
   } else {
-    // `deleteActive` (edge 5) burns the active token the request names;
-    // the cage requires it as an input, exactly as the terminal update
-    // does.
-    [
-      BurnFromInput { policy: pins.active_policy, key, sole: False },
-      ReturnDeposit { owner, floor },
-    ]
+    []
   }
 }
 

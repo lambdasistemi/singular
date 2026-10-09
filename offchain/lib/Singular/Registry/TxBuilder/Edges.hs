@@ -6,8 +6,8 @@ Module      : Singular.Registry.TxBuilder.Edges
 Description : Booking and folding one registry-mode tree edge
 License     : Apache-2.0
 
-Registry mode admits seven edges and nothing else (#157 seven-admitted-edges), and every
-processed edge but a read rides on an approval the naming application's
+M1 admits insertActive and updateTerminal (#157 seven-admitted-edges), and every
+processed edge rides on an approval the naming application's
 mint arm certified (#157 tree-edge-admission-by-approval, approval-asset-binding). A caller that wants a fold to
 land therefore needs three things this module supplies: the four policy
 pins derived from the naming partition's own compiled code, a booking
@@ -168,10 +168,8 @@ import Singular.Registry.TxBuilder.Update
     )
 import Singular.Registry.Types
     ( Edge
-    , edgeInsertAbsent
     , edgeInsertActive
-    , edgeUpdateActive
-    , edgeWitnessTerminal
+    , edgeUpdateTerminal
     )
 
 {- | Sign a built transaction with the payer's key, submit it, and wait
@@ -434,7 +432,7 @@ edgeDestinationOf
 edgeDestinationOf cfg codes payerAddr edge =
     let appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network cfg) (ScriptHashObj appHash) StakeRefNull
-    in  if edge == edgeInsertActive || edge == edgeUpdateActive
+    in  if edge == edgeInsertActive
             then (serialiseAddr appAddr, Just edgeRecordDatum)
             else (serialiseAddr payerAddr, Nothing)
 
@@ -491,7 +489,7 @@ bookingApproval
     -- ^ Destination: address bytes, datum hash
     -> Maybe BookingApproval
 bookingApproval codes edge key owner dest
-    | edge == edgeWitnessTerminal = Nothing
+    | edge /= edgeInsertActive && edge /= edgeUpdateTerminal = Nothing
     | otherwise =
         Just
             BookingApproval
@@ -731,13 +729,13 @@ than carried to a fold that would refuse it @edge-inadmissible@ anyway.
 -}
 requireAdmissible :: ByteString -> Edge -> IO ()
 requireAdmissible key edge =
-    when (edge < edgeInsertAbsent || edge > edgeWitnessTerminal) $
+    when (edge /= edgeInsertActive && edge /= edgeUpdateTerminal) $
         error
             ( "bookEdge: edge "
                 <> show edge
                 <> " on key "
                 <> show key
-                <> " is not one of the seven admissible edges"
+                <> " is not supported by M1 (expected insertActive or updateTerminal)"
             )
 
 {- | The request output a booking locks, and the bond it holds.

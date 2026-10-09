@@ -1,0 +1,452 @@
+{
+  "boundary": "exported compiled component evaluation",
+  "compiler": {
+    "name": "Aiken",
+    "version": "v1.1.21+unknown"
+  },
+  "blueprintSha256": "813997f9a3e92f131066b5467ee7e99c8c75ef72c9ce8fa3d0852ae20cea74cc",
+  "rows": [
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 0,
+      "case": "edge-0",
+      "contextSha256": "9a08fff17fdece5db32a4a8c6c3d22dbc6982e926a1632c29348f6c1b5b33067",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 1,
+      "case": "edge-1",
+      "contextSha256": "aabac6fb43ba8b5b098898af74dfe6d6a8869c41a5b790e4bdffbd3ab155d926",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 2,
+      "case": "edge-2",
+      "contextSha256": "14a590d180588b8d611478c68a81e9c0a84f930d5ae9b58276d64f3f87e84630",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 3,
+      "case": "edge-3",
+      "contextSha256": "3ae26d8a31124ed0ecb6fd3a8d443dc75396d26c218b10734e742fa87850a002",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 4,
+      "case": "edge-4",
+      "contextSha256": "f793a667101e2e9874b3c1bddf7d21347059c076528a7d4ab1d4599394a25fce",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 5,
+      "case": "edge-5",
+      "contextSha256": "827448ce1755e68f4a8422080de92406204a2563cd80f720471d8cb62728ab92",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 6,
+      "case": "edge-6",
+      "contextSha256": "fbd6ac8520a0f346322e25de8c00ad896ca13fb1cade55df445467675415aaa0",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-0",
+      "contextSha256": "145b08c2091406ff97f2b27bb1804784c7696d4a4e12a07443957813702b6c5f",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-1",
+      "contextSha256": "504f1db44a1f25ad87226cdbfc5dbfe8543cd5395ff2a88ed641aae64c7022db",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-2",
+      "contextSha256": "033041ef96afa98829fe647074e80e6152c6139a83d5ec3a878e8aff60a14624",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-3",
+      "contextSha256": "584d8dbe11c7593bbe274c52d0037fac110defbf669511dcde1faf62f4ff5cc3",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-4",
+      "contextSha256": "c54c3ea6484099b7d25978c5e442e38b32a8d1c697fece7d0ee1097969f9d47f",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-5",
+      "contextSha256": "bbe9b15be56c04e7716e44cd8c9e195b8e982c5bf9cdda9306a83d93990ac8bd",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": null,
+      "case": "extra-6",
+      "contextSha256": "fd9e28cb8b961181f4e2e1583cc4fca00d4f5b444c3f760954e11f6a9df4b8ea",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 0,
+      "case": "request-0",
+      "contextSha256": "b0cf3d99c3c503744f6f0ddaff4801b1326845b5c90506f59d73b5e2807103cf",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 1,
+      "case": "request-1",
+      "contextSha256": "532e77760d8faaa1f3b05f3b571489f8cffc1cd5e304c48306cf1cca0b519da2",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 2,
+      "case": "request-2",
+      "contextSha256": "2601004f262393807d531672387e0c312edc0421795513960b5bd0b3834105be",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 3,
+      "case": "request-3",
+      "contextSha256": "e9d57ce7dee7ca1757a351c448b3abf004053c0af2867e80c023b22bc0c60d24",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 4,
+      "case": "request-4",
+      "contextSha256": "7f6e7cf893e6df2fe0ef2c10305b127d0bf9a673e0bddbfad6a78a9acb5582af",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 5,
+      "case": "request-5",
+      "contextSha256": "5375bdbfc7a4fd61e7f18699f1736769c8e4307136700f34b72f368b9c290fde",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "request.request.spend",
+      "scriptHash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320",
+      "edge": 6,
+      "case": "request-6",
+      "contextSha256": "1f1ab81d6c10db63e8a5cf256028dc0819321143b45f7b5ed4c9846c288251e4",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 0,
+      "case": "mint-0",
+      "contextSha256": "69c49acb779f7c488f6bbfa5dc29fae49db6bc4a9f90d43bf5cde51d26f183dd",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 1,
+      "case": "mint-1",
+      "contextSha256": "caa527895b533f354dcde425e7b05d6a32431082e339b85b4576fbd37e59d953",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 2,
+      "case": "mint-2",
+      "contextSha256": "7a4edbdef447d13e4b5486f33eb2d255ff3c36b37a2dea98d02dafa526c65569",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 3,
+      "case": "mint-3",
+      "contextSha256": "969b0b09e1816eecb95fb1b9b0e7bc60762c23fceda0d332919de63dc9cd86bd",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 4,
+      "case": "mint-4",
+      "contextSha256": "5723e2c9586eddc7005043d2978c6a5c5520dfeb261ee28ef9466fdc9e2cc576",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 5,
+      "case": "mint-5",
+      "contextSha256": "6ad047c97f94b207d8fc25af7e9428dd92919af1c57cc8e70792c6ff6d2d0ea7",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "witness.witness.mint",
+      "scriptHash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "edge": 6,
+      "case": "mint-6",
+      "contextSha256": "6e41ef833d64dfff0725355a5e5e1a82cdf618d85a91702650c22289ece6aae3",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 0,
+      "case": "joined-0",
+      "contextSha256": "4ac69a119cafa9a820024d4202032826314a3e91c80f5d2e6a7bca153e5fdb5d",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 1,
+      "case": "joined-1",
+      "contextSha256": "695bd674bdd15a4f845fc49e8f428bcc8f3fc2bd0623691596bb8067532e7168",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 2,
+      "case": "joined-2",
+      "contextSha256": "315425f2dad794b6292fc31091e0138728823aea004ef5d1588b2e00791a7e3b",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 3,
+      "case": "joined-3",
+      "contextSha256": "dddeb86b3494a2c08e48cddfb8d2323405c9f151378d78183cabf96a8c001f1b",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 4,
+      "case": "joined-4",
+      "contextSha256": "05c804ea8e3387a3cf5987654fd711287794af77e2c0c30fb244a30dd02126d3",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 5,
+      "case": "joined-5",
+      "contextSha256": "04f8090817a8cff836ae1b7ececd97067be145c1f08dc3ee7f6f5df98c40a16a",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "state.state.spend",
+      "scriptHash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "edge": 6,
+      "case": "joined-6",
+      "contextSha256": "de0e89bc0b30e627b55c50ca7cc231cf42cd155f3441e3ea77b01c53a7dea853",
+      "exit": 1,
+      "accepted": false,
+      "expectedAccepted": false,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.mint",
+      "scriptHash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "edge": null,
+      "case": "application-0",
+      "contextSha256": "8892fa66be23b8738a3db58ef4e49e26926c2687bc21f2f8fb2779924f5f414d",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.mint",
+      "scriptHash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "edge": null,
+      "case": "application-1",
+      "contextSha256": "007b253c52af79effafb8ac90e1a19710f1a5eaced7d6e0d9064744e43c28469",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.spend",
+      "scriptHash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "edge": null,
+      "case": "application-2",
+      "contextSha256": "efd2536719bf8a353b460ba4cd1c160c2b0e2640274f4a0c54b1fb391e13d52f",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    },
+    {
+      "validator": "open_datum.open_datum.spend",
+      "scriptHash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "edge": null,
+      "case": "application-3",
+      "contextSha256": "28ccff6226a0b33b1fd79ca5450a0309c56a92855c916d98abfb21fc8a376c7a",
+      "exit": 0,
+      "accepted": true,
+      "expectedAccepted": true,
+      "boundaryFaultDetected": false
+    }
+  ],
+  "failures": [],
+  "limits": [
+    "fixture roots are not connected ledger journeys",
+    "absent states are unreachable from M1 genesis",
+    "request and witness components admit co-present folds; the state's decision enforces the boundary",
+    "route fixture witness policies are not applied ledger policy identities",
+    "Aiken CEK evaluation does not establish ledger acceptance or execution budgets"
+  ],
+  "faultControl": {
+    "exit": 1,
+    "diagnostic": "state.state.spend: edge-6 accepted=True, expected=False",
+    "detected": true
+  }
+}

@@ -17,19 +17,19 @@
       "pause": 400
     },
     {
-      "text": "Define Singular.M1 as a fixed restriction of the existing model, with allowed outcomes delegated unchanged, excluded folds refused, atomic batches, original request exits, executable driver cases and proofs.",
+      "text": "Narrow Singular.Model to registration and permanent termination; retain stable wire ordinals and applicable request exits. Singular.M1 and its driver are compatibility names for this single active model.",
       "pause": 300
     },
     {
-      "text": "Give the bounded state validator a distinct compiled identity. Its fold checks every updating request before approval or trie execution. Keep the broader state validator and its evidence separate. Bind bounded witnesses to the bounded state hash, and select both explicitly in ordinary CLI creation and recognition. Do not introduce mutable admission configuration.",
+      "text": "Use one canonical state/fold/duty pipeline with a fixed pre-approval admission boundary. Remove obsolete production success paths and duplicate broad/restricted modules. Pin witnesses and ordinary CLI recognition to the freshly compiled state identity; refuse unknown or old code.",
       "pause": 300
     },
     {
-      "text": "Exercise allowed lifecycle controls and independently constructed excluded, unknown and mixed requests at the validator boundary. Check a deliberately broader contract against the boundary checker to demonstrate detection.",
+      "text": "Keep independently constructed excluded, unknown, mixed and alternate-route controls at the compiled boundary, with both supported positive controls. Demonstrate the checker detects an actual always-accept artifact mutation.",
       "pause": 300
     },
     {
-      "text": "Reuse the packaged Demo1 journey and existing conformance description language; retain broader evidence and uncovered rows. Run targeted checks, then one bounded full repository gate and exact-head hosted CI. Submit one draft PR and the precise receipt/limit manifest to the parent for acceptance.",
+      "text": "Reuse the packaged ordinary CLI journey. Preserve archived broader evidence, all preservation refs and uncovered consumer rows. Record the exact authorized coverage-baseline disposition without altering the coverage gate. Run targeted checks, one bounded repository gate and exact-head hosted CI, then hand off the concrete candidate for parent acceptance.",
       "pause": 300
     },
     {
@@ -37,12 +37,12 @@
       "pause": 400
     },
     {
-      "text": "Superseding scope: the later operator ruling abandons registries from earlier releases and withdraws old-deployment compatibility. New fixed identities must still be checked and wrong/unknown identities refused. Protected rejection (#498/#495) follows this carve with its own identity change and remains a first-milestone closing condition. This candidate does not close that milestone. Protected deposit is outside this carve's closing conditions.",
+      "text": "Superseding scope: the later operator ruling abandons registries from earlier releases and withdraws old-deployment compatibility. New fixed identities must still be checked and wrong/unknown identities refused. Protected rejection (#498/#495) follows this carve with its own identity change and remains separate from this carve and its closing conditions. This candidate does not close that milestone. Protected deposit is outside this carve's closing conditions.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "7e0071e134ef61f08c905da1c6cb1c1050be298301584ddc26e70ef79ddfafc4"
+    "sha256": "c9e99d3dbf36804400c09c27a80ca6fd98edd4fdb0fc5d133ba3073ddc7c80fc"
   }
 }

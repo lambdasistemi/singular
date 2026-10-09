@@ -59,7 +59,7 @@ import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
+import Singular.Registry.Types (OnChainRoot (..), edgeInsertActive)
 import Singular.Registry.Wait (tryOutcome)
 
 import Singular.Registry.E2E.CageSpec (submitWithGenesis, withE2E)
@@ -88,8 +88,8 @@ driverSpec stateBytes requestBytes = do
             -- Two edges through the driver. The second is the load-bearing
             -- one: its proof is built after the first has landed, so it can
             -- only succeed if the first was committed into the manager.
-            outA <- foldEdge reg driverKeyA edgeInsertAbsent
-            outB <- foldEdge reg driverKeyB edgeInsertAbsent
+            outA <- foldEdge reg driverKeyA edgeInsertActive
+            outB <- foldEdge reg driverKeyB edgeInsertActive
 
             -- The receipt carries both roots, and they move.
             unRoot (foRootBefore outA) /= unRoot (foRootAfter outA)
@@ -123,7 +123,7 @@ driverSpec stateBytes requestBytes = do
                     genesisAddr
                     (registryTokenId reg)
                     seededKey
-                    edgeInsertAbsent
+                    edgeInsertActive
             unsigned <- Cage.withLatest prov $ \v -> do
                 ctx <- Edges.registryContextFor cfg codes v (registryRefs reg)
                 updateTokenWithDuties
@@ -153,7 +153,7 @@ driverSpec stateBytes requestBytes = do
             staleHex `shouldNotBe` chainHex
 
             result <-
-                tryOutcome (foldEdge reg afterSeededKey edgeInsertAbsent)
+                tryOutcome (foldEdge reg afterSeededKey edgeInsertActive)
             case result of
                 Right _ ->
                     expectationFailure

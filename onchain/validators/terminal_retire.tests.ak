@@ -258,40 +258,14 @@ test another_keys_witness_refuses_cleanly() {
 // The edge that shares the duty must not move
 // ----------------------------------------------------------------------------
 
-/// `deleteActive` (edge 5) also requires its witness among the inputs,
-/// and its trace is `burn-from-input`. #177 moves edge 3 to its OWN duty
-/// so that name keeps meaning what it meant; this row is the guard that
-/// edge 5 still folds exactly as it did.
-test delete_active_still_folds() {
-  state.state.spend(
-    Some(StateDatum(fx.stateOf(fx.oneLeaf(fx.keyA, fx.activeLeaf)))),
-    Modify([UpdateAction([])]),
-    fx.stateRef,
-    fx.foldTx(
-      fx.oneLeaf(fx.keyA, fx.activeLeaf),
-      fx.emptyRoot(),
-      [
-        fx.requestInput(
-          0,
-          fx.keyA,
-          5,
-          fx.bookerKey,
-          fx.noDestination(),
-          fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
-          fx.requestLovelace,
-        ),
-      ],
-      witnessHeld(),
-      [fx.paymentOutput(fx.bookerAddress, fx.deposit)],
-      theBurn(),
-    ),
-  )
-}
-
 // ----------------------------------------------------------------------------
 // The reason each refusal gives
 // ----------------------------------------------------------------------------
 
+/// `deleteActive` (edge 5) also requires its witness among the inputs,
+/// and its trace is `burn-from-input`. #177 moves edge 3 to its OWN duty
+/// so that name keeps meaning what it meant; this row is the guard that
+/// edge 5 still folds exactly as it did.
 /// A-006's rule, applied to this edge: the reasons come from the
 /// construction sites the validator itself reads, so a test asserting a
 /// reason asserts the value the cage actually traces rather than a

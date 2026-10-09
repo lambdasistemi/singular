@@ -28,8 +28,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     status: 'SIMULATOR-CANDIDATE',
     formalStatus: 'PROVED / standard axioms',
     profiles: [
-      { id: 'generic', label: 'Preserved broader registry profile', engine: 'simulator/core.mjs' },
-      { id: 'naming', label: 'Naming profile — the Over witness', engine: 'simulator/naming.mjs' },
+      { id: 'generic', label: 'Permanent M1 registry profile', engine: 'simulator/core.mjs' },
+      {
+        id: 'naming',
+        label: 'Naming profile — permanent retirement',
+        engine: 'simulator/naming.mjs',
+      },
     ],
     files,
     templateSha256: hash('page-template.html'),

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Status. This page records the original three-operation design: Insert, Update and Delete requests, an application-minted Withdraw, and the states Absent, Active and Over. The registry-mode model that the Lean proves, the simulator replays and the conformance suite compares against the deployed validators moves a key through seven edges and calls the terminal state Terminal; where the two differ, registry mode is current. How a name moves in the registry shows the seven edges, and the model ledger records what replaced each part of this design.",
+      "text": "Historical design. This page records the earlier Insert/Update/Delete design and its broader broader model successor. The active permanent permanent contract model supports only insertActive and updateTerminal. Historical tags 0, 2, 4, 5 and 6 encode refused actions, not available features. Current supported behavior describes permanent contract; archived source and evidence remain on preserve/m2/pre-m1-source-removal.",
       "pause": 400
     },
     {
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "lifecycle.md",
-    "sha256": "df0bac55d8eaa9423786e05bcb1e60255e02dfa18c102eada54c2a1536ef5906"
+    "sha256": "b4ee83d1236e953c403b8a6677b7f79b34e125d999f35e3574d00b754028c486"
   }
 }

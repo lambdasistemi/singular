@@ -32,13 +32,11 @@ def booked (s : RegistryState) (k : Nat) : RegistryState :=
   | .ok r => r.state
   | .error _ => s
 
-/-- A canonical witnessed-absent key: known absent, custody with refund 91 and
+/-- A canonical legacyAbsent-absent key: known absent, custody with refund 91 and
 value 200 named by the witness. -/
-def witnessed (s : RegistryState) (k : Nat) : RegistryState :=
-  match step s ({ edge := .insertAbsent, key := k, owner := 91, refundAddress := 91
-                , deposit := 200, approval := apFor .insertAbsent k 91 0 } : Request) with
-  | .ok r => r.state
-  | .error _ => s
+def legacyAbsent (s : RegistryState) (k : Nat) : RegistryState :=
+  let trie := trieSet s.trie k (.known .absent)
+  { s with trie := trie, config := { s.config with root := rootOf trie } }
 
 def req (e : Edge) (k : Nat) (owner : Nat) (out : Nat) : Request :=
   let target : Request := { edge := e, key := k, owner := owner, output := out }
@@ -74,98 +72,38 @@ def retiredState : RegistryState :=
   match step (booked s0 42) (req .updateTerminal 42 42 555) with
   | .ok r => r.state | .error _ => s0
 
--- accepted edges (one per seven-edge row, with its delta observed in the result)
-def accInsertAbsent : Case :=
-  runCase "GA01-insert-absent-accepted" true "" (witnessed s0 7)
-    (req .insertAbsent 8 91 0)
+-- Only two success rows. Legacy absent starts below are synthetic, unreachable fixtures.
 def accInsertActive : Case :=
   runCase "GA02-insert-active-accepted" true "" s0 (req .insertActive 42 42 555)
-def accUpdateActive : Case :=
-  runCase "GA03-update-active-accepted" true "" (witnessed s0 42)
-    (req .updateActive 42 42 555)
 def accUpdateTerminal : Case :=
   runCase "GA04-update-terminal-accepted" true "" (booked s0 42)
     (req .updateTerminal 42 42 555)
-def accDeleteAbsent : Case :=
-  runCase "GA05-delete-absent-accepted" true "" (witnessed s0 42)
-    (req .deleteAbsent 42 91 0)
-def accDeleteActive : Case :=
-  runCase "GA06-delete-active-accepted" true "" (booked s0 42)
-    (req .deleteActive 42 42 0)
-def accWitnessTerminal : Case :=
-  runCase "GA07-witness-terminal-accepted" true "" retiredState
-    ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
 
--- refused-edge-combinations complement refusals: every non-seven-edge (edge, before) pair
 def refusals : List Case :=
-  let taken := booked s0 42            -- known active
-  let retired := match step (booked s0 42) (req .updateTerminal 42 42 555) with
-    | .ok r => r.state | .error _ => taken -- known terminal
-  let absent := witnessed s0 42        -- known absent
-  [ runCase "GR01-insert-absent-on-active" false "key-exists" taken (req .insertAbsent 42 91 0)
-  , runCase "GR02-insert-active-on-active" false "key-exists" taken (req .insertActive 42 42 555)
-  , runCase "GR03-insert-absent-on-terminal" false "key-exists" retired (req .insertAbsent 42 91 0)
-  , runCase "GR04-insert-active-on-terminal" false "key-exists" retired (req .insertActive 42 42 555)
-  , runCase "GR05-insert-active-on-absent" false "key-exists" absent (req .insertActive 42 42 555)
-  , runCase "GR06-update-active-on-unknown" false "key-unknown" s0 (req .updateActive 42 42 555)
-  , runCase "GR07-update-active-on-active" false "already-booked" taken (req .updateActive 42 42 555)
-  , runCase "GR08-update-active-on-terminal" false "terminal-immutable" retired
-      (req .updateActive 42 42 555)
-  , runCase "GR09-update-terminal-on-unknown" false "key-unknown" s0 (req .updateTerminal 42 42 555)
-  , runCase "GR10-update-terminal-on-absent" false "not-booked" absent (req .updateTerminal 42 42 555)
-  , runCase "GR11-update-terminal-on-terminal" false "terminal-immutable" retired
-      (req .updateTerminal 42 42 555)
-  , runCase "GR12-delete-absent-on-unknown" false "key-unknown" s0 (req .deleteAbsent 42 91 0)
-  , runCase "GR13-delete-absent-on-active" false "not-absent" taken (req .deleteAbsent 42 91 0)
-  , runCase "GR14-delete-absent-on-terminal" false "terminal-immutable" retired
-      (req .deleteAbsent 42 91 0)
-  , runCase "GR15-delete-active-on-unknown" false "key-unknown" s0 (req .deleteActive 42 42 0)
-  , runCase "GR16-delete-active-on-absent" false "not-active" absent (req .deleteActive 42 42 0)
-  , runCase "GR17-delete-active-on-terminal" false "terminal-immutable" retired
-      (req .deleteActive 42 42 0)
-  , runCase "GR18-read-active-refused" false "read-active" taken
-      (req .witnessTerminal 42 0 700)
-  , runCase "GR19-read-absent-refused" false "read-absent" absent
-      (req .witnessTerminal 42 0 700)
-  , runCase "GR20-read-unknown-refused" false "read-unknown" s0
-      (req .witnessTerminal 42 0 700)
-  , runCase "GR21-insert-absent-no-approval" false "no-approval" s0
-      ({ edge := .insertAbsent, key := 42, owner := 91, refundAddress := 91, deposit := 200 } : Request)
-  , runCase "GR22-insert-active-other-policy" false "no-approval" s0
-      ({ edge := .insertActive, key := 42, owner := 42, output := 555, approval := some ({ policy := 8, edge := .insertActive, key := 42, owner := 42, destination := 555, assetName := approvalAssetName .insertActive 42 42 555 } : Approval) } : Request)
-  , runCase "GR23-insert-active-mismatched-tuple" false "approval-mismatch" s0
-      ({ edge := .insertActive, key := 42, owner := 42, output := 555, approval := some ({ policy := 7, edge := .insertActive, key := 43, owner := 42, destination := 555, assetName := approvalAssetName .insertActive 43 42 555 } : Approval) } : Request)]
+  let starts := [("unknown", s0), ("absent", legacyAbsent s0 42),
+                 ("active", booked s0 42), ("terminal", retiredState)]
+  let excluded := [Edge.insertAbsent, .updateActive, .deleteAbsent, .deleteActive, .witnessTerminal]
+  excluded.flatMap fun e => starts.map fun (label, state) =>
+    runCase ("GR-excluded-" ++ edgeName e ++ "-" ++ label) false "edge-inadmissible" state
+      (req e 42 42 555)
 
--- the read-position controls
 def readRows : List Case :=
-  [ runCase "GD01-read-terminal-accepted" true "" retiredState
-      ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
-  , runCase "GD02-read-before-establishing" false "read-unknown" s0
-      ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
-  ]
+  [ runCase "GD01-register-occupied-refused" false "key-exists" (booked s0 42)
+      (req .insertActive 42 42 555)
+  , runCase "GD02-terminal-permanent-refused" false "key-exists" retiredState
+      (req .insertActive 42 42 555)
+  , runCase "GD03-termination-unknown-refused" false "key-unknown" s0
+      (req .updateTerminal 42 42 555)
+  , runCase "GD04-termination-terminal-refused" false "terminal-immutable" retiredState
+      (req .updateTerminal 42 42 555)
+  , runCase "GD05-approval-missing-refused" false "no-approval" s0
+      { req .insertActive 42 42 555 with approval := none } ]
 
--- GC: the custody census (absent-custody-datum). An absent token lives in the cage's own
--- custody, so the two edges that consume one are refused when it is missing
--- even though the leaf says absent, and the census is exactly the outstanding
--- absent tokens.
 def custodyRows : List Case :=
-  let absentNoCustody : RegistryState :=
-    { (witnessed s0 42) with custody := [] }
-  let activeNoToken : RegistryState :=
-    { (booked s0 42) with held := [] }
-  [ runCase "GC01-update-active-without-custody" false "custody-missing"
-      absentNoCustody (req .updateActive 42 42 555)
-  , runCase "GC02-delete-absent-without-custody" false "custody-missing"
-      absentNoCustody (req .deleteAbsent 42 91 0)
-  , runCase "GC03-update-active-with-custody" true "" (witnessed s0 42)
-      (req .updateActive 42 42 555)
-  , runCase "GC04-delete-absent-with-custody" true "" (witnessed s0 42)
-      (req .deleteAbsent 42 91 0)
-  , runCase "GC05-update-terminal-without-token" false "token-missing"
-      activeNoToken (req .updateTerminal 42 42 555)
-  , runCase "GC06-delete-active-without-token" false "token-missing"
-      activeNoToken (req .deleteActive 42 42 555)
-  ]
+  [ runCase "GC05-update-terminal-without-token" false "token-missing"
+      { booked s0 42 with held := [] } (req .updateTerminal 42 42 555)
+  , runCase "GC06-update-terminal-legacy-absent" false "not-booked"
+      (legacyAbsent s0 42) (req .updateTerminal 42 42 555) ]
 
 -- fold-level rows: zero batch, mint mismatch, read inside batch at position
 def foldRows : List (String × Bool × String) :=
@@ -175,29 +113,23 @@ def foldRows : List (String × Bool × String) :=
 
 def batchOk : Bool :=
   match foldBatch s0
-    [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
-      , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 1)] }
-    , { edge := .updateActive, key := 5, owner := 42, output := 555
-      , approval := apFor .updateActive 5 42 555, claimed := [(.absent, -1), (.active, 1)] } ] with
+    [ { req .insertActive 5 42 555 with claimed := [(.active, 1)] }
+    , { req .updateTerminal 5 42 555 with claimed := [(.active, -1)] } ] with
   | .ok _ => true | .error _ => false
 
 def batchEmpty : Option String :=
-  match foldBatch s0 [] with
-  | .error e => some e | .ok _ => none
+  match foldBatch s0 [] with | .error e => some e | .ok _ => none
 
 def batchMint : Option String :=
-  match foldBatch s0
-    [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
-      , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 2)] } ] with
+  match foldBatch s0 [{ req .insertActive 5 42 555 with claimed := [(.active, 2)] }] with
   | .error e => some e | .ok _ => none
 
--- custody-lovelace-refund value flow: the inserter (91) is paid, not the consumer's output
 def adaRows : List (String × Bool × (List (Nat × Nat))) :=
-  [ ("GAda-update-active-pays-refund", true,
-      match step (witnessed s0 42) (req .updateActive 42 42 555) with
+  [ ("GAda-reject-returns-deposit", true,
+      match exitStep s0 .reject { req .insertActive 5 91 555 with deposit := 55 } with
       | .ok r => r.paid | .error _ => [])
-  , ("GAda-delete-absent-pays-refund", true,
-      match step (witnessed s0 42) (req .deleteAbsent 42 91 0) with
+  , ("GAda-retract-returns-deposit-and-tip", true,
+      match exitStep s0 .retract { req .insertActive 5 91 555 with deposit := 55, tip := 7 } with
       | .ok r => r.paid | .error _ => []) ]
 
 -- codec rows
@@ -295,65 +227,6 @@ def transactionRowJson : Json :=
   | _, _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
 
 /-- An insertion from genesis with a refund address different from the key. -/
-def absentRequest : Request :=
-  { req .insertAbsent 42 91 0 with refundAddress := 91, deposit := 200, claimed := [(.absent, 1)] }
-
-def absentResult : Except String Result := step s0 absentRequest
-
-def absentTx : Except String Tx := txOf s0 absentRequest txLovelace
-
-def absentRowTheorem : String := "Singular.Statements.insert_absent_transaction_row"
-def absentRowStatement : String := "a7e93824be2944e55b6482d0836111450522a7ed04eb57c262656f8903adaec6"
-
-/-- Check the constructed value independently of its constructors, so changing
-those constructors cannot silently change the exported expectations. -/
-def absentTxCorrect : Bool :=
-  match absentTx, absentResult with
-  | .ok tx, .ok t =>
-    tx ==
-      { inputs :=
-          [ { role := .state, datum := .inline, stateTokens := 1, approvals := 0, lovelace := 0 }
-          , { role := .request, datum := .inline, stateTokens := 0, approvals := 1
-            , lovelace := txLovelace } ]
-      , outputs :=
-          [ { role := .state, datum := .inline, address := none, stateTokens := 1
-            , config := some t.state.config, commitment := none, assets := [] }
-          , { role := .cage, datum := .inline, address := some 0, stateTokens := 0
-            , config := none, commitment := none, assets := [((.absent, 42), 1)]
-            , custodyDatum := some [91], lovelace := 200 } ]
-      , mint := [((.absent, 42), 1)], signers := [], refunds := [(0, 200)] } &&
-    (tx.outputs.filter (fun o => o.role == .cage)).map custodyKey == [some 42] &&
-    t.state.trie == trieSet s0.trie 42 (.known .absent) &&
-    onlyRootChanged cfg t.state.config && t.state.config.root == rootOf t.state.trie &&
-    t.state.custody == [{ key := 42, refundAddress := 91, value := 200 }] &&
-    t.state.held == [] && custodyCount t.state 42 == 1 &&
-    lovelaceCoversTip cfg txLovelace && destinationDatumBinds absentRequest
-  | _, _ => false
-
-def absentRowJson : Json :=
-  match absentTx, absentResult with
-  | .ok tx, .ok t => Json.mkObj
-      [ ("profile", "insertAbsent"), ("accepted", toJson absentTxCorrect)
-      , ("theorem", toJson absentRowTheorem), ("statementSha256", toJson absentRowStatement)
-      , ("request", toJson absentRequest), ("transaction", txJson cfg tx)
-      , ("recoveredKeys", toJson ((tx.outputs.filter (fun o => o.role == .cage)).map custodyKey))
-      , ("claimed", assetsJson cfg (requestClaim absentRequest))
-      , ("onlyRootChanges", toJson (onlyRootChanged cfg t.state.config))
-      , ("rootMatchesTrie", toJson (t.state.config.root == rootOf t.state.trie))
-      , ("absentQuantity", toJson (custodyCount t.state 42))
-      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
-      , ("destinationDatumBinds", toJson (destinationDatumBinds absentRequest)) ]
-  | _, _ => Json.mkObj [("profile", "insertAbsent"), ("accepted", toJson false)]
-
-/-! ### transaction-correspondence — the `updateTerminal` transaction row (#177)
-
-Retirement is the first row in this corpus whose mint is negative, and a
-negative mint is the one thing a transaction cannot simply assert: the token has
-to be spent from somewhere. The state below is the one the accepted
-`insertActive` produced, so the active witness this fold burns is the very token
-that edge minted, and the verdicts read the built value rather than the logical
-step. -/
-
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
   "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
@@ -408,7 +281,7 @@ def retireWithoutToken : RegistryState := { retireState with held := [] }
 
 def retirementRefusalRows : List (String × String × RegistryState) :=
   [ ("GT01-update-terminal-unknown-refused", "key-unknown", s0)
-  , ("GT02-update-terminal-absent-refused", "not-booked", witnessed s0 42)
+  , ("GT02-update-terminal-absent-refused", "not-booked", legacyAbsent s0 42)
   , ("GT03-update-terminal-terminal-refused", "terminal-immutable", retiredState)
   , ("GT04-update-terminal-without-token-refused", "token-missing", retireWithoutToken) ]
 
@@ -478,42 +351,6 @@ def tokenPoliciesJson : Json :=
     , ("absent", toJson (kindPolicy cfg .absent))
     , ("terminal", toJson (kindPolicy cfg .terminal)) ]
 
-/-- A deleted key is a non-member. Each row deletes key 42 from a registry that
-stored it, alone or beside key 8, and names the registry the same requests build
-without key 42. Both sides are computed by the model; nothing is typed. -/
-def deletionRows : List (String × Except String Result × RegistryState) :=
-  [ ("deleteAbsent of the only key",
-      step (witnessed s0 42) (req .deleteAbsent 42 91 0), s0)
-  , ("deleteAbsent beside another key",
-      step (witnessed (witnessed s0 8) 42) (req .deleteAbsent 42 91 0), witnessed s0 8)
-  , ("deleteActive of the only key",
-      step (booked s0 42) (req .deleteActive 42 42 0), s0)
-  , ("deleteActive beside another key",
-      step (booked (booked s0 8) 42) (req .deleteActive 42 42 0), booked s0 8) ]
-
-/-- What a deletion row violates: a stored `unknown` leaf, a registry other than
-the one that never stored the key, a lookup other than `unknown`, or a later
-`updateTerminal` of the key refused for a reason other than `key-unknown`. -/
-def deletionFailures : List String :=
-  deletionRows.flatMap fun (name, result, never) =>
-    match result with
-    | .error why => [s!"{name}: refused {why}"]
-    | .ok t =>
-      (if t.state.trie.all (fun p => p.2 != .unknown) then []
-       else [s!"{name}: trie stores an unknown leaf {repr t.state.trie}"]) ++
-      (if t.state.trie == never.trie then []
-       else [s!"{name}: trie {repr t.state.trie} != {repr never.trie}"]) ++
-      (if t.state.config.root == never.config.root then []
-       else [s!"{name}: root {repr t.state.config.root.toList} != {repr never.config.root.toList}"]) ++
-      (if t.state == never then []
-       else [s!"{name}: registry differs from the one that never stored the key"]) ++
-      (if trieGet t.state.trie 42 == .unknown then []
-       else [s!"{name}: lookup of the deleted key is {repr (trieGet t.state.trie 42)}"]) ++
-      (match step t.state (req .updateTerminal 42 42 555) with
-       | .error "key-unknown" => []
-       | .error why => [s!"{name}: updateTerminal after deletion refused {why}"]
-       | .ok _ => [s!"{name}: updateTerminal after deletion accepted"])
-
 /-- The signature sets each admitted fold is folded again with: one signer, and
 two signatures from different keys. -/
 def signatureSets : List (List (List Nat)) := [[[1]], [[2], [3, 4]]]
@@ -542,8 +379,7 @@ no transaction for the admitted fold, the transaction requires a signer, the
 signature set did not change the request, or the step or the transaction moved
 with it. One row per edge, all seven. -/
 def signerFailures : List String :=
-  [accInsertAbsent, accInsertActive, accUpdateActive, accUpdateTerminal,
-   accDeleteAbsent, accDeleteActive, accWitnessTerminal].flatMap fun c =>
+  [accInsertActive, accUpdateTerminal].flatMap fun c =>
     let r := signedAction c
     match txOf c.before r txLovelace with
     | .error why => [s!"{c.id}: the model built no transaction ({why})"]
@@ -558,8 +394,7 @@ def signerFailures : List String :=
          else [s!"{c.id}: the transaction moved with signatures {sigs}"])
 
 
-def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
-  accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
+def cases : List Case := [accInsertActive, accUpdateTerminal] ++ refusals ++ readRows ++ custodyRows
 
 def caseJson (c : Case) : Json :=
   Json.mkObj [("id", toJson c.id), ("status", toJson c.status),
@@ -584,19 +419,19 @@ def exitRequest (e : Edge) : Request :=
 
 -- The rule table, one row per exit.
 #guard obligations (.fold .insertAbsent) (exitRequest .insertAbsent) ==
-  [{ recipient := .custody, atLeast := 55 }]
+  []
 #guard obligations (.fold .insertActive) (exitRequest .insertActive) ==
   [{ recipient := .destination 99 none, atLeast := 55 }]
 #guard obligations (.fold .updateActive) (exitRequest .updateActive) ==
-  [{ recipient := .destination 99 none, atLeast := 55 }]
+  []
 #guard obligations (.fold .witnessTerminal) (exitRequest .witnessTerminal) ==
-  [{ recipient := .destination 99 none, atLeast := 55 }]
+  []
 #guard obligations (.fold .updateTerminal) (exitRequest .updateTerminal) ==
   [{ recipient := .owner 42, atLeast := 55 }]
 #guard obligations (.fold .deleteAbsent) (exitRequest .deleteAbsent) ==
-  [{ recipient := .owner 42, atLeast := 55 }]
+  []
 #guard obligations (.fold .deleteActive) (exitRequest .deleteActive) ==
-  [{ recipient := .owner 42, atLeast := 55 }]
+  []
 #guard obligations .reject (exitRequest .insertActive) ==
   [{ recipient := .owner 42, atLeast := 55 }]
 #guard obligations .retract (exitRequest .insertActive) ==
@@ -653,14 +488,14 @@ def settleInsertActive : SettleCase :=
   , context := outs.filter (·.role != .destination)
   , carrier := { dest with lovelace := settleInsertActiveRequest.deposit } }
 
-def settleDeleteActiveRequest : Request :=
-  { req .deleteActive 8 42 99 with deposit := 55, tip := 7 }
+def settleUpdateTerminalRequest : Request :=
+  { req .updateTerminal 8 42 99 with deposit := 55, tip := 7 }
 
 /-- The fold delivering nothing: the model's own transaction, its owner output
 carrying the deposit back. -/
-def settleDeleteActive : SettleCase :=
-  let outs := txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)
-  { exit := .fold .deleteActive, request := settleDeleteActiveRequest
+def settleUpdateTerminal : SettleCase :=
+  let outs := txOutputs (txOf (booked s0 8) settleUpdateTerminalRequest 1)
+  { exit := .fold .updateTerminal, request := settleUpdateTerminalRequest
   , context := outs.filter (·.role != .owner)
   , carrier := (outs.find? (·.role == .owner)).getD (ownerOutput 0 0) }
 
@@ -679,14 +514,14 @@ def settleRetract : SettleCase :=
 
 -- The model's own transactions exist, so the controls above are not vacuous.
 #guard (txOutputs (txOf s0 settleInsertActiveRequest 1)).any (·.role == .destination)
-#guard (txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)).any (·.role == .owner)
+#guard (txOutputs (txOf (booked s0 8) settleUpdateTerminalRequest 1)).any (·.role == .owner)
 
 #guard settleInsertActive.untampered == none
 #guard settleInsertActive.shortByOne == some "deposit-returned"
 #guard settleInsertActive.otherAddress == some "destination"
-#guard settleDeleteActive.untampered == none
-#guard settleDeleteActive.shortByOne == some "deposit-returned"
-#guard settleDeleteActive.otherAddress == some "deposit-returned"
+#guard settleUpdateTerminal.untampered == none
+#guard settleUpdateTerminal.shortByOne == some "deposit-returned"
+#guard settleUpdateTerminal.otherAddress == some "deposit-returned"
 #guard settleReject.untampered == none
 #guard settleReject.shortByOne == some "deposit-returned"
 #guard settleReject.otherAddress == some "deposit-returned"
@@ -760,31 +595,9 @@ def stateTokenInput : TxInput :=
 #guard [Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal, .deleteAbsent,
     .deleteActive, .witnessTerminal].all fun e => spendRefusal (.fold e) [stateTokenInput] == none
 
-/-- The custody-delivering fold, with the model's own cage output. -/
-def settleInsertAbsentRequest : Request :=
-  { req .insertAbsent 8 91 0 with refundAddress := 91, deposit := 55 }
-
-def settleInsertAbsentOutputs : List TxOutput :=
-  txOutputs (txOf s0 settleInsertAbsentRequest 1)
-
-#guard settleInsertAbsentOutputs.any (·.role == .cage)
-#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
-  settleInsertAbsentOutputs == none
--- A custody output present but short is a deposit going back, as the chain names
--- it; no custody output at the cage is `absent-custody`.
-#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
-  (settleInsertAbsentOutputs.map fun o =>
-    if o.role == .cage then { o with lovelace := o.lovelace - 1 } else o) == some "deposit-returned"
-#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
-  (settleInsertAbsentOutputs.filter (·.role != .cage)) == some "absent-custody"
-#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
-  (settleInsertAbsentOutputs.map fun o =>
-    if o.role == .cage then { o with address := o.address.map (· + 1) } else o) == some "absent-custody"
-
 -- Every recipient is paid only by an output of its role at its address: the same
 -- lovelace at another address, or under any other role, pays nothing.
-#guard [ (obligations (.fold .insertAbsent) settleInsertAbsentRequest, TxRole.cage, cageAddress, "absent-custody")
-       , (obligations (.fold .insertActive) settleInsertActiveRequest, .destination, 99, "destination")
+#guard [ (obligations (.fold .insertActive) settleInsertActiveRequest, .destination, 99, "destination")
        , (obligations .reject settleInsertActiveRequest, .owner, 42, "deposit-returned") ].all
     fun (owed, role, address, reason) =>
       let paid := { ownerOutput address 1000 with role := role, datum := .none }
@@ -801,8 +614,7 @@ def settleInsertAbsentOutputs : List TxOutput :=
   [ownerOutput 42 55, ownerOutput 42 55] == none
 
 -- The state continuation pays no recipient, even at the recipient's own address.
-#guard [ (obligations (.fold .insertAbsent) settleInsertAbsentRequest, some 0, "absent-custody")
-       , (obligations (.fold .insertActive) settleInsertActiveRequest, some 99, "destination")
+#guard [ (obligations (.fold .insertActive) settleInsertActiveRequest, some 99, "destination")
        , (obligations .reject settleInsertActiveRequest, some 42, "deposit-returned") ].all
     fun (owed, address, reason) =>
       settle owed [{ txStateOutput (emptyResult s0) with address := address, lovelace := 1000 }] == some reason
@@ -847,7 +659,7 @@ def exitEdges : List Edge :=
    .deleteAbsent, .deleteActive, .witnessTerminal]
 
 /-- Keys 3 and 4 active, key 6 absent under custody. -/
-def exitState : RegistryState := witnessed (booked (booked s0 3) 4) 6
+def exitState : RegistryState := legacyAbsent (booked (booked s0 3) 4) 6
 
 /-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
 def exitStepRequest (e : Edge) (k : Nat) : Request :=
@@ -931,15 +743,15 @@ def paidKeys : List Nat := [4, 5, 6, 9]
 rule table: the cage for `insertAbsent`, the named output 99 for the edges that
 deliver a token, the owner 42 for the edges that deliver nothing. -/
 def foldPaysDepositTo : Edge → Nat
-  | .insertAbsent => cageAddress
-  | .insertActive | .updateActive | .witnessTerminal => 99
-  | .updateTerminal | .deleteAbsent | .deleteActive => 42
+  | .insertActive => 99
+  | .updateTerminal => 42
+  | _ => 0
 
 def deliversToken (e : Edge) : Bool := foldPaysDepositTo e == 99
 def returnsDeposit (e : Edge) : Bool := foldPaysDepositTo e == 42
 
 -- Not vacuous: every edge is admitted at one of the keys.
-#guard exitEdges.all fun e => paidKeys.any fun k =>
+#guard exitEdges.filter (fun e => allowed e) |>.all fun e => paidKeys.any fun k =>
   match step paidState (exitStepRequest e k) with | .ok _ => true | .error _ => false
 
 -- A fold pays the deposit where the rule table says, then what its step pays.
@@ -979,7 +791,7 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
   match txOfExit paidState x (exitStepRequest e k) 3 with
   | .ok tx => settle (obligations x (exitStepRequest e k)) tx.outputs == none
   | .error _ => true
-#guard allExits.all fun x => exitEdges.any fun e => paidKeys.any fun k =>
+#guard (allExits.filter fun x => match x with | .fold e => allowed e | _ => true).all fun x => exitEdges.any fun e => paidKeys.any fun k =>
   match txOfExit paidState x (exitStepRequest e k) 3 with | .ok _ => true | .error _ => false
 
 -- The driver's operations are the nine exits: the seven edges by their own
@@ -1011,7 +823,7 @@ def SettleCase.judged (c : SettleCase) : List (Option String) :=
 -- The driver judges outputs a caller observed against what the scenario's own exit
 -- owes: a delivering and a non-delivering fold, untampered, short and misdirected.
 #guard settleInsertActive.judged == [none, some "deposit-returned", some "destination"]
-#guard settleDeleteActive.judged == [none, some "deposit-returned", some "deposit-returned"]
+#guard settleUpdateTerminal.judged == [none, some "deposit-returned", some "deposit-returned"]
 -- A reject's refund, as built, short and misdirected.
 #guard settleReject.judged == [none, some "deposit-returned", some "deposit-returned"]
 
@@ -1209,8 +1021,6 @@ def main : IO Unit := do
     throw (IO.userError "Transaction correspondence keyed accepted row refused")
   unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do
     throw (IO.userError s!"Transaction correspondence wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
-  unless absentTxCorrect do
-    throw (IO.userError "Transaction correspondence insertAbsent constructed transaction violates refund-only custody row")
   -- #177: the transaction an admitted updateTerminal builds is a verdict too
   unless (match retireResult with | .ok _ => true | .error _ => false) do
     throw (IO.userError "Transaction correspondence updateTerminal was refused at a booked key")
@@ -1227,8 +1037,6 @@ def main : IO Unit := do
   for (id, expected, before) in retirementRefusalRows do
     unless retireRefusal before == expected do
       throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")
-  unless deletionFailures.isEmpty do
-    throw (IO.userError s!"deletion keeps the key: {deletionFailures}")
   unless signerFailures.isEmpty do
     throw (IO.userError s!"a fold requires a signer: {signerFailures}")
   unless admissionFailures.isEmpty do
@@ -1257,7 +1065,7 @@ def main : IO Unit := do
     , ("codec", toJson codecJson)
     , ("configRoundtrip", toJson configRow)
     , ("tokenPolicies", tokenPoliciesJson)
-    , ("transactions", Json.arr #[transactionRowJson, absentRowJson, retirementRowJson])
+    , ("transactions", Json.arr #[transactionRowJson, retirementRowJson])
     , ("keyedMintRows", Json.arr
         #[ keyedMintRowJson "GK01-two-keys-accepted" keyedAccepted
          , keyedMintRowJson "GK02-same-kind-wrong-key-refused" keyedWrongKey ])

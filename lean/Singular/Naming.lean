@@ -321,26 +321,18 @@ def namingContext (state : NamingState) (key : Key) (owner : List Nat) :
           some { controllerBytes := owner, refundBytes := owner
                , fixture := aliceFixture }
 
-/-- naming-approval-rules (operator ruling, as amended): what naming's approval policy
-certifies on, per edge. `insertAbsent` for anyone; `updateActive` on the
-signature of the controller who will own the record; `deleteAbsent` on the
-signature of the refund address the `insertAbsent` request named; `insertActive`
-on the controller's signature; `updateTerminal` on the committed recovery key
-revealed and signing, or a distinct-member quorum — never the current control
-key alone; `deleteActive` never. Reads need no certification. -/
+/-- M1 naming certifies registration on the controller's signature and termination
+on the committed recovery key or distinct-member quorum. All other wire edges
+are refused. Ordinary payload maintenance has its own application path. -/
 def namingCertifies (hasher : RecoveryHasher) (edge : Edge)
     (signatures : List (List Nat)) (revealed : Option NamingAddress)
     (context : NamingCtx) : Bool :=
   match edge with
-  | .insertAbsent => true
   | .insertActive => signatures.contains context.controllerBytes
-  | .updateActive => signatures.contains context.controllerBytes
-  | .deleteAbsent => signatures = [context.refundBytes]
   | .updateTerminal =>
       revealsCommittedRecoveryKey hasher context.fixture revealed ||
         quorumMet context.fixture.retirementQuorum signatures
-  | .deleteActive => false
-  | .witnessTerminal => true
+  | _ => false
 
 /-- The naming pinned configuration (the eight-field datum of R7). -/
 def namingConfig : Config :=
@@ -392,49 +384,12 @@ def namingApproval (r : Request) (signatures : List (List Nat)) : Option Approva
        , assetName := approvalAssetName r.edge r.key r.owner (requestDestination r)
        , signatures := signatures }
 
-/-- Witness the absence of a key: `insertAbsent`, anyone, depositing at the
-refund address the witness names (Carol). -/
-def namingWitness (state : NamingState) (key : Nat) (witness : Nat) (deposit : Nat) :
-    Except String NamingState := do
-  let r : Request :=
-    ({ edge := .insertAbsent, key := key, owner := witness, refundAddress := witness
-      , deposit := deposit } : Request)
-  let ap := namingApproval r []
-  (namingStep fixtureHasher state { r with approval := ap } none).map
-    fun result => { state with registry := result.state }
-
 /-- Register a fresh name: `insertActive`, the controller's signature; the
 record UTxO holds the active token and the trie carries only `Active` (record-binds-active-registration). -/
 def namingRegister (state : NamingState) (key : Nat) (out : Nat)
     (fixture : NamingFixture) : Except String NamingState := do
   let r : Request :=
     ({ edge := .insertActive, key := key
-     , owner := List.toNatFallback controllerAddress.bytes, output := out } : Request)
-  let ap := namingApproval r [toBytes28 r.owner]
-  (namingStep fixtureHasher state { r with approval := ap } none).map
-    fun result =>
-      { state with
-        registry := result.state
-        records := { key := key, output := out, fixture := fixture } :: state.records }
-
-/-- Retract a witnessed absence: `deleteAbsent`, the refund address the
-`insertAbsent` request named — the inserter only, never anyone else (custody-lovelace-refund,
-naming-approval-rules). The deposit returns to the inserter whichever way the absence ends. -/
-def namingRetract (state : NamingState) (key : Nat) : Except String NamingState := do
-  let entry ←
-    Option.toExcept (state.registry.custody.find? (·.key == key)) "custody-missing"
-  let r : Request := ({ edge := .deleteAbsent, key := key, owner := entry.refundAddress } : Request)
-  let ap := namingApproval r [toBytes28 entry.refundAddress]
-  (namingStep fixtureHasher state { r with approval := ap } none).map
-    fun result => { state with registry := result.state }
-
-/-- Book a witnessed name: `updateActive`, the controller's signature; the fold
-consumes the absent token without the witness's signature and pays the deposit
-to the refund address its custody datum records. -/
-def namingBook (state : NamingState) (key : Nat) (out : Nat)
-    (fixture : NamingFixture) : Except String NamingState := do
-  let r : Request :=
-    ({ edge := .updateActive, key := key
      , owner := List.toNatFallback controllerAddress.bytes, output := out } : Request)
   let ap := namingApproval r [toBytes28 r.owner]
   (namingStep fixtureHasher state { r with approval := ap } none).map
@@ -547,16 +502,6 @@ def namingCompleteRetirement (state : NamingState) (attempt : RetirementCompleti
       pendingRetirements := state.pendingRetirements.filter
         (·.request.key != attempt.key) }
 
-/-- Attest a retired name: `witnessTerminal`, anyone; the Over witness is
-minted by a folded read and freely burnable. -/
-def namingAttest (state : NamingState) (key : Nat) (out : Nat) :
-    Except String NamingState := do
-  let r : Request := ({ edge := .witnessTerminal, key := key, output := out } : Request)
-  (namingStep fixtureHasher state r none).map
-    fun result => { state with registry := result.state }
-
-/-- `WellFormed` over the naming state: the registry is consistent and every
-record's key is exactly the booked active token at the record's output. -/
 def namingWellFormed (state : NamingState) : Prop :=
   Consistent state.registry ∧
   (∀ record ∈ state.records,

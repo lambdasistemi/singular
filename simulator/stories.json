@@ -1,536 +1,306 @@
 [
- {
-  "id": "book",
-  "title": "Book a name",
-  "blurb": "The shortest journey: an unknown key is booked in one fold and the active token goes to the record.",
-  "steps": [
-   {
-    "what": "insertActive books the key",
-    "request": {
-     "edge": "insertActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1604014105,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   }
-  ],
-  "forks": [
-   {
-    "at": 1,
+  {
+    "id": "book",
+    "title": "Book a name",
+    "blurb": "The shortest journey: an unknown key is booked in one fold and the active token goes to the record.",
     "steps": [
-     {
-      "what": "booking it again is refused: the key is taken",
-      "request": {
-       "edge": "insertActive",
-       "key": 42,
-       "owner": 42,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 555,
-       "datum": null,
-       "approval": {
-        "policy": 7,
-        "edge": "insertActive",
-        "key": 42,
-        "owner": 42,
-        "destination": 555,
-        "assetName": 1604014105,
-        "signatures": []
-       },
-       "claimed": []
-      },
-      "expect": "key-exists"
-     }
+      {
+        "what": "insertActive books the key",
+        "request": {
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 555,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "insertActive",
+            "key": 42,
+            "owner": 42,
+            "destination": 555,
+            "assetName": 1604014105,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "accept"
+      }
+    ],
+    "forks": [
+      {
+        "at": 1,
+        "steps": [
+          {
+            "what": "booking it again is refused: the key is taken",
+            "request": {
+              "edge": "insertActive",
+              "key": 42,
+              "owner": 42,
+              "refundAddress": 0,
+              "deposit": 0,
+              "tip": 0,
+              "reference": 0,
+              "output": 555,
+              "datum": null,
+              "approval": {
+                "policy": 7,
+                "edge": "insertActive",
+                "key": 42,
+                "owner": 42,
+                "destination": 555,
+                "assetName": 1604014105,
+                "signatures": []
+              },
+              "claimed": []
+            },
+            "expect": "key-exists"
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "id": "witness",
-  "title": "Witness an absence, then book it",
-  "blurb": "Anyone may record that a key is unknown. The absent token lives in the cage, and booking consumes it and pays the deposit back to whoever funded it.",
-  "steps": [
-   {
-    "what": "insertAbsent records the absence; the token goes to cage custody",
-    "request": {
-     "edge": "insertAbsent",
-     "key": 42,
-     "owner": 91,
-     "refundAddress": 91,
-     "deposit": 200,
-     "tip": 0,
-     "reference": 0,
-     "output": 0,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertAbsent",
-      "key": 42,
-      "owner": 91,
-      "destination": 0,
-      "assetName": 3021472884,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "updateActive books it, consuming the absent token",
-    "request": {
-     "edge": "updateActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "updateActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 84686170,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   }
-  ],
-  "forks": [
-   {
-    "at": 1,
+  },
+  {
+    "id": "retire",
+    "title": "Retire a name permanently",
+    "blurb": "Register, retire, then refuse reuse of the terminal key.",
     "steps": [
-     {
-      "what": "the inserter retracts instead, and the deposit returns",
-      "request": {
-       "edge": "deleteAbsent",
-       "key": 42,
-       "owner": 91,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 0,
-       "datum": null,
-       "approval": {
-        "policy": 7,
-        "edge": "deleteAbsent",
-        "key": 42,
-        "owner": 91,
-        "destination": 0,
-        "assetName": 2709712832,
-        "signatures": []
-       },
-       "claimed": []
+      {
+        "what": "Register an unknown key",
+        "request": {
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 555,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "insertActive",
+            "key": 42,
+            "owner": 42,
+            "destination": 555,
+            "assetName": 1604014105,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "accept"
       },
-      "expect": "accept"
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "retire",
-  "title": "Retire a name and attest it",
-  "blurb": "Retirement is a state move. The attestation is a read: it changes nothing, and only a leaf that can no longer move may be attested.",
-  "steps": [
-   {
-    "what": "book it",
-    "request": {
-     "edge": "insertActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1604014105,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "updateTerminal retires it; the active token is consumed",
-    "request": {
-     "edge": "updateTerminal",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "updateTerminal",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 2958227895,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "the read mints an Over witness and changes nothing",
-    "request": {
-     "edge": "witnessTerminal",
-     "key": 42,
-     "owner": 0,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 700,
-     "datum": null,
-     "approval": null,
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "again: attestations are plural",
-    "request": {
-     "edge": "witnessTerminal",
-     "key": 42,
-     "owner": 0,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 701,
-     "datum": null,
-     "approval": null,
-     "claimed": []
-    },
-    "expect": "accept"
-   }
-  ],
-  "forks": [
-   {
-    "at": 2,
+      {
+        "what": "Retire the active key",
+        "request": {
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 0,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "updateTerminal",
+            "key": 42,
+            "owner": 42,
+            "destination": 0,
+            "assetName": 3377668370,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "accept"
+      },
+      {
+        "what": "Refuse reuse of the terminal key",
+        "request": {
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 555,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "insertActive",
+            "key": 42,
+            "owner": 42,
+            "destination": 555,
+            "assetName": 1604014105,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "key-exists"
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "refuse-insertAbsent",
+    "title": "Refuse insertAbsent",
+    "blurb": "This historical wire encoding is explicitly rejected by permanent M1.",
     "steps": [
-     {
-      "what": "the key is terminal, so nothing moves it",
-      "request": {
-       "edge": "deleteActive",
-       "key": 42,
-       "owner": 42,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 555,
-       "datum": null,
-       "approval": {
-        "policy": 7,
-        "edge": "deleteActive",
-        "key": 42,
-        "owner": 42,
-        "destination": 555,
-        "assetName": 1831697717,
-        "signatures": []
-       },
-       "claimed": []
-      },
-      "expect": "terminal-immutable"
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "refused",
-  "title": "What the cage refuses",
-  "blurb": "Refusal is the complement of the edge table, not a list. Each refusal carries its own reason.",
-  "steps": [
-   {
-    "what": "a read of an unknown key attests nothing",
-    "request": {
-     "edge": "witnessTerminal",
-     "key": 42,
-     "owner": 0,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 700,
-     "datum": null,
-     "approval": null,
-     "claimed": []
-    },
-    "expect": "read-unknown"
-   },
-   {
-    "what": "book it",
-    "request": {
-     "edge": "insertActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1604014105,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "a read of an ACTIVE key is refused — the leaf can still move",
-    "request": {
-     "edge": "witnessTerminal",
-     "key": 42,
-     "owner": 0,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 700,
-     "datum": null,
-     "approval": null,
-     "claimed": []
-    },
-    "expect": "read-active"
-   },
-   {
-    "what": "nothing is terminated that was never booked",
-    "request": {
-     "edge": "updateTerminal",
-     "key": 43,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "updateTerminal",
-      "key": 43,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 2502960376,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "key-unknown"
-   }
-  ],
-  "forks": [
-   {
-    "at": 1,
+      {
+        "what": "insertAbsent is refused before approval or trie effects",
+        "request": {
+          "edge": "insertAbsent",
+          "key": 42,
+          "owner": 91,
+          "refundAddress": 91,
+          "deposit": 200,
+          "tip": 0,
+          "reference": 0,
+          "output": 0,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "insertAbsent",
+            "key": 42,
+            "owner": 91,
+            "destination": 0,
+            "assetName": 3021472884,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "edge-inadmissible"
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "refuse-updateActive",
+    "title": "Refuse updateActive",
+    "blurb": "This historical wire encoding is explicitly rejected by permanent M1.",
     "steps": [
-     {
-      "what": "right policy, wrong tuple: not sufficient",
-      "request": {
-       "edge": "updateTerminal",
-       "key": 42,
-       "owner": 42,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 555,
-       "datum": null,
-       "approval": {
-        "policy": 7,
-        "edge": "updateTerminal",
-        "key": 43,
-        "owner": 42,
-        "destination": 555,
-        "assetName": 2502960376,
-        "signatures": []
-       },
-       "claimed": []
-      },
-      "expect": "approval-mismatch"
-     }
-    ]
-   },
-   {
-    "at": 1,
+      {
+        "what": "updateActive is refused before approval or trie effects",
+        "request": {
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 555,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "updateActive",
+            "key": 42,
+            "owner": 42,
+            "destination": 555,
+            "assetName": 84686170,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "edge-inadmissible"
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "refuse-deleteActive",
+    "title": "Refuse deleteActive",
+    "blurb": "This historical wire encoding is explicitly rejected by permanent M1.",
     "steps": [
-     {
-      "what": "an approval under another policy is not admission",
-      "request": {
-       "edge": "updateTerminal",
-       "key": 42,
-       "owner": 42,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 555,
-       "datum": null,
-       "approval": {
-        "policy": 99,
-        "edge": "updateTerminal",
-        "key": 42,
-        "owner": 42,
-        "destination": 555,
-        "assetName": 2958227895,
-        "signatures": []
-       },
-       "claimed": []
-      },
-      "expect": "no-approval"
-     }
-    ]
-   },
-   {
-    "at": 1,
+      {
+        "what": "deleteActive is refused before approval or trie effects",
+        "request": {
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 555,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "deleteActive",
+            "key": 42,
+            "owner": 42,
+            "destination": 555,
+            "assetName": 1831697717,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "edge-inadmissible"
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "refuse-witnessTerminal",
+    "title": "Refuse witnessTerminal",
+    "blurb": "This historical wire encoding is explicitly rejected by permanent M1.",
     "steps": [
-     {
-      "what": "no approval at all",
-      "request": {
-       "edge": "updateTerminal",
-       "key": 42,
-       "owner": 42,
-       "refundAddress": 0,
-       "deposit": 0,
-       "tip": 0,
-       "reference": 0,
-       "output": 555,
-       "datum": null,
-       "approval": null,
-       "claimed": []
-      },
-      "expect": "no-approval"
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "delete",
-  "title": "Delete recreates the key",
-  "blurb": "A deleted key is Unknown again and may be booked again — the same key, not a new version. There is no incarnation counter.",
-  "steps": [
-   {
-    "what": "book it",
-    "request": {
-     "edge": "insertActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1604014105,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "deleteActive returns it to Unknown",
-    "request": {
-     "edge": "deleteActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "deleteActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1831697717,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   },
-   {
-    "what": "and it books again, as the same key",
-    "request": {
-     "edge": "insertActive",
-     "key": 42,
-     "owner": 42,
-     "refundAddress": 0,
-     "deposit": 0,
-     "tip": 0,
-     "reference": 0,
-     "output": 555,
-     "datum": null,
-     "approval": {
-      "policy": 7,
-      "edge": "insertActive",
-      "key": 42,
-      "owner": 42,
-      "destination": 555,
-      "assetName": 1604014105,
-      "signatures": []
-     },
-     "claimed": []
-    },
-    "expect": "accept"
-   }
-  ],
-  "forks": []
- }
+      {
+        "what": "witnessTerminal is refused before approval or trie effects",
+        "request": {
+          "edge": "witnessTerminal",
+          "key": 42,
+          "owner": 0,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 700,
+          "datum": null,
+          "approval": null,
+          "claimed": []
+        },
+        "expect": "edge-inadmissible"
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "refuse-deleteAbsent",
+    "title": "Refuse deleteAbsent",
+    "blurb": "This historical wire encoding is explicitly rejected by permanent M1.",
+    "steps": [
+      {
+        "what": "Refuse the excluded encoding",
+        "request": {
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 0,
+          "refundAddress": 0,
+          "deposit": 0,
+          "tip": 0,
+          "reference": 0,
+          "output": 0,
+          "datum": null,
+          "approval": {
+            "policy": 7,
+            "edge": "deleteAbsent",
+            "key": 42,
+            "owner": 0,
+            "destination": 0,
+            "assetName": 589774483,
+            "signatures": []
+          },
+          "claimed": []
+        },
+        "expect": "edge-inadmissible"
+      }
+    ],
+    "forks": []
+  }
 ]

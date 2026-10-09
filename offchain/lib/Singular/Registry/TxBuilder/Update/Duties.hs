@@ -72,12 +72,8 @@ import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
     , OnChainTokenState (..)
-    , UpdateRedeemer (..)
-    , edgeDeleteAbsent
-    , edgeDeleteActive
-    , edgeInsertAbsent
+    , edgeInsertActive
     , edgeUpdateTerminal
-    , edgeWitnessTerminal
     )
 
 -- ---------------------------------------------------------
@@ -85,8 +81,8 @@ import Singular.Registry.Types
 -- ---------------------------------------------------------
 
 {- | Everything an edge owes a fold beyond the trie: what must move under
-the three token policies, where the minted token has to land, which
-custody has to be spent, and who has to sign.
+the active token policy, where a registration lands, and which holder
+a retirement consumes.
 
 The cage computes these from the requests it consumes (`dutiesOf`,
 `dutyOk`); this recomputes them from the same requests so a fold can be
@@ -101,7 +97,7 @@ data RegistryDuties = RegistryDuties
     , rdSigners :: [KeyHash Guard]
     , rdInputs :: [(TxIn, TxOut ConwayEra)]
     {- ^ #177 I177-BUILDER: ordinary (non-script) inputs the edge needs
-    the transaction to consume. A retirement or a deletion of an
+    the transaction to consume. A retirement of an
     active key burns an asset it does not create, so the holder UTxO
     carrying that asset has to ride in as an input; a mint of `-1` with nothing to burn is a transaction
     whose only possible outcome is a refusal.
@@ -146,7 +142,6 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     -- requests than actions, and the tail of it takes no edge.
     consumed = zip reqUtxos (processed <> repeat False)
     net = network cfg
-    cageAddr = cageAddrFromCfg cfg net
     tip = stateMaxFee st
     one (_, isProcessed)
         | not isProcessed = Right mempty
@@ -163,7 +158,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
         -- nothing is derived from bytes. A tag outside the table owes
         -- the fold no mint and no destination, because the cage refuses
         -- it `edge-inadmissible` before either is read.
-        if edge < edgeInsertAbsent || edge > edgeWitnessTerminal
+        if edge /= edgeInsertActive && edge /= edgeUpdateTerminal
             then
                 if rcAllowInadmissible ctx
                     then
@@ -177,7 +172,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                                 <> show edge
                                 <> " on key "
                                 <> show key
-                                <> " is not one of the seven admissible edges"
+                                <> " is not supported by M1 (expected insertActive or updateTerminal)"
                             )
             else do
                 mints <- mintsFor edge key
@@ -239,22 +234,15 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             }
                 )
                 (deltaOf edge)
-    dutiesFor edge key dest destAddr floorAda
-        | edge == 0 = lockCustody key destAddr floorAda
-        | edge == 1 = deliver (cfgActivePolicy cfg) key dest floorAda
-        | edge == 2 =
-            (<>)
-                <$> spendCustody key
-                <*> deliver (cfgActivePolicy cfg) key dest floorAda
-        | edge == 3 = burnSource (cfgActivePolicy cfg) key
-        | edge == 4 = spendCustody key
-        | edge == 5 = burnSource (cfgActivePolicy cfg) key
-        | edge == 6 =
-            deliver (cfgTerminalPolicy cfg) key dest floorAda
-        | otherwise = Left ("registryDuties: unknown edge " <> show edge)
-    -- \| #177 I177-BUILDER, #236: the retirement and the deletion of an
-    --    active key burn a token they must first hold. `deltaOf 3` and
-    --    `deltaOf 5` are both `[(active, -1)]` with no carrier output, so the
+    dutiesFor edge key dest _destAddr floorAda
+        | edge == edgeInsertActive =
+            deliver (cfgActivePolicy cfg) key dest floorAda
+        | edge == edgeUpdateTerminal = burnSource (cfgActivePolicy cfg) key
+        | otherwise =
+            Left ("registryDuties: unsupported M1 edge " <> show edge)
+    -- \| #177 I177-BUILDER, #236: retirement burns an active token
+    --    it must first hold. `deltaOf 3` is `[(active, -1)]`
+    --    with no carrier output, so the
     --    asset the mint destroys has to arrive on an input — the Lean row's
     --    witness input,
     --    the witness input carrying one active token for `r.key`.
@@ -324,23 +312,6 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             <> show key
                             <> "; the burn must name one source"
                         )
-    -- token-destinations-and-refunds: the absent token sits at the cage, alone, under a custody datum
-    -- naming the address the deposit goes back to. Its sole asset is its key.
-    lockCustody key refund floorAda = do
-        let value =
-                MaryValue
-                    (Coin floorAda)
-                    ( MultiAsset
-                        ( Map.singleton
-                            (policyIdOf (cfgAbsentPolicy cfg))
-                            (Map.singleton (AssetName (SBS.toShort key)) 1)
-                        )
-                    )
-            out =
-                mkBasicTxOut cageAddr value
-                    & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody refund))
-        requireMinAda "custody" out
-        pure mempty{rdOutputs = [out]}
     -- T1/T2: the minted token lands in exactly the output the request
     -- named, carrying the datum the request carries (#419).
     deliver policy key (destAddr, datum) floorAda = do
@@ -368,56 +339,6 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                       \builder cannot decode: "
                         <> show destAddr
                     )
-    -- T4/T5: the custody this edge consumes is spent, and its deposit
-    -- goes back to the address it recorded.
-    spendCustody key = do
-        (utxo, refund, owed) <- findCustody key
-        cageScript <- case rcCageScript ctx of
-            Just s -> Right s
-            Nothing ->
-                Left
-                    "registryDuties: this edge spends custody, and the \
-                    \builder was given no cage script to spend it with"
-        let refundAddr = case addrFromBytes refund of
-                Just a -> a
-                Nothing ->
-                    error "registryDuties: custody records an undecodable refund address"
-            out = mkBasicTxOut refundAddr (MaryValue (Coin owed) mempty)
-        requireMinAda "refund" out
-        pure
-            mempty
-                { rdSpends =
-                    [ ConnectedSpend
-                        { csUtxo = utxo
-                        , csRedeemer = RawRedeemer (toPlcData (Modify []))
-                        , csScript = cageScript
-                        }
-                    ]
-                , rdOutputs = [out]
-                }
-    findCustody key =
-        case [ (u, refund, coin)
-             | u@(_, o) <- rcCageUtxos ctx
-             , Just (AbsentCustody refund) <- [extractCageDatum o]
-             , Just (policy, name) <- [custodyAssetOf o]
-             , policy == policyIdOf (cfgAbsentPolicy cfg)
-             , name == AssetName (SBS.toShort key)
-             , let Coin coin = o ^. coinTxOutL
-             ] of
-            [c] -> Right c
-            [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
-            _ ->
-                Left
-                    ("registryDuties: more than one custody UTxO for key " <> show key)
-    custodyAssetOf out =
-        case out ^. valueTxOutL of
-            MaryValue _ (MultiAsset policies) ->
-                case [ (policy, name, quantity)
-                     | (policy, names) <- Map.toList policies
-                     , (name, quantity) <- Map.toList names
-                     ] of
-                    [(policy, name, 1)] -> Just (policy, name)
-                    _ -> Nothing
     requireMinAda what out =
         let Coin minAda = getMinCoinTxOut @ConwayEra pp out
             Coin got = out ^. coinTxOutL
@@ -434,7 +355,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                             <> " minimum"
                         )
     policyIdOf = policyIdFromPin
-    -- #253: an edge that delivers no token (3, 4, 5) owes the consumed
+    -- #253: retirement (edge 3), which delivers no token owes the consumed
     -- request's deposit to its owner's key. The cage sums what one fold
     -- owes one key and counts only the outputs paying that key outside the
     -- token carriers, so each owner's deposits go out together, in one
@@ -443,7 +364,7 @@ registryDuties cfg pp st ctx reqUtxos processed = do
     -- its approval; an output holding them is never ada-only, so it cannot
     -- be mistaken for a custody refund of the same address and amount.
     returnsDeposit edge =
-        edge `elem` [edgeUpdateTerminal, edgeDeleteAbsent, edgeDeleteActive]
+        edge == edgeUpdateTerminal
     --
     -- #299: an application holder the fold spends releases what its
     -- application owes, to its recipient's key. That is owed in the same

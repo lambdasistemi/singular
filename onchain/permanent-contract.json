@@ -7,9 +7,9 @@
   },
   "scripts": [
     {
-      "title": "permanent_state.state",
-      "hash": "807d91e4dc360ab722ad2b3b47d6b3d000237992048f3333ae799aaa",
-      "compiledCodeSha256": "d89f8ee773ae575cac14ef19096aafde9492a06765643dddadc80a7b534cecc1",
+      "title": "state.state",
+      "hash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+      "compiledCodeSha256": "803e0f7425d88183e6a587104194d9f297303ceb6f8d9ce680cfca252d33cc7b",
       "parameters": 0
     },
     {
@@ -19,15 +19,15 @@
       "parameters": 2
     },
     {
-      "title": "permanent_witness.witness",
-      "hash": "4c87b7aa4c2f509c8de536243f98da7a44b48cfc5bb541e19c38f5a1",
-      "compiledCodeSha256": "77b4bf5d44ddf2e5cc401b1ec27148c17bcb00f93f3b14752ce8b999d41e0544",
+      "title": "witness.witness",
+      "hash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
+      "compiledCodeSha256": "f759321c1d7dad7364b6809f5798d0fccd0c728c684c58f7c85fee33f4e637f2",
       "parameters": 2
     },
     {
-      "title": "permanent_open_datum.open_datum",
-      "hash": "eeb82738115c80dc63d606513387b85bb93e35657744a34e318d3f03",
-      "compiledCodeSha256": "5e7d5fbaec2b573f97d5211cfd42fb7032815f821d51125fc80154425fed02ae",
+      "title": "open_datum.open_datum",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "compiledCodeSha256": "897dadc512c7fcff3938972cbe6e70a9158c89cbc16e4a8718cbb31f01c6c8bf",
       "parameters": 1
     }
   ],

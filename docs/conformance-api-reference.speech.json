@@ -9,6 +9,16 @@
       "pause": 400
     }
   ],
+  "which-contract-a-story-describes": [
+    {
+      "text": "Which contract a story describes.",
+      "pause": 500
+    },
+    {
+      "text": "Conformance.Edge.Permanent describes the first milestone's registration and permanent termination, refusal of the five other encoded registry actions, and refusal of a mixed batch containing an excluded action. Its public requirement remains uncovered until a bounded live consumer comparison receipt establishes it. Compiled refusal tests passing does not assign that product status. Other seven-edge story modules retain the broader contract's descriptions; their historical successes do not establish support in the permanent contract. The consumer record keeps that distinction and the uncovered rows visible.",
+      "pause": 400
+    }
+  ],
   "what-this-reference-contains": [
     {
       "text": "What this reference contains.",
@@ -193,6 +203,6 @@
   ],
   "_source": {
     "file": "conformance-api-reference.md",
-    "sha256": "b194f036d22b32982dbabb1c772ff667a2c97140417242e5a4702c30eaadd769"
+    "sha256": "516d6469a517b43f9c8ac1f1bf4c3132d738b3669da25f3511a97cb46e010ff2"
   }
 }

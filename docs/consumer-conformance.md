@@ -5,6 +5,24 @@ distinguish partial evidence from completed coverage, and trace older
 observations to the candidate that produced them. The connected naming
 release journey is documented separately in [recovery and permanent retirement](recovery-retirement.md).
 
+## Permanent contract and preserved consumer evidence
+
+The first milestone's fixed contract admits registration (`insertActive`) and
+permanent termination (`updateTerminal`). All seven edge values remain encodable
+in request datums and fold redeemers, but `witnessTerminal`, `insertAbsent`,
+`updateActive`, `deleteAbsent` and `deleteActive` fail at the permanent state
+validator, including independently constructed requests and mixed batches.
+Application payload updates leave the registry leaf unchanged; they are not
+the excluded `updateActive` registry transition.
+
+The seven-edge interface and older receipts below describe the preserved broader
+consumer contract. They do not establish current permanent-contract successes.
+Its generic consumer expectations remain recorded, and the new permanent
+requirement remains uncovered without a bounded live consumer comparison receipt.
+The [candidate evidence](../specs/505-permanent-m1/RESULTS.md) separates compiled
+refusal tests, connected CLI execution and their limits. Defined redeemers,
+missing CLI commands and setup failures are not evidence of behavioral refusal.
+
 ## The contract and its binding
 
 The rows answer to the consumer contract source-bound to

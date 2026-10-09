@@ -11,7 +11,7 @@ server: `index.html` carries its engines, its stories and its corpora inside it.
 | `naming.mjs` | the naming instance: the Over witness journey, and the corpus replay |
 | `lifecycle.mjs` | the lifecycle replay — seeding, maintenance, recovery, retirement, wire |
 | `page.mjs`, `page-body.html`, `page.css`, `template-generic.js` | the page |
-| `stories.json` | five journeys, twenty steps |
+| `stories.json` | seven journeys with supported transitions and all five excluded encodings |
 | `corpus.json` | a copy of the generated `lean/corpus.json`, embedded in the page |
 | `formal/` | every Lean source and manifest, mirrored so the page ships what it was built from |
 | `identity.json` | the sha256 of everything above that is bound |

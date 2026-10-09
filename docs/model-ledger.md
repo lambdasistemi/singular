@@ -1,5 +1,20 @@
 # Model ledger
 
+As a reader of current permanent contract, I can register a fresh key and terminate it permanently.
+The active model and compiled state support exactly tags 1 (`insertActive`) and
+3 (`updateTerminal`); tags 0, 2, 4, 5 and 6 are explicitly refused, including
+caller-constructed and mixed requests. Application payload maintenance is separate.
+Current sources and receipts must be bound to the revised candidate.
+
+The detailed walkthrough and measurements below are **archived broader model evidence**,
+retained to explain the earlier contract; their broader success claims do not apply
+to permanent contract. Historical sources are retained on `preserve/m2/pre-m1-source-removal`.
+[The active theorem manifest](theorems.md) and
+[the exact scope-retirement record](https://github.com/lambdasistemi/singular/blob/feat/505-permanent-m1/conformance/coverage/m1-scope-retirement.md)
+explain the changed law and denominator. Unmet consumer requirements stay uncovered.
+
+## Archived broader model evidence
+
 As a reviewer deciding how far to trust this model, use this page to see what it
 covers, what it deliberately abstracts, and — because this revision replaced the
 model wholesale — what happened to every guarantee the previous one made.

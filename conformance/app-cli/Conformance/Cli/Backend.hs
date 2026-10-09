@@ -853,11 +853,11 @@ runRelease env = do
                 pure
                 (extractCompiledCode (T.pack name) bp)
     Release
-        <$> code "permanent_state.state"
+        <$> code "state.state"
         <*> code "request.request"
         <*> ( NamingCodes
-                <$> code "permanent_open_datum.open_datum"
-                <*> code "permanent_witness.witness"
+                <$> code "open_datum.open_datum"
+                <*> code "witness.witness"
             )
 
 {- | The state token of a target: the one a take is given, or the one the

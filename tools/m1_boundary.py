@@ -2,8 +2,8 @@
 """Evaluate exported M1 validator bytes over independent Aiken fixture contexts.
 
 These are component evaluations, not reachable ledger states or a connected
-journey. The preserved broader validator is a positive control for each edge
-and a deliberate boundary fault the checker must detect. Keep raw executions.
+journey. A test-only always-accepting program is the deliberate artifact fault the
+checker must detect. Keep raw executions.
 """
 
 import argparse
@@ -174,8 +174,7 @@ def main():
     failures = []
     evaluations = []
     for title, bounded in [
-        ("state.state.spend", False),
-        ("permanent_state.state.spend", True),
+        ("state.state.spend", True),
     ]:
         cases = [
             (f"edge-{edge}", edge, payload, not bounded or edge in (1, 3), False)
@@ -188,8 +187,8 @@ def main():
         evaluations.append((title, cases))
     for route, title in [
         ("REQUEST", "request.request.spend"),
-        ("MINT", "permanent_witness.witness.mint"),
-        ("JOINED", "permanent_state.state.spend"),
+        ("MINT", "witness.witness.mint"),
+        ("JOINED", "state.state.spend"),
     ]:
         evaluations.append(
             (
@@ -206,7 +205,7 @@ def main():
                 ],
             )
         )
-    for family, bounded in [("open_datum", False), ("permanent_open_datum", True)]:
+    for family, bounded in [("open_datum", True)]:
         for purpose, numbers in [("mint", (0, 1)), ("spend", (2, 3))]:
             evaluations.append(
                 (
@@ -292,18 +291,23 @@ def main():
         ],
     }
     if not failures and not args.fault_child:
-        # Keep the same context producer and checker, replacing only the
-        # bounded compiled program with the preserved broader program.
+        # Replace only the state artifact with a test-only always-unit program.
+        # This admits the same excluded contexts and must fail this same checker.
         faulty = json.loads(args.blueprint.read_text())
-        broad = next(
+        bounded = next(
             v for v in faulty["validators"] if v["title"] == "state.state.spend"
         )
-        bounded = next(
-            v
-            for v in faulty["validators"]
-            if v["title"] == "permanent_state.state.spend"
-        )
-        bounded["compiledCode"], bounded["hash"] = broad["compiledCode"], broad["hash"]
+        fault_source = args.receipts_dir / "always-accept.uplc"
+        fault_source.write_text("(program 1.1.0 (lam context (con unit ())))\n")
+        encoded = subprocess.check_output(
+            [args.aiken, "uplc", "encode", "--cbor", "--hex", str(fault_source)],
+            text=True,
+        ).strip()
+        bytes.fromhex(encoded)
+        bounded["compiledCode"] = encoded
+        bounded["hash"] = hashlib.blake2b(
+            b"\x03" + bytes.fromhex(encoded), digest_size=28
+        ).hexdigest()
         fault_path = args.receipts_dir / "admitted-excluded-fault.json"
         fault_path.write_text(json.dumps(faulty) + "\n")
         child = subprocess.run(
@@ -329,7 +333,7 @@ def main():
         )
         (args.receipts_dir / "fault-replay.stdout").write_text(child.stdout)
         (args.receipts_dir / "fault-replay.stderr").write_text(child.stderr)
-        diagnostic = "permanent_state.state.spend: edge-6 accepted=True, expected=False"
+        diagnostic = "state.state.spend: edge-6 accepted=True, expected=False"
         if child.returncode == 0 or diagnostic not in child.stdout + child.stderr:
             failures.append(
                 "controlled excluded-admission fault was not detected by this checker"
@@ -344,7 +348,7 @@ def main():
     if failures:
         raise SystemExit("\n".join(failures))
     print(
-        "Exported M1: 57 component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes, fixed application booking/update/release; excluded-admission artifact fault refused by checker"
+        f"Exported M1: {len(rows)} component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes, fixed application booking/update/release; excluded-admission artifact fault refused by checker"
     )
 
 

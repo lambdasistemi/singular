@@ -72,7 +72,9 @@ def main():
             broad = evaluate(
                 {key: value for key, value in question.items() if key != "contract"}
             )
-            assert broad["outcome"] == "accepted", "broader-model control did not fire"
+            assert (
+                broad["outcome"] == "refused" and broad["reason"] == "edge-inadmissible"
+            ), "canonical admission control did not fire"
     name = "Singular.M1.Statements.successful_batch_members_allowed"
     for row in corpus["batches"]:
         question = {
@@ -117,7 +119,7 @@ def main():
             + "\n"
         )
     print(
-        "Permanent conformance transport: 10 scenarios and 4 batches; broader-law and unknown-contract controls detected"
+        "Permanent conformance transport: 10 scenarios and 4 batches; canonical admission and unknown-contract controls detected"
     )
 
 

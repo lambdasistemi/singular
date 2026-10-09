@@ -60,5 +60,5 @@ export const otherPolicy = (edge, key, opts = {}) => {
   return { ...r, approval: approvalFor(r, { ...opts, policy: 99 }) };
 };
 
-/** The read needs no approval at all. */
+/** A raw legacy read encoding, refused by M1 even without approval. */
 export const read = (key, output = 0) => request('witnessTerminal', key, { output });

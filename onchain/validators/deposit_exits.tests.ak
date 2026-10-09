@@ -12,13 +12,12 @@ use types.{
 // #253 — the deposit of a fold that delivers nothing goes back to its owner
 // ============================================================================
 //
-// Rule (issue #253): a fold on edge 3 (`updateTerminal`), 4 (`deleteAbsent`)
-// or 5 (`deleteActive`) delivers no token, so the deposit the request rode
+// Rule (issue #253): a fold on edge 3 (`updateTerminal`) delivers no token, so the deposit the request rode
 // with is paid to `requestOwner`'s key, at least the deposit; a reject pays
 // the same owner at least the deposit. The folder earns the tip and nothing
 // else. Deposits and refunds owed to one owner in one fold are settled on
 // the summed lovelace of the outputs paying that owner's key, not counting
-// the state continuation, token carriers or cage custody, so one output
+// the state continuation, token carriers, so one output
 // cannot pay two obligations.
 //
 // Each refusal row changes one output of an accepting twin and asserts the
@@ -140,96 +139,19 @@ test retirement_deposit_one_lovelace_short_refuses() {
 }
 
 // ----------------------------------------------------------------------------
-// Edge 4 — `deleteAbsent`
-// ----------------------------------------------------------------------------
-
-/// The request's owner is the booker; the custody it consumes records the
-/// inserter's refund address. The two payments go to two different keys,
-/// so the custody refund cannot be what pays the deposit.
-fn deleteAbsent(outputs: List<Output>) -> Scenario {
-  scenario(
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 4, fx.bookerKey)],
-    [fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit)],
-    outputs,
-    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-    [UpdateAction([])],
-  )
-}
-
-test absent_deletion_deposit_paid_to_the_owner_accepts() {
-  accepts(
-    deleteAbsent(
-      [paid(fx.inserterAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
-    ),
-  )
-}
-
-test absent_deletion_deposit_diverted_to_another_address_refuses() {
-  refusesDepositReturned(
-    deleteAbsent(
-      [
-        paid(fx.inserterAddress, fx.deposit),
-        paid(fx.strangerAddress, fx.deposit),
-      ],
-    ),
-  )
-}
-
-test absent_deletion_deposit_one_lovelace_short_refuses() {
-  refusesDepositReturned(
-    deleteAbsent(
-      [
-        paid(fx.inserterAddress, fx.deposit),
-        paid(fx.bookerAddress, fx.deposit - 1),
-      ],
-    ),
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Edge 5 — `deleteActive`
-// ----------------------------------------------------------------------------
-
-fn deleteActive(outputs: List<Output>) -> Scenario {
-  scenario(
-    fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 5, fx.bookerKey)],
-    [activeWitness(0, fx.keyA)],
-    outputs,
-    burnActive(fx.keyA),
-    [UpdateAction([])],
-  )
-}
-
-test active_deletion_deposit_paid_to_the_owner_accepts() {
-  accepts(deleteActive([paid(fx.bookerAddress, fx.deposit)]))
-}
-
-test active_deletion_deposit_diverted_to_another_address_refuses() {
-  refusesDepositReturned(deleteActive([paid(fx.strangerAddress, fx.deposit)]))
-}
-
-test active_deletion_deposit_one_lovelace_short_refuses() {
-  refusesDepositReturned(deleteActive([paid(fx.bookerAddress, fx.deposit - 1)]))
-}
-
-// ----------------------------------------------------------------------------
 // An update is folded in the processing window only (spec KR-01)
 //
 // Current validator behaviour, with no counterpart in Lean: Lean admits a
 // fold in every window, and this rule stays under the fold-correspondence
-// hold. The e5 fold above is valid in every other respect, so outside the
+// hold. The retirement fold above is valid in every other respect, so outside the
 // processing window the first reason the cage gives is `not-phase1`, the
 // fold's first check on an update; a carriage, action, edge, approval or
 // trie refusal would name itself instead.
 // ----------------------------------------------------------------------------
 
-/// The e5 fold, paying its owner the deposit, valid over `range`.
-fn deleteActiveIn(range: Interval<Int>) -> Scenario {
-  let s = deleteActive([paid(fx.bookerAddress, fx.deposit)])
+/// The retirement fold, paying its owner the deposit, valid over `range`.
+fn retireIn(range: Interval<Int>) -> Scenario {
+  let s = updateTerminal([paid(fx.bookerAddress, fx.deposit)])
   Scenario { ..s, tx: Transaction { ..s.tx, validity_range: range } }
 }
 
@@ -243,77 +165,77 @@ fn refusesNotPhase1(s: Scenario) -> Bool {
 /// The control the four refusals below share: the same fold inside the
 /// processing window.
 test update_in_the_processing_window_accepts() {
-  accepts(deleteActiveIn(fx.phase1()))
+  accepts(retireIn(fx.phase1()))
 }
 
 test update_in_the_retraction_window_refuses_not_phase1() {
-  refusesNotPhase1(deleteActiveIn(fx.phase2()))
+  refusesNotPhase1(retireIn(fx.phase2()))
 }
 
 test update_after_the_windows_refuses_not_phase1() {
-  refusesNotPhase1(deleteActiveIn(fx.phase3()))
+  refusesNotPhase1(retireIn(fx.phase3()))
 }
 
 test update_across_the_processing_deadline_refuses_not_phase1() {
-  refusesNotPhase1(deleteActiveIn(interval.between(5_000, 15_000)))
+  refusesNotPhase1(retireIn(interval.between(5_000, 15_000)))
 }
 
 test update_with_no_validity_bounds_refuses_not_phase1() {
-  refusesNotPhase1(deleteActiveIn(interval.everything))
+  refusesNotPhase1(retireIn(interval.everything))
 }
 
 // ----------------------------------------------------------------------------
 // Two deposits of one owner in one fold are owed as their sum
 // ----------------------------------------------------------------------------
 
-/// The booker deletes two active keys in one fold: `keyA` against the
-/// two-leaf trie, then `keyB` against the one leaf left.
-fn deleteTwoActive(outputs: List<Output>) -> Scenario {
+/// The booker retires two active keys in one fold: `keyA` against the
+/// two-leaf trie, then `keyB` against the updated two-leaf trie.
+fn retireTwoActive(outputs: List<Output>) -> Scenario {
   scenario(
     fx.twoLeaves(fx.keyA, fx.activeLeaf, fx.keyB, fx.activeLeaf),
-    fx.emptyRoot(),
+    fx.twoLeaves(fx.keyA, fx.terminalLeaf, fx.keyB, fx.terminalLeaf),
     [
-      ownedRequest(0, fx.keyA, 5, fx.bookerKey),
-      ownedRequest(1, fx.keyB, 5, fx.bookerKey),
+      ownedRequest(0, fx.keyA, 3, fx.bookerKey),
+      ownedRequest(1, fx.keyB, 3, fx.bookerKey),
     ],
     [activeWitness(0, fx.keyA), activeWitness(1, fx.keyB)],
     outputs,
     merge(burnActive(fx.keyA), burnActive(fx.keyB)),
     [
       UpdateAction(fx.siblingProof(fx.keyB, fx.activeLeaf, fx.keyA)),
-      UpdateAction([]),
+      UpdateAction(fx.siblingProof(fx.keyA, fx.terminalLeaf, fx.keyB)),
     ],
   )
 }
 
 test two_deposits_in_one_output_accepts() {
-  accepts(deleteTwoActive([paid(fx.bookerAddress, fx.deposit * 2)]))
+  accepts(retireTwoActive([paid(fx.bookerAddress, fx.deposit * 2)]))
 }
 
 test two_deposits_in_two_outputs_accepts() {
   accepts(
-    deleteTwoActive(
+    retireTwoActive(
       [paid(fx.bookerAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
     ),
   )
 }
 
 test two_deposits_paid_one_deposit_refuses() {
-  refusesDepositReturned(deleteTwoActive([paid(fx.bookerAddress, fx.deposit)]))
+  refusesDepositReturned(retireTwoActive([paid(fx.bookerAddress, fx.deposit)]))
 }
 
 // ----------------------------------------------------------------------------
 // A deposit and a token carrier to the owner's key are two payments
 // ----------------------------------------------------------------------------
 
-/// The booker books `keyB` to their own key address and deletes `keyA` in
-/// the same fold. The carrier owes the booking's deposit; the deletion's
+/// The booker books `keyB` to their own key address and retires `keyA` in
+/// the same fold. The carrier owes the booking's deposit; the retirement's
 /// deposit is owed separately.
-fn bookAndDelete(outputs: List<Output>) -> Scenario {
+fn bookAndRetire(outputs: List<Output>) -> Scenario {
   let booking = (fx.bookerAddress, None)
   scenario(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.oneLeaf(fx.keyB, fx.activeLeaf),
+    fx.twoLeaves(fx.keyA, fx.terminalLeaf, fx.keyB, fx.activeLeaf),
     [
       fx.requestInput(
         0,
@@ -324,7 +246,7 @@ fn bookAndDelete(outputs: List<Output>) -> Scenario {
         fx.approval(1, fx.keyB, fx.bookerKey, booking),
         fx.requestLovelace,
       ),
-      ownedRequest(1, fx.keyA, 5, fx.bookerKey),
+      ownedRequest(1, fx.keyA, 3, fx.bookerKey),
     ],
     [activeWitness(0, fx.keyA)],
     outputs,
@@ -348,12 +270,12 @@ fn carrierOf(lovelace: Int) -> Output {
 
 test carrier_and_deposit_in_two_outputs_accepts() {
   accepts(
-    bookAndDelete([carrierOf(fx.deposit), paid(fx.bookerAddress, fx.deposit)]),
+    bookAndRetire([carrierOf(fx.deposit), paid(fx.bookerAddress, fx.deposit)]),
   )
 }
 
 test carrier_holding_both_deposits_refuses() {
-  refusesDepositReturned(bookAndDelete([carrierOf(fx.deposit * 2)]))
+  refusesDepositReturned(bookAndRetire([carrierOf(fx.deposit * 2)]))
 }
 
 // ----------------------------------------------------------------------------
@@ -361,7 +283,7 @@ test carrier_holding_both_deposits_refuses() {
 // ----------------------------------------------------------------------------
 
 /// A request dated in the future, rejected inside a phase-1 range: one
-/// fold deletes `keyA` for the booker
+/// fold retires `keyA` for the booker
 /// and rejects another request of the booker's.
 fn futureRequest(index: Int) -> Input {
   Input {
@@ -387,11 +309,11 @@ fn futureRequest(index: Int) -> Input {
   }
 }
 
-fn deleteAndReject(outputs: List<Output>) -> Scenario {
+fn retireAndReject(outputs: List<Output>) -> Scenario {
   scenario(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 5, fx.bookerKey), futureRequest(1)],
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    [ownedRequest(0, fx.keyA, 3, fx.bookerKey), futureRequest(1)],
     [activeWitness(0, fx.keyA)],
     outputs,
     burnActive(fx.keyA),
@@ -401,20 +323,20 @@ fn deleteAndReject(outputs: List<Output>) -> Scenario {
 
 test refund_and_deposit_in_two_outputs_accepts() {
   accepts(
-    deleteAndReject(
+    retireAndReject(
       [paid(fx.bookerAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
     ),
   )
 }
 
 test refund_and_deposit_in_one_output_sized_for_both_accepts() {
-  accepts(deleteAndReject([paid(fx.bookerAddress, fx.deposit * 2)]))
+  accepts(retireAndReject([paid(fx.bookerAddress, fx.deposit * 2)]))
 }
 
 /// The one output pays the rejected row positionally, and is then offered
-/// for the deletion's deposit as well.
+/// for the retirement's deposit as well.
 test refund_output_offered_for_the_deposit_too_refuses() {
-  refusesDepositReturned(deleteAndReject([paid(fx.bookerAddress, fx.deposit)]))
+  refusesDepositReturned(retireAndReject([paid(fx.bookerAddress, fx.deposit)]))
 }
 
 // ----------------------------------------------------------------------------
@@ -519,250 +441,4 @@ test early_reject_refund_to_a_script_in_the_retraction_window_refuses_by_name() 
 
 test early_reject_refund_missing_in_the_retraction_window_refuses_by_name() {
   refusesDepositReturned(rejectIn(fx.phase2(), []))
-}
-
-// ----------------------------------------------------------------------------
-// One settlement per payee: custody refunds and deposits to one key
-// ----------------------------------------------------------------------------
-
-/// The cage refuses it for `refund` and for nothing else.
-fn refusesRefund(s: Scenario) -> Bool {
-  refusalOf(s) == Some(@"refund") && !spend(s)
-}
-
-/// The inserter deletes their own witness: the custody refund and the
-/// request's deposit are owed to the same key, in two outputs. The
-/// deposit output carries the returned approval, as the builder pays it;
-/// the custody refund is ada-only. Both land at one address, so no output
-/// can be told apart as "the refund": the payee is owed their sum.
-fn deleteOwnAbsent(refund: Int, deposit: Int) -> Scenario {
-  scenario(
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 4, fx.inserterKey)],
-    [fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit)],
-    [
-      paid(fx.inserterAddress, refund),
-      Output {
-        ..paid(fx.inserterAddress, deposit),
-        value: merge(
-          from_lovelace(deposit),
-          fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
-        ),
-      },
-    ],
-    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-    [UpdateAction([])],
-  )
-}
-
-test own_custody_refund_and_deposit_exact_accepts() {
-  accepts(deleteOwnAbsent(fx.deposit, fx.deposit))
-}
-
-test own_custody_refund_one_short_refuses() {
-  refusesDepositReturned(deleteOwnAbsent(fx.deposit - 1, fx.deposit))
-}
-
-test own_deposit_one_short_refuses() {
-  refusesDepositReturned(deleteOwnAbsent(fx.deposit, fx.deposit - 1))
-}
-
-// Two custody refunds to one address (the #254 reproduction): both
-// custodies record the inserter's refund address, with 2 and 3 ada.
-
-const smallCustody: Int = 2_000_000
-
-const largeCustody: Int = 3_000_000
-
-/// Two `deleteAbsent` requests of `owner`, on `keyA` and `keyB`.
-fn deleteTwoAbsent(owner: ByteArray, outputs: List<Output>) -> Scenario {
-  scenario(
-    fx.twoLeaves(fx.keyA, fx.absentLeaf, fx.keyB, fx.absentLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 4, owner), ownedRequest(1, fx.keyB, 4, owner)],
-    [
-      fx.custodyInput(0, fx.keyA, fx.inserterAddress, smallCustody),
-      fx.custodyInput(1, fx.keyB, fx.inserterAddress, largeCustody),
-    ],
-    outputs,
-    merge(
-      fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-      fx.mintOf(fx.absentPolicy, fx.keyB, -1),
-    ),
-    [
-      UpdateAction(fx.siblingProof(fx.keyB, fx.absentLeaf, fx.keyA)),
-      UpdateAction([]),
-    ],
-  )
-}
-
-/// The booker deletes, so the two deposits go to the booker and only the
-/// two custody refunds go to the inserter's address.
-test two_custody_refunds_to_one_address_paid_in_full_accepts() {
-  accepts(
-    deleteTwoAbsent(
-      fx.bookerKey,
-      [
-        paid(fx.inserterAddress, smallCustody),
-        paid(fx.inserterAddress, largeCustody),
-        paid(fx.bookerAddress, fx.deposit * 2),
-      ],
-    ),
-  )
-}
-
-test two_custody_refunds_paid_by_the_larger_one_refuses() {
-  refusesRefund(
-    deleteTwoAbsent(
-      fx.bookerKey,
-      [
-        paid(fx.inserterAddress, largeCustody),
-        paid(fx.bookerAddress, fx.deposit * 2),
-      ],
-    ),
-  )
-}
-
-/// The booker deletes one key the inserter witnessed absent: the custody
-/// refund is owed to the inserter's address and to no other payee.
-fn deleteOthersAbsent(custody: List<Input>, outputs: List<Output>) -> Scenario {
-  scenario(
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.emptyRoot(),
-    [ownedRequest(0, fx.keyA, 4, fx.bookerKey)],
-    custody,
-    outputs,
-    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-    [UpdateAction([])],
-  )
-}
-
-fn inserterCustody() -> List<Input> {
-  [fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit)]
-}
-
-test custody_refund_paid_to_the_inserter_accepts() {
-  accepts(
-    deleteOthersAbsent(
-      inserterCustody(),
-      [paid(fx.inserterAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
-    ),
-  )
-}
-
-test custody_refund_one_lovelace_short_refuses_by_name() {
-  refusesRefund(
-    deleteOthersAbsent(
-      inserterCustody(),
-      [
-        paid(fx.inserterAddress, fx.deposit - 1),
-        paid(fx.bookerAddress, fx.deposit),
-      ],
-    ),
-  )
-}
-
-test custody_refund_to_another_address_refuses_by_name() {
-  refusesRefund(
-    deleteOthersAbsent(
-      inserterCustody(),
-      [paid(fx.strangerAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
-    ),
-  )
-}
-
-/// The absent token is burned but its custody UTxO is not an input: no
-/// output can pay a refund the fold never collected.
-test custody_left_unspent_refuses_by_name() {
-  refusesRefund(
-    deleteOthersAbsent(
-      [],
-      [paid(fx.inserterAddress, fx.deposit), paid(fx.bookerAddress, fx.deposit)],
-    ),
-  )
-}
-
-/// #254 as filed: the inserter deletes both, so the address is owed the
-/// two custody refunds AND the two deposits.
-test own_two_custody_refunds_and_deposits_paid_in_full_accepts() {
-  accepts(
-    deleteTwoAbsent(
-      fx.inserterKey,
-      [
-        paid(fx.inserterAddress, smallCustody),
-        paid(fx.inserterAddress, largeCustody),
-        paid(fx.inserterAddress, fx.deposit * 2),
-      ],
-    ),
-  )
-}
-
-test own_two_custody_refunds_paid_by_the_larger_one_refuses() {
-  refusesDepositReturned(
-    deleteTwoAbsent(
-      fx.inserterKey,
-      [
-        paid(fx.inserterAddress, largeCustody),
-        paid(fx.inserterAddress, fx.deposit * 2),
-      ],
-    ),
-  )
-}
-
-// ----------------------------------------------------------------------------
-// Edge 2 — a custody refund and a delivery to one address
-// ----------------------------------------------------------------------------
-
-/// The inserter books the key they witnessed absent, to their own
-/// address: the custody refund and the token carrier land at one address.
-/// The carrier owes the booking's deposit; the refund is owed apart.
-fn updateOwnAbsent(outputs: List<Output>) -> Scenario {
-  let booking = (fx.inserterAddress, None)
-  scenario(
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    [
-      fx.requestInput(
-        0,
-        fx.keyA,
-        2,
-        fx.inserterKey,
-        booking,
-        fx.approval(2, fx.keyA, fx.inserterKey, booking),
-        fx.requestLovelace,
-      ),
-    ],
-    [fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit)],
-    outputs,
-    merge(
-      fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-      fx.mintOf(fx.activePolicy, fx.keyA, 1),
-    ),
-    [UpdateAction([])],
-  )
-}
-
-fn ownCarrier(lovelace: Int) -> Output {
-  fx.deliveryOutput(
-    fx.activePolicy,
-    fx.keyA,
-    fx.inserterAddress,
-    NoDatum,
-    lovelace,
-  )
-}
-
-test own_refund_and_delivery_at_one_address_accepts() {
-  accepts(
-    updateOwnAbsent(
-      [ownCarrier(fx.deposit), paid(fx.inserterAddress, fx.deposit)],
-    ),
-  )
-}
-
-/// The carrier holds the deposit and the refund, and no other output pays
-/// the refund address: a carrier owes its own deposit and pays nothing else.
-test carrier_holding_the_custody_refund_too_refuses() {
-  refusesRefund(updateOwnAbsent([ownCarrier(fx.deposit * 2)]))
 }

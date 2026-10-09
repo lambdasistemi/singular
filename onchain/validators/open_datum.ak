@@ -1,3 +1,6 @@
+//// Open-datum application bound to the permanent state identity.
+//// Booking, payload update and release retain the existing application law.
+
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list
 use aiken/collection/pairs
@@ -19,7 +22,7 @@ use lib.{
 }
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
 use registry/refusal.{traceFalse}
-use registry/settlement.{custodyOwedOf, payeeOwed, settlesOf}
+use registry/settlement.{payeeOwed, settlesOf}
 use types.{
   CageDatum, Modify, Rejected, Request, RequestAction, RequestDatum, State,
   StateDatum, UpdateAction, UpdateRedeemer,
@@ -549,9 +552,8 @@ fn ownFold(
 
 /// What the given registry folds owe one payee, summed, and the duties
 /// they create together (#253, DM-seven-admitted-edges):
-/// each fold's deposits, reject refunds and custody refunds to that key,
-/// read with the registry's own `dutiesOf`, `custodyOwedOf` and
-/// `payeeOwed`. `None` when a fold's custody refunds cannot be read.
+/// each fold's termination deposits and reject refunds to that key,
+/// read with the registry's own `dutiesOf` and `payeeOwed`.
 fn registryOwed(
   folds: List<(Input, ByteArray, State, List<RequestAction>)>,
   payee: address.PaymentCredential,
@@ -566,19 +568,12 @@ fn registryOwed(
         Some((owed, allDuties)) -> {
           let (input, name, state, actions) = fold
           let duties = rowDuties(state, foldRows(name, tx.inputs, actions))
-          when
-            custodyOwedOf(state, input.output.address, duties, tx.inputs)
-          is {
-            None -> None
-            Some(custodyOwed) -> {
-              let floor =
-                when pairs.get_first(payeeOwed(duties, custodyOwed), payee) is {
-                  Some(amount) -> amount
-                  None -> 0
-                }
-              Some((owed + floor, list.concat(allDuties, duties)))
+          let floor =
+            when pairs.get_first(payeeOwed(duties), payee) is {
+              Some(amount) -> amount
+              None -> 0
             }
-          }
+          Some((owed + floor, list.concat(allDuties, duties)))
         }
       }
     },

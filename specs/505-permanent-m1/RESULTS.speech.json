@@ -7,6 +7,26 @@
     {
       "text": "As a participant, I create a new registry, register a key and terminate it permanently. The fixed contract refuses every other registry edge. The ordinary CLI selects the known new scripts and refuses unknown supplied code. Old registries are abandoned, with no migration or compatibility recognition.",
       "pause": 400
+    }
+  ],
+  "active-source-removal-candidate": [
+    {
+      "text": "Active source-removal candidate.",
+      "pause": 500
+    },
+    {
+      "text": "The operator subsequently authorized removing obsolete active success paths. Singular.Model now owns the two supported transitions, with compatibility aliases in Singular.M1; canonical validators and builders implement that law. The retired scope table records exact archived identities and changed signatures without consumer coverage credit. Fresh candidate verification is in progress; the table below certifies only the historical preserved revision, not the changed source.",
+      "pause": 400
+    }
+  ],
+  "archived-evidence-before-source-removal": [
+    {
+      "text": "Archived evidence before source removal.",
+      "pause": 500
+    },
+    {
+      "text": "Everything in this section is historical evidence for preserved revision a098408e58c150b9ebf83c3fd1dff1704599c01f, available on preserve/m2/pre-m1-source-removal. Its source identities and receipts do not certify the active source-removal candidate.",
+      "pause": 400
     },
     {
       "text": "The broader model remains bound to base 464ed8674de626470396cc871f3af85a1d489477. The new law is Singular.M1, source SHA-256 e94c1bbc502514a7be7083f56a52b595bd435050cbc868b61fe44a1fe7301a93. Its audited statement manifest and driver corpus carry all source and declaration digests; the broader generic corpus and driver remain byte-identical. Naming and lifecycle corpus envelopes are refreshed for the wider source inventory; their behavior is unchanged.",
@@ -43,6 +63,6 @@
   ],
   "_source": {
     "file": "RESULTS.md",
-    "sha256": "1387e864ae6e4fc82977a5eaeda71dda8e1a27074e30b3167539cd2e34f81349"
+    "sha256": "8d630219f8632a36cc0020a58114c5d4049e937aca0ea5ba303530ff735cba9d"
   }
 }

@@ -135,19 +135,9 @@ export const trieGet = (t, k) => {
 const trieSet = (t, k, l) => [{ key: k, leaf: l }, ...t.filter((p) => p.key !== k)];
 
 // ---- deltas (R2) -----------------------------------------------------------
-const DELTA = {
-  insertAbsent: [['absent', 1]],
-  insertActive: [['active', 1]],
-  updateActive: [
-    ['absent', -1],
-    ['active', 1],
-  ],
-  updateTerminal: [['active', -1]],
-  deleteAbsent: [['absent', -1]],
-  deleteActive: [['active', -1]],
-  witnessTerminal: [['terminal', 1]],
-};
-export const delta = (e) => DELTA[e].map(([kind, quantity]) => ({ kind, quantity }));
+export const allowed = (edge) => edge === 'insertActive' || edge === 'updateTerminal';
+const DELTA = { insertActive: [['active', 1]], updateTerminal: [['active', -1]] };
+export const delta = (e) => (DELTA[e] || []).map(([kind, quantity]) => ({ kind, quantity }));
 export const deltaKind = (ds, k) => ds.reduce((n, d) => (d.kind === k ? n + d.quantity : n), 0);
 export const deltaSame = (a, b) =>
   [...a, ...b].every((d) => deltaKind(a, d.kind) === deltaKind(b, d.kind));
@@ -180,20 +170,11 @@ export const assetSame = (a, b) =>
   [...a, ...b].every((d) => assetKind(a, d.kind, d.key) === assetKind(b, d.kind, d.key));
 
 // ---- the R2 from→to column -------------------------------------------------
-export const transition = (e, before) => {
-  const k = `${e}/${before === null ? 'unknown' : before}`;
-  return (
-    {
-      'insertAbsent/unknown': 'absent',
-      'insertActive/unknown': 'active',
-      'updateActive/absent': 'active',
-      'updateTerminal/active': 'terminal',
-      'deleteAbsent/absent': null,
-      'deleteActive/active': null,
-      'witnessTerminal/terminal': 'terminal',
-    }[k] ?? (k in { 'deleteAbsent/absent': 0, 'deleteActive/active': 0 } ? null : undefined)
-  );
-};
+export const transition = (e, before) =>
+  ({
+    'insertActive/unknown': 'active',
+    'updateTerminal/active': 'terminal',
+  })[`${e}/${before === null ? 'unknown' : before}`];
 
 // ---- admission (R4, D-APPROVAL, D-SELF) ------------------------------------
 const EDGE_ORDINAL = Object.fromEntries(EDGES.map((e, i) => [e, i]));
@@ -203,7 +184,6 @@ export const approvalAssetName = (e, key, owner, destination) =>
   Number(fnv1a([EDGE_ORDINAL[e], u8(key), u8(owner), u8(destination)]) & 0xffffffffn);
 export const requestDestination = (r) => (r.edge === 'insertAbsent' ? 0 : r.output);
 export const admitsFor = (config, r, ap) => {
-  if (r.edge === 'witnessTerminal') return true;
   if (ap === null || ap === undefined) return false;
   return (
     ap.policy === config.applicationPolicy &&
@@ -215,48 +195,23 @@ export const admitsFor = (config, r, ap) => {
   );
 };
 
-// ---- the read (R5) ---------------------------------------------------------
-export const readAt = (s, _position, key, value) =>
-  equal(s.config.root, rootOf(s.trie)) && trieGet(s.trie, key) === value && value === 'terminal';
-
 // ---- refusal: the complement of the R2 table (R3) --------------------------
 export function refusal(s, a) {
   const before = trieGet(s.trie, a.key);
-  if (a.edge === 'witnessTerminal')
-    return readAt(s, 0, a.key, 'terminal')
-      ? null
-      : {
-          null: 'read-unknown',
-          absent: 'read-absent',
-          active: 'read-active',
-          terminal: 'read-invalid',
-        }[String(before)];
+  if (!allowed(a.edge)) return 'edge-inadmissible';
   const ap = a.approval;
   if (ap === null || ap === undefined) return 'no-approval';
   if (ap.policy !== s.config.applicationPolicy) return 'no-approval';
   if (!admitsFor(s.config, a, ap)) return 'approval-mismatch';
-  const custodyPresent = s.custody.some((c) => c.key === a.key);
   const activePresent = s.held.some((h) => h.key === a.key && h.kind === 'active');
   const at = `${a.edge}/${before === null ? 'unknown' : before}`;
   switch (at) {
-    case 'insertAbsent/unknown':
     case 'insertActive/unknown':
       return null;
-    case 'insertAbsent/absent':
-    case 'insertAbsent/active':
-    case 'insertAbsent/terminal':
     case 'insertActive/absent':
     case 'insertActive/active':
     case 'insertActive/terminal':
       return 'key-exists';
-    case 'updateActive/absent':
-      return custodyPresent ? null : 'custody-missing';
-    case 'updateActive/unknown':
-      return 'key-unknown';
-    case 'updateActive/active':
-      return 'already-booked';
-    case 'updateActive/terminal':
-      return 'terminal-immutable';
     case 'updateTerminal/active':
       return activePresent ? null : 'token-missing';
     case 'updateTerminal/unknown':
@@ -265,116 +220,23 @@ export function refusal(s, a) {
       return 'not-booked';
     case 'updateTerminal/terminal':
       return 'terminal-immutable';
-    case 'deleteAbsent/absent':
-      return custodyPresent ? null : 'custody-missing';
-    case 'deleteAbsent/unknown':
-      return 'key-unknown';
-    case 'deleteAbsent/active':
-      return 'not-absent';
-    case 'deleteAbsent/terminal':
-      return 'terminal-immutable';
-    case 'deleteActive/active':
-      return activePresent ? null : 'token-missing';
-    case 'deleteActive/unknown':
-      return 'key-unknown';
-    case 'deleteActive/absent':
-      return 'not-active';
-    case 'deleteActive/terminal':
-      return 'terminal-immutable';
     default:
-      return 'read-invalid';
+      return 'edge-inadmissible';
   }
 }
-
 // ---- applying an admitted edge (R2, R6, R-ADA) ------------------------------
 export function applyEdge(s, a) {
-  const entry = s.custody.find((c) => c.key === a.key);
-  const withTrie = (l) => {
-    const trie = trieSet(s.trie, a.key, l);
-    return { trie, config: { ...s.config, root: rootOf(trie) } };
+  if (!allowed(a.edge)) return { state: s, mint: [], paid: [] };
+  const inserting = a.edge === 'insertActive';
+  const trie = trieSet(s.trie, a.key, inserting ? 'active' : 'terminal');
+  const held = inserting
+    ? [{ key: a.key, kind: 'active', output: a.output, datum: a.datum }, ...s.held]
+    : s.held.filter((h) => !(h.key === a.key && h.kind === 'active'));
+  return {
+    state: { ...s, trie, config: { ...s.config, root: rootOf(trie) }, held },
+    mint: delta(a.edge),
+    paid: [],
   };
-  switch (a.edge) {
-    case 'insertAbsent': {
-      const t = withTrie('absent');
-      return {
-        state: {
-          ...s,
-          ...t,
-          custody: [{ key: a.key, refundAddress: a.refundAddress, value: a.deposit }, ...s.custody],
-        },
-        mint: delta(a.edge),
-        paid: [],
-      };
-    }
-    case 'insertActive': {
-      const t = withTrie('active');
-      return {
-        state: {
-          ...s,
-          ...t,
-          held: [{ key: a.key, kind: 'active', output: a.output, datum: a.datum }, ...s.held],
-        },
-        mint: delta(a.edge),
-        paid: [],
-      };
-    }
-    case 'updateActive': {
-      const t = withTrie('active');
-      return {
-        state: {
-          ...s,
-          ...t,
-          custody: s.custody.filter((c) => c.key !== a.key),
-          held: [{ key: a.key, kind: 'active', output: a.output, datum: a.datum }, ...s.held],
-        },
-        mint: delta(a.edge),
-        paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
-      };
-    }
-    case 'updateTerminal': {
-      const t = withTrie('terminal');
-      return {
-        state: {
-          ...s,
-          ...t,
-          held: s.held.filter((h) => !(h.key === a.key && h.kind === 'active')),
-        },
-        mint: delta(a.edge),
-        paid: [],
-      };
-    }
-    case 'deleteAbsent': {
-      const trie = s.trie.filter((p) => p.key !== a.key),
-        t = { trie, config: { ...s.config, root: rootOf(trie) } };
-      return {
-        state: { ...s, ...t, custody: s.custody.filter((c) => c.key !== a.key) },
-        mint: delta(a.edge),
-        paid: entry ? [{ destination: entry.refundAddress, value: entry.value }] : [],
-      };
-    }
-    case 'deleteActive': {
-      const trie = s.trie.filter((p) => p.key !== a.key),
-        t = { trie, config: { ...s.config, root: rootOf(trie) } };
-      return {
-        state: {
-          ...s,
-          ...t,
-          held: s.held.filter((h) => !(h.key === a.key && h.kind === 'active')),
-        },
-        mint: delta(a.edge),
-        paid: [],
-      };
-    }
-    case 'witnessTerminal':
-      return {
-        state: {
-          ...s,
-          held: [{ key: a.key, kind: 'terminal', output: a.output, datum: a.datum }, ...s.held],
-        },
-        mint: delta(a.edge),
-        paid: [],
-      };
-  }
 }
 
 // ---- step and the fold ------------------------------------------------------

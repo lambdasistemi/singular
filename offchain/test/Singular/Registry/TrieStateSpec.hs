@@ -28,16 +28,16 @@ import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 
--- The seven admitted moves, in the frozen model's leaf vocabulary.
+-- The two admitted moves and five raw refused encodings, in the frozen model's leaf vocabulary.
 edgeCases :: [(String, Integer, [Integer], Leaf)]
 edgeCases =
-    [ ("insert absent", 0, [], Absent)
-    , ("insert active", 1, [], Active)
-    , ("update active", 2, [0], Active)
+    [ ("insert active", 1, [], Active)
     , ("update terminal", 3, [1], Terminal)
-    , ("delete absent", 4, [0], Unknown)
-    , ("delete active", 5, [1], Unknown)
-    , ("witness terminal", 6, [1, 3], Terminal)
+    , ("excluded insert absent", 0, [], Unknown)
+    , ("excluded update active", 2, [], Unknown)
+    , ("excluded delete absent", 4, [], Unknown)
+    , ("excluded delete active", 5, [1], Active)
+    , ("excluded witness terminal", 6, [1, 3], Terminal)
     ]
 
 walkReport
@@ -132,7 +132,7 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
             let a = TokenId (AssetName "registry-a")
                 b = TokenId (AssetName "registry-b")
                 path = dir </> "deployment.json"
-            (one, _, _) <- produced a [("first", 1), ("second", 0)]
+            (one, _, _) <- produced a [("first", 1), ("second", 1)]
             (two, _, _) <- produced b [("first", 1), ("first", 3), ("second", 1)]
             let nodes = Map.fromList [(a, one), (b, two)]
             saveMirror path nodes
