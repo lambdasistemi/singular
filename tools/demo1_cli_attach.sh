@@ -39,6 +39,7 @@ work="$6"
 }
 mkdir -p "$work"
 # shellcheck source=tools/managed_state.sh
+# shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/managed_state.sh"
 
 setup_fail() {

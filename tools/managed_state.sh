@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329 # sourced library: every function is an entry point for its sourcers
 # Managed-state path helpers for the CLI journey and recovery controls.
 #
 # Mirror of Singular.CLI.ManagedState.managedDir: ROOT/net-MAGIC/POLICY-NAME/wallets/KEYHASH.

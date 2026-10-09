@@ -52,6 +52,8 @@ preview() {
   [ ! -e "$work/probe-$name" ] || fail "$name: a preview created its target"
   return "$status"
 }
+# shellcheck source=tools/managed_state.sh
+# shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/managed_state.sh"
 
 digest() {

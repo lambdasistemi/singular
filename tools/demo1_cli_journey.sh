@@ -49,6 +49,7 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 reg="$work/registry"
 # shellcheck source=tools/managed_state.sh
+# shellcheck disable=SC1091 # resolved from this script's own directory at runtime
 source "$(dirname "$0")/managed_state.sh"
 : >"$work/trie-command-invocations"
 : >"$work/trace-command-invocations"
@@ -725,13 +726,25 @@ cp "$work/bob.skey" "$bob_copy"
 # The expected CLI-managed root, with an explicitly cleared XDG so an
 # inherited XDG_STATE_HOME cannot override the intended HOME unexpectedly.
 bob_root="$(managed_default_root "$bob_home" "")"
+# bob_env_on/bob_env_off: scope bob's isolated HOME (and XDG clearing) around
+# ordinary commands without a subshell, so later uses of HOME and singular
+# stay intact. Loss at a subshell end would hide the spent environment;
+# explicit restore keeps the spent state visible.
+bob_env_on() {
+  bob_home_old="$HOME"
+  bob_xdg_old="${XDG_STATE_HOME-unset}"
+  unset XDG_STATE_HOME
+  export HOME="$bob_home"
+}
+bob_env_off() {
+  export HOME="$bob_home_old"
+  if [ "$bob_xdg_old" = unset ]; then unset XDG_STATE_HOME; else export XDG_STATE_HOME="$bob_xdg_old"; fi
+}
 # bob_run NAME CLASS -- ARGS: run() with bob's isolated HOME and no XDG.
 bob_run() {
-  (
-    unset XDG_STATE_HOME
-    export HOME="$bob_home"
-    run "$@"
-  )
+  bob_env_on
+  run "$@"
+  bob_env_off
 }
 bob_key=defaultBob
 payload "$work/payload-bob-default.json"
@@ -755,14 +768,14 @@ bob_traced="$work/traced-singular-bob"
 printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' \
   "$work/bob-book.strace" "$singular" >"$bob_traced"
 chmod +x "$bob_traced"
-(
-  unset XDG_STATE_HOME
-  export HOME="$bob_home"
-  singular="$bob_traced"
-  run bob-default-insert success -- registry insert --key "$bob_key" \
-    --payload "$work/payload-bob-default.json" --blueprint "$blueprint" \
-    --state-token "$state_token" "${node[@]}" --wallet-skey "$work/bob.skey"
-)
+bob_singular_old="$singular"
+singular="$bob_traced"
+bob_env_on
+run bob-default-insert success -- registry insert --key "$bob_key" \
+  --payload "$work/payload-bob-default.json" --blueprint "$blueprint" \
+  --state-token "$state_token" "${node[@]}" --wallet-skey "$work/bob.skey"
+bob_env_off
+singular="$bob_singular_old"
 [ "$(field bob-default-insert .requester)" = "$bobkey" ] \
   || fail "fresh bob's default-path booking names another requester"
 holds_envelope bob-default-insert .envelope "$bobkey" "$bob_key" "$work/payload-bob-default.json" \
@@ -783,14 +796,13 @@ mapfile -t bob_journals < <(managed_find "$bob_root" journal.jsonl)
 # journal and partition, and the fold consumes exactly his booking.
 printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" "%s" "$@"\n' \
   "$work/bob-fold.strace" "$singular" >"$bob_traced"
-(
-  unset XDG_STATE_HOME
-  export HOME="$bob_home"
-  singular="$bob_traced"
-  run bob-default-fold success -- registry fold --request "$(field bob-default-insert .request)" \
-    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
-    --wallet-skey "$bob_copy"
-)
+singular="$bob_traced"
+bob_env_on
+run bob-default-fold success -- registry fold --request "$(field bob-default-insert .request)" \
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+  --wallet-skey "$bob_copy"
+bob_env_off
+singular="$bob_singular_old"
 [ "$(field bob-default-fold .folder)" = "$bobkey" ] \
   || fail "the copied key folded into another wallet's partition"
 jq -e --slurpfile b "$receipts/bob-default-insert.json" '
@@ -837,13 +849,11 @@ printf '#!/usr/bin/env bash\nexec strace -f -qq -e trace=%%file -o "%s" bash -c 
   "$work/bob-evil.strace" "$alice_journal" "$singular" >"$work/traced-singular-bob-evil"
 chmod +x "$work/traced-singular-bob-evil"
 evil_before="$(wc -l <"$bob_journal" | tr -d ' ')"
-(
-  unset XDG_STATE_HOME
-  export HOME="$bob_home"
-  "$work/traced-singular-bob-evil" registry fold --request "$(field bob-default-insert .request)" \
-    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
-    --wallet-skey "$bob_copy" >"$receipts/bob-default-evil.json" 2>"$receipts/bob-default-evil.err" || true
-)
+bob_env_on
+"$work/traced-singular-bob-evil" registry fold --request "$(field bob-default-insert .request)" \
+  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
+  --wallet-skey "$bob_copy" >"$receipts/bob-default-evil.json" 2>"$receipts/bob-default-evil.err" || true
+bob_env_off
 grep -qF "$reg/" "$work/bob-evil.strace" \
   || fail "negative control did not fire: a creator-journal open by bob's process went undetected"
 [ "$(wc -l <"$bob_journal" | tr -d ' ')" = "$evil_before" ] \
@@ -1250,8 +1260,8 @@ run inspect-no-node node-unavailable -- registry inspect --key "$key" "${common[
 rm -f "$work/lock.held" "$work/lock.pid"
 # The holding process is the exec'd sleep itself, so killing it releases
 # the lock (the open-file description dies with its last holder).
-# shellcheck disable=SC2016 # $$ and $1 belong to the holder's own shell
 alice_lock="$(managed_lock "$reg" "$state_token" "$alicekey")"
+# shellcheck disable=SC2016 # $$ and $1 belong to the holder's own shell
 flock --fcntl "$alice_lock" bash -c 'echo $$ > "$1/lock.pid"; touch "$1/lock.held"; exec sleep 120' _ "$work" &
 holder=$!
 for _ in $(seq 1 100); do
