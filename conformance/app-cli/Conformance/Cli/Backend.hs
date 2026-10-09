@@ -65,8 +65,14 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (sortOn)
+import Data.IORef
+    ( IORef
+    , modifyIORef'
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
+import Data.List (nub, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
@@ -270,7 +276,11 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address, loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 import Conformance.Cli.Admission
     ( admit
@@ -864,13 +874,15 @@ walletPartition magic keyfile =
     addrKeyHashBytes . walletAddr
         <$> loadWallet (fromIntegral magic) keyfile
 
--- | The primary wallet's public address: what the harness passes its
--- inspects so they reconcile that wallet's managed partition, as they
--- reconciled the actor directory before managed state.
+{- | The primary wallet's public address: what the harness passes its
+inspects so they reconcile that wallet's managed partition, as they
+reconciled the actor directory before managed state.
+-}
 primaryAddress :: Env -> IO String
 primaryAddress env = do
     let o = envOptions env
-    bech32Address . walletAddr <$> loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
+    bech32Address . walletAddr
+        <$> loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
 
 {- | The journal the command journals to: the actor root, the registry token
 and the wallet the command signs with. A fold signs with the second wallet;
@@ -1810,7 +1822,7 @@ provoke env p target key r = do
             printed <-
                 Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
             filesAfter <- digests dir
-            (spentStatus, spentPrinted, probe) <-
+            (spentStatus, spentPrinted, spentReceipt) <-
                 singular
                     env
                     r
@@ -1839,11 +1851,57 @@ provoke env p target key r = do
                     && printedField "outcome" spentPrinted == Just (String "success")
                 )
                 $ fail "the raced seed is still live after the winning boot"
+            -- Bind the spend to the winning boot: the only prepared
+            -- transaction in the winner's journal naming the seed. The
+            -- wrapper carries the spent probe receipt for the verdict.
+            token <- targetToken env target
+            winnerHash <- walletPartition (optMagic o) (optWalletKey o)
+            let winnerJournal =
+                    managedPartition
+                        (targetDir env target)
+                        (optMagic o)
+                        token
+                        winnerHash
+                        </> "journal.jsonl"
+            spentByPath <-
+                journalLines' winnerJournal
+                    >>= ( \ls -> case nub
+                            [ txid
+                            | l <- ls
+                            , Just (Object m) <- [Aeson.decodeStrict l]
+                            , Just (String txid) <- [KeyMap.lookup "journalTxId" m]
+                            , Just (String event) <- [KeyMap.lookup "journalEvent" m]
+                            , event == "prepared"
+                            , Just (Aeson.Array ins) <- [KeyMap.lookup "journalInputs" m]
+                            , Aeson.String (T.pack first) `elem` foldr (:) [] ins
+                            ] of
+                            [spentBy] -> pure spentBy
+                            _ ->
+                                fail
+                                    "the raced seed is not spent once by the winning boot"
+                        )
+            let wrapperFile =
+                    envEvidence env </> printf "step-%03d-spent-wrapper.json" (rcStep r)
+            BL.writeFile
+                wrapperFile
+                ( encodePretty
+                    ( Aeson.object
+                        [ "expectation" Aeson..= T.pack "spent"
+                        , "receipt" Aeson..= spentReceipt
+                        , "seed" Aeson..= first
+                        , "spentBy" Aeson..= spentByPath
+                        , "journal"
+                            Aeson..= T.pack (makeRelative work winnerJournal)
+                        ]
+                    )
+                    <> "\n"
+                )
             finishFrom lockedBefore status printed (T.pack ("evidence" </> out)) $ \pe ->
                 pe
                     { peFilesBefore = copies
                     , peFilesAfter = filesAfter
-                    , peSeedProbe = Just probe
+                    , peSeedProbe =
+                        Just (T.pack (makeRelative work wrapperFile))
                     }
         UnderfundedCreate -> do
             let poor = optUnderfunded o

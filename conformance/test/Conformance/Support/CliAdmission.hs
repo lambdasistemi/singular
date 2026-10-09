@@ -605,6 +605,45 @@ processSpec = describe
                 printed `shouldSatisfy` mentions "differs from evidence/printed.json"
                 unrecorded <- admit work r{rcProcess = Nothing}
                 unrecorded `shouldSatisfy` mentions "is not recorded"
+        it
+            "binds a spent seed to its boot transaction, rejecting tampering"
+            $ withSystemTempDirectory "admission-spent"
+            $ \work -> do
+                r <- processIn work
+                let seed = "ab01" :: Text
+                    spentBy = "cd02" :: Text
+                    journalLine txid event =
+                        Aeson.object
+                            [ "journalTxId" Aeson..= txid
+                            , "journalEvent" Aeson..= (event :: Text)
+                            , "journalInputs" Aeson..= ([seed] :: [Text])
+                            ]
+                BL.writeFile
+                    (work </> "targets/t/journal.jsonl")
+                    (Aeson.encode (journalLine spentBy "prepared") <> "\n")
+                BL.writeFile
+                    (work </> "evidence/spent-probe.json")
+                    "{\"outcome\":\"client-refusal\"}"
+                let wrapper (spent :: Text) =
+                        Aeson.object
+                            [ "expectation" Aeson..= T.pack "spent"
+                            , "receipt" Aeson..= T.pack "evidence/spent-probe.json"
+                            , "seed" Aeson..= seed
+                            , "spentBy" Aeson..= spent
+                            , "journal" Aeson..= T.pack "targets/t/journal.jsonl"
+                            ]
+                    withProbe w = r{rcProcess = (\p -> p{peSeedProbe = Just w}) <$> rcProcess r}
+                BL.writeFile
+                    (work </> "evidence/spent.json")
+                    (Aeson.encode (wrapper spentBy))
+                bound <- admit work (withProbe "evidence/spent.json")
+                bound `shouldSatisfy` (not . mentions "is not spent once")
+                BL.writeFile
+                    (work </> "evidence/spent-evil.json")
+                    (Aeson.encode (wrapper (T.replicate 64 "0")))
+                evil <- admit work (withProbe "evidence/spent-evil.json")
+                evil
+                    `shouldSatisfy` mentions "is not spent once by its boot transaction"
 
 {- | A completed replay reads each journal once and still judges every
 receipt on its own span; a journal it could not read is read again.
