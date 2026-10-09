@@ -23,13 +23,17 @@ validator from that reference; the request validator, the three witness
 policies and the applied application are published as reference outputs to
 the creator's wallet. The receipt names the state token, which is the
 registry: no identity file is written, and the pending identity recorded
-for an interrupted create is removed once it finishes. The seed is selected
-from one view of the wallet's outputs first, so a provider failure during
-selection is reported as node-unavailable; the existing-state refusal then
-happens under the target's lock, after seed selection and before any
-submission.
+for an interrupted create is removed once it finishes. An explicit seed
+already names its managed partition, so a real create meets the
+existing-state refusal before any chain read and before seed validation; a
+provider it cannot use is never contacted. An automatically selected seed
+still needs one view of the wallet's outputs first, so a provider failure
+during selection is reported as node-unavailable and the existing-state
+refusal happens under the target's lock, after selection and before any
+submission. A preview never refuses for existing state: it only reads,
+submitting nothing and writing nothing.
 -}
-module Singular.CLI.Create (runCreate) where
+module Singular.CLI.Create (runCreate, stateTokenOf) where
 
 import Control.Exception
     ( SomeAsyncException
@@ -244,12 +248,14 @@ createWith env a rel ws = do
     let addr = walletAddr caller
         settings = writeProvider ws
     -- An explicit seed already names its managed partition before any chain
-    -- read: existing state there refuses before seed validation, so a second
-    -- boot of one seed is refused for the existing state however far chain
-    -- inclusion has progressed. An automatically selected seed still needs
-    -- its wallet view first and is checked after selection below.
+    -- read: a real create with existing state there refuses before seed
+    -- validation, so a second boot of one seed is refused for the existing
+    -- state however far chain inclusion has progressed. A preview never
+    -- refuses for existing state: it still only reads. An automatically
+    -- selected seed still needs its wallet view first and is checked after
+    -- selection below.
     case createSeed a of
-        Just s -> do
+        Just s | not (createPreview a) -> do
             named <- either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
             refuseExisting
                 ( managedDir
@@ -259,7 +265,7 @@ createWith env a rel ws = do
                     (walletPartition caller)
                 )
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
-        Nothing -> pure ()
+        _ -> pure ()
     -- The seed is selected before any lock or journal use, from one view
     -- of the wallet's outputs. An automatically selected seed is validated,
     -- never re-selected, under the lock, so the managed journal always binds
