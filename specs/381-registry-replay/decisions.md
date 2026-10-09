@@ -54,19 +54,24 @@ reading the web page and provider (Koios)". Neither actor is the creator. A thir
 creator-only fixture may make the development registry, but its creation files
 are never shared with either user.
 
-[Issue #437](https://github.com/lambdasistemi/singular/issues/437), owned by another
-team under epic #301, owns the registry page generated from the chain and joining
-by state token. Every command derives the seed, pins, windows, tip and reference
-outputs from the state token, state datum and release. The former proposal to
-import a creator's `registry.json` and verify its fields is withdrawn; this slice
-ships no joining command and no substitute joined directory.
+Joining by state token has since merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)),
+and the managed state directory ([issue #485](https://github.com/lambdasistemi/singular/issues/485),
+PR 525) removes the per-registry directory. Every command derives the seed, pins,
+windows, tip and reference outputs from the state token, state datum and release, and
+chooses where its own journal lives. The former proposal to import a creator's
+`registry.json` and verify its fields stays withdrawn; this ticket ships no joining
+command and no substitute joined directory.
 
-The pre-#437 part of #381 lands as part of the ticket: public replay and
-cross-actor decision controls at unit level, the creator fixture and empty-user
-journey harness, and these superseded statements. Joining and every later
-journey step are pending by name under #437. The complete integrated journey is
-a separate pull request after #437 merges. The #419 dependency is now merged; cross-actor insertion folding remains an
-unexecuted integration requirement.
+On October 9 the epic owner added the rule for the tests: Bob starts with the state
+token, his wallet and a Koios URL, and any assertion that reads a registry directory is
+rewritten rather than kept, whether it is a foreign actor's directory, the creator's
+directory or any state directory. The journey's assertions read command receipts,
+`inspect` reads made with the state token, and access traces.
+
+The registry page, generated from the chain, belongs to
+[issue #503](https://github.com/lambdasistemi/singular/issues/503). The two journey rows
+that read it stay pending on it, with their joining receipts attached. The complete
+integrated journey ships in this pull request, stacked on PR 525.
 
 ## The directory keeps nothing the replay replaces
 
@@ -134,15 +139,10 @@ ticket builds on the payload-carrying type rather than rebasing across it.
 
 ## Sequencing and staffing
 
-As this ticket's owner, I implement only against published code. Both slices that
-consume history start when the provider ticket's provider switch slice is
-pushed, since `Session.history` arrives with it. A preparation slice builds
-the pure replay and its chain oracles first, against nothing unpublished.
-The epic owner forwards each as an inbox note. If the published contract does not
-fit lineage reconstruction, that is a question, not a change to the provider ticket.
-
-The October 7 operator instruction supersedes the earlier roster: use the
-existing Sol, Muse and GLM team under the epic owner, serially, with no audit.
-Only one worker executes at a time. Exact-head CI and the actual story receipts
-remain required; the owner verifies and merges. #437 remains a separate epic's
-dependency with an explicit stop-for-today order until that order is resolved.
+As this ticket's owner, I implement only against published code, and the base is PR 525.
+The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a
+Muse source writer and a GLM auditor, no other seat, one writer at a time. The
+[mandate](mandate.md) quotes the ruling. This ticket merges immediately after
+[issue #485](https://github.com/lambdasistemi/singular/issues/485), in the slot the desk
+grants, and is not rebased onto main before it. If the published contract does not fit
+lineage reconstruction, that is a question, not a change to the provider ticket.

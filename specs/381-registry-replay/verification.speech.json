@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry user, I want public history to rebuild the selected chain root and supply valid proofs, or refuse incomplete or altered history by name. This record establishes the independent replay checks. The two users joining and operating through the actual CLI remain unexecuted under the stopped token-joining dependency; see the tasks.",
+      "text": "As a registry user, I want public history to rebuild the selected chain root and supply valid proofs, or refuse incomplete or altered history by name. This record establishes the independent replay checks as they stood on October 7. The two users joining and operating through the actual CLI were then unexecuted, under a token-joining dependency that has since merged. The mandate orders that work and the tasks track it; its evidence is recorded in a later section of this page, under its own heading, when it exists.",
       "pause": 400
     }
   ],
@@ -101,6 +101,6 @@
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "14ed90c8362ba1577694ee40a344f011ef932b2853066f138fae5184e9034cf5"
+    "sha256": "1c0a99f237d3fffc5fd3ef78985f862c1931fc33499a5712419f7b88198c9d61"
   }
 }

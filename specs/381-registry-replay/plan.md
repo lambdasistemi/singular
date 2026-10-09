@@ -4,9 +4,12 @@ As a maintainer, I want one trie-state backend that rebuilds a registry's trie
 from its full public history at every selection, so that commands get the
 chain's trie without any actor's local copy. Read the [stories](spec.md) first,
 then the [decisions](decisions.md). The pure replay and command migration are merged in PRs 391 and 411.
-The remaining branch is rebased onto main `23964e667fa278b2027d0c05169c0f5e0e9233cb`.
-The remaining deliverable is the actual independent-user journey. The ordered
-[task list](tasks.md) tracks it; an empty-user harness alone does not complete it.
+The remaining branch is stacked on PR 525, the managed-state ticket
+([issue #485](https://github.com/lambdasistemi/singular/issues/485)), at
+`026576268e916c964426d4a4be304d35544d9816`. The remaining deliverable is the actual
+independent-user journey. The [mandate](mandate.md) fixes its content, runs and
+gate, and the ordered [task list](tasks.md) tracks it; an empty-user harness alone
+does not complete it.
 
 ## The contract consumed
 
@@ -109,23 +112,27 @@ through the provider ticket's Koios-shaped development-network provider.
 ```mermaid
 flowchart TD
   Creator[Private creator-only fixture] -->|Create registry| Chain[Development network]
-  Chain -->|Generated registry page: pending 437| Page[Public registry page]
-  Page --> AliceDir[Alice's empty directory]
-  Page --> BobDir[Bob's empty directory]
+  Chain -->|State token, published| Token[State token]
+  Chain -->|Generated registry page: waits on 503| Page[Public registry page]
+  Token --> AliceRun[Alice's singular, empty home]
+  Token --> BobRun[Bob's singular, empty home]
   Chain -->|Asset history| Provider[Koios-shaped provider]
-  Provider -->|Same history| AliceRun[Alice's singular]
-  Provider -->|Same history| BobRun[Bob's singular]
+  Provider -->|Same history| AliceRun
+  Provider -->|Same history| BobRun
 ```
 
-A private creator-only fixture makes the registry. Alice and Bob both start
-with empty homes and registry directories, using only the registry page generated
-from the chain and Koios. Token joining is owned by #437, under the updated
-[decision](decisions.md#joining-a-registry-from-public-data). Every step below is
-published pending until that integration runs, with no copied identity or
-simulated joined directory:
+A private creator-only fixture makes the registry. Alice and Bob both start with
+empty homes. Each is given the registry's state token, its own wallet and the
+provider's address, and nothing else: every command carries `--state-token`, none
+carries a directory option, and the command chooses where its own journal lives
+([issue #485](https://github.com/lambdasistemi/singular/issues/485)). Joining by
+token is merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)).
+The registry page waits on [issue #503](https://github.com/lambdasistemi/singular/issues/503),
+so the two rows that read it stay pending, with the joining receipts attached. No
+identity file is copied and no joined directory is simulated:
 
 1. Bob inspects his key, proving its absence, and books and folds its
-   insertion. Alice's directory is hashed before and after, and never read.
+   insertion. Alice's files are never opened, which the access trace shows.
 2. Alice inspects Bob's key and finds it active, from her own replay.
 3. Bob books the termination of his own key; Alice folds it, with the
    membership proof from her own replay and no envelope. Alice books the
@@ -137,12 +144,13 @@ simulated joined directory:
 5. Rejection and reclaim run across actors, as today.
 6. After every fold, both actors' inspect roots equal the fold's state root.
 
-The harness starts Alice and Bob with separate empty `HOME` and registry
-directories and traces creator processes so any attempted actor-directory read
-fails. Once #437 supplies the real joining interface, actor processes are traced
-and foreign directories are hashed before and after every step as well. The current
-mirror-dependent controls become history controls: the provider withholds one
-fold, then serves an altered request edge, and each refusal is named.
+The harness starts Alice and Bob with separate empty homes and traces every
+process, the creator's included, so any attempted read of another party's files
+fails the journey. It reads no home and no state directory itself: "nothing was
+submitted" is shown by `inspect` before and after. The mirror-dependent controls
+became history controls: the provider withholds one fold, and a replay that maps one
+edge wrongly is run through the actor's command, and each refusal is named. The
+[mandate](mandate.md) says why the second control cannot be served by a provider.
 
 ## Vertical slices
 
@@ -153,8 +161,8 @@ and stacks on the provider ticket's published slices.
 | --- | --- | --- |
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
-| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. The journey names joining and all subsequent CLI steps pending under #437, with all actual joined-user steps still to execute. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
-| Separate actors integrated | Actual token/page-driven joining and the full two-user CLI journey, in a separate pull request. No creator identity file is shared. | #437 merged and its actual interface available |
+| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. Merged before this stack. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Separate actors integrated | Actual token-driven joining and the full two-user CLI journey, in four runs under the [mandate](mandate.md). No creator identity file is shared. | Joining by token merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)) and the managed state directory stacked ([PR 525](https://github.com/lambdasistemi/singular/pull/525)) |
 | Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
@@ -203,18 +211,20 @@ its state computed from receipts. Uncovered rows remain visible.
 
 ## Execution and acceptance
 
-The October 7 instruction supersedes the old staffing plan: the existing Sol,
-Muse and GLM team works serially under the epic owner; no auditor is commissioned.
-Only one worker executes at a time. The owner verifies and merges.
+The October 9 staffing ruling governs: a Sonnet ticket owner, a Muse source writer and
+a GLM auditor that is mute toward the writer, one source writer at a time, and no other
+seat. The [mandate](mandate.md) quotes it. The owner verifies, and the desk grants the
+merge slot.
 
-#437 owns the token-only join. Its lane has an explicit October 7 stop order,
-so resuming that separate epic's lane requires resolving that order. #381 can
-finish rebase, tasks and independent replay checks meanwhile. Its full journey
-cannot be accepted while token-only joining is missing. No identity-file copy
-or handwritten registry configuration substitutes for the joining feature.
+The stop of October 7 on token-only joining no longer applies: joining by token merged
+in [issue #501](https://github.com/lambdasistemi/singular/issues/501) and the managed
+state directory is stacked beneath this branch. The two rows that read the registry page
+stay pending on [issue #503](https://github.com/lambdasistemi/singular/issues/503). No
+identity-file copy or handwritten registry configuration substitutes for the joining.
 
-Lean behavior is bound to `bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713`,
-`Singular.step`, `exitStep`, `foldActions`, `buildFold` and the public-fold-input
-statements. No model change is planned. Mixed transactions retain the separately
-stated validator oracle. Final acceptance requires exact-head CI and executed
-journey receipts, including the negative controls, with all missing rows visible.
+Lean behavior is bound to tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, the same on
+main, on PR 525 and here, with `Singular.step`, `exitStep`, `foldActions`, `buildFold`
+and the public-fold-input statements. No model change is planned. Mixed transactions
+retain the separately stated validator oracle. Final acceptance requires exact-head CI
+and executed journey receipts, including the negative controls, with all missing rows
+visible.

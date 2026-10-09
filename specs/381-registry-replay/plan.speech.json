@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want one trie-state backend that rebuilds a registry's trie from its full public history at every selection, so that commands get the chain's trie without any actor's local copy. Read the stories first, then the decisions. The pure replay and command migration are merged in PRs 391 and 411. The remaining branch is rebased onto main 23964e667fa278b2027d0c05169c0f5e0e9233cb. The remaining deliverable is the actual independent-user journey. The ordered task list tracks it; an empty-user harness alone does not complete it.",
+      "text": "As a maintainer, I want one trie-state backend that rebuilds a registry's trie from its full public history at every selection, so that commands get the chain's trie without any actor's local copy. Read the stories first, then the decisions. The pure replay and command migration are merged in PRs 391 and 411. The remaining branch is stacked on PR 525, the managed-state ticket (issue #485), at 026576268e916c964426d4a4be304d35544d9816. The remaining deliverable is the actual independent-user journey. The mandate fixes its content, runs and gate, and the ordered task list tracks it; an empty-user harness alone does not complete it.",
       "pause": 400
     }
   ],
@@ -105,11 +105,11 @@
       "pause": 400
     },
     {
-      "text": "A private creator-only fixture makes the registry. Alice and Bob both start with empty homes and registry directories, using only the registry page generated from the chain and Koios. Token joining is owned by #437, under the updated decision. Every step below is published pending until that integration runs, with no copied identity or simulated joined directory:",
+      "text": "A private creator-only fixture makes the registry. Alice and Bob both start with empty homes. Each is given the registry's state token, its own wallet and the provider's address, and nothing else: every command carries --state-token, none carries a directory option, and the command chooses where its own journal lives (issue #485). Joining by token is merged (issue #501). The registry page waits on issue #503, so the two rows that read it stay pending, with the joining receipts attached. No identity file is copied and no joined directory is simulated:",
       "pause": 400
     },
     {
-      "text": "Bob inspects his key, proving its absence, and books and folds its insertion. Alice's directory is hashed before and after, and never read.",
+      "text": "Bob inspects his key, proving its absence, and books and folds its insertion. Alice's files are never opened, which the access trace shows.",
       "pause": 300
     },
     {
@@ -133,7 +133,7 @@
       "pause": 300
     },
     {
-      "text": "The harness starts Alice and Bob with separate empty HOME and registry directories and traces creator processes so any attempted actor-directory read fails. Once #437 supplies the real joining interface, actor processes are traced and foreign directories are hashed before and after every step as well. The current mirror-dependent controls become history controls: the provider withholds one fold, then serves an altered request edge, and each refusal is named.",
+      "text": "The harness starts Alice and Bob with separate empty homes and traces every process, the creator's included, so any attempted read of another party's files fails the journey. It reads no home and no state directory itself: \"nothing was submitted\" is shown by inspect before and after. The mirror-dependent controls became history controls: the provider withholds one fold, and a replay that maps one edge wrongly is run through the actor's command, and each refusal is named. The mandate says why the second control cannot be served by a provider.",
       "pause": 400
     }
   ],
@@ -181,26 +181,20 @@
       "pause": 500
     },
     {
-      "text": "The October 7 instruction supersedes the old staffing plan: the existing Sol, Muse and GLM team works serially under the epic owner; no auditor is commissioned. Only one worker executes at a time. The owner verifies and merges.",
-      "pause": 400
-    }
-  ],
-  "437-owns-the-token-only-join-its-lane-has-an-explicit-october-7-stop-order": [
-    {
-      "text": "437 owns the token-only join. Its lane has an explicit October 7 stop order,.",
-      "pause": 500
-    },
-    {
-      "text": "so resuming that separate epic's lane requires resolving that order. #381 can finish rebase, tasks and independent replay checks meanwhile. Its full journey cannot be accepted while token-only joining is missing. No identity-file copy or handwritten registry configuration substitutes for the joining feature.",
+      "text": "The October 9 staffing ruling governs: a Sonnet ticket owner, a Muse source writer and a GLM auditor that is mute toward the writer, one source writer at a time, and no other seat. The mandate quotes it. The owner verifies, and the desk grants the merge slot.",
       "pause": 400
     },
     {
-      "text": "Lean behavior is bound to bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713, Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. No model change is planned. Mixed transactions retain the separately stated validator oracle. Final acceptance requires exact-head CI and executed journey receipts, including the negative controls, with all missing rows visible.",
+      "text": "The stop of October 7 on token-only joining no longer applies: joining by token merged in issue #501 and the managed state directory is stacked beneath this branch. The two rows that read the registry page stay pending on issue #503. No identity-file copy or handwritten registry configuration substitutes for the joining.",
+      "pause": 400
+    },
+    {
+      "text": "Lean behavior is bound to tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, the same on main, on PR 525 and here, with Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. No model change is planned. Mixed transactions retain the separately stated validator oracle. Final acceptance requires exact-head CI and executed journey receipts, including the negative controls, with all missing rows visible.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a0e60d162a11eca13b1e47a7dcfed389fac83b721c7cf7eb3a79f5329e19321a"
+    "sha256": "c186fb641309ed8ce1167c8a197dec7c9a3ad7038d5ccc7e7421ce0e867d9afc"
   }
 }
