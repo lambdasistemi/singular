@@ -1,0 +1,104 @@
+cabal-version: 3.4
+name: singular-negative
+version: 0.1.0.0
+synopsis: Adversarial singular host that submits forbidden moves unevaluated
+description:
+  The singular-negative executable shares the ordinary command-line
+  sources by directory and depends on the singular-registry library.
+  It builds the forbidden holding-spend shapes, signs with any named
+  key file, skips every local check and local script evaluation, and
+  submits. No ordinary executable links a host module.
+
+license: Apache-2.0
+license-file: LICENSE
+author: Paolo Veronelli
+maintainer: paolo.veronelli@gmail.com
+category: Cardano
+build-type: Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+executable singular-negative
+  import: warnings
+  default-language: GHC2021
+  hs-source-dirs: app src ../cli/src
+  main-is: Main.hs
+  other-modules:
+    Negative.Craft
+    Negative.Parse
+    Negative.Read
+    Negative.Run
+    Negative.Submit
+    Singular.CLI
+    Singular.CLI.Attached
+    Singular.CLI.Command
+    Singular.CLI.Create
+    Singular.CLI.Entry
+    Singular.CLI.Finish
+    Singular.CLI.Fold
+    Singular.CLI.FoldRules
+    Singular.CLI.InsertEnvelope
+    Singular.CLI.Inspect
+    Singular.CLI.Live
+    Singular.CLI.Outlay
+    Singular.CLI.Permanent
+    Singular.CLI.Plan
+    Singular.CLI.Preview
+    Singular.CLI.Proof
+    Singular.CLI.Receipt
+    Singular.CLI.ReceiptBody
+    Singular.CLI.Reclaim
+    Singular.CLI.ReclaimRules
+    Singular.CLI.Reconcile
+    Singular.CLI.Recovery
+    Singular.CLI.Registry
+    Singular.CLI.Reject
+    Singular.CLI.RejectRules
+    Singular.CLI.RequestWindow
+    Singular.CLI.Root
+    Singular.CLI.Session
+    Singular.CLI.Trace
+    Singular.CLI.TrieHistory
+    Singular.CLI.TrieTrace
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , async
+    , base >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers
+    , contra-tracer
+    , contra-tracer-contrib
+    , directory
+    , filepath
+    , microlens
+    , mts:mpf-write
+    , plutus-core
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:koios-http
+    , text
+    , time
+    , unix
+  ghc-options: -threaded -with-rtsopts=-N
