@@ -167,19 +167,9 @@ jobs:
       - name: List the inventory as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance -- list
-        # Read all eleven model-and-chain step records from the retirement
-        # receipt. The refusals must carry state-script attribution, and
-        # every accepted step must compare the declared surface and reject
-        # discovered-value perturbations. The separate registry makes the
-        # unknown-key attempt independent of the Absent refusal. The two
-        # tampered deletions, paying the deposit back one lovelace short and
-        # to another address, are refused by the state script and by the
-        # model, whose reason is the one the compiled Aiken suite names for
-        # the shape: onchain/validators/deposit_exits.tests.ak
-        # e5_deposit_one_lovelace_short_refuses and
-        # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
-        # The ledger's own reason comes from the traced replay of each refused
-        # transaction (#287) and must equal the model's.
+        # The current retirement receipt proves Active to Terminal and the
+        # excluded encodings. The original Absent/deletion-refund promises
+        # remain separately published and uncovered (A-004).
   conformance-budget:
     name: "Conformance devnet: honest fold budget regression"
     runs-on: nixos
@@ -281,50 +271,12 @@ jobs:
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
           receipts="$CONFORMANCE_DEDICATED_RECEIPTS/retire-active-key"
-          bash test/ci/dedicated-row.sh retire-active-key -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run retire-active-key
+          bash test/ci/dedicated-row.sh retire-active-key -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run permanent-retire-active-key
           head_sha="$(git rev-parse HEAD)"
-          f="$receipts/receipt-retire-active-key.json"
+          f="$receipts/receipt-permanent-retire-active-key.json"
           test -f "$f" || { echo 'FAIL: missing retire-active-key receipt'; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
-          # jq expands its own --arg variables inside this program.
-          # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
-            def txid: type == "string" and test("^[0-9a-f]{64}$");
-            def text: type == "string" and length > 0;
-            def complete: .comparison == "agrees" and .tamper == null
-              and (.compared | length) == 9 and .perturbation.refused > 0;
-            .row == "retire-active-key"
-            and .verdict == "agrees-with-model"
-            and .base == $base and .dirty == false
-            and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 11
-            and ([.steps[].edge] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal","insertActive","deleteActive","deleteActive","deleteActive"])
-            and ([.steps[].tamper] == [null,null,null,null,null,null,null,null,"short-by-one","other-address",null])
-            and ([.steps[].model.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
-            and ([.steps[].chain.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
-            and all(.steps[]; .comparison == "agrees")
-            and .steps[8].model.reason == "deposit-returned"
-            and .steps[9].model.reason == "deposit-returned"
-            and all(.steps[8,9]; (.chain.txid | txid) and (.chain.refusal.hashes | index($state) != null))
-            and ([.steps[8,9,10].request] | unique | length) == 1
-            and .steps[10].registry == .steps[0].registry
-            and .steps[7].registry == .steps[0].registry
-            and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
-            and all(.steps[] | select(.model.outcome == "refused");
-              (.chain.txid | txid) and (.chain.refusal.hashes | length) > 0)
-            and .steps[3].model.reason == "not-booked"
-            and .steps[6].model.reason == "key-unknown"
-            and .steps[1].perturbation.byObservation.mint > 0
-            and .steps[1].perturbation.byObservation.leaf > 0
-            and .steps[0].registry == .steps[1].registry
-            and .steps[1].registry == .steps[2].registry
-            and .steps[2].registry == .steps[3].registry
-            and .steps[4].registry == .steps[5].registry
-            and .steps[5].registry == .steps[6].registry
-            and .steps[0].registry != .steps[4].registry
-            and (.transactions | length) == 7
-          ' "$f" > /dev/null || { echo 'FAIL: retire-active-key retirement evidence moved'; exit 1; }
-          bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: retire-active-key refused steps lack the traced replay of their reason'; exit 1; }
+          bash test/ci/permanent-retirement-evidence.sh "$f" "$head_sha" "$state_hash"
           # #326 R9: the dedicated rows' receipts are kept together as the
           # conformance-story-receipts artifact, beside the generic session's.
           STORY_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/story-receipts.XXXXXX")"

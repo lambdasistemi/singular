@@ -1118,6 +1118,7 @@ loadReceipts dir = do
             | otherwise -> stepsComplete path r steps
         ("register-active-key", Nothing) -> Left (path <> ": registration names no live steps")
         ("retire-active-key", Nothing) -> Left (path <> ": retirement names no live steps")
+        ("permanent-retire-active-key", Nothing) -> Left (path <> ": retirement names no live steps")
         ("retract-outside-window", Nothing) -> Left (path <> ": retraction window names no live steps")
         ("reject-and-retract-refund-controls", Nothing) -> Left (path <> ": exit chapter names no live steps")
         ("reject-inside-processing-and-retraction-windows", Nothing) -> Left (path <> ": early rejection names no live steps")

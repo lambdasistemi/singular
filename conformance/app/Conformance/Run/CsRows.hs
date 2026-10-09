@@ -159,7 +159,6 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
-    , edgeInsertAbsent
     , edgeInsertActive
     )
 
@@ -970,7 +969,7 @@ runProofStepConstructorWitnesses prov submit stateBytes requestBytes namingCodes
                 (actorAddress submit)
                 tid
                 key
-                edgeInsertAbsent
+                edgeInsertActive
         unsignedFold <- Cage.withLatest prov $ \v -> do
             ctx <- RegistryEdges.registryContextFor cfg namingCodes v refs
             updateTokenWithDuties cfg v tm tid (actorAddress submit) ctx
@@ -987,7 +986,7 @@ runProofStepConstructorWitnesses prov submit stateBytes requestBytes namingCodes
         (mem, cpu) <- measureUnitsProv prov unsignedFold
         signedFold <- submitWithGenesis submit unsignedFold
         root <- withTrie tm tid $ \trie -> do
-            _ <- walkEdge trie key edgeInsertAbsent
+            _ <- walkEdge trie key edgeInsertActive
             CageTrie.getRoot trie
         observed <- readChainState cfg prov tid
         require

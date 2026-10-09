@@ -23,7 +23,15 @@
     "lean/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
     "onchain/permanent-contract.json": "0393fc84f2f91e6811a83a5a5cc4c75af67584704ef614f0a4a9a45e9468e26a",
     "onchain/script-identity.json": "824ee61c4667b10c725fe27e8e10752a256e5ddd94155088184f611bd0a47328",
-    "naming-onchain/script-identity.json": "47f4bc1005fd831da4885078debf3576deb95836af3cbfd36d42cf309420ef40"
+    "naming-onchain/script-identity.json": "8a8faed3b19138bcf1f410ad11a870b40f4414cad17dea2cff70254f655f342f",
+    "naming-onchain/validators/naming.ak": "54e68e00cc3b2ec0c51ade731ee4116fe7741d5a51267936525a5d40f71cfa77",
+    "naming-onchain/validators/application.ak": "72dbbeb583a0d4e0b526230d4dfcab3a09a098e269d2c5bf36edb62e23c99ff3",
+    "naming-onchain/validators/retirement_custody.ak": "c0ceaa8375562fa3de8dc9eecf17a42f2c463415f2a676d5d13ad395c15bc8cb",
+    "applications/open-datum/lean/OpenDatumApplication/ProofSupport.lean": "35a730c92a961910359f9e4991de20c74dcfd95ad37510f8597e6aeadbe8fcdb",
+    "conformance/rows.json": "55e7fce7872af3b8235796f3e376e7cf12bce49a8131c8611da8fddd30ec4c94",
+    "conformance/lib/Conformance/Edge/Programs.hs": "7953693cbe6dd218ca2ff93d89db48af82d2e6ff2030d021a8cbfbabfa36edb1",
+    "conformance/lib/Conformance/Edge/Retire.hs": "3de750870698a931beaa97ced2fd982c81f34c65c4876aae269c3fa6f208a9e0",
+    "conformance/lib/Conformance/Edge/Occupied.hs": "bd92468f434aff3fc162ed0e16dece35a1ab71d6f1c861e50a14f836f412329a"
   },
   "auditedDeclarationCounts": {
     "lean/theorem-debt.json": 36,

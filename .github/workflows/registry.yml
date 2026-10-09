@@ -563,9 +563,9 @@ jobs:
               and ($r.unknown.detail | text)
               and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
               and ($r.unknown.controlTxid | txid)
-              and ($r.absent.detail | text)
-              and ($r.absent.trace == null or $r.absent.trace == "not-booked")
-              and ($r.absent.controlTxid | txid)
+              and ($r.terminal.detail | text)
+              and ($r.terminal.trace == null or $r.terminal.trace == "terminal-immutable")
+              and ($r.terminal.controlTxid | txid)
             )
           ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
           echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."

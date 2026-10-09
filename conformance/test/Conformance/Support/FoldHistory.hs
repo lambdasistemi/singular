@@ -54,7 +54,7 @@ named n =
         (txIdTx (mkBasicTx (mkBasicTxBody & feeTxBodyL .~ Coin n) :: ConwayTx))
         (TxIx 0)
 
-{- | The roots and nodes are produced by the unchanged MPF edge engine.
+{- | The roots and nodes are produced by the supported MPF edge engine.
 The fixture adapter checks the entire recorded walk from an empty trie.
 -}
 snapshotFor :: [(ByteString, Integer)] -> IO (TS.TrieSnapshot IO)
@@ -91,12 +91,9 @@ snapshotFor moves = do
 
 setup :: [(ByteString, Integer)]
 setup =
-    [ ("absent", 0)
-    , ("held", 1)
+    [ ("held", 1)
     , ("gone", 1)
     , ("gone", 3)
-    , ("deleted", 1)
-    , ("deleted", 5)
     ]
 
 keys :: Set.Set ByteString
@@ -133,7 +130,7 @@ refusingSession calls =
 spec :: Spec
 spec = describe "A fold trie is rebuilt from authenticated current leaves" $ do
     it
-        "preserves Absent, Active, Terminal and proven Unknown under the selected root"
+        "preserves Active, Terminal and proven Unknown under the selected root"
         $ do
             snapshot <- snapshotFor setup
             manager <- rebuilt snapshot
@@ -141,7 +138,7 @@ spec = describe "A fold trie is rebuilt from authenticated current leaves" $ do
             createTrie producer token
             _ <- withTrie producer token $ \trie -> mapM (uncurry (walkEdge trie)) setup
             forM_
-                [ ("absent", TS.Absent)
+                [ ("absent", TS.Unknown)
                 , ("held", TS.Active)
                 , ("gone", TS.Terminal)
                 , ("deleted", TS.Unknown)
@@ -155,16 +152,16 @@ spec = describe "A fold trie is rebuilt from authenticated current leaves" $ do
             withTrie manager token Trie.getRoot
                 `shouldReturn` TS.trieRoot snapshot
     it
-        "returns the same ordered proofs and root for all seven edges, discarding speculation"
+        "returns ordered proofs for the two operations and raw excluded edges on known keys, discarding speculation"
         $ do
             snapshot <- snapshotFor setup
             manager <- rebuilt snapshot
             let moves =
-                    [ ("new-absent", 0)
+                    [ ("gone", 0)
                     , ("new-active", 1)
-                    , ("absent", 2)
+                    , ("gone", 2)
                     , ("held", 3)
-                    , ("new-absent", 4)
+                    , ("gone", 4)
                     , ("new-active", 5)
                     , ("gone", 6)
                     ]

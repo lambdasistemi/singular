@@ -1,5 +1,6 @@
-{- | Retire a registration, then try an Absent and an unknown key; delete a
-registration, paying its deposit back short and elsewhere before paying it.
+{- | Reach Active and retire it permanently; compare unknown-key and excluded
+encoding refusals beside accepting controls. No Absent or deletion success is
+claimed, and the broader retirement requirement remains separately uncovered.
 -}
 module Conformance.Edge.Retire (story) where
 
@@ -14,11 +15,9 @@ import Conformance.Story.Live
     , Edge (..)
     , EdgeRequest (..)
     , Story
-    , Tamper (..)
     , compareWithModel
     , observe
     , submit
-    , tamper
     )
 import Conformance.Story.Specification (clause, theorem)
 
@@ -48,13 +47,13 @@ story (Context registry holder) (Context otherRegistry _) = do
         otherRegistry
         (EdgeRequest UpdateTerminal "never-registered" holder)
 
-    -- A deletion owes its owner the deposit back. Each tampered deletion is
-    -- refused and leaves the key active for the untampered one.
+    -- Excluded deletion leaves the registration live. Its termination then
+    -- succeeds, and that Terminal key cannot be registered again.
     let deletion = EdgeRequest DeleteActive "deleted" holder
     checked registry (EdgeRequest InsertActive "deleted" holder)
-    tamper ShortByOne registry deletion >>= compared
-    tamper OtherAddress registry deletion >>= compared
     checked registry deletion
+    checked registry (EdgeRequest UpdateTerminal "deleted" holder)
+    checked registry (EdgeRequest InsertActive "deleted" holder)
   where
     checked registry' request = submit registry' request >>= compared
     compared step = do

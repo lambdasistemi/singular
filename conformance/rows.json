@@ -397,6 +397,15 @@
       "expected": "accept registration and termination; refuse all other registry edges",
       "state": "uncovered",
       "note": "No bounded live consumer-comparison receipt is attached to the existing historical book. Compiled component evidence and packaged CLI evidence are reported separately; prior broader rows remain published. #498/#495 is subsequent M1 work, so the carve alone does not close M1."
+    },
+    {
+      "id": "permanent-retire-active-key",
+      "group": "registry-operations",
+      "requirement": "On a real devnet, registration delivers an Active token and termination burns that exact token, leaves no live holding and commits Terminal. Unknown-key termination and excluded insertion/deletion encodings are refused beside reached controls; an excluded deletion leaves the Active key able to terminate, and its Terminal key cannot register again.",
+      "source": "Singular.Model.refusal/applyEdge; Singular.Statements.update_terminal_transaction_row; A-004 conformance scope disposition",
+      "expected": "accept registration and termination; refuse unknown termination, excluded encodings and Terminal reinsertion",
+      "state": "uncovered",
+      "note": "This separate current requirement does not credit the original broader retirement row, unreachable Absent prefix, deletion refunds or the full permanent-contract consumer row."
     }
   ]
 }

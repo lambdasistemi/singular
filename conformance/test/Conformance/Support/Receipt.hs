@@ -120,6 +120,36 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
                             fail "fixture inventory has no single update requirement"
 
     it
+        "Keeps broader requirements uncovered beside a current retirement receipt"
+        $ do
+            rows <- loadCommitted
+            let current =
+                    smallReceipt
+                        { receiptRow = "permanent-retire-active-key"
+                        , receiptBase = "scope-control"
+                        }
+                broader =
+                    filter
+                        ( ( `elem`
+                                [ "update-existing-key"
+                                , "delete-existing-key"
+                                , "reinsert-deleted-key"
+                                , "retire-active-key"
+                                ]
+                          )
+                            . rowId
+                        )
+                        rows
+            length broader `shouldBe` 4
+            map (effectiveState "scope-control" [current]) broader
+                `shouldBe` replicate 4 (ShownPlanned Uncovered)
+            case filter ((== receiptRow current) . rowId) rows of
+                [supported] ->
+                    effectiveState "scope-control" [current] supported
+                        `shouldBe` ShownExecuted
+                _ -> fail "current retirement requirement is missing or duplicated"
+
+    it
         "Counts a demonstrated rejection as a completed test of a rejection requirement"
         $ do
             dir <- getDataFileName "test/fixtures/receipts"
@@ -583,7 +613,7 @@ stepRoundTrip = describe "Saving compared live requests" $
                     ]
             receipt =
                 smallReceipt
-                    { receiptRow = "retire-active-key"
+                    { receiptRow = "permanent-retire-active-key"
                     , receiptSteps = Just [step]
                     }
         case eitherDecode (encode receipt) :: Either String Receipt of
@@ -902,7 +932,9 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         $ do
             renderBook [] [exitControlsLive]
                 `shouldSatisfy` isInfixOf "Rejection and retraction compared"
-            renderBook [] [acceptedLive{receiptRow = "retire-active-key"}]
+            renderBook
+                []
+                [acceptedLive{receiptRow = "permanent-retire-active-key"}]
                 `shouldSatisfy` isInfixOf "Retirement compared"
     it
         "publishes a refused retraction with the exit and the reason the model gave"
@@ -1475,7 +1507,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                     "The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `destination`."
     it
         "renders an untampered refused request with the reason its traced replay admitted"
-        $ renderBook [] [untamperedRefusal "retire-active-key"]
+        $ renderBook [] [untamperedRefusal "permanent-retire-active-key"]
             `shouldSatisfy` isInfixOf
                 "was refused on chain (transaction `abc123`); the model refused it for `not-booked`. The traced replay of the deployed script `abcdef` (traced build `traced-abcdef`) failed with `not-booked`."
     it "names the cause when the traced replay admitted no reason" $
@@ -1523,7 +1555,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
             let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
                 others =
                     [ "register-active-key"
-                    , "retire-active-key"
+                    , "permanent-retire-active-key"
                     , "reject-and-retract-refund-controls"
                     , "reject-inside-processing-and-retraction-windows"
                     , "retract-outside-window"
@@ -1551,7 +1583,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
             book
                 `shouldSatisfy` isInfixOf "## Insert on a key the registry already holds"
             occurrences
-                "Submit **insertAbsent** for **occupied** in **occupied insert**"
+                "Submit **insertActive** for **occupied** in **occupied insert**"
                 book
                 `shouldBe` 2
             book
@@ -1566,7 +1598,7 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                 { receiptRow = "register-active-key"
                 }
             , (tracedPaymentLive [causeEntry] Nothing)
-                { receiptRow = "retire-active-key"
+                { receiptRow = "permanent-retire-active-key"
                 }
             , (paymentTamperLive "short-by-one" "deposit-returned")
                 { receiptRow = "reject-and-retract-refund-controls"
@@ -1579,7 +1611,9 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                 (tracedPaymentLive [admittedEntry] (Just "destination"))
                     { receiptRow = "register-active-key"
                     }
-        renderBook [] [admitted, admitted{receiptRow = "retire-active-key"}]
+        renderBook
+            []
+            [admitted, admitted{receiptRow = "permanent-retire-active-key"}]
             `shouldSatisfy` isInfixOf
                 "Of the 2 refused requests in this run's chapters, 2 carry a reason their traced replay admitted, 0 name the cause their replay admits none, and 0 record no traced replay."
         renderBook [] [admitted]

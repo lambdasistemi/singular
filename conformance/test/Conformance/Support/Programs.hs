@@ -150,10 +150,8 @@ programSpec = describe
 compositions :: [Text]
 compositions =
     [ "insert-key"
-    , "update-existing-key"
-    , "delete-existing-key"
-    , "reinsert-deleted-key"
     , "insert-occupied-key"
+    , "permanent-retire-active-key"
     , "retract-inside-window"
     , "reject-after-window"
     , "empty-fold"
@@ -165,14 +163,17 @@ tampers =
     , "reject-before-deadline-consumer-requirement"
     , "request-value-and-refund-routing"
     , "register-active-key"
-    , "retire-active-key"
     , "reject-and-retract-refund-controls"
     , "reject-inside-processing-and-retraction-windows"
     ]
 
 outside :: [Text]
 outside =
-    [ "fold-against-superseded-root"
+    [ "update-existing-key"
+    , "delete-existing-key"
+    , "reinsert-deleted-key"
+    , "retire-active-key"
+    , "fold-against-superseded-root"
     , "surplus-fold-actions"
     , "historical-owner-change"
     , "retired-stake-hook-with-withdrawal"

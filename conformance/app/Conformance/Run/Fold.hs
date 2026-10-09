@@ -157,7 +157,7 @@ import Singular.Registry.Types
     , ProofStep (..)
     , RequestAction (Update)
     , UpdateRedeemer (..)
-    , edgeInsertAbsent
+    , edgeInsertActive
     )
 import Singular.Registry.Types qualified as CageTypes
 
@@ -725,10 +725,8 @@ rowRequestAndFold
 rowRequestAndFold env cage label key _val _op = do
     let cfg = rcCfg cage
     tid <- cageTid cage
-    -- #157 A-009: the row books an edge. The absence witness is the one
-    -- edge that needs no signature, and it is what every issue-70 row
-    -- asks of the trie.
-    dest <- edgeDestination env edgeInsertAbsent
+    -- Structural controls calibrate against a supported registration.
+    dest <- edgeDestination env edgeInsertActive
     _ <-
         bookEdge
             env
@@ -737,7 +735,7 @@ rowRequestAndFold env cage label key _val _op = do
             (genesisAddr env)
             (genesisSignKey env)
             key
-            edgeInsertAbsent
+            edgeInsertActive
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
@@ -773,10 +771,8 @@ rowRequestAndFold env cage label key _val _op = do
     signed <- submitWithGenesis (envActor env) unsignedFold
     let size = txSizeBytes signed
     emitMeasure env label mem cpu size
-    -- Commit what was FOLDED, which is the absence this row booked: the
-    -- caller.s value never reached the chain, and a trie holding it
-    -- would prove against a root the chain does not have.
-    rowCommit env cage key edgeInsertAbsent
+    -- Commit the Active leaf the registration actually delivered.
+    rowCommit env cage key edgeInsertActive
     pure (signed, mem, cpu, size)
 
 -- ---------------------------------------------------------

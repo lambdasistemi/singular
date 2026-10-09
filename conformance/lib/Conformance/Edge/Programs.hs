@@ -188,9 +188,6 @@ programs =
     , retractionWindow
     , sequenceProgram
     , insertion
-    , update
-    , deletion
-    , reinsertion
     , phase2Retraction
     , lateRejection
     , processingRejection
@@ -211,6 +208,22 @@ do so through their own runner.
 outsideVocabulary :: [(Text, Text)]
 outsideVocabulary =
     [
+        ( "update-existing-key"
+        , "The original broader update requirement remains uncovered. Its insertAbsent/updateActive success setup is excluded by the current two-edge law. No excluded-edge refusal certifies that requirement."
+        )
+    ,
+        ( "delete-existing-key"
+        , "The original deletion requirement remains uncovered: the current two-edge law refuses deletion and cannot return a key to absence."
+        )
+    ,
+        ( "reinsert-deleted-key"
+        , "The original reincarnation requirement remains uncovered: the current two-edge law cannot reach its successful deletion prefix."
+        )
+    ,
+        ( "retire-active-key"
+        , "The original retirement requirement remains uncovered because it also requires an Absent starting key. A separate current retirement story certifies Active to Terminal and excluded encodings, without claiming that unreachable prefix or the former deletion-refund chapter."
+        )
+    ,
         ( "fold-against-superseded-root"
         , "a fold whose proof was built against a root the registry has since superseded. The model takes no proof and no authenticated root, so it has no reason to compare with the chain's refusal (lambdasistemi/singular#346). The conformance session runs the refusal and its accepting control on the devnet; the model comparison stays unmet by ruling."
         )
@@ -410,14 +423,14 @@ occupied =
         , programChapter =
             chapter
                 "Insert on a key the registry already holds"
-                "In a registry of its own, a key is booked by an insertion and made active by an update, each accepted and compared with the executable registry model. The same insertion on that key must then be refused by the ledger and by the model."
+                "A key is registered Active in this run. Registering that key again is refused beside its accepting control. The excluded updateActive encoding is also refused without changing the registration. Each result is compared with the executable registry model."
                 "Occupied-key insertion compared"
         }
 
 retirement :: Program
 retirement =
     Program
-        { programRow = "retire-active-key"
+        { programRow = "permanent-retire-active-key"
         , programRegistries =
             [ standard "story-retirement" "retirement"
             , standard "story-unknown-key comparison" "comparison"
@@ -431,7 +444,7 @@ retirement =
         , programChapter =
             chapter
                 "Retire a registration and burn its active token"
-                "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion."
+                "The holder registers a key in this run, then termination consumes and burns that very token and changes the key to Terminal. Unknown-key termination is refused beside a reached accepting control. Excluded insertion and deletion encodings are refused. After a refused deletion the same Active key can still terminate; its Terminal key cannot register again. The original broader Absent and deletion-refund requirements stay published as uncovered."
                 "Retirement compared"
         }
 
@@ -540,34 +553,7 @@ foldsOf row name reading requests =
 
 insertion :: Program
 insertion =
-    foldsOf "insert-key" "cg01" "insertion" [(InsertAbsent, "cg01-key")]
-
-update :: Program
-update =
-    foldsOf
-        "update-existing-key"
-        "cg02"
-        "update"
-        [(InsertAbsent, "cg02-key"), (UpdateActive, "cg02-key")]
-
-deletion :: Program
-deletion =
-    foldsOf
-        "delete-existing-key"
-        "cg03"
-        "deletion"
-        [(InsertAbsent, "cg03-key"), (DeleteAbsent, "cg03-key")]
-
-reinsertion :: Program
-reinsertion =
-    foldsOf
-        "reinsert-deleted-key"
-        "cg04"
-        "reinsertion"
-        [ (InsertAbsent, "cg04-key")
-        , (DeleteAbsent, "cg04-key")
-        , (InsertAbsent, "cg04-key")
-        ]
+    foldsOf "insert-key" "cg01" "insertion" [(InsertActive, "cg01-key")]
 
 -- | The owner retracts an insertion request inside phase 2.
 phase2Retraction :: Program
