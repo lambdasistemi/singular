@@ -51,6 +51,14 @@ REQUIREMENTS = (
 )
 PAGE_ROWS = REQUIREMENTS[0:2]
 RUN_ONE_ROWS = REQUIREMENTS[2:4]
+RUN_TWO_TERMINATE_ROWS = REQUIREMENTS[4:6]
+RUN_TWO_ROWS = (
+    "Alice folds Bob's termination from her own public replay",
+    "Bob folds Alice's termination from his own public replay",
+    "Another actor folds an insertion",
+    "Another controller cannot update or terminate a key",
+    "Both users inspect the fold's state root after every fold",
+)
 # Later runs own the rest; in run one they wait on those runs' legs.
 WAITING_ON = {
     "Alice folds Bob's termination from her own public replay": (
@@ -571,6 +579,210 @@ class Journey:
         except json.JSONDecodeError:
             return None
 
+    def load_exit(self, name, receipts=None):
+        """The exit status a command ended with, beside its JSON receipt."""
+        path = (receipts or self.receipts) / f"{name}.exit"
+        if not path.exists():
+            return None
+        try:
+            return int(path.read_text().strip())
+        except ValueError:
+            return None
+
+    def terminate_fold_agreement(self, folder, leg, legs, receipts=None):
+        """Recompute one terminate-and-fold row from its receipts on disk.
+
+        The controller books the termination of its own key; FOLDER, who
+        holds no copy of the booking, folds the one pending request from
+        the chain. The fold names the booking's request, the
+        `updateTerminal` edge and the folder's own identity, and both
+        actors then read the key terminal under the fold's root.
+        """
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "inspect_before",
+                "booking",
+                "fold",
+                "inspect_owner",
+                "inspect_other",
+            )
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the termination's {', '.join(missing)} receipt"
+        before, booking, fold, inspect_owner, inspect_other = (
+            docs["inspect_before"],
+            docs["booking"],
+            docs["fold"],
+            docs["inspect_owner"],
+            docs["inspect_other"],
+        )
+        if before.get("leaf") != "active":
+            return False, list(leg.values()), "the live key readback"
+        if not isinstance(booking.get("request"), str):
+            return False, list(leg.values()), "the termination booking request"
+        if fold.get("request") != booking["request"]:
+            return False, list(leg.values()), "the fold of the termination"
+        if fold.get("edge") != "updateTerminal":
+            return False, list(leg.values()), "the termination fold"
+        own_name = legs.get(folder, {}).get("fold")
+        own = self.load_receipt(own_name, receipts) if own_name else None
+        if own is None or fold.get("folder") != own.get("folder"):
+            return False, list(leg.values()), "the folder's own booking"
+        if fold.get("folder") == booking.get("requester"):
+            return False, list(leg.values()), "a folder other than the booker"
+        if not fold.get("root"):
+            return False, list(leg.values()), "the fold root"
+        for inspect in (inspect_owner, inspect_other):
+            if inspect.get("leaf") != "terminal":
+                return False, list(leg.values()), "the terminal key readback"
+            if inspect.get("root") != fold["root"]:
+                return False, list(leg.values()), "the fold root readback"
+        return True, list(leg.values()), ""
+
+    def cross_insert_agreement(self, legs, receipts=None):
+        """Recompute the cross-actor insertion row from its receipts.
+
+        Each direction books an insertion; the other actor folds the one
+        pending request from the chain, carrying no payload file and no
+        copy of the booking. Both directions must agree.
+        """
+        directions = legs.get("cross-insert", {})
+        found = []
+        for direction in ("alice-books", "bob-books"):
+            leg = directions.get(direction, {})
+            folder = "bob" if direction == "alice-books" else "alice"
+            docs = {
+                slot: self.load_receipt(leg[slot], receipts)
+                if slot in leg
+                else None
+                for slot in (
+                    "inspect_before",
+                    "booking",
+                    "fold",
+                    "inspect_booker",
+                    "inspect_folder",
+                )
+            }
+            missing = [slot for slot, doc in docs.items() if doc is None]
+            if missing:
+                return (
+                    False,
+                    [],
+                    f"the cross-actor insertion's {', '.join(missing)} receipt",
+                )
+            before, booking, fold, inspect_booker, inspect_folder = (
+                docs["inspect_before"],
+                docs["booking"],
+                docs["fold"],
+                docs["inspect_booker"],
+                docs["inspect_folder"],
+            )
+            if before.get("leaf") != "unknown":
+                return False, found, "the absent key readback"
+            if before.get("pendingRequests") != []:
+                return False, found, "the empty pending readback"
+            if not isinstance(booking.get("request"), str):
+                return False, found, "the insertion booking request"
+            if fold.get("request") != booking["request"]:
+                return False, found, "the fold of the insertion"
+            if fold.get("edge") != "insertActive":
+                return False, found, "the insertion fold"
+            own_name = legs.get(folder, {}).get("fold")
+            own = self.load_receipt(own_name, receipts) if own_name else None
+            if own is None or fold.get("folder") != own.get("folder"):
+                return False, found, "the folder's own booking"
+            if fold.get("folder") == booking.get("requester"):
+                return False, found, "a folder other than the booker"
+            if not fold.get("root"):
+                return False, found, "the fold root"
+            for inspect in (inspect_booker, inspect_folder):
+                if inspect.get("leaf") != "active":
+                    return False, found, "the active key readback"
+                if inspect.get("root") != fold["root"]:
+                    return False, found, "the fold root readback"
+            found += list(leg.values())
+        return True, found, ""
+
+    def refusal_agreement(self, legs, receipts=None):
+        """Recompute the controller-refusal row from its receipts.
+
+        In each direction the foreign actor's `update` and `terminate`
+        of a key it did not create are refused by name with the
+        controller refusal class and a non-zero exit, and both actors'
+        `inspect` root and pending requests are unchanged.
+        """
+        attempts = legs.get("refusals", [])
+        if not attempts:
+            return False, [], "the controller refusal receipts"
+        found = []
+        for leg in attempts:
+            docs = {
+                slot: self.load_receipt(leg[slot], receipts)
+                if slot in leg
+                else None
+                for slot in (
+                    "inspect_before_owner",
+                    "inspect_before_foreign",
+                    "refuse_update",
+                    "refuse_terminate",
+                    "inspect_after_owner",
+                    "inspect_after_foreign",
+                )
+            }
+            missing = [slot for slot, doc in docs.items() if doc is None]
+            if missing:
+                return (
+                    False,
+                    [],
+                    f"the controller refusal's {', '.join(missing)} receipt",
+                )
+            for name in ("refuse_update", "refuse_terminate"):
+                if self.load_exit(leg[name], receipts) != 10:
+                    return False, found, "the controller refusal exit"
+                if docs[name].get("outcome") != "client-refusal":
+                    return False, found, "the controller refusal class"
+                if "controller" not in docs[name].get("reason", ""):
+                    return False, found, "the controller refusal name"
+            for before_slot, after_slot in (
+                ("inspect_before_owner", "inspect_after_owner"),
+                ("inspect_before_foreign", "inspect_after_foreign"),
+            ):
+                if docs[before_slot].get("root") != docs[after_slot].get("root"):
+                    return False, found, "the unchanged root"
+                if docs[before_slot].get("pendingRequests") != docs[
+                    after_slot
+                ].get("pendingRequests"):
+                    return False, found, "the unchanged pending requests"
+            found += list(leg.values())
+        return True, found, ""
+
+    def fold_roots_agreement(self, legs, receipts=None):
+        """Recompute the fold-root row from every fold's receipts.
+
+        After each fold the journey executed, both actors' `inspect`
+        root equals the root in that fold's receipt.
+        """
+        records = legs.get("fold_roots", [])
+        if not records:
+            return False, [], "the fold root readbacks"
+        found = []
+        for record in records:
+            fold = self.load_receipt(record["fold"], receipts)
+            first = self.load_receipt(record["inspect_a"], receipts)
+            second = self.load_receipt(record["inspect_b"], receipts)
+            found += [record["fold"], record["inspect_a"], record["inspect_b"]]
+            if fold is None or first is None or second is None:
+                return False, [], "the fold root readbacks"
+            if not fold.get("root"):
+                return False, found, "the fold root"
+            if first.get("root") != fold["root"]:
+                return False, found, "both actors' root readback"
+            if second.get("root") != fold["root"]:
+                return False, found, "both actors' root readback"
+        return True, found, ""
+
     def directory_bytes(self, path):
         return sum(entry.stat().st_size for entry in path.rglob("*") if entry.is_file())
 
@@ -658,6 +870,60 @@ class Journey:
                 passed, receipts, waiting = self.run_one_agreement(
                     actor, legs.get(actor, {})
                 )
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name in RUN_TWO_TERMINATE_ROWS:
+                folder = "alice" if name.startswith("Alice") else "bob"
+                direction = (
+                    "terminate-bob-by-alice"
+                    if folder == "alice"
+                    else "terminate-alice-by-bob"
+                )
+                passed, receipts, waiting = self.terminate_fold_agreement(
+                    folder, legs.get(direction, {}), legs
+                )
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Another actor folds an insertion":
+                passed, receipts, waiting = self.cross_insert_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Another controller cannot update or terminate a key":
+                passed, receipts, waiting = self.refusal_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif (
+                name == "Both users inspect the fold's state root after every fold"
+            ):
+                passed, receipts, waiting = self.fold_roots_agreement(legs)
                 rows.append(
                     {
                         "requirement": name,
