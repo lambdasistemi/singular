@@ -326,9 +326,7 @@ class Journey:
             )
         (self.receipts / f"{name}.exit").write_text(f"{result.returncode}\n")
         stdout.write_text(
-            trim_record(
-                receipt.get("command", name), result.returncode, raw
-            )
+            trim_record(receipt.get("command", name), result.returncode, raw)
         )
         self.appendix.append({"process": f"{party} {name}", "accessTrace": str(trace)})
         if result.returncode == 12 or receipt.get("outcome") == "node-unavailable":
@@ -649,8 +647,7 @@ class Journey:
         )
         require(
             seen.get("root") == fold["root"],
-            f"{other} inspect root {seen.get('root')} "
-            f"!= fold root {fold['root']}",
+            f"{other} inspect root {seen.get('root')} != fold root {fold['root']}",
         )
         self.record_fold_root(
             leg["fold"], key, leg["inspect_after"], f"{actor}-fold-seen-by-{other}"
@@ -769,9 +766,7 @@ class Journey:
         require(fold.get("root"), f"{folder} fold named no root: {fold}")
         leg["fold"] = f"{direction}-fold"
         for party, slot in ((controller, "inspect_owner"), (folder, "inspect_other")):
-            others = tuple(
-                home for name, home in self.homes.items() if name != party
-            )
+            others = tuple(home for name, home in self.homes.items() if name != party)
             status, after = self.run_party(
                 party,
                 f"{direction}-inspect-{party}",
@@ -788,8 +783,7 @@ class Journey:
             )
             require(
                 after.get("root") == fold["root"],
-                f"{party} inspect root {after.get('root')} "
-                f"!= fold root {fold['root']}",
+                f"{party} inspect root {after.get('root')} != fold root {fold['root']}",
             )
             leg[slot] = f"{direction}-inspect-{party}"
         self.record_fold_root(
@@ -873,9 +867,7 @@ class Journey:
         require(fold.get("root"), f"{folder} fold named no root: {fold}")
         leg["fold"] = f"{direction}-fold"
         for party, slot in ((booker, "inspect_booker"), (folder, "inspect_folder")):
-            others = tuple(
-                home for name, home in self.homes.items() if name != party
-            )
+            others = tuple(home for name, home in self.homes.items() if name != party)
             status, after = self.run_party(
                 party,
                 f"{direction}-inspect-{party}",
@@ -892,8 +884,7 @@ class Journey:
             )
             require(
                 after.get("root") == fold["root"],
-                f"{party} inspect root {after.get('root')} "
-                f"!= fold root {fold['root']}",
+                f"{party} inspect root {after.get('root')} != fold root {fold['root']}",
             )
             leg[slot] = f"{direction}-inspect-{party}"
         self.record_fold_root(
@@ -1094,9 +1085,7 @@ class Journey:
             leg = directions.get(direction, {})
             folder = "bob" if direction == "alice-books" else "alice"
             docs = {
-                slot: self.load_receipt(leg[slot], receipts)
-                if slot in leg
-                else None
+                slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
                 for slot in (
                     "inspect_before",
                     "booking",
@@ -1159,9 +1148,7 @@ class Journey:
         found = []
         for leg in attempts:
             docs = {
-                slot: self.load_receipt(leg[slot], receipts)
-                if slot in leg
-                else None
+                slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
                 for slot in (
                     "inspect_before",
                     "refuse_update",
@@ -1183,9 +1170,7 @@ class Journey:
                     return False, found, "the controller refusal class"
                 if "controller" not in docs[name].get("reason", ""):
                     return False, found, "the controller refusal name"
-            if docs["inspect_before"].get("root") != docs[
-                "inspect_after"
-            ].get("root"):
+            if docs["inspect_before"].get("root") != docs["inspect_after"].get("root"):
                 return False, found, "the unchanged root"
             if docs["inspect_before"].get("pendingRequests") != docs[
                 "inspect_after"
@@ -1363,9 +1348,7 @@ class Journey:
                         "waitingOn": waiting,
                     }
                 )
-            elif (
-                name == "Both users inspect the fold's state root after every fold"
-            ):
+            elif name == "Both users inspect the fold's state root after every fold":
                 passed, receipts, waiting = self.fold_roots_agreement(legs)
                 rows.append(
                     {
@@ -1449,9 +1432,7 @@ class Journey:
                 self.refusal_leg("alice", "bob", "alice-1"),
                 self.refusal_leg("bob", "alice", "bob-1"),
             ]
-            legs["terminate-bob-by-alice"] = self.terminate_leg(
-                "bob", "alice", "bob-1"
-            )
+            legs["terminate-bob-by-alice"] = self.terminate_leg("bob", "alice", "bob-1")
             legs["terminate-alice-by-bob"] = self.terminate_leg(
                 "alice", "bob", "alice-1"
             )
