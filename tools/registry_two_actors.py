@@ -18,6 +18,7 @@ real booking with `--state-dir` aimed at the other actor's state root and
 must end at status 2 with the guard diagnostic naming the path.
 """
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -102,6 +103,80 @@ class GuardFired(Exception):
 
 class JourneyFailure(Exception):
     pass
+
+
+TRIM_THRESHOLD_BYTES = 262144
+RECORD_KEPT_FIELDS = (
+    "command",
+    "outcome",
+    "reason",
+    "leaf",
+    "root",
+    "pendingRequests",
+    "request",
+    "requester",
+    "edge",
+    "folder",
+    "stateToken",
+)
+
+
+def trim_record(command, exit_code, raw):
+    """Trim one command receipt to the record rows and the report read.
+
+    Receipts at or under the threshold stay raw. A larger receipt is
+    parsed once; the record keeps the command, its exit status, every
+    field a row consumes, and the hash and size of the full output,
+    which is then deleted. Row states are computed from these records,
+    never typed.
+    """
+    if len(raw.encode()) <= TRIM_THRESHOLD_BYTES:
+        return raw
+    try:
+        receipt = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
+    if not isinstance(receipt, dict):
+        return raw
+    record = {key: receipt[key] for key in RECORD_KEPT_FIELDS if key in receipt}
+    record["command"] = command
+    record["exit"] = exit_code
+    record["rawSha256"] = hashlib.sha256(raw.encode()).hexdigest()
+    record["rawBytes"] = len(raw.encode())
+    return json.dumps(record, indent=2) + "\n"
+
+
+def check_record(name, raw):
+    """One integrity error in a stored receipt, or None when it holds.
+
+    A receipt over the trim threshold is untrimmed evidence and fails;
+    a trimmed record must name its command, outcome and exit, and carry
+    a well-formed hash with a raw size above the threshold.
+    """
+    if len(raw) > TRIM_THRESHOLD_BYTES:
+        return f"{name} is {len(raw)} bytes over the trim threshold"
+    try:
+        receipt = json.loads(raw)
+    except json.JSONDecodeError:
+        return f"{name} is not JSON"
+    if not isinstance(receipt, dict):
+        return f"{name} is not a receipt"
+    if "rawSha256" not in receipt:
+        return None
+    digest = receipt.get("rawSha256")
+    if (
+        not isinstance(digest, str)
+        or len(digest) != 64
+        or any(c not in "0123456789abcdef" for c in digest)
+    ):
+        return f"{name} names no raw hash"
+    size = receipt.get("rawBytes")
+    if not isinstance(size, int) or size <= TRIM_THRESHOLD_BYTES:
+        return f"{name} raw size does not match its hash"
+    for key in ("command", "outcome", "exit"):
+        if key not in receipt:
+            return f"{name} record names no {key}"
+    return None
 
 
 def setup_require(condition, message):
@@ -241,13 +316,20 @@ class Journey:
         trace_text = trace.read_text() if trace.exists() else ""
         setup_require(trace_text != "", f"{party} {name} left no access trace")
         check_access(trace_text, forbidden)
+        raw = stdout.read_text()
         try:
-            receipt = json.loads(stdout.read_text())
+            receipt = json.loads(raw)
         except json.JSONDecodeError as error:
             raise SetupFailure(
                 f"{party} {name} printed no JSON receipt "
                 f"(exit {result.returncode}): {error}"
             )
+        (self.receipts / f"{name}.exit").write_text(f"{result.returncode}\n")
+        stdout.write_text(
+            trim_record(
+                receipt.get("command", name), result.returncode, raw
+            )
+        )
         self.appendix.append({"process": f"{party} {name}", "accessTrace": str(trace)})
         if result.returncode == 12 or receipt.get("outcome") == "node-unavailable":
             raise SetupFailure(
@@ -778,6 +860,98 @@ class Journey:
             leg[slot] = f"{direction}-inspect-{party}"
         return leg
 
+    def refusal_leg(self, owner, foreign, key):
+        """FOREIGN's `update` and `terminate` of OWNER's key are refused.
+
+        Each attempt must end refused by name with the controller refusal
+        class and a non-zero exit, submitting nothing; FOREIGN's own
+        `inspect` before and after shows the root and the pending requests
+        unchanged (one inspector suffices: both actors read the same chain
+        root). `update` is not a booking verb, so its command is assembled
+        here, at the one place that attempts it.
+        """
+        direction = f"refuse-{key}-by-{foreign}"
+        leg = {}
+        foreign_others = tuple(
+            home for party, home in self.homes.items() if party != foreign
+        )
+        status, before = self.run_party(
+            foreign,
+            f"{direction}-inspect-before",
+            self.inspect_key(key),
+            foreign_others,
+        )
+        require(
+            status == 0 and before.get("outcome") == "success",
+            f"{foreign} inspect-before failed: exit {status}, {before}",
+        )
+        leg["inspect_before"] = f"{direction}-inspect-before"
+        status, refused_update = self.run_party(
+            foreign,
+            f"{direction}-refuse-update",
+            [
+                "registry",
+                "update",
+                "--key",
+                key,
+                "--payload",
+                str(self.payload(f"{direction}-update")),
+                "--blueprint",
+                self.blueprint,
+                "--state-token",
+                self.state_token,
+                *self.node_arguments(),
+                "--wallet-skey",
+                str(self.keys / f"{foreign}.skey"),
+            ],
+            foreign_others,
+        )
+        require(
+            status == 10
+            and refused_update.get("outcome") == "client-refusal"
+            and "controller" in refused_update.get("reason", ""),
+            f"{foreign} update was not refused by controller: "
+            f"exit {status}, {refused_update}",
+        )
+        leg["refuse_update"] = f"{direction}-refuse-update"
+        status, refused_terminate = self.run_party(
+            foreign,
+            f"{direction}-refuse-terminate",
+            self.book(foreign, "terminate", key, direction),
+            foreign_others,
+        )
+        require(
+            status == 10
+            and refused_terminate.get("outcome") == "client-refusal"
+            and "controller" in refused_terminate.get("reason", ""),
+            f"{foreign} terminate was not refused by controller: "
+            f"exit {status}, {refused_terminate}",
+        )
+        leg["refuse_terminate"] = f"{direction}-refuse-terminate"
+        status, after = self.run_party(
+            foreign,
+            f"{direction}-inspect-after",
+            self.inspect_key(key),
+            foreign_others,
+        )
+        require(
+            status == 0 and after.get("outcome") == "success",
+            f"{foreign} inspect-after failed: exit {status}, {after}",
+        )
+        require(
+            after.get("root") == before.get("root"),
+            f"{foreign} root moved under a refused command: "
+            f"{before.get('root')} -> {after.get('root')}",
+        )
+        require(
+            after.get("pendingRequests") == before.get("pendingRequests"),
+            f"{foreign} pending requests moved under a refused command: "
+            f"{before.get('pendingRequests')} -> "
+            f"{after.get('pendingRequests')}",
+        )
+        leg["inspect_after"] = f"{direction}-inspect-after"
+        return leg
+
     def report(self, rows):
         report = {
             "requirements": rows,
@@ -948,12 +1122,10 @@ class Journey:
                 if slot in leg
                 else None
                 for slot in (
-                    "inspect_before_owner",
-                    "inspect_before_foreign",
+                    "inspect_before",
                     "refuse_update",
                     "refuse_terminate",
-                    "inspect_after_owner",
-                    "inspect_after_foreign",
+                    "inspect_after",
                 )
             }
             missing = [slot for slot, doc in docs.items() if doc is None]
@@ -970,16 +1142,14 @@ class Journey:
                     return False, found, "the controller refusal class"
                 if "controller" not in docs[name].get("reason", ""):
                     return False, found, "the controller refusal name"
-            for before_slot, after_slot in (
-                ("inspect_before_owner", "inspect_after_owner"),
-                ("inspect_before_foreign", "inspect_after_foreign"),
-            ):
-                if docs[before_slot].get("root") != docs[after_slot].get("root"):
-                    return False, found, "the unchanged root"
-                if docs[before_slot].get("pendingRequests") != docs[
-                    after_slot
-                ].get("pendingRequests"):
-                    return False, found, "the unchanged pending requests"
+            if docs["inspect_before"].get("root") != docs[
+                "inspect_after"
+            ].get("root"):
+                return False, found, "the unchanged root"
+            if docs["inspect_before"].get("pendingRequests") != docs[
+                "inspect_after"
+            ].get("pendingRequests"):
+                return False, found, "the unchanged pending requests"
             found += list(leg.values())
         return True, found, ""
 
@@ -1007,6 +1177,13 @@ class Journey:
             if second.get("root") != fold["root"]:
                 return False, found, "both actors' root readback"
         return True, found, ""
+
+    def verify_records(self):
+        """Every stored receipt is raw-small or a well-formed record."""
+        for path in sorted(self.receipts.glob("*.json")):
+            error = check_record(path.name, path.read_bytes())
+            require(error is None, error)
+        print("two actors: receipt records verified", flush=True)
 
     def directory_bytes(self, path):
         return sum(entry.stat().st_size for entry in path.rglob("*") if entry.is_file())
@@ -1227,6 +1404,10 @@ class Journey:
                 self.foreign_open()
             for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
                 legs[actor] = self.actor_leg(actor, key)
+            legs["refusals"] = [
+                self.refusal_leg("alice", "bob", "alice-1"),
+                self.refusal_leg("bob", "alice", "bob-1"),
+            ]
             legs["terminate-bob-by-alice"] = self.terminate_leg(
                 "bob", "alice", "bob-1"
             )
@@ -1239,6 +1420,7 @@ class Journey:
             }
             self.removal_check(legs)
             self.cap_check()
+            self.verify_records()
             rows = self.compute_rows(legs)
             self.report(rows)
             status = self.exit_for(rows)
