@@ -27,7 +27,6 @@ module Singular.Registry.Surface
     , Network (..)
 
       -- * Named read services (Singular.Registry.SessionIO)
-    , outputsAt
     , outputsAtAddress
     , outputsAtTxIn
     , outputsHolding
@@ -197,7 +196,6 @@ import Singular.Registry.SessionIO
     , fundableOutputsAt
     , fundedView
     , mintRecordOf
-    , outputsAt
     , outputsAtAddress
     , outputsAtTxIn
     , outputsCarrying
