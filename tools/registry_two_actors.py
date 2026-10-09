@@ -425,6 +425,8 @@ RECORD_KEPT_FIELDS = (
     "processingEnds",
     "retractEnds",
     "wallet",
+    "topUp",
+    "stateMaxFee",
 )
 
 

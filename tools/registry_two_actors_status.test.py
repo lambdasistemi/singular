@@ -737,6 +737,251 @@ def test_no_preview_files_needed(mod, tmp):
     )
 
 
+class _SpyDict(dict):
+    """A receipt dict recording every key path read through get/item."""
+
+    def __init__(self, mapping, log, path):
+        super().__init__(mapping)
+        object.__setattr__(self, "_log", log)
+        object.__setattr__(self, "_path", path)
+
+    def _wrap(self, key, value):
+        path = self._path + (key,)
+        if isinstance(value, dict):
+            return _SpyDict(value, self._log, path)
+        if isinstance(value, list):
+            return _SpyList(value, self._log, path)
+        return value
+
+    def get(self, key, default=None):
+        self._log.append(self._path + (key,))
+        return self._wrap(key, super().get(key, default))
+
+    def __getitem__(self, key):
+        self._log.append(self._path + (key,))
+        return self._wrap(key, super().__getitem__(key))
+
+
+class _SpyList(list):
+    """A receipt list recording every index read."""
+
+    def __init__(self, items, log, path):
+        super().__init__(items)
+        object.__setattr__(self, "_log", log)
+        object.__setattr__(self, "_path", path)
+
+    def _wrap(self, index, value):
+        path = self._path + (index,)
+        if isinstance(value, dict):
+            return _SpyDict(value, self._log, path)
+        if isinstance(value, list):
+            return _SpyList(value, self._log, path)
+        return value
+
+    def __getitem__(self, index):
+        self._log.append(self._path + (index,))
+        return self._wrap(index, super().__getitem__(index))
+
+    def __iter__(self):
+        for index in range(len(self)):
+            self._log.append(self._path + (index,))
+            yield self._wrap(index, super().__getitem__(index))
+
+
+def _wrong_valid_base(tmp):
+    booking_request = "wxyz12#0"
+    owner_hex = "wrongownerhex00000000000000000000000000000000000000000003"
+    root = "root000000000000000000000000000000000000000000000000000000000004"
+    pending_entry = {
+        "request": booking_request,
+        "owner": owner_hex,
+        "locked": {"lovelace": 2000000, "assets": []},
+    }
+    booking = {
+        "command": "insert",
+        "outcome": "success",
+        "request": booking_request,
+        "requester": owner_hex,
+    }
+    before = {
+        "command": "inspect",
+        "outcome": "success",
+        "root": root,
+        "pendingRequests": [pending_entry],
+    }
+    attempt = {
+        "command": "reclaim",
+        "outcome": "client-refusal",
+        "reason": "retract-owner: this wallet is not the request's owner",
+        "request": booking_request,
+    }
+    after = dict(before)
+    _write_receipt(tmp, "wrong-booking", booking)
+    _write_receipt(tmp, "wrong-inspect-before", before)
+    _write_receipt(tmp, "wrong-attempt", attempt, exit_code=10)
+    _write_receipt(tmp, "wrong-inspect-after", after)
+    legs = {
+        "reclaim-wrong": {
+            "booking": "wrong-booking",
+            "inspect_before": "wrong-inspect-before",
+            "attempt": "wrong-attempt",
+            "inspect_after": "wrong-inspect-after",
+        }
+    }
+    return legs, Path(tmp)
+
+
+def _refusal_valid_base(tmp):
+    root = "root000000000000000000000000000000000000000000000000000000000005"
+    inspect = {
+        "command": "inspect",
+        "outcome": "success",
+        "root": root,
+        "pendingRequests": [],
+    }
+    update = {
+        "command": "update",
+        "outcome": "client-refusal",
+        "reason": "the envelope's controller is 0x11 but signs as 0x22",
+    }
+    terminate = {
+        "command": "terminate",
+        "outcome": "client-refusal",
+        "reason": "the envelope's controller is 0x11 but signs as 0x22",
+    }
+    _write_receipt(tmp, "refuse-inspect-before", inspect)
+    _write_receipt(tmp, "refuse-update", update, exit_code=10)
+    _write_receipt(tmp, "refuse-terminate", terminate, exit_code=10)
+    _write_receipt(tmp, "refuse-inspect-after", dict(inspect))
+    legs = {
+        "refusals": [
+            {
+                "inspect_before": "refuse-inspect-before",
+                "refuse_update": "refuse-update",
+                "refuse_terminate": "refuse-terminate",
+                "inspect_after": "refuse-inspect-after",
+            }
+        ]
+    }
+    return legs, Path(tmp)
+
+
+def _foldroots_valid_base(tmp):
+    root = "root000000000000000000000000000000000000000000000000000000000006"
+    fold = {"command": "fold", "outcome": "success", "root": root}
+    first = {"command": "inspect", "outcome": "success", "root": root}
+    _write_receipt(tmp, "foldroot-fold", fold)
+    _write_receipt(tmp, "foldroot-inspect-a", first)
+    _write_receipt(tmp, "foldroot-inspect-b", dict(first))
+    legs = {
+        "fold_roots": [
+            {
+                "fold": "foldroot-fold",
+                "inspect_a": "foldroot-inspect-a",
+                "inspect_b": "foldroot-inspect-b",
+            }
+        ]
+    }
+    return legs, Path(tmp)
+
+
+def test_trim_derived_from_reads(mod, tmp):
+    kept = set(getattr(mod, "RECORD_KEPT_FIELDS", ()))
+    log = []
+    journey = bare(mod, tmp)
+    rlegs, _ = _reject_valid_base(tmp)
+    olegs, _ = _owner_valid_base(tmp)
+    wlegs, _ = _wrong_valid_base(tmp)
+    glegs, _ = _refusal_valid_base(tmp)
+    flegs, _ = _foldroots_valid_base(tmp)
+    real_load = journey.load_receipt
+
+    def spy_load(name, receipts=None):
+        doc = real_load(name, receipts)
+        if doc is None:
+            return None
+        return _SpyDict(doc, log, (name,))
+
+    journey.load_receipt = spy_load
+    receipts = Path(tmp)
+    checks = [
+        ("reject", journey.reject_agreement(rlegs, receipts)),
+        ("wrong", journey.wrong_reclaim_agreement(wlegs, receipts)),
+        ("owner", journey.owner_reclaim_agreement(olegs, receipts)),
+        ("refusal", journey.refusal_agreement(glegs, receipts)),
+        ("foldroots", journey.fold_roots_agreement(flegs, receipts)),
+    ]
+    for name, (passed, _, _) in checks:
+        check(f"derived-valid-{name}-passes", passed, f"the {name} base did not pass")
+    roots = {path[1] for path in log if len(path) == 2}
+    missing = {key for key in roots if key not in kept}
+    check(
+        "trim-derived-from-reads",
+        not missing,
+        f"reads escape the kept set: {sorted(missing)}" if missing else "",
+    )
+
+
+def test_nonzero_topup_survives_trim(mod, tmp):
+    import json as _json
+
+    journey = bare(mod, tmp)
+    legs, receipts = _owner_valid_base(tmp)
+    raw = Path(tmp, "reclaim-success.json").read_text()
+    wraw = Path(tmp, "reclaim-window-inspect-before.json").read_text()
+    wdoc = _json.loads(wraw)
+    wdoc["pendingRequests"][0]["locked"] = {
+        "lovelace": 3000000,
+        "assets": [],
+    }
+    Path(tmp, "reclaim-window-inspect-before.json").write_text(_json.dumps(wdoc) + "\n")
+    topped = _json.loads(raw)
+    topped["locked"] = {"lovelace": 3000000, "assets": []}
+    topped["topUp"] = 1000000
+    topped["returned"] = dict(topped["returned"])
+    topped["returned"]["lovelace"] = 4000000
+    topped["returned"]["value"] = {"lovelace": 4000000, "assets": []}
+    _write_receipt(tmp, "reclaim-success", topped)
+    bob_preview = {
+        "command": "create",
+        "outcome": "success",
+        "wallet": "addr_test1vqxst3dzgs3gvqu24ufqtf927sdza8pmk8p5jcke3e362pq9ck9xr",
+    }
+    _write_receipt(tmp, "bob-preview", bob_preview)
+    passed_plain, _, _ = journey.owner_reclaim_agreement(legs, receipts)
+    check(
+        "nonzero-topup-passes-untrimmed",
+        passed_plain,
+        "a topped-up return did not pass untrimmed",
+    )
+    threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
+    bloated = dict(topped)
+    bloated["sessionEvidence"] = "x" * (threshold + 1)
+    raw_large = _json.dumps(bloated)
+    trimmed = mod.trim_record("reclaim", 0, raw_large)
+    Path(tmp, "reclaim-success.json").write_text(trimmed)
+    error = mod.check_record("reclaim-success.json", trimmed.encode())
+    check("nonzero-topup-trim-is-record", error is None, error or "")
+    passed_trimmed, _, _ = journey.owner_reclaim_agreement(legs, receipts)
+    check(
+        "nonzero-topup-passes-trimmed",
+        passed_trimmed,
+        "a topped-up return did not pass after the trim",
+    )
+    dropped = _json.loads(raw)
+    dropped = dict(_json.loads(_json.dumps(topped)))
+    del dropped["topUp"]
+    _write_receipt(tmp, "reclaim-success", dropped)
+    passed_dropped, _, _ = journey.owner_reclaim_agreement(legs, receipts)
+    check(
+        "dropped-topup-does-not-pass",
+        not passed_dropped,
+        "a return without its top-up still passed",
+    )
+    Path(tmp, "reclaim-success.json").write_text(raw)
+    Path(tmp, "reclaim-window-inspect-before.json").write_text(wraw)
+
+
 def test_trim_preserves_run_three_predicates(mod, tmp):
     import hashlib as _hashlib
     import json as _json
@@ -926,6 +1171,8 @@ def main():
         test_reclaim_refusal_is_row_result,
         test_money_compares_value_and_recipient,
         test_no_preview_files_needed,
+        test_trim_derived_from_reads,
+        test_nonzero_topup_survives_trim,
         test_trim_preserves_run_three_predicates,
         test_refusal_compares_pending_set,
         test_window_comes_from_registry,
