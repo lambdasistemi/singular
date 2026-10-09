@@ -896,10 +896,16 @@ if [ "$cross_any" -eq 1 ]; then
     # another wallet's fold, which her journal never names.
     cross_update_phases="$(jq -s -r --arg t "$cross_update" '[.[] | select(.journalTxId == $t) | .journalEvent] | sort | join(",")' "$journal")"
     [ "$cross_update_phases" = "confirmed,observed,prepared,submitted" ] \
-      || { say "$control: her update journalled [$cross_update_phases], not its four phases"; refusals_clean=1; }
+      || {
+        say "$control: her update journalled [$cross_update_phases], not its four phases"
+        refusals_clean=1
+      }
     cross_fold_alice="$(jq -s --arg t "$cross_fold" '[.[] | select(.journalTxId == $t)] | length' "$journal")"
     [ "$cross_fold_alice" = 0 ] \
-      || { say "$control: her journal names the other wallet's fold $cross_fold"; refusals_clean=1; }
+      || {
+        say "$control: her journal names the other wallet's fold $cross_fold"
+        refusals_clean=1
+      }
     # Bob's reconcile observes his own fold once it is on chain, submitting
     # nothing: the case's readback inspect carries his address, so the one
     # read reconciles his partition alone while reading the folded key back.
@@ -920,7 +926,10 @@ if [ "$cross_any" -eq 1 ]; then
     loss=null
     if [[ "$cross_case" == *:lost-answer ]]; then loss="$(cat "$receipts/$cross-fold.json")"; fi
     cross_evidence="$receipts/$cross-evidence.json"
-    cross_signers="$(journal="$(managed_journal "$reg" "$state_token" "$bobkey")"; signers_of "$cross_fold" | jq -Rsc 'split("\n") | map(select(. != ""))')"
+    cross_signers="$(
+      journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+      signers_of "$cross_fold" | jq -Rsc 'split("\n") | map(select(. != ""))'
+    )"
     jq -n --arg fold "$cross_fold" --arg key "$key" --arg point "$point" --argjson reached "$reached" \
       --arg folder "$bobkey" --argjson signers "$cross_signers" \
       --argjson clean "$refusals_clean" --argjson exit "$(cat "$receipts/$cross-next.exit")" --argjson loss "$loss" \
