@@ -311,6 +311,72 @@ def test_refusal_is_row_result(mod, tmp):
             )
 
 
+def test_reject_refusal_is_row_result(mod, tmp):
+    journey = party(mod, tmp)
+    fake = fake_run(
+        trace_text="trace-line\n",
+        receipt_text='{"outcome": "client-refusal", '
+        '"reason": "1 pending request is still inside a window: abc#0"}',
+        code=10,
+    )
+    with mock.patch.object(mod.subprocess, "run", fake):
+        try:
+            status, receipt = journey.run_party(
+                "actor", "step", ["registry", "reject"], ()
+            )
+        except mod.SetupFailure as error:  # noqa: BLE001 - see above
+            check(
+                "reject-refusal-is-row-result",
+                False,
+                f"an early reject refusal mapped to setup: {error}",
+            )
+        except Exception as error:  # noqa: BLE001 - see above
+            check(
+                "reject-refusal-is-row-result",
+                False,
+                f"mapped to {type(error).__name__}, want the receipt",
+            )
+        else:
+            check(
+                "reject-refusal-is-row-result",
+                status == 10 and receipt.get("outcome") == "client-refusal",
+                f"status={status} outcome={receipt.get('outcome')}",
+            )
+
+
+def test_reclaim_refusal_is_row_result(mod, tmp):
+    journey = party(mod, tmp)
+    fake = fake_run(
+        trace_text="trace-line\n",
+        receipt_text='{"outcome": "client-refusal", '
+        '"reason": "retract-owner: this wallet is not the request\'s owner"}',
+        code=10,
+    )
+    with mock.patch.object(mod.subprocess, "run", fake):
+        try:
+            status, receipt = journey.run_party(
+                "actor", "step", ["registry", "reclaim"], ()
+            )
+        except mod.SetupFailure as error:  # noqa: BLE001 - see above
+            check(
+                "reclaim-refusal-is-row-result",
+                False,
+                f"a not-owner refusal mapped to setup: {error}",
+            )
+        except Exception as error:  # noqa: BLE001 - see above
+            check(
+                "reclaim-refusal-is-row-result",
+                False,
+                f"mapped to {type(error).__name__}, want the receipt",
+            )
+        else:
+            check(
+                "reclaim-refusal-is-row-result",
+                status == 10 and receipt.get("outcome") == "client-refusal",
+                f"status={status} outcome={receipt.get('outcome')}",
+            )
+
+
 def test_trim_keeps_predicate_fields(mod, tmp):
     trim = getattr(mod, "trim_record", None)
     threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
@@ -406,6 +472,8 @@ def main():
         test_command_timeout_is_setup,
         test_provider_loss_is_setup,
         test_refusal_is_row_result,
+        test_reject_refusal_is_row_result,
+        test_reclaim_refusal_is_row_result,
         test_trim_keeps_predicate_fields,
         test_record_tamper_is_detected,
         test_oversize_untrimmed_is_detected,
