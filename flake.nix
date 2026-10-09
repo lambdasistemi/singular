@@ -462,6 +462,38 @@
               }
             );
           };
+          # #381: the foreign-open access check over the two-actor journey —
+          # one real booking with --state-dir at the other actor's state root
+          # must fail at the guard: `nix run --quiet .#registry-two-actors-control`.
+          registry-two-actors-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "registry-two-actors-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  procps
+                  python3
+                  strace
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/control.XXXXXX")"
+                  echo "two-actor control: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  bash ${./tools/registry_two_actors_control.test.sh} ${./tools/registry_two_actors_control.sh}
+                  bash ${./tools/registry_two_actors_control.sh} "$work" \
+                    python3 ${./tools/registry_two_actors.py} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                    ${onchain.packages.${system}.plutus-blueprint}
+                '';
+              }
+            );
+          };
           # #299: the ordinary CLI's refusal controls, judged from their
           # receipts: `nix run --quiet .#demo1-cli-controls`.
           demo1-cli-controls = {
