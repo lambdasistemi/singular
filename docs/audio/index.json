@@ -4423,15 +4423,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/off-chain-api-reference-01",
     "pause_ms": 400,
-    "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
-    "v": "ce8a37e1187f"
-   },
-   {
-    "index": 2,
-    "name": "docs-offchain-api-reference/off-chain-api-reference-02",
-    "pause_ms": 400,
     "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here documents exactly the code this candidate was built from — and, as the extent below states, a few of its modules are documented for the contributor without being importable by a caller. One boundary on that promise is named below: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
-    "v": "e409b5c486d4"
+    "v": "bfda96ea07a5"
    }
   ],
   "what-the-reference-does-not-claim": [
@@ -7503,8 +7496,8 @@
     "index": 1,
     "name": "docs-singular-node/booking-and-folding-01",
     "pause_ms": 400,
-    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the live registry root does not change.",
-    "v": "9efc5df17600"
+    "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+    "v": "4cf0e15c574c"
    },
    {
     "index": 2,
@@ -7517,8 +7510,8 @@
     "index": 3,
     "name": "docs-singular-node/booking-and-folding-03",
     "pause_ms": 400,
-    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet. It records its own submission in its journal and reconstructs the resulting trie from public history:",
-    "v": "ab28cdcf7229"
+    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
+    "v": "cf86b2348e74"
    },
    {
     "index": 4,
@@ -7674,8 +7667,8 @@
     "index": 1,
     "name": "docs-singular-node/harness-appendix-test-hooks-01",
     "pause_ms": 400,
-    "text": "You never set these. The released singular reads nine environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-    "v": "ec44b78a99f7"
+    "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+    "v": "b1ba9f578639"
    },
    {
     "index": 2,
@@ -7778,8 +7771,8 @@
     "index": 3,
     "name": "docs-singular-node/reclaiming-your-pending-request-03",
     "pause_ms": 400,
-    "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The next command reconstructs that root from public history. The next request can be booked and folded normally.",
-    "v": "daae54a707b5"
+    "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
+    "v": "3208fdbe8425"
    }
   ],
   "rejecting-expired-requests": [
@@ -7794,8 +7787,8 @@
     "index": 1,
     "name": "docs-singular-node/rejecting-expired-requests-01",
     "pause_ms": 400,
-    "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the live registry root does not change.",
-    "v": "d88833eb53f2"
+    "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
+    "v": "58deb9a676fb"
    },
    {
     "index": 2,
@@ -7833,50 +7826,6 @@
     "pause_ms": 400,
     "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
     "v": "a6113557517a"
-   }
-  ],
-  "two-independent-users": [
-   {
-    "index": 0,
-    "name": "docs-singular-node/two-independent-users-00",
-    "pause_ms": 500,
-    "text": "Two independent users.",
-    "v": "003185269aff"
-   },
-   {
-    "index": 1,
-    "name": "docs-singular-node/two-independent-users-01",
-    "pause_ms": 400,
-    "text": "Demo 1 is Alice and Bob using separate terminals, homes and registry directories, both starting empty. Neither user creates the registry or receives a creator's identity file. Their only registry inputs are its web page generated from the chain and Koios. A third, private creator fixture makes the development registry.",
-    "v": "79742c20ebfb"
-   },
-   {
-    "index": 2,
-    "name": "docs-singular-node/two-independent-users-02",
-    "pause_ms": 400,
-    "text": "Joining by state token belongs to issue #437. Every command will derive the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Importing a creator's registry.json is superseded; no identity-file joining command is supplied here.",
-    "v": "0ae97c3668dc"
-   },
-   {
-    "index": 3,
-    "name": "docs-singular-node/two-independent-users-03",
-    "pause_ms": 400,
-    "text": "The packaged harness creates the registry privately and checks that both users' directories remain empty and unopened by its creator processes:",
-    "v": "9c424bbb67fb"
-   },
-   {
-    "index": 4,
-    "name": "docs-singular-node/two-independent-users-04",
-    "pause_ms": 400,
-    "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
-    "v": "82a169872a6c"
-   },
-   {
-    "index": 5,
-    "name": "docs-singular-node/two-independent-users-05",
-    "pause_ms": 400,
-    "text": "Unit controls exercise public replay, proof preparation and the existing controller and request-window decisions over component fixtures. They establish those component results; they do not establish an executed two-user CLI journey. Process access traces and directory hashes are harness evidence in an appendix.",
-    "v": "33baaeaf53ee"
    }
   ],
   "what-a-write-records": [

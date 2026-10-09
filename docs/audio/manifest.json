@@ -139496,331 +139496,11 @@
    ]
   },
   "docs-offchain-api-reference/off-chain-api-reference-01": {
-   "audio_sha256": "ce8a37e1187fd810705af5ea9ef27d52c6c049feed4c02ccdc5467566beca7c3",
-   "characters": 367,
-   "cost": 0.00022754,
-   "duration": 28.025,
-   "index": 1,
-   "key": "f1f6571aad0dff68f31f7784c3376563abf06c5aa4baa8e6850f155c3c2f053b",
-   "page": "docs/offchain-api-reference.md",
-   "pause_ms": 400,
-   "section": "off-chain-api-reference",
-   "sent_text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
-   "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
-   "words": [
-    {
-     "end": 0.25,
-     "start": 0.175,
-     "text": "The"
-    },
-    {
-     "end": 0.7,
-     "start": 0.25,
-     "text": "deployment"
-    },
-    {
-     "end": 1.038,
-     "start": 0.7,
-     "text": "mirror"
-    },
-    {
-     "end": 1.837,
-     "start": 1.038,
-     "text": "API"
-    },
-    {
-     "end": 2.35,
-     "start": 1.837,
-     "text": "remains"
-    },
-    {
-     "end": 2.475,
-     "start": 2.35,
-     "text": "for"
-    },
-    {
-     "end": 2.912,
-     "start": 2.475,
-     "text": "retained"
-    },
-    {
-     "end": 3.35,
-     "start": 2.912,
-     "text": "deployment"
-    },
-    {
-     "end": 4.325,
-     "start": 3.35,
-     "text": "journeys"
-    },
-    {
-     "end": 4.525,
-     "start": 4.325,
-     "text": "."
-    },
-    {
-     "end": 5.4,
-     "start": 4.8,
-     "text": "Ordinary"
-    },
-    {
-     "end": 5.95,
-     "start": 5.4,
-     "text": "singular"
-    },
-    {
-     "end": 6.537,
-     "start": 5.95,
-     "text": "registry"
-    },
-    {
-     "end": 7.075,
-     "start": 6.537,
-     "text": "commands"
-    },
-    {
-     "end": 7.338,
-     "start": 7.075,
-     "text": "under"
-    },
-    {
-     "end": 8.738,
-     "start": 7.338,
-     "text": "381"
-    },
-    {
-     "end": 9.488,
-     "start": 8.738,
-     "text": "reconstruct"
-    },
-    {
-     "end": 9.837,
-     "start": 9.488,
-     "text": "proof"
-    },
-    {
-     "end": 10.2,
-     "start": 9.837,
-     "text": "state"
-    },
-    {
-     "end": 10.413,
-     "start": 10.2,
-     "text": "from"
-    },
-    {
-     "end": 10.825,
-     "start": 10.413,
-     "text": "public"
-    },
-    {
-     "end": 11.475,
-     "start": 10.825,
-     "text": "state-token"
-    },
-    {
-     "end": 12.2,
-     "start": 11.475,
-     "text": "history"
-    },
-    {
-     "end": 12.337,
-     "start": 12.2,
-     "text": "and"
-    },
-    {
-     "end": 12.45,
-     "start": 12.337,
-     "text": "do"
-    },
-    {
-     "end": 12.712,
-     "start": 12.45,
-     "text": "not"
-    },
-    {
-     "end": 13.113,
-     "start": 12.712,
-     "text": "read"
-    },
-    {
-     "end": 13.288,
-     "start": 13.113,
-     "text": "or"
-    },
-    {
-     "end": 13.6,
-     "start": 13.288,
-     "text": "write"
-    },
-    {
-     "end": 13.837,
-     "start": 13.6,
-     "text": "that"
-    },
-    {
-     "end": 14.363,
-     "start": 13.837,
-     "text": "mirror"
-    },
-    {
-     "end": 14.525,
-     "start": 14.363,
-     "text": "or"
-    },
-    {
-     "end": 14.637,
-     "start": 14.525,
-     "text": "a"
-    },
-    {
-     "end": 15.188,
-     "start": 14.637,
-     "text": "saved-root"
-    },
-    {
-     "end": 16.325,
-     "start": 15.188,
-     "text": "file"
-    },
-    {
-     "end": 16.55,
-     "start": 16.325,
-     "text": "."
-    },
-    {
-     "end": 17.163,
-     "start": 16.775,
-     "text": "Demo"
-    },
-    {
-     "end": 17.5,
-     "start": 17.163,
-     "text": "1"
-    },
-    {
-     "end": 17.888,
-     "start": 17.5,
-     "text": "starts"
-    },
-    {
-     "end": 18.15,
-     "start": 17.888,
-     "text": "two"
-    },
-    {
-     "end": 18.8,
-     "start": 18.15,
-     "text": "independent"
-    },
-    {
-     "end": 19.237,
-     "start": 18.8,
-     "text": "users"
-    },
-    {
-     "end": 19.825,
-     "start": 19.237,
-     "text": "empty"
-    },
-    {
-     "end": 19.962,
-     "start": 19.825,
-     "text": ";"
-    },
-    {
-     "end": 20.425,
-     "start": 19.962,
-     "text": "joining"
-    },
-    {
-     "end": 20.625,
-     "start": 20.425,
-     "text": "by"
-    },
-    {
-     "end": 20.962,
-     "start": 20.625,
-     "text": "state"
-    },
-    {
-     "end": 21.4,
-     "start": 20.962,
-     "text": "token"
-    },
-    {
-     "end": 21.562,
-     "start": 21.4,
-     "text": "is"
-    },
-    {
-     "end": 22.025,
-     "start": 21.562,
-     "text": "pending"
-    },
-    {
-     "end": 22.263,
-     "start": 22.025,
-     "text": "under"
-    },
-    {
-     "end": 24.275,
-     "start": 22.263,
-     "text": "437"
-    },
-    {
-     "end": 24.55,
-     "start": 24.275,
-     "text": "."
-    },
-    {
-     "end": 25.188,
-     "start": 24.75,
-     "text": "Importing"
-    },
-    {
-     "end": 25.25,
-     "start": 25.188,
-     "text": "a"
-    },
-    {
-     "end": 25.65,
-     "start": 25.25,
-     "text": "creator"
-    },
-    {
-     "end": 26.138,
-     "start": 25.65,
-     "text": "identity"
-    },
-    {
-     "end": 26.5,
-     "start": 26.138,
-     "text": "file"
-    },
-    {
-     "end": 26.625,
-     "start": 26.5,
-     "text": "is"
-    },
-    {
-     "end": 27.825,
-     "start": 26.625,
-     "text": "superseded"
-    },
-    {
-     "end": 28.025,
-     "start": 27.825,
-     "text": "."
-    }
-   ]
-  },
-  "docs-offchain-api-reference/off-chain-api-reference-02": {
-   "audio_sha256": "e409b5c486d4b59bc6a30a73e2c0fd46166ca7d6ee74e63e4bb94369e02241f0",
+   "audio_sha256": "bfda96ea07a513e4ef93da0059875a3c69f70eac6c3bff3197e7dba6b4da3859",
    "characters": 828,
-   "cost": 0.00051336,
+   "cost": 0.0008197199999999999,
    "duration": 53.825,
-   "index": 2,
+   "index": 1,
    "key": "ff0e3c41864b92af274908d19b6d7ff0af80bdd6885fe217a9ccc5a4c9808767",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
@@ -254926,17 +254606,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-01": {
-   "audio_sha256": "9efc5df17600df5480b56d16c16c6a6a398ed992b53d7b72fc4676894a555841",
-   "characters": 361,
-   "cost": 0.00022382000000000004,
-   "duration": 22.825,
+   "audio_sha256": "4cf0e15c574c747ce95f153b79e170afe7c75a5f3e86d23344e822275013326c",
+   "characters": 386,
+   "cost": 0.00038214,
+   "duration": 24.35,
    "index": 1,
-   "key": "b2d10619318982627de74eb3951493d7986f8cc80018ad7a89a16227aae40dcb",
+   "key": "e245b8695ffb0932babed5aac88a78be7627547833b7d38cd9c3c2edcc699f88",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the live registry root does not change.",
-   "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the live registry root does not change.",
+   "sent_text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+   "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
    "words": [
     {
      "end": 0.275,
@@ -255229,68 +254909,98 @@
      "text": "."
     },
     {
-     "end": 19.325,
-     "start": 19.0,
+     "end": 19.4,
+     "start": 19.025,
      "text": "Nothing"
     },
     {
-     "end": 19.475,
-     "start": 19.325,
+     "end": 19.562,
+     "start": 19.4,
      "text": "is"
     },
     {
-     "end": 19.925,
-     "start": 19.475,
+     "end": 20.025,
+     "start": 19.562,
      "text": "folded"
     },
     {
-     "end": 20.0,
-     "start": 19.925,
+     "end": 20.075,
+     "start": 20.025,
      "text": ","
     },
     {
-     "end": 20.112,
-     "start": 20.0,
+     "end": 20.188,
+     "start": 20.075,
      "text": "and"
     },
     {
-     "end": 20.2,
-     "start": 20.112,
+     "end": 20.275,
+     "start": 20.188,
      "text": "the"
     },
     {
-     "end": 20.55,
-     "start": 20.2,
-     "text": "live"
+     "end": 20.862,
+     "start": 20.275,
+     "text": "registry's"
     },
     {
-     "end": 21.025,
-     "start": 20.55,
-     "text": "registry"
-    },
-    {
-     "end": 21.25,
-     "start": 21.025,
+     "end": 21.225,
+     "start": 20.862,
      "text": "root"
     },
     {
-     "end": 21.425,
-     "start": 21.25,
-     "text": "does"
+     "end": 21.3,
+     "start": 21.225,
+     "text": ","
     },
     {
-     "end": 21.663,
-     "start": 21.425,
+     "end": 21.513,
+     "start": 21.3,
+     "text": "its"
+    },
+    {
+     "end": 21.95,
+     "start": 21.513,
+     "text": "mirror"
+    },
+    {
+     "end": 22.062,
+     "start": 21.95,
+     "text": "and"
+    },
+    {
+     "end": 22.188,
+     "start": 22.062,
+     "text": "its"
+    },
+    {
+     "end": 22.55,
+     "start": 22.188,
+     "text": "saved"
+    },
+    {
+     "end": 22.875,
+     "start": 22.55,
+     "text": "state"
+    },
+    {
+     "end": 22.987,
+     "start": 22.875,
+     "text": "do"
+    },
+    {
+     "end": 23.225,
+     "start": 22.987,
      "text": "not"
     },
     {
-     "end": 22.6,
-     "start": 21.663,
-     "text": "change"
+     "end": 24.15,
+     "start": 23.225,
+     "text": "move"
     },
     {
-     "end": 22.825,
-     "start": 22.6,
+     "end": 24.35,
+     "start": 24.15,
      "text": "."
     }
    ]
@@ -255701,17 +255411,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-03": {
-   "audio_sha256": "ab28cdcf7229da7e23603366ddbf5ad3f5f22ddb2034de82a3ea83a7f3857e5c",
-   "characters": 241,
-   "cost": 0.00014942000000000002,
-   "duration": 15.8,
+   "audio_sha256": "cf86b2348e74399819ad16cc2f71f6a7a4e8c6b5387ed3aba34a34219ac31c05",
+   "characters": 210,
+   "cost": 0.00020789999999999998,
+   "duration": 13.95,
    "index": 3,
-   "key": "10d6f1a579e2ff0967af6d3c8c70f5335a64e54e999705b1740d2faf709b5e2b",
+   "key": "208e8575112095dec0c52e13380cb7b5db19936a8bd5c3e1ce18bbc99cc5c4c4",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet. It records its own submission in its journal and reconstructs the resulting trie from public history:",
-   "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet. It records its own submission in its journal and reconstructs the resulting trie from public history:",
+   "sent_text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
+   "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
    "words": [
     {
      "end": 0.237,
@@ -255764,173 +255474,153 @@
      "text": "reads"
     },
     {
-     "end": 3.675,
+     "end": 3.7,
      "start": 3.5,
      "text": "that"
     },
     {
-     "end": 4.075,
-     "start": 3.675,
+     "end": 4.1,
+     "start": 3.7,
      "text": "pending"
     },
     {
-     "end": 4.725,
-     "start": 4.075,
+     "end": 4.75,
+     "start": 4.1,
      "text": "request"
     },
     {
-     "end": 4.8,
-     "start": 4.725,
+     "end": 4.825,
+     "start": 4.75,
      "text": ","
     },
     {
-     "end": 5.037,
-     "start": 4.8,
+     "end": 5.062,
+     "start": 4.825,
      "text": "then"
     },
     {
-     "end": 5.525,
-     "start": 5.037,
+     "end": 5.55,
+     "start": 5.062,
      "text": "builds"
     },
     {
-     "end": 5.613,
-     "start": 5.525,
+     "end": 5.637,
+     "start": 5.55,
      "text": ","
     },
     {
-     "end": 6.15,
-     "start": 5.613,
+     "end": 6.175,
+     "start": 5.637,
      "text": "signs"
     },
     {
-     "end": 6.287,
-     "start": 6.15,
+     "end": 6.312,
+     "start": 6.175,
      "text": "and"
     },
     {
-     "end": 6.65,
-     "start": 6.287,
+     "end": 6.675,
+     "start": 6.312,
      "text": "funds"
     },
     {
-     "end": 6.8,
-     "start": 6.65,
+     "end": 6.825,
+     "start": 6.675,
      "text": "the"
     },
     {
-     "end": 7.225,
-     "start": 6.8,
+     "end": 7.25,
+     "start": 6.825,
      "text": "fold"
     },
     {
-     "end": 7.363,
-     "start": 7.225,
+     "end": 7.387,
+     "start": 7.25,
      "text": "with"
     },
     {
-     "end": 7.463,
-     "start": 7.363,
+     "end": 7.512,
+     "start": 7.387,
      "text": "the"
     },
     {
-     "end": 7.938,
-     "start": 7.463,
+     "end": 7.988,
+     "start": 7.512,
      "text": "folder's"
     },
     {
-     "end": 8.925,
-     "start": 7.938,
+     "end": 9.0,
+     "start": 7.988,
      "text": "wallet"
     },
     {
-     "end": 9.15,
-     "start": 8.925,
-     "text": "."
+     "end": 9.225,
+     "start": 9.0,
+     "text": ";"
     },
     {
-     "end": 9.5,
-     "start": 9.35,
-     "text": "It"
-    },
-    {
-     "end": 9.938,
-     "start": 9.5,
-     "text": "records"
-    },
-    {
-     "end": 10.137,
-     "start": 9.938,
-     "text": "its"
-    },
-    {
-     "end": 10.4,
-     "start": 10.137,
-     "text": "own"
-    },
-    {
-     "end": 11.0,
-     "start": 10.4,
-     "text": "submission"
-    },
-    {
-     "end": 11.125,
-     "start": 11.0,
-     "text": "in"
-    },
-    {
-     "end": 11.337,
-     "start": 11.125,
-     "text": "its"
-    },
-    {
-     "end": 11.887,
-     "start": 11.337,
-     "text": "journal"
-    },
-    {
-     "end": 12.025,
-     "start": 11.887,
-     "text": "and"
-    },
-    {
-     "end": 12.8,
-     "start": 12.025,
-     "text": "reconstructs"
-    },
-    {
-     "end": 12.9,
-     "start": 12.8,
+     "end": 9.512,
+     "start": 9.4,
      "text": "the"
     },
     {
-     "end": 13.488,
-     "start": 12.9,
-     "text": "resulting"
+     "end": 9.875,
+     "start": 9.512,
+     "text": "saved"
     },
     {
-     "end": 13.9,
-     "start": 13.488,
-     "text": "trie"
+     "end": 10.35,
+     "start": 9.875,
+     "text": "registry"
     },
     {
-     "end": 14.1,
-     "start": 13.9,
-     "text": "from"
+     "end": 10.825,
+     "start": 10.35,
+     "text": "journal"
     },
     {
-     "end": 14.475,
-     "start": 14.1,
-     "text": "public"
+     "end": 10.938,
+     "start": 10.825,
+     "text": ","
     },
     {
-     "end": 15.575,
-     "start": 14.475,
-     "text": "history"
+     "end": 11.35,
+     "start": 10.938,
+     "text": "mirror"
     },
     {
-     "end": 15.8,
-     "start": 15.575,
+     "end": 11.488,
+     "start": 11.35,
+     "text": "and"
+    },
+    {
+     "end": 11.863,
+     "start": 11.488,
+     "text": "state"
+    },
+    {
+     "end": 12.188,
+     "start": 11.863,
+     "text": "follow"
+    },
+    {
+     "end": 12.325,
+     "start": 12.188,
+     "text": "the"
+    },
+    {
+     "end": 12.812,
+     "start": 12.325,
+     "text": "observed"
+    },
+    {
+     "end": 13.725,
+     "start": 12.812,
+     "text": "fold"
+    },
+    {
+     "end": 13.95,
+     "start": 13.725,
      "text": ":"
     }
    ]
@@ -262326,17 +262016,17 @@
    ]
   },
   "docs-singular-node/harness-appendix-test-hooks-01": {
-   "audio_sha256": "ec44b78a99f7dd2c2059e171f30836b19e5aaadc3f23710567f872018d61aa95",
-   "characters": 596,
-   "cost": 0.00036951999999999997,
-   "duration": 39.7,
+   "audio_sha256": "b1ba9f578639e202a1203f694d71f2d0cb9d653920f66e91b5d8e685ac0d3e5c",
+   "characters": 598,
+   "cost": 0.00059202,
+   "duration": 39.725,
    "index": 1,
-   "key": "91eb729d1fee2ffa29117610c54fb94214d5f1af1c4c27ca8f91db952338fed4",
+   "key": "fd091351f25fbb334e7bd7a0662e118caff4aebf1aa5a12f4d901fb7d6e83c85",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "harness-appendix-test-hooks",
-   "sent_text": "You never set these. The released singular reads nine environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-   "text": "You never set these. The released singular reads nine environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+   "sent_text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+   "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
    "words": [
     {
      "end": 0.275,
@@ -262374,553 +262064,553 @@
      "text": "released"
     },
     {
-     "end": 3.1,
+     "end": 3.138,
      "start": 2.588,
      "text": "singular"
     },
     {
-     "end": 3.525,
-     "start": 3.1,
+     "end": 3.537,
+     "start": 3.138,
      "text": "reads"
     },
     {
-     "end": 3.9,
-     "start": 3.525,
-     "text": "nine"
+     "end": 4.0,
+     "start": 3.537,
+     "text": "eleven"
     },
     {
-     "end": 4.525,
-     "start": 3.9,
+     "end": 4.6,
+     "start": 4.0,
      "text": "environment"
     },
     {
-     "end": 5.2,
-     "start": 4.525,
+     "end": 5.225,
+     "start": 4.6,
      "text": "variables"
     },
     {
-     "end": 5.425,
-     "start": 5.2,
+     "end": 5.45,
+     "start": 5.225,
      "text": "whose"
     },
     {
-     "end": 5.738,
-     "start": 5.425,
+     "end": 5.762,
+     "start": 5.45,
      "text": "only"
     },
     {
-     "end": 6.287,
-     "start": 5.738,
+     "end": 6.312,
+     "start": 5.762,
      "text": "purpose"
     },
     {
-     "end": 6.45,
-     "start": 6.287,
+     "end": 6.475,
+     "start": 6.312,
      "text": "is"
     },
     {
-     "end": 6.575,
-     "start": 6.45,
+     "end": 6.6,
+     "start": 6.475,
      "text": "to"
     },
     {
-     "end": 6.762,
-     "start": 6.575,
+     "end": 6.787,
+     "start": 6.6,
      "text": "let"
     },
     {
-     "end": 6.85,
-     "start": 6.762,
+     "end": 6.887,
+     "start": 6.787,
      "text": "the"
     },
     {
-     "end": 7.375,
-     "start": 6.85,
+     "end": 7.425,
+     "start": 6.887,
      "text": "project's"
     },
     {
-     "end": 7.637,
-     "start": 7.375,
+     "end": 7.713,
+     "start": 7.425,
      "text": "own"
     },
     {
-     "end": 8.137,
-     "start": 7.637,
+     "end": 8.212,
+     "start": 7.713,
      "text": "tests"
     },
     {
-     "end": 8.438,
-     "start": 8.137,
+     "end": 8.512,
+     "start": 8.212,
      "text": "stop"
     },
     {
-     "end": 8.5,
-     "start": 8.438,
+     "end": 8.575,
+     "start": 8.512,
      "text": "a"
     },
     {
-     "end": 9.087,
-     "start": 8.5,
+     "end": 9.15,
+     "start": 8.575,
      "text": "command"
     },
     {
-     "end": 9.188,
-     "start": 9.087,
+     "end": 9.238,
+     "start": 9.15,
      "text": "at"
     },
     {
-     "end": 9.275,
-     "start": 9.188,
+     "end": 9.325,
+     "start": 9.238,
      "text": "an"
     },
     {
-     "end": 9.788,
-     "start": 9.275,
+     "end": 9.837,
+     "start": 9.325,
      "text": "exact"
     },
     {
-     "end": 10.363,
-     "start": 9.788,
+     "end": 10.4,
+     "start": 9.837,
      "text": "point"
     },
     {
-     "end": 10.45,
-     "start": 10.363,
+     "end": 10.475,
+     "start": 10.4,
      "text": "—"
     },
     {
-     "end": 10.6,
-     "start": 10.45,
+     "end": 10.625,
+     "start": 10.475,
      "text": "to"
     },
     {
-     "end": 11.1,
-     "start": 10.6,
+     "end": 11.125,
+     "start": 10.625,
      "text": "inspect"
     },
     {
-     "end": 11.25,
-     "start": 11.1,
+     "end": 11.275,
+     "start": 11.125,
      "text": "it"
     },
     {
-     "end": 12.3,
-     "start": 11.25,
+     "end": 12.325,
+     "start": 11.275,
      "text": "there"
     },
     {
-     "end": 12.525,
-     "start": 12.3,
+     "end": 12.55,
+     "start": 12.325,
      "text": ","
     },
     {
-     "end": 12.887,
-     "start": 12.7,
+     "end": 12.913,
+     "start": 12.725,
      "text": "kill"
     },
     {
-     "end": 12.975,
-     "start": 12.887,
+     "end": 13.0,
+     "start": 12.913,
      "text": "it"
     },
     {
-     "end": 13.575,
-     "start": 12.975,
+     "end": 13.6,
+     "start": 13.0,
      "text": "there"
     },
     {
-     "end": 13.825,
-     "start": 13.575,
+     "end": 13.85,
+     "start": 13.6,
      "text": ","
     },
     {
-     "end": 14.175,
-     "start": 14.025,
+     "end": 14.2,
+     "start": 14.05,
      "text": "or"
     },
     {
-     "end": 14.363,
-     "start": 14.175,
+     "end": 14.387,
+     "start": 14.2,
      "text": "make"
     },
     {
-     "end": 14.475,
-     "start": 14.363,
+     "end": 14.5,
+     "start": 14.387,
      "text": "it"
     },
     {
-     "end": 14.7,
-     "start": 14.475,
+     "end": 14.725,
+     "start": 14.5,
      "text": "meet"
     },
     {
-     "end": 14.962,
-     "start": 14.7,
+     "end": 14.988,
+     "start": 14.725,
      "text": "no"
     },
     {
-     "end": 15.375,
-     "start": 14.962,
+     "end": 15.4,
+     "start": 14.988,
      "text": "answer"
     },
     {
-     "end": 15.512,
-     "start": 15.375,
+     "end": 15.538,
+     "start": 15.4,
      "text": "from"
     },
     {
-     "end": 15.6,
-     "start": 15.512,
+     "end": 15.625,
+     "start": 15.538,
      "text": "the"
     },
     {
-     "end": 16.225,
-     "start": 15.6,
+     "end": 16.25,
+     "start": 15.625,
      "text": "provider"
     },
     {
-     "end": 16.3,
-     "start": 16.225,
+     "end": 16.325,
+     "start": 16.25,
      "text": "—"
     },
     {
-     "end": 16.438,
-     "start": 16.3,
+     "end": 16.462,
+     "start": 16.325,
      "text": "and"
     },
     {
-     "end": 16.7,
-     "start": 16.438,
+     "end": 16.725,
+     "start": 16.462,
      "text": "check"
     },
     {
-     "end": 16.837,
-     "start": 16.7,
+     "end": 16.862,
+     "start": 16.725,
      "text": "what"
     },
     {
-     "end": 16.925,
-     "start": 16.837,
+     "end": 16.95,
+     "start": 16.862,
      "text": "it"
     },
     {
-     "end": 17.225,
-     "start": 16.925,
+     "end": 17.25,
+     "start": 16.95,
      "text": "leaves"
     },
     {
-     "end": 18.275,
-     "start": 17.225,
+     "end": 18.3,
+     "start": 17.25,
      "text": "behind"
     },
     {
-     "end": 18.5,
-     "start": 18.275,
+     "end": 18.525,
+     "start": 18.3,
      "text": "."
     },
     {
-     "end": 18.8,
-     "start": 18.675,
+     "end": 18.825,
+     "start": 18.7,
      "text": "When"
     },
     {
-     "end": 19.025,
-     "start": 18.8,
+     "end": 19.05,
+     "start": 18.825,
      "text": "none"
     },
     {
-     "end": 19.188,
-     "start": 19.025,
+     "end": 19.212,
+     "start": 19.05,
      "text": "is"
     },
     {
-     "end": 19.475,
-     "start": 19.188,
+     "end": 19.5,
+     "start": 19.212,
      "text": "set"
     },
     {
-     "end": 19.525,
-     "start": 19.475,
+     "end": 19.55,
+     "start": 19.5,
      "text": ","
     },
     {
-     "end": 19.725,
-     "start": 19.525,
+     "end": 19.75,
+     "start": 19.55,
      "text": "which"
     },
     {
-     "end": 19.85,
-     "start": 19.725,
+     "end": 19.875,
+     "start": 19.75,
      "text": "is"
     },
     {
-     "end": 20.112,
-     "start": 19.85,
+     "end": 20.138,
+     "start": 19.875,
      "text": "how"
     },
     {
-     "end": 20.45,
-     "start": 20.112,
+     "end": 20.475,
+     "start": 20.138,
      "text": "every"
     },
     {
-     "end": 21.025,
-     "start": 20.45,
+     "end": 21.05,
+     "start": 20.475,
      "text": "operator"
     },
     {
-     "end": 21.362,
-     "start": 21.025,
+     "end": 21.388,
+     "start": 21.05,
      "text": "runs"
     },
     {
-     "end": 21.525,
-     "start": 21.362,
+     "end": 21.55,
+     "start": 21.388,
      "text": "it"
     },
     {
-     "end": 21.6,
-     "start": 21.525,
+     "end": 21.625,
+     "start": 21.55,
      "text": ","
     },
     {
-     "end": 21.75,
-     "start": 21.6,
+     "end": 21.775,
+     "start": 21.625,
      "text": "they"
     },
     {
-     "end": 21.875,
-     "start": 21.75,
+     "end": 21.9,
+     "start": 21.775,
      "text": "do"
     },
     {
-     "end": 22.825,
-     "start": 21.875,
+     "end": 22.85,
+     "start": 21.9,
      "text": "nothing"
     },
     {
-     "end": 23.025,
-     "start": 22.825,
+     "end": 23.05,
+     "start": 22.85,
      "text": ":"
     },
     {
-     "end": 23.4,
-     "start": 23.225,
+     "end": 23.425,
+     "start": 23.25,
      "text": "no"
     },
     {
-     "end": 23.625,
-     "start": 23.4,
+     "end": 23.65,
+     "start": 23.425,
      "text": "hold"
     },
     {
-     "end": 23.663,
-     "start": 23.625,
+     "end": 23.688,
+     "start": 23.65,
      "text": ","
     },
     {
-     "end": 23.8,
-     "start": 23.663,
+     "end": 23.825,
+     "start": 23.688,
      "text": "no"
     },
     {
-     "end": 24.1,
-     "start": 23.8,
+     "end": 24.125,
+     "start": 23.825,
      "text": "dropped"
     },
     {
-     "end": 24.85,
-     "start": 24.1,
+     "end": 24.875,
+     "start": 24.125,
      "text": "send"
     },
     {
-     "end": 25.05,
-     "start": 24.85,
+     "end": 25.075,
+     "start": 24.875,
      "text": "."
     },
     {
-     "end": 25.325,
-     "start": 25.25,
+     "end": 25.35,
+     "start": 25.275,
      "text": "The"
     },
     {
-     "end": 25.825,
-     "start": 25.325,
+     "end": 25.85,
+     "start": 25.35,
      "text": "retained"
     },
     {
-     "end": 26.2,
-     "start": 25.825,
+     "end": 26.225,
+     "start": 25.85,
      "text": "harness"
     },
     {
-     "end": 26.837,
-     "start": 26.2,
+     "end": 26.862,
+     "start": 26.225,
      "text": "controls"
     },
     {
-     "end": 27.1,
-     "start": 26.837,
+     "end": 27.125,
+     "start": 26.862,
      "text": "check"
     },
     {
-     "end": 27.225,
-     "start": 27.1,
+     "end": 27.25,
+     "start": 27.125,
      "text": "the"
     },
     {
-     "end": 27.788,
-     "start": 27.225,
+     "end": 27.812,
+     "start": 27.25,
      "text": "ordinary"
     },
     {
-     "end": 28.225,
-     "start": 27.788,
+     "end": 28.25,
+     "start": 27.812,
      "text": "path"
     },
     {
-     "end": 28.413,
-     "start": 28.225,
+     "end": 28.438,
+     "start": 28.25,
      "text": "with"
     },
     {
-     "end": 28.688,
-     "start": 28.413,
+     "end": 28.712,
+     "start": 28.438,
      "text": "no"
     },
     {
-     "end": 29.25,
-     "start": 28.688,
+     "end": 29.275,
+     "start": 28.712,
      "text": "variable"
     },
     {
-     "end": 29.663,
-     "start": 29.25,
+     "end": 29.688,
+     "start": 29.275,
      "text": "set"
     },
     {
-     "end": 29.788,
-     "start": 29.663,
+     "end": 29.812,
+     "start": 29.688,
      "text": "and"
     },
     {
-     "end": 29.888,
-     "start": 29.788,
+     "end": 29.913,
+     "start": 29.812,
      "text": "the"
     },
     {
-     "end": 30.3,
-     "start": 29.888,
+     "end": 30.325,
+     "start": 29.913,
      "text": "holds"
     },
     {
-     "end": 30.425,
-     "start": 30.3,
+     "end": 30.45,
+     "start": 30.325,
      "text": "at"
     },
     {
-     "end": 30.525,
-     "start": 30.425,
+     "end": 30.55,
+     "start": 30.45,
      "text": "the"
     },
     {
-     "end": 31.075,
-     "start": 30.525,
+     "end": 31.1,
+     "start": 30.55,
      "text": "requested"
     },
     {
-     "end": 32.175,
-     "start": 31.075,
+     "end": 32.2,
+     "start": 31.1,
      "text": "points"
     },
     {
-     "end": 32.4,
-     "start": 32.175,
+     "end": 32.425,
+     "start": 32.2,
      "text": "."
     },
     {
-     "end": 32.775,
-     "start": 32.575,
+     "end": 32.8,
+     "start": 32.6,
      "text": "Their"
     },
     {
-     "end": 33.2,
-     "start": 32.775,
+     "end": 33.225,
+     "start": 32.8,
      "text": "local"
     },
     {
-     "end": 33.25,
-     "start": 33.2,
+     "end": 33.275,
+     "start": 33.225,
      "text": ","
     },
     {
-     "end": 33.75,
-     "start": 33.25,
+     "end": 33.775,
+     "start": 33.275,
      "text": "hosted"
     },
     {
-     "end": 33.862,
-     "start": 33.75,
+     "end": 33.888,
+     "start": 33.775,
      "text": "and"
     },
     {
-     "end": 34.2,
-     "start": 33.862,
+     "end": 34.225,
+     "start": 33.888,
      "text": "release"
     },
     {
-     "end": 34.688,
-     "start": 34.2,
+     "end": 34.713,
+     "start": 34.225,
      "text": "results"
     },
     {
-     "end": 34.875,
-     "start": 34.688,
+     "end": 34.9,
+     "start": 34.713,
      "text": "are"
     },
     {
-     "end": 35.275,
-     "start": 34.875,
+     "end": 35.3,
+     "start": 34.9,
      "text": "separate"
     },
     {
-     "end": 36.3,
-     "start": 35.275,
+     "end": 36.325,
+     "start": 35.3,
      "text": "evidence"
     },
     {
-     "end": 36.5,
-     "start": 36.3,
+     "end": 36.525,
+     "start": 36.325,
      "text": ";"
     },
     {
-     "end": 36.75,
-     "start": 36.675,
+     "end": 36.775,
+     "start": 36.7,
      "text": "an"
     },
     {
-     "end": 37.45,
-     "start": 36.75,
+     "end": 37.475,
+     "start": 36.775,
      "text": "unexecuted"
     },
     {
-     "end": 37.95,
-     "start": 37.45,
+     "end": 37.975,
+     "start": 37.475,
      "text": "control"
     },
     {
-     "end": 38.6,
-     "start": 37.95,
+     "end": 38.625,
+     "start": 37.975,
      "text": "establishes"
     },
     {
-     "end": 39.5,
-     "start": 38.6,
+     "end": 39.525,
+     "start": 38.625,
      "text": "nothing"
     },
     {
-     "end": 39.7,
-     "start": 39.5,
+     "end": 39.725,
+     "start": 39.525,
      "text": "."
     }
    ]
@@ -267041,17 +266731,17 @@
    ]
   },
   "docs-singular-node/reclaiming-your-pending-request-03": {
-   "audio_sha256": "daae54a707b57468cd2ef32023987de455be550072508784287fb7ffba97d5e3",
-   "characters": 869,
-   "cost": 0.00053878,
-   "duration": 56.85,
+   "audio_sha256": "3208fdbe84255ce1ab6622dfa101701313b68d4996ca7db76a02b266585e167b",
+   "characters": 847,
+   "cost": 0.00083853,
+   "duration": 55.95,
    "index": 3,
-   "key": "7413ebe5ccf31d7b3df0a2b6456a36076a80e989a6e96a5fc953242485cd68f1",
+   "key": "d257fb2721dd963172fac9d326de6a7ad330fd9a2e120cb703b90731c4be523f",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "reclaiming-your-pending-request",
-   "sent_text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The next command reconstructs that root from public history. The next request can be booked and folded normally.",
-   "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The next command reconstructs that root from public history. The next request can be booked and folded normally.",
+   "sent_text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
+   "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
    "words": [
     {
      "end": 0.712,
@@ -267719,103 +267409,93 @@
      "text": "."
     },
     {
-     "end": 50.0,
-     "start": 49.925,
+     "end": 50.062,
+     "start": 49.95,
      "text": "The"
     },
     {
-     "end": 50.275,
-     "start": 50.0,
-     "text": "next"
+     "end": 50.5,
+     "start": 50.062,
+     "text": "mirror"
     },
     {
-     "end": 50.775,
-     "start": 50.275,
-     "text": "command"
-    },
-    {
-     "end": 51.45,
-     "start": 50.775,
-     "text": "reconstructs"
-    },
-    {
-     "end": 51.675,
-     "start": 51.45,
-     "text": "that"
-    },
-    {
-     "end": 51.95,
-     "start": 51.675,
-     "text": "root"
-    },
-    {
-     "end": 52.1,
-     "start": 51.95,
-     "text": "from"
-    },
-    {
-     "end": 52.475,
-     "start": 52.1,
-     "text": "public"
-    },
-    {
-     "end": 53.45,
-     "start": 52.475,
-     "text": "history"
-    },
-    {
-     "end": 53.65,
-     "start": 53.45,
-     "text": "."
-    },
-    {
-     "end": 53.9,
-     "start": 53.825,
-     "text": "The"
-    },
-    {
-     "end": 54.162,
-     "start": 53.9,
-     "text": "next"
-    },
-    {
-     "end": 54.575,
-     "start": 54.162,
-     "text": "request"
-    },
-    {
-     "end": 54.688,
-     "start": 54.575,
-     "text": "can"
-    },
-    {
-     "end": 54.838,
-     "start": 54.688,
-     "text": "be"
-    },
-    {
-     "end": 55.15,
-     "start": 54.838,
-     "text": "booked"
-    },
-    {
-     "end": 55.287,
-     "start": 55.15,
+     "end": 50.662,
+     "start": 50.5,
      "text": "and"
     },
     {
-     "end": 55.7,
-     "start": 55.287,
+     "end": 51.675,
+     "start": 50.662,
+     "text": "state.json"
+    },
+    {
+     "end": 51.8,
+     "start": 51.675,
+     "text": "do"
+    },
+    {
+     "end": 52.05,
+     "start": 51.8,
+     "text": "not"
+    },
+    {
+     "end": 52.55,
+     "start": 52.05,
+     "text": "move"
+    },
+    {
+     "end": 52.65,
+     "start": 52.55,
+     "text": "."
+    },
+    {
+     "end": 52.75,
+     "start": 52.65,
+     "text": "The"
+    },
+    {
+     "end": 53.013,
+     "start": 52.75,
+     "text": "next"
+    },
+    {
+     "end": 53.475,
+     "start": 53.013,
+     "text": "request"
+    },
+    {
+     "end": 53.588,
+     "start": 53.475,
+     "text": "can"
+    },
+    {
+     "end": 53.737,
+     "start": 53.588,
+     "text": "be"
+    },
+    {
+     "end": 54.125,
+     "start": 53.737,
+     "text": "booked"
+    },
+    {
+     "end": 54.263,
+     "start": 54.125,
+     "text": "and"
+    },
+    {
+     "end": 54.675,
+     "start": 54.263,
      "text": "folded"
     },
     {
-     "end": 56.65,
-     "start": 55.7,
+     "end": 55.725,
+     "start": 54.675,
      "text": "normally"
     },
     {
-     "end": 56.85,
-     "start": 56.65,
+     "end": 55.95,
+     "start": 55.725,
      "text": "."
     }
    ]
@@ -267856,17 +267536,17 @@
    ]
   },
   "docs-singular-node/rejecting-expired-requests-01": {
-   "audio_sha256": "d88833eb53f219561f980371c3f02dfaff381f0106c0f7f1c7c26489c37e010c",
-   "characters": 445,
-   "cost": 0.0002759,
-   "duration": 29.425,
+   "audio_sha256": "58deb9a676fbbbb99864d87a778f2e0033fc3c6dabf3e0fe4c4130861e0a44c0",
+   "characters": 470,
+   "cost": 0.0004652999999999999,
+   "duration": 30.85,
    "index": 1,
-   "key": "1ae237546a5ab6ff01f974c4bed147daa1865271842ffa44047c153b0b06773d",
+   "key": "6e8bc296d74dc33f314fe77cdce49eab630b6667b9db4e142c3ae0d7458f67e7",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "rejecting-expired-requests",
-   "sent_text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the live registry root does not change.",
-   "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the live registry root does not change.",
+   "sent_text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
+   "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
    "words": [
     {
      "end": 0.325,
@@ -268209,83 +267889,113 @@
      "text": ","
     },
     {
-     "end": 24.062,
+     "end": 24.087,
      "start": 23.775,
      "text": "using"
     },
     {
-     "end": 24.15,
-     "start": 24.062,
+     "end": 24.175,
+     "start": 24.087,
      "text": "the"
     },
     {
-     "end": 24.75,
-     "start": 24.15,
+     "end": 24.775,
+     "start": 24.175,
      "text": "registry's"
     },
     {
-     "end": 25.175,
-     "start": 24.75,
+     "end": 25.225,
+     "start": 24.775,
      "text": "published"
     },
     {
-     "end": 25.55,
-     "start": 25.175,
+     "end": 25.65,
+     "start": 25.225,
      "text": "reference"
     },
     {
-     "end": 26.45,
-     "start": 25.55,
+     "end": 26.175,
+     "start": 25.65,
      "text": "scripts"
     },
     {
-     "end": 26.625,
-     "start": 26.45,
+     "end": 26.25,
+     "start": 26.175,
      "text": ","
     },
     {
-     "end": 26.913,
-     "start": 26.825,
+     "end": 26.362,
+     "start": 26.25,
      "text": "and"
     },
     {
-     "end": 27.0,
-     "start": 26.913,
+     "end": 26.45,
+     "start": 26.362,
      "text": "the"
     },
     {
-     "end": 27.275,
-     "start": 27.0,
-     "text": "live"
+     "end": 27.038,
+     "start": 26.45,
+     "text": "registry's"
     },
     {
-     "end": 27.75,
-     "start": 27.275,
-     "text": "registry"
-    },
-    {
-     "end": 27.975,
-     "start": 27.75,
+     "end": 27.85,
+     "start": 27.038,
      "text": "root"
     },
     {
-     "end": 28.112,
-     "start": 27.975,
-     "text": "does"
+     "end": 28.05,
+     "start": 27.85,
+     "text": ","
     },
     {
-     "end": 28.337,
-     "start": 28.112,
+     "end": 28.425,
+     "start": 28.25,
+     "text": "its"
+    },
+    {
+     "end": 28.775,
+     "start": 28.425,
+     "text": "mirror"
+    },
+    {
+     "end": 28.888,
+     "start": 28.775,
+     "text": "and"
+    },
+    {
+     "end": 29.0,
+     "start": 28.888,
+     "text": "its"
+    },
+    {
+     "end": 29.275,
+     "start": 29.0,
+     "text": "saved"
+    },
+    {
+     "end": 29.562,
+     "start": 29.275,
+     "text": "state"
+    },
+    {
+     "end": 29.663,
+     "start": 29.562,
+     "text": "do"
+    },
+    {
+     "end": 29.85,
+     "start": 29.663,
      "text": "not"
     },
     {
-     "end": 29.2,
-     "start": 28.337,
-     "text": "change"
+     "end": 30.65,
+     "start": 29.85,
+     "text": "move"
     },
     {
-     "end": 29.425,
-     "start": 29.2,
+     "end": 30.85,
+     "start": 30.65,
      "text": "."
     }
    ]
@@ -270881,1446 +270591,6 @@
     {
      "end": 27.325,
      "start": 27.075,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-00": {
-   "audio_sha256": "003185269aff44c5343085fc4f2e0d876098d7fe236350417717a881818fff8a",
-   "characters": 22,
-   "cost": 1.364e-05,
-   "duration": 1.925,
-   "index": 0,
-   "key": "8fcc09d81c854df81efc89042d429a1759fef098b349829355b081f827c0367d",
-   "page": "docs/singular-node.md",
-   "pause_ms": 500,
-   "section": "two-independent-users",
-   "sent_text": "Two independent users.",
-   "text": "Two independent users.",
-   "words": [
-    {
-     "end": 0.363,
-     "start": 0.2,
-     "text": "Two"
-    },
-    {
-     "end": 0.825,
-     "start": 0.363,
-     "text": "independent"
-    },
-    {
-     "end": 1.725,
-     "start": 0.825,
-     "text": "users"
-    },
-    {
-     "end": 1.925,
-     "start": 1.725,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-01": {
-   "audio_sha256": "79742c20ebfb71ef4d8580a3d1d77b73fd0fa2fbbc8b4f7ddc2d62c97e2f8f4c",
-   "characters": 320,
-   "cost": 0.0001984,
-   "duration": 22.2,
-   "index": 1,
-   "key": "ebaa9e44c1a4ef1c4b99f83d24ba3c72c9292ba7aca03a0ed81624da8e0f98e5",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "two-independent-users",
-   "sent_text": "Demo 1 is Alice and Bob using separate terminals, homes and registry directories, both starting empty. Neither user creates the registry or receives a creator's identity file. Their only registry inputs are its web page generated from the chain and Koios. A third, private creator fixture makes the development registry.",
-   "text": "Demo 1 is Alice and Bob using separate terminals, homes and registry directories, both starting empty. Neither user creates the registry or receives a creator's identity file. Their only registry inputs are its web page generated from the chain and Koios. A third, private creator fixture makes the development registry.",
-   "words": [
-    {
-     "end": 0.587,
-     "start": 0.2,
-     "text": "Demo"
-    },
-    {
-     "end": 0.875,
-     "start": 0.587,
-     "text": "1"
-    },
-    {
-     "end": 1.075,
-     "start": 0.875,
-     "text": "is"
-    },
-    {
-     "end": 1.525,
-     "start": 1.075,
-     "text": "Alice"
-    },
-    {
-     "end": 1.663,
-     "start": 1.525,
-     "text": "and"
-    },
-    {
-     "end": 2.05,
-     "start": 1.663,
-     "text": "Bob"
-    },
-    {
-     "end": 2.412,
-     "start": 2.05,
-     "text": "using"
-    },
-    {
-     "end": 2.8,
-     "start": 2.412,
-     "text": "separate"
-    },
-    {
-     "end": 3.475,
-     "start": 2.8,
-     "text": "terminals"
-    },
-    {
-     "end": 3.562,
-     "start": 3.475,
-     "text": ","
-    },
-    {
-     "end": 4.1,
-     "start": 3.562,
-     "text": "homes"
-    },
-    {
-     "end": 4.225,
-     "start": 4.1,
-     "text": "and"
-    },
-    {
-     "end": 4.725,
-     "start": 4.225,
-     "text": "registry"
-    },
-    {
-     "end": 5.4,
-     "start": 4.725,
-     "text": "directories"
-    },
-    {
-     "end": 5.475,
-     "start": 5.4,
-     "text": ","
-    },
-    {
-     "end": 5.775,
-     "start": 5.475,
-     "text": "both"
-    },
-    {
-     "end": 6.175,
-     "start": 5.775,
-     "text": "starting"
-    },
-    {
-     "end": 7.275,
-     "start": 6.175,
-     "text": "empty"
-    },
-    {
-     "end": 7.5,
-     "start": 7.275,
-     "text": "."
-    },
-    {
-     "end": 8.05,
-     "start": 7.725,
-     "text": "Neither"
-    },
-    {
-     "end": 8.425,
-     "start": 8.05,
-     "text": "user"
-    },
-    {
-     "end": 8.825,
-     "start": 8.425,
-     "text": "creates"
-    },
-    {
-     "end": 8.925,
-     "start": 8.825,
-     "text": "the"
-    },
-    {
-     "end": 9.675,
-     "start": 8.925,
-     "text": "registry"
-    },
-    {
-     "end": 9.85,
-     "start": 9.675,
-     "text": "or"
-    },
-    {
-     "end": 10.312,
-     "start": 9.85,
-     "text": "receives"
-    },
-    {
-     "end": 10.375,
-     "start": 10.312,
-     "text": "a"
-    },
-    {
-     "end": 10.887,
-     "start": 10.375,
-     "text": "creator's"
-    },
-    {
-     "end": 11.413,
-     "start": 10.887,
-     "text": "identity"
-    },
-    {
-     "end": 12.325,
-     "start": 11.413,
-     "text": "file"
-    },
-    {
-     "end": 12.525,
-     "start": 12.325,
-     "text": "."
-    },
-    {
-     "end": 12.875,
-     "start": 12.7,
-     "text": "Their"
-    },
-    {
-     "end": 13.175,
-     "start": 12.875,
-     "text": "only"
-    },
-    {
-     "end": 13.675,
-     "start": 13.175,
-     "text": "registry"
-    },
-    {
-     "end": 14.238,
-     "start": 13.675,
-     "text": "inputs"
-    },
-    {
-     "end": 14.375,
-     "start": 14.238,
-     "text": "are"
-    },
-    {
-     "end": 14.587,
-     "start": 14.375,
-     "text": "its"
-    },
-    {
-     "end": 14.85,
-     "start": 14.587,
-     "text": "web"
-    },
-    {
-     "end": 15.238,
-     "start": 14.85,
-     "text": "page"
-    },
-    {
-     "end": 15.8,
-     "start": 15.238,
-     "text": "generated"
-    },
-    {
-     "end": 15.938,
-     "start": 15.8,
-     "text": "from"
-    },
-    {
-     "end": 16.038,
-     "start": 15.938,
-     "text": "the"
-    },
-    {
-     "end": 16.425,
-     "start": 16.038,
-     "text": "chain"
-    },
-    {
-     "end": 16.562,
-     "start": 16.425,
-     "text": "and"
-    },
-    {
-     "end": 17.7,
-     "start": 16.562,
-     "text": "Koios"
-    },
-    {
-     "end": 17.9,
-     "start": 17.7,
-     "text": "."
-    },
-    {
-     "end": 18.2,
-     "start": 18.1,
-     "text": "A"
-    },
-    {
-     "end": 18.625,
-     "start": 18.2,
-     "text": "third"
-    },
-    {
-     "end": 18.675,
-     "start": 18.625,
-     "text": ","
-    },
-    {
-     "end": 19.05,
-     "start": 18.675,
-     "text": "private"
-    },
-    {
-     "end": 19.513,
-     "start": 19.05,
-     "text": "creator"
-    },
-    {
-     "end": 20.025,
-     "start": 19.513,
-     "text": "fixture"
-    },
-    {
-     "end": 20.3,
-     "start": 20.025,
-     "text": "makes"
-    },
-    {
-     "end": 20.4,
-     "start": 20.3,
-     "text": "the"
-    },
-    {
-     "end": 20.95,
-     "start": 20.4,
-     "text": "development"
-    },
-    {
-     "end": 21.975,
-     "start": 20.95,
-     "text": "registry"
-    },
-    {
-     "end": 22.2,
-     "start": 21.975,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-02": {
-   "audio_sha256": "0ae97c3668dcf0f34b28b9a178cac32d588915741a330ff170ce07e6e328b38f",
-   "characters": 271,
-   "cost": 0.00016802,
-   "duration": 20.125,
-   "index": 2,
-   "key": "62f820f91bc27aecd6f1a397b80a2f1b906a97e235c56fce4773f504d328ade6",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "two-independent-users",
-   "sent_text": "Joining by state token belongs to issue #437. Every command will derive the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Importing a creator's registry.json is superseded; no identity-file joining command is supplied here.",
-   "text": "Joining by state token belongs to issue #437. Every command will derive the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Importing a creator's registry.json is superseded; no identity-file joining command is supplied here.",
-   "words": [
-    {
-     "end": 0.525,
-     "start": 0.2,
-     "text": "Joining"
-    },
-    {
-     "end": 0.7,
-     "start": 0.525,
-     "text": "by"
-    },
-    {
-     "end": 1.0,
-     "start": 0.7,
-     "text": "state"
-    },
-    {
-     "end": 1.35,
-     "start": 1.0,
-     "text": "token"
-    },
-    {
-     "end": 1.9,
-     "start": 1.35,
-     "text": "belongs"
-    },
-    {
-     "end": 2.025,
-     "start": 1.9,
-     "text": "to"
-    },
-    {
-     "end": 2.4,
-     "start": 2.025,
-     "text": "issue"
-    },
-    {
-     "end": 4.225,
-     "start": 2.4,
-     "text": "437"
-    },
-    {
-     "end": 4.45,
-     "start": 4.225,
-     "text": "."
-    },
-    {
-     "end": 4.925,
-     "start": 4.65,
-     "text": "Every"
-    },
-    {
-     "end": 5.325,
-     "start": 4.925,
-     "text": "command"
-    },
-    {
-     "end": 5.5,
-     "start": 5.325,
-     "text": "will"
-    },
-    {
-     "end": 5.95,
-     "start": 5.5,
-     "text": "derive"
-    },
-    {
-     "end": 6.1,
-     "start": 5.95,
-     "text": "the"
-    },
-    {
-     "end": 6.525,
-     "start": 6.1,
-     "text": "seed"
-    },
-    {
-     "end": 6.613,
-     "start": 6.525,
-     "text": ","
-    },
-    {
-     "end": 7.1,
-     "start": 6.613,
-     "text": "pins"
-    },
-    {
-     "end": 7.175,
-     "start": 7.1,
-     "text": ","
-    },
-    {
-     "end": 7.75,
-     "start": 7.175,
-     "text": "windows"
-    },
-    {
-     "end": 7.838,
-     "start": 7.75,
-     "text": ","
-    },
-    {
-     "end": 8.15,
-     "start": 7.838,
-     "text": "tip"
-    },
-    {
-     "end": 8.275,
-     "start": 8.15,
-     "text": "and"
-    },
-    {
-     "end": 8.7,
-     "start": 8.275,
-     "text": "reference"
-    },
-    {
-     "end": 9.2,
-     "start": 8.7,
-     "text": "outputs"
-    },
-    {
-     "end": 9.337,
-     "start": 9.2,
-     "text": "from"
-    },
-    {
-     "end": 9.425,
-     "start": 9.337,
-     "text": "the"
-    },
-    {
-     "end": 9.75,
-     "start": 9.425,
-     "text": "state"
-    },
-    {
-     "end": 10.325,
-     "start": 9.75,
-     "text": "token"
-    },
-    {
-     "end": 10.462,
-     "start": 10.325,
-     "text": ","
-    },
-    {
-     "end": 10.8,
-     "start": 10.462,
-     "text": "state"
-    },
-    {
-     "end": 11.225,
-     "start": 10.8,
-     "text": "datum"
-    },
-    {
-     "end": 11.35,
-     "start": 11.225,
-     "text": "and"
-    },
-    {
-     "end": 12.55,
-     "start": 11.35,
-     "text": "release"
-    },
-    {
-     "end": 12.75,
-     "start": 12.55,
-     "text": "."
-    },
-    {
-     "end": 13.387,
-     "start": 12.95,
-     "text": "Importing"
-    },
-    {
-     "end": 13.45,
-     "start": 13.387,
-     "text": "a"
-    },
-    {
-     "end": 13.925,
-     "start": 13.45,
-     "text": "creator's"
-    },
-    {
-     "end": 15.225,
-     "start": 13.925,
-     "text": "registry.json"
-    },
-    {
-     "end": 15.35,
-     "start": 15.225,
-     "text": "is"
-    },
-    {
-     "end": 16.525,
-     "start": 15.35,
-     "text": "superseded"
-    },
-    {
-     "end": 16.725,
-     "start": 16.525,
-     "text": ";"
-    },
-    {
-     "end": 17.138,
-     "start": 16.925,
-     "text": "no"
-    },
-    {
-     "end": 17.825,
-     "start": 17.138,
-     "text": "identity-file"
-    },
-    {
-     "end": 18.175,
-     "start": 17.825,
-     "text": "joining"
-    },
-    {
-     "end": 18.638,
-     "start": 18.175,
-     "text": "command"
-    },
-    {
-     "end": 18.775,
-     "start": 18.638,
-     "text": "is"
-    },
-    {
-     "end": 19.225,
-     "start": 18.775,
-     "text": "supplied"
-    },
-    {
-     "end": 19.9,
-     "start": 19.225,
-     "text": "here"
-    },
-    {
-     "end": 20.125,
-     "start": 19.9,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-03": {
-   "audio_sha256": "9c424bbb67fbaae5038b47c041eb1661e595285326d99f488016d59103edefe5",
-   "characters": 143,
-   "cost": 8.866000000000001e-05,
-   "duration": 9.425,
-   "index": 3,
-   "key": "112e8f8545023e41795937778cce462032128bea8d8e7793901509af0aaa045b",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "two-independent-users",
-   "sent_text": "The packaged harness creates the registry privately and checks that both users' directories remain empty and unopened by its creator processes:",
-   "text": "The packaged harness creates the registry privately and checks that both users' directories remain empty and unopened by its creator processes:",
-   "words": [
-    {
-     "end": 0.275,
-     "start": 0.2,
-     "text": "The"
-    },
-    {
-     "end": 0.75,
-     "start": 0.275,
-     "text": "packaged"
-    },
-    {
-     "end": 1.212,
-     "start": 0.75,
-     "text": "harness"
-    },
-    {
-     "end": 1.625,
-     "start": 1.212,
-     "text": "creates"
-    },
-    {
-     "end": 1.75,
-     "start": 1.625,
-     "text": "the"
-    },
-    {
-     "end": 2.362,
-     "start": 1.75,
-     "text": "registry"
-    },
-    {
-     "end": 3.037,
-     "start": 2.362,
-     "text": "privately"
-    },
-    {
-     "end": 3.2,
-     "start": 3.037,
-     "text": "and"
-    },
-    {
-     "end": 3.625,
-     "start": 3.2,
-     "text": "checks"
-    },
-    {
-     "end": 3.838,
-     "start": 3.625,
-     "text": "that"
-    },
-    {
-     "end": 4.15,
-     "start": 3.838,
-     "text": "both"
-    },
-    {
-     "end": 4.55,
-     "start": 4.15,
-     "text": "users'"
-    },
-    {
-     "end": 5.25,
-     "start": 4.55,
-     "text": "directories"
-    },
-    {
-     "end": 5.662,
-     "start": 5.25,
-     "text": "remain"
-    },
-    {
-     "end": 6.213,
-     "start": 5.662,
-     "text": "empty"
-    },
-    {
-     "end": 6.387,
-     "start": 6.213,
-     "text": "and"
-    },
-    {
-     "end": 7.0,
-     "start": 6.387,
-     "text": "unopened"
-    },
-    {
-     "end": 7.225,
-     "start": 7.0,
-     "text": "by"
-    },
-    {
-     "end": 7.425,
-     "start": 7.225,
-     "text": "its"
-    },
-    {
-     "end": 7.85,
-     "start": 7.425,
-     "text": "creator"
-    },
-    {
-     "end": 9.225,
-     "start": 7.85,
-     "text": "processes"
-    },
-    {
-     "end": 9.425,
-     "start": 9.225,
-     "text": ":"
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-04": {
-   "audio_sha256": "82a169872a6c88f5442e447605fce255031df49d079bfc7e9ad62ffcd03fa24d",
-   "characters": 563,
-   "cost": 0.00034906,
-   "duration": 42.575,
-   "index": 4,
-   "key": "834b67c499efffbe1574e60a52cb64b1a37ec176fc4a744445e0a00565eda931",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "two-independent-users",
-   "sent_text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
-   "text": "Joining is a named pending integration point under #437. Every dependent step is published as pending: both insertions, reciprocal termination folds, reject, reclaim, controller refusals, matching roots and history controls. No copied identity or fabricated joined directory substitutes for that integration. Once #437 is available, the complete journey can be connected to its actual command interface. Requests already carry their insertion envelopes publicly under merged #419; cross-actor insertion folding remains to be exercised in this joined-user journey.",
-   "words": [
-    {
-     "end": 0.688,
-     "start": 0.225,
-     "text": "Joining"
-    },
-    {
-     "end": 0.85,
-     "start": 0.688,
-     "text": "is"
-    },
-    {
-     "end": 0.962,
-     "start": 0.85,
-     "text": "a"
-    },
-    {
-     "end": 1.413,
-     "start": 0.962,
-     "text": "named"
-    },
-    {
-     "end": 1.788,
-     "start": 1.413,
-     "text": "pending"
-    },
-    {
-     "end": 2.537,
-     "start": 1.788,
-     "text": "integration"
-    },
-    {
-     "end": 2.9,
-     "start": 2.537,
-     "text": "point"
-    },
-    {
-     "end": 3.138,
-     "start": 2.9,
-     "text": "under"
-    },
-    {
-     "end": 5.025,
-     "start": 3.138,
-     "text": "437"
-    },
-    {
-     "end": 5.25,
-     "start": 5.025,
-     "text": "."
-    },
-    {
-     "end": 5.725,
-     "start": 5.45,
-     "text": "Every"
-    },
-    {
-     "end": 6.15,
-     "start": 5.725,
-     "text": "dependent"
-    },
-    {
-     "end": 6.45,
-     "start": 6.15,
-     "text": "step"
-    },
-    {
-     "end": 6.6,
-     "start": 6.45,
-     "text": "is"
-    },
-    {
-     "end": 7.025,
-     "start": 6.6,
-     "text": "published"
-    },
-    {
-     "end": 7.175,
-     "start": 7.025,
-     "text": "as"
-    },
-    {
-     "end": 8.1,
-     "start": 7.175,
-     "text": "pending"
-    },
-    {
-     "end": 8.3,
-     "start": 8.1,
-     "text": ":"
-    },
-    {
-     "end": 8.775,
-     "start": 8.5,
-     "text": "both"
-    },
-    {
-     "end": 9.525,
-     "start": 8.775,
-     "text": "insertions"
-    },
-    {
-     "end": 9.575,
-     "start": 9.525,
-     "text": ","
-    },
-    {
-     "end": 10.15,
-     "start": 9.575,
-     "text": "reciprocal"
-    },
-    {
-     "end": 10.85,
-     "start": 10.15,
-     "text": "termination"
-    },
-    {
-     "end": 11.425,
-     "start": 10.85,
-     "text": "folds"
-    },
-    {
-     "end": 11.5,
-     "start": 11.425,
-     "text": ","
-    },
-    {
-     "end": 12.1,
-     "start": 11.5,
-     "text": "reject"
-    },
-    {
-     "end": 12.175,
-     "start": 12.1,
-     "text": ","
-    },
-    {
-     "end": 12.8,
-     "start": 12.175,
-     "text": "reclaim"
-    },
-    {
-     "end": 12.875,
-     "start": 12.8,
-     "text": ","
-    },
-    {
-     "end": 13.4,
-     "start": 12.875,
-     "text": "controller"
-    },
-    {
-     "end": 14.05,
-     "start": 13.4,
-     "text": "refusals"
-    },
-    {
-     "end": 14.137,
-     "start": 14.05,
-     "text": ","
-    },
-    {
-     "end": 14.575,
-     "start": 14.137,
-     "text": "matching"
-    },
-    {
-     "end": 14.925,
-     "start": 14.575,
-     "text": "roots"
-    },
-    {
-     "end": 15.05,
-     "start": 14.925,
-     "text": "and"
-    },
-    {
-     "end": 15.425,
-     "start": 15.05,
-     "text": "history"
-    },
-    {
-     "end": 16.775,
-     "start": 15.425,
-     "text": "controls"
-    },
-    {
-     "end": 17.0,
-     "start": 16.775,
-     "text": "."
-    },
-    {
-     "end": 17.462,
-     "start": 17.2,
-     "text": "No"
-    },
-    {
-     "end": 17.888,
-     "start": 17.462,
-     "text": "copied"
-    },
-    {
-     "end": 18.625,
-     "start": 17.888,
-     "text": "identity"
-    },
-    {
-     "end": 18.812,
-     "start": 18.625,
-     "text": "or"
-    },
-    {
-     "end": 19.55,
-     "start": 18.812,
-     "text": "fabricated"
-    },
-    {
-     "end": 19.925,
-     "start": 19.55,
-     "text": "joined"
-    },
-    {
-     "end": 20.475,
-     "start": 19.925,
-     "text": "directory"
-    },
-    {
-     "end": 21.225,
-     "start": 20.475,
-     "text": "substitutes"
-    },
-    {
-     "end": 21.35,
-     "start": 21.225,
-     "text": "for"
-    },
-    {
-     "end": 21.587,
-     "start": 21.35,
-     "text": "that"
-    },
-    {
-     "end": 22.85,
-     "start": 21.587,
-     "text": "integration"
-    },
-    {
-     "end": 23.05,
-     "start": 22.85,
-     "text": "."
-    },
-    {
-     "end": 23.587,
-     "start": 23.275,
-     "text": "Once"
-    },
-    {
-     "end": 25.087,
-     "start": 23.587,
-     "text": "437"
-    },
-    {
-     "end": 25.25,
-     "start": 25.087,
-     "text": "is"
-    },
-    {
-     "end": 25.925,
-     "start": 25.25,
-     "text": "available"
-    },
-    {
-     "end": 26.025,
-     "start": 25.925,
-     "text": ","
-    },
-    {
-     "end": 26.125,
-     "start": 26.025,
-     "text": "the"
-    },
-    {
-     "end": 26.612,
-     "start": 26.125,
-     "text": "complete"
-    },
-    {
-     "end": 27.025,
-     "start": 26.612,
-     "text": "journey"
-    },
-    {
-     "end": 27.2,
-     "start": 27.025,
-     "text": "can"
-    },
-    {
-     "end": 27.35,
-     "start": 27.2,
-     "text": "be"
-    },
-    {
-     "end": 27.85,
-     "start": 27.35,
-     "text": "connected"
-    },
-    {
-     "end": 28.0,
-     "start": 27.85,
-     "text": "to"
-    },
-    {
-     "end": 28.212,
-     "start": 28.0,
-     "text": "its"
-    },
-    {
-     "end": 28.675,
-     "start": 28.212,
-     "text": "actual"
-    },
-    {
-     "end": 29.125,
-     "start": 28.675,
-     "text": "command"
-    },
-    {
-     "end": 30.375,
-     "start": 29.125,
-     "text": "interface"
-    },
-    {
-     "end": 30.6,
-     "start": 30.375,
-     "text": "."
-    },
-    {
-     "end": 31.325,
-     "start": 30.8,
-     "text": "Requests"
-    },
-    {
-     "end": 31.7,
-     "start": 31.325,
-     "text": "already"
-    },
-    {
-     "end": 32.025,
-     "start": 31.7,
-     "text": "carry"
-    },
-    {
-     "end": 32.225,
-     "start": 32.025,
-     "text": "their"
-    },
-    {
-     "end": 32.912,
-     "start": 32.225,
-     "text": "insertion"
-    },
-    {
-     "end": 33.487,
-     "start": 32.912,
-     "text": "envelopes"
-    },
-    {
-     "end": 34.1,
-     "start": 33.487,
-     "text": "publicly"
-    },
-    {
-     "end": 34.35,
-     "start": 34.1,
-     "text": "under"
-    },
-    {
-     "end": 34.725,
-     "start": 34.35,
-     "text": "merged"
-    },
-    {
-     "end": 36.65,
-     "start": 34.725,
-     "text": "419"
-    },
-    {
-     "end": 36.85,
-     "start": 36.65,
-     "text": ";"
-    },
-    {
-     "end": 37.725,
-     "start": 37.05,
-     "text": "cross-actor"
-    },
-    {
-     "end": 38.338,
-     "start": 37.725,
-     "text": "insertion"
-    },
-    {
-     "end": 38.963,
-     "start": 38.338,
-     "text": "folding"
-    },
-    {
-     "end": 39.475,
-     "start": 38.963,
-     "text": "remains"
-    },
-    {
-     "end": 39.562,
-     "start": 39.475,
-     "text": "to"
-    },
-    {
-     "end": 39.713,
-     "start": 39.562,
-     "text": "be"
-    },
-    {
-     "end": 40.5,
-     "start": 39.713,
-     "text": "exercised"
-    },
-    {
-     "end": 40.612,
-     "start": 40.5,
-     "text": "in"
-    },
-    {
-     "end": 40.812,
-     "start": 40.612,
-     "text": "this"
-    },
-    {
-     "end": 41.388,
-     "start": 40.812,
-     "text": "joined-user"
-    },
-    {
-     "end": 42.35,
-     "start": 41.388,
-     "text": "journey"
-    },
-    {
-     "end": 42.575,
-     "start": 42.35,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/two-independent-users-05": {
-   "audio_sha256": "33baaeaf53ee25875bb1cfc84904df10808fcc675bb30cbdd0a5092098091a9c",
-   "characters": 313,
-   "cost": 0.00019406,
-   "duration": 21.95,
-   "index": 5,
-   "key": "3dafc457badfee1ca69b4edceef0faeef7c203dffd2f54bcc3566aa0e0d9919f",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "two-independent-users",
-   "sent_text": "Unit controls exercise public replay, proof preparation and the existing controller and request-window decisions over component fixtures. They establish those component results; they do not establish an executed two-user CLI journey. Process access traces and directory hashes are harness evidence in an appendix.",
-   "text": "Unit controls exercise public replay, proof preparation and the existing controller and request-window decisions over component fixtures. They establish those component results; they do not establish an executed two-user CLI journey. Process access traces and directory hashes are harness evidence in an appendix.",
-   "words": [
-    {
-     "end": 0.525,
-     "start": 0.25,
-     "text": "Unit"
-    },
-    {
-     "end": 1.138,
-     "start": 0.525,
-     "text": "controls"
-    },
-    {
-     "end": 1.862,
-     "start": 1.138,
-     "text": "exercise"
-    },
-    {
-     "end": 2.275,
-     "start": 1.862,
-     "text": "public"
-    },
-    {
-     "end": 2.85,
-     "start": 2.275,
-     "text": "replay"
-    },
-    {
-     "end": 2.963,
-     "start": 2.85,
-     "text": ","
-    },
-    {
-     "end": 3.275,
-     "start": 2.963,
-     "text": "proof"
-    },
-    {
-     "end": 4.088,
-     "start": 3.275,
-     "text": "preparation"
-    },
-    {
-     "end": 4.213,
-     "start": 4.088,
-     "text": "and"
-    },
-    {
-     "end": 4.3,
-     "start": 4.213,
-     "text": "the"
-    },
-    {
-     "end": 4.875,
-     "start": 4.3,
-     "text": "existing"
-    },
-    {
-     "end": 5.6,
-     "start": 4.875,
-     "text": "controller"
-    },
-    {
-     "end": 5.725,
-     "start": 5.6,
-     "text": "and"
-    },
-    {
-     "end": 6.475,
-     "start": 5.725,
-     "text": "request-window"
-    },
-    {
-     "end": 7.125,
-     "start": 6.475,
-     "text": "decisions"
-    },
-    {
-     "end": 7.375,
-     "start": 7.125,
-     "text": "over"
-    },
-    {
-     "end": 7.938,
-     "start": 7.375,
-     "text": "component"
-    },
-    {
-     "end": 9.25,
-     "start": 7.938,
-     "text": "fixtures"
-    },
-    {
-     "end": 9.475,
-     "start": 9.25,
-     "text": "."
-    },
-    {
-     "end": 9.825,
-     "start": 9.675,
-     "text": "They"
-    },
-    {
-     "end": 10.425,
-     "start": 9.825,
-     "text": "establish"
-    },
-    {
-     "end": 10.675,
-     "start": 10.425,
-     "text": "those"
-    },
-    {
-     "end": 11.2,
-     "start": 10.675,
-     "text": "component"
-    },
-    {
-     "end": 11.8,
-     "start": 11.2,
-     "text": "results"
-    },
-    {
-     "end": 11.875,
-     "start": 11.8,
-     "text": ";"
-    },
-    {
-     "end": 12.025,
-     "start": 11.875,
-     "text": "they"
-    },
-    {
-     "end": 12.2,
-     "start": 12.025,
-     "text": "do"
-    },
-    {
-     "end": 12.425,
-     "start": 12.2,
-     "text": "not"
-    },
-    {
-     "end": 13.05,
-     "start": 12.425,
-     "text": "establish"
-    },
-    {
-     "end": 13.212,
-     "start": 13.05,
-     "text": "an"
-    },
-    {
-     "end": 13.887,
-     "start": 13.212,
-     "text": "executed"
-    },
-    {
-     "end": 14.5,
-     "start": 13.887,
-     "text": "two-user"
-    },
-    {
-     "end": 15.062,
-     "start": 14.5,
-     "text": "CLI"
-    },
-    {
-     "end": 16.075,
-     "start": 15.062,
-     "text": "journey"
-    },
-    {
-     "end": 16.3,
-     "start": 16.075,
-     "text": "."
-    },
-    {
-     "end": 16.987,
-     "start": 16.5,
-     "text": "Process"
-    },
-    {
-     "end": 17.425,
-     "start": 16.987,
-     "text": "access"
-    },
-    {
-     "end": 18.013,
-     "start": 17.425,
-     "text": "traces"
-    },
-    {
-     "end": 18.15,
-     "start": 18.013,
-     "text": "and"
-    },
-    {
-     "end": 18.725,
-     "start": 18.15,
-     "text": "directory"
-    },
-    {
-     "end": 19.312,
-     "start": 18.725,
-     "text": "hashes"
-    },
-    {
-     "end": 19.487,
-     "start": 19.312,
-     "text": "are"
-    },
-    {
-     "end": 19.913,
-     "start": 19.487,
-     "text": "harness"
-    },
-    {
-     "end": 20.425,
-     "start": 19.913,
-     "text": "evidence"
-    },
-    {
-     "end": 20.513,
-     "start": 20.425,
-     "text": "in"
-    },
-    {
-     "end": 20.6,
-     "start": 20.513,
-     "text": "an"
-    },
-    {
-     "end": 21.75,
-     "start": 20.6,
-     "text": "appendix"
-    },
-    {
-     "end": 21.95,
-     "start": 21.75,
      "text": "."
     }
    ]
