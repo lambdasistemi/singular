@@ -10,6 +10,7 @@ import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.FoldSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
+import Singular.CLI.ManagedStateSpec qualified
 import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RecoverySpec qualified
@@ -181,6 +182,9 @@ main = hspec $ do
         (tagged "Singular.CLI.Outlay" [Cli])
         Singular.CLI.OutlaySpec.spec
     describe (tagged "Singular.CLI.Fold" [Cli]) Singular.CLI.FoldSpec.spec
+    describe
+        (tagged "Singular.CLI.ManagedState" [Cli])
+        Singular.CLI.ManagedStateSpec.spec
     describe
         (tagged "Singular.CLI.TrieRefusal" [Cli])
         Singular.CLI.TrieRefusalSpec.spec

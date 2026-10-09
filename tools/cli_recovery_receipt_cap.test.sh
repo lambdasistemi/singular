@@ -47,6 +47,8 @@ jq -nc --arg id "$other_tx" --rawfile body "$fixture/body.txt" \
 } >"$fixture/booked.jsonl"
 cp "$fixture/bulky.json" "$fixture/held.jsonl"
 cp "$fixture/bulky.json" "$fixture/after.jsonl"
+jq -nc --arg id "$booking_tx" \
+  '{journalTxId:$id,journalEvent:"observed",journalCommand:"update"}' >"$fixture/reconciled.jsonl"
 jq -nc --arg tx "$booking_tx" --arg requester "$requester" --rawfile body "$fixture/body.txt" \
   '{outcome:"success",request:($tx+"#0"),booking:$tx,requester:$requester,unused:$body}' \
   >"$fixture/booking.json"
@@ -66,6 +68,8 @@ bytes="$(stat -c %s "$evidence")"
 [ "$bytes" -le "$cap" ] || fail "projected evidence is $bytes bytes, cap is $cap"
 jq -e '[.booked[].journalBody] | all(. == null)' "$evidence" >/dev/null \
   || fail "projected booked lines still carry journalBody"
+jq -e '[.reconciled[] | .journalTxId] | length == 1' "$evidence" >/dev/null \
+  || fail "projected reconciled lines did not survive"
 # The booking predicate from the recovery controls, on the projected file.
 # shellcheck disable=SC2016 # the predicate is a jq program, not a shell expansion
 predicate='. as $e | .booking.outcome == "success" and .booking.request == (.booking.booking + "#0")

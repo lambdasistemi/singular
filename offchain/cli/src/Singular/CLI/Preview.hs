@@ -76,9 +76,15 @@ import Singular.CLI.Command
     , EntryArgs (..)
     , Key (..)
     , ProviderSettings (..)
+    , RegistryAccess (..)
     , neededRoles
     )
 import Singular.CLI.Live
+import Singular.CLI.ManagedState
+    ( addressPartition
+    , managedDir
+    , resolveStateRoot
+    )
 import Singular.CLI.Outlay
     ( Outlay (..)
     , bookingOutlay
@@ -145,6 +151,15 @@ runPreview env kind a settings addrText = do
     insertPayload <- case kind of
         KInsert -> Just <$> readInsertPayload a
         _ -> pure Nothing
+    -- A preview resolves the caller's managed partition for the records it
+    -- names, and creates nothing: no lock, no directory, no journal.
+    previewRoot <- resolveStateRoot (entryStateDir a)
+    let previewDir =
+            managedDir
+                previewRoot
+                magic
+                (accessToken (entryAccess a))
+                (addressPartition addr)
     -- One view for the whole preparation: the state, the replayed root
     -- against it, the wallet, the parameters, the evaluation and the chain
     -- point the report names are all that view's.
@@ -154,7 +169,7 @@ runPreview env kind a settings addrText = do
             point <- Cage.tip v
             saved <-
                 resolveSaved
-                    (entryStateDir a)
+                    previewDir
                     release
                     (entryAccess a)
                     (neededRoles (commandOf kind a))

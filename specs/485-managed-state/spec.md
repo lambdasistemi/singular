@@ -1,0 +1,82 @@
+# Bob joins without managing registry files (#485)
+
+## Story and authority
+
+Bob receives Carl's public state token. With the shipped CLI, his own wallet
+and provider he inspects, books and folds without creating, receiving, editing
+or deleting a per-registry directory. The CLI keeps its own recoverable
+submission state. A new participant's lack of files is never a refusal.
+
+This completes #485 under epic #371. PR #524's flag rename is a prerequisite,
+not completion. #501 already supplies public token resolution. Public registry
+pages (#503), the complete two-user lifecycle (#381), and reference restoration
+(#471/#502 under #437) retain their separate acceptance scopes.
+
+Constitution 1.13.0 applies. Baseline Lean tree:
+`16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef` (verify before acceptance).
+Local path selection is implementation bookkeeping, not a new ledger rule.
+`Singular.buildFold` / `Singular.Statements.fold_inputs_public` and
+`fold_requires_no_signer` bind the public-material fold: creator disk must
+never supply required transaction material. Existing admission, custody,
+payment, windows and recovery semantics remain required. Escalate any actual
+model conflict with a concrete story; no new behavioral ruling is authorized.
+
+## Requirements
+
+1. Every existing-registry command works without a directory option. Token,
+   provider, caller wallet/address and operation arguments suffice.
+2. Resolve writable state under the platform's per-user state location
+   (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace
+   `singular`). The CLI creates required directories itself. Any retained
+   optional `--state-dir` is a state **root** override, with the same identity
+   partitioning, never a compulsory per-registry path.
+3. Partition by network, complete state-token identity (policy and asset),
+   and stable wallet payment identity, not signing-key filename or provider
+   URL. Same identity reuses its journal/lock across invocations and key-file
+   relocation. Different wallets and tokens cannot read/reconcile each
+   other's pending submissions. Use path-safe canonical identities.
+4. Resolve the path before its lock/journal is used. Hold the existing
+   process lock across the protected write and preserve durable submission
+   reconciliation; restarting after acceptance never submits a duplicate.
+5. Inspect/preview with no prior state still succeeds without loading creator
+   metadata. Do not require a signing key for reads. Preview stays free of
+   submission and unnecessary persistent state creation.
+   Inspect accepts an optional public `--wallet-address`: when supplied it
+   selects the same partition as that wallet's writes and preserves locked
+   journal reconciliation and incomplete-create inspection. Without it,
+   inspect is a stateless public-chain read: no wallet-journal or pending-file
+   lookup, no cross-wallet scan, and no local state or lock creation. It must
+   not claim to have reconciled a wallet journal it never checked. Recovery
+   examples and controls supply the public address when they require inspect
+   to reconcile an interrupted write. There is no persistent reader partition.
+6. Creation also needs no user-managed directory. Bind its managed journal
+   to the state token derived from the selected seed and creator wallet
+   before its first submission. Preserve create recovery/concurrency fences;
+   explicitly document any limitation concerning automatically selected seeds.
+7. Normal help, examples, demo and test consumers use the default managed
+   path. Recovery fixtures locate actual managed state rather than silently
+   bypassing it with a mandatory directory argument.
+
+## Acceptance evidence
+
+- Fresh isolated Bob HOME/state root, Carl disk inaccessible: real CLI inspect,
+  booking, fold and readback, with no directory argument or pre-created state.
+  Receipts link booking output to the fold and resulting registry state.
+- File-access evidence proves no creator access; deliberately allowing a
+  creator-file open must make the isolation control fail.
+- Identity controls distinguish two wallets, two tokens and two networks;
+  the same wallet loaded from another key path resolves the same location.
+- A real held/killed accepted write resumes using the managed journal without
+  duplicate submission. Concurrent same-identity writer is refused; unrelated
+  identities do not share that lock. Existing refusal classes stay intact.
+  Public-address inspect participates in the recovery proof; address-free
+  inspect has a control proving it neither scans wallet files nor creates
+  local state.
+- Required repository gates, focused tests, exact-head hosted checks and GLM
+  independent review. Unexecuted rows remain uncovered, not passed.
+
+## Non-goals
+
+No public-chain writes, migration of arbitrary historical caller directories,
+new validator/Lean behavior, alternate provider implementation, new recovery
+policy, page distribution or whole-epic completion claim.

@@ -23,12 +23,25 @@ validator from that reference; the request validator, the three witness
 policies and the applied application are published as reference outputs to
 the creator's wallet. The receipt names the state token, which is the
 registry: no identity file is written, and the pending identity recorded
-for an interrupted create is removed once it finishes. A directory that
-holds a journal or a pending create is refused before a node is contacted.
+for an interrupted create is removed once it finishes. An explicit seed
+already names its managed partition, so a real create meets the
+existing-state refusal before any chain read and before seed validation; a
+provider it cannot use is never contacted. An automatically selected seed
+still needs one view of the wallet's outputs first, so a provider failure
+during selection is reported as node-unavailable and the existing-state
+refusal happens under the target's lock, after selection and before any
+submission. A preview never refuses for existing state: it only reads,
+submitting nothing and writing nothing.
 -}
-module Singular.CLI.Create (runCreate) where
+module Singular.CLI.Create (runCreate, stateTokenOf) where
 
-import Control.Exception (throwIO)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -77,6 +90,11 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.Live (receipt, txInText)
+import Singular.CLI.ManagedState
+    ( managedDir
+    , resolveStateRoot
+    , walletPartition
+    )
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
     ( Release (..)
@@ -93,6 +111,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session
     ( Building (..)
+    , CommandFailure (..)
     , Env (..)
     , WriteContext (..)
     , expecting
@@ -165,13 +184,14 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 runCreate :: Env -> CreateArgs -> IO Value
 runCreate env a = do
-    let dir = createStateDir a
-    refuseExisting dir
-        >>= either (failWith ClientRefusal . renderIdentityError) pure
     rel <-
         envLoadRelease env (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
@@ -197,42 +217,116 @@ runCreate env a = do
                         )
         Submit ws -> createWith env a rel ws
 
+{- | Run the pre-lock selection read, reporting a provider it cannot use as
+node-unavailable with the session's own wording. A failure the command
+itself classified, and any asynchronous failure, propagates unchanged.
+-}
+catchSelection :: IO a -> ProviderSettings -> IO a
+catchSelection act settings = do
+    result <- try act
+    case result of
+        Right x -> pure x
+        Left (e :: SomeException) -> case fromException e of
+            Just (_ :: CommandFailure) -> throwIO e
+            Nothing -> case fromException e of
+                Just (_ :: SomeAsyncException) -> throwIO e
+                Nothing ->
+                    failWith
+                        NodeUnavailable
+                        ( "the provider at "
+                            <> providerUrl settings
+                            <> " could not be used: "
+                            <> show e
+                        )
+
 createWith
     :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
 createWith env a rel ws = do
-    let dir = createStateDir a
-    -- A preview writes nothing: no lock, no directory, no journal.
-    let session = if createPreview a then withSession else withWrite
-    session env dir "create" ws $ \wc -> do
-        let addr = walletAddr (wcWallet wc)
-        (utxos, scope) <-
-            readStep
-                (wcTracer wc)
-                (wcSource wc)
-                ["wallet outputs"]
-                (wcCapabilities wc)
-                ( \v -> do
-                    outputs <- Cage.outputsAt v addr
-                    evidence <- sessionReceipt (wcCapabilities wc) v
-                    pure (outputs, evidence)
+    let magic = providerMagic (writeProvider ws)
+    caller <- loadWallet magic (writeWalletKey ws)
+    root <- resolveStateRoot (createStateDir a)
+    let addr = walletAddr caller
+        settings = writeProvider ws
+    -- An explicit seed already names its managed partition before any chain
+    -- read: a real create with existing state there refuses before seed
+    -- validation, so a second boot of one seed is refused for the existing
+    -- state however far chain inclusion has progressed. A preview never
+    -- refuses for existing state: it still only reads. An automatically
+    -- selected seed still needs its wallet view first and is checked after
+    -- selection below.
+    case createSeed a of
+        Just s | not (createPreview a) -> do
+            named <- either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
+            refuseExisting
+                ( managedDir
+                    root
+                    magic
+                    (stateTokenOf rel named)
+                    (walletPartition caller)
                 )
-        ((seedIn, cfg, pinned), identity) <-
-            previewIdentity (not (createPreview a)) a rel addr utxos
-        if createPreview a
-            then
-                pure $
-                    receipt
-                        "create"
-                        Success
-                        ( [("preview", toJSON True), ("sessionEvidence", scope)]
-                            <> identity
-                        )
-            else do
+                >>= either (failWith ClientRefusal . renderIdentityError) pure
+        _ -> pure ()
+    -- The seed is selected before any lock or journal use, from one view
+    -- of the wallet's outputs. An automatically selected seed is validated,
+    -- never re-selected, under the lock, so the managed journal always binds
+    -- the state token this command creates: a seed spent in between refuses
+    -- instead of silently booting another registry. A provider the selection
+    -- read cannot use is reported as node-unavailable, as a session
+    -- established for a write would report it, never as a client refusal.
+    (utxos, scope) <-
+        readOnce
+            env
+            settings
+            ["wallet outputs"]
+            ( \caps v -> do
+                outputs <- Cage.outputsAt v addr
+                evidence <- sessionReceipt caps v
+                pure (outputs, evidence)
+            )
+            `catchSelection` settings
+    ((seedIn, cfg, pinned), identity) <-
+        previewIdentity (not (createPreview a)) a rel addr utxos
+    let token = stateTokenOf rel seedIn
+        dir = managedDir root magic token (walletPartition caller)
+    -- A preview writes nothing: no lock, no directory, no journal.
+    if createPreview a
+        then withSession env dir "create" ws $ \_ ->
+            pure $
+                receipt
+                    "create"
+                    Success
+                    ( [("preview", toJSON True), ("sessionEvidence", scope)]
+                        <> identity
+                    )
+        else do
+            refuseExisting dir
+                >>= either (failWith ClientRefusal . renderIdentityError) pure
+            withWrite env dir "create" ws $ \wc -> do
                 -- The existence check again, now under the target's lock: a
                 -- create that passed it before another create finished
-                -- must not boot a second registry over the first.
+                -- must not boot a second registry over the first. It runs
+                -- before the seed is revalidated, so a concurrent double
+                -- boot of one seed is refused for the existing state,
+                -- not for the seed the winner just spent.
                 refuseExisting dir
                     >>= either (failWith ClientRefusal . renderIdentityError) pure
+                let addrUnder = walletAddr (wcWallet wc)
+                (freshUtxos, _) <-
+                    readStep
+                        (wcTracer wc)
+                        (wcSource wc)
+                        ["wallet outputs"]
+                        (wcCapabilities wc)
+                        ( \v -> do
+                            outputs <- Cage.outputsAt v addrUnder
+                            evidence <- sessionReceipt (wcCapabilities wc) v
+                            pure (outputs, evidence)
+                        )
+                _ <-
+                    either
+                        (failWith ClientRefusal . renderIdentityError)
+                        pure
+                        (seedChecks True seedIn freshUtxos)
                 -- The state reference, found by its hash wherever it sits,
                 -- and the funding of every publication still to make, all
                 -- decided before anything is written or submitted.
@@ -243,10 +337,9 @@ createWith env a rel ws = do
                         ["reference scripts"]
                         (wcCapabilities wc)
                         $ \v -> do
-                            found <- stateReference v addr rel seedIn
+                            found <- stateReference v addrUnder rel seedIn
                             (found,) <$> Cage.parameters v
-                let token = stateTokenOf rel seedIn
-                    stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+                let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
                     beforeBoot = case foundState of
                         Just _ -> []
                         Nothing -> [("state", stateScript)]
@@ -255,7 +348,7 @@ createWith env a rel ws = do
                     carrier =
                         fromMaybe
                             ( seedIn
-                            , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                            , mkBasicTxOut addrUnder (MaryValue (Coin 0) mempty)
                                 & referenceScriptTxOutL .~ SJust stateScript
                             )
                             foundState
@@ -268,13 +361,12 @@ createWith env a rel ws = do
                         (bootCostBound pp carrier)
                         beforeBoot
                         (laterScripts cfg pinned (TokenId (snd token)))
-                        utxos
+                        freshUtxos
                     )
                 createDirectoryIfMissing True dir
                 -- The pending identity, durable before the first submission:
                 -- an interrupted create stays inspectable with its own token
                 -- and is refused a second boot.
-                let ProviderSettings _ magic _ _ = writeProvider ws
                 durableWrite
                     (pendingPath dir)
                     ( BL.toStrict

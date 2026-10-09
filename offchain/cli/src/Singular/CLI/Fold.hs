@@ -90,9 +90,17 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.Application.OpenDatum.Release (withApplication)
 import Singular.CLI.Attached
-import Singular.CLI.Command (Command (..), FoldArgs (..), neededRoles)
+import Singular.CLI.Command
+    ( Command (..)
+    , FoldArgs (..)
+    , ProviderSettings (..)
+    , RegistryAccess (..)
+    , WriteSettings (..)
+    , neededRoles
+    )
 import Singular.CLI.FoldRules
 import Singular.CLI.Live
+import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay
     ( foldOutlay
     , foldPastAllowance
@@ -254,14 +262,21 @@ data Plan = Plan
     }
 
 {- | @singular registry fold@: fold the one pending request, signed and funded
-by this wallet, and journal it. Whoever booked the request, and whatever
-wallet, your state directory says what the fold needs.
+by this wallet, and journal it. Whoever booked the request, the fold journals
+in this wallet's own managed partition.
 -}
 runFold :: Env -> FoldArgs -> IO Value
-runFold env a =
+runFold env a = do
+    let ws = foldWrite a
+    dir <-
+        resolveWalletDir
+            (foldStateDir a)
+            (providerMagic (writeProvider ws))
+            (accessToken (foldAccess a))
+            (writeWalletKey ws)
     attached
         env
-        (foldStateDir a)
+        dir
         (foldBlueprint a)
         (foldAccess a)
         (neededRoles (Fold a))

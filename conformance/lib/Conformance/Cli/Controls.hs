@@ -288,9 +288,9 @@ data Provocation
       CreateKilled
     | -- | @create@ again, on that interrupted registry
       CreateAgain
-    | {- | @create@ from another wallet with its own live seed, held before
-      the registry's lock while a first @create@ of the same registry
-      completes
+    | {- | @create@ from the same wallet on the same seed twice; the second is
+      held before the registry's lock while the first @create@ completes,
+      and is refused because the registry exists
       -}
       LateCreate
     | -- | @create@, from a wallet that cannot fund every publication
@@ -331,7 +331,7 @@ provocationPhrase p = case p of
         "Run `singular registry create` on a new registry and kill it once the node accepted its boot"
     CreateAgain -> "Run `singular registry create` again on that registry"
     LateCreate ->
-        "Run `singular registry create` from another wallet with its own live seed, held before the registry's lock while a first create of the same registry completes"
+        "Run `singular registry create` twice from the same wallet on the same seed, the second held before the registry's lock while the first create completes, and refused because the registry exists"
     UnderfundedCreate ->
         "Run `singular registry create` from a wallet that cannot fund every publication"
     NodeLost ->
@@ -1826,7 +1826,7 @@ processStory = do
                 (pure <$> action (Run Insert target third))
         _ <-
             clause
-                "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                "the same wallet starts create on the same seed twice; the second is held before the lock while the first completes, and is refused because the registry exists"
                 (requirement haltsAttributably LateCreateRefused)
                 (pure <$> action (Provoke LateCreate raced ""))
         _ <-
@@ -3840,6 +3840,12 @@ replacedClauses =
         , "inspect with the public history it needs withheld prints no leaf and names HistoryIncomplete"
         , "inspect now reads no saved proof material; it rebuilds a root-checked trie from public history, so the witness withholds that history instead, while the obligation, that inspect never prints a leaf it cannot authenticate, is unchanged (operator ruling of 7 October 2026). Named limit: history is withheld by a test forwarder answering empty; a provider that errors instead produces a client refusal, which this witness does not cover"
         )
+    ,
+        ( "R299-05"
+        , "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+        , "the same wallet starts create on the same seed twice; the second is held before the lock while the first completes, and is refused because the registry exists"
+        , "per-wallet state makes the cross-wallet collision impossible: each wallet boots only in its own partition, so a second create for one target can only come from the same wallet on the same seed (desk ruling of 9 October 2026)"
+        )
     ]
 
 {- | The approved matrix of controls for the ordinary CLI and the
@@ -3940,10 +3946,10 @@ approvedCases =
              )
            | (name, row, titles) <-
                 [
-                    ( "a second create racing for one target on another wallet's live seed"
+                    ( "a second create racing for one seed with one wallet"
                     , "R299-05"
                     ,
-                        [ "a create from another wallet on its own live seed, held before the lock while a first create completes, is refused because the registry exists"
+                        [ "the same wallet starts create on the same seed twice; the second is held before the lock while the first completes, and is refused because the registry exists"
                         ]
                     )
                 ,

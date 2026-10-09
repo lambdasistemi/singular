@@ -1,0 +1,58 @@
+# Tasks
+
+Tasks close only when source-bound evidence exists. Story, model binding,
+requirements and limits are in spec.md; execution order and ownership in plan.md.
+
+- [x] T001 Verify base, constitution/Lean binding and actual baseline; record failures.
+  Base `1015f3a3` and Lean tree `16ee2d4a` verified; docs-check failed on the missing
+  speech companion. This records a baseline failure, not a passing full gate.
+- [x] T002 Reproduce current directory requirement and add meaningful resolver/identity controls.
+  RED commit `81f8964e` executed 11 cases with 6 missing-behavior failures. The
+  subsequent focused suite executed 121 cases with 0 failures, including parser and pure
+  identity-partition controls. Connected behavior remains T007/T008 below.
+- [x] T003 Implement managed state resolution and optional parser arguments across commands.
+  Core implementation `f2750390`, with create-path repair `c201af6a`; the latest
+  full local suite passed 1,100 examples with 0 failures and 11 pending
+  (`green-cage-selection.log`, SHA-256 `1724276d49160fae9df0106999ff567378813beac47906da0ba20c0e3db53872`).
+  Final consumer integration, gates and review remain below.
+- [x] T004 Bind create state after seed selection without weakening recovery or concurrency.
+  Create selects its seed from one wallet view, then checks for existing state twice under
+  the target's lock and revalidates the seed before any submission (`c201af6a`; ordering
+  note corrected in `f2176933`). The journey's same-seed create race and the
+  interrupted-create flows passed on devnet (journey r4, log `4bc57e92`).
+- [x] T005 Preserve inspection/preview behavior and journal reconciliation under managed paths.
+  Inspect without a wallet address is a stateless public read that creates no files;
+  with `--wallet-address` it reconciles that wallet's partition. Preview resolves but never
+  creates its partition. Evidence: journey r4 and the recovery accepting, lost-answer and
+  killed runs (logs `65397676`, `15aed206`, `5b3a13f1`).
+- [x] T006 Update help, examples and production demo/recovery consumers to default managed state.
+  Journey, create race, attach and recovery scripts and the conformance attach backend
+  use the managed layout (`5e8b403d`, `02657626`); the flag check found all 141
+  documented flag pairs agreeing with the CLI and all 52 documented invocations valid
+  (log `d25fad6e`); attach devnet passed on the clean-head
+  conformance binary (log `50888b71`, 14 takes).
+- [x] T007 Execute isolated fresh Bob inspect/book/fold/readback and creator-access negative control.
+  Devnet journey r4 at `f4ccd575`, CLI build `3n6ffvxc`, executed the default-state
+  leg without a directory argument: booking with Bob's key, folding with its
+  relocated copy, linked readback and creator-access negative control.
+  Retained log SHA-256 `4bc57e9230e0fe7a4d3c1ee6e7c900ab96ba6f40c019c56c70926a0c34883edd`.
+  The separately identified body-tamper evidence repair is tracked under T009;
+  this completed Bob leg does not certify the remaining consumer work or merge.
+- [x] T008 Execute managed-path interruption recovery and identity/lock separation controls.
+  Interrupted folds recover in the owning wallet's partition through public-address
+  inspect, with no second submission; same-identity writers are refused and unrelated
+  identities do not share a lock. Evidence: journey r4 and all five cross-wallet
+  recovery parts as CI runs them, each under the receipt cap (logs `fd0872bf`,
+  `eec2c0c0`, `3ea639b2`, `7d3c604c`, `e0ca48f3`). Runs batching all five parts in one
+  directory exceed the 50 MiB cap and are not counted as passing.
+- [x] T009 Run focused and required gates; bind receipts, raw exits and candidate hashes.
+  `just ci` passed (log `edbda6ea`), followed by lint, format and presentation checks;
+  receipts and commands are in the author handoff. The script edits after the devnet
+  runs (`9a987d35`, `ef586a3f`, `02657626`, `435cc0f5`, `e0b5c37f`) are covered by
+  the exact-head hosted journey and recovery jobs under T011.
+- [x] T010 Freeze candidate, obtain GLM independent review and resolve findings.
+  GLM reviewed `e0b5c37f`: all twelve review rows hold, no blocking finding. Two
+  advisory findings, a stale ordering note in create and a duplicated shell helper,
+  were repaired in `f2176933`; the third corrected a cited receipt (the binding full
+  suite is `1724276d`).
+- [ ] T011 Integrate current main, pass exact-head hosted checks, merge and close #485 on full evidence.

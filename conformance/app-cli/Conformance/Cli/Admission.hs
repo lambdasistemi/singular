@@ -616,16 +616,83 @@ admitProcess readJournal work r = do
 
     probeProblems file = do
         bytes <- readRetained file
-        pure $ case bytes of
-            Left problem -> [problem]
+        case bytes of
+            Left problem -> pure [problem]
             Right b -> case Aeson.decodeStrict b of
                 Just (Aeson.Object o)
-                    | Just (Aeson.String "success") <- KeyMap.lookup "outcome" o -> []
+                    | Just (Aeson.String "spent") <- KeyMap.lookup "expectation" o ->
+                        probeSpent file o
+                    | Just (Aeson.String "success") <- KeyMap.lookup "outcome" o ->
+                        pure []
                 _ ->
-                    [ "the seed's probe "
-                        <> file
-                        <> " did not succeed: the seed is spent or was not read"
-                    ]
+                    pure
+                        [ "the seed's probe "
+                            <> file
+                            <> " did not succeed: the seed is spent or was not read"
+                        ]
+
+    -- A spent-by wrapper for a raced seed: the file names the expectation,
+    -- the probe receipt, the seed, the one boot transaction that spent it,
+    -- and the journal that shows it. Anything else is a problem with it.
+    probeSpent :: Text -> KeyMap.KeyMap Aeson.Value -> IO [Text]
+    probeSpent file o = case ( KeyMap.lookup "receipt" o
+                             , KeyMap.lookup "seed" o
+                             , KeyMap.lookup "spentBy" o
+                             , KeyMap.lookup "journal" o
+                             ) of
+        ( Just (Aeson.String receipt)
+            , Just (Aeson.String seed)
+            , Just (Aeson.String spentBy)
+            , Just (Aeson.String journalRel)
+            )
+                | T.length spentBy == 64 -> do
+                    refused <- readRetained (T.pack (work </> T.unpack receipt))
+                    case refused of
+                        Left problem -> pure [problem]
+                        Right b -> case Aeson.decodeStrict b of
+                            Just (Aeson.Object rr)
+                                | Just (Aeson.String "client-refusal") <- KeyMap.lookup "outcome" rr ->
+                                    checkBinding seed spentBy journalRel
+                            _ ->
+                                pure
+                                    [ "the raced seed's probe "
+                                        <> receipt
+                                        <> " does not refuse a spent seed"
+                                    ]
+        _ ->
+            pure
+                [ "the seed-spend binding "
+                    <> file
+                    <> " names no receipt, seed, spender and journal"
+                ]
+      where
+        checkBinding seed spentBy journalRel = do
+            entries <- try (BS.readFile (work </> T.unpack journalRel))
+            case entries of
+                Left (e :: IOException) ->
+                    pure
+                        [ "the bound journal "
+                            <> journalRel
+                            <> " cannot be read: "
+                            <> T.pack (show e)
+                        ]
+                Right ls ->
+                    let spenders =
+                            [ txid
+                            | l <- BC.lines ls
+                            , Just (Aeson.Object m) <- [Aeson.decodeStrict l]
+                            , Just (Aeson.String txid) <- [KeyMap.lookup "journalTxId" m]
+                            , Just (Aeson.String event) <- [KeyMap.lookup "journalEvent" m]
+                            , event == "prepared"
+                            , Just (Aeson.Array ins) <- [KeyMap.lookup "journalInputs" m]
+                            , Aeson.String seed `elem` foldr (:) [] ins
+                            ]
+                    in  pure
+                            [ "the seed-spend binding "
+                                <> file
+                                <> " is not spent once by its boot transaction"
+                            | nub spenders /= [spentBy]
+                            ]
 
 -- | @step/event@ of one journal line.
 lastEventOf :: ByteString -> Text
