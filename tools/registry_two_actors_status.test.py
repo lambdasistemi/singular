@@ -1377,6 +1377,72 @@ def test_oversize_untrimmed_is_detected(mod, tmp):
     )
 
 
+def test_long_root_uses_short_runtime(mod, tmp):
+    journey = bare(mod, tmp)
+    long_root = Path(tmp) / ("l" * 120)
+    journey.work = long_root
+    journey.neutral = long_root / "devnet"
+    journey.tmp = long_root / "tmp"
+    try:
+        env = journey.neutral_environment()
+    except Exception as error:  # noqa: BLE001 - no short runtime is the finding
+        check(
+            "long-root-uses-short-runtime",
+            False,
+            f"neutral_environment raised {type(error).__name__}: {error}",
+        )
+        return
+    tmpdir = env.get("TMPDIR", "")
+    check(
+        "long-root-uses-short-runtime",
+        len(tmpdir) < 60 and str(long_root) not in tmpdir,
+        f"TMPDIR={tmpdir[:80]} len={len(tmpdir)}",
+    )
+
+
+def test_setup_names_devnet_cause(mod, tmp):
+    journey = bare(mod, tmp)
+    journey.neutral.mkdir(parents=True, exist_ok=True)
+    cause = "Timed out waiting for cardano-node socket"
+
+    class _Exited:
+        def poll(self):
+            return 1
+
+    def _popen(argv, **kwargs):
+        err = kwargs.get("stderr")
+        if err is not None:
+            try:
+                err.write(cause + "\n")
+            except Exception:  # noqa: BLE001 - the harness still names the cause
+                pass
+        return _Exited()
+
+    with mock.patch.object(mod.subprocess, "Popen", _popen):
+        with mock.patch.object(mod.time, "sleep", lambda *_a, **_k: None):
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    journey.start_devnet()
+            except mod.SetupFailure as failed:
+                check(
+                    "setup-names-devnet-cause",
+                    cause in str(failed),
+                    f"SetupFailure={failed}",
+                )
+            except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+                check(
+                    "setup-names-devnet-cause",
+                    False,
+                    f"mapped to {type(error).__name__}, want SetupFailure naming the cause",
+                )
+            else:
+                check(
+                    "setup-names-devnet-cause",
+                    False,
+                    "an exited development source claimed success",
+                )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -1406,6 +1472,8 @@ def main():
         test_trim_keeps_predicate_fields,
         test_record_tamper_is_detected,
         test_oversize_untrimmed_is_detected,
+        test_long_root_uses_short_runtime,
+        test_setup_names_devnet_cause,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,

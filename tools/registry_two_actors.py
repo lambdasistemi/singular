@@ -2239,6 +2239,70 @@ class Journey:
                 return False, found, "both actors' root readback"
         return True, found, ""
 
+    def withheld_fold_agreement(self, legs, receipts=None):
+        """Recompute the withheld-history row from its receipts.
+
+        A forwarding provider answers an empty list for the state token's
+        transactions; the actor's real `inspect` through it refuses
+        `HistoryIncomplete` with no root, after a positive `inspect` on the
+        unforwarded provider returned a root. No leg produces their receipts
+        yet, so this row is pending for lack of receipts.
+        """
+        leg = legs.get("withheld", {})
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in ("positive_inspect", "withheld_inspect")
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the withheld history's {', '.join(missing)} receipt"
+        positive, withheld = docs["positive_inspect"], docs["withheld_inspect"]
+        if positive.get("outcome") != "success":
+            return False, list(leg.values()), "the positive inspect"
+        if not positive.get("root"):
+            return False, list(leg.values()), "the positive inspect root"
+        if self.load_exit(leg["withheld_inspect"], receipts) != 14:
+            return False, list(leg.values()), "the withheld refusal exit"
+        if withheld.get("outcome") != "stale-state":
+            return False, list(leg.values()), "the withheld refusal class"
+        if "HistoryIncomplete" not in withheld.get("reason", ""):
+            return False, list(leg.values()), "the withheld refusal name"
+        if withheld.get("root"):
+            return False, list(leg.values()), "no withheld root"
+        return True, list(leg.values()), ""
+
+    def altered_edge_agreement(self, legs, receipts=None):
+        """Recompute the altered-edge row from its receipts.
+
+        The control runs a real actor `inspect` against the real devnet and
+        provider with a binary built only for this control, whose replay maps
+        one edge to another, and requires `RootDoesNotChain` naming the
+        registry and the fold, with no root. No leg produces their receipts
+        yet, so this row is pending for lack of receipts.
+        """
+        leg = legs.get("altered", {})
+        docs = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in ("positive_inspect", "altered_inspect")
+        }
+        missing = [slot for slot, doc in docs.items() if doc is None]
+        if missing:
+            return False, [], f"the altered edge's {', '.join(missing)} receipt"
+        positive, altered = docs["positive_inspect"], docs["altered_inspect"]
+        if positive.get("outcome") != "success":
+            return False, list(leg.values()), "the positive inspect"
+        if not positive.get("root"):
+            return False, list(leg.values()), "the positive inspect root"
+        if self.load_exit(leg["altered_inspect"], receipts) != 14:
+            return False, list(leg.values()), "the altered refusal exit"
+        if altered.get("outcome") != "stale-state":
+            return False, list(leg.values()), "the altered refusal class"
+        if "RootDoesNotChain" not in altered.get("reason", ""):
+            return False, list(leg.values()), "the altered refusal name"
+        if altered.get("root"):
+            return False, list(leg.values()), "no altered root"
+        return True, list(leg.values()), ""
+
     def reject_agreement(self, legs, receipts=None):
         """Recompute the cross-actor reject row from its receipts.
 
@@ -2805,6 +2869,28 @@ class Journey:
                 )
             elif name == "Both users inspect the fold's state root after every fold":
                 passed, receipts, waiting = self.fold_roots_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "Withheld fold history refuses HistoryIncomplete without a trie":
+                passed, receipts, waiting = self.withheld_fold_agreement(legs)
+                rows.append(
+                    {
+                        "requirement": name,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
+                    }
+                )
+            elif name == "An altered request edge refuses RootDoesNotChain without a trie":
+                passed, receipts, waiting = self.altered_edge_agreement(legs)
                 rows.append(
                     {
                         "requirement": name,
