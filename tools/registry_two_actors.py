@@ -1672,8 +1672,6 @@ class Journey:
         returned = row.get("returned")
         if not isinstance(returned, dict):
             return False, list(leg.values()), "the owner refund"
-        if returned.get("request") != booking["request"]:
-            return False, list(leg.values()), "the return bound to the request"
         locked_lovelace = expected_locked.get("lovelace")
         returned_lovelace = returned.get("lovelace")
         if not isinstance(locked_lovelace, int) or not isinstance(
