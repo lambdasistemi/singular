@@ -1144,29 +1144,67 @@ class Journey:
         finally:
             self.node = None
 
-    def _release_kill(self):
-        for pattern in self._release_patterns:
-            subprocess.run(["pkill", "-f", pattern], check=False)
+    def _node_pattern(self, label):
+        # The one home of the survivor-query patterns; labels are stable.
+        if label == "neutral":
+            return f"cardano-node run --config {self.neutral}/"
+        runtime = getattr(self, "runtime", None)
+        if runtime is None:
+            return None
+        return f"cardano-node run --config {runtime}/"
 
-    def _release_settle(self):
+    def _release_kill_neutral(self):
+        subprocess.run(["pkill", "-f", self._node_pattern("neutral")], check=False)
+
+    def _release_kill_runtime(self):
+        pattern = self._node_pattern("runtime")
+        if pattern is None:
+            return
+        subprocess.run(["pkill", "-f", pattern], check=False)
+
+    def _release_settle_neutral(self):
         deadline = time.monotonic() + 30
+        pattern = self._node_pattern("neutral")
         while time.monotonic() < deadline:
-            if all(check_absent(pattern) for pattern in self._release_patterns):
+            if check_absent(pattern):
                 return
             time.sleep(0.5)
 
-    def _release_verify(self):
-        labels = ("neutral", "runtime")
-        for label, pattern in zip(labels, self._release_patterns):
-            probe = subprocess.run(
-                ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
-            )
-            print(f"survivor query {label} exit={probe.returncode}", flush=True)
-            clean, error = classify_pgrep_exit(pattern, probe.returncode, probe.stderr)
-            if error is not None:
-                raise SetupFailure(error)
-            if not clean:
-                raise SetupFailure("a node of this run survives")
+    def _release_settle_runtime(self):
+        pattern = self._node_pattern("runtime")
+        if pattern is None:
+            return
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            if check_absent(pattern):
+                return
+            time.sleep(0.5)
+
+    def _release_verify_neutral(self):
+        pattern = self._node_pattern("neutral")
+        probe = subprocess.run(
+            ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
+        )
+        print(f"survivor query neutral exit={probe.returncode}", flush=True)
+        clean, error = classify_pgrep_exit(pattern, probe.returncode, probe.stderr)
+        if error is not None:
+            raise SetupFailure(error)
+        if not clean:
+            raise SetupFailure("a node of this run survives")
+
+    def _release_verify_runtime(self):
+        pattern = self._node_pattern("runtime")
+        if pattern is None:
+            return
+        probe = subprocess.run(
+            ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
+        )
+        print(f"survivor query runtime exit={probe.returncode}", flush=True)
+        clean, error = classify_pgrep_exit(pattern, probe.returncode, probe.stderr)
+        if error is not None:
+            raise SetupFailure(error)
+        if not clean:
+            raise SetupFailure("a node of this run survives")
 
     def _release_remove(self):
         runtime = getattr(self, "runtime", None)
@@ -1179,21 +1217,19 @@ class Journey:
         self.runtime = None
 
     def _stop_release_steps(self):
-        # Ordered (name, kind, callable) release steps; patterns always list
-        # the neutral node first with the runtime node beside it when one
-        # exists, so per-pattern controls address a stable order.
-        patterns = [f"cardano-node run --config {self.neutral}/"]
-        runtime = getattr(self, "runtime", None)
-        if runtime is not None:
-            patterns.append(f"cardano-node run --config {runtime}/")
-        self._release_patterns = patterns
+        # Ordered (name, kind, callable) release steps; kill, settle and
+        # verify run per pattern so every pattern is its own injectable
+        # step. Unconditional: runtime steps no-op without a runtime.
         return [
             ("verify-tools", "release", self._release_verify_tools),
             ("signal-devnet", "release", self._release_signal),
             ("await-devnet-exit", "release", self._release_await_exit),
-            ("kill-patterns", "launch", self._release_kill),
-            ("settle-queries", "launch", self._release_settle),
-            ("verify-patterns", "launch", self._release_verify),
+            ("kill-neutral", "launch", self._release_kill_neutral),
+            ("kill-runtime", "launch", self._release_kill_runtime),
+            ("settle-neutral", "launch", self._release_settle_neutral),
+            ("settle-runtime", "launch", self._release_settle_runtime),
+            ("verify-neutral", "launch", self._release_verify_neutral),
+            ("verify-runtime", "launch", self._release_verify_runtime),
             ("remove-runtime", "release", self._release_remove),
         ]
 

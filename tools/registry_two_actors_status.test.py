@@ -3596,6 +3596,95 @@ def test_receipt_loaders_handle_absence(mod, tmp):
     )
 
 
+def _stop_calls_script(fail_index, fail_with):
+    seen = []
+
+    def fake_run(argv, **kwargs):
+        seen.append(argv)
+        if len(seen) - 1 == fail_index:
+            if isinstance(fail_with, int):
+                return subprocess.CompletedProcess(
+                    argv, fail_with, stderr="pgrep: syntax error"
+                )
+            raise fail_with
+        if argv[0] == "pkill":
+            return subprocess.CompletedProcess(argv, 0)
+        return subprocess.CompletedProcess(argv, 1)
+
+    return fake_run, seen
+
+
+def test_first_pattern_failure_reaches_second(mod, tmp):
+    # Exit 2, and separately a launch OSError, on the first pattern of
+    # kill, settle and verify: the second pattern's call still runs.
+    # Best-effort stays best-effort: a kill exit code never fails teardown.
+    cases = [
+        ("kill", 0, 2, False),
+        ("kill", 0, OSError("injected-launch"), True),
+        ("settle", 2, 2, True),
+        ("settle", 2, OSError("injected-launch"), True),
+        ("verify", 4, 2, True),
+        ("verify", 4, OSError("injected-launch"), True),
+    ]
+    for op, fail_index, fail_with, expect_setup in cases:
+        fail_kind = "exit2" if isinstance(fail_with, int) else "launch-error"
+        journey = bare(mod, tmp)
+        runtime = Path(tmp) / f"rt-first-{op}-{fail_index}"
+        runtime.mkdir(exist_ok=True)
+        journey.runtime = runtime
+        fake_run, seen = _stop_calls_script(fail_index, fail_with)
+        patterns = [
+            f"cardano-node run --config {journey.neutral}/",
+            f"cardano-node run --config {runtime}/",
+        ]
+        out = io.StringIO()
+        if expect_setup:
+
+            def _boom(self):
+                raise mod.SetupFailure("injected")
+
+            journey.fixture = _boom.__get__(journey, mod.Journey)
+            with mock.patch.object(mod.subprocess, "run", fake_run):
+                status, text = quiet_execute(journey)
+            second_ran = any(patterns[1] in " ".join(argv) for argv in seen)
+            pgrep_calls = sum(1 for argv in seen if argv[0] == "pgrep")
+            check(
+                f"first-failure-reaches-second-{op}-{fail_index}-{fail_kind}",
+                status == 3
+                and second_ran
+                and pgrep_calls == 4
+                and not runtime.exists()
+                and "two actors: FAIL:" not in text
+                and "owned processes: none" not in text,
+                f"{op} call {fail_index} gave status={status} second-ran={second_ran} pgrep-calls={pgrep_calls}",
+            )
+            if op in ("settle", "verify"):
+                check(
+                    f"first-failure-prints-second-{op}-{fail_index}-{fail_kind}",
+                    "survivor query runtime exit=1" in text,
+                    "the second pattern printed no exit line",
+                )
+        else:
+            with mock.patch.object(mod.subprocess, "run", fake_run):
+                with contextlib.redirect_stdout(out):
+                    try:
+                        journey.stop_devnet()
+                    except Exception as error:  # noqa: BLE001 - must not raise
+                        stopped = f"{type(error).__name__}: {error}"
+                    else:
+                        stopped = "clean"
+            text = out.getvalue()
+            second_ran = any(patterns[1] in " ".join(argv) for argv in seen)
+            check(
+                f"first-failure-reaches-second-{op}-{fail_index}",
+                stopped == "clean"
+                and second_ran
+                and not runtime.exists()
+                and "owned processes: none" in text,
+                f"best-effort kill exit gave {stopped} second-ran={second_ran}",
+            )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -3653,6 +3742,7 @@ def main():
         test_withheld_cleanup_failure_keeps_setup_and_receipts,
         test_killpg_failure_is_setup_and_continues,
         test_devnet_cause_read_fallback,
+        test_first_pattern_failure_reaches_second,
         test_forwarder_relay_failure_is_502,
         test_node_wait_timeout_continues_teardown,
         test_which_missing_still_removes_runtime,
