@@ -2588,40 +2588,213 @@ def _pgrep_script(codes, seen):
     return fake_run
 
 
-def test_pgrep_exit_2_and_3_are_setup(mod, tmp):
-    for site, sequence in (
-        ("loop", [(2, "pgrep: syntax error")]),
-        ("final", [(1, ""), (1, ""), (2, "pgrep: syntax error")]),
+def test_forwarder_close_error_is_setup_and_releases(mod, tmp):
+    from http.server import ThreadingHTTPServer as _Server
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-close-error-is-setup",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    forward.start()
+    joined = []
+    real_join = forward.thread.join
+
+    def _join(timeout=None):
+        joined.append(timeout)
+        return real_join(timeout)
+
+    with mock.patch.object(_Server, "server_close", side_effect=OSError("denied")):
+        with mock.patch.object(forward.thread, "join", _join):
+            try:
+                forward.stop()
+            except mod.SetupFailure as failed:
+                stopped = f"SetupFailure: {failed}"
+            except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+                stopped = f"{type(error).__name__}: {error}"
+            else:
+                stopped = "clean"
+    check(
+        "forwarder-close-error-is-setup",
+        stopped.startswith("SetupFailure") and "denied" in stopped,
+        f"a refused close gave {stopped}",
+    )
+    check(
+        "forwarder-close-error-still-joins",
+        bool(joined),
+        "a failed close skipped the thread join",
+    )
+
+
+def test_forwarder_shutdown_error_releases(mod, tmp):
+    from http.server import ThreadingHTTPServer as _Server
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-shutdown-error-releases",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    forward.start()
+    closed = []
+    real_close = forward.server.server_close
+
+    def _close():
+        closed.append(True)
+        return real_close()
+
+    with mock.patch.object(_Server, "shutdown", side_effect=OSError("broken")):
+        with mock.patch.object(forward.server, "server_close", _close):
+            try:
+                forward.stop()
+            except mod.SetupFailure as failed:
+                stopped = f"SetupFailure: {failed}"
+            except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+                stopped = f"{type(error).__name__}: {error}"
+            else:
+                stopped = "clean"
+    check(
+        "forwarder-shutdown-error-is-setup",
+        stopped.startswith("SetupFailure") and "broken" in stopped,
+        f"a refused shutdown gave {stopped}",
+    )
+    check(
+        "forwarder-shutdown-error-still-closes",
+        bool(closed),
+        "a failed shutdown skipped the socket close",
+    )
+
+
+def test_forwarder_join_survivor_is_setup(mod, tmp):
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-join-survivor-is-setup",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    forward.start()
+    with mock.patch.object(forward.thread, "join", lambda timeout=None: None):
+        with mock.patch.object(forward.thread, "is_alive", lambda: True):
+            try:
+                forward.stop()
+            except mod.SetupFailure as failed:
+                stopped = f"SetupFailure: {failed}"
+            except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+                stopped = f"{type(error).__name__}: {error}"
+            else:
+                stopped = "clean"
+    try:
+        forward.stop()
+    except Exception:
+        pass
+    check(
+        "forwarder-join-survivor-is-setup",
+        stopped.startswith("SetupFailure") and "serving after timeout" in stopped,
+        f"a surviving thread gave {stopped}",
+    )
+
+
+def test_withheld_cleanup_failure_keeps_setup_and_receipts(mod, tmp):
+    import json as _json
+    from http.server import ThreadingHTTPServer as _Server
+
+    if getattr(mod, "_WithholdingForwarder", None) is None or not hasattr(
+        mod.Journey, "withheld_leg"
     ):
-        for exit_code, diagnostic in ((2, "pgrep: syntax error"), (3, "pgrep: fatal")):
-            journey = bare(mod, tmp)
-            journey.runtime = Path(tmp) / f"rt-{site}-{exit_code}"
-            journey.runtime.mkdir(exist_ok=True)
-            codes = [(code, err) for code, err in sequence[:-1]] + [
-                (exit_code, diagnostic)
-            ]
-            seen = []
-            out = io.StringIO()
-            with mock.patch.object(mod.subprocess, "run", _pgrep_script(codes, seen)):
-                with contextlib.redirect_stdout(out):
-                    try:
-                        journey.stop_devnet()
-                    except mod.SetupFailure as failed:
-                        stopped = f"{type(failed).__name__}: {failed}"
-                    except Exception as error:  # noqa: BLE001 - wrong mapping
-                        stopped = f"{type(error).__name__}: {error}"
-                    else:
-                        stopped = "clean"
-            text = out.getvalue()
-            check(
-                f"pgrep-{site}-{exit_code}-is-setup",
-                stopped.startswith("SetupFailure")
-                and "process query failed" in stopped
-                and str(exit_code) in stopped
-                and diagnostic in stopped
-                and "owned processes: none" not in text,
-                f"{site} pgrep exit {exit_code} gave {stopped}",
-            )
+        check(
+            "withheld-cleanup-failure-keeps-setup",
+            False,
+            "the withheld leg is absent",
+        )
+        return
+    refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState HistoryIncomplete",
+        "trieRefusal": {
+            "registry": {"policy": "aabbcc", "name": "ddeeff"},
+            "cause": "missing-transaction",
+        },
+    }
+    journey, _urls, fake_run_party = _withheld_mocked_leg(
+        mod, tmp, lambda: (14, dict(refusal))
+    )
+    with mock.patch.object(_Server, "server_close", side_effect=OSError("denied")):
+        with mock.patch.object(journey, "run_party", fake_run_party):
+            try:
+                journey.withheld_leg("alice", "alice-2")
+            except mod.SetupFailure:
+                kept_setup = True
+            except Exception as error:  # noqa: BLE001 - row status is the finding
+                kept_setup = f"{type(error).__name__}: {error}"
+            else:
+                kept_setup = "clean"
+    raw = Path(tmp, "withheld-inspect.json").read_text()
+    check(
+        "withheld-cleanup-failure-keeps-setup",
+        kept_setup is True,
+        f"a cleanup failure after the refusal gave {kept_setup}",
+    )
+    check(
+        "withheld-cleanup-keeps-refusal",
+        _json.loads(raw).get("outcome") == "stale-state",
+        "the observed refusal did not survive cleanup",
+    )
+
+
+def test_pgrep_exit_2_and_3_are_setup(mod, tmp):
+    # Every pattern (neutral, runtime) at both sites (settle loop, final
+    # check): only exit 1 means nothing found; 2/3 are named setup failures.
+    # Names are literal so the inventory script finds each control by name.
+    cases = [
+        ("pgrep-loop-0-2-is-setup", 0, 2, "pgrep: syntax error"),
+        ("pgrep-loop-0-3-is-setup", 0, 3, "pgrep: fatal"),
+        ("pgrep-loop-1-2-is-setup", 1, 2, "pgrep: syntax error"),
+        ("pgrep-loop-1-3-is-setup", 1, 3, "pgrep: fatal"),
+        ("pgrep-final-2-2-is-setup", 2, 2, "pgrep: syntax error"),
+        ("pgrep-final-2-3-is-setup", 2, 3, "pgrep: fatal"),
+        ("pgrep-final-3-2-is-setup", 3, 2, "pgrep: syntax error"),
+        ("pgrep-final-3-3-is-setup", 3, 3, "pgrep: fatal"),
+    ]
+    sites = ("loop", "loop", "final", "final")
+    for name, position, exit_code, diagnostic in cases:
+        site = sites[position]
+        journey = bare(mod, tmp)
+        journey.runtime = Path(tmp) / f"rt-{name}"
+        journey.runtime.mkdir(exist_ok=True)
+        codes = [(1, "")] * position + [(exit_code, diagnostic)]
+        seen = []
+        out = io.StringIO()
+        with mock.patch.object(mod.subprocess, "run", _pgrep_script(codes, seen)):
+            with contextlib.redirect_stdout(out):
+                try:
+                    journey.stop_devnet()
+                except mod.SetupFailure as failed:
+                    stopped = f"{type(failed).__name__}: {failed}"
+                except Exception as error:  # noqa: BLE001 - wrong mapping
+                    stopped = f"{type(error).__name__}: {error}"
+                else:
+                    stopped = "clean"
+        text = out.getvalue()
+        check(
+            name,
+            stopped.startswith("SetupFailure")
+            and "process query failed" in stopped
+            and str(exit_code) in stopped
+            and diagnostic in stopped
+            and "owned processes: none" not in text,
+            f"{site} call {position} exit {exit_code} gave {stopped}",
+        )
     journey = bare(mod, tmp)
     journey.runtime = Path(tmp) / "rt-clean"
     journey.runtime.mkdir(exist_ok=True)
@@ -2870,6 +3043,159 @@ def test_altered_leg_accepted_is_row_failure(mod, tmp):
                 )
 
 
+def test_killpg_failure_is_setup_and_continues(mod, tmp):
+    journey = bare(mod, tmp)
+    journey.node = mock.Mock(pid=12345)
+    journey.node.wait.return_value = None
+    runtime = Path(tmp) / "rt-killpg"
+    runtime.mkdir(exist_ok=True)
+    journey.runtime = runtime
+    out = io.StringIO()
+    with mock.patch.object(mod.os, "killpg", side_effect=PermissionError("denied")):
+        with mock.patch.object(mod.subprocess, "run", _pgrep_script([], [])):
+            with contextlib.redirect_stdout(out):
+                try:
+                    journey.stop_devnet()
+                except mod.SetupFailure as failed:
+                    stopped = f"SetupFailure: {failed}"
+                except Exception as error:  # noqa: BLE001 - wrong mapping
+                    stopped = f"{type(error).__name__}: {error}"
+                else:
+                    stopped = "clean"
+    check(
+        "killpg-failure-is-setup",
+        stopped.startswith("SetupFailure") and "denied" in stopped,
+        f"a refused signal gave {stopped}",
+    )
+    check(
+        "killpg-failure-still-tears-down",
+        not runtime.exists() and "owned processes: none" not in out.getvalue(),
+        "teardown stopped at the signal failure",
+    )
+
+
+def test_devnet_cause_read_fallback(mod, tmp):
+    journey = bare(mod, tmp)
+    journey.neutral = Path(tmp) / "no-such-dir"
+    check(
+        "devnet-cause-missing-file",
+        journey._devnet_cause() == "no devnet.err",
+        "a missing error file named no cause",
+    )
+    journey.neutral = Path(tmp)
+    (Path(tmp) / "devnet.err").write_text("\n")
+    check(
+        "devnet-cause-empty-file",
+        journey._devnet_cause() == "empty devnet.err",
+        "an empty error file named no cause",
+    )
+    (Path(tmp) / "devnet.err").write_text("boot\nTimed out waiting for socket\n")
+    check(
+        "devnet-cause-names-tail",
+        "Timed out waiting for socket" in journey._devnet_cause(),
+        "the error tail is not named",
+    )
+
+
+def test_forwarder_relay_failure_is_502(mod, tmp):
+    import json as _json
+    import urllib.request as _url
+    from http.server import BaseHTTPRequestHandler as _Handler
+    from http.server import ThreadingHTTPServer as _Server
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-relay-failure-is-502",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+
+    doomed = _Server(("127.0.0.1", 0), _Handler)
+    doomed_port = doomed.server_address[1]
+    doomed.server_close()
+    forward = forward_cls(f"http://127.0.0.1:{doomed_port}/api/v1", "aa", "bb")
+    forward.start()
+    try:
+        request = _url.Request(forward.url + "/tip")
+        try:
+            with _url.urlopen(request, timeout=10) as answer:
+                code, payload = answer.status, _json.loads(answer.read().decode())
+        except Exception as error:  # noqa: BLE001 - urllib raises for 502
+            import urllib.error as _err
+
+            if isinstance(error, _err.HTTPError):
+                code, payload = error.code, _json.loads(error.read().decode())
+            else:
+                raise
+    finally:
+        forward.stop()
+    check(
+        "forwarder-relay-failure-is-502",
+        code == 502 and "error" in payload,
+        f"a dead upstream gave {code} {payload!r}",
+    )
+
+
+def test_node_wait_timeout_continues_teardown(mod, tmp):
+    journey = bare(mod, tmp)
+    journey.node = mock.Mock(pid=12345)
+    journey.node.wait.side_effect = mod.subprocess.TimeoutExpired("wait", 60)
+    runtime = Path(tmp) / "rt-wait"
+    runtime.mkdir(exist_ok=True)
+    journey.runtime = runtime
+    out = io.StringIO()
+    with mock.patch.object(mod.subprocess, "run", _pgrep_script([], [])):
+        with contextlib.redirect_stdout(out):
+            try:
+                journey.stop_devnet()
+            except mod.SetupFailure as failed:
+                stopped = f"SetupFailure: {failed}"
+            except Exception as error:  # noqa: BLE001 - wrong mapping
+                stopped = f"{type(error).__name__}: {error}"
+            else:
+                stopped = "clean"
+    check(
+        "node-wait-timeout-is-setup",
+        stopped.startswith("SetupFailure") and "did not stop" in stopped,
+        f"a stuck node gave {stopped}",
+    )
+    check(
+        "node-wait-timeout-still-tears-down",
+        not runtime.exists() and "owned processes: none" not in out.getvalue(),
+        "teardown stopped at the stuck node",
+    )
+
+
+def test_which_missing_still_removes_runtime(mod, tmp):
+    journey = bare(mod, tmp)
+    runtime = Path(tmp) / "rt-no-tools"
+    runtime.mkdir(exist_ok=True)
+    journey.runtime = runtime
+    out = io.StringIO()
+    with mock.patch.object(mod, "which", lambda program: None):
+        with contextlib.redirect_stdout(out):
+            try:
+                journey.stop_devnet()
+            except mod.SetupFailure as failed:
+                stopped = f"SetupFailure: {failed}"
+            except Exception as error:  # noqa: BLE001 - wrong mapping
+                stopped = f"{type(error).__name__}: {error}"
+            else:
+                stopped = "clean"
+    check(
+        "which-missing-is-setup",
+        stopped.startswith("SetupFailure") and "cannot verify" in stopped,
+        f"missing tools gave {stopped}",
+    )
+    check(
+        "which-missing-still-removes-runtime",
+        not runtime.exists() and "owned processes: none" not in out.getvalue(),
+        "teardown stopped at the missing tools",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2921,6 +3247,15 @@ def main():
         test_pgrep_exit_2_and_3_are_setup,
         test_pkill_failure_is_best_effort,
         test_pgrep_failure_flows,
+        test_forwarder_close_error_is_setup_and_releases,
+        test_forwarder_shutdown_error_releases,
+        test_forwarder_join_survivor_is_setup,
+        test_withheld_cleanup_failure_keeps_setup_and_receipts,
+        test_killpg_failure_is_setup_and_continues,
+        test_devnet_cause_read_fallback,
+        test_forwarder_relay_failure_is_502,
+        test_node_wait_timeout_continues_teardown,
+        test_which_missing_still_removes_runtime,
         test_altered_leg_records_and_passes,
         test_altered_leg_skips_without_faulted_binary,
         test_altered_leg_accepted_is_row_failure,

@@ -708,25 +708,46 @@ class _WithholdingForwarder:
             )
             self.thread.start()
         except Exception as error:
-            self.server.server_close()
-            self.server = None
             self.thread = None
+            try:
+                self.stop()
+            except SetupFailure as cleaning:
+                raise SetupFailure(
+                    f"the withholding forwarder thread did not start: {error}; "
+                    f"{cleaning}"
+                )
             raise SetupFailure(
                 f"the withholding forwarder thread did not start: {error}"
             )
         return self.url
 
     def stop(self):
+        # Release only what exists, and everything that exists, even when
+        # an earlier step raised: a failed shutdown still closes and joins,
+        # and a timed-out join checks for a surviving thread.
         thread, self.thread = self.thread, None
         server, self.server = self.server, None
+        errors = []
         if server is not None:
             # shutdown() waits on the serving loop: only wait when a thread
             # is actually serving, never on a loop that never started.
             if thread is not None and thread.is_alive():
-                server.shutdown()
-            server.server_close()
+                try:
+                    server.shutdown()
+                except Exception as error:
+                    errors.append(f"shutdown: {error}")
+            try:
+                server.server_close()
+            except Exception as error:
+                errors.append(f"close: {error}")
         if thread is not None:
             thread.join(timeout=30)
+            if thread.is_alive():
+                errors.append("join: thread still serving after timeout")
+        if errors:
+            raise SetupFailure(
+                "the withholding forwarder did not release: " + "; ".join(errors)
+            )
 
     def _handler(self):
         root, policy, name = self._root, self.policy, self.name
@@ -1062,37 +1083,56 @@ class Journey:
             )
 
     def stop_devnet(self):
+        # Every release step runs even if an earlier step raised; each
+        # failure is collected and the run fails setup once at the end.
+        # Nothing here prints owned-processes-none except full success.
+        errors = []
         if self.node is not None:
             try:
                 os.killpg(self.node.pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
+            except OSError as error:
+                errors.append(f"could not signal the development source: {error}")
             try:
                 self.node.wait(timeout=60)
             except subprocess.TimeoutExpired:
-                raise SetupFailure("the development source did not stop")
+                errors.append("the development source did not stop")
             self.node = None
         if which("pkill") is None or which("pgrep") is None:
-            raise SetupFailure("cannot verify no surviving node")
+            errors.append("cannot verify no surviving node")
+            verifiable = False
+        else:
+            verifiable = True
         runtime = getattr(self, "runtime", None)
         patterns = [f"cardano-node run --config {self.neutral}/"]
         if runtime is not None:
             patterns.append(f"cardano-node run --config {runtime}/")
-        for pattern in patterns:
-            subprocess.run(["pkill", "-f", pattern], check=False)
-        deadline = time.monotonic() + 30
-        while time.monotonic() < deadline:
-            if all(check_absent(pattern) for pattern in patterns):
-                break
-            time.sleep(0.5)
-        for pattern in patterns:
-            setup_require(check_absent(pattern), "a node of this run survives")
+        if verifiable:
+            for pattern in patterns:
+                subprocess.run(["pkill", "-f", pattern], check=False)
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                try:
+                    if all(check_absent(pattern) for pattern in patterns):
+                        break
+                except SetupFailure as failed:
+                    errors.append(str(failed))
+                    break
+                time.sleep(0.5)
+            for pattern in patterns:
+                try:
+                    setup_require(check_absent(pattern), "a node of this run survives")
+                except SetupFailure as failed:
+                    errors.append(str(failed))
         if runtime is not None:
             try:
                 shutil.rmtree(runtime, ignore_errors=False)
             except OSError as error:
-                raise SetupFailure(f"the short runtime did not clean: {error}")
+                errors.append(f"the short runtime did not clean: {error}")
             self.runtime = None
+        if errors:
+            raise SetupFailure("; ".join(errors))
         print("two actors: owned processes: none", flush=True)
 
     def fixture(self):
