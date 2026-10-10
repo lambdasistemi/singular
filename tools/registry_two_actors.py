@@ -667,6 +667,117 @@ def check_access(trace, forbidden):
                     raise GuardFired(line.strip())
 
 
+class _WithholdingForwarder:
+    """Forward a Koios-shaped provider, withholding the state asset's history.
+
+    Every request is relayed to the upstream provider unchanged, except
+    `asset_txs` for the state token (policy and name, case-insensitive),
+    which answers an empty list: as far as the caller sees, no transaction
+    ever moved the token. A forwarder that cannot start is setup, never a
+    row result; stop it in a finally on every path.
+    """
+
+    def __init__(self, upstream, policy, name, port=0):
+        import urllib.parse
+
+        self.upstream = upstream.rstrip("/")
+        parts = urllib.parse.urlsplit(self.upstream)
+        self._root = f"{parts.scheme}://{parts.netloc}"
+        self.policy = policy.lower()
+        self.name = name.lower()
+        self.port = port
+        self.server = None
+        self.thread = None
+
+    @property
+    def url(self):
+        return f"http://127.0.0.1:{self.server.server_address[1]}/api/v1"
+
+    def start(self):
+        import threading
+        from http.server import ThreadingHTTPServer
+
+        handler = self._handler()
+        try:
+            self.server = ThreadingHTTPServer(("127.0.0.1", self.port), handler)
+        except OSError as error:
+            raise SetupFailure(f"the withholding forwarder did not start: {error}")
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        return self.url
+
+    def stop(self):
+        if self.server is not None:
+            self.server.shutdown()
+            self.server.server_close()
+            self.server = None
+        if self.thread is not None:
+            self.thread.join(timeout=30)
+            self.thread = None
+
+    def _handler(self):
+        root, policy, name = self._root, self.policy, self.name
+
+        from http.server import BaseHTTPRequestHandler
+
+        class _Forward(BaseHTTPRequestHandler):
+            def _answer(self, status, payload):
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def _relay(self):
+                import urllib.error
+                import urllib.parse
+                import urllib.request
+
+                parts = urllib.parse.urlsplit(self.path)
+                query = urllib.parse.parse_qs(parts.query)
+                if (
+                    parts.path == "/api/v1/asset_txs"
+                    and (query.get("_asset_policy", [""])[0] or "").lower() == policy
+                    and (query.get("_asset_name", [""])[0] or "").lower() == name
+                ):
+                    self._answer(200, b"[]")
+                    return
+                target = root + parts.path
+                if parts.query:
+                    target += "?" + parts.query
+                length = int(self.headers.get("Content-Length", 0))
+                body = self.rfile.read(length) if length else None
+                headers = {}
+                for key in ("Content-Type", "Accept"):
+                    value = self.headers.get(key)
+                    if value:
+                        headers[key] = value
+                try:
+                    request = urllib.request.Request(
+                        target, data=body, headers=headers, method=self.command
+                    )
+                    with urllib.request.urlopen(request, timeout=60) as answer:
+                        self._answer(answer.status, answer.read())
+                except urllib.error.HTTPError as failed:
+                    self._answer(failed.code, failed.read())
+                except Exception as error:  # noqa: BLE001 - relay maps to 502
+                    payload = json.dumps(
+                        {"error": f"forwarder relay failed: {error}"}
+                    ).encode()
+                    self._answer(502, payload)
+
+            def do_GET(self):
+                self._relay()
+
+            def do_POST(self):
+                self._relay()
+
+            def log_message(self, *args):
+                pass
+
+        return _Forward
+
+
 class Journey:
     def __init__(self, singular, devnet, blueprint, work):
         self.singular, self.devnet, self.blueprint = singular, devnet, blueprint
@@ -762,10 +873,10 @@ class Journey:
             str(trace),
         ] + command
 
-    def node_arguments(self):
+    def node_arguments(self, koios_url=None):
         return [
             "--koios-url",
-            self.settings["providerUrl"],
+            koios_url or self.settings["providerUrl"],
             "--network-magic",
             str(self.settings["networkMagic"]),
             "--network-time",
@@ -1190,7 +1301,7 @@ class Journey:
             str(self.keys / f"{party}.skey"),
         ]
 
-    def inspect_key(self, key):
+    def inspect_key(self, key, koios_url=None):
         """Read one key through the state token alone."""
         return [
             "registry",
@@ -1201,7 +1312,7 @@ class Journey:
             self.blueprint,
             "--state-token",
             self.state_token,
-            *self.node_arguments(),
+            *self.node_arguments(koios_url),
         ]
 
     def wallet_address(self, party):
@@ -1769,6 +1880,63 @@ class Journey:
             leg["continue_inspect_a"],
             leg["continue_inspect_b"],
         )
+        return leg
+
+    def withheld_leg(self, actor, key):
+        """Withhold the state history in front of ACTOR's inspect of KEY.
+
+        A forwarding provider answers an empty list for the state token's
+        transactions; first the actor's positive `inspect` on the
+        unforwarded provider must return a root, then the same actor's real
+        `inspect` through the forwarder must refuse `HistoryIncomplete`
+        with no root. Any other outcome is a row failure; a forwarder that
+        cannot start is a setup failure. Every command carries
+        `--state-token`.
+        """
+        others = tuple(home for party, home in self.homes.items() if party != actor)
+        leg = {}
+        status, positive = self.run_party(
+            actor,
+            "withheld-positive-inspect",
+            self.inspect_key(key),
+            others,
+        )
+        require(
+            status == 0 and positive.get("outcome") == "success",
+            f"{actor} withheld positive inspect failed: exit {status}, {positive}",
+        )
+        require(
+            positive.get("root"),
+            f"{actor} withheld positive inspect named no root: {positive}",
+        )
+        leg["positive_inspect"] = "withheld-positive-inspect"
+        policy, _, name = self.state_token.partition(".")
+        setup_require(policy and name, "the state token names no asset")
+        forwarder = _WithholdingForwarder(self.settings["providerUrl"], policy, name)
+        try:
+            forwarder.start()
+            status, refused = self.run_party(
+                actor,
+                "withheld-inspect",
+                self.inspect_key(key, forwarder.url),
+                others,
+            )
+        finally:
+            forwarder.stop()
+        require(
+            status == 14 and refused.get("outcome") == "stale-state",
+            f"{actor} withheld inspect was not refused stale: exit {status}, {refused}",
+        )
+        require(
+            "HistoryIncomplete" in refused.get("reason", ""),
+            f"{actor} withheld inspect named another refusal: {refused}",
+        )
+        require(
+            not refused.get("root"),
+            f"{actor} withheld inspect returned a root: {refused}",
+        )
+        leg["withheld_inspect"] = "withheld-inspect"
+        leg["create"] = "create"
         return leg
 
     def terminate_leg(self, controller, folder, key):
@@ -3095,6 +3263,7 @@ class Journey:
             legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
             legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
             legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
+            legs["withheld"] = self.withheld_leg("alice", "alice-2")
             legs["fold_roots"] = getattr(self, "fold_records", [])
             self.removal_check(legs)
             self.cap_check()
