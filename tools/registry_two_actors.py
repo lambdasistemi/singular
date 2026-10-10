@@ -721,10 +721,12 @@ class _WithholdingForwarder:
         from http.server import BaseHTTPRequestHandler
 
         class _Forward(BaseHTTPRequestHandler):
-            def _answer(self, status, payload):
+            def _answer(self, status, payload, content_range=None):
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(payload)))
+                if content_range is not None:
+                    self.send_header("Content-Range", content_range)
                 self.end_headers()
                 self.wfile.write(payload)
 
@@ -748,7 +750,7 @@ class _WithholdingForwarder:
                 length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(length) if length else None
                 headers = {}
-                for key in ("Content-Type", "Accept"):
+                for key in ("Content-Type", "Accept", "Prefer", "Range"):
                     value = self.headers.get(key)
                     if value:
                         headers[key] = value
@@ -757,9 +759,15 @@ class _WithholdingForwarder:
                         target, data=body, headers=headers, method=self.command
                     )
                     with urllib.request.urlopen(request, timeout=60) as answer:
-                        self._answer(answer.status, answer.read())
+                        self._answer(
+                            answer.status,
+                            answer.read(),
+                            answer.headers.get("Content-Range"),
+                        )
                 except urllib.error.HTTPError as failed:
-                    self._answer(failed.code, failed.read())
+                    self._answer(
+                        failed.code, failed.read(), failed.headers.get("Content-Range")
+                    )
                 except Exception as error:  # noqa: BLE001 - relay maps to 502
                     payload = json.dumps(
                         {"error": f"forwarder relay failed: {error}"}

@@ -1687,6 +1687,60 @@ def test_forwarder_withholds_state_asset(mod, tmp):
     thread.start()
     try:
         upstream = f"http://127.0.0.1:{server.server_address[1]}/api/v1"
+        seen = {}
+
+        class _RangedStub(_Handler):
+            def _answer_ranged(self, payload):
+                body = _json.dumps(payload).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Content-Range", "0-0/1")
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                seen["prefer"] = self.headers.get("Prefer")
+                self._answer_ranged(upstream_rows)
+
+            def log_message(self, *args):
+                pass
+
+        ranged = _Server(("127.0.0.1", 0), _RangedStub)
+        ranged_thread = _threading.Thread(target=ranged.serve_forever, daemon=True)
+        ranged_thread.start()
+        try:
+            ranged_upstream = f"http://127.0.0.1:{ranged.server_address[1]}/api/v1"
+            forward = forward_cls(ranged_upstream, "aabbcc", "ddeeff")
+            forward.start()
+            try:
+                import urllib.request as _url2
+
+                request = _url2.Request(
+                    forward.url
+                    + "/asset_txs?_asset_policy=00&_asset_name=11&_history=true",
+                    headers={"Prefer": "count=exact", "Accept": "application/json"},
+                )
+                with _url2.urlopen(request, timeout=10) as answer:
+                    ranged_rows = _json.loads(answer.read().decode())
+                    relayed_range = answer.headers.get("Content-Range")
+                check(
+                    "forwarder-relays-prefer",
+                    seen.get("prefer") == "count=exact",
+                    f"upstream saw Prefer={seen.get('prefer')!r}",
+                )
+                check(
+                    "forwarder-relays-content-range",
+                    ranged_rows == upstream_rows and relayed_range == "0-0/1",
+                    f"rows={ranged_rows!r} range={relayed_range!r}",
+                )
+            finally:
+                forward.stop()
+        finally:
+            ranged.shutdown()
+            ranged.server_close()
+            ranged_thread.join(timeout=10)
+        upstream = f"http://127.0.0.1:{server.server_address[1]}/api/v1"
         forward = forward_cls(upstream, "aabbcc", "ddeeff")
         try:
             forward.start()
