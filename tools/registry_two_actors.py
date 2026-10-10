@@ -1125,6 +1125,14 @@ class Journey:
         self.state_token = create["stateToken"]
         print(f"two actors: registry {self.state_token} created", flush=True)
         self.fetch_fee_bound()
+        self.appendix.append(
+            {
+                "fixture": "development-network-and-registry",
+                "providerUrl": self.settings["providerUrl"],
+                "networkMagic": self.settings["networkMagic"],
+                "stateToken": self.state_token,
+            }
+        )
 
     def foreign_open(self):
         """One real booking with --state-dir at the other actor's root."""
@@ -2253,6 +2261,23 @@ class Journey:
                 f"two actors: {row['requirement']}: {row['state']}{waiting}",
                 flush=True,
             )
+        print(
+            "two actors: harness evidence appendix (the harness's own, "
+            f"not product rows): {len(self.appendix)} entries",
+            flush=True,
+        )
+        for entry in self.appendix:
+            if "fixture" in entry:
+                print(
+                    f"two actors: harness evidence: fixture {entry.get('fixture')}",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"two actors: harness evidence: {entry.get('process')} "
+                    f"trace {entry.get('accessTrace')}",
+                    flush=True,
+                )
 
     def load_receipt(self, name, receipts=None):
         path = (receipts or self.receipts) / f"{name}.json"
