@@ -1,0 +1,74 @@
+{
+  "data-model": [
+    {
+      "text": "Data model.",
+      "pause": 500
+    },
+    {
+      "text": "Fields, relationships, validation. Types are the registry's existing ones unless named here. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "application-value-registry-library": [
+    {
+      "text": "Application value (registry-library).",
+      "pause": 500
+    }
+  ],
+  "pin-forms": [
+    {
+      "text": "Pin forms.",
+      "pause": 500
+    },
+    {
+      "text": "For the first form no script bytes exist: no reference output for the application is published by create.",
+      "pause": 400
+    }
+  ],
+  "booking": [
+    {
+      "text": "Booking.",
+      "pause": 500
+    },
+    {
+      "text": "A booking refusal names the key, the edge, the leaf found and the leaf required, and is labelled client policy. It is raised before any key is read for signing and in preview alike. The fold still validates on its own; the early refusal never replaces it.",
+      "pause": 400
+    }
+  ],
+  "neutral-behaviours-a-001": [
+    {
+      "text": "Neutral behaviours (A-001).",
+      "pause": 500
+    },
+    {
+      "text": "singular registry fold on an insertion: the delivered datum is the request's own, so nothing is decoded; the delivered output is read back at the request's own destination.",
+      "pause": 300
+    },
+    {
+      "text": "singular registry fold on a termination: refused before anything is built, naming the application's executable when the state datum's pin matches a known value, otherwise naming that the application's own binary is needed.",
+      "pause": 300
+    },
+    {
+      "text": "singular registry inspect: raw datums for the key's outputs; no envelope fields.",
+      "pause": 300
+    },
+    {
+      "text": "The application-policy input of create, a HEX policy hash, wired with the open-datum executable: pins that hash; publishes the other reference outputs as today.",
+      "pause": 300
+    },
+    {
+      "text": "Reconcile matches a journalled active: or payload: expectation against the hash of the live output's datum bytes; for the open-datum value that hash is the envelope hash, as today.",
+      "pause": 300
+    }
+  ],
+  "separation-records": [
+    {
+      "text": "Separation records.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "1db394ec68d6d91e7fc13cacd2cd1647791cdcd0c21e7c4efd406d7ef305272d"
+  }
+}

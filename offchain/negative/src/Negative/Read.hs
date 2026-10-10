@@ -20,7 +20,11 @@ import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.Text qualified as T
 
-import Singular.Application.OpenDatum.Envelope (envelopeToJson)
+import Singular.Application.OpenDatum.Envelope
+    ( envelopeFromData
+    , envelopeToJson
+    )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Attached (Attached (..), reading, savedOf)
 import Singular.CLI.Live
     ( Live (..)
@@ -32,6 +36,7 @@ import Singular.CLI.Live
     , valueJson
     )
 import Singular.CLI.Registry (hexT)
+import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Wallet (Wallet (..))
 
@@ -53,7 +58,7 @@ readAround :: Attached -> ByteString -> Wallet -> IO Around
 readAround at key wallet = do
     let s = savedOf at
     live <- reading at (`attachLive` s)
-    outs <- reading at (`liveOutputs` s)
+    outs <- reading at (\v -> liveOutputs openDatumApplication v s)
     walletOuts <- reading at (`Cage.outputsAt` walletAddr wallet)
     let stateJson = case observedRoot live of
             Right root ->
@@ -66,13 +71,20 @@ readAround at key wallet = do
                     [ ("stateOutput", toJSON (txInText (fst (liveState live))))
                     , ("root", toJSON ("unreadable" :: T.Text))
                     ]
-        holdingJson = case liveOutputFor s key outs of
-            Right ((txin, txout), envelope) ->
-                Aeson.object
-                    [ ("output", toJSON (txInText txin))
-                    , ("value", valueJson txout)
-                    , ("envelope", envelopeToJson envelope)
-                    ]
+        holdingJson = case liveOutputFor openDatumApplication s key outs of
+            Right ((txin, txout), dh) -> case envelopeFromData (dhDatumData dh) of
+                Right envelope ->
+                    Aeson.object
+                        [ ("output", toJSON (txInText txin))
+                        , ("value", valueJson txout)
+                        , ("envelope", envelopeToJson envelope)
+                        ]
+                Left _ ->
+                    Aeson.object
+                        [ ("output", toJSON ("none" :: T.Text))
+                        , ("value", toJSON ("none" :: T.Text))
+                        , ("envelope", toJSON ("none" :: T.Text))
+                        ]
             Left _ ->
                 Aeson.object
                     [ ("output", toJSON ("none" :: T.Text))

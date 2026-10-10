@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 74 modules in
-three kinds: 57 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 69 modules in
+three kinds: 52 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -62,12 +62,6 @@ Run: mkdocs serve
 - <a href="../offchain/naming/src/Naming/Verify.hs" data-api="module">Naming.Verify</a> — <a href="../offchain/naming/src/Naming/Verify.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Wire.hs" data-api="module">Naming.Wire</a> — <a href="../offchain/naming/src/Naming/Wire.hs" data-api="source">source</a>
 - <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="module">Naming.Wire.Vectors</a> — <a href="../offchain/naming/src/Naming/Wire/Vectors.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="module">Singular.Application.OpenDatum.Book</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Book.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="module">Singular.Application.OpenDatum.Build</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Build.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="module">Singular.Application.OpenDatum.Envelope</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Envelope.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="module">Singular.Application.OpenDatum.Release</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Release.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="module">Singular.Application.OpenDatum.Script</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Script.hs" data-api="source">source</a>
-- <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="module">Singular.Application.OpenDatum.Update</a> — <a href="../offchain/lib/Singular/Application/OpenDatum/Update.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="module">Singular.Provider.Koios.Client</a> — <a href="../offchain/lib/Singular/Provider/Koios/Client.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="module">Singular.Provider.Koios.Evidence</a> — <a href="../offchain/lib/Singular/Provider/Koios/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="module">Singular.Provider.Koios.History</a> — <a href="../offchain/lib/Singular/Provider/Koios/History.hs" data-api="source">source</a>
@@ -76,6 +70,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="module">Singular.Provider.Koios.Runtime</a> — <a href="../offchain/lib/Singular/Provider/Koios/Runtime.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="module">Singular.Provider.Koios.State</a> — <a href="../offchain/lib/Singular/Provider/Koios/State.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Provider/Koios/Wire.hs" data-api="module">Singular.Provider.Koios.Wire</a> — <a href="../offchain/lib/Singular/Provider/Koios/Wire.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Application.hs" data-api="module">Singular.Registry.Application</a> — <a href="../offchain/lib/Singular/Registry/Application.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/AssetName.hs" data-api="module">Singular.Registry.AssetName</a> — <a href="../offchain/lib/Singular/Registry/AssetName.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="module">Singular.Registry.Blueprint</a> — <a href="../offchain/lib/Singular/Registry/Blueprint.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="module">Singular.Registry.Blueprint.Load</a> — <a href="../offchain/lib/Singular/Registry/Blueprint/Load.hs" data-api="source">source</a>
@@ -205,7 +200,36 @@ generated references. The public `local-services` component also exposes
 `SessionEvidence`, `SessionIO`, `SessionServices`, `TimeMaterial`,
 `TimeSource`, `Trace`, `TraceRender`, `WaitTypes` and `Wallet`; their sources live under
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
-in this main-library reference. This coverage gap stays visible; wider
+in this main-library reference. The public `open-datum-application`
+component (`offchain/open-datum/`) carries the open-datum application the
+command line composes — envelope, booking approval and destination,
+payload update, release rules, script, and the application value:
+`Singular.Application.OpenDatum.Book`,
+`Singular.Application.OpenDatum.Build`,
+`Singular.Application.OpenDatum.Envelope`,
+`Singular.Application.OpenDatum.Release`,
+`Singular.Application.OpenDatum.Script`,
+`Singular.Application.OpenDatum.Update` and
+`Singular.Application.OpenDatum.Value`; their sources live under
+`offchain/open-datum/src/Singular/Application/OpenDatum/`.
+The public `registry-cli` component (`offchain/cli/`) carries the registry
+command line the two binaries link — session, journal and receipts, the
+flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
+recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
+`Singular.CLI.Command`, `Singular.CLI.Create`, `Singular.CLI.Entry`,
+`Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
+`Singular.CLI.InsertEnvelope`, `Singular.CLI.Inspect`, `Singular.CLI.Live`,
+`Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Permanent`,
+`Singular.CLI.Plan`, `Singular.CLI.Preview`, `Singular.CLI.Proof`,
+`Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
+`Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
+`Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
+`Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
+`Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
+`Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
+under `offchain/cli/src/Singular/CLI/`.
+Their generated pages are not in this main-library reference either: only
+the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a
 claim this page makes. Nothing on
 this page is a publication or release claim — the reference ships with

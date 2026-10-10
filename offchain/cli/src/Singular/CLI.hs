@@ -37,13 +37,18 @@ import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Reclaim (runReclaim)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..))
+import Singular.Registry.Application (Application)
 
 -- | Run one command in the environment the entry point composed; the exit status names its outcome class.
-runCommand :: Env -> Command -> IO ExitCode
-runCommand env = \case
+runCommand :: Application -> Env -> Command -> IO ExitCode
+runCommand app env = \case
     Help -> putStr usage >> pure ExitSuccess
     Create a ->
-        finish (envTracer env) "create" (createReceipt a) (runCreate env a)
+        finish
+            (envTracer env)
+            "create"
+            (createReceipt a)
+            (runCreate app env a)
     Insert a -> finish (envTracer env) "insert" (entryReceipt a) (runInsert env a)
     Update a -> finish (envTracer env) "update" (entryReceipt a) (runUpdate env a)
     Terminate a ->
@@ -52,10 +57,14 @@ runCommand env = \case
             "terminate"
             (entryReceipt a)
             (runTerminate env a)
-    Fold a -> finish (envTracer env) "fold" (foldReceipt a) (runFold env a)
+    Fold a -> finish (envTracer env) "fold" (foldReceipt a) (runFold app env a)
     Reject a ->
         finish (envTracer env) "reject" (rejectReceipt a) (runReject env a)
     Reclaim a ->
         finish (envTracer env) "reclaim" (reclaimReceipt a) (runReclaim env a)
     Inspect a ->
-        finish (envTracer env) "inspect" (inspectReceipt a) (runInspect env a)
+        finish
+            (envTracer env)
+            "inspect"
+            (inspectReceipt a)
+            (runInspect app env a)

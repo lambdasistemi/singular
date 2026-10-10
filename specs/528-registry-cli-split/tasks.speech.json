@@ -1,0 +1,198 @@
+{
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "One group per slice; a task is checked when its slice's candidate gate is green at the slice head and its checkpoint is approved.",
+      "pause": 400
+    }
+  ],
+  "application-value-seam": [
+    {
+      "text": "application-value-seam.",
+      "pause": 500
+    },
+    {
+      "text": "[x] add-application-value",
+      "pause": 300
+    },
+    {
+      "text": "[x] move-open-datum-into-its-own-library",
+      "pause": 300
+    },
+    {
+      "text": "[x] state-token-and-config-take-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[x] boundary-control-scoped-to-the-registry-library",
+      "pause": 300
+    },
+    {
+      "text": "[x] classify-the-new-library-in-the-component-inventory",
+      "pause": 300
+    }
+  ],
+  "commands-through-the-value": [
+    {
+      "text": "commands-through-the-value.",
+      "pause": 500
+    },
+    {
+      "text": "[x] create-pins-through-the-value-or-a-hash",
+      "pause": 300
+    },
+    {
+      "text": "[x] fold-and-live-reach-the-application-only-through-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[x] reconcile-matches-by-datum-hash",
+      "pause": 300
+    },
+    {
+      "text": "[x] inspect-decodes-only-through-the-value",
+      "pause": 300
+    },
+    {
+      "text": "[x] neutral-value-specs",
+      "pause": 300
+    }
+  ],
+  "registry-cli-library": [
+    {
+      "text": "registry-cli-library.",
+      "pause": 500
+    },
+    {
+      "text": "[x] move-command-line-modules-into-registry-cli",
+      "pause": 300
+    },
+    {
+      "text": "[x] cage-tests-depend-on-the-library",
+      "pause": 300
+    },
+    {
+      "text": "[x] classify-the-new-library-in-the-component-inventory-for-registry-cli",
+      "pause": 300
+    }
+  ],
+  "open-datum-executable": [
+    {
+      "text": "open-datum-executable.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] open-datum-package-in-its-own-tree",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-verbs-and-executable",
+      "pause": 300
+    },
+    {
+      "text": "[ ] known-scripts-come-from-the-application",
+      "pause": 300
+    },
+    {
+      "text": "[ ] negative-host-moves-with-the-open-datum",
+      "pause": 300
+    },
+    {
+      "text": "[ ] singular-refuses-insert-update-terminate",
+      "pause": 300
+    },
+    {
+      "text": "[ ] demo1-scripts-and-controls-use-the-new-binaries",
+      "pause": 300
+    },
+    {
+      "text": "[ ] release-archive-and-documented-flags",
+      "pause": 300
+    },
+    {
+      "text": "[ ] docs-name-the-new-commands",
+      "pause": 300
+    },
+    {
+      "text": "[ ] separation-control-covers-the-offchain-trees",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-open-datum-package-in-the-inventory",
+      "pause": 300
+    }
+  ],
+  "application-onchain-tree": [
+    {
+      "text": "application-onchain-tree.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] registry-shared-modules-move-to-the-lib-directory",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-validator-moves-to-its-own-aiken-project",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-deployment-blueprint-is-registry-plus-application",
+      "pause": 300
+    },
+    {
+      "text": "[ ] script-hash-comparison-control",
+      "pause": 300
+    },
+    {
+      "text": "[ ] registry-onchain-names-no-application-control",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-application-aiken-project-in-the-inventory",
+      "pause": 300
+    }
+  ],
+  "booking-refusal": [
+    {
+      "text": "booking-refusal.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] booking-call-in-the-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] early-refusal-in-preview-and-submit",
+      "pause": 300
+    },
+    {
+      "text": "[ ] refusal-row-in-demo1-controls",
+      "pause": 300
+    }
+  ],
+  "keri-stub": [
+    {
+      "text": "keri-stub.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] stub-executable-and-policy-in-its-own-tree",
+      "pause": 300
+    },
+    {
+      "text": "[ ] keri-stub-check-and-job",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-stub-in-the-inventory",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5ba595dea5391dd45fab1acce99610fa16a7ba6faed4a0c686b3a23c6fd7d932"
+  }
+}

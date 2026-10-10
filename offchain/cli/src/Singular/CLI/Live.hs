@@ -56,10 +56,12 @@ import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
 
+import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -74,6 +76,7 @@ import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
     )
+import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value
     ( MaryValue (..)
     , MultiAsset (..)
@@ -81,13 +84,6 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Application.OpenDatum.Envelope
-    ( Control (..)
-    , Envelope (..)
-    , envelopeVersion
-    , registryBytes
-    )
-import Singular.Application.OpenDatum.Release (heldOf, liveEnvelope)
 import Singular.CLI.Command (RegistryAccess (..))
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
@@ -95,6 +91,11 @@ import Singular.CLI.Receipt qualified as Receipt
 import Singular.CLI.Registry (Release (..), hexT)
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.CLI.TrieTrace (observeTrie)
+import Singular.Registry.Application
+    ( Application (..)
+    , DecodedHolding (..)
+    , HoldingRules (..)
+    )
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (renderOutRef)
@@ -108,7 +109,7 @@ import Singular.Registry.Ledger
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken
-    ( ReferenceRole
+    ( ReferenceRole (..)
     , ResolvedRegistry (..)
     , findReferences
     , findStateOutput
@@ -189,75 +190,76 @@ observedRoot l = case extractCageDatum (snd (liveState l)) of
     Just (StateDatum st) -> Right (unOnChainRoot (stateRoot st))
     _ -> Left "the registry's state output carries no state datum"
 
--- | The applied open-datum script's address.
+{- | The application address, from the registry's pinned application policy
+(slice 2: identical for a script pin, since the policy is the applied
+script's hash; sensible for a hash pin, whose script bytes do not exist).
+-}
 applicationAddr :: Saved -> Addr
 applicationAddr s =
     Addr
         Testnet
-        (ScriptHashObj (computeScriptHash (applied s)))
+        (ScriptHashObj (policyHash (cfgApplicationPolicy (savedCfg s))))
         StakeRefNull
+  where
+    policyHash bytes = case hashFromBytes (SBS.fromShort bytes) of
+        Just h -> ScriptHash h
+        Nothing -> error "applicationAddr: pinned application policy is not 28 bytes"
 
--- | Every output at the application's address.
+-- | Every output at the application's address (through the value's address).
 liveOutputs
-    :: Cage.Session Cage.NoWitness IO
+    :: Application
+    -> Cage.Session Cage.NoWitness IO
     -> Saved
     -> IO [(TxIn, TxOut ConwayEra)]
-liveOutputs view s = Cage.outputsAt view (applicationAddr s)
+liveOutputs _app view s = Cage.outputsAt view (applicationAddr s)
 
 {- | The outputs at the application that are this registry's holding of
-@key@: an envelope of version 1 naming this registry's full state asset,
-its pinned active policy and the key, over exactly one of the key's
-active token under that pinned policy. An output anyone paid to the
-address under an envelope naming another registry, policy or key is not
-a holding of this one.
+@key@, through the value. With holding rules (the open datum) this is the
+envelope's lookup (version, registry, active policy, key, exactly one token;
+a foreign envelope is not a holding); without them (neutral) there are none
+(the datum is never decoded).
 -}
 holdingsFor
-    :: Saved
+    :: Application
+    -> Saved
     -> ByteString
     -> [(TxIn, TxOut ConwayEra)]
-    -> [((TxIn, TxOut ConwayEra), Envelope)]
-holdingsFor s key outs =
-    [ (u, e)
-    | u@(_, o) <- outs
-    , Right e <- [liveEnvelope o]
-    , let c = envControl e
-    , ctlVersion c == envelopeVersion
-    , registryBytes (ctlRegistry c) == identity
-    , ctlActivePolicy c == SBS.fromShort (cfgActivePolicy (savedCfg s))
-    , ctlKey c == key
-    , heldOf c o == 1
-    ]
-  where
-    identity =
-        scriptHashBytes (cfgScriptHash (savedCfg s))
-            <> let TokenId (AssetName n) = savedToken s in SBS.fromShort n
+    -> [((TxIn, TxOut ConwayEra), DecodedHolding)]
+holdingsFor app s key outs = case appHolding app of
+    Just rules -> hrFindHoldings rules (savedCfg s) (savedToken s) key outs
+    Nothing -> []
 
--- | The key's one live holding in this registry, or why there is none.
+{- | The key's one live holding in this registry, or why there is none
+(through the value; same words as before for the open datum, so every
+refusal stays byte-identical).
+-}
 liveOutputFor
-    :: Saved
+    :: Application
+    -> Saved
     -> ByteString
     -> [(TxIn, TxOut ConwayEra)]
-    -> Either String ((TxIn, TxOut ConwayEra), Envelope)
-liveOutputFor s key outs =
-    case holdingsFor s key outs of
-        [one] -> Right one
-        [] -> Left ("no live output holds key 0x" <> BC.unpack (B16.encode key))
-        _ ->
-            Left
-                ( "more than one live output claims key 0x"
-                    <> BC.unpack (B16.encode key)
-                )
+    -> Either String ((TxIn, TxOut ConwayEra), DecodedHolding)
+liveOutputFor app s key outs = case appHolding app of
+    Just rules -> case hrLiveOutputFor rules (savedCfg s) (savedToken s) key outs of
+        Left why -> Left (T.unpack why)
+        Right one -> Right one
+    Nothing -> Left ("no live output holds key 0x" <> BC.unpack (B16.encode key))
 
--- | The published output carrying the applied script as a reference script.
-applicationReference :: Live -> Maybe (TxIn, TxOut ConwayEra)
-applicationReference l =
-    case [ u
-         | u@(_, o) <- liveRefs l
-         , SJust sc <- [o ^. referenceScriptTxOutL]
-         , hashScript sc == computeScriptHash (applied (liveSaved l))
-         ] of
-        (u : _) -> Just u
-        [] -> Nothing
+{- | The published output carrying the applied script as a reference script
+(through the value; without holding rules there is none to find).
+-}
+applicationReference
+    :: Application -> Live -> Maybe (TxIn, TxOut ConwayEra)
+applicationReference app l = case appHolding app of
+    Nothing -> Nothing
+    Just _ ->
+        case [ u
+             | u@(_, o) <- liveRefs l
+             , SJust sc <- [o ^. referenceScriptTxOutL]
+             , hashScript sc == computeScriptHash (applied (liveSaved l))
+             ] of
+            (u : _) -> Just u
+            [] -> Nothing
 
 -- | A capability and its caller's selection; no nodes or files are retained.
 newtype TrieContext = TrieContext
@@ -393,7 +395,8 @@ session, and find the references its transactions run. The actor's
 directory is where its journal lives; nothing in it is read here.
 -}
 resolveSaved
-    :: FilePath
+    :: Application
+    -> FilePath
     -> Release
     -> RegistryAccess
     -> Set ReferenceRole
@@ -401,14 +404,19 @@ resolveSaved
     -- ^ The actor's wallet, when the command has one
     -> Cage.Session Cage.NoWitness IO
     -> IO Saved
-resolveSaved dir release access roles wallet view = do
+resolveSaved app dir release access roles wallet view = do
     resolved <-
-        resolveRegistry release (accessToken access) view
+        resolveRegistry app release (accessToken access) view
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderIdentityRefusal)
                 pure
+    -- Without holding rules (neutral) no application reference is needed
+    -- (a hash pin publishes none); with them, every needed role is found.
+    let needed = case appHolding app of
+            Nothing -> Set.delete RoleApplication roles
+            Just _ -> roles
     found <-
-        findReferences view wallet (resolvedExpected resolved) roles
+        findReferences view wallet (resolvedExpected resolved) needed
             >>= either
                 (failWith Receipt.ClientRefusal . T.unpack . renderReferenceRefusal)
                 pure

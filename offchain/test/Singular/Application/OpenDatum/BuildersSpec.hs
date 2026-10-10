@@ -58,6 +58,7 @@ import Singular.PhaseLogFixture
     , textField
     , withLogFile
     )
+import Singular.Registry.Application (ApplicationPin (..))
 import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application
@@ -351,10 +352,10 @@ seedRef = ref '9' 0
 economics :: RegistryEconomics
 economics = RegistryEconomics 30_000 30_000 (Coin 1_000_000)
 
-bootWith :: Application -> TxIn -> (CageConfig, NamingCodes)
-bootWith app seed =
+bootWith :: ApplicationPin -> TxIn -> (CageConfig, NamingCodes)
+bootWith pin seed =
     configForApplication
-        app
+        pin
         codes
         stateBytes
         requestBytes
@@ -366,15 +367,34 @@ pinning :: Spec
 pinning = describe "pinning the application at boot" $ do
     it
         "pins the open-datum script applied to the identity the seed determines"
-        $ let (cfg, pinned) = bootWith OpenDatumApplication seedRef
+        $ let (cfg, pinned) =
+                bootWith (PinByScript (applicationTitle OpenDatumApplication)) seedRef
               identity = registryIdentity stateBytes (txInToRef seedRef)
           in  do
                 ncApplication pinned `shouldBe` openDatumScript identity program
                 SBS.fromShort (cfgApplicationPolicy cfg)
                     `shouldBe` openDatumPolicy (ncApplication pinned)
     it "pins the open application as compiled, whatever the seed" $
-        cfgApplicationPolicy (fst (bootWith OpenApplication seedRef))
-            `shouldBe` cfgApplicationPolicy (fst (bootWith OpenApplication (ref '8' 0)))
+        cfgApplicationPolicy
+            ( fst
+                (bootWith (PinAsCompiled (applicationTitle OpenApplication)) seedRef)
+            )
+            `shouldBe` cfgApplicationPolicy
+                ( fst
+                    ( bootWith
+                        (PinAsCompiled (applicationTitle OpenApplication))
+                        (ref '8' 0)
+                    )
+                )
     it "pins another open-datum policy for another seed" $
-        cfgApplicationPolicy (fst (bootWith OpenDatumApplication seedRef))
-            `shouldNotBe` cfgApplicationPolicy (fst (bootWith OpenDatumApplication (ref '8' 0)))
+        cfgApplicationPolicy
+            ( fst
+                (bootWith (PinByScript (applicationTitle OpenDatumApplication)) seedRef)
+            )
+            `shouldNotBe` cfgApplicationPolicy
+                ( fst
+                    ( bootWith
+                        (PinByScript (applicationTitle OpenDatumApplication))
+                        (ref '8' 0)
+                    )
+                )

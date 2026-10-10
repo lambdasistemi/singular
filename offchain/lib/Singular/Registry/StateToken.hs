@@ -89,9 +89,10 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 
-import Singular.Application.OpenDatum.Script
+import Singular.Registry.Application
     ( Application (..)
-    , applicationCodes
+    , ApplicationPin (..)
+    , applyPin
     )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes, applyRequestParams)
@@ -200,31 +201,40 @@ roleName = \case
 parseRole :: Text -> Maybe ReferenceRole
 parseRole name = lookup name [(roleName r, r) | r <- [minBound .. maxBound]]
 
-{- | The script hash each role must carry, derived from the release and the
-token alone. The state hash is the release's state script; every other
-role is the release's script for it applied to the registry identity,
-state policy then token name.
+{- | The script hash each role must carry, derived from the release, the
+application pin and the token alone. The state hash is the release's
+state script; every other role is the release's script for it applied to
+the registry identity, state policy then token name. A pin read from
+state arrives as 'PinByHash' of the datum's pin: 'resolveRegistry'
+reads the datum first. A hash pin publishes no application reference
+(slice 2: its script bytes do not exist), so it omits that role; a script
+or compiled pin lists it as today.
 -}
-expectedReferences :: Release -> Asset -> Map ReferenceRole ScriptHash
-expectedReferences release (_, AssetName name) =
+expectedReferences
+    :: ApplicationPin -> Release -> Asset -> Map ReferenceRole ScriptHash
+expectedReferences pinForm release (_, AssetName name) =
     Map.fromList
-        [ (RoleState, stateHash)
-        , (RoleRequest, computeScriptHash requestBytes)
-        , (RoleWitnessAbsent, pinHash absentPin)
-        , (RoleWitnessActive, pinHash activePin)
-        , (RoleWitnessTerminal, pinHash terminalPin)
-        , (RoleApplication, pinHash applicationPin)
-        ]
+        ( [ (RoleState, stateHash)
+          , (RoleRequest, computeScriptHash requestBytes)
+          , (RoleWitnessAbsent, pinHash absentPin)
+          , (RoleWitnessActive, pinHash activePin)
+          , (RoleWitnessTerminal, pinHash terminalPin)
+          ]
+            <> [(RoleApplication, pinHash applicationPin) | hasApplication]
+        )
   where
     stateHash = computeScriptHash (releaseState release)
     registryId = scriptHashBytes stateHash <> SBS.fromShort name
-    pinned =
-        applicationCodes
-            OpenDatumApplication
-            registryId
-            (releaseCodes release)
-    (applicationPin, absentPin, activePin, terminalPin) =
+    (applicationPin, pinned) = applyPin pinForm registryId (releaseCodes release)
+    (_, absentPin, activePin, terminalPin) =
         namingPins pinned registryId
+    -- A hash pin (including a pin read from state, which arrives as one)
+    -- publishes no application reference; a script or compiled pin does.
+    hasApplication = case pinForm of
+        PinByHash _ -> False
+        PinFromState -> False
+        PinByScript _ -> True
+        PinAsCompiled _ -> True
     requestBytes =
         applyRequestParams
             (scriptHashBytes stateHash)
@@ -287,15 +297,18 @@ data IdentityRefusal
     deriving stock (Eq, Show)
 
 {- | Resolve a state token into a registry, refusing by name in the checking
-order. No file is read.
+order. No file is read. The application pin is compared with the state
+datum only for a script pin; a pin read from state is taken from the
+datum, and the three witness pins are compared as always.
 -}
 resolveRegistry
     :: (Monad m)
-    => Release
+    => Application
+    -> Release
     -> Asset
     -> Session w m
     -> m (Either IdentityRefusal ResolvedRegistry)
-resolveRegistry release token@(PolicyID policy, AssetName name) session =
+resolveRegistry app release token@(PolicyID policy, AssetName name) session =
     runExceptT $ do
         let stateHash = computeScriptHash (releaseState release)
         when (policy /= stateHash) $
@@ -310,9 +323,13 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
                 found : _ -> pure found
                 [] -> throwError (StateTokenSeedMismatch (mintTransaction record))
         (stateRef, stateOut, datum) <- ExceptT (findStateOutput token session)
+        effectivePin <- case appPin app of
+            PinFromState ->
+                pure (PinByHash (SBS.toShort (stateAppPolicyBytes datum)))
+            pin -> pure pin
         let (cfg, codes) =
                 configForApplication
-                    OpenDatumApplication
+                    effectivePin
                     (releaseCodes release)
                     (releaseState release)
                     (releaseRequest release)
@@ -323,7 +340,7 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
                         }
                     Ledger.Testnet
                     (txInToRef seed)
-        forM_ [minBound .. maxBound] $ \field ->
+        forM_ checkFields $ \field ->
             when (datumPin field datum /= SBS.fromShort (configPin field cfg)) $
                 throwError (RegistryPinMismatch field)
         let network = sessionNetwork session
@@ -338,10 +355,15 @@ resolveRegistry release token@(PolicyID policy, AssetName name) session =
                 , resolvedDatum = datum
                 , resolvedConfig = cfg
                 , resolvedCodes = codes
-                , resolvedExpected = expectedReferences release token
+                , resolvedExpected = expectedReferences effectivePin release token
                 , resolvedNetwork = network
                 }
   where
+    -- \| The datum pins this resolution compares: the three witness pins
+    -- always, the application pin only for a script pin.
+    checkFields = case appPin app of
+        PinByScript _ -> [minBound .. maxBound]
+        _ -> [PinActive, PinAbsent, PinTerminal]
     derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
     readFact action =
         ExceptT

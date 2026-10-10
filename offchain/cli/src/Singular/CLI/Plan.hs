@@ -30,6 +30,7 @@ module Singular.CLI.Plan
       -- * What an update asks
     , planUpdate
     , buildUpdate
+    , previewInsert
 
       -- * What it costs
     , refuseOver
@@ -64,11 +65,14 @@ import Singular.Application.OpenDatum.Build
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
+    , envelopeFromData
+    , envelopeToJson
     )
 import Singular.Application.OpenDatum.Update
     ( UpdateArgs (..)
     , updatePayloadTx
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command (EntryArgs (..), Key (..))
 import Singular.CLI.InsertEnvelope (insertEnvelope)
 import Singular.CLI.Live
@@ -80,6 +84,7 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session (failWith, failWithFields)
+import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -116,7 +121,17 @@ appReferenceOf live =
             "the deployment records no published application reference"
         )
         (pure . fst)
-        (applicationReference live)
+        (applicationReference openDatumApplication live)
+
+{- | A holding view as the envelope the entry commands still book with
+(slice 2 B shim; slice 4 moves these commands).
+-}
+toEnvelopeHolding
+    :: ((TxIn, TxOut ConwayEra), DecodedHolding)
+    -> Either String ((TxIn, TxOut ConwayEra), Envelope)
+toEnvelopeHolding (u, dh) = case envelopeFromData (dhDatumData dh) of
+    Left why -> Left why
+    Right e -> Right (u, e)
 
 -- | One booking through the application: what it books and how it is certified.
 data Booked = Booked
@@ -144,6 +159,21 @@ planInsert live envelope = do
                     { baScriptReference = Just appRef
                     }
             }
+
+{- | An insertion preview without naming the envelope outside this module
+(slice 2 C: `Preview` stays clean; slice 4 moves the entry commands).
+-}
+previewInsert
+    :: Live
+    -> Saved
+    -> EntryArgs
+    -> ByteString
+    -> PLC.Data
+    -> IO (Booked, Value)
+previewInsert live s a caller payload = do
+    let envelope = insertionOf s a caller payload
+    booked <- planInsert live envelope
+    pure (booked, envelopeToJson envelope)
 
 -- | The payload an insert carries, from the file its @--payload@ names.
 readInsertPayload :: EntryArgs -> IO PLC.Data
@@ -175,17 +205,25 @@ insertionOf s a controller =
   where
     Key key = entryKey a
 
--- | A termination of @key@ by @caller@: its booking, its holding and envelope.
+-- | A termination of @key@ by @caller@: its booking, its holding and decoded view.
 planTerminate
     :: Live
     -> ByteString
     -> ByteString
     -> [(TxIn, TxOut ConwayEra)]
-    -> IO (Booked, (TxIn, TxOut ConwayEra), Envelope)
+    -> IO (Booked, (TxIn, TxOut ConwayEra), DecodedHolding)
 planTerminate live caller key outs = do
     let s = liveSaved live
-    (holding@(liveIn, _), envelope) <-
-        either (failWith ClientRefusal) pure (liveOutputFor s key outs)
+    decoded <-
+        either
+            (failWith ClientRefusal)
+            pure
+            (liveOutputFor openDatumApplication s key outs)
+    let holding = fst decoded
+        dh = snd decoded
+        (liveIn, _) = holding
+    (_, envelope) <-
+        either (failWith ClientRefusal) pure (toEnvelopeHolding decoded)
     let c = envControl envelope
     controllerCheck caller c
     appRef <- appReferenceOf live
@@ -201,24 +239,26 @@ planTerminate live caller key outs = do
                     }
             }
         , holding
-        , envelope
+        , dh
         )
 
--- | An update of @key@ by @caller@: the holding and the envelope it carries.
+-- | An update of @key@ by @caller@: the holding and the decoded view it carries.
 planUpdate
     :: Live
     -> ByteString
     -> ByteString
     -> [(TxIn, TxOut ConwayEra)]
-    -> IO ((TxIn, TxOut ConwayEra), Envelope)
+    -> IO ((TxIn, TxOut ConwayEra), DecodedHolding)
 planUpdate live caller key outs = do
-    (holding, envelope) <-
+    decoded <-
         either
             (failWith ClientRefusal)
             pure
-            (liveOutputFor (liveSaved live) key outs)
+            (liveOutputFor openDatumApplication (liveSaved live) key outs)
+    (_, envelope) <-
+        either (failWith ClientRefusal) pure (toEnvelopeHolding decoded)
     controllerCheck caller (envControl envelope)
-    pure (holding, envelope)
+    pure decoded
 
 {- | The unsigned update of a holding to a new payload, funded from the
 caller's chosen ada-only output or else the largest.

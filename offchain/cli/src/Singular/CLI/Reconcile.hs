@@ -68,10 +68,6 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
-import Singular.Application.OpenDatum.Envelope
-    ( Envelope (..)
-    , envelopeHash
-    )
 import Singular.CLI.Live
     ( Saved (..)
     , attachLive
@@ -105,6 +101,10 @@ import Singular.CLI.Registry
     ( hexT
     )
 import Singular.CLI.Session (failWith, failWithFields)
+import Singular.Registry.Application
+    ( Application (..)
+    , DecodedHolding (..)
+    )
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
@@ -156,12 +156,13 @@ data Recovery = Recovery
 on behalf of the named command, which the lines it appends carry.
 -}
 reconcile
-    :: Text
+    :: Application
+    -> Text
     -> FilePath
     -> Saved
     -> Cage.Session Cage.NoWitness IO
     -> IO Reconciliation
-reconcile command dir saved view = do
+reconcile app command dir saved view = do
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
     recovered <- recoverInclusion command dir view liveAt
@@ -169,10 +170,10 @@ reconcile command dir saved view = do
     root <- either (failWith Partial) pure (observedRoot live)
     context <- openTrie saved
     requireTrieSelection saved live context
-    outs <- liveOutputs view saved
+    outs <- liveOutputs app view saved
     let readKey key = do
             leaf <- trieLeaf context key root
-            pure (leaf, liveOutputFor saved key outs)
+            pure (leaf, liveOutputFor app saved key outs)
     observedNow <- observe command dir (Just readKey) recovered
     remaining <- remainingOf <$> readJournal dir
     pure
@@ -482,7 +483,7 @@ type KeyRead =
     ByteString
     -> IO
         ( Either AuthError Leaf
-        , Either String ((TxIn, TxOut ConwayEra), Envelope)
+        , Either String ((TxIn, TxOut ConwayEra), DecodedHolding)
         )
 
 {- | Journal @observed@ for each included transaction whose prepared
@@ -526,8 +527,8 @@ observe command dir readKey recovered = do
             , out0 ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef request)) ->
                 pure (Just (command <> ": the request-bound return output is live"))
         Just ("active", h) -> withKey p $ \key -> \case
-            (Right Active, Right (_, e))
-                | ":" <> hexT (envelopeHash e) == h ->
+            (Right Active, Right (_, dh))
+                | ":" <> hexT (dhDatumHash dh) == h ->
                     Just
                         ( command
                             <> ": key 0x"
@@ -536,8 +537,8 @@ observe command dir readKey recovered = do
                         )
             _ -> Nothing
         Just ("payload", h) -> withKey p $ \key -> \case
-            (Right Active, Right (_, e))
-                | ":" <> hexT (envelopeHash e) == h ->
+            (Right Active, Right (_, dh))
+                | ":" <> hexT (dhDatumHash dh) == h ->
                     Just
                         ( command
                             <> ": key 0x"

@@ -1,0 +1,46 @@
+{
+  "functions-model": [
+    {
+      "text": "Functions model.",
+      "pause": 500
+    },
+    {
+      "text": "New or changed signatures only: names, explicit arguments, argument and result types, constraints and effects. No bodies. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "registry-library": [
+    {
+      "text": "registry-library.",
+      "pause": 500
+    }
+  ],
+  "registry-cli": [
+    {
+      "text": "registry-cli.",
+      "pause": 500
+    }
+  ],
+  "open-datum-package": [
+    {
+      "text": "open-datum-package.",
+      "pause": 500
+    }
+  ],
+  "keri-stub": [
+    {
+      "text": "keri-stub.",
+      "pause": 500
+    }
+  ],
+  "separation-controls": [
+    {
+      "text": "separation controls.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "1466299977d5f5ca18b3ba459dcc78ba69a975ca4b27540e42d491326d3e1458"
+  }
+}

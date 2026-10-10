@@ -197,6 +197,7 @@ import Singular.Application.OpenDatum.Update
     , releaseRedeemer
     , updateRedeemer
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
@@ -1005,7 +1006,9 @@ openRegistry env target = do
     asset <- targetToken env target
     resolved <-
         withSession env $ \caps _ ->
-            Cage.withLatest (ncReads caps) (resolveRegistry release asset)
+            Cage.withLatest
+                (ncReads caps)
+                (resolveRegistry openDatumApplication release asset)
     r <- either (fail . T.unpack . renderIdentityRefusal) pure resolved
     let (_, name) = asset
     pure

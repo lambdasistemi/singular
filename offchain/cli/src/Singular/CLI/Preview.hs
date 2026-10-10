@@ -67,10 +67,6 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
-import Singular.Application.OpenDatum.Envelope
-    ( dataFromJson
-    , envelopeToJson
-    )
 import Singular.CLI.Command
     ( Command (..)
     , EntryArgs (..)
@@ -100,6 +96,10 @@ import Singular.CLI.Registry
     , parseEnterpriseAddress
     )
 import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
+import Singular.Registry.Application
+    ( Application
+    , datumFromJson
+    )
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
@@ -128,13 +128,14 @@ commandOf = \case
 address the caller named, and report what it would submit.
 -}
 runPreview
-    :: Env
+    :: Application
+    -> Env
     -> Kind
     -> EntryArgs
     -> ProviderSettings
     -> String
     -> IO Value
-runPreview env kind a settings addrText = do
+runPreview app env kind a settings addrText = do
     let magic = providerMagic settings
     addr <-
         either
@@ -142,7 +143,7 @@ runPreview env kind a settings addrText = do
             pure
             (parseEnterpriseAddress magic addrText)
     release <-
-        envLoadRelease env (entryBlueprint a)
+        envLoadRelease env app (entryBlueprint a)
             >>= either (failWith ClientRefusal) pure
     let Key key = entryKey a
         caller = addrKeyHashBytes addr
@@ -169,31 +170,35 @@ runPreview env kind a settings addrText = do
             point <- Cage.tip v
             saved <-
                 resolveSaved
+                    app
                     previewDir
                     release
                     (entryAccess a)
                     (neededRoles (commandOf kind a))
                     (Just addr)
                     v
-            let inserted = insertionOf saved a caller <$> insertPayload
             context <- openTrie saved
             live <- attachLive v saved
             observed <- either (failWith StaleState) pure (observedRoot live)
             requireTrieSelection saved live context
             prepared <- case kind of
                 KInsert -> do
-                    envelope <-
-                        maybe (failWith ClientRefusal "insert has no envelope") pure inserted
-                    booked <- planInsert live envelope
-                    (<> [("envelope", envelopeToJson envelope)])
+                    payloadForInsert <-
+                        maybe
+                            (failWith ClientRefusal "insert has no envelope")
+                            pure
+                            insertPayload
+                    (booked, envelopeJson) <-
+                        previewInsert live saved a caller payloadForInsert
+                    (<> [("envelope", envelopeJson)])
                         <$> previewBooking a v live addr key booked
                 KTerminate -> do
-                    outs <- liveOutputs v saved
+                    outs <- liveOutputs app v saved
                     (booked, _, _) <- planTerminate live caller key outs
                     previewBooking a v live addr key booked
                 KUpdate -> do
-                    payload <- document "update needs --payload" dataFromJson
-                    outs <- liveOutputs v saved
+                    payload <- document "update needs --payload" datumFromJson
+                    outs <- liveOutputs app v saved
                     (holding, _) <- planUpdate live caller key outs
                     tx <- buildUpdate v live addr (entryFund a) holding payload
                     let outlay = updateOutlay tx

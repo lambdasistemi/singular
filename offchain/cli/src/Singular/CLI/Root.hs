@@ -61,20 +61,26 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
+import Singular.Registry.Application (Application)
 
 -- | Run one command line, with this environment and standard error.
 runSingular
-    :: Maybe Handle -> [(String, String)] -> [String] -> IO ExitCode
+    :: Application
+    -> Maybe Handle
+    -> [(String, String)]
+    -> [String]
+    -> IO ExitCode
 runSingular = runSingularVia koiosEnv
 
 -- | The same, over the chain provider built from the composed tracer.
 runSingularVia
     :: (Tracer IO Trace -> Env)
+    -> Application
     -> Maybe Handle
     -> [(String, String)]
     -> [String]
     -> IO ExitCode
-runSingularVia provider errors environment args =
+runSingularVia provider app errors environment args =
     case parseInvocation environment args of
         Left err -> do
             case errors of
@@ -93,7 +99,7 @@ runSingularVia provider errors environment args =
                 terminal
                 (phaseLog environment)
                 request
-                (\tracer -> runCommand (provider tracer) command)
+                (\tracer -> runCommand app (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path
@@ -128,7 +134,11 @@ and its sink dropped, never an aborted command. Asynchronous exceptions
 propagate.
 -}
 runPackagedWith
-    :: IO (Maybe Handle) -> [String] -> [(String, String)] -> IO ExitCode
+    :: Application
+    -> IO (Maybe Handle)
+    -> [String]
+    -> [(String, String)]
+    -> IO ExitCode
 runPackagedWith = runPackagedVia koiosEnv
 
 {- | The packaged command over the chain provider built from the composed
@@ -138,14 +148,16 @@ run with that provider. The packaged binary is this with Koios.
 -}
 runPackagedVia
     :: (Tracer IO Trace -> Env)
+    -> Application
     -> IO (Maybe Handle)
     -> [String]
     -> [(String, String)]
     -> IO ExitCode
-runPackagedVia provider getErrors args environment = do
+runPackagedVia provider app getErrors args environment = do
     errors <- fromRight Nothing <$> attempt getErrors
-    runSingularVia provider errors environment args
+    runSingularVia provider app errors environment args
 
 -- | The packaged command with the process's own standard error.
-runPackaged :: [String] -> [(String, String)] -> IO ExitCode
-runPackaged = runPackagedWith standardError
+runPackaged
+    :: Application -> [String] -> [(String, String)] -> IO ExitCode
+runPackaged app = runPackagedWith app standardError

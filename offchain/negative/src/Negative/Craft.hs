@@ -62,6 +62,7 @@ import Singular.Application.OpenDatum.Update
     , releaseRedeemer
     , updateRedeemer
     )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Live
     ( Live (..)
     , Saved (..)
@@ -165,7 +166,7 @@ craftHoldingSpend view live holding@(hIn, hOut) envelope caller signer spend = d
     let home = walletAddr caller
         signerBytes = addrKeyHashBytes (walletAddr signer)
     feeUtxo <- pickFee view caller
-    let appRef = applicationReference live
+    let appRef = applicationReference openDatumApplication live
         MaryValue (Coin held) tokens = hOut ^. valueTxOutL
         payloadOf = case spend of
             SpendControllerUpdate p -> p
@@ -271,9 +272,12 @@ craftBooking view live payer key shape = case shape of
             "not in this slice: insert bookings arrive in the third slice"
     BookingTerminate -> do
         let s = liveSaved live
-        outs <- liveOutputs view s
+        outs <- liveOutputs openDatumApplication view s
         ((liveIn, _), _) <-
-            either (failWith ClientRefusal) pure (liveOutputFor s key outs)
+            either
+                (failWith ClientRefusal)
+                pure
+                (liveOutputFor openDatumApplication s key outs)
         appRef <-
             maybe
                 ( failWith
@@ -281,7 +285,7 @@ craftBooking view live payer key shape = case shape of
                     "the deployment records no published application reference"
                 )
                 (pure . fst)
-                (applicationReference live)
+                (applicationReference openDatumApplication live)
         let stateIn = fst (liveState live)
             owner = addrKeyHashBytes (walletAddr payer)
             approval =

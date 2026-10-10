@@ -95,6 +95,13 @@ jobs:
       # whole package — build only, nothing executes.
       - run: nix build --quiet .#component-build
         working-directory: offchain
+      # #528 slice 1: the registry library names no application. The proof
+      # is the build graph (the carrier above); the check names the offender
+      # and the controls plant an import and a dependency and must fail.
+      - run: nix run --quiet .#application-boundary-check
+        working-directory: offchain
+      - run: nix run --quiet .#application-boundary-controls
+        working-directory: offchain
   model:
     if: github.event.action != 'closed'
     needs: build-gate

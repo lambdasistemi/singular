@@ -165,6 +165,7 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeVersion
     )
 import Singular.Application.OpenDatum.Release (liveEnvelope)
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Live
     ( Saved (..)
     , applicationAddr
@@ -1397,6 +1398,7 @@ syntheticRows =
                         _ -> fail "the prepared line names no saved body"
                     result <-
                         reconcile
+                            openDatumApplication
                             "inspect"
                             (syntheticDir s)
                             (syntheticSaved s)
@@ -1420,6 +1422,7 @@ syntheticRows =
                     outcome <-
                         try @CommandFailure
                             ( reconcile
+                                openDatumApplication
                                 "inspect"
                                 (syntheticDir s)
                                 (syntheticSaved s)

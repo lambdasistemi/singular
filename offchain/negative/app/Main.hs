@@ -17,6 +17,7 @@ import System.Environment (getArgs, getEnvironment)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn)
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
     ( Command (..)
@@ -86,8 +87,8 @@ runNegative env = \case
             "terminate"
             (entryReceipt args)
             (runNegativeTerminate env args)
-    Ordinary cmd@(Inspect _) -> runCommand env cmd
-    Ordinary Help -> runCommand env Help
+    Ordinary cmd@(Inspect _) -> runCommand openDatumApplication env cmd
+    Ordinary Help -> runCommand openDatumApplication env Help
     Ordinary _ ->
         failWith
             ClientRefusal

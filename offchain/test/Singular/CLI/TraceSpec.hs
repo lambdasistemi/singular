@@ -80,6 +80,7 @@ import Test.QuickCheck
     , (===)
     )
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
@@ -816,13 +817,14 @@ entryPoint = describe "the receipt under every tracing setting" $ do
                     ]
             (_, open) <- openTempFile dir "stderr"
             (plainCode, plainOut, _) <-
-                captured (runSingular (Just open) [] command)
+                captured (runSingular openDatumApplication (Just open) [] command)
             hClose open
             plainCode `shouldBe` ExitFailure 10
             closed <- closedHandle
             forM_ asked $ \flags -> do
                 (code, out, _) <-
-                    captured (runSingular (Just closed) [] (command <> flags))
+                    captured
+                        (runSingular openDatumApplication (Just closed) [] (command <> flags))
                 (flags, code, out) `shouldBe` (flags, plainCode, plainOut)
     it
         "keeps the packaged command's receipt and exit when every setup step fails in turn"
@@ -855,10 +857,12 @@ entryPoint = describe "the receipt under every tracing setting" $ do
             -- baselines at the real composition: a local refusal and help, each
             -- writing no journal (the registry is missing; help prints usage).
             (refusedCode, refusedOut, _) <-
-                captured (runPackagedWith (pure (Just open)) refused [])
+                captured
+                    (runPackagedWith openDatumApplication (pure (Just open)) refused [])
             refusedCode `shouldBe` ExitFailure 10
             (helpCode, helpOut, _) <-
-                captured (runPackagedWith (pure (Just open)) help [])
+                captured
+                    (runPackagedWith openDatumApplication (pure (Just open)) help [])
             helpCode `shouldBe` ExitSuccess
             hClose open
             closed <- closedHandle
@@ -873,11 +877,13 @@ entryPoint = describe "the receipt under every tracing setting" $ do
             forM_ asked $ \flags -> do
                 forM_ faults $ \(name, getErrors) -> do
                     (code, out, _) <-
-                        captured (runPackagedWith getErrors (refused <> flags) [])
+                        captured
+                            (runPackagedWith openDatumApplication getErrors (refused <> flags) [])
                     (flags, name, code, out)
                         `shouldBe` (flags, name, refusedCode, refusedOut)
             forM_ faults $ \(name, getErrors) -> do
-                (code, out, _) <- captured (runPackagedWith getErrors help [])
+                (code, out, _) <-
+                    captured (runPackagedWith openDatumApplication getErrors help [])
                 (name, code, out) `shouldBe` (name, helpCode, helpOut)
     it "takes a standard error that is not a stream as closed" $
         withSystemTempDirectory "trace-not-a-stream" $ \dir -> do
@@ -983,16 +989,29 @@ setupRecut = describe "(#416) tracing setup re-cut" $ do
                     ]
             (_, open) <- openTempFile dir "stderr"
             (plainCode, plainOut, _) <-
-                captured (runPackagedWith (pure (Just open)) help [])
+                captured
+                    (runPackagedWith openDatumApplication (pure (Just open)) help [])
             (code, out, _) <-
-                captured (runPackagedWith (pure (Just open)) (help <> asked) [])
+                captured
+                    ( runPackagedWith
+                        openDatumApplication
+                        (pure (Just open))
+                        (help <> asked)
+                        []
+                    )
             (code, out) `shouldBe` (plainCode, plainOut)
             code `shouldBe` ExitSuccess
             BS.null out `shouldBe` False
             doesFileExist target `shouldReturn` False
             -- the same target is created by a command that reports anything
             (refusedCode, _, _) <-
-                captured (runPackagedWith (pure (Just open)) (refused <> asked) [])
+                captured
+                    ( runPackagedWith
+                        openDatumApplication
+                        (pure (Just open))
+                        (refused <> asked)
+                        []
+                    )
             hClose open
             refusedCode `shouldBe` ExitFailure 10
             doesFileExist target `shouldReturn` True

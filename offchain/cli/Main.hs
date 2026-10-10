@@ -13,10 +13,11 @@ module Main (main) where
 import System.Environment (getArgs, getEnvironment)
 import System.Exit (exitWith)
 
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Root (runPackaged)
 
 main :: IO ()
 main = do
     args <- getArgs
     environment <- getEnvironment
-    runPackaged args environment >>= exitWith
+    runPackaged openDatumApplication args environment >>= exitWith
