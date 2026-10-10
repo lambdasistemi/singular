@@ -2525,6 +2525,178 @@ def test_replay_fault_status_maps(mod, tmp):
     )
 
 
+def test_forwarder_thread_start_failure_is_setup_and_teardown(mod, tmp):
+    import threading as _threading
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-thread-start-is-setup",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    with mock.patch.object(
+        _threading.Thread, "start", side_effect=RuntimeError("cannot start thread")
+    ):
+        try:
+            forward.start()
+        except mod.SetupFailure as failed:
+            check(
+                "forwarder-thread-start-is-setup",
+                "thread" in str(failed) and "cannot start thread" in str(failed),
+                f"SetupFailure={failed}",
+            )
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            check(
+                "forwarder-thread-start-is-setup",
+                False,
+                f"mapped to {type(error).__name__}: {error}",
+            )
+            # Leave the bound socket to stop(): on the pre-repair harness
+            # shutdown() blocks forever on the loop that never started,
+            # which the bounded check below turns into a failure, not a hang.
+    done = []
+
+    def _stop():
+        try:
+            forward.stop()
+        finally:
+            done.append(True)
+
+    watcher = _threading.Thread(target=_stop, daemon=True)
+    watcher.start()
+    watcher.join(timeout=15)
+    check(
+        "forwarder-stop-after-failed-start-completes",
+        done == [True],
+        "stop() hung on a serving loop that never started",
+    )
+
+
+def _pgrep_script(codes, seen):
+    def fake_run(argv, **kwargs):
+        if argv[0] == "pkill":
+            return subprocess.CompletedProcess(argv, 1)
+        if argv[0] == "pgrep":
+            seen.append(argv[2])
+            code, err = codes.pop(0) if codes else (1, "")
+            return subprocess.CompletedProcess(argv, code, stderr=err)
+        raise AssertionError(argv)
+
+    return fake_run
+
+
+def test_pgrep_exit_2_and_3_are_setup(mod, tmp):
+    for site, sequence in (
+        ("loop", [(2, "pgrep: syntax error")]),
+        ("final", [(1, ""), (1, ""), (2, "pgrep: syntax error")]),
+    ):
+        for exit_code, diagnostic in ((2, "pgrep: syntax error"), (3, "pgrep: fatal")):
+            journey = bare(mod, tmp)
+            journey.runtime = Path(tmp) / f"rt-{site}-{exit_code}"
+            journey.runtime.mkdir(exist_ok=True)
+            codes = [(code, err) for code, err in sequence[:-1]] + [
+                (exit_code, diagnostic)
+            ]
+            seen = []
+            out = io.StringIO()
+            with mock.patch.object(mod.subprocess, "run", _pgrep_script(codes, seen)):
+                with contextlib.redirect_stdout(out):
+                    try:
+                        journey.stop_devnet()
+                    except mod.SetupFailure as failed:
+                        stopped = f"{type(failed).__name__}: {failed}"
+                    except Exception as error:  # noqa: BLE001 - wrong mapping
+                        stopped = f"{type(error).__name__}: {error}"
+                    else:
+                        stopped = "clean"
+            text = out.getvalue()
+            check(
+                f"pgrep-{site}-{exit_code}-is-setup",
+                stopped.startswith("SetupFailure")
+                and "process query failed" in stopped
+                and str(exit_code) in stopped
+                and diagnostic in stopped
+                and "owned processes: none" not in text,
+                f"{site} pgrep exit {exit_code} gave {stopped}",
+            )
+    journey = bare(mod, tmp)
+    journey.runtime = Path(tmp) / "rt-clean"
+    journey.runtime.mkdir(exist_ok=True)
+    seen = []
+    out = io.StringIO()
+    with mock.patch.object(mod.subprocess, "run", _pgrep_script([], seen)):
+        with contextlib.redirect_stdout(out):
+            journey.stop_devnet()
+    check(
+        "pgrep-clean-queries-both-patterns",
+        "owned processes: none" in out.getvalue()
+        and any(str(journey.neutral) in pattern for pattern in seen)
+        and any("rt-clean" in pattern for pattern in seen),
+        f"patterns seen: {seen}",
+    )
+
+
+def test_pkill_failure_is_best_effort(mod, tmp):
+    journey = bare(mod, tmp)
+    runtime = Path(tmp) / "rt-pkill"
+    runtime.mkdir(exist_ok=True)
+    journey.runtime = runtime
+    out = io.StringIO()
+    with mock.patch.object(mod.subprocess, "run", _pgrep_script([], [])):
+        with contextlib.redirect_stdout(out):
+            journey.stop_devnet()
+    check(
+        "pkill-failure-is-best-effort",
+        "owned processes: none" in out.getvalue() and not runtime.exists(),
+        "a best-effort kill failure failed teardown or leaked the runtime",
+    )
+
+
+def test_pgrep_failure_flows(mod, tmp):
+    journey = bare(mod, tmp)
+
+    def _boom(self):
+        self.runtime = Path(tmp) / "rt-flow"
+        self.runtime.mkdir(exist_ok=True)
+        raise mod.SetupFailure("injected")
+
+    journey.fixture = _boom.__get__(journey, mod.Journey)
+    with mock.patch.object(mod.subprocess, "run", _pgrep_script([], [])):
+        with mock.patch.object(
+            mod.shutil, "rmtree", side_effect=OSError("read-only filesystem")
+        ):
+            status, out = quiet_execute(journey)
+    check(
+        "pgrep-failure-flow-is-setup",
+        status == 3,
+        f"a removal failure exited {status}, want 3",
+    )
+    check(
+        "pgrep-failure-flow-names-cause",
+        "did not clean" in out and "two actors: FAIL:" not in out,
+        "no setup line names the removal cause without a row result",
+    )
+    journey_guard = bare(mod, tmp)
+    journey_guard.runtime = Path(tmp) / "rt-flow-guard"
+    journey_guard.runtime.mkdir(exist_ok=True)
+    journey_guard.fixture = lambda: (_ for _ in ()).throw(
+        mod.GuardFired("/w/bob-home/journal.jsonl")
+    )
+    with mock.patch.object(mod.subprocess, "run", _pgrep_script([], [])):
+        with mock.patch.object(
+            mod.shutil, "rmtree", side_effect=OSError("read-only filesystem")
+        ):
+            status_guard, out_guard = quiet_execute(journey_guard)
+    check(
+        "pgrep-failure-flow-keeps-guard",
+        status_guard == 2 and "GUARD:" in out_guard,
+        f"a removal failure overrode the guard with {status_guard}",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2572,6 +2744,10 @@ def main():
         test_replay_fault_control_accepted_is_row_failure,
         test_replay_fault_control_needs_unpatched,
         test_replay_fault_status_maps,
+        test_forwarder_thread_start_failure_is_setup_and_teardown,
+        test_pgrep_exit_2_and_3_are_setup,
+        test_pkill_failure_is_best_effort,
+        test_pgrep_failure_flows,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
