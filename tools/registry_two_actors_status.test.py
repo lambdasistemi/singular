@@ -1502,6 +1502,9 @@ def _history_valid_bases(tmp):
             "withheld_inspect": "history-withheld",
         },
         "alice": {"fold": "history-fold"},
+        "fold_roots": [
+            {"fold": "history-fold", "key": "k", "inspect_a": "ia", "inspect_b": "ib"}
+        ],
     }
     alegs = {
         "altered": {
@@ -1510,6 +1513,9 @@ def _history_valid_bases(tmp):
             "altered_inspect": "history-altered",
         },
         "alice": {"fold": "history-fold"},
+        "fold_roots": [
+            {"fold": "history-fold", "key": "k", "inspect_a": "ia", "inspect_b": "ib"}
+        ],
     }
     return wlegs, alegs, Path(tmp)
 
@@ -1997,6 +2003,250 @@ def test_forwarder_stops_after_leg_failure(mod, tmp):
     )
 
 
+def _fold_set_bases(tmp):
+    policy = "aa" * 28
+    name = "bb" * 16
+    token = f"{policy}.{name}"
+    root = "cc" * 32
+    txs = {
+        slot: ("%02d" % index) * 32
+        for index, slot in enumerate(
+            ("actor-a", "actor-b", "term-1", "term-2", "cross-1", "cross-2", "continue")
+        )
+    }
+    _write_receipt(
+        tmp,
+        "foldset-create",
+        {"command": "create", "outcome": "success", "stateToken": token},
+    )
+    _write_receipt(
+        tmp,
+        "foldset-positive",
+        {
+            "command": "inspect",
+            "outcome": "success",
+            "root": root,
+            "leaf": "active",
+            "pendingRequests": [],
+        },
+    )
+    folds = {
+        "foldset-fold-a": txs["actor-a"],
+        "foldset-fold-b": txs["actor-b"],
+        "foldset-fold-t1": txs["term-1"],
+        "foldset-fold-t2": txs["term-2"],
+        "foldset-fold-c1": txs["cross-1"],
+        "foldset-fold-c2": txs["cross-2"],
+        "foldset-fold-continue": txs["continue"],
+    }
+    for receipt, tx in folds.items():
+        _write_receipt(
+            tmp,
+            receipt,
+            {
+                "command": "fold",
+                "outcome": "success",
+                "root": root,
+                "fold": tx,
+            },
+        )
+    records = [
+        {"fold": name, "key": "k", "inspect_a": "ia", "inspect_b": "ib"}
+        for name in folds
+    ]
+    legs = {
+        "altered": {
+            "create": "foldset-create",
+            "positive_inspect": "foldset-positive",
+            "altered_inspect": "foldset-altered",
+        },
+        "alice": {"fold": "foldset-fold-a"},
+        "bob": {"fold": "foldset-fold-b"},
+        "terminate-bob-by-alice": {"fold": "foldset-fold-t1"},
+        "terminate-alice-by-bob": {"fold": "foldset-fold-t2"},
+        "cross-insert": {
+            "alice-books": {"fold": "foldset-fold-c1"},
+            "bob-books": {"fold": "foldset-fold-c2"},
+        },
+        "fold_roots": records,
+    }
+    return legs, txs, Path(tmp), policy, name, root
+
+
+def _write_foldset_refusal(tmp, tx, policy, name):
+    import json as _json
+
+    doc = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState RootDoesNotChain",
+        "trieRefusal": {
+            "registry": {"policy": policy, "name": name},
+            "transaction": tx,
+            "cause": "roots-part",
+            "rebuiltRoot": "ee" * 32,
+            "recordedRoot": "cc" * 32,
+        },
+    }
+    Path(tmp, "foldset-altered.json").write_text(_json.dumps(doc) + "\n")
+    Path(tmp, "foldset-altered.exit").write_text("14\n")
+
+
+def test_fold_set_derived_from_record(mod, tmp):
+    legs, txs, receipts, policy, name, _root = _fold_set_bases(tmp)
+    journey = bare(mod, tmp)
+    expected = set(txs.values())
+    got = journey._journey_fold_txs(legs, receipts)
+    check(
+        "fold-set-derived-complete",
+        got == expected,
+        f"the set misses {sorted(expected - got)}" if got != expected else "",
+    )
+    failures = []
+    for slot, tx in sorted(txs.items()):
+        _write_foldset_refusal(tmp, tx, policy, name)
+        passed, _, waiting = journey.altered_edge_agreement(legs, receipts)
+        if not passed:
+            failures.append(f"{slot}: {waiting}")
+    check(
+        "fold-set-every-held-fold-passes",
+        not failures,
+        "; ".join(failures) if failures else "",
+    )
+    _write_foldset_refusal(tmp, "ff" * 32, policy, name)
+    passed_foreign, _, _ = journey.altered_edge_agreement(legs, receipts)
+    check(
+        "fold-set-foreign-transaction-does-not-pass",
+        not passed_foreign,
+        "a refusal naming a foreign transaction still passed",
+    )
+
+
+def test_fold_set_missing_record_excludes(mod, tmp):
+    import json as _json
+
+    legs, txs, receipts, policy, name, _root = _fold_set_bases(tmp)
+    journey = bare(mod, tmp)
+    failures = []
+    for record in legs["fold_roots"]:
+        receipt = Path(tmp, f"{record['fold']}.json")
+        tx = _json.loads(receipt.read_text())["fold"]
+        _write_foldset_refusal(tmp, tx, policy, name)
+        passed_held, _, waiting = journey.altered_edge_agreement(legs, receipts)
+        if not passed_held:
+            failures.append(f"held {record['fold']}: {waiting}")
+        trimmed = [entry for entry in legs["fold_roots"] if entry != record]
+        legs_dropped = dict(legs, fold_roots=trimmed)
+        passed_dropped, _, _ = journey.altered_edge_agreement(legs_dropped, receipts)
+        if passed_dropped:
+            failures.append(f"dropped {record['fold']} still passed")
+    check(
+        "fold-set-missing-record-excludes",
+        not failures,
+        "; ".join(failures) if failures else "",
+    )
+
+
+def test_start_runtime_allocation_failure_is_setup(mod, tmp):
+    import tempfile as _tempfile
+
+    journey = bare(mod, tmp)
+    with mock.patch.object(
+        _tempfile, "mkdtemp", side_effect=OSError("permission denied")
+    ):
+        status, out = quiet_execute(journey)
+    check(
+        "runtime-allocation-is-setup",
+        status == 3,
+        f"an unallocated runtime exited {status}, want 3",
+    )
+    check(
+        "runtime-allocation-names-cause",
+        "two actors: SETUP:" in out and "did not allocate" in out,
+        "no setup line names the allocation cause",
+    )
+    check(
+        "runtime-allocation-is-no-row",
+        "two actors: FAIL:" not in out,
+        "an allocation failure computed a row result",
+    )
+
+
+def test_runtime_removal_failure_is_setup(mod, tmp):
+    import shutil as _shutil
+
+    journey = bare(mod, tmp)
+    runtime = Path(tmp) / "stuck-runtime"
+    runtime.mkdir(exist_ok=True)
+    journey.runtime = runtime
+    with mock.patch.object(
+        _shutil, "rmtree", side_effect=OSError("read-only filesystem")
+    ):
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                journey.stop_devnet()
+        except mod.SetupFailure as failed:
+            check(
+                "runtime-removal-names-cause",
+                "did not clean" in str(failed) and "read-only" in str(failed),
+                f"SetupFailure={failed}",
+            )
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            check(
+                "runtime-removal-names-cause",
+                False,
+                f"mapped to {type(error).__name__}, want SetupFailure",
+            )
+        else:
+            check(
+                "runtime-removal-names-cause",
+                False,
+                "a refused removal claimed clean",
+            )
+
+
+def test_runtime_removal_failure_flows(mod, tmp):
+    import shutil as _shutil
+
+    runtime = Path(tmp) / "stuck-runtime-flow"
+    runtime.mkdir(exist_ok=True)
+
+    def _boom_fixture(self):
+        self.runtime = runtime
+        raise mod.SetupFailure("injected")
+
+    journey = bare(mod, tmp)
+    journey.fixture = _boom_fixture.__get__(journey, mod.Journey)
+    with mock.patch.object(
+        _shutil, "rmtree", side_effect=OSError("read-only filesystem")
+    ):
+        status, out = quiet_execute(journey)
+    check(
+        "runtime-removal-flow-is-setup",
+        status == 3,
+        f"a removal failure exited {status}, want 3",
+    )
+    check(
+        "runtime-removal-flow-names-cause",
+        "did not clean" in out and "two actors: FAIL:" not in out,
+        "no setup line names the removal cause without a row result",
+    )
+    journey_guard = bare(mod, tmp)
+    journey_guard.runtime = runtime
+    journey_guard.fixture = lambda: (_ for _ in ()).throw(
+        mod.GuardFired("/w/bob-home/journal.jsonl")
+    )
+    with mock.patch.object(
+        _shutil, "rmtree", side_effect=OSError("read-only filesystem")
+    ):
+        status_guard, out_guard = quiet_execute(journey_guard)
+    check(
+        "runtime-removal-keeps-guard",
+        status_guard == 2 and "GUARD:" in out_guard,
+        f"a removal failure overrode the guard with {status_guard}",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2034,6 +2284,11 @@ def main():
         test_forwarder_start_failure_is_setup,
         test_withheld_leg_records_and_passes,
         test_forwarder_stops_after_leg_failure,
+        test_fold_set_derived_from_record,
+        test_fold_set_missing_record_excludes,
+        test_start_runtime_allocation_failure_is_setup,
+        test_runtime_removal_failure_is_setup,
+        test_runtime_removal_failure_flows,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,

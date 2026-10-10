@@ -860,7 +860,10 @@ class Journey:
         # stay under that root; evidence stays under neutral via --evidence-dir.
         runtime = getattr(self, "runtime", None)
         if runtime is None:
-            runtime = Path(tempfile.mkdtemp(prefix="singular-", dir="/tmp"))
+            try:
+                runtime = Path(tempfile.mkdtemp(prefix="singular-", dir="/tmp"))
+            except OSError as error:
+                raise SetupFailure(f"the short runtime did not allocate: {error}")
             self.runtime = runtime
         environment.update(HOME=str(self.neutral), TMPDIR=str(runtime))
         environment.pop("SINGULAR_NODE_SOCKET", None)
@@ -2474,23 +2477,23 @@ class Journey:
         return True, ""
 
     def _journey_fold_txs(self, legs, receipts=None):
-        """Every fold transaction the journey holds, from its fold receipts."""
-        names = []
-        for actor in ("alice", "bob"):
-            slot = legs.get(actor, {}).get("fold")
-            if slot:
-                names.append(slot)
-        for direction in ("terminate-bob-by-alice", "terminate-alice-by-bob"):
-            slot = legs.get(direction, {}).get("fold")
-            if slot:
-                names.append(slot)
-        cross = legs.get("cross-insert", {})
-        for direction in ("alice-books", "bob-books"):
-            slot = cross.get(direction, {}).get("fold")
-            if slot:
-                names.append(slot)
+        """Every fold transaction the journey holds, from its own record.
+
+        Derived from the `fold_roots` record each leg writes as its fold
+        executes: a leg added later that records a fold enters the set
+        without anyone editing this method. No hand-written list of
+        receipt keys.
+        """
         txs = set()
-        for name in names:
+        records = legs.get("fold_roots", [])
+        if not isinstance(records, list):
+            return txs
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            name = record.get("fold")
+            if not name:
+                continue
             doc = self.load_receipt(name, receipts)
             if isinstance(doc, dict) and isinstance(doc.get("fold"), str):
                 txs.add(doc["fold"])
