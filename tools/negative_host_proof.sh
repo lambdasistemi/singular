@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Proof for #358 third slice first registry pair (commit-owner-6): the slice subject, executed.
+# Proof for #358 third slice registry pairs (commit-owner-7): the slice subject, executed.
 # Rows: gate 1 (host builds; parts discovery fails closed on empty),
 # row 6a (negative-host-ordinary), row 6d (negative-host-lint).
 # Expected oracle: specs/358-singular-negative/tasks.md second slice.
@@ -44,7 +44,7 @@ fi
 begin_leg
 if nix run --quiet .#negative-host-parts >"$receipts/parts.out" 2>"$receipts/parts.err"; then
   parts_ok=0
-  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key; do
+  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key; do
     if grep -q "$want" "$receipts/parts.out"; then
       say "parts list carries $want"
     else

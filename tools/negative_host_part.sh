@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# negative-host-part (second slice plus the first registry pair): the application
-# pairs from the release archive, and stranger-registers-a-taken-key.
+# negative-host-part (second slice plus the registry pairs): the application
+# pairs from the release archive, the stranger's taken key
+# (stranger-registers-a-taken-key), the owner's taken key
+# (owner-registers-a-taken-key-again), and the two revivals of a terminated
+# key (owner-revives-a-terminated-key, stranger-revives-a-terminated-key).
 # Parts: stranger-updates-the-key (first slice), the controller-signed
 # tamper family (controller-tamper-controller|deposit|token|address|datum),
 # the stranger's termination booking (stranger-terminates-the-key), the
@@ -24,7 +27,7 @@ set -euo pipefail
 root="$1"
 part="$2"
 case "$part" in
-  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key) ;;
+  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key | owner-registers-a-taken-key-again | owner-revives-a-terminated-key | stranger-revives-a-terminated-key) ;;
   *)
     echo "negative-host-part: unknown part: $part" >&2
     exit 2
@@ -214,9 +217,12 @@ say "registry ready: alice-1 active"
 # tampered update beside her honest update) and of the withdraw (her
 # release outside any fold beside the same release inside the honest fold
 # of the booked termination, ordinary commands); the termination booking
-# pairs the stranger against the controller; the taken-key insertion pairs
-# the stranger's taken key against his fresh key from the same registry
-# state. Every refusal is judged below against the registry's own pin for
+# pairs the stranger against the controller; the taken-key insertions pair
+# the taken key against a fresh key from the same active registry state (the
+# stranger's with Bob, the owner's with Alice); each revival first terminates
+# alice-1 through the ordinary commands and folds it to terminal, then pairs
+# the terminated key against a fresh key from that same terminated state (the
+# owner's with Alice, the stranger's with Bob). Every refusal is judged below against the registry's own pin for
 # its part (application or state); setup, encoding and client failures are
 # classified and never counted.
 mkdir -p "$work/host-bob" "$work/host-alice"
@@ -292,6 +298,97 @@ case "$part" in
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
     ;;
+  owner-revives-a-terminated-key)
+    # Setup: terminate alice-1 through the ordinary commands and fold it to
+    # terminal, as controller-withdraws-outside-a-fold does.
+    run_ok setup-terminate "$open_datum" open-datum terminate --key alice-1 \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup termination booking failed"
+    run_ok setup-fold "$open_datum" open-datum fold \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup fold failed"
+    run_ok setup-inspect "$open_datum" open-datum inspect --key alice-1 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "setup inspect failed"
+    [ "$(jq -er .leaf "$receipts/setup-inspect.json")" = terminal ] \
+      || setup_fail "key is not terminal after setup fold"
+    fresh_key="fresh-3"
+    # Freshness is checked from the terminated state, before either host
+    # command, as stranger-registers-a-taken-key does.
+    run_ok inspect-fresh "$open_datum" open-datum inspect --key "$fresh_key" \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "fresh key inspect failed"
+    [ "$(jq -er .leaf "$receipts/inspect-fresh.json")" = unknown ] \
+      || setup_fail "fresh key not fresh: expected unknown leaf"
+    mkdir -p "$work/host-alice-control"
+    # No `--fold` flag: the host always books then folds (issue 486 removes
+    # the combined switch from the ordinary insert), so the command line
+    # never carries it.
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-alice-control" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    ;;
+  owner-registers-a-taken-key-again)
+    fresh_key="fresh-2"
+    # Freshness is checked, not assumed: the control key was never used
+    # earlier in the run, so the registry must not hold it.
+    run_ok inspect-fresh "$open_datum" open-datum inspect --key "$fresh_key" \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "fresh key inspect failed"
+    [ "$(jq -er .leaf "$receipts/inspect-fresh.json")" = unknown ] \
+      || setup_fail "fresh key not fresh: expected unknown leaf"
+    mkdir -p "$work/host-alice-control"
+    # No `--fold` flag: the host always books then folds (issue 486 removes
+    # the combined switch from the ordinary insert), so the command line
+    # never carries it.
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-alice-control" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    ;;
+  stranger-revives-a-terminated-key)
+    # Setup: the same termination to terminal through the ordinary commands.
+    run_ok setup-terminate "$open_datum" open-datum terminate --key alice-1 \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup termination booking failed"
+    run_ok setup-fold "$open_datum" open-datum fold \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup fold failed"
+    run_ok setup-inspect "$open_datum" open-datum inspect --key alice-1 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "setup inspect failed"
+    [ "$(jq -er .leaf "$receipts/setup-inspect.json")" = terminal ] \
+      || setup_fail "key is not terminal after setup fold"
+    fresh_key="fresh-4"
+    # Freshness is checked from the terminated state, before either host
+    # command, as stranger-registers-a-taken-key does.
+    run_ok inspect-fresh "$open_datum" open-datum inspect --key "$fresh_key" \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "fresh key inspect failed"
+    [ "$(jq -er .leaf "$receipts/inspect-fresh.json")" = unknown ] \
+      || setup_fail "fresh key not fresh: expected unknown leaf"
+    mkdir -p "$work/host-bob-control"
+    # No `--fold` flag: the host always books then folds (issue 486 removes
+    # the combined switch from the ordinary insert), so the command line
+    # never carries it.
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+      --state-dir "$work/host-bob-control" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    ;;
 esac
 
 # Enforce the receipt cap.
@@ -312,11 +409,17 @@ expect_pin="$pin_app"
 expect_role="application-spending"
 expect_read="holding-ref"
 case "$part" in
-  stranger-registers-a-taken-key)
+  stranger-registers-a-taken-key | owner-registers-a-taken-key-again)
     expect_hash_field="stateHash"
     expect_pin="$pin_state"
     expect_role="state-validator"
     expect_read="holding-ref"
+    ;;
+  owner-revives-a-terminated-key | stranger-revives-a-terminated-key)
+    expect_hash_field="stateHash"
+    expect_pin="$pin_state"
+    expect_role="state-validator"
+    expect_read="no-holding"
     ;;
 esac
 
@@ -411,6 +514,23 @@ jq '.before.state.root = "unreadable" | .before.holding.output = "none"' \
   "$receipts/forbidden.json" >"$altered/forbidden-degenerate-read.json"
 if judge "$altered/forbidden-degenerate-read.json" refused-by-expected; then
   fail "control: degenerate before-read passed the positive-read clause"
+fi
+# (vi-vii) no-holding predicates, each the only reason to reject: built from
+# the valid receipt with before equal to after. Only for the no-holding form;
+# the holding-reference parts and their controls are untouched.
+if [ "$expect_read" = no-holding ]; then
+  # (vi) a real holding output must fail the no-holding clause.
+  jq '.before.holding = {"output": "00000000000000000000000000000000000000000000000000000000#0"} | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-real-holding.json"
+  if judge "$altered/forbidden-real-holding.json" refused-by-expected; then
+    fail "control: real holding passed the no-holding clause"
+  fi
+  # (vii) an unreadable wallet must fail the no-holding clause.
+  jq '.before.wallet = "unreadable" | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-unreadable-wallet.json"
+  if judge "$altered/forbidden-unreadable-wallet.json" refused-by-expected; then
+    fail "control: unreadable wallet passed the no-holding clause"
+  fi
 fi
 # (iv) control in forbidden form is refused (it would be refused, not accepted).
 if judge "$receipts/forbidden.json" accepted; then
