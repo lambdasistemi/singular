@@ -3237,6 +3237,365 @@ def test_apps_supply_process_tools(mod, tmp):
     )
 
 
+def test_thread_construction_failure_is_setup(mod, tmp):
+    import threading as _threading
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "thread-construction-failure-is-setup",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    with mock.patch.object(
+        _threading, "Thread", side_effect=RuntimeError("cannot construct thread")
+    ):
+        try:
+            forward.start()
+        except mod.SetupFailure as failed:
+            stopped = f"SetupFailure: {failed}"
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            stopped = f"{type(error).__name__}: {error}"
+        else:
+            stopped = "clean"
+    check(
+        "thread-construction-failure-is-setup",
+        stopped.startswith("SetupFailure") and "thread" in stopped,
+        f"a refused thread construction gave {stopped}",
+    )
+    check(
+        "thread-construction-frees-socket",
+        getattr(forward, "server", None) is None,
+        "a failed construction leaked the bound socket",
+    )
+
+
+def test_removal_check_flips_row(mod, tmp):
+    journey = bare(mod, tmp)
+    root = "cc" * 32
+    booking_request = "abc123#0"
+    owner_hex = "ownerhex000000000000000000000000000000000000000000000001"
+    before = {
+        "command": "inspect",
+        "outcome": "success",
+        "leaf": "unknown",
+        "root": root,
+        "pendingRequests": [],
+    }
+    booking = {
+        "command": "insert",
+        "outcome": "success",
+        "request": booking_request,
+        "requester": owner_hex,
+    }
+    fold = {
+        "command": "fold",
+        "outcome": "success",
+        "request": booking_request,
+        "edge": "insertActive",
+        "folder": owner_hex,
+        "root": root,
+    }
+    after = {
+        "command": "inspect",
+        "outcome": "success",
+        "leaf": "active",
+        "root": root,
+        "pendingRequests": [],
+    }
+    _write_receipt(tmp, "removal-inspect-before", before)
+    _write_receipt(tmp, "removal-booking", booking)
+    # The removal control unlinks exactly this name; keep it literal.
+    _write_receipt(tmp, "alice-fold", fold)
+    _write_receipt(tmp, "removal-inspect-after", after)
+    legs = {
+        "alice": {
+            "inspect_before": "removal-inspect-before",
+            "booking": "removal-booking",
+            "fold": "alice-fold",
+            "inspect_after": "removal-inspect-after",
+        }
+    }
+    passed, _, _ = journey.run_one_agreement("alice", legs["alice"], Path(tmp))
+    check(
+        "removal-check-valid-passes",
+        passed,
+        "the valid removal base did not pass",
+    )
+    try:
+        journey.removal_check(legs)
+    except Exception as error:  # noqa: BLE001 - escape is the finding
+        check(
+            "removal-check-flips-row",
+            False,
+            f"escaped as {type(error).__name__}: {error}",
+        )
+    else:
+        check("removal-check-flips-row", True)
+
+
+def test_environment_isolates_party_tmp(mod, tmp):
+    journey = bare(mod, tmp)
+    env = journey.environment("alice")
+    party_tmp = Path(tmp) / "alice"
+    check(
+        "environment-isolates-party-tmp",
+        env.get("HOME", "").endswith("alice-home")
+        and env.get("TMPDIR", "") == str(party_tmp)
+        and party_tmp.is_dir()
+        and "XDG_STATE_HOME" not in env,
+        "a party's home or temporary directory escapes its own root",
+    )
+
+
+def test_journey_init_creates_worktree(mod, tmp):
+    work = Path(tmp) / "fresh-work"
+    journey = mod.Journey.__new__(mod.Journey)
+    try:
+        mod.Journey.__init__(journey, "singular", "devnet", "blueprint", str(work))
+    except Exception as error:  # noqa: BLE001 - escape is the finding
+        check(
+            "journey-init-creates-worktree",
+            False,
+            f"escaped as {type(error).__name__}: {error}",
+        )
+        return
+    check(
+        "journey-init-creates-worktree",
+        (work / "devnet").is_dir()
+        and (work / "receipts").is_dir()
+        and (work / "creator-home").is_dir()
+        and (work / "alice-home").is_dir()
+        and (work / "bob-home").is_dir(),
+        "fresh homes and receipt roots are missing",
+    )
+
+
+def test_koios_post_roundtrip(mod, tmp):
+    import threading as _threading
+    from http.server import BaseHTTPRequestHandler as _Handler
+    from http.server import ThreadingHTTPServer as _Server
+
+    class _Echo(_Handler):
+        def do_POST(self):
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = _Server(("127.0.0.1", 0), _Echo)
+    thread = _threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        answer = mod._koios_post(
+            f"http://127.0.0.1:{server.server_address[1]}",
+            "/echo",
+            {"hello": "world"},
+        )
+    except Exception as error:  # noqa: BLE001 - escape is the finding
+        answer = f"{type(error).__name__}: {error}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=10)
+    check(
+        "koios-post-roundtrip",
+        answer == {"hello": "world"},
+        f"a provider round trip gave {answer!r}",
+    )
+
+
+def _wrap_steps_for_injection(steps, index):
+    ran = []
+
+    def _record(name, action):
+        def call():
+            ran.append(name)
+            return action()
+
+        return call
+
+    def _raise(name, kind):
+        def call():
+            ran.append(name)
+            if kind == "launch":
+                raise OSError(f"injected-{name}")
+            raise RuntimeError(f"injected-{name}")
+
+        return call
+
+    wrapped = []
+    for position, (name, kind, action) in enumerate(steps):
+        if position <= index:
+            wrapped.append((name, kind, _raise(name, kind)))
+        else:
+            wrapped.append((name, kind, _record(name, action)))
+    return wrapped, ran
+
+
+def _wrap_steps_for_injection(steps, index):
+    ran = []
+
+    def _record(name, action):
+        def call():
+            ran.append(name)
+            return action()
+
+        return call
+
+    def _raise(name, kind):
+        def call():
+            ran.append(name)
+            if kind == "launch":
+                raise OSError(f"injected-{name}")
+            raise RuntimeError(f"injected-{name}")
+
+        return call
+
+    wrapped = []
+    for position, (name, kind, action) in enumerate(steps):
+        if position <= index:
+            wrapped.append((name, kind, _raise(name, kind)))
+        else:
+            wrapped.append((name, kind, _record(name, action)))
+    return wrapped, ran
+
+
+def test_stop_registry_total(mod, tmp):
+    if not hasattr(mod.Journey, "_stop_release_steps"):
+        check(
+            "stop-registry-total",
+            False,
+            "the stop release registry is absent",
+        )
+        return
+    template = bare(mod, tmp)
+    template.runtime = Path(tmp) / "rt-registry-shape"
+    template.runtime.mkdir(exist_ok=True)
+    step_names = [name for name, _kind, _fn in template._stop_release_steps()]
+    for index, (name, _kind, _fn) in enumerate(template._stop_release_steps()):
+        run = bare(mod, tmp)
+        run.runtime = Path(tmp) / f"rt-registry-{index}"
+        run.runtime.mkdir(exist_ok=True)
+
+        def _boom(self):
+            raise mod.SetupFailure("injected")
+
+        run.fixture = _boom.__get__(run, mod.Journey)
+        wrapped, ran = _wrap_steps_for_injection(run._stop_release_steps(), index)
+        with mock.patch.object(run, "_stop_release_steps", lambda: wrapped):
+            status, out = quiet_execute(run)
+        present = all(f"{step}:" in out for step in step_names[: index + 1])
+        check(
+            f"stop-registry-total-{name}",
+            status == 3
+            and present
+            and set(ran) == set(step_names)
+            and "two actors: FAIL:" not in out
+            and "internal error" not in out
+            and "owned processes: none" not in out,
+            f"injecting {name} gave status={status} ran={sorted(ran)}",
+        )
+
+
+def test_forwarder_registry_total(mod, tmp):
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None or not hasattr(mod.Journey, "withheld_leg"):
+        check(
+            "forwarder-registry-total",
+            False,
+            "the forwarder release registry is absent",
+        )
+        return
+    import json as _json
+
+    step_methods = {
+        "shutdown-if-serving": "_release_shutdown",
+        "close": "_release_close",
+        "join-and-check": "_release_join",
+    }
+    template = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb")
+    step_names = [name for name, _kind, _fn in template._release_steps()]
+    refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState HistoryIncomplete",
+        "trieRefusal": {
+            "registry": {"policy": "aabbcc", "name": "ddeeff"},
+            "cause": "missing-transaction",
+        },
+    }
+    for index, (name, _kind, _fn) in enumerate(template._release_steps()):
+        journey, _urls, fake_run_party = _withheld_mocked_leg(
+            mod, tmp, lambda: (14, dict(refusal))
+        )
+        ran = []
+        patches = []
+        for position, (step_name, _step_kind, _step_fn) in enumerate(
+            template._release_steps()
+        ):
+            method = getattr(forward_cls, step_methods[step_name])
+
+            def _record(*args, _method=method, _step_name=step_name, **kwargs):
+                ran.append(_step_name)
+                return _method(*args, **kwargs)
+
+            def _raise(*args, _step_name=step_name, **kwargs):
+                ran.append(_step_name)
+                raise RuntimeError(f"injected-{_step_name}")
+
+            if position <= index:
+                patches.append(
+                    mock.patch.object(forward_cls, step_methods[step_name], _raise)
+                )
+            else:
+                patches.append(
+                    mock.patch.object(forward_cls, step_methods[step_name], _record)
+                )
+        for patch in patches:
+            patch.start()
+        try:
+            with mock.patch.object(journey, "run_party", fake_run_party):
+                try:
+                    journey.withheld_leg("alice", "alice-2")
+                except mod.SetupFailure as failed:
+                    outcome = f"SetupFailure: {failed}"
+                except Exception as error:  # noqa: BLE001 - row status is the finding
+                    outcome = f"{type(error).__name__}: {error}"
+                else:
+                    outcome = "clean"
+        finally:
+            for patch in reversed(patches):
+                patch.stop()
+        raw = Path(tmp, "withheld-inspect.json").read_text()
+        check(
+            f"forwarder-registry-total-{name}",
+            outcome.startswith("SetupFailure")
+            and all(f"{step}:" in outcome for step in step_names[: index + 1])
+            and set(ran) == set(step_names)
+            and _json.loads(raw).get("outcome") == "stale-state",
+            f"injecting {name} gave {outcome} ran={sorted(ran)}",
+        )
+
+
+def test_receipt_loaders_handle_absence(mod, tmp):
+    journey = bare(mod, tmp)
+    check(
+        "receipt-loaders-handle-absence",
+        journey.load_receipt("no-such-receipt", Path(tmp)) is None
+        and journey.load_exit("no-such-receipt", Path(tmp)) is None,
+        "a missing receipt did not read as absent",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -3297,6 +3656,14 @@ def main():
         test_forwarder_relay_failure_is_502,
         test_node_wait_timeout_continues_teardown,
         test_which_missing_still_removes_runtime,
+        test_stop_registry_total,
+        test_forwarder_registry_total,
+        test_thread_construction_failure_is_setup,
+        test_removal_check_flips_row,
+        test_environment_isolates_party_tmp,
+        test_journey_init_creates_worktree,
+        test_koios_post_roundtrip,
+        test_receipt_loaders_handle_absence,
         test_apps_supply_process_tools,
         test_altered_leg_records_and_passes,
         test_altered_leg_skips_without_faulted_binary,
