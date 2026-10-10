@@ -502,7 +502,10 @@
                   work="$(mktemp -d "$base/run.XXXXXX")/journey"
                   echo "two actors: receipts in $work"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  python3 ${./tools/registry_two_actors.py} \
+                  # #381: the altered journey leg inspects with the control
+                  # build; without it the leg is skipped and its row pending.
+                  SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
+                    python3 ${./tools/registry_two_actors.py} \
                     ${pkgs.lib.getExe offchain.packages.${system}.singular} \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                     ${onchain.packages.${system}.plutus-blueprint} "$work"

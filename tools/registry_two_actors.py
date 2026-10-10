@@ -2070,6 +2070,63 @@ class Journey:
         )
         return 0 if passed else 1
 
+    def altered_leg(self, actor, key):
+        """Refuse an altered request edge through the actor command.
+
+        The positive `inspect` runs on the journey binary; the refused
+        `inspect` runs on the faulted binary from SINGULAR_REPLAY_FAULT,
+        whose replay maps an insertion edge to another leaf, and must
+        refuse `RootDoesNotChain` naming the registry and the fold, with
+        no root. Without the faulted binary the leg is skipped and the
+        row stays pending for its absent receipts. Every command carries
+        `--state-token`.
+        """
+        faulted = os.environ.get("SINGULAR_REPLAY_FAULT")
+        if not faulted:
+            return None
+        others = tuple(home for party, home in self.homes.items() if party != actor)
+        leg = {}
+        status, positive = self.run_party(
+            actor,
+            "altered-positive-inspect",
+            self.inspect_key(key),
+            others,
+        )
+        require(
+            status == 0 and positive.get("outcome") == "success",
+            f"{actor} altered positive inspect failed: exit {status}, {positive}",
+        )
+        require(
+            positive.get("root"),
+            f"{actor} altered positive inspect named no root: {positive}",
+        )
+        leg["positive_inspect"] = "altered-positive-inspect"
+        journey_binary, self.singular = self.singular, faulted
+        try:
+            status, refused = self.run_party(
+                actor,
+                "altered-inspect",
+                self.inspect_key(key),
+                others,
+            )
+        finally:
+            self.singular = journey_binary
+        require(
+            status == 14 and refused.get("outcome") == "stale-state",
+            f"{actor} altered inspect was not refused stale: exit {status}, {refused}",
+        )
+        require(
+            "RootDoesNotChain" in refused.get("reason", ""),
+            f"{actor} altered inspect named another refusal: {refused}",
+        )
+        require(
+            not refused.get("root"),
+            f"{actor} altered inspect returned a root: {refused}",
+        )
+        leg["altered_inspect"] = "altered-inspect"
+        leg["create"] = "create"
+        return leg
+
     def terminate_leg(self, controller, folder, key):
         """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
         direction = f"terminate-{key}-by-{folder}"
@@ -3424,6 +3481,9 @@ class Journey:
                 legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
                 legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
                 legs["withheld"] = self.withheld_leg("alice", "alice-2")
+                altered = self.altered_leg("bob", "bob-2")
+                if altered is not None:
+                    legs["altered"] = altered
                 legs["fold_roots"] = getattr(self, "fold_records", [])
                 self.removal_check(legs)
                 self.cap_check()
