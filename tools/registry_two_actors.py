@@ -721,33 +721,41 @@ class _WithholdingForwarder:
             )
         return self.url
 
+    def _release_shutdown(self):
+        if (
+            self.server is not None
+            and self.thread is not None
+            and self.thread.is_alive()
+        ):
+            self.server.shutdown()
+
+    def _release_close(self):
+        if self.server is not None:
+            self.server.server_close()
+
+    def _release_join(self):
+        if self.thread is not None:
+            self.thread.join(timeout=30)
+            if self.thread.is_alive():
+                raise SetupFailure("join: thread still serving after timeout")
+
+    def _release_steps(self):
+        # Ordered (name, kind, callable) release steps; shutdown() waits on
+        # the serving loop, so it runs only while a thread is serving.
+        return [
+            ("shutdown-if-serving", "release", self._release_shutdown),
+            ("close", "release", self._release_close),
+            ("join-and-check", "release", self._release_join),
+        ]
+
     def stop(self):
         # Release only what exists, and everything that exists, even when
-        # an earlier step raised: a failed shutdown still closes and joins,
-        # and a timed-out join checks for a surviving thread.
-        thread, self.thread = self.thread, None
-        server, self.server = self.server, None
-        errors = []
-        if server is not None:
-            # shutdown() waits on the serving loop: only wait when a thread
-            # is actually serving, never on a loop that never started.
-            if thread is not None and thread.is_alive():
-                try:
-                    server.shutdown()
-                except Exception as error:
-                    errors.append(f"shutdown: {error}")
-            try:
-                server.server_close()
-            except Exception as error:
-                errors.append(f"close: {error}")
-        if thread is not None:
-            thread.join(timeout=30)
-            if thread.is_alive():
-                errors.append("join: thread still serving after timeout")
-        if errors:
-            raise SetupFailure(
-                "the withholding forwarder did not release: " + "; ".join(errors)
-            )
+        # an earlier step raised; a timed-out join checks for survivors.
+        try:
+            run_release_steps(self._release_steps())
+        finally:
+            self.thread = None
+            self.server = None
 
     def _handler(self):
         root, policy, name = self._root, self.policy, self.name
@@ -849,6 +857,28 @@ def classify_pgrep_exit(pattern, returncode, stderr):
         f"the process query failed: pgrep -f {pattern} "
         f"exited {returncode}: {(stderr or '').strip()}"
     )
+
+
+def run_release_steps(steps):
+    """Run named release steps; every step runs; failures become one setup failure.
+
+    Steps are (name, kind, callable) triples. A step that raises is
+    recorded as `name: error` and the run continues with the next step.
+    `kind` is `launch` for subprocess launches (whose `OSError` is the
+    failure) and `release` otherwise; it only guides the injected
+    failure in the generated control. A combined `SetupFailure` naming
+    every failure ends the run; silence means every step held.
+    """
+    errors = []
+    for name, _kind, action in steps:
+        try:
+            action()
+        except SetupFailure as failed:
+            errors.append(f"{name}: {failed}")
+        except Exception as error:
+            errors.append(f"{name}: {type(error).__name__}: {error}")
+    if errors:
+        raise SetupFailure("; ".join(errors))
 
 
 class Journey:
@@ -1090,67 +1120,88 @@ class Journey:
                 f"development settings lack {field}",
             )
 
+    def _release_verify_tools(self):
+        if which("pkill") is None or which("pgrep") is None:
+            raise SetupFailure("cannot verify no surviving node")
+
+    def _release_signal(self):
+        if self.node is None:
+            return
+        try:
+            os.killpg(self.node.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except OSError as error:
+            raise SetupFailure(f"could not signal the development source: {error}")
+
+    def _release_await_exit(self):
+        if self.node is None:
+            return
+        try:
+            self.node.wait(timeout=60)
+        except subprocess.TimeoutExpired:
+            raise SetupFailure("the development source did not stop")
+        finally:
+            self.node = None
+
+    def _release_kill(self):
+        for pattern in self._release_patterns:
+            subprocess.run(["pkill", "-f", pattern], check=False)
+
+    def _release_settle(self):
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            if all(check_absent(pattern) for pattern in self._release_patterns):
+                return
+            time.sleep(0.5)
+
+    def _release_verify(self):
+        labels = ("neutral", "runtime")
+        for label, pattern in zip(labels, self._release_patterns):
+            probe = subprocess.run(
+                ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
+            )
+            print(f"survivor query {label} exit={probe.returncode}", flush=True)
+            clean, error = classify_pgrep_exit(pattern, probe.returncode, probe.stderr)
+            if error is not None:
+                raise SetupFailure(error)
+            if not clean:
+                raise SetupFailure("a node of this run survives")
+
+    def _release_remove(self):
+        runtime = getattr(self, "runtime", None)
+        if runtime is None:
+            return
+        try:
+            shutil.rmtree(runtime, ignore_errors=False)
+        except OSError as error:
+            raise SetupFailure(f"the short runtime did not clean: {error}")
+        self.runtime = None
+
+    def _stop_release_steps(self):
+        # Ordered (name, kind, callable) release steps; patterns always list
+        # the neutral node first with the runtime node beside it when one
+        # exists, so per-pattern controls address a stable order.
+        patterns = [f"cardano-node run --config {self.neutral}/"]
+        runtime = getattr(self, "runtime", None)
+        if runtime is not None:
+            patterns.append(f"cardano-node run --config {runtime}/")
+        self._release_patterns = patterns
+        return [
+            ("verify-tools", "release", self._release_verify_tools),
+            ("signal-devnet", "release", self._release_signal),
+            ("await-devnet-exit", "release", self._release_await_exit),
+            ("kill-patterns", "launch", self._release_kill),
+            ("settle-queries", "launch", self._release_settle),
+            ("verify-patterns", "launch", self._release_verify),
+            ("remove-runtime", "release", self._release_remove),
+        ]
+
     def stop_devnet(self):
         # Every release step runs even if an earlier step raised; each
         # failure is collected and the run fails setup once at the end.
         # Nothing here prints owned-processes-none except full success.
-        errors = []
-        if self.node is not None:
-            try:
-                os.killpg(self.node.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            except OSError as error:
-                errors.append(f"could not signal the development source: {error}")
-            try:
-                self.node.wait(timeout=60)
-            except subprocess.TimeoutExpired:
-                errors.append("the development source did not stop")
-            self.node = None
-        if which("pkill") is None or which("pgrep") is None:
-            errors.append("cannot verify no surviving node")
-            verifiable = False
-        else:
-            verifiable = True
-        runtime = getattr(self, "runtime", None)
-        patterns = [f"cardano-node run --config {self.neutral}/"]
-        if runtime is not None:
-            patterns.append(f"cardano-node run --config {runtime}/")
-        if verifiable:
-            for pattern in patterns:
-                subprocess.run(["pkill", "-f", pattern], check=False)
-            deadline = time.monotonic() + 30
-            while time.monotonic() < deadline:
-                try:
-                    if all(check_absent(pattern) for pattern in patterns):
-                        break
-                except SetupFailure as failed:
-                    errors.append(str(failed))
-                    break
-                time.sleep(0.5)
-            for label, pattern in zip(("neutral", "runtime"), patterns):
-                probe = subprocess.run(
-                    ["pgrep", "-f", pattern],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                print(f"survivor query {label} exit={probe.returncode}", flush=True)
-                clean, error = classify_pgrep_exit(
-                    pattern, probe.returncode, probe.stderr
-                )
-                if error is not None:
-                    errors.append(error)
-                elif not clean:
-                    errors.append("a node of this run survives")
-        if runtime is not None:
-            try:
-                shutil.rmtree(runtime, ignore_errors=False)
-            except OSError as error:
-                errors.append(f"the short runtime did not clean: {error}")
-            self.runtime = None
-        if errors:
-            raise SetupFailure("; ".join(errors))
+        run_release_steps(self._stop_release_steps())
         print("two actors: owned processes: none", flush=True)
 
     def fixture(self):
