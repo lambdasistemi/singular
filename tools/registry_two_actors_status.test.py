@@ -2697,6 +2697,179 @@ def test_pgrep_failure_flows(mod, tmp):
     )
 
 
+def _altered_mocked(mod, tmp, faulted_outcome):
+    journey = bare(mod, tmp)
+    journey.singular = "journey-singular"
+    journey.state_token = "aabbcc.ddeeff"
+    root = "cc" * 32
+    positive = {
+        "command": "inspect",
+        "outcome": "success",
+        "root": root,
+        "leaf": "active",
+        "pendingRequests": [],
+    }
+    _write_receipt(tmp, "altered-positive-inspect", positive)
+    _write_receipt(
+        tmp,
+        "create",
+        {"command": "create", "outcome": "success", "stateToken": "aabbcc.ddeeff"},
+    )
+    _write_receipt(
+        tmp,
+        "altered-alice-fold",
+        {
+            "command": "fold",
+            "outcome": "success",
+            "root": root,
+            "fold": "dd" * 32,
+        },
+    )
+    seen_binaries = []
+
+    def fake_run_party(party, name, arguments, forbidden):
+        assert "--state-token" in arguments, "an actor command without --state-token"
+        if name == "altered-positive-inspect":
+            return 0, dict(positive)
+        if name == "altered-inspect":
+            seen_binaries.append(journey.singular)
+            return faulted_outcome()
+        raise AssertionError(f"unexpected command {name}")
+
+    return journey, seen_binaries, fake_run_party
+
+
+def test_altered_leg_records_and_passes(mod, tmp):
+    if not hasattr(mod.Journey, "altered_leg"):
+        check(
+            "altered-leg-records-and-passes",
+            False,
+            "the altered journey leg is absent",
+        )
+        return
+    refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState RootDoesNotChain",
+        "trieRefusal": {
+            "registry": {"policy": "aabbcc", "name": "ddeeff"},
+            "transaction": "dd" * 32,
+            "cause": "roots-part",
+            "rebuiltRoot": "ee" * 32,
+            "recordedRoot": "cc" * 32,
+        },
+    }
+    journey, seen_binaries, fake_run_party = _altered_mocked(
+        mod, tmp, lambda: (14, dict(refusal))
+    )
+    _write_receipt(tmp, "altered-inspect", refusal, exit_code=14)
+    with mock.patch.dict(os.environ, {"SINGULAR_REPLAY_FAULT": "faulted-singular"}):
+        with mock.patch.object(journey, "run_party", fake_run_party):
+            try:
+                leg = journey.altered_leg("bob", "bob-2")
+            except Exception as error:  # noqa: BLE001 - escape is the finding
+                check(
+                    "altered-leg-records-and-passes",
+                    False,
+                    f"escaped as {type(error).__name__}: {error}",
+                )
+                return
+    check(
+        "altered-leg-runs-faulted-binary",
+        seen_binaries == ["faulted-singular"],
+        f"faulted inspect ran on {seen_binaries}",
+    )
+    check(
+        "altered-leg-restores-binary",
+        journey.singular == "journey-singular",
+        "the journey binary was not restored after the faulted inspect",
+    )
+    check(
+        "altered-leg-records-and-passes",
+        leg is not None
+        and leg.get("positive_inspect") == "altered-positive-inspect"
+        and leg.get("altered_inspect") == "altered-inspect"
+        and leg.get("create") == "create",
+        f"leg slots are {leg}",
+    )
+    legs = {
+        "altered": leg,
+        "fold_roots": [
+            {
+                "fold": "altered-alice-fold",
+                "key": "k",
+                "inspect_a": "ia",
+                "inspect_b": "ib",
+            }
+        ],
+    }
+    passed, _, waiting = journey.altered_edge_agreement(legs, Path(tmp))
+    check(
+        "altered-leg-agreement-passes",
+        passed,
+        f"the leg receipts did not pass: {waiting}",
+    )
+
+
+def test_altered_leg_skips_without_faulted_binary(mod, tmp):
+    if not hasattr(mod.Journey, "altered_leg"):
+        check(
+            "altered-leg-skips-without-faulted-binary",
+            False,
+            "the altered journey leg is absent",
+        )
+        return
+    journey = bare(mod, tmp)
+    with mock.patch.dict(os.environ, {}, clear=True):
+        try:
+            leg = journey.altered_leg("bob", "bob-2")
+        except Exception as error:  # noqa: BLE001 - skip must not raise
+            check(
+                "altered-leg-skips-without-faulted-binary",
+                False,
+                f"a skipped leg raised {type(error).__name__}: {error}",
+            )
+            return
+    check(
+        "altered-leg-skips-without-faulted-binary",
+        leg is None,
+        f"a leg without its faulted binary returned {leg}",
+    )
+
+
+def test_altered_leg_accepted_is_row_failure(mod, tmp):
+    if not hasattr(mod.Journey, "altered_leg"):
+        check(
+            "altered-leg-accepted-is-row-failure",
+            False,
+            "the altered journey leg is absent",
+        )
+        return
+
+    def accepted():
+        return 0, {"command": "inspect", "outcome": "success", "root": "cc" * 32}
+
+    journey, _seen, fake_run_party = _altered_mocked(mod, tmp, accepted)
+    with mock.patch.dict(os.environ, {"SINGULAR_REPLAY_FAULT": "faulted-singular"}):
+        with mock.patch.object(journey, "run_party", fake_run_party):
+            try:
+                journey.altered_leg("bob", "bob-2")
+            except mod.JourneyFailure:
+                check("altered-leg-accepted-is-row-failure", True)
+            except Exception as error:  # noqa: BLE001 - wrong mapping
+                check(
+                    "altered-leg-accepted-is-row-failure",
+                    False,
+                    f"mapped to {type(error).__name__}, want JourneyFailure",
+                )
+            else:
+                check(
+                    "altered-leg-accepted-is-row-failure",
+                    False,
+                    "an accepted faulted inspect claimed success",
+                )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2748,6 +2921,9 @@ def main():
         test_pgrep_exit_2_and_3_are_setup,
         test_pkill_failure_is_best_effort,
         test_pgrep_failure_flows,
+        test_altered_leg_records_and_passes,
+        test_altered_leg_skips_without_faulted_binary,
+        test_altered_leg_accepted_is_row_failure,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
