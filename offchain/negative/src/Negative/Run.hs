@@ -30,7 +30,11 @@ import Data.Text qualified as T
 
 import PlutusCore.Data qualified as PLC
 
-import Singular.Application.OpenDatum.Envelope (dataFromJson)
+import Singular.Application.OpenDatum.Envelope
+    ( dataFromJson
+    , envelopeFromData
+    )
+import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Attached (Attached (..), attached, savedOf)
 import Singular.CLI.Command
     ( Command (..)
@@ -62,6 +66,7 @@ import Singular.CLI.Session
     , submitBuiltIn
     , txIdHex
     )
+import Singular.Registry.Application (DecodedHolding (..))
 
 import Negative.Craft
     ( BookingShape (..)
@@ -123,6 +128,7 @@ runNegativeUpdate env args tamper = case entryMode args of
                 (dataFromJson payloadValue)
         dir <- negativeStateDir args ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint args)
@@ -152,12 +158,17 @@ runNegativeUpdate env args tamper = case entryMode args of
                             )
                             ( \_building v -> do
                                 live <- attachLive v s
-                                outs <- liveOutputs v s
-                                (holding, envelope) <-
+                                outs <- liveOutputs openDatumApplication v s
+                                (holding, dh) <-
                                     either
                                         (failWith ClientRefusal)
                                         pure
-                                        (liveOutputFor s key outs)
+                                        (liveOutputFor openDatumApplication s key outs)
+                                envelope <-
+                                    either
+                                        (failWith ClientRefusal)
+                                        pure
+                                        (envelopeFromData (dhDatumData dh))
                                 spend <- spendOf tamper payload
                                 unsigned <-
                                     craftHoldingSpend
@@ -243,6 +254,7 @@ runNegativeTerminate env args = case entryMode args of
                 "not in this slice: folds arrive in the third slice"
         dir <- negativeStateDir args ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint args)
@@ -343,6 +355,7 @@ runNegativeWithdraw env args = case entryMode args of
         let Key key = entryKey args
         dir <- negativeStateDir args ws
         attached
+            openDatumApplication
             env
             dir
             (entryBlueprint args)
@@ -372,22 +385,27 @@ runNegativeWithdraw env args = case entryMode args of
                             )
                             ( \_building v -> do
                                 live <- attachLive v s
-                                outs <- liveOutputs v s
-                                (holding, envelope) <-
+                                outs <- liveOutputs openDatumApplication v s
+                                (holding, dhWithdraw) <-
                                     either
                                         (failWith ClientRefusal)
                                         pure
-                                        (liveOutputFor s key outs)
+                                        (liveOutputFor openDatumApplication s key outs)
+                                envelopeWithdraw <-
+                                    either
+                                        (failWith ClientRefusal)
+                                        pure
+                                        (envelopeFromData (dhDatumData dhWithdraw))
                                 unsigned <-
                                     craftHoldingSpend
                                         v
                                         live
                                         holding
-                                        envelope
+                                        envelopeWithdraw
                                         wallet
                                         wallet
                                         SpendRelease
-                                pure (unsigned, envelope)
+                                pure (unsigned, envelopeWithdraw)
                             )
                         )
                 case result of

@@ -115,6 +115,7 @@ let
     name = "application-boundary-controls";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.gawk
       pkgs.gnugrep
       pkgs.gnused
     ];
