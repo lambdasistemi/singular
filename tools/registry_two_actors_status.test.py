@@ -1643,6 +1643,306 @@ def test_history_reads_covered_and_load_bearing(mod, tmp):
     Path(tmp, "history-withheld.json").write_text(raw)
 
 
+def test_forwarder_withholds_state_asset(mod, tmp):
+    import json as _json
+    import threading as _threading
+    from http.server import BaseHTTPRequestHandler as _Handler
+    from http.server import ThreadingHTTPServer as _Server
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-withholds-state-asset",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    upstream_rows = [{"tx_hash": "aa" * 32, "block_height": 10}]
+
+    class _Stub(_Handler):
+        def _answer(self, payload):
+            body = _json.dumps(payload).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            if self.path.startswith("/api/v1/asset_txs"):
+                self._answer(upstream_rows)
+            else:
+                self._answer({"echo": self.path})
+
+        def do_POST(self):
+            length = int(self.headers.get("Content-Length", 0))
+            self.rfile.read(length)
+            self._answer({"echo": self.path})
+
+        def log_message(self, *args):
+            pass
+
+    server = _Server(("127.0.0.1", 0), _Stub)
+    thread = _threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        upstream = f"http://127.0.0.1:{server.server_address[1]}/api/v1"
+        forward = forward_cls(upstream, "aabbcc", "ddeeff")
+        try:
+            forward.start()
+        except mod.SetupFailure as error:
+            check(
+                "forwarder-withholds-state-asset",
+                False,
+                f"an ephemeral forwarder did not start: {error}",
+            )
+            return
+        try:
+            import urllib.request as _url
+
+            with _url.urlopen(
+                forward.url
+                + "/asset_txs?_asset_policy=aabbcc&_asset_name=ddeeff&_history=true",
+                timeout=10,
+            ) as answer:
+                withheld = _json.loads(answer.read().decode())
+            check(
+                "forwarder-withholds-state-asset",
+                withheld == [],
+                f"state asset_txs answered {withheld!r}",
+            )
+            with _url.urlopen(
+                forward.url
+                + "/asset_txs?_asset_policy=00&_asset_name=11&_history=true",
+                timeout=10,
+            ) as answer:
+                other = _json.loads(answer.read().decode())
+            check(
+                "forwarder-forwards-other-assets",
+                other == upstream_rows,
+                f"other asset_txs answered {other!r}",
+            )
+            with _url.urlopen(forward.url + "/tip", timeout=10) as answer:
+                tip = _json.loads(answer.read().decode())
+            check(
+                "forwarder-forwards-other-paths",
+                tip == {"echo": "/api/v1/tip"},
+                f"tip answered {tip!r}",
+            )
+        finally:
+            forward.stop()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=10)
+
+
+def test_forwarder_start_failure_is_setup(mod, tmp):
+    import socket as _socket
+
+    forward_cls = getattr(mod, "_WithholdingForwarder", None)
+    if forward_cls is None:
+        check(
+            "forwarder-start-failure-is-setup",
+            False,
+            "_WithholdingForwarder is absent",
+        )
+        return
+    held = _socket.socket()
+    held.bind(("127.0.0.1", 0))
+    port = held.getsockname()[1]
+    try:
+        forward = forward_cls("http://127.0.0.1:9/api/v1", "aa", "bb", port=port)
+        try:
+            forward.start()
+        except mod.SetupFailure:
+            check("forwarder-start-failure-is-setup", True)
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            check(
+                "forwarder-start-failure-is-setup",
+                False,
+                f"mapped to {type(error).__name__}, want SetupFailure",
+            )
+        else:
+            check(
+                "forwarder-start-failure-is-setup",
+                False,
+                "a bound port claimed success",
+            )
+            forward.stop()
+    finally:
+        held.close()
+
+
+def _withheld_mocked_leg(mod, tmp, withheld_outcome):
+    journey = bare(mod, tmp)
+    journey.state_token = "aabbcc.ddeeff"
+    root = "cc" * 32
+    positive = {
+        "command": "inspect",
+        "outcome": "success",
+        "root": root,
+        "leaf": "active",
+        "pendingRequests": [],
+    }
+    _write_receipt(tmp, "withheld-positive-inspect", positive)
+    _write_receipt(
+        tmp,
+        "withheld-inspect",
+        {
+            "command": "inspect",
+            "outcome": "stale-state",
+            "reason": "TrieState HistoryIncomplete",
+            "trieRefusal": {
+                "registry": {"policy": "aabbcc", "name": "ddeeff"},
+                "cause": "missing-transaction",
+            },
+        },
+        exit_code=14,
+    )
+    _write_receipt(
+        tmp,
+        "create",
+        {"command": "create", "outcome": "success", "stateToken": "aabbcc.ddeeff"},
+    )
+    _write_receipt(
+        tmp,
+        "withheld-alice-fold",
+        {
+            "command": "fold",
+            "outcome": "success",
+            "root": root,
+            "fold": "dd" * 32,
+        },
+    )
+    urls = []
+
+    def fake_run_party(party, name, arguments, forbidden):
+        assert "--state-token" in arguments, "an actor command without --state-token"
+        if name == "withheld-positive-inspect":
+            return 0, dict(positive)
+        if name == "withheld-inspect":
+            urls.append(arguments[arguments.index("--koios-url") + 1])
+            return withheld_outcome()
+        raise AssertionError(f"unexpected command {name}")
+
+    return journey, urls, fake_run_party
+
+
+def _forwarder_port_closed(url):
+    import socket as _socket
+
+    port = int(url.rsplit(":", 1)[1].split("/")[0])
+    probe = _socket.socket()
+    probe.settimeout(5)
+    try:
+        probe.connect(("127.0.0.1", port))
+        return False
+    except OSError:
+        return True
+    finally:
+        probe.close()
+
+
+def test_withheld_leg_records_and_passes(mod, tmp):
+    if getattr(mod, "_WithholdingForwarder", None) is None or not hasattr(
+        mod.Journey, "withheld_leg"
+    ):
+        check(
+            "withheld-leg-records-and-passes",
+            False,
+            "the withheld leg is absent",
+        )
+        return
+    refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState HistoryIncomplete",
+        "trieRefusal": {
+            "registry": {"policy": "aabbcc", "name": "ddeeff"},
+            "cause": "missing-transaction",
+        },
+    }
+    journey, urls, fake_run_party = _withheld_mocked_leg(
+        mod, tmp, lambda: (14, dict(refusal))
+    )
+    with mock.patch.object(journey, "run_party", fake_run_party):
+        try:
+            leg = journey.withheld_leg("alice", "alice-2")
+        except Exception as error:  # noqa: BLE001 - escaping is the finding
+            check(
+                "withheld-leg-records-and-passes",
+                False,
+                f"escaped as {type(error).__name__}: {error}",
+            )
+            return
+    check(
+        "withheld-leg-records-and-passes",
+        leg.get("positive_inspect") == "withheld-positive-inspect"
+        and leg.get("withheld_inspect") == "withheld-inspect"
+        and leg.get("create") == "create",
+        f"leg slots are {leg}",
+    )
+    check(
+        "withheld-inspect-uses-forwarder",
+        bool(urls) and urls[0].startswith("http://127.0.0.1:"),
+        f"withheld koios urls are {urls}",
+    )
+    check(
+        "withheld-forwarder-stops",
+        bool(urls) and _forwarder_port_closed(urls[0]),
+        "the forwarder still serves after the leg",
+    )
+    legs = {"withheld": leg, "alice": {"fold": "withheld-alice-fold"}}
+    passed, _, waiting = journey.withheld_fold_agreement(legs, Path(tmp))
+    check(
+        "withheld-leg-agreement-passes",
+        passed,
+        f"the leg receipts did not pass: {waiting}",
+    )
+
+
+def test_forwarder_stops_after_leg_failure(mod, tmp):
+    if getattr(mod, "_WithholdingForwarder", None) is None or not hasattr(
+        mod.Journey, "withheld_leg"
+    ):
+        check(
+            "forwarder-stops-after-leg-failure",
+            False,
+            "the withheld leg is absent",
+        )
+        return
+
+    def accepted():
+        raise mod.JourneyFailure("the withheld inspect was accepted")
+
+    journey, urls, fake_run_party = _withheld_mocked_leg(mod, tmp, accepted)
+    with mock.patch.object(journey, "run_party", fake_run_party):
+        try:
+            journey.withheld_leg("alice", "alice-2")
+        except mod.JourneyFailure:
+            failed_as_row = True
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            check(
+                "forwarder-stops-after-leg-failure",
+                False,
+                f"mapped to {type(error).__name__}, want JourneyFailure",
+            )
+            return
+        else:
+            check(
+                "forwarder-stops-after-leg-failure",
+                False,
+                "an accepted withheld inspect claimed success",
+            )
+            return
+    check(
+        "forwarder-stops-after-leg-failure",
+        failed_as_row and bool(urls) and _forwarder_port_closed(urls[0]),
+        "the failure escaped teardown or the row result",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -1676,6 +1976,10 @@ def main():
         test_setup_names_devnet_cause,
         test_history_refusals_bind_identity,
         test_history_reads_covered_and_load_bearing,
+        test_forwarder_withholds_state_asset,
+        test_forwarder_start_failure_is_setup,
+        test_withheld_leg_records_and_passes,
+        test_forwarder_stops_after_leg_failure,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
