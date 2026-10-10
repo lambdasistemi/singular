@@ -2253,6 +2253,69 @@ def test_runtime_removal_failure_flows(mod, tmp):
     )
 
 
+def test_report_lists_marked_appendix_after_rows(mod, tmp):
+    import contextlib as _contextlib
+    import io as _io
+    import json as _json
+
+    journey = bare(mod, tmp)
+    journey.appendix = [
+        {"process": "alice withheld-inspect", "accessTrace": "/t/access"},
+        {"fixture": "development-network-and-registry", "stateToken": "p.n"},
+    ]
+    rows = [
+        {
+            "requirement": "R1",
+            "state": "passed",
+            "receipts": [],
+            "dependencies": [],
+            "waitingOn": "",
+        },
+        {
+            "requirement": "R2",
+            "state": "pending",
+            "receipts": [],
+            "dependencies": [],
+            "waitingOn": "later",
+        },
+    ]
+    out = _io.StringIO()
+    with _contextlib.redirect_stdout(out):
+        journey.report(rows)
+    lines = out.getvalue().splitlines()
+    row_positions = [
+        i for i, line in enumerate(lines) if ": passed" in line or ": pending" in line
+    ]
+    appendix_positions = [
+        i for i, line in enumerate(lines) if "harness evidence" in line
+    ]
+    check(
+        "report-appendix-after-rows",
+        bool(row_positions)
+        and bool(appendix_positions)
+        and max(row_positions) < min(appendix_positions),
+        "no harness-evidence appendix follows the product rows",
+    )
+    check(
+        "report-appendix-labelled",
+        any("harness's own, not product rows" in line for line in lines),
+        "no label marks the appendix as the harness's own evidence",
+    )
+    check(
+        "report-appendix-lists-entries",
+        any("withheld-inspect" in line for line in lines)
+        and any("fixture" in line for line in lines),
+        "traces and fixture creation are not both listed",
+    )
+    stored = _json.loads(Path(tmp, "journey.json").read_text())
+    check(
+        "report-json-appendix-after-rows",
+        list(stored.keys()) == ["requirements", "harnessAppendix"]
+        and stored["harnessAppendix"] == journey.appendix,
+        "journey.json carries no appendix after the product rows",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2295,6 +2358,7 @@ def main():
         test_start_runtime_allocation_failure_is_setup,
         test_runtime_removal_failure_is_setup,
         test_runtime_removal_failure_flows,
+        test_report_lists_marked_appendix_after_rows,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
