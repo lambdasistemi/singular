@@ -11,6 +11,7 @@ Usage: registry_two_actors_status.test.py [HARNESS.PY]
 import contextlib
 import importlib.util
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -2316,6 +2317,214 @@ def test_report_lists_marked_appendix_after_rows(mod, tmp):
     )
 
 
+def _replay_fault_mocked(mod, tmp, faulted_outcome):
+    journey = bare(mod, tmp)
+    journey.singular = "faulted-singular"
+    journey.state_token = "aabbcc.ddeeff"
+    root = "cc" * 32
+    fold_tx = "dd" * 32
+    _write_receipt(
+        tmp,
+        "create",
+        {"command": "create", "outcome": "success", "stateToken": "aabbcc.ddeeff"},
+    )
+    _write_receipt(
+        tmp,
+        "rf-inspect-after",
+        {
+            "command": "inspect",
+            "outcome": "success",
+            "root": root,
+            "leaf": "active",
+            "pendingRequests": [],
+        },
+    )
+    _write_receipt(
+        tmp,
+        "rf-fold",
+        {
+            "command": "fold",
+            "outcome": "success",
+            "request": "rfreq#0",
+            "edge": "insertActive",
+            "folder": "ff",
+            "root": root,
+            "fold": fold_tx,
+        },
+    )
+    setup_leg = {
+        "inspect_before": "rf-inspect-before",
+        "booking": "rf-booking",
+        "fold": "rf-fold",
+        "inspect_after": "rf-inspect-after",
+    }
+
+    def fake_run_party(party, name, arguments, forbidden):
+        assert "--state-token" in arguments, "an actor command without --state-token"
+        if name == "replay-fault-inspect-bob":
+            return 0, {
+                "command": "inspect",
+                "outcome": "success",
+                "root": root,
+                "leaf": "active",
+                "pendingRequests": [],
+            }
+        if name == "replay-fault-inspect":
+            return faulted_outcome()
+        raise AssertionError(f"unexpected command {name}")
+
+    return journey, setup_leg, fake_run_party
+
+
+def test_replay_fault_control_passes(mod, tmp):
+    if not hasattr(mod.Journey, "replay_fault_legs"):
+        check(
+            "replay-fault-control-passes",
+            False,
+            "the replay-fault control is absent",
+        )
+        return
+    refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState RootDoesNotChain",
+        "trieRefusal": {
+            "registry": {"policy": "aabbcc", "name": "ddeeff"},
+            "transaction": "dd" * 32,
+            "cause": "roots-part",
+            "rebuiltRoot": "ee" * 32,
+            "recordedRoot": "cc" * 32,
+        },
+    }
+    journey, setup_leg, fake_run_party = _replay_fault_mocked(
+        mod, tmp, lambda: (14, dict(refusal))
+    )
+    _write_receipt(tmp, "replay-fault-inspect", refusal, exit_code=14)
+    with mock.patch.dict(os.environ, {"SINGULAR_UNFAULTED": "unpatched-singular"}):
+        with mock.patch.object(journey, "fixture", lambda: None):
+            with mock.patch.object(journey, "actor_leg", lambda *a: dict(setup_leg)):
+                with mock.patch.object(journey, "run_party", fake_run_party):
+                    try:
+                        legs = journey.replay_fault_legs()
+                    except Exception as error:  # noqa: BLE001 - escape is the finding
+                        check(
+                            "replay-fault-control-passes",
+                            False,
+                            f"escaped as {type(error).__name__}: {error}",
+                        )
+                        return
+    check(
+        "replay-fault-uses-unpatched-setup",
+        journey.singular == "faulted-singular",
+        "the faulted binary was not restored after setup",
+    )
+    check(
+        "replay-fault-records-altered-leg",
+        legs.get("altered", {}).get("altered_inspect") == "replay-fault-inspect"
+        and legs.get("altered", {}).get("create") == "create",
+        f"altered leg slots are {legs.get('altered')}",
+    )
+    full = dict(legs, fold_roots=getattr(journey, "fold_records", []))
+    passed, _, waiting = journey.altered_edge_agreement(full, Path(tmp))
+    check(
+        "replay-fault-control-passes",
+        passed,
+        f"the control receipts did not pass: {waiting}",
+    )
+    check(
+        "replay-fault-status-is-zero",
+        journey.replay_fault_status(full) == 0,
+        "a passing control did not map to exit 0",
+    )
+
+
+def test_replay_fault_control_accepted_is_row_failure(mod, tmp):
+    if not hasattr(mod.Journey, "replay_fault_legs"):
+        check(
+            "replay-fault-accepted-is-row-failure",
+            False,
+            "the replay-fault control is absent",
+        )
+        return
+
+    def accepted():
+        return 0, {"command": "inspect", "outcome": "success", "root": "cc" * 32}
+
+    journey, setup_leg, fake_run_party = _replay_fault_mocked(mod, tmp, accepted)
+    with mock.patch.dict(os.environ, {"SINGULAR_UNFAULTED": "unpatched-singular"}):
+        with mock.patch.object(journey, "fixture", lambda: None):
+            with mock.patch.object(journey, "actor_leg", lambda *a: dict(setup_leg)):
+                with mock.patch.object(journey, "run_party", fake_run_party):
+                    try:
+                        journey.replay_fault_legs()
+                    except mod.JourneyFailure:
+                        check("replay-fault-accepted-is-row-failure", True)
+                    except Exception as error:  # noqa: BLE001 - wrong mapping
+                        check(
+                            "replay-fault-accepted-is-row-failure",
+                            False,
+                            f"mapped to {type(error).__name__}, want JourneyFailure",
+                        )
+                    else:
+                        check(
+                            "replay-fault-accepted-is-row-failure",
+                            False,
+                            "an accepted faulted inspect claimed success",
+                        )
+
+
+def test_replay_fault_control_needs_unpatched(mod, tmp):
+    if not hasattr(mod.Journey, "replay_fault_legs"):
+        check(
+            "replay-fault-needs-unpatched",
+            False,
+            "the replay-fault control is absent",
+        )
+        return
+    journey = bare(mod, tmp)
+    with mock.patch.dict(os.environ, {}, clear=True):
+        try:
+            journey.replay_fault_legs()
+        except mod.SetupFailure as failed:
+            check(
+                "replay-fault-needs-unpatched",
+                "unpatched" in str(failed),
+                f"SetupFailure={failed}",
+            )
+        except Exception as error:  # noqa: BLE001 - wrong mapping is the finding
+            check(
+                "replay-fault-needs-unpatched",
+                False,
+                f"mapped to {type(error).__name__}, want SetupFailure",
+            )
+        else:
+            check(
+                "replay-fault-needs-unpatched",
+                False,
+                "a control without its unpatched binary claimed success",
+            )
+
+
+def test_replay_fault_status_maps(mod, tmp):
+    if not hasattr(mod.Journey, "replay_fault_status"):
+        check(
+            "replay-fault-status-maps",
+            False,
+            "the replay-fault verdict is absent",
+        )
+        return
+    journey = bare(mod, tmp)
+    legs, _txs, receipts, policy, name, _root = _fold_set_bases(tmp)
+    _write_foldset_refusal(tmp, "ff" * 32, policy, name)
+    with contextlib.redirect_stdout(io.StringIO()):
+        failed_status = journey.replay_fault_status(legs)
+    check(
+        "replay-fault-status-maps",
+        failed_status == 1,
+        f"a pending control mapped to {failed_status}, want 1",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -2359,6 +2568,10 @@ def main():
         test_runtime_removal_failure_is_setup,
         test_runtime_removal_failure_flows,
         test_report_lists_marked_appendix_after_rows,
+        test_replay_fault_control_passes,
+        test_replay_fault_control_accepted_is_row_failure,
+        test_replay_fault_control_needs_unpatched,
+        test_replay_fault_status_maps,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,

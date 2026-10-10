@@ -1961,6 +1961,89 @@ class Journey:
         leg["create"] = "create"
         return leg
 
+    def replay_fault_legs(self):
+        """Run the replay-fault control: genuine setup, faulted inspect.
+
+        The setup (fixture, one insertion booked and folded, both actors'
+        readbacks) runs on the unpatched binary from SINGULAR_UNFAULTED;
+        only the final inspect runs on the faulted binary (self.singular),
+        whose replay maps an insertion edge to another leaf. That inspect
+        must refuse `RootDoesNotChain` naming the registry and the setup
+        fold, with no root. A missing unpatched binary is setup; any other
+        outcome is a row failure. Every command carries `--state-token`.
+        """
+        unpatched = os.environ.get("SINGULAR_UNFAULTED")
+        setup_require(unpatched, "the replay-fault control names no unpatched singular")
+        faulted, self.singular = self.singular, unpatched
+        try:
+            self.fixture()
+            setup = self.actor_leg("alice", "alice-rf")
+            bob_others = tuple(
+                home for party, home in self.homes.items() if party != "bob"
+            )
+            status, seen = self.run_party(
+                "bob",
+                "replay-fault-inspect-bob",
+                self.inspect_key("alice-rf"),
+                bob_others,
+            )
+            require(
+                status == 0 and seen.get("outcome") == "success",
+                f"bob replay-fault readback failed: exit {status}, {seen}",
+            )
+            fold = self.load_receipt(setup["fold"])
+            require(
+                fold is not None and seen.get("root") == fold.get("root"),
+                "bob replay-fault readback differs from the setup fold",
+            )
+            self.record_fold_root(
+                setup["fold"],
+                "alice-rf",
+                setup["inspect_after"],
+                "replay-fault-inspect-bob",
+            )
+        finally:
+            self.singular = faulted
+        alice_others = tuple(
+            home for party, home in self.homes.items() if party != "alice"
+        )
+        status, refused = self.run_party(
+            "alice",
+            "replay-fault-inspect",
+            self.inspect_key("alice-rf"),
+            alice_others,
+        )
+        require(
+            status == 14 and refused.get("outcome") == "stale-state",
+            "alice replay-fault inspect was not refused stale: "
+            f"exit {status}, {refused}",
+        )
+        require(
+            "RootDoesNotChain" in refused.get("reason", ""),
+            f"alice replay-fault inspect named another refusal: {refused}",
+        )
+        require(
+            not refused.get("root"),
+            f"alice replay-fault inspect returned a root: {refused}",
+        )
+        return {
+            "alice": setup,
+            "altered": {
+                "create": "create",
+                "positive_inspect": setup["inspect_after"],
+                "altered_inspect": "replay-fault-inspect",
+            },
+        }
+
+    def replay_fault_status(self, legs):
+        """The control verdict: exit 0 only on the named refusal."""
+        passed, _, waiting = self.altered_edge_agreement(legs)
+        print(
+            f"replay-fault control: {'PASS' if passed else 'FAIL'} {waiting}",
+            flush=True,
+        )
+        return 0 if passed else 1
+
     def terminate_leg(self, controller, folder, key):
         """CONTROLLER terminates KEY; FOLDER folds it from the chain request."""
         direction = f"terminate-{key}-by-{folder}"
@@ -3282,34 +3365,46 @@ class Journey:
         legs = {}
         status = None
         try:
-            self.fixture()
-            if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
-                self.foreign_open()
-            for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
-                legs[actor] = self.actor_leg(actor, key)
-            legs["refusals"] = [
-                self.refusal_leg("alice", "bob", "alice-1"),
-                self.refusal_leg("bob", "alice", "bob-1"),
-            ]
-            legs["terminate-bob-by-alice"] = self.terminate_leg("bob", "alice", "bob-1")
-            legs["terminate-alice-by-bob"] = self.terminate_leg(
-                "alice", "bob", "alice-1"
-            )
-            legs["cross-insert"] = {
-                "alice-books": self.cross_insert_leg("alice", "bob", "alice-2"),
-                "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
-            }
-            legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
-            legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
-            legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
-            legs["withheld"] = self.withheld_leg("alice", "alice-2")
-            legs["fold_roots"] = getattr(self, "fold_records", [])
-            self.removal_check(legs)
-            self.cap_check()
-            self.verify_records()
-            rows = self.compute_rows(legs)
-            self.report(rows)
-            status = self.exit_for(rows)
+            if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "replay-fault":
+                legs = self.replay_fault_legs()
+                legs["fold_roots"] = getattr(self, "fold_records", [])
+                self.removal_check(legs)
+                self.cap_check()
+                self.verify_records()
+                rows = self.compute_rows(legs)
+                self.report(rows)
+                status = self.replay_fault_status(legs)
+            else:
+                self.fixture()
+                if os.environ.get("SINGULAR_TWO_ACTOR_CONTROL") == "foreign-open":
+                    self.foreign_open()
+                for actor, key in (("alice", "alice-1"), ("bob", "bob-1")):
+                    legs[actor] = self.actor_leg(actor, key)
+                legs["refusals"] = [
+                    self.refusal_leg("alice", "bob", "alice-1"),
+                    self.refusal_leg("bob", "alice", "bob-1"),
+                ]
+                legs["terminate-bob-by-alice"] = self.terminate_leg(
+                    "bob", "alice", "bob-1"
+                )
+                legs["terminate-alice-by-bob"] = self.terminate_leg(
+                    "alice", "bob", "alice-1"
+                )
+                legs["cross-insert"] = {
+                    "alice-books": self.cross_insert_leg("alice", "bob", "alice-2"),
+                    "bob-books": self.cross_insert_leg("bob", "alice", "bob-2"),
+                }
+                legs["reject"] = self.reject_leg("alice", "bob", "alice-3")
+                legs["reclaim-wrong"] = self.reclaim_wrong_leg("bob", "alice", "bob-3")
+                legs["reclaim-owner"] = self.reclaim_owner_leg("bob", "bob-3")
+                legs["withheld"] = self.withheld_leg("alice", "alice-2")
+                legs["fold_roots"] = getattr(self, "fold_records", [])
+                self.removal_check(legs)
+                self.cap_check()
+                self.verify_records()
+                rows = self.compute_rows(legs)
+                self.report(rows)
+                status = self.exit_for(rows)
         except GuardFired as fired:
             status = 2
             print(f"two actors: GUARD: {fired.path}", flush=True)
