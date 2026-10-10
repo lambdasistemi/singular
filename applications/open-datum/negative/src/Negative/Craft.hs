@@ -6,11 +6,10 @@ Description : The crafted transactions, written once in the host
 License     : Apache-2.0
 
 The holding-spend shapes (controller update, stranger update,
-tampered update, release outside a fold), the termination booking and
-the unevaluated fold are built here and nowhere else the shipped
+tampered update, release outside a fold), the insertion and termination
+bookings and the unevaluated fold are built here and nowhere else the shipped
 binaries use. The harness keeps its own copy for now as a named
-residual until the command-line split cleans it up. Insertion bookings
-wait for a later brief and stop at a clear client refusal.
+residual until the command-line split cleans it up.
 -}
 module Negative.Craft
     ( -- * Holding spends (first slice)
@@ -65,13 +64,16 @@ import Cardano.Tx.Ledger (ConwayTx)
 import PlutusCore.Data qualified as PLC
 
 import Singular.Application.OpenDatum.Book
-    ( terminateApproval
+    ( insertApproval
+    , insertDestination
+    , terminateApproval
     , terminateDestination
     )
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
     )
+import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
 import Singular.Application.OpenDatum.Release (withApplication)
 import Singular.Application.OpenDatum.Update
     ( continuationOf
@@ -144,6 +146,7 @@ import Singular.Registry.Types
     , OnChainRequest (..)
     , OnChainRoot (..)
     , OnChainTokenState (..)
+    , edgeInsertActive
     , edgeUpdateTerminal
     )
 import Singular.Registry.Wallet (Wallet (..))
@@ -164,11 +167,11 @@ data HoldingSpend
 {- | Which booking the host books. Stranger or honest is not a separate
 choice: the booking names the wallet that signs as its payer and owner,
 so the controller's own command is the honest booking and a stranger's
-the forbidden one; the node tells them apart. Insertions wait for the
-third slice.
+the forbidden one; the node tells them apart. An insertion carries its
+payload and deposit; a termination reads its live output.
 -}
 data BookingShape
-    = BookingInsert
+    = BookingInsert PLC.Data Integer
     | BookingTerminate
     deriving stock (Eq, Show)
 
@@ -321,8 +324,10 @@ craftHoldingSpend view live holding@(hIn, hOut) envelope caller signer spend = d
 
 {- | The unsigned booking for one shape, built unevaluated with stated
 budgets so the node judges it: the payer wallet funds it and is named
-its owner, with no controller check here. Termination bookings run in
-this slice; insertions wait for the third.
+its owner, with no controller check here. The insertion mirrors the
+ordinary insert through the same shared builders; a taken or terminated
+key still books (a request is only a request) and the registry state
+validator refuses later, at the fold.
 -}
 craftBooking
     :: Session NoWitness IO
@@ -332,10 +337,45 @@ craftBooking
     -> BookingShape
     -> IO ConwayTx
 craftBooking view live payer key shape = case shape of
-    BookingInsert ->
-        failWith
-            ClientRefusal
-            "not in this slice: insert bookings arrive in the third slice"
+    BookingInsert payload deposit -> do
+        let s = liveSaved live
+        appRef <-
+            maybe
+                ( failWith
+                    ClientRefusal
+                    "the deployment records no published application reference"
+                )
+                (pure . fst)
+                (applicationReference openDatumApplication live)
+        let stateIn = fst (liveState live)
+            owner = addrKeyHashBytes (walletAddr payer)
+            envelope =
+                insertEnvelope
+                    (savedCfg s)
+                    (savedToken s)
+                    key
+                    owner
+                    deposit
+                    payload
+            approval =
+                ( insertApproval
+                    Testnet
+                    (applied s)
+                    stateIn
+                    envelope
+                )
+                    { baScriptReference = Just appRef
+                    }
+        bookEdgeTx
+            (savedCfg s)
+            view
+            (walletAddr payer)
+            (savedToken s)
+            key
+            edgeInsertActive
+            (insertDestination Testnet (applied s) envelope)
+            deposit
+            (Just approval)
     BookingTerminate -> do
         let s = liveSaved live
         outs <- liveOutputs openDatumApplication view s
