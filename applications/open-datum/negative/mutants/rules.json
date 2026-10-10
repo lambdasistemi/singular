@@ -1,0 +1,12 @@
+{
+  "mutants": [
+    {
+      "name": "release-no-fold",
+      "patch": "release-no-fold.patch",
+      "rule": "release-no-fold",
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "controller-withdraws-outside-a-fold", "command": "withdraw"}],
+      "control": "stranger-updates-the-key"
+    }
+  ]
+}

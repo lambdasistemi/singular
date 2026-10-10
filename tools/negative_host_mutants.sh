@@ -1,0 +1,539 @@
+#!/usr/bin/env bash
+# negative-host-mutants (row 3b): each mutant validator runs its pairs
+# against the archive's own build of the mutated source.
+#
+# A mutant is a source-only patch in the host's own tree that removes exactly
+# one refusing rule from the Aiken source. For one mutant the command builds
+# a scratch git copy of the checkout, applies the patch there, regenerates
+# the identity manifest with the repo's own recipe (A-001: `just
+# script-identity-regen` in onchain, scratch copy only, never typed, never
+# edited by hand; the checkout is never touched), commits the scratch copy
+# (a flake and the release assembler need tracked files), and runs the
+# UNMODIFIED part command (`nix run .#negative-host-part -- PART`) from that
+# copy for each pair the rule refuses plus the mutant's declared control
+# pair. The part assembles its release archive from the scratch copy, so the
+# archive's own build produces the mutated blueprint with no change to the
+# part script. Scratch copies exist only for the minutes of a run: they are
+# removed at the end of every run, including failed runs.
+#
+# A flip pair counts as flipped only when its forbidden check failed because
+# the node ACCEPTED what the rule refuses, read from `forbidden.json` in the
+# part's kept scratch (NEGATIVE_KEEP_SCRATCH=1): the part's exit code alone
+# is not enough (exit 1 also means other judge failures, exit 3 means
+# setup). The control pair must pass (part exit 0). A setup failure, a
+# missing receipt, a failure of another kind, or a flip pair that still
+# passes is never a flip and fails the command.
+#
+# usage: negative_host_mutants.sh REPO-ROOT [--list | --control-noop | MUTANT]
+#   --list          print {"mutant": [...]} from the host's own table of
+#                   mutants; starts nothing; fails on an empty list
+#   --control-noop  self-check: an empty patch over every flip pair (the
+#                   node still refuses, so nothing flips) plus the
+#                   classification controls on altered results, all driving
+#                   the same classify_mutant_run the live run calls
+#   MUTANT          run one mutant: every flip pair must flip, the declared
+#                   control pair must pass
+#   (no argument)   run every mutant
+set -euo pipefail
+[ "$#" -ge 1 ] || {
+  echo "usage: $0 REPO-ROOT [--list | --control-noop | MUTANT]" >&2
+  exit 2
+}
+root="$1"
+shift
+root="$(realpath -m "$root")"
+mutants_dir="$root/applications/open-datum/negative/mutants"
+rules="$mutants_dir/rules.json"
+
+mode=all
+mutant=""
+case "$#" in
+  0) mode=all ;;
+  1)
+    case "$1" in
+      --list) mode=list ;;
+      --control-noop) mode=noop ;;
+      --)
+        echo "usage: $0 REPO-ROOT [--list | --control-noop | MUTANT]" >&2
+        exit 2
+        ;;
+      *)
+        mode=one
+        mutant="$1"
+        ;;
+    esac
+    ;;
+  2)
+    if [ "$1" = "--" ]; then
+      mode=one
+      mutant="$2"
+    else
+      echo "usage: $0 REPO-ROOT [--list | --control-noop | MUTANT]" >&2
+      exit 2
+    fi
+    ;;
+  *)
+    echo "usage: $0 REPO-ROOT [--list | --control-noop | MUTANT]" >&2
+    exit 2
+    ;;
+esac
+
+[ -f "$rules" ] || {
+  echo "negative-host-mutants: FAIL: no rules table at $rules" >&2
+  exit 2
+}
+
+fail() {
+  echo "negative-host-mutants: FAIL: $*" >&2
+  exit 1
+}
+
+# The classification of one mutated run (A-002). Inputs: the regeneration
+# status (ok | skipped-empty | failed | unchanged), the control pair's part
+# exit (0 | nonzero | skipped when no control ran), the flip pair's part
+# exit, the path of its forbidden.json (may be absent), and the receipt
+# command the flip pair's forbidden invocation prints (e.g. "withdraw").
+# Prints exactly one of FLIPPED | NOT-FLIPPED-REFUSED | OTHER-FAILURE |
+# MISSING | SETUP | CONTROL-FAILED | BAD-STATUS and returns 0 only for
+# FLIPPED: the part's exit is 1 or 3 AND the kept receipt exists, parses, is
+# the host's receipt for the expected command, and reports success. Nothing
+# else is a flip: exit 0/2/127 (whatever the receipt says), a non-success
+# receipt, a missing or malformed receipt, a foreign command.
+#
+# Collateral collapse (A-002): for a mutant whose accepted forbidden move
+# consumes state (here the released holding), the part's own same-registry
+# control stage may fail afterwards with the holding gone; the part then
+# exits 3 AFTER the node accepted. That failure is expected and is evidence
+# of acceptance, not an infrastructure failure, hence exit 3 with a success
+# receipt flips while exit 3 without one stays SETUP. Do not touch the part
+# script (outside this brief's fence).
+# The live run calls it on real results; every control below calls it on
+# altered results. Each control input fails exactly one guard, so deleting
+# that guard's check makes its control classify as FLIPPED.
+classify_mutant_run() {
+  local regen="$1" control_exit="$2" part_exit="$3" receipt="$4" expect_command="$5"
+  local outcome="" command=""
+  [ "$regen" = ok ] || [ "$regen" = skipped-empty ] || {
+    echo "SETUP"
+    return 1
+  } # GUARD-regen
+  [ "$control_exit" = 0 ] || [ "$control_exit" = skipped ] || {
+    echo "CONTROL-FAILED"
+    return 1
+  } # GUARD-control
+  # GUARD-receipt below: the receipt must exist, parse, name the expected
+  # command (do not accept any file), and report success. Presence rides
+  # here: no receipt means no success, never a flip.
+  outcome="$(jq -er .outcome "$receipt" 2>/dev/null)" || outcome="unreadable"
+  command="$(jq -er .command "$receipt" 2>/dev/null)" || command="unreadable"
+  [ "$outcome" = success ] && [ "$command" = "$expect_command" ] || { # GUARD-receipt
+    [ "$part_exit" = 3 ] && {
+      echo "SETUP"
+      return 1
+    }
+    [ -f "$receipt" ] || {
+      echo "MISSING"
+      return 1
+    }
+    [ "$outcome" = ledger-refusal ] && {
+      echo "NOT-FLIPPED-REFUSED"
+      return 1
+    }
+    echo "OTHER-FAILURE"
+    return 1
+  }
+  [ "$part_exit" = 1 ] || [ "$part_exit" = 3 ] || {
+    echo "BAD-STATUS"
+    return 1
+  } # GUARD-status
+  echo "FLIPPED"
+  return 0
+}
+
+# The regeneration step may change only the identity manifest (F314-1):
+# after the source patch is committed, exactly onchain/script-identity.json
+# is modified, it did change, and the move stays within the open_datum pins
+# (same schema, compiler and upstream, same validator count and titles,
+# every changed validator an open_datum one). Anything else is a setup
+# failure, never a flip. The live run calls it on the real scratch state;
+# the self-check drives it on fabricated states. Each fabricated state fails
+# exactly one guard, so deleting that guard's check makes it pass.
+regen_manifest_ok() {
+  local copy="$1" base="$2"
+  local manifest="$copy/onchain/script-identity.json"
+  local modified=""
+  git -C "$copy" show HEAD:onchain/script-identity.json >"$base" || return 1 # GUARD-rbase
+  git -C "$copy" diff --quiet -- onchain/script-identity.json && return 1    # GUARD-rchanged
+  modified="$(git -C "$copy" status --porcelain | awk '{print $2}')" || return 1
+  [ -z "$modified" ] || [ "$modified" = "onchain/script-identity.json" ] || return 1 # GUARD-rfiles
+  jq --slurpfile b "$base" --slurpfile n "$manifest" -n -e ' # GUARD-rscope
+    ($b[0]) as $bb | ($n[0]) as $nn
+    | ($bb.schema == $nn.schema and $bb.compiler == $nn.compiler and $bb.upstream == $nn.upstream)
+    and (($bb.validators | length) == ($nn.validators | length))
+    and (([$bb.validators[].title] | sort) == ([$nn.validators[].title] | sort))
+    and ([range(0; ($bb.validators | length)) | select($bb.validators[.] != $nn.validators[.]) | $bb.validators[.].title | startswith("open_datum.")] | all)
+  ' >/dev/null || return 1
+}
+
+# Build a scratch git copy of the checkout at its HEAD (tracked source only;
+# the patch and the rules are read from the checkout itself) and commit it,
+# so the flakes and the release assembler see tracked files.
+make_scratch_copy() {
+  local src="$1" parent="$2"
+  local copy="$parent/repo"
+  mkdir -p "$copy" || return 1
+  git -C "$src" archive HEAD | tar -x -C "$copy" || return 1
+  git -C "$copy" init -q || return 1
+  git -C "$copy" add -A || return 1
+  git -C "$copy" -c user.email=negative-host-mutants@local -c user.name=negative-host-mutants commit -qm base || return 1
+}
+
+# Apply a (possibly empty) patch in the scratch copy and regenerate the
+# identity manifest with the repo's own recipe (F314-1: the patch is applied
+# and committed first, so the tree is clean; the regeneration may then
+# change only the manifest). Sets REGEN_STATUS to one of ok | skipped-empty
+# | failed | unchanged. An empty patch skips the regeneration (nothing to
+# regenerate; the baseline manifest already matches its build): the RED and
+# no-op paths. Otherwise a regeneration failure, an unchanged manifest, or
+# any modified file beyond the manifest is a setup failure, never a flip.
+apply_patch_and_regen() {
+  local copy="$1" patch="$2" parent="$3"
+  if [ ! -s "$patch" ]; then
+    REGEN_STATUS=skipped-empty
+    return 0
+  fi
+  git -C "$copy" apply "$patch" || {
+    echo "negative-host-mutants: FAIL: patch does not apply" >&2
+    REGEN_STATUS=failed
+    return 1
+  }
+  git -C "$copy" add -A || {
+    echo "negative-host-mutants: FAIL: cannot stage the mutant source" >&2
+    REGEN_STATUS=failed
+    return 1
+  }
+  git -C "$copy" -c user.email=negative-host-mutants@local -c user.name=negative-host-mutants commit -qm "mutant source" || {
+    echo "negative-host-mutants: FAIL: cannot commit the mutant source" >&2
+    REGEN_STATUS=failed
+    return 1
+  }
+  (cd "$copy/onchain" && just script-identity-regen >"$parent/regen.log" 2>&1) || {
+    echo "negative-host-mutants: FAIL: script-identity-regen failed (see regen.log)" >&2
+    REGEN_STATUS=failed
+    return 1
+  }
+  regen_manifest_ok "$copy" "$parent/base-manifest.json" || {
+    echo "negative-host-mutants: FAIL: regeneration step changed more than the manifest, or the manifest did not change (see regen.log)" >&2
+    REGEN_STATUS=failed
+    return 1
+  }
+  REGEN_STATUS=ok
+  return 0
+}
+
+# Run one part from the scratch copy with the scratch kept, so the verdict
+# is read from the receipts. Sets PART_STATUS (the part's exit) and
+# PART_KEPT (its kept scratch directory, empty when none was kept).
+run_part() {
+  local copy="$1" pair="$2" logbase="$3"
+  PART_STATUS=0
+  PART_KEPT=""
+  (cd "$copy" && NEGATIVE_KEEP_SCRATCH=1 nix run --quiet .#negative-host-part -- "$pair" >"$logbase.stdout" 2>"$logbase.stderr") || PART_STATUS=$?
+  PART_KEPT="$(grep '^kept scratch: ' "$logbase.stderr" 2>/dev/null | tail -n 1 | awk '{print $3}' || true)"
+}
+
+# Every altered-result control for classify_mutant_run, driven on fabricated
+# results around one live receipt base. Each control fails exactly one guard
+# (deleting that guard's check makes it classify as FLIPPED); the can-flip
+# controls prove the function can still flip on each admissible status.
+# Prints one line per control; returns nonzero on the first mismatch.
+classification_controls() {
+  local base="$1" work="$2"
+  mkdir -p "$work" || return 1
+  local succ="$work/success.json" client="$work/client.json" enc="$work/encoding.json" wrong="$work/wrong-command.json"
+  local expect=""
+  expect="$(jq -er .command "$base")" || return 1
+  jq '.outcome = "success"' "$base" >"$succ" || return 1
+  jq '.outcome = "client-refusal"' "$base" >"$client" || return 1
+  jq '.outcome = "encoding-failure"' "$base" >"$enc" || return 1
+  jq '.outcome = "success" | .command = "no-such-command"' "$base" >"$wrong" || return 1
+  check_control "can-flip-exit-1" ok skipped 1 "$succ" "$expect" "FLIPPED" 0 || return 1
+  check_control "can-flip-exit-3" ok skipped 3 "$succ" "$expect" "FLIPPED" 0 || return 1
+  check_control "still-refused-exit-0" ok skipped 0 "$base" "$expect" "NOT-FLIPPED-REFUSED" 1 || return 1
+  check_control "still-refused-exit-1" ok skipped 1 "$base" "$expect" "NOT-FLIPPED-REFUSED" 1 || return 1
+  check_control "exit-3-ledger" ok skipped 3 "$base" "$expect" "SETUP" 1 || return 1
+  check_control "exit-3-missing" ok skipped 3 "$work/absent.json" "$expect" "SETUP" 1 || return 1
+  check_control "exit-1-missing" ok skipped 1 "$work/absent.json" "$expect" "MISSING" 1 || return 1
+  check_control "other-client" ok skipped 1 "$client" "$expect" "OTHER-FAILURE" 1 || return 1
+  check_control "other-encoding" ok skipped 1 "$enc" "$expect" "OTHER-FAILURE" 1 || return 1
+  check_control "wrong-command" ok skipped 1 "$wrong" "$expect" "OTHER-FAILURE" 1 || return 1
+  check_control "exit-0-success" ok skipped 0 "$succ" "$expect" "BAD-STATUS" 1 || return 1
+  check_control "exit-2-success" ok skipped 2 "$succ" "$expect" "BAD-STATUS" 1 || return 1
+  check_control "exit-127-success" ok skipped 127 "$succ" "$expect" "BAD-STATUS" 1 || return 1
+  check_control "control-fails" ok 1 1 "$succ" "$expect" "CONTROL-FAILED" 1 || return 1
+  check_control "regen-failed" failed skipped 1 "$succ" "$expect" "SETUP" 1 || return 1
+  check_control "regen-unchanged" unchanged skipped 1 "$succ" "$expect" "SETUP" 1 || return 1
+}
+
+check_control() {
+  local name="$1" regen="$2" control_exit="$3" part_exit="$4" receipt="$5" expect_command="$6" want="$7" want_status="$8"
+  local got st
+  set +e
+  got="$(classify_mutant_run "$regen" "$control_exit" "$part_exit" "$receipt" "$expect_command")"
+  st=$?
+  set -e
+  [ "$got" = "$want" ] || {
+    echo "negative-host-mutants: control $name: got $got, want $want" >&2
+    return 1
+  }
+  [ "$st" -eq "$want_status" ] || {
+    echo "negative-host-mutants: control $name: status $st, want $want_status" >&2
+    return 1
+  }
+  echo "negative-host-mutants: control $name: $got (as expected)"
+}
+
+# Every fabricated-state control for regen_manifest_ok (F314-1): a scratch
+# state with the patch committed and only the manifest modified passes; a
+# state with an extra modified file, an unchanged manifest, or a manifest
+# move beyond the open_datum pins is rejected. Each state fails exactly one
+# guard of the same function the live run calls. Prints one line per state;
+# returns nonzero on the first mismatch. The mini-repo mirrors the scratch
+# layout (onchain/script-identity.json) with fixture content.
+regen_step_controls() {
+  local base_manifest="$1" work="$2"
+  local rdir="$work/regen"
+  local man="$rdir/onchain/script-identity.json"
+  local other="$rdir/onchain/validators/open_datum.ak"
+  rm -rf "$rdir" || return 1
+  mkdir -p "$rdir/onchain/validators" || return 1
+  cp "$base_manifest" "$man" || return 1
+  printf '%s\n' "-- placeholder validator (content irrelevant to the guard)" >"$other" || return 1
+  git -C "$rdir" init -q || return 1
+  git -C "$rdir" add -A || return 1
+  git -C "$rdir" -c user.email=negative-host-mutants@local -c user.name=negative-host-mutants commit -qm base || return 1
+  local st
+  regen_manifest_ok "$rdir" "$work/unchanged-base.json" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: regen control unchanged-manifest passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: regen control unchanged-manifest: rejected (as expected)"
+  jq -e '[.validators[] | select(.title | startswith("open_datum."))][0] | .title' "$man" >/dev/null || return 1
+  jq '.validators |= map(if (.title | startswith("open_datum.")) then .hash = "00000000000000000000000000000000000000000000000000000000" else . end)' "$man" >"$work/pass-manifest.json" || return 1
+  cp "$work/pass-manifest.json" "$man" || return 1
+  regen_manifest_ok "$rdir" "$work/pass-base.json" && st=0 || st=$?
+  [ "$st" -eq 0 ] || {
+    echo "negative-host-mutants: regen control manifest-only rejected" >&2
+    return 1
+  }
+  echo "negative-host-mutants: regen control manifest-only: passes (as expected)"
+  printf '%s\n' "-- extra modification outside the manifest" >>"$other" || return 1
+  regen_manifest_ok "$rdir" "$work/extra-base.json" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: regen control extra-file passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: regen control extra-file: rejected (as expected)"
+  git -C "$rdir" checkout -- onchain/validators/open_datum.ak || return 1
+  jq '.validators |= map(if (.title | startswith("open_datum.") | not) then .hash = "11111111111111111111111111111111111111111111111111111111" else . end)' "$man" >"$work/wide-manifest.json" || return 1
+  cp "$work/wide-manifest.json" "$man" || return 1
+  regen_manifest_ok "$rdir" "$work/wide-base.json" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: regen control wide-scope passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: regen control wide-scope: rejected (as expected)"
+}
+
+mutant_field() {
+  local name="$1" field="$2"
+  jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .[$f] // empty' --arg f "$field" "$rules" || return 1
+}
+
+if [ "$mode" = list ]; then
+  count="$(jq -r '[.mutants[].name] | length' "$rules")" || fail "cannot read $rules"
+  [ "$count" -gt 0 ] || {
+    echo "negative-host-mutants: FAIL: empty mutant list" >&2
+    exit 1
+  }
+  jq -c '{mutant: [.mutants[].name]}' "$rules"
+  exit 0
+fi
+
+names=""
+if [ "$mode" = one ]; then
+  jq -e --arg n "$mutant" '.mutants[] | select(.name == $n)' "$rules" >/dev/null || {
+    echo "negative-host-mutants: unknown mutant: $mutant" >&2
+    exit 2
+  }
+  names="$mutant"
+else
+  names="$(jq -r '.mutants[].name' "$rules")" || fail "cannot read $rules"
+  [ -n "$names" ] || fail "empty mutant list"
+fi
+
+# One scratch parent per process; every repo copy and every kept part
+# scratch is recorded and removed at the end of its run, including failed
+# runs (the trap is the backstop for abnormal exits).
+scratch_parent="$(mktemp -d "${RUNNER_TEMP:-/tmp}/negative-host-mutants.XXXXXX")"
+kept_list="$scratch_parent/kept.list"
+touch "$kept_list"
+cleanup_all() {
+  local code=$?
+  trap - EXIT
+  if [ -f "$kept_list" ]; then
+    while IFS= read -r d; do
+      [ -n "${d:-}" ] && [ -d "$d" ] && rm -rf "$d"
+    done <"$kept_list" || true
+  fi
+  rm -rf "$scratch_parent" || true
+  exit "$code"
+}
+trap cleanup_all EXIT
+record_kept() {
+  [ -n "${1:-}" ] || return 0
+  printf '%s\n' "$1" >>"$kept_list"
+}
+release_kept() {
+  local dir="${1:-}" tmp="$scratch_parent/kept.tmp"
+  [ -n "$dir" ] || return 0
+  rm -rf "$dir" || true
+  grep -vxF "$dir" "$kept_list" >"$tmp" || true
+  mv "$tmp" "$kept_list"
+}
+
+# Run one mutant: every flip pair must flip on the mutated copy, the
+# declared control pair must pass there. Prints one verdict line per pair.
+run_one_mutant() {
+  local name="$1"
+  local patch flips control copy
+  patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
+  flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || return 1
+  control="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .control' "$rules")" || return 1
+  [ -n "$flips" ] || {
+    echo "negative-host-mutants [$name]: FAIL: no flip pairs" >&2
+    return 1
+  }
+  [ -f "$patch" ] || {
+    echo "negative-host-mutants [$name]: FAIL: no patch file at $patch" >&2
+    return 1
+  }
+  local run_dir="$scratch_parent/$name"
+  mkdir -p "$run_dir" || return 1
+  make_scratch_copy "$root" "$run_dir" || {
+    echo "negative-host-mutants [$name]: FAIL: scratch copy failed (setup)" >&2
+    return 1
+  }
+  copy="$run_dir/repo"
+  REGEN_STATUS=""
+  apply_patch_and_regen "$copy" "$patch" "$run_dir" || {
+    echo "negative-host-mutants [$name]: classified SETUP (regeneration)" >&2
+    return 1
+  }
+  if [ "$REGEN_STATUS" = ok ]; then
+    git -C "$copy" add -A || return 1
+    git -C "$copy" -c user.email=negative-host-mutants@local -c user.name=negative-host-mutants commit -qm "mutant pins $name" || return 1
+  fi
+  local t0 t1
+  t0="$SECONDS"
+  run_part "$copy" "$control" "$run_dir/control"
+  t1="$SECONDS"
+  local control_status="$PART_STATUS" control_kept="$PART_KEPT"
+  record_kept "$control_kept"
+  if [ "$control_status" -ne 0 ]; then
+    echo "negative-host-mutants [$name]: control $control: part exit $control_status, want 0 ($((t1 - t0))s)" >&2
+    release_kept "$control_kept"
+    return 1
+  fi
+  echo "negative-host-mutants [$name]: control $control: PASS (part exit 0, $((t1 - t0))s)"
+  release_kept "$control_kept"
+  local entry pair expect class st
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    pair="$(jq -er .pair <<<"$entry")" || return 1
+    expect="$(jq -er .command <<<"$entry")" || return 1
+    t0="$SECONDS"
+    run_part "$copy" "$pair" "$run_dir/flip-$pair"
+    t1="$SECONDS"
+    local flip_status="$PART_STATUS" flip_kept="$PART_KEPT"
+    record_kept "$flip_kept"
+    set +e
+    class="$(classify_mutant_run "$REGEN_STATUS" "$control_status" "$flip_status" "$flip_kept/run/receipts/forbidden.json" "$expect")"
+    st=$?
+    set -e
+    if [ "$st" -eq 0 ]; then
+      echo "negative-host-mutants [$name]: pair $pair: FLIPPED (the node accepted, part exit $flip_status, $((t1 - t0))s)"
+    else
+      echo "negative-host-mutants [$name]: pair $pair: $class (part exit $flip_status, $((t1 - t0))s)" >&2
+      release_kept "$flip_kept"
+      return 1
+    fi
+    release_kept "$flip_kept"
+  done <<<"$flips"
+  echo "negative-host-mutants [$name]: PASS"
+}
+
+if [ "$mode" = noop ]; then
+  # Self-check: an empty patch over every flip pair (the node still refuses,
+  # so nothing flips), then the classification controls on altered results
+  # around the first live receipt. Exits 0 only if the live empty run
+  # classifies as not-flipped and every control holds.
+  noop_ok=1
+  first_base=""
+  first_copy=""
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || fail "cannot read flips"
+    run_dir="$scratch_parent/noop-$name"
+    mkdir -p "$run_dir" || fail "scratch failed (setup)"
+    make_scratch_copy "$root" "$run_dir" || fail "scratch copy failed (setup)"
+    copy="$run_dir/repo"
+    if [ -z "$first_copy" ]; then first_copy="$copy"; fi
+    while IFS= read -r entry; do
+      [ -n "$entry" ] || continue
+      pair="$(jq -er .pair <<<"$entry")" || fail "cannot read flip pair"
+      expect="$(jq -er .command <<<"$entry")" || fail "cannot read flip command"
+      t0="$SECONDS"
+      run_part "$copy" "$pair" "$run_dir/noop-$pair"
+      t1="$SECONDS"
+      flip_status="$PART_STATUS"
+      flip_kept="$PART_KEPT"
+      record_kept "$flip_kept"
+      set +e
+      class="$(classify_mutant_run "skipped-empty" "skipped" "$flip_status" "$flip_kept/run/receipts/forbidden.json" "$expect")"
+      st=$?
+      set -e
+      if [ "$st" -eq 0 ]; then
+        echo "negative-host-mutants: self-check $name/$pair: unexpectedly FLIPPED" >&2
+        noop_ok=0
+      elif [ "$class" = "NOT-FLIPPED-REFUSED" ]; then
+        echo "negative-host-mutants: self-check $name/$pair: $class (the node still refuses, part exit $flip_status, $((t1 - t0))s)"
+      else
+        echo "negative-host-mutants: self-check $name/$pair: $class (part exit $flip_status), want NOT-FLIPPED-REFUSED" >&2
+        noop_ok=0
+      fi
+      if [ -z "$first_base" ] && [ -f "$flip_kept/run/receipts/forbidden.json" ]; then
+        first_base="$run_dir/base-forbidden.json"
+        cp "$flip_kept/run/receipts/forbidden.json" "$first_base" || noop_ok=0
+      fi
+      release_kept "$flip_kept"
+    done <<<"$flips"
+  done <<<"$names"
+  [ "$noop_ok" -eq 1 ] || fail "self-check live empty run failed"
+  [ -n "$first_base" ] || fail "self-check produced no receipt base"
+  [ -n "$first_copy" ] || fail "self-check produced no scratch copy"
+  git -C "$first_copy" show HEAD:onchain/script-identity.json >"$scratch_parent/noop-base-manifest.json" || fail "self-check cannot read the scratch manifest"
+  classification_controls "$first_base" "$scratch_parent/controls" || fail "self-check classification controls failed"
+  regen_step_controls "$scratch_parent/noop-base-manifest.json" "$scratch_parent/regen-controls" || fail "self-check regeneration-step controls failed"
+  echo "negative-host-mutants: SELF-CHECK PASS"
+  exit 0
+fi
+
+overall=0
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  run_one_mutant "$name" || overall=1
+done <<<"$names"
+[ "$overall" -eq 0 ] || fail "one or more mutants did not flip"
+echo "negative-host-mutants: PASS"
