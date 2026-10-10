@@ -339,6 +339,7 @@ test-suite conformance-tests
     Conformance.Support.Fixture
     Conformance.Support.FixtureChild
     Conformance.Support.FoldHistory
+    Conformance.Support.FoldSelection
     Conformance.Support.HeldView
     Conformance.Support.Identity
     Conformance.Support.ObservedTx
@@ -397,6 +398,7 @@ test-suite conformance-tests
     , plutus-ledger-api
     , plutus-tx
     , process                           >=1.6     && <1.7
+    , QuickCheck
     , serialise
     , singular-registry
     , singular-registry:koios-http

@@ -19,6 +19,7 @@ import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
+import Singular.Registry.FoldSelectionSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
@@ -86,6 +87,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.FailureMatch" [Provider])
         Singular.Registry.FailureMatchSpec.spec
+    describe
+        (tagged "Singular.Registry.FoldSelection" [Builders])
+        Singular.Registry.FoldSelectionSpec.spec
     describe
         (tagged "Singular.Registry.NetworkTime" [Time, Provider])
         Singular.Registry.NetworkTimeSpec.spec
