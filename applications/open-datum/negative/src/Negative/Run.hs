@@ -7,10 +7,10 @@ Description : The host's entry handlers over the shared session
 License     : Apache-2.0
 
 For this slice the holding-spend shapes (controller update,
-stranger update, tampered update, release outside a fold) and the
-termination booking run end to end; every other host command stops at
-a clear client refusal naming its slice. Every ordinary spelling is
-handed to the shared command unchanged.
+stranger update, tampered update, release outside a fold), the
+termination booking and the unevaluated fold run end to end; every
+other host command stops at a clear client refusal naming its slice.
+Every ordinary spelling is handed to the shared command unchanged.
 -}
 module Negative.Run
     ( -- * Entry handlers
@@ -46,12 +46,18 @@ import Singular.Application.OpenDatum.Envelope
     , envelopeFromData
     )
 import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.Attached (Attached (..), attached, savedOf)
+import Singular.CLI.Attached
+    ( Attached (..)
+    , attached
+    , reading
+    , savedOf
+    )
 import Singular.CLI.Live
     ( attachLive
     , liveOutputFor
     , liveOutputs
     , receipt
+    , txInText
     )
 import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Plan (readJson)
@@ -67,12 +73,17 @@ import Singular.CLI.Session
     , txIdHex
     )
 import Singular.Registry.Application (DecodedHolding (..))
+import Singular.Registry.Types (OnChainRequest (..))
 
 import Negative.Craft
     ( BookingShape (..)
+    , FoldPayment (..)
+    , FoldSelection (..)
     , HoldingSpend (..)
     , craftBooking
+    , craftFold
     , craftHoldingSpend
+    , selectFoldRequests
     )
 import Negative.Parse (TamperField (..))
 import Negative.Read (Around (..), readAround)
@@ -460,14 +471,117 @@ runNegativeWithdraw env args = case entryMode args of
                                     ClientRefusal
                                     ("withdraw failed: " <> show e)
 
-{- | Fold the pending requests, paying short when asked. Not in this
-slice.
+{- | Fold every pending request, paying short when asked. Permissionless:
+signed and funded by the named wallet, built unevaluated with stated
+budgets so the node judges it, with no local evaluation and no client
+check beyond finding its inputs. Receipt shape follows the other host
+handlers. Before and after read the first selected key's holding; with
+one request pending that is the request's key.
 -}
 runNegativeFold :: Env -> FoldArgs -> Maybe Integer -> IO Value
-runNegativeFold _ _ _ =
-    failWith
-        ClientRefusal
-        "not in this slice: folds arrive in the third slice"
+runNegativeFold env args short = do
+    let ws = foldWrite args
+    dir <-
+        resolveWalletDir
+            (foldStateDir args)
+            (providerMagic (writeProvider ws))
+            (accessToken (foldAccess args))
+            (writeWalletKey ws)
+    attached
+        openDatumApplication
+        env
+        dir
+        (foldBlueprint args)
+        (foldAccess args)
+        (neededRoles (OpenFold args))
+        ws
+        "fold"
+        $ \at -> do
+            let wallet = wcWallet (atWrite at)
+                payment = maybe PayAsOwed PayShort short
+            pairs <- reading at (\v -> selectFoldRequests v (atLive at) FoldEvery)
+            firstKey <- case pairs of
+                ((_, _), q) : _ -> pure (requestKey q)
+                [] ->
+                    failWith ClientRefusal "no request is pending for the fold"
+            before <- readAround at firstKey wallet
+            result <-
+                try
+                    ( submitBuiltIn
+                        (atWrite at)
+                        "fold"
+                        ["state", "key outputs"]
+                        ( const
+                            ( Expectation
+                                (Just firstKey)
+                                "fold"
+                                Nothing
+                                Nothing
+                                Nothing
+                            )
+                        )
+                        ( \_building v -> do
+                            live <- attachLive v (savedOf at)
+                            (unsigned, chosen) <- craftFold v live wallet FoldEvery payment
+                            pure (unsigned, chosen)
+                        )
+                    )
+            case result of
+                Right (signed, chosen) -> do
+                    after <- readAround at firstKey wallet
+                    let registry = atLive at
+                    pure
+                        ( receipt
+                            "fold"
+                            Success
+                            [ ("fold", toJSON (txIdHex signed))
+                            , ("requests", toJSON [txInText tin | (tin, _) <- chosen])
+                            , ("keys", toJSON [hexT k | (_, k) <- chosen])
+                            , ("before", aroundJson before)
+                            , ("after", aroundJson after)
+                            , ("payShort", toJSON short)
+                            , ("applicationHash", toJSON (applicationHashOf registry))
+                            , ("stateHash", toJSON (stateHashOf registry))
+                            ]
+                        )
+                Left (e :: SomeException) ->
+                    case fromException e :: Maybe CommandFailure of
+                        Just (CommandFailure LedgerRefusal why _) -> do
+                            after <- readAround at firstKey wallet
+                            let registry = atLive at
+                                failed =
+                                    failedScripts
+                                        registry
+                                        (AnswerRefused (T.pack why))
+                            pure
+                                ( receipt
+                                    "fold"
+                                    LedgerRefusal
+                                    [ ("fold", toJSON ("none" :: Text))
+                                    , ("requests", toJSON [txInText tin | ((tin, _), _) <- pairs])
+                                    , ("keys", toJSON [hexT (requestKey q) | (_, q) <- pairs])
+                                    , ("reason", toJSON (T.pack why))
+                                    ,
+                                        ( "failedScripts"
+                                        , toJSON
+                                            [ Aeson.object
+                                                [ "hash" .= failedHash f
+                                                , "role" .= scriptRoleName (failedRole f)
+                                                ]
+                                            | f <- failed
+                                            ]
+                                        )
+                                    , ("before", aroundJson before)
+                                    , ("after", aroundJson after)
+                                    , ("payShort", toJSON short)
+                                    , ("applicationHash", toJSON (applicationHashOf registry))
+                                    , ("stateHash", toJSON (stateHashOf registry))
+                                    ]
+                                )
+                        _ ->
+                            failWith
+                                ClientRefusal
+                                ("fold failed: " <> show e)
 
 {- | What one update spends: tampered when asked, otherwise the same
 continuation for any signer. The node tells the controller from the
