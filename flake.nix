@@ -189,6 +189,54 @@
         # #451 re-cut R1: the collector as a buildable package; the app below
         # refers to this same writeShellApplication derivation.
         cli-recovery-cross-wallet-evidence = (recoveryTools system).evidence;
+        # #381: the replay-fault control build — the packaged singular rebuilt
+        # with the committed replay-fault patch applied at package level over
+        # the existing source. Package level because the fault lives in the
+        # registry library, which the executable links: patching the
+        # executable derivation alone rebuilds it unpatched (proven by the
+        # first control run refusing nothing). Reuses the offchain lock's own
+        # inputs and project shape; adds no input, edits no offchain file.
+        # Never the packaged product: the journey apps keep the unpatched
+        # binary; only the replay-fault control app runs this one.
+        singular-replay-fault =
+          let
+            pkgs = import offchain.inputs.nixpkgs {
+              overlays = [
+                offchain.inputs.iohkNix.overlays.crypto
+                offchain.inputs.haskellNix.overlay
+                offchain.inputs.iohkNix.overlays.haskell-nix-crypto
+                offchain.inputs.iohkNix.overlays.cardano-lib
+              ];
+              inherit system;
+            };
+            patchedSrc = pkgs.applyPatches {
+              src = ./offchain;
+              patches = [ ./tools/replay-fault.patch ];
+            };
+            fix-libs =
+              { lib, pkgs, ... }:
+              {
+                packages.cardano-crypto-praos.components.library.pkgconfig = lib.mkForce [ [ pkgs.libsodium-vrf ] ];
+                packages.cardano-crypto-class.components.library.pkgconfig = lib.mkForce [
+                  [
+                    pkgs.libsodium-vrf
+                    pkgs.secp256k1
+                    pkgs.libblst
+                  ]
+                ];
+              };
+            faultProject = pkgs.haskell-nix.cabalProject' (_: {
+              name = "singular-registry-replay-fault";
+              src = patchedSrc;
+              compiler-nix-name = "ghc9123";
+              cabalProjectLocal = "packages: negative";
+              modules = [ fix-libs ];
+              inputMap = {
+                "https://chap.intersectmbo.org/" = offchain.inputs.CHaP;
+              };
+            });
+          in
+          faultProject.hsPkgs.singular-registry.components.exes.singular;
       };
       buildGate =
         system:
@@ -438,6 +486,70 @@
               }
             );
           };
+          registry-two-actors = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "registry-two-actors";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.strace
+                  pkgs.python3
+                  # the stop path verifies no surviving node with pkill/pgrep
+                  pkgs.procps
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/journey"
+                  echo "two actors: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  # #381: the altered journey leg inspects with the control
+                  # build; without it the leg is skipped and its row pending.
+                  SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
+                    python3 ${./tools/registry_two_actors.py} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                    ${onchain.packages.${system}.plutus-blueprint} "$work"
+                '';
+              }
+            );
+          };
+          # #381: the foreign-open access check over the two-actor journey —
+          # one real booking with --state-dir at the other actor's state root
+          # must fail at the guard: `nix run --quiet .#registry-two-actors-control`.
+          registry-two-actors-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "registry-two-actors-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  procps
+                  python3
+                  strace
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/control.XXXXXX")"
+                  echo "two-actor control: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  # #381: the shipped harness's status taxonomy needs no
+                  # development network, so it runs before anything starts one.
+                  python3 ${./tools/registry_two_actors_status.test.py} ${./tools/registry_two_actors.py}
+                  bash ${./tools/registry_two_actors_control.test.sh} ${./tools/registry_two_actors_control.sh}
+                  bash ${./tools/registry_two_actors_control.sh} "$work" \
+                    python3 ${./tools/registry_two_actors.py} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                    ${onchain.packages.${system}.plutus-blueprint}
+                '';
+              }
+            );
+          };
           # #299: the ordinary CLI's refusal controls, judged from their
           # receipts: `nix run --quiet .#demo1-cli-controls`.
           demo1-cli-controls = {
@@ -577,6 +689,47 @@
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
           })
+          // {
+            # #381: the replay-fault control — one genuine insertion booked
+            # and folded, then a real actor inspect with the control build
+            # whose replay maps one edge to another. The job passes only on
+            # exit 0, which the harness returns only for RootDoesNotChain
+            # naming the registry and the fold, with no root:
+            # `nix run --quiet .#registry-two-actors-replay-fault`.
+            registry-two-actors-replay-fault = {
+              type = "app";
+              program =
+                let
+                  pkgs = import nixpkgs { inherit system; };
+                in
+                pkgs.lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "registry-two-actors-replay-fault";
+                    runtimeInputs = with pkgs; [
+                      bash
+                      coreutils
+                      gnugrep
+                      procps
+                      python3
+                      strace
+                    ];
+                    text = ''
+                      base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                      mkdir -p "$base"
+                      work="$(mktemp -d "$base/replay-fault.XXXXXX")"
+                      echo "replay-fault control: receipts in $work"
+                      export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                      SINGULAR_UNFAULTED=${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                      SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
+                        python3 ${./tools/registry_two_actors.py} \
+                        ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
+                        ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                        ${onchain.packages.${system}.plutus-blueprint} "$work/journey"
+                    '';
+                  }
+                );
+            };
+          }
           // (import ./nix/negative-host.nix { pkgs = import nixpkgs { inherit system; }; })
         )
       );

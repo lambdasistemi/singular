@@ -1,0 +1,158 @@
+{
+  "finish-the-independent-user-registry-journey": [
+    {
+      "text": "Finish the independent-user registry journey.",
+      "pause": 500
+    },
+    {
+      "text": "The value is two users operating one registry from public history without sharing files. Replay and command migration already landed; this list tracks the remaining acceptance, in the four runs the mandate orders. One source writer works at a time, under the October 9 staffing ruling, and the frozen gate decides each run's end.",
+      "pause": 400
+    }
+  ],
+  "done-before-this-stack": [
+    {
+      "text": "Done before this stack.",
+      "pause": 500
+    },
+    {
+      "text": "[x] T001 Preserve the old branch and rebase onto main 23964e66; regenerate conflicting speech companions in docs/ (rebased head fdc6523a).",
+      "pause": 300
+    },
+    {
+      "text": "[x] T002 Reconcile merged #419 and the staffing instruction in specs/381-registry-replay/{spec,plan,decisions}.md.",
+      "pause": 300
+    },
+    {
+      "text": "[x] T008 [US2] Run and reconcile offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs and offchain/test/Singular/Registry/TrieStateContractSpec.hs for every-fold roots, mixed folds, input order and proofs. Executed October 7: 48 replay and 36 capability examples passed; scope and limits in verification.",
+      "pause": 300
+    },
+    {
+      "text": "[x] T010 [US2] Verify replay controls detect wrong edges, corrupted proofs and missing history; retained in verification.",
+      "pause": 300
+    },
+    {
+      "text": "[x] prepare-empty-actor-harness Make a private creator registry and start Alice and Bob with empty homes, tracing every process, with all fourteen product requirements published as pending.",
+      "pause": 300
+    },
+    {
+      "text": "[x] verify-component-actor-controls Check two actors' public-fact decisions at component level, with five wired faults that each turn a named check red; align the fixture with public carried datums.",
+      "pause": 300
+    },
+    {
+      "text": "[x] T012 Reconcile user instructions and historical mirror statements in docs/consumer-onboarding.md, docs/singular-node.md, specs/324-indexer-view/plan.md and specs/362-separate-fold/spec.md; regenerate affected speech companions.",
+      "pause": 300
+    }
+  ],
+  "stack-and-dependency": [
+    {
+      "text": "Stack and dependency.",
+      "pause": 500
+    },
+    {
+      "text": "[x] T003 Consume the published token-only interface: joining by state token merged in issue 501, and the managed state directory is PR 525. The branch is stacked on PR 525 at 026576268e916c964426d4a4be304d35544d9816, recorded in plan and the mandate. No copied creator identity file.",
+      "pause": 300
+    },
+    {
+      "text": "[x] stack-on-managed-state-ticket Rebase the nine commits of this ticket onto PR 525, keeping the previous tip as archive/e371-381-before-485-stack-20261009.",
+      "pause": 300
+    }
+  ],
+  "run-one-docs-baseline-token-only-actors-isolation-us1-p1": [
+    {
+      "text": "Run one: docs baseline, token-only actors, isolation (US1, P1).",
+      "pause": 500
+    },
+    {
+      "text": "Independent check: real CLI receipts from separate empty homes; each user starts only with the state token, a wallet and the provider address.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] clear-docs-baseline Regenerate the six stale narration clips and the speech stamp of docs/singular-node.md, and remove the seven orphan clips, in one commit that contains nothing else.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T004 [US1] Replace pending actor setup with the real token-only commands in tools/registry_two_actors.py; the creator and both actors use the managed state, with no directory option; trace every process; no assertion reads a home or state directory.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] guard-detects-foreign-open Run the foreign-open control after a passing positive run and require the guard, and only the guard, to fail the run.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] each-actor-inserts-and-folds [US1] Each actor proves a key absent, books its insertion, folds it, and reads it active, from its own replay.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] add-journey-hosted-jobs Add the journey job and its control job to .github/workflows/registry.yml, and the control to flake.nix, modelled on the existing two-actor control.",
+      "pause": 300
+    }
+  ],
+  "run-two-cross-actor-folds-and-refusals-us1-p1": [
+    {
+      "text": "Run two: cross-actor folds and refusals (US1, P1).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T005 [US1] The other actor folds each termination, and each insertion, from public data, in both directions, including insertion folds using the carried datum.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] only-the-controller-updates-or-terminates [US1] The other actor's update and terminate are refused by name, with the root and pending requests unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T007 [US1] Compare both actors' inspect roots to every fold's state root.",
+      "pause": 300
+    }
+  ],
+  "run-three-reject-and-reclaim-across-actors-us1-p1": [
+    {
+      "text": "Run three: reject and reclaim across actors (US1, P1).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T006 [US1] Execute cross-actor reject of an expired request, wrong-owner reclaim and the valid reclaim inside the window; record the actual refusal names and exit codes.",
+      "pause": 300
+    }
+  ],
+  "run-four-history-faults-report-and-publication-us2-p1": [
+    {
+      "text": "Run four: history faults, report and publication (US2, P1).",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T009 [US2] Withheld fold history through the actor's command refuses HistoryIncomplete with no trie; a replay that maps one edge wrongly, in a control build, refuses RootDoesNotChain with no trie.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T011 Compute all fourteen row states from the executed receipts in tools/registry_two_actors.py; the two rows that read the registry page stay pending on issue 503; keep harness evidence in a marked appendix.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reconcile-onboarding-join-statement Correct the statement in docs/consumer-onboarding.md that joining by state token is pending under issue 437, regenerating its speech companion and narration.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T013 Run the packaged journey and nix develop --quiet -c just ci on the final candidate; record candidate, Lean tree, commands, receipts and limits in specs/381-registry-replay/verification.md.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T014 Update PR 433 from .github/pull_request_template.md with the words \"stacked on PR 525\", verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.",
+      "pause": 300
+    }
+  ],
+  "order-and-model-binding": [
+    {
+      "text": "Order and model binding.",
+      "pause": 500
+    },
+    {
+      "text": "Run one precedes the rest; runs two to four each start when the run before has all its checkpoints approved. Lean tree: 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef; Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. No semantic change is planned. A mixed transaction is checked by the compiled state validator; it has no whole-transaction Lean correspondence claim. Public networks remain read-only.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "4b6cd5e3d98c799a1f5f5129b1868ba280a83428df8886da0924e4cdc9b99fbd"
+  }
+}

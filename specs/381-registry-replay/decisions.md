@@ -48,27 +48,35 @@ of October 4.
 
 ## Joining a registry from public data
 
-As Bob, I need a registry directory before any command will run, and today only
-`create` makes one. The saved identity, `registry.json`, is documented as public:
-network, pins and the deployment record, with no key
-(`offchain/cli/src/Singular/CLI/Registry.hs:11-15`). Its reference outputs sit
-at the creator's wallet and are not in the state token's history.
+The operator's October 6 definition supersedes the proposed identity-file join:
+"demo-1 is Alice and Bob on separate terminals and directories, starting empty,
+reading the web page and provider (Koios)". Neither actor is the creator. A third
+creator-only fixture may make the development registry, but its creation files
+are never shared with either user.
 
-Proposed: a read-only joining path takes the published identity record and the
-blueprint the actor brings. It checks the record against public data before
-writing anything: the create transaction found through the state token's
-history spends the seed, mints `assetName(seed)` and carries the pins; every
-reference output is live and holds the script whose hash the record names. It
-then writes a fresh directory holding that identity and an empty journal.
-A creator's mirror, journal and envelopes are never needed.
+Joining by state token has since merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)),
+and the managed state directory ([issue #485](https://github.com/lambdasistemi/singular/issues/485),
+PR 525) removes the per-registry directory. Every command derives the seed, pins,
+windows, tip and reference outputs from the state token, state datum and release, and
+chooses where its own journal lives. The former proposal to import a creator's
+`registry.json` and verify its fields stays withdrawn; this ticket ships no joining
+command and no substitute joined directory.
 
-Rejected alternative: deriving the identity from the seed and blueprint alone,
-then scanning the creator's address for reference outputs. Those outputs are
-ordinary wallet outputs the creator may spend, so the scan cannot be complete.
+On October 9 the epic owner added the rule for the tests: Bob starts with the state
+token, his wallet and a Koios URL, and any assertion that reads a registry directory is
+rewritten rather than kept, whether it is a foreign actor's directory, the creator's
+directory or any state directory. The journey's assertions read command receipts,
+`inspect` reads made with the state token, and access traces.
+
+The registry page, generated from the chain, belongs to
+[issue #503](https://github.com/lambdasistemi/singular/issues/503). The two journey rows
+that read it stay pending on it, with their joining receipts attached. The complete
+integrated journey ships in this pull request, stacked on PR 525.
 
 ## The directory keeps nothing the replay replaces
 
-As a registry owner, I keep the identity, my own journal and my own envelopes.
+As a registry owner, I keep the identity and my own journal. Insertion envelopes
+are carried publicly by their requests under #419.
 The mirror file and the saved root commitment are retired with the mirror
 adapter in the commands slice, and the slice receipt names every caller removed.
 No cache survives. A directory written by an earlier release still holds those
@@ -79,16 +87,12 @@ Rejected alternative: keeping the mirror as a cache checked against the replay.
 The operator places caching in a later backend, and two trie sources in one
 release would need a reconciliation rule no ticket specifies.
 
-## Folding an insertion needs the booker's preimage today
+## Folding an insertion uses its public carried datum
 
-This is a limit, not a decision. An insertion's request carries only the hash of
-the datum it delivers, and today a fold that delivers a datum needs the booker's
-preimage file (`offchain/cli/src/Singular/CLI/Preimage.hs:9-14`), so only the
-booker can fold it. The operator contradicted that as a design on October 6: it
-would make every application invent an off-chain service. The design is open in
-[issue 419](https://github.com/lambdasistemi/singular/issues/419). No control asserts
-the cross-actor refusal as correct behaviour; the existing unit test checks only
-today's refusal. A termination fold needs no preimage and runs across actors.
+The October 6 #419 ruling is implemented on main: a request carries the datum
+its delivery writes, and a folder uses public inputs (`Singular.buildFold`).
+The earlier hash-only/preimage-file limitation is superseded. #381 must execute
+another actor's insertion fold without access to the booker's directory.
 
 ## Recovery is observed from public history
 
@@ -135,16 +139,10 @@ ticket builds on the payload-carrying type rather than rebasing across it.
 
 ## Sequencing and staffing
 
-As this ticket's owner, I implement only against published code. Both slices that
-consume history start when the provider ticket's provider switch slice is
-pushed, since `Session.history` arrives with it. A preparation slice builds
-the pure replay and its chain oracles first, against nothing unpublished.
-The epic owner forwards each as an inbox note. If the published contract does not
-fit lineage reconstruction, that is a question, not a change to the provider ticket.
-
-After acceptance of the intake head, this window runs one commit owner and one
-mute persistent auditor, in its own detached audit worktree, with the models the
-operator names. Until October 4 these were Claude claude-opus-5-5 and Codex
-gpt-6.1-sol; from October 5, Codex gpt-6.1-sol and Grok grok-4.7. No gate authors or
-draft seats are authorised. Merge readiness is the auditor's approval of every
-checkpoint and exact-head CI green; the epic owner merges.
+As this ticket's owner, I implement only against published code, and the base is PR 525.
+The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a
+Muse source writer and a GLM auditor, no other seat, one writer at a time. The
+[mandate](mandate.md) quotes the ruling. This ticket merges immediately after
+[issue #485](https://github.com/lambdasistemi/singular/issues/485), in the slot the desk
+grants, and is not rebased onto main before it. If the published contract does not fit
+lineage reconstruction, that is a question, not a change to the provider ticket.

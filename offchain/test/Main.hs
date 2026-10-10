@@ -9,6 +9,7 @@ import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.FoldSpec qualified
+import Singular.CLI.IndependentActorsSpec qualified
 import Singular.CLI.InsertEnvelopeSpec qualified
 import Singular.CLI.ManagedStateSpec qualified
 import Singular.CLI.OutlaySpec qualified
@@ -181,6 +182,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Outlay" [Cli])
         Singular.CLI.OutlaySpec.spec
+    describe
+        (tagged "Singular.CLI.IndependentActors" [Cli, Provider, History, Trie])
+        Singular.CLI.IndependentActorsSpec.spec
     describe (tagged "Singular.CLI.Fold" [Cli]) Singular.CLI.FoldSpec.spec
     describe
         (tagged "Singular.CLI.ManagedState" [Cli])

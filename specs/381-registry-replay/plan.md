@@ -3,11 +3,13 @@
 As a maintainer, I want one trie-state backend that rebuilds a registry's trie
 from its full public history at every selection, so that commands get the
 chain's trie without any actor's local copy. Read the [stories](spec.md) first,
-then the [decisions](decisions.md). The pure replay, the exclusion of failed
-transactions and the named refusals are on main
-([PR 391](https://github.com/lambdasistemi/singular/pull/391)). The commands slice
-starts from main at `2cafe6b2`, where the provider ticket published
-`Session.history` ([PR 410](https://github.com/lambdasistemi/singular/pull/410)).
+then the [decisions](decisions.md). The pure replay and command migration are merged in PRs 391 and 411.
+The remaining branch is stacked on PR 525, the managed-state ticket
+([issue #485](https://github.com/lambdasistemi/singular/issues/485)), at
+`026576268e916c964426d4a4be304d35544d9816`. The remaining deliverable is the actual
+independent-user journey. The [mandate](mandate.md) fixes its content, runs and
+gate, and the ordered [task list](tasks.md) tracks it; an empty-user harness alone
+does not complete it.
 
 ## The contract consumed
 
@@ -109,33 +111,46 @@ through the provider ticket's Koios-shaped development-network provider.
 
 ```mermaid
 flowchart TD
-  AliceDir[Alice's directory] -->|Create and announce identity| Chain[Development network]
-  BobDir[Bob's directory] -->|Join from published identity| Chain
+  Creator[Private creator-only fixture] -->|Create registry| Chain[Development network]
+  Chain -->|State token, published| Token[State token]
+  Chain -->|Generated registry page: waits on 503| Page[Public registry page]
+  Token --> AliceRun[Alice's singular, empty home]
+  Token --> BobRun[Bob's singular, empty home]
   Chain -->|Asset history| Provider[Koios-shaped provider]
-  Provider -->|Same history| AliceRun[Alice's singular]
-  Provider -->|Same history| BobRun[Bob's singular]
+  Provider -->|Same history| AliceRun
+  Provider -->|Same history| BobRun
 ```
 
-Alice creates the registry in her own directory. Bob's directory starts empty
-and is initialised from the published identity, under the joining decision in
-the [decisions](decisions.md#joining-a-registry-from-public-data). Then:
+A private creator-only fixture makes the registry. Alice and Bob both start with
+empty homes. Each is given the registry's state token, its own wallet and the
+provider's address, and nothing else: every command carries `--state-token`, none
+carries a directory option, and the command chooses where its own journal lives
+([issue #485](https://github.com/lambdasistemi/singular/issues/485)). Joining by
+token is merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)).
+The registry page waits on [issue #503](https://github.com/lambdasistemi/singular/issues/503),
+so the two rows that read it stay pending, with the joining receipts attached. No
+identity file is copied and no joined directory is simulated:
 
 1. Bob inspects his key, proving its absence, and books and folds its
-   insertion. Alice's directory is hashed before and after, and never read.
+   insertion. Alice's files are never opened, which the access trace shows.
 2. Alice inspects Bob's key and finds it active, from her own replay.
 3. Bob books the termination of his own key; Alice folds it, with the
    membership proof from her own replay and no envelope. Alice books the
    termination of her own key; Bob folds it likewise. Bob's update and
    termination attempts on Alice's key stay refused as not the controller.
-4. Alice inserts and folds her own key. Whether another actor can fold her
-   insertion waits for [issue 419](https://github.com/lambdasistemi/singular/issues/419).
+4. Alice books an insertion and Bob folds it from the public request datum;
+   Bob books an insertion and Alice folds it likewise. #419 is merged, so no
+   booker preimage is needed.
 5. Rejection and reclaim run across actors, as today.
 6. After every fold, both actors' inspect roots equal the fold's state root.
 
-The journey runs Alice and Bob with separate `HOME` and registry directories.
-It fails if either process opens the other's directory. The current
-mirror-dependent controls become history controls: the provider withholds one
-fold, then serves an altered request edge, and each refusal is named.
+The harness starts Alice and Bob with separate empty homes and traces every
+process, the creator's included, so any attempted read of another party's files
+fails the journey. It reads no home and no state directory itself: "nothing was
+submitted" is shown by `inspect` before and after. The mirror-dependent controls
+became history controls: the provider withholds one fold, and a replay that maps one
+edge wrongly is run through the actor's command, and each refusal is named. The
+[mandate](mandate.md) says why the second control cannot be served by a provider.
 
 ## Vertical slices
 
@@ -146,8 +161,9 @@ and stacks on the provider ticket's published slices.
 | --- | --- | --- |
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
-| Separate actors | The joining path, separate directories, cross-actor steps and history-based controls in the journey; superseded statements corrected. | The same publication |
-| Published evidence | The two-edge journey evidence published in the public suite's language, and the audited trail bound to the head. | Separate actors |
+| Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. Merged before this stack. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
+| Separate actors integrated | Actual token-driven joining and the full two-user CLI journey, in four runs under the [mandate](mandate.md). No creator identity file is shared. | Joining by token merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)) and the managed state directory stacked ([PR 525](https://github.com/lambdasistemi/singular/pull/525)) |
+| Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
 and its file handling leave with the commands slice; the pure fixture trie stays.
@@ -165,12 +181,13 @@ the provider.
 | Edge semantics | `walkEdge`, unchanged |
 | The in-memory trie | The provider ticket's pure fixture trie representation, not a new one |
 | The trie-state instance | One lineage backend over a session, chosen at terminal composition |
-| Joining from a published identity | The registry directory owner in the CLI |
+| Registry page and joining by state token | #437 under epic #301; integration point only in this slice |
 
 ## Invariant-to-test map and controlled faults
 
 As a reviewer, I want every guarantee paired with the observation that would
-contradict it. These are planned checks; none has run on an implementation.
+contradict it. Prior slices have checks; the remaining branch needs evidence bound to its
+final candidate. The task list distinguishes that verification from new work.
 Each must run red under its fault, from the subject itself, never from a build
 failure.
 
@@ -192,12 +209,22 @@ the packaged two-actor journey, and the focused replay checks added to that
 same surface. Every product claim is described in the public suite's language,
 its state computed from receipts. Uncovered rows remain visible.
 
-## Acceptance boundaries and phase stop
+## Execution and acceptance
 
-As the epic owner, I receive this intake before authorising execution. This
-seat writes planning and PR metadata only; no code, tests or gates change here.
-Each page has its speech extracted by mkdocs-speech and stamped against its
-bytes, within 24 KiB and 300 lines. Each slice runs one commit owner and one mute
-auditor in its own detached audit worktree, with the models the operator names
-(see the [decisions](decisions.md#sequencing-and-staffing)), both in this
-ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.
+The October 9 staffing ruling governs: a Sonnet ticket owner, a Muse source writer and
+a GLM auditor that is mute toward the writer, one source writer at a time, and no other
+seat. The [mandate](mandate.md) quotes it. The owner verifies, and the desk grants the
+merge slot.
+
+The stop of October 7 on token-only joining no longer applies: joining by token merged
+in [issue #501](https://github.com/lambdasistemi/singular/issues/501) and the managed
+state directory is stacked beneath this branch. The two rows that read the registry page
+stay pending on [issue #503](https://github.com/lambdasistemi/singular/issues/503). No
+identity-file copy or handwritten registry configuration substitutes for the joining.
+
+Lean behavior is bound to tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, the same on
+main, on PR 525 and here, with `Singular.step`, `exitStep`, `foldActions`, `buildFold`
+and the public-fold-input statements. No model change is planned. Mixed transactions
+retain the separately stated validator oracle. Final acceptance requires exact-head CI
+and executed journey receipts, including the negative controls, with all missing rows
+visible.

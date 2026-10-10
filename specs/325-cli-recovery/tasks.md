@@ -1,5 +1,13 @@
 # #325 tasks
 
+> **Replay supersedes the former local proof state.** This record preserves the
+> #325 recovery design and its original requirement names. Under #381, ordinary
+> commands reconstruct proof state from public state-token history. They neither
+> read nor write a proof mirror or `state.json`, and the journal supplies no replay
+> edge or root. Recovery still appends submission phases and observations; public
+> history selects the trie, including after a rollback. References below to the
+> former local mirror commit are historical and are superseded by this rule.
+
 The ticket owner stamps tasks at acceptance.
 
 - [x] distinct-outcome-naming-in-journal-receipt-for (outcomes-durable-local-commit-reconciliation-on-next) Distinct outcome naming in journal and receipt for acknowledged, unknown, rejected, included and timeout (journal-events-existing-prepared-submitted-acknowledged-rejected, unresolved-write-refusal) (acknowledgement-unknown-outcome-inclusion-timeout-rollback-exclusion; distinct-outcomes-submission-ends-command-in-exactly).

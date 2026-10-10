@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Historical plan: #383 removed the production node read path and this in-memory indexer. Current commands use the ledger-provider interfaces and reconstruct registry proof state from public history under #381. The implementation choices below record the retired adapter, not a current backend option.",
+      "pause": 400
+    },
+    {
       "text": "Strategy. Replace the point-agnostic indexedReads in Singular.Registry.Node.Indexer with an indexer adapter that yields #323 views at one chain point. Fact at the pin: the chain-sync follower mutates the index only through the caller-owned IndexerHandle record that Singular passes to withChainSyncFollower (applyAtSlot, rollbackTo, pruneRollbacks). Singular therefore owns the index's write path: while a view is held, the index does not advance, and a view is admitted only when the index's applied point equals the node view's point. The devnet produces ten blocks per second and the pinned node client cannot acquire at a named point, so agreement must be reached deterministically, never by chance. followedProvider keeps its signature; its devnet consumers (journeys, e2e) exercise the adapter live in adapter-contract-spec-adapter-its-failure-classes.",
       "pause": 400
     },
@@ -41,7 +45,7 @@
       "pause": 300
     },
     {
-      "text": "no-upstream-reimplementation-no-index-state-reconstruction no upstream reimplementation: no index state reconstruction, history replay or chain-sync logic copied into Singular.",
+      "text": "no-upstream-reimplementation-no-index-state-reconstruction No index state reconstruction or chain-sync logic is copied into this indexer adapter. The ordinary CLI separately reconstructs registry proofs from public state-token history under #381; that replay does not reimplement the upstream indexer.",
       "pause": 300
     },
     {
@@ -97,12 +101,12 @@
       "pause": 300
     },
     {
-      "text": "Constraints. No lean/, validator, blueprint or conformance-row change. Singular.Registry.Provider and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. Journal, mirror and recovery flow are #325's.",
+      "text": "Constraints. No lean/, validator, blueprint or conformance-row change. Singular.Registry.Provider and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. The ordinary CLI keeps its submission journal under #325 and derives proof state from public replay under #381, without a persisted mirror or saved root.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "ed7b62c11fe99ed002d6bfc4d26de5ff2c2a42af9af113fe36a73b0a0e1cf6b6"
+    "sha256": "d560a5b6e1cce4bca47e22dc13ebd9e5e9a417aa1691be3fd34916b6a11f3428"
   }
 }

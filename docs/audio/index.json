@@ -988,22 +988,22 @@
     "index": 1,
     "name": "docs-cli-recovery/the-next-command-reconciles-01",
     "pause_ms": 400,
-    "text": "After an inclusion, a write commits locally in a fixed order: the registry's proof mirror, then state.json, then the observed line. Each file is replaced whole or not at all, so an interruption leaves the previous version or the new one, never a torn file. Wherever the interruption fell, the next ordinary command — any write, or inspect — finishes the commit from chain evidence before it does anything else, and submits nothing while doing so.",
-    "v": "b6dbf62f8699"
+    "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
+    "v": "525817717198"
    },
    {
     "index": 2,
     "name": "docs-cli-recovery/the-next-command-reconciles-02",
     "pause_ms": 400,
-    "text": "The edge a fold commits is applied to the mirror only from the root it was journalled to fold from, and only when the ledger already holds the root it was journalled to reach — so it is applied at most once. A mirror that commits to any other root is stale local state: it is refused, never repaired. The observation is made for the key the interrupted step concerned, whichever key the current command targets.",
-    "v": "8bf7da30f94a"
+    "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
+    "v": "2767cb130619"
    },
    {
     "index": 3,
     "name": "docs-cli-recovery/the-next-command-reconciles-03",
     "pause_ms": 400,
-    "text": "A write's receipt carries what the reconciliation did under reconciled: the transactions it journalled rolled back, those it found unresolved, those it excluded, the root it returned the mirror to after a rollback, the folds whose edge it applied, whether it brought state.json along, and the transactions it observed. inspect reports the same under rolledBack, recovery, excluded, mirrorRewound, mirrorAdvanced and observed. inspect reconciles only while no other singular process is writing to the registry; otherwise it reads without reconciling and says so.",
-    "v": "d16a0f4d3bfe"
+    "text": "A write reports reconciliation under reconciled: rolledBack, recovery, excluded and observed. Inspect reports the same fields at the receipt's top level. Inspect reconciles only while no other process holds this directory's write lock; otherwise it reads without reconciling and says so.",
+    "v": "0c6e69628ec5"
    }
   ],
   "the-request-keeps-its-registrys-windows": [
@@ -1057,15 +1057,15 @@
     "index": 1,
     "name": "docs-cli-recovery/when-a-transaction-can-never-land-01",
     "pause_ms": 400,
-    "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root the mirror already holds.",
-    "v": "0b9b618205af"
+    "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root selected by fresh public replay.",
+    "v": "eabff8de2538"
    },
    {
     "index": 2,
     "name": "docs-cli-recovery/when-a-transaction-can-never-land-02",
     "pause_ms": 400,
-    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
-    "v": "acfe831fd29c"
+    "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+    "v": "c3269b6059d6"
    },
    {
     "index": 3,
@@ -1094,8 +1094,8 @@
     "index": 2,
     "name": "docs-cli-recovery/when-the-chain-rolls-back-02",
     "pause_ms": 400,
-    "text": "For a fold, the rolled-back line also names the root the mirror returns to: the root the fold was journalled to fold from. The mirror is rebuilt from the empty trie the registry was created with, by applying in journal order the edges of the folds still on the chain, each from its journalled root before to its journalled root after; state.json follows it. If that rebuild does not reach the fold's root before, the local files are stale and the command stops stale-state, writing nothing. The rolled-back transaction is never sent again. If the chain includes it again — another node still had it — the next command journals it confirmed and reconciles it as above; otherwise every write stops on it, naming the case rolled-back.",
-    "v": "b2d800b1ce63"
+    "text": "Proof state follows the public history selected by the current command, including rollbacks. The journal does not rebuild a private trie. The rolled-back transaction is never sent again. If the chain includes it again, the next command journals it confirmed and reconciles its observation; otherwise writes stop on it, naming the case rolled-back.",
+    "v": "2f8faa6b06c5"
    }
   ],
   "when-the-next-command-stops": [
@@ -1131,8 +1131,8 @@
     "index": 4,
     "name": "docs-cli-recovery/when-the-next-command-stops-04",
     "pause_ms": 300,
-    "text": "included: the transaction is on chain, but its journalled edge does not take the mirror to the ledger's root. The outcome is stale-state (status 14): the local files no longer follow the chain and are not repaired.",
-    "v": "e8e5122d94e7"
+    "text": "included: the transaction is on chain, but public history is incomplete or its reconstructed root does not chain. The named trie refusal preserves its existing outcome and exit status; the journal cannot repair public facts.",
+    "v": "c1a3a021bfbf"
    },
    {
     "index": 5,
@@ -2460,8 +2460,8 @@
     "index": 3,
     "name": "docs-consumer-onboarding/deployment-and-naming-availability-03",
     "pause_ms": 400,
-    "text": "A deployment manifest and its mirror travel together. Writing a proof needs the trie, not only the root an API reports; a root mismatch must stop rather than build against the wrong registry. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
-    "v": "ed9be9c969d1"
+    "text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+    "v": "158adbec93ba"
    }
   ],
   "fund-a-wallet-you-control": [
@@ -4424,7 +4424,7 @@
     "name": "docs-offchain-api-reference/off-chain-api-reference-01",
     "pause_ms": 400,
     "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here documents exactly the code this candidate was built from — and, as the extent below states, a few of its modules are documented for the contributor without being importable by a caller. One boundary on that promise is named below: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
-    "v": "c6019a5ceccf"
+    "v": "bfda96ea07a5"
    }
   ],
   "what-the-reference-does-not-claim": [
@@ -4948,8 +4948,15 @@
     "index": 1,
     "name": "docs-offchain-deployment-owners/who-owns-a-deployment-record-01",
     "pause_ms": 400,
+    "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+    "v": "d34335159409"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-deployment-owners/who-owns-a-deployment-record-02",
+    "pause_ms": 400,
     "text": "A contributor changing what a deployment carries — a manifest field, a mirror entry, the checks a run makes before it attaches to a recorded registry — wants to edit one module beside the concern it owns, and have the review ask one question. Before the extraction, all of it lived in one 677-line Deployment module where a JSON key change, a mirror persistence change and a node query change were reviewed side by side with nothing between them. Now the record has three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, which way the dependencies run, what the record may never do while it moves, and where the evidence boundary sits.",
-    "v": "e980576d959b"
+    "v": "e240ed083b30"
    }
   ]
  },
@@ -7490,7 +7497,7 @@
     "name": "docs-singular-node/booking-and-folding-01",
     "pause_ms": 400,
     "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
-    "v": "28facd1ba9dc"
+    "v": "4cf0e15c574c"
    },
    {
     "index": 2,
@@ -7504,7 +7511,7 @@
     "name": "docs-singular-node/booking-and-folding-03",
     "pause_ms": 400,
     "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
-    "v": "990c1fabf54c"
+    "v": "cf86b2348e74"
    },
    {
     "index": 4,
@@ -7661,7 +7668,7 @@
     "name": "docs-singular-node/harness-appendix-test-hooks-01",
     "pause_ms": 400,
     "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-    "v": "c2f453c17e54"
+    "v": "b1ba9f578639"
    },
    {
     "index": 2,
@@ -7765,7 +7772,7 @@
     "name": "docs-singular-node/reclaiming-your-pending-request-03",
     "pause_ms": 400,
     "text": "Inside the window, the existing retract builder pays the owner all the request's locked lovelace in one output whose inline datum is that request's reference. The command checks that output and the built validity interval before signing. When the retract deadline has no slot, the built upper bound must still be placed in time by that same session's pinned time and be no later than the deadline. The receipt names the request, retract transaction, actual locked value, owner, return address and output, returned value and any minimum-output top-up. It does not assume a protected holding deposit ever reached the request. After confirmation, it reads back the consumed request, exact return output and unchanged registry root before journalling observed. The mirror and state.json do not move. The next request can be booked and folded normally.",
-    "v": "f60db4ff36db"
+    "v": "3208fdbe8425"
    }
   ],
   "rejecting-expired-requests": [
@@ -7781,7 +7788,7 @@
     "name": "docs-singular-node/rejecting-expired-requests-01",
     "pause_ms": 400,
     "text": "A request that nobody folds and whose owner does not take it back stays pending, and the registry's fold, which takes every pending request, is blocked behind it. registry reject clears it. It is an ordinary command: it signs and funds with the wallet it is given and journals its own transactions. It rejects every pending request in one transaction, using the registry's published reference scripts, and the registry's root, its mirror and its saved state do not move.",
-    "v": "df52f4246c44"
+    "v": "58deb9a676fb"
    },
    {
     "index": 2,

@@ -1,99 +1,11 @@
 {
-  "responsibilities-and-data-flow": [
+  "rebuild-every-registry-trie-from-its-public-lineage": [
     {
-      "text": "Responsibilities and data flow.",
+      "text": "Rebuild every registry trie from its public lineage.",
       "pause": 500
     },
     {
-      "text": "As a module maintainer, I keep interpretation in the terminal and transport in the provider.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 6 rows is shown here.",
-      "pause": 400
-    }
-  ],
-  "invariant-to-test-map-and-controlled-faults": [
-    {
-      "text": "Invariant-to-test map and controlled faults.",
-      "pause": 500
-    },
-    {
-      "text": "As a reviewer, I want every guarantee paired with the observation that would contradict it. These are planned checks; none has run on an implementation. Each must run red under its fault, from the subject itself, never from a build failure.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 10 rows is shown here.",
-      "pause": 400
-    },
-    {
-      "text": "The CI carriers are the development shell's nix develop --quiet -c just ci, the packaged two-actor journey, and the focused replay checks added to that same surface. Every product claim is described in the public suite's language, its state computed from receipts. Uncovered rows remain visible.",
-      "pause": 400
-    }
-  ],
-  "how-actions-pair-with-requests": [
-    {
-      "text": "How actions pair with requests.",
-      "pause": 500
-    },
-    {
-      "text": "As a replay author, I mirror the validator's walk exactly. The fold's Modify redeemer is the one attached to the state input's spend. The spending inputs are walked in ledger order, and each resolved output is tested with the chain's request predicate (the rules table). Each matching request takes the next action:",
-      "pause": 400
-    },
-    {
-      "text": "Rejected leaves the trie unchanged;.",
-      "pause": 300
-    },
-    {
-      "text": "UpdateAction walks the request datum's key and edge with walkEdge, on the.",
-      "pause": 300
-    },
-    {
-      "text": "trie the previous requests of the same fold produced.",
-      "pause": 400
-    },
-    {
-      "text": "The brief cited walkEdge at TxBuilder/ConnectedFold.hs:264. That line is the connected fold's call; the definition is at TxBuilder/Internal/Edges.hs:116. The replay reuses the definition and adds no second edge table.",
-      "pause": 400
-    }
-  ],
-  "the-two-actor-journey": [
-    {
-      "text": "The two-actor journey.",
-      "pause": 500
-    },
-    {
-      "text": "As a demonstration reviewer, I watch two actors share nothing but the chain, through the provider ticket's Koios-shaped development-network provider.",
-      "pause": 400
-    },
-    {
-      "text": "A diagram is shown here.",
-      "pause": 400
-    },
-    {
-      "text": "Alice creates the registry in her own directory. Bob's directory starts empty and is initialised from the published identity, under the joining decision in the decisions. Then:",
-      "pause": 400
-    },
-    {
-      "text": "Bob inspects his key, proving its absence, and books and folds its.",
-      "pause": 300
-    },
-    {
-      "text": "insertion. Alice's directory is hashed before and after, and never read. 2. Alice inspects Bob's key and finds it active, from her own replay. 3. Bob books the termination of his own key; Alice folds it, with the    membership proof from her own replay and no envelope. Alice books the    termination of her own key; Bob folds it likewise. Bob's update and    termination attempts on Alice's key stay refused as not the controller. 4. Alice inserts and folds her own key. Whether another actor can fold her insertion waits for issue 419. 5. Rejection and reclaim run across actors, as today. 6. After every fold, both actors' inspect roots equal the fold's state root.",
-      "pause": 400
-    },
-    {
-      "text": "The journey runs Alice and Bob with separate HOME and registry directories. It fails if either process opens the other's directory. The current mirror-dependent controls become history controls: the provider withholds one fold, then serves an altered request edge, and each refusal is named.",
-      "pause": 400
-    }
-  ],
-  "the-root-check-at-every-fold": [
-    {
-      "text": "The root check at every fold.",
-      "pause": 500
-    },
-    {
-      "text": "After each fold the rebuilt root must equal the root in that fold's first output's state datum. Create is checked against the empty root. The first mismatch refuses the registry, naming its token and the transaction. No later fold is applied and no partial trie is served.",
+      "text": "As a maintainer, I want one trie-state backend that rebuilds a registry's trie from its full public history at every selection, so that commands get the chain's trie without any actor's local copy. Read the stories first, then the decisions. The pure replay and command migration are merged in PRs 391 and 411. The remaining branch is stacked on PR 525, the managed-state ticket (issue #485), at 026576268e916c964426d4a4be304d35544d9816. The remaining deliverable is the actual independent-user journey. The mandate fixes its content, runs and gate, and the ordered task list tracks it; an empty-user harness alone does not complete it.",
       "pause": 400
     }
   ],
@@ -107,43 +19,7 @@
       "pause": 400
     },
     {
-      "text": "A table with 6 rows is shown here.",
-      "pause": 400
-    },
-    {
       "text": "The backend is built from one acquired session. A selection whose session id differs from that session's is refused. Each slice starts with a fit check against the published code. Any of these is a question to the epic owner, never a change made here: HistoryRange cannot ask for the history from create; a named failure cannot carry the registry and the transaction; or the composition builds trie state outside a session.",
-      "pause": 400
-    }
-  ],
-  "coverage-and-named-failures": [
-    {
-      "text": "Coverage and named failures.",
-      "pause": 500
-    },
-    {
-      "text": "As a command user, I either get a trie with coverage complete from create, or one named refusal. Never an empty registry.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 6 rows is shown here.",
-      "pause": 400
-    }
-  ],
-  "vertical-slices": [
-    {
-      "text": "Vertical slices.",
-      "pause": 500
-    },
-    {
-      "text": "As the epic owner, I receive runnable slices. Each leaves the journey green and stacks on the provider ticket's published slices.",
-      "pause": 400
-    },
-    {
-      "text": "A table with 4 rows is shown here.",
-      "pause": 400
-    },
-    {
-      "text": "Each slice deletes what it makes obsolete in the same diff: the mirror adapter and its file handling leave with the commands slice; the pure fixture trie stays. Internal commits may build toward a slice; only completed slices are pushed.",
       "pause": 400
     }
   ],
@@ -157,38 +33,168 @@
       "pause": 400
     },
     {
-      "text": "A diagram is shown here.",
-      "pause": 400
-    },
-    {
       "text": "The history call streams the transactions that carried the state token as whole blocks in ascending height. Within a block, a transaction that spends an asset-carrying output created in the same block follows its creator; a cycle, a missing in-block parent and a double spend are the provider's named refusals. Pages never reach the replay. The replay still chains the transactions by what they spend:",
       "pause": 400
     },
     {
-      "text": "Create is the one transaction that mints the token under Minting(seed),.",
+      "text": "Create is the one transaction that mints the token under Minting(seed), spends that seed, and names the token assetName(seed). Its first output holds the token, and its state datum root is the empty trie's root.",
       "pause": 300
     },
     {
-      "text": "spends that seed, and names the token assetName(seed). Its first output   holds the token, and its state datum root is the empty trie's root. - Each fold spends the previous state output. Its first output holds the   token and carries the next state datum. - The walk stops at the selected state output, whose root must equal the   selection's root. Transactions after it on the same chain are ignored, so a   provider ahead of the outputs answer is not an error.",
-      "pause": 400
+      "text": "Each fold spends the previous state output. Its first output holds the token and carries the next state datum.",
+      "pause": 300
+    },
+    {
+      "text": "The walk stops at the selected state output, whose root must equal the selection's root. Transactions after it on the same chain are ignored, so a provider ahead of the outputs answer is not an error.",
+      "pause": 300
     },
     {
       "text": "A transaction's identifier is computed from its own CBOR, never taken from the listing. Byte-identical repeats of one transaction count once.",
       "pause": 400
     }
   ],
-  "acceptance-boundaries-and-phase-stop": [
+  "how-actions-pair-with-requests": [
     {
-      "text": "Acceptance boundaries and phase stop.",
+      "text": "How actions pair with requests.",
       "pause": 500
     },
     {
-      "text": "As the epic owner, I receive this intake before authorising execution. This seat writes planning and PR metadata only; no code, tests or gates change here. Each page has its speech extracted by mkdocs-speech and stamped against its bytes, within 24 KiB and 300 lines. Each slice runs one commit owner and one mute auditor in its own detached audit worktree, with the models the operator names (see the decisions), both in this ticket's tmux window. No other seats are authorised. The epic owner verifies and merges.",
+      "text": "As a replay author, I mirror the validator's walk exactly. The fold's Modify redeemer is the one attached to the state input's spend. The spending inputs are walked in ledger order, and each resolved output is tested with the chain's request predicate (the rules table). Each matching request takes the next action:",
+      "pause": 400
+    },
+    {
+      "text": "Rejected leaves the trie unchanged;",
+      "pause": 300
+    },
+    {
+      "text": "UpdateAction walks the request datum's key and edge with walkEdge, on the trie the previous requests of the same fold produced.",
+      "pause": 300
+    },
+    {
+      "text": "The brief cited walkEdge at TxBuilder/ConnectedFold.hs:264. That line is the connected fold's call; the definition is at TxBuilder/Internal/Edges.hs:116. The replay reuses the definition and adds no second edge table.",
+      "pause": 400
+    }
+  ],
+  "the-root-check-at-every-fold": [
+    {
+      "text": "The root check at every fold.",
+      "pause": 500
+    },
+    {
+      "text": "After each fold the rebuilt root must equal the root in that fold's first output's state datum. Create is checked against the empty root. The first mismatch refuses the registry, naming its token and the transaction. No later fold is applied and no partial trie is served.",
+      "pause": 400
+    }
+  ],
+  "coverage-and-named-failures": [
+    {
+      "text": "Coverage and named failures.",
+      "pause": 500
+    },
+    {
+      "text": "As a command user, I either get a trie with coverage complete from create, or one named refusal. Never an empty registry.",
+      "pause": 400
+    }
+  ],
+  "the-two-actor-journey": [
+    {
+      "text": "The two-actor journey.",
+      "pause": 500
+    },
+    {
+      "text": "As a demonstration reviewer, I watch two actors share nothing but the chain, through the provider ticket's Koios-shaped development-network provider.",
+      "pause": 400
+    },
+    {
+      "text": "A private creator-only fixture makes the registry. Alice and Bob both start with empty homes. Each is given the registry's state token, its own wallet and the provider's address, and nothing else: every command carries --state-token, none carries a directory option, and the command chooses where its own journal lives (issue #485). Joining by token is merged (issue #501). The registry page waits on issue #503, so the two rows that read it stay pending, with the joining receipts attached. No identity file is copied and no joined directory is simulated:",
+      "pause": 400
+    },
+    {
+      "text": "Bob inspects his key, proving its absence, and books and folds its insertion. Alice's files are never opened, which the access trace shows.",
+      "pause": 300
+    },
+    {
+      "text": "Alice inspects Bob's key and finds it active, from her own replay.",
+      "pause": 300
+    },
+    {
+      "text": "Bob books the termination of his own key; Alice folds it, with the membership proof from her own replay and no envelope. Alice books the termination of her own key; Bob folds it likewise. Bob's update and termination attempts on Alice's key stay refused as not the controller.",
+      "pause": 300
+    },
+    {
+      "text": "Alice books an insertion and Bob folds it from the public request datum; Bob books an insertion and Alice folds it likewise. #419 is merged, so no booker preimage is needed.",
+      "pause": 300
+    },
+    {
+      "text": "Rejection and reclaim run across actors, as today.",
+      "pause": 300
+    },
+    {
+      "text": "After every fold, both actors' inspect roots equal the fold's state root.",
+      "pause": 300
+    },
+    {
+      "text": "The harness starts Alice and Bob with separate empty homes and traces every process, the creator's included, so any attempted read of another party's files fails the journey. It reads no home and no state directory itself: \"nothing was submitted\" is shown by inspect before and after. The mirror-dependent controls became history controls: the provider withholds one fold, and a replay that maps one edge wrongly is run through the actor's command, and each refusal is named. The mandate says why the second control cannot be served by a provider.",
+      "pause": 400
+    }
+  ],
+  "vertical-slices": [
+    {
+      "text": "Vertical slices.",
+      "pause": 500
+    },
+    {
+      "text": "As the epic owner, I receive runnable slices. Each leaves the journey green and stacks on the provider ticket's published slices.",
+      "pause": 400
+    },
+    {
+      "text": "Each slice deletes what it makes obsolete in the same diff: the mirror adapter and its file handling leave with the commands slice; the pure fixture trie stays. Internal commits may build toward a slice; only completed slices are pushed.",
+      "pause": 400
+    }
+  ],
+  "responsibilities-and-data-flow": [
+    {
+      "text": "Responsibilities and data flow.",
+      "pause": 500
+    },
+    {
+      "text": "As a module maintainer, I keep interpretation in the terminal and transport in the provider.",
+      "pause": 400
+    }
+  ],
+  "invariant-to-test-map-and-controlled-faults": [
+    {
+      "text": "Invariant-to-test map and controlled faults.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want every guarantee paired with the observation that would contradict it. Prior slices have checks; the remaining branch needs evidence bound to its final candidate. The task list distinguishes that verification from new work. Each must run red under its fault, from the subject itself, never from a build failure.",
+      "pause": 400
+    },
+    {
+      "text": "The CI carriers are the development shell's nix develop --quiet -c just ci, the packaged two-actor journey, and the focused replay checks added to that same surface. Every product claim is described in the public suite's language, its state computed from receipts. Uncovered rows remain visible.",
+      "pause": 400
+    }
+  ],
+  "execution-and-acceptance": [
+    {
+      "text": "Execution and acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "The October 9 staffing ruling governs: a Sonnet ticket owner, a Muse source writer and a GLM auditor that is mute toward the writer, one source writer at a time, and no other seat. The mandate quotes it. The owner verifies, and the desk grants the merge slot.",
+      "pause": 400
+    },
+    {
+      "text": "The stop of October 7 on token-only joining no longer applies: joining by token merged in issue #501 and the managed state directory is stacked beneath this branch. The two rows that read the registry page stay pending on issue #503. No identity-file copy or handwritten registry configuration substitutes for the joining.",
+      "pause": 400
+    },
+    {
+      "text": "Lean behavior is bound to tree 16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef, the same on main, on PR 525 and here, with Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. No model change is planned. Mixed transactions retain the separately stated validator oracle. Final acceptance requires exact-head CI and executed journey receipts, including the negative controls, with all missing rows visible.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "5819b5a0599110410c1a2c168884bf61dbd39c01169b6d29bf8c39a0747f9d83"
+    "sha256": "c186fb641309ed8ce1167c8a197dec7c9a3ad7038d5ccc7e7421ce0e867d9afc"
   }
 }

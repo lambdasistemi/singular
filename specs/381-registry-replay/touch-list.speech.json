@@ -1,0 +1,52 @@
+{
+  "touch-list-every-file-the-independent-user-journey-edits-creates-or-deletes": [
+    {
+      "text": "Touch list: every file the independent-user journey edits, creates or deletes.",
+      "pause": 500
+    },
+    {
+      "text": "As the desk ordering merges, I read here every file this ticket edits, creates or deletes, and the shared surfaces it crosses, so that I can order the merge without opening the diff. The ticket is issue 381, pull request 433, stacked on PR 525. It covers the four runs of the mandate. A slice that needs a file not on this list asks before editing it.",
+      "pause": 400
+    }
+  ],
+  "created": [
+    {
+      "text": "Created.",
+      "pause": 500
+    }
+  ],
+  "edited": [
+    {
+      "text": "Edited.",
+      "pause": 500
+    },
+    {
+      "text": "Already on the branch before the four runs, from the earlier nine commits: offchain/singular-registry.cabal (one line), offchain/test/Main.hs (four lines) and offchain/test/Singular/CLI/IndependentActorsSpec.hs; the pages docs/cli-recovery.md, docs/consumer-onboarding.md, docs/offchain-deployment-owners.md, the specs of tickets 102, 122, 324, 325 and 362; and the narration records of those pages. The docs baseline commit refreshed docs/audio/** and docs/singular-node.speech.json.",
+      "pause": 400
+    }
+  ],
+  "deleted": [
+    {
+      "text": "Deleted.",
+      "pause": 500
+    },
+    {
+      "text": "None.",
+      "pause": 400
+    }
+  ],
+  "shared-surfaces-crossed": [
+    {
+      "text": "Shared surfaces crossed.",
+      "pause": 500
+    },
+    {
+      "text": "Out of scope by number: 485, 528, 529, 503, 492, 437, 471, 518, 477, 505.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "458586ee28e1177baa821c6a20c09cdf0bf3194b356d0d08dd8a9017c8aedb2d"
+  }
+}

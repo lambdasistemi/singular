@@ -1,0 +1,294 @@
+{
+  "two-users-one-registry-no-shared-files-the-mandate": [
+    {
+      "text": "Two users, one registry, no shared files: the mandate.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I have an empty home, the state token Carl published, my own wallet and a Koios URL. I run singular registry inspect, insert, fold, terminate, reject and reclaim with --state-token and no directory option, on the registry Alice and Carl use, and I never open their files. Alice does the same, and we fold each other's requests. This is the work order for the remaining acceptance of the reconstruction ticket. It sits under the Koios demonstration and reads with the spec, the plan and the task list.",
+      "pause": 400
+    }
+  ],
+  "what-is-being-built-on": [
+    {
+      "text": "What is being built on.",
+      "pause": 500
+    },
+    {
+      "text": "The branch is stacked on PR 525, the managed-state ticket #485. The desk owns that branch and this ticket never edits it.",
+      "pause": 400
+    },
+    {
+      "text": "Until PR 525 is pushed, nothing of this branch is pushed: a push now would publish commits of the desk's branch that are not on its remote. If the tip of PR 525 is rewritten under this stack, work stops and the ticket owner re-bases first.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "These are quoted, not referenced.",
+      "pause": 400
+    },
+    {
+      "text": "Command-line split (#528). \"Build against the library's request and fold, not the open-datum envelope.\" That ticket leaves singular registry with create | fold | reject | reclaim | inspect only and moves insert, update and terminate into the open-datum executable. Here, every assertion is about a request, a fold, an edge, a root and a refund. None is about the envelope bytes or the --payload file. The commands that book a request are assembled in one place in the harness, so the split moves them without rewriting the journey.",
+      "pause": 300
+    },
+    {
+      "text": "The inline request datum, with no size cap. \"A request carries the datum value it names for its delivered output\" (constitution 1.13.0, the tx and settle rows). A folder reads that datum from the pending request on the chain. No file the booker wrote is an input, and the harness never assumes or truncates a datum size.",
+      "pause": 300
+    },
+    {
+      "text": "The request tag (#529), where relevant. The ticket says the processor \"discovers requests by that tag\". It is not built. The journey observes requests only through command receipts and chain reads, so the tag changes nothing here and nothing here depends on how requests are found.",
+      "pause": 300
+    },
+    {
+      "text": "Staffing (2026-10-09). \"Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.\" Ticket owner: Claude Sonnet 5.5 at extra-high effort. Source writer: Muse through the pi harness, /home/paolino/.local/bin/muse --approve, in the ticket worktree. Mute persistent auditor: GLM through the pi harness, /code/llm-settings/pi/glm --approve, on a read-only audit worktree. Gate authors: the ticket owner and the auditor. \"No Codex seat is launched or kept.\" The untrusted flash model is never launched. No helper or substitute is added.",
+      "pause": 300
+    },
+    {
+      "text": "Token join, never the directory (epic owner release, 2026-10-09). Bob starts with the state token, his wallet and a Koios URL. An assertion that reads a registry or state directory is rewritten, not kept. That covers a foreign actor's directory, the creator's directory and any --state-dir.",
+      "pause": 300
+    },
+    {
+      "text": "Stacking and the merge slot. The stack is declared in the pull request body with the words \"stacked on PR 525\". This ticket merges immediately after #485, in the slot the desk grants. It does not rebase onto main before that slot.",
+      "pause": 300
+    }
+  ],
+  "what-must-hold": [
+    {
+      "text": "What must hold.",
+      "pause": 500
+    },
+    {
+      "text": "Each item names the check that proves it. A check runs the shipped singular binary, or it is a named control; reading the harness source is never a check. The frozen gate (last section) maps each item to the command that carries it.",
+      "pause": 400
+    }
+  ],
+  "docs-baseline": [
+    {
+      "text": "Docs baseline.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] The narration and speech records agree with the pages. On the rebased base the narration check reports six stale clips and seven orphan clips, and the presentation check reports the stale speech stamp of docs/singular-node.md. Main, PR 525 and the previous base pass the narration check. The commit that clears it is the first commit of the ticket's source work and contains nothing else. It is 02510b95, made by the ticket owner before the source writer started, with the narration key's standing authorization. Proof: python3 tools/narrate.py --check and just check-presentation exit 0, and nix run --quiet .#docs-check exits 0.",
+      "pause": 300
+    }
+  ],
+  "joining-and-isolation": [
+    {
+      "text": "Joining and isolation.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Alice and Bob act on a token alone. After the creator makes the registry, each actor runs on a fresh home that the harness has just created. An actor is given the state token printed by the creator's receipt, its own wallet key, the provider URL, the network magic, the network-time source and the public blueprint, and nothing the creator or the other actor wrote. Every command an actor runs carries --state-token and none carries --registry or --state-dir. Proof: the packaged journey, whose report row for each actor's first command is built from that command's receipt.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] No actor opens a file that belongs to the creator or the other actor. Every actor process and the creator's processes are traced for file access, and the journey fails if any traced path lies under another party's home. Proof: the whole journey passes with the guard on (the positive run), and the control below fails.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The guard can fail, for that reason only. After a passing positive run, the control SINGULAR_TWO_ACTOR_CONTROL=foreign-open runs one real singular command with --state-dir aimed at the other actor's state root. The run must end failed at the guard, naming the path. A setup failure, a refusal by the command or a pass is not detection. Proof: the control job exits 1 with that single diagnostic, and a stand-in run shows the classifier tells the control's failure from a setup failure.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] No assertion reads a registry or state directory. Every journey assertion reads a command receipt, a chain read made through inspect with the state token, or an access trace. \"Nothing was submitted\" is shown by inspect before and after (root and pending requests unchanged), not by reading a journal. The harness does not hash, list or read any home or state root. Proof: the control above, plus the auditor's review of the harness; a text search is a lead, not evidence.",
+      "pause": 300
+    }
+  ],
+  "the-two-users-lifecycles": [
+    {
+      "text": "The two users' lifecycles.",
+      "pause": 500
+    },
+    {
+      "text": "Rows are named by the published requirement text in the harness. The fourteen requirement texts stay byte for byte as they are in the harness today.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] Each actor inserts a key and folds the insertion (rows \"Alice inserts a key and folds her insertion\", \"Bob inserts a key and folds his insertion\"). Before inserting, the actor's inspect shows the key absent. The fold receipt's request is the booking receipt's request, and the next inspect shows the key active.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Each actor terminates and the other folds the termination (rows \"Alice folds Bob's termination from her own public replay\", \"Bob folds Alice's termination from his own public replay\"). The controller books the termination of its own key. The other actor, who holds no copy of the booking, folds it. The fold receipt names the edge updateTerminal, the booking's request and the folder's own identity.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Another actor folds an insertion (row \"Another actor folds an insertion\"). The booker's insertion is folded by the other actor from the pending request on the chain, in both directions, with no file from the booker.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Only the controller updates or terminates a key (row \"Another controller cannot update or terminate a key\"). The other actor's update and terminate on a key are refused by name, with the controller refusal class and a non-zero exit, and inspect shows the root and the pending requests unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Reject and reclaim across actors (rows \"Bob rejects Alice's expired request\", \"Alice cannot reclaim Bob's request\", \"Bob reclaims his request during its retract window\"). A request left past its processing deadline is rejected by the other actor once its retract window has closed, and refused by name while it is open. The wrong owner's reclaim is refused by name. The owner's reclaim inside the window succeeds and its return is bound to the request.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Both actors see the fold's root after every fold (row \"Both users inspect the fold's state root after every fold\"). After each fold of the journey, both actors' inspect root equals the root in that fold's receipt. A fold folded wrongly would differ.",
+      "pause": 300
+    }
+  ],
+  "history-faults-seen-through-the-actors-command": [
+    {
+      "text": "History faults seen through the actor's command.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] A withheld fold refuses HistoryIncomplete and returns no trie (row \"Withheld fold history refuses HistoryIncomplete without a trie\"). A forwarding provider in front of the actor's --koios-url answers an empty list for the state token's transactions, and the actor's real inspect refuses with that name and returns no root.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] A replay that maps an edge wrongly refuses RootDoesNotChain and returns no trie (row \"An altered request edge refuses RootDoesNotChain without a trie\"). A provider that serves an altered request cannot reach this refusal: the replay compares every served output with the one the booking created and refuses first as a history material mismatch. The refusal is reached only when the replay itself computes a root that the chain's state output does not hold. The control therefore runs a real actor inspect against the real devnet and provider with a binary built only for this control, whose replay maps one edge to another, and requires RootDoesNotChain naming the registry and the fold, and no root. That binary is never the packaged product, is built from a committed, reviewable patch, and leaves production sources unchanged on disk. The row's wording is not changed. If this mechanism cannot be met within the fences, the row stays pending with the reason, and the ticket owner files the question.",
+      "pause": 300
+    }
+  ],
+  "publication": [
+    {
+      "text": "Publication.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Row states are computed from the commands' receipts. Each of the fourteen rows is passed only when every receipt it needs exists and agrees; otherwise it is pending, listed with the ticket it waits on. No state is typed. A control removes one receipt and the row becomes pending; a second control shows the journey exits with a failure if a row that waits on nothing is not passed. The two rows \"Alice reads the registry page and joins by state token\" and \"Bob reads the registry page and joins by state token\" read a page that #503 has not built, so they stay pending on #503. The join by token they name is executed, and its receipts are attached to those rows as partial evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Harness evidence is a marked appendix. Access traces and the fixture creation are listed after the product rows and labelled as the harness's own evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The journey runs in the hosted checks. nix run --quiet .#registry-two-actors and the foreign-open control each run as a hosted job on the pull request head. Both are added by this ticket.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The repository's checks stay green on the touched paths. Format, lint, the file inventory, the presentation check, the speech and narration records, and the component actor spec (eleven examples) pass; the full aggregate passes once on the final head.",
+      "pause": 300
+    }
+  ],
+  "the-runs-and-how-each-ends": [
+    {
+      "text": "The runs, and how each ends.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket would run for hours if sent as one task, so it is sent as four runs, one writer at a time, under one frozen gate. Each run is a whole task with an end: green, a question filed because the writer is blocked, or stopped at capacity with a handoff.",
+      "pause": 400
+    },
+    {
+      "text": "Runs two to four are briefed from this page and the frozen gate when the run before has all its checkpoints approved. They need no new decision.",
+      "pause": 400
+    }
+  ],
+  "out-of-scope-by-number": [
+    {
+      "text": "Out of scope, by number.",
+      "pause": 500
+    },
+    {
+      "text": "#485: the desk's join lane, the state directory and session layer. This ticket uses it and never edits it.",
+      "pause": 300
+    },
+    {
+      "text": "#528: the command-line split.",
+      "pause": 300
+    },
+    {
+      "text": "#529: the request tag.",
+      "pause": 300
+    },
+    {
+      "text": "#503: the registry page.",
+      "pause": 300
+    },
+    {
+      "text": "#492.",
+      "pause": 300
+    },
+    {
+      "text": "#437 and #471: restoration.",
+      "pause": 300
+    },
+    {
+      "text": "#518: concurrent booking.",
+      "pause": 300
+    },
+    {
+      "text": "#477: recovery.",
+      "pause": 300
+    },
+    {
+      "text": "#505: the bounded contract.",
+      "pause": 300
+    },
+    {
+      "text": "Also out: any change to offchain/cli, the library, the validators, Lean, the registry partition's blueprint or production configuration; a new registry on any public network; a transaction or key on a public network; and any helper seat.",
+      "pause": 400
+    }
+  ],
+  "evidence-this-ticket-will-produce": [
+    {
+      "text": "Evidence this ticket will produce.",
+      "pause": 500
+    },
+    {
+      "text": "The pull request body is filled from these, in the repository's template.",
+      "pause": 400
+    },
+    {
+      "text": "The candidate commit and tree, the rebased base, and the Lean tree.",
+      "pause": 300
+    },
+    {
+      "text": "One receipt per journey command and a report whose fourteen rows are computed from them.",
+      "pause": 300
+    },
+    {
+      "text": "The raw logs of the packaged journey, the foreign-open control, the withheld-history control and the replay-fault control, each with an exit status and a hash.",
+      "pause": 300
+    },
+    {
+      "text": "The hosted job runs on the exact head.",
+      "pause": 300
+    },
+    {
+      "text": "The independent review's verdict, bound to that commit.",
+      "pause": 300
+    },
+    {
+      "text": "What stays uncovered, said before the work: the page part of two rows (#503); a real public Koios provider (the journey uses the development network's Koios-shaped provider); a replay fault is shown through a control build, not through a provider (above); mixed applied and rejected folds stay a component-level oracle; the seven-edge lifecycles are outside the demonstration by the operator's ruling in the decisions.",
+      "pause": 400
+    }
+  ],
+  "budget": [
+    {
+      "text": "Budget.",
+      "pause": 500
+    },
+    {
+      "text": "One team for this epic. One producer at a time, for ticket work. Journey runs go on a fresh development network each, with receipts under the 50 MiB cap and scratch under /srv/lanes/singular-e371/381-live. No public-network write and no private key. The aggregate just ci runs once, on the final candidate. A local rerun of a hosted job list is not a gate: a hosted failure is one repair commit.",
+      "pause": 400
+    }
+  ],
+  "the-frozen-gate": [
+    {
+      "text": "The frozen gate.",
+      "pause": 500
+    },
+    {
+      "text": "Written independently by the ticket owner and the auditor, then synthesized once into version 1, then completed by version 2 before any source writer runs. It lives in the ticket owner's runtime record, and its hash binds it.",
+      "pause": 400
+    },
+    {
+      "text": "Every row is an existing hosted command, or a command this ticket adds to the hosted checks and the pushed head proves. A row that is added is marked in the gate. A change to the rows is a new gate version with the settled rows byte for byte the same.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "mandate.md",
+    "sha256": "718659af23c4cbeb76640679aed13767c5660efb390f4ddb2dbe3dc5972e952d"
+  }
+}

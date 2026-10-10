@@ -891,6 +891,7 @@ test-suite cage-tests
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.FoldSpec
+    Singular.CLI.IndependentActorsSpec
     Singular.CLI.InsertEnvelope
     Singular.CLI.InsertEnvelopeSpec
     Singular.CLI.Inspect

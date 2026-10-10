@@ -32386,902 +32386,632 @@
    ]
   },
   "docs-cli-recovery/the-next-command-reconciles-01": {
-   "audio_sha256": "b6dbf62f86997d58c150691cc2ba07aaa14a9909a0002c91a3350835320f9a93",
-   "characters": 446,
-   "cost": 0.00027652,
-   "duration": 28.85,
+   "audio_sha256": "52581771719894108e13f82aa7fdfcbca50e405d09b7f374d358b82c90d67523",
+   "characters": 383,
+   "cost": 0.00023746,
+   "duration": 25.65,
    "index": 1,
-   "key": "44fd426ee4ec43184145abd8f4dc2f4d51ff52d9af560689ed5654667d9efd41",
+   "key": "fc978e7aefe9d488cbe8211e7e82c90dff94b9bb56ec566c61d260e4d563fa6c",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "the-next-command-reconciles",
-   "sent_text": "After an inclusion, a write commits locally in a fixed order: the registry's proof mirror, then state.json, then the observed line. Each file is replaced whole or not at all, so an interruption leaves the previous version or the new one, never a torn file. Wherever the interruption fell, the next ordinary command — any write, or inspect — finishes the commit from chain evidence before it does anything else, and submits nothing while doing so.",
-   "text": "After an inclusion, a write commits locally in a fixed order: the registry's proof mirror, then state.json, then the observed line. Each file is replaced whole or not at all, so an interruption leaves the previous version or the new one, never a torn file. Wherever the interruption fell, the next ordinary command — any write, or inspect — finishes the commit from chain evidence before it does anything else, and submits nothing while doing so.",
+   "sent_text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
+   "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
    "words": [
     {
-     "end": 0.438,
-     "start": 0.2,
+     "end": 0.575,
+     "start": 0.25,
      "text": "After"
     },
     {
-     "end": 0.512,
-     "start": 0.438,
+     "end": 0.675,
+     "start": 0.575,
      "text": "an"
     },
     {
-     "end": 1.175,
-     "start": 0.512,
+     "end": 1.325,
+     "start": 0.675,
      "text": "inclusion"
     },
     {
-     "end": 1.25,
-     "start": 1.175,
+     "end": 1.375,
+     "start": 1.325,
      "text": ","
     },
     {
-     "end": 1.362,
-     "start": 1.25,
-     "text": "a"
-    },
-    {
-     "end": 1.65,
-     "start": 1.362,
-     "text": "write"
-    },
-    {
-     "end": 2.037,
-     "start": 1.65,
-     "text": "commits"
-    },
-    {
-     "end": 2.525,
-     "start": 2.037,
-     "text": "locally"
-    },
-    {
-     "end": 2.612,
-     "start": 2.525,
-     "text": "in"
-    },
-    {
-     "end": 2.713,
-     "start": 2.612,
-     "text": "a"
-    },
-    {
-     "end": 3.05,
-     "start": 2.713,
-     "text": "fixed"
-    },
-    {
-     "end": 3.875,
-     "start": 3.05,
-     "text": "order"
-    },
-    {
-     "end": 4.1,
-     "start": 3.875,
-     "text": ":"
-    },
-    {
-     "end": 4.35,
-     "start": 4.275,
+     "end": 1.475,
+     "start": 1.375,
      "text": "the"
     },
     {
-     "end": 4.925,
-     "start": 4.35,
-     "text": "registry's"
-    },
-    {
-     "end": 5.2,
-     "start": 4.925,
-     "text": "proof"
-    },
-    {
-     "end": 5.5,
-     "start": 5.2,
-     "text": "mirror"
-    },
-    {
-     "end": 5.55,
-     "start": 5.5,
-     "text": ","
-    },
-    {
-     "end": 5.762,
-     "start": 5.55,
-     "text": "then"
-    },
-    {
-     "end": 6.975,
-     "start": 5.762,
-     "text": "state.json"
-    },
-    {
-     "end": 7.012,
-     "start": 6.975,
-     "text": ","
-    },
-    {
-     "end": 7.137,
-     "start": 7.012,
-     "text": "then"
-    },
-    {
-     "end": 7.225,
-     "start": 7.137,
-     "text": "the"
-    },
-    {
-     "end": 7.7,
-     "start": 7.225,
-     "text": "observed"
-    },
-    {
-     "end": 8.575,
-     "start": 7.7,
-     "text": "line"
-    },
-    {
-     "end": 8.775,
-     "start": 8.575,
-     "text": "."
-    },
-    {
-     "end": 9.238,
-     "start": 9.0,
-     "text": "Each"
-    },
-    {
-     "end": 9.625,
-     "start": 9.238,
-     "text": "file"
-    },
-    {
-     "end": 9.775,
-     "start": 9.625,
-     "text": "is"
-    },
-    {
-     "end": 10.288,
-     "start": 9.775,
-     "text": "replaced"
-    },
-    {
-     "end": 10.688,
-     "start": 10.288,
-     "text": "whole"
-    },
-    {
-     "end": 10.85,
-     "start": 10.688,
-     "text": "or"
-    },
-    {
-     "end": 11.125,
-     "start": 10.85,
-     "text": "not"
-    },
-    {
-     "end": 11.25,
-     "start": 11.125,
-     "text": "at"
-    },
-    {
-     "end": 11.65,
-     "start": 11.25,
-     "text": "all"
-    },
-    {
-     "end": 11.75,
-     "start": 11.65,
-     "text": ","
-    },
-    {
-     "end": 11.887,
-     "start": 11.75,
-     "text": "so"
-    },
-    {
-     "end": 11.975,
-     "start": 11.887,
-     "text": "an"
-    },
-    {
-     "end": 12.65,
-     "start": 11.975,
-     "text": "interruption"
-    },
-    {
-     "end": 12.975,
-     "start": 12.65,
-     "text": "leaves"
-    },
-    {
-     "end": 13.087,
-     "start": 12.975,
-     "text": "the"
-    },
-    {
-     "end": 13.55,
-     "start": 13.087,
-     "text": "previous"
-    },
-    {
-     "end": 14.038,
-     "start": 13.55,
-     "text": "version"
-    },
-    {
-     "end": 14.225,
-     "start": 14.038,
-     "text": "or"
-    },
-    {
-     "end": 14.363,
-     "start": 14.225,
-     "text": "the"
-    },
-    {
-     "end": 14.575,
-     "start": 14.363,
-     "text": "new"
-    },
-    {
-     "end": 14.9,
-     "start": 14.575,
-     "text": "one"
-    },
-    {
-     "end": 14.975,
-     "start": 14.9,
-     "text": ","
-    },
-    {
-     "end": 15.275,
-     "start": 14.975,
-     "text": "never"
-    },
-    {
-     "end": 15.387,
-     "start": 15.275,
-     "text": "a"
-    },
-    {
-     "end": 15.788,
-     "start": 15.387,
-     "text": "torn"
-    },
-    {
-     "end": 16.875,
-     "start": 15.788,
-     "text": "file"
-    },
-    {
-     "end": 17.1,
-     "start": 16.875,
-     "text": "."
-    },
-    {
-     "end": 17.638,
-     "start": 17.3,
-     "text": "Wherever"
-    },
-    {
-     "end": 17.737,
-     "start": 17.638,
-     "text": "the"
-    },
-    {
-     "end": 18.312,
-     "start": 17.737,
-     "text": "interruption"
-    },
-    {
-     "end": 18.7,
-     "start": 18.312,
-     "text": "fell"
-    },
-    {
-     "end": 18.775,
-     "start": 18.7,
-     "text": ","
-    },
-    {
-     "end": 18.875,
-     "start": 18.775,
-     "text": "the"
-    },
-    {
-     "end": 19.2,
-     "start": 18.875,
-     "text": "next"
-    },
-    {
-     "end": 19.675,
-     "start": 19.2,
-     "text": "ordinary"
-    },
-    {
-     "end": 20.225,
-     "start": 19.675,
+     "end": 2.013,
+     "start": 1.475,
      "text": "command"
     },
     {
-     "end": 20.3,
-     "start": 20.225,
-     "text": "—"
+     "end": 2.438,
+     "start": 2.013,
+     "text": "selects"
     },
     {
-     "end": 20.5,
-     "start": 20.3,
-     "text": "any"
+     "end": 2.638,
+     "start": 2.438,
+     "text": "its"
     },
     {
-     "end": 21.3,
-     "start": 20.5,
-     "text": "write"
+     "end": 2.987,
+     "start": 2.638,
+     "text": "proof"
     },
     {
-     "end": 21.5,
-     "start": 21.3,
-     "text": ","
+     "end": 3.35,
+     "start": 2.987,
+     "text": "state"
     },
     {
-     "end": 21.85,
-     "start": 21.7,
-     "text": "or"
-    },
-    {
-     "end": 22.425,
-     "start": 21.85,
-     "text": "inspect"
-    },
-    {
-     "end": 22.5,
-     "start": 22.425,
-     "text": "—"
-    },
-    {
-     "end": 22.95,
-     "start": 22.5,
-     "text": "finishes"
-    },
-    {
-     "end": 23.05,
-     "start": 22.95,
-     "text": "the"
-    },
-    {
-     "end": 23.425,
-     "start": 23.05,
-     "text": "commit"
-    },
-    {
-     "end": 23.638,
-     "start": 23.425,
+     "end": 3.562,
+     "start": 3.35,
      "text": "from"
     },
     {
-     "end": 23.975,
-     "start": 23.638,
-     "text": "chain"
+     "end": 3.975,
+     "start": 3.562,
+     "text": "public"
     },
     {
-     "end": 24.45,
-     "start": 23.975,
-     "text": "evidence"
+     "end": 4.625,
+     "start": 3.975,
+     "text": "state-token"
     },
     {
-     "end": 24.812,
-     "start": 24.45,
-     "text": "before"
+     "end": 5.325,
+     "start": 4.625,
+     "text": "history"
     },
     {
-     "end": 24.888,
-     "start": 24.812,
-     "text": "it"
-    },
-    {
-     "end": 25.075,
-     "start": 24.888,
-     "text": "does"
-    },
-    {
-     "end": 25.45,
-     "start": 25.075,
-     "text": "anything"
-    },
-    {
-     "end": 26.325,
-     "start": 25.45,
-     "text": "else"
-    },
-    {
-     "end": 26.525,
-     "start": 26.325,
-     "text": ","
-    },
-    {
-     "end": 26.8,
-     "start": 26.7,
+     "end": 5.512,
+     "start": 5.325,
      "text": "and"
     },
     {
-     "end": 27.2,
-     "start": 26.8,
-     "text": "submits"
+     "end": 5.887,
+     "start": 5.512,
+     "text": "reads"
     },
     {
-     "end": 27.513,
-     "start": 27.2,
-     "text": "nothing"
+     "end": 6.225,
+     "start": 5.887,
+     "text": "back"
     },
     {
-     "end": 27.65,
-     "start": 27.513,
-     "text": "while"
+     "end": 6.325,
+     "start": 6.225,
+     "text": "the"
     },
     {
-     "end": 27.938,
-     "start": 27.65,
-     "text": "doing"
+     "end": 6.713,
+     "start": 6.325,
+     "text": "step's"
     },
     {
-     "end": 28.65,
-     "start": 27.938,
-     "text": "so"
+     "end": 7.45,
+     "start": 6.713,
+     "text": "after-state"
     },
     {
-     "end": 28.85,
-     "start": 28.65,
+     "end": 7.85,
+     "start": 7.45,
+     "text": "before"
+    },
+    {
+     "end": 8.325,
+     "start": 7.85,
+     "text": "appending"
+    },
+    {
+     "end": 9.6,
+     "start": 8.325,
+     "text": "observed"
+    },
+    {
+     "end": 9.85,
+     "start": 9.6,
+     "text": "."
+    },
+    {
+     "end": 10.15,
+     "start": 10.05,
+     "text": "The"
+    },
+    {
+     "end": 10.475,
+     "start": 10.15,
+     "text": "next"
+    },
+    {
+     "end": 11.0,
+     "start": 10.475,
+     "text": "ordinary"
+    },
+    {
+     "end": 11.4,
+     "start": 11.0,
+     "text": "write"
+    },
+    {
+     "end": 11.6,
+     "start": 11.4,
+     "text": "or"
+    },
+    {
+     "end": 12.125,
+     "start": 11.6,
+     "text": "inspect"
+    },
+    {
+     "end": 12.887,
+     "start": 12.125,
+     "text": "reconciles"
+    },
+    {
+     "end": 13.575,
+     "start": 12.887,
+     "text": "unfinished"
+    },
+    {
+     "end": 14.45,
+     "start": 13.575,
+     "text": "observations"
+    },
+    {
+     "end": 14.663,
+     "start": 14.45,
+     "text": "from"
+    },
+    {
+     "end": 15.087,
+     "start": 14.663,
+     "text": "public"
+    },
+    {
+     "end": 15.425,
+     "start": 15.087,
+     "text": "chain"
+    },
+    {
+     "end": 15.9,
+     "start": 15.425,
+     "text": "evidence"
+    },
+    {
+     "end": 16.25,
+     "start": 15.9,
+     "text": "before"
+    },
+    {
+     "end": 17.475,
+     "start": 16.25,
+     "text": "proceeding"
+    },
+    {
+     "end": 17.675,
+     "start": 17.475,
+     "text": ","
+    },
+    {
+     "end": 18.15,
+     "start": 17.85,
+     "text": "without"
+    },
+    {
+     "end": 18.55,
+     "start": 18.15,
+     "text": "submitting"
+    },
+    {
+     "end": 19.425,
+     "start": 18.55,
+     "text": "anything"
+    },
+    {
+     "end": 19.625,
+     "start": 19.425,
+     "text": "."
+    },
+    {
+     "end": 20.075,
+     "start": 19.825,
+     "text": "Proof"
+    },
+    {
+     "end": 20.425,
+     "start": 20.075,
+     "text": "state"
+    },
+    {
+     "end": 20.575,
+     "start": 20.425,
+     "text": "is"
+    },
+    {
+     "end": 21.325,
+     "start": 20.575,
+     "text": "reconstructed"
+    },
+    {
+     "end": 21.95,
+     "start": 21.325,
+     "text": "afresh"
+    },
+    {
+     "end": 22.062,
+     "start": 21.95,
+     "text": ";"
+    },
+    {
+     "end": 22.337,
+     "start": 22.062,
+     "text": "no"
+    },
+    {
+     "end": 22.7,
+     "start": 22.337,
+     "text": "mirror"
+    },
+    {
+     "end": 22.862,
+     "start": 22.7,
+     "text": "or"
+    },
+    {
+     "end": 23.388,
+     "start": 22.862,
+     "text": "saved-root"
+    },
+    {
+     "end": 23.775,
+     "start": 23.388,
+     "text": "file"
+    },
+    {
+     "end": 23.975,
+     "start": 23.775,
+     "text": "is"
+    },
+    {
+     "end": 24.337,
+     "start": 23.975,
+     "text": "read"
+    },
+    {
+     "end": 24.513,
+     "start": 24.337,
+     "text": "or"
+    },
+    {
+     "end": 25.425,
+     "start": 24.513,
+     "text": "written"
+    },
+    {
+     "end": 25.65,
+     "start": 25.425,
      "text": "."
     }
    ]
   },
   "docs-cli-recovery/the-next-command-reconciles-02": {
-   "audio_sha256": "8bf7da30f94a127339969efca65c28bf5b66fbb1985e8cf1a6d40804f93eeb60",
-   "characters": 411,
-   "cost": 0.00025482,
-   "duration": 25.75,
+   "audio_sha256": "2767cb1306192a54ded61400c198702afdb28a425916e935e46209ead5e7b339",
+   "characters": 320,
+   "cost": 0.0001984,
+   "duration": 21.625,
    "index": 2,
-   "key": "d07a6fc85cf9d7d953b90279f70529e5329463ee93aa3e10219c54dca885350a",
+   "key": "1165ee84a3802da19e778482e8892be5fb6a72c32214aad3f3052e46e613babe",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "the-next-command-reconciles",
-   "sent_text": "The edge a fold commits is applied to the mirror only from the root it was journalled to fold from, and only when the ledger already holds the root it was journalled to reach — so it is applied at most once. A mirror that commits to any other root is stale local state: it is refused, never repaired. The observation is made for the key the interrupted step concerned, whichever key the current command targets.",
-   "text": "The edge a fold commits is applied to the mirror only from the root it was journalled to fold from, and only when the ledger already holds the root it was journalled to reach — so it is applied at most once. A mirror that commits to any other root is stale local state: it is refused, never repaired. The observation is made for the key the interrupted step concerned, whichever key the current command targets.",
+   "sent_text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
+   "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
    "words": [
     {
-     "end": 0.363,
-     "start": 0.225,
+     "end": 0.25,
+     "start": 0.175,
      "text": "The"
     },
     {
-     "end": 0.625,
-     "start": 0.363,
-     "text": "edge"
+     "end": 0.525,
+     "start": 0.25,
+     "text": "journal"
     },
     {
-     "end": 0.75,
-     "start": 0.625,
-     "text": "a"
+     "end": 0.887,
+     "start": 0.525,
+     "text": "tracks"
     },
     {
-     "end": 1.188,
-     "start": 0.75,
-     "text": "fold"
+     "end": 1.05,
+     "start": 0.887,
+     "text": "this"
     },
     {
-     "end": 1.675,
-     "start": 1.188,
-     "text": "commits"
+     "end": 1.425,
+     "start": 1.05,
+     "text": "actor's"
     },
     {
-     "end": 1.825,
-     "start": 1.675,
-     "text": "is"
+     "end": 2.55,
+     "start": 1.425,
+     "text": "submissions"
     },
     {
-     "end": 2.3,
-     "start": 1.825,
-     "text": "applied"
-    },
-    {
-     "end": 2.4,
-     "start": 2.3,
-     "text": "to"
-    },
-    {
-     "end": 2.537,
-     "start": 2.4,
-     "text": "the"
-    },
-    {
-     "end": 2.987,
-     "start": 2.537,
-     "text": "mirror"
-    },
-    {
-     "end": 3.362,
-     "start": 2.987,
-     "text": "only"
-    },
-    {
-     "end": 3.562,
-     "start": 3.362,
-     "text": "from"
-    },
-    {
-     "end": 3.688,
-     "start": 3.562,
-     "text": "the"
-    },
-    {
-     "end": 3.975,
-     "start": 3.688,
-     "text": "root"
-    },
-    {
-     "end": 4.075,
-     "start": 3.975,
-     "text": "it"
-    },
-    {
-     "end": 4.262,
-     "start": 4.075,
-     "text": "was"
-    },
-    {
-     "end": 4.7,
-     "start": 4.262,
-     "text": "journalled"
-    },
-    {
-     "end": 4.838,
-     "start": 4.7,
-     "text": "to"
-    },
-    {
-     "end": 5.25,
-     "start": 4.838,
-     "text": "fold"
-    },
-    {
-     "end": 5.65,
-     "start": 5.25,
-     "text": "from"
-    },
-    {
-     "end": 5.75,
-     "start": 5.65,
-     "text": ","
-    },
-    {
-     "end": 5.875,
-     "start": 5.75,
-     "text": "and"
-    },
-    {
-     "end": 6.2,
-     "start": 5.875,
-     "text": "only"
-    },
-    {
-     "end": 6.363,
-     "start": 6.2,
-     "text": "when"
-    },
-    {
-     "end": 6.475,
-     "start": 6.363,
-     "text": "the"
-    },
-    {
-     "end": 6.812,
-     "start": 6.475,
-     "text": "ledger"
-    },
-    {
-     "end": 7.225,
-     "start": 6.812,
-     "text": "already"
-    },
-    {
-     "end": 7.6,
-     "start": 7.225,
-     "text": "holds"
-    },
-    {
-     "end": 7.738,
-     "start": 7.6,
-     "text": "the"
-    },
-    {
-     "end": 8.087,
-     "start": 7.738,
-     "text": "root"
-    },
-    {
-     "end": 8.225,
-     "start": 8.087,
-     "text": "it"
-    },
-    {
-     "end": 8.413,
-     "start": 8.225,
-     "text": "was"
-    },
-    {
-     "end": 8.875,
-     "start": 8.413,
-     "text": "journalled"
-    },
-    {
-     "end": 9.0,
-     "start": 8.875,
-     "text": "to"
-    },
-    {
-     "end": 9.625,
-     "start": 9.0,
-     "text": "reach"
-    },
-    {
-     "end": 9.738,
-     "start": 9.625,
-     "text": "—"
-    },
-    {
-     "end": 9.975,
-     "start": 9.738,
-     "text": "so"
-    },
-    {
-     "end": 10.075,
-     "start": 9.975,
-     "text": "it"
-    },
-    {
-     "end": 10.225,
-     "start": 10.075,
-     "text": "is"
-    },
-    {
-     "end": 10.7,
-     "start": 10.225,
-     "text": "applied"
-    },
-    {
-     "end": 10.85,
-     "start": 10.7,
-     "text": "at"
-    },
-    {
-     "end": 11.175,
-     "start": 10.85,
-     "text": "most"
-    },
-    {
-     "end": 12.3,
-     "start": 11.175,
-     "text": "once"
-    },
-    {
-     "end": 12.55,
-     "start": 12.3,
+     "end": 2.75,
+     "start": 2.55,
      "text": "."
     },
     {
-     "end": 12.825,
-     "start": 12.75,
-     "text": "A"
+     "end": 3.075,
+     "start": 2.95,
+     "text": "It"
     },
     {
-     "end": 13.175,
-     "start": 12.825,
-     "text": "mirror"
-    },
-    {
-     "end": 13.325,
-     "start": 13.175,
-     "text": "that"
-    },
-    {
-     "end": 13.675,
-     "start": 13.325,
-     "text": "commits"
-    },
-    {
-     "end": 13.8,
-     "start": 13.675,
-     "text": "to"
-    },
-    {
-     "end": 14.012,
-     "start": 13.8,
-     "text": "any"
-    },
-    {
-     "end": 14.275,
-     "start": 14.012,
-     "text": "other"
-    },
-    {
-     "end": 14.637,
-     "start": 14.275,
-     "text": "root"
-    },
-    {
-     "end": 14.775,
-     "start": 14.637,
-     "text": "is"
-    },
-    {
-     "end": 15.075,
-     "start": 14.775,
-     "text": "stale"
-    },
-    {
-     "end": 15.4,
-     "start": 15.075,
-     "text": "local"
-    },
-    {
-     "end": 16.25,
-     "start": 15.4,
-     "text": "state"
-    },
-    {
-     "end": 16.45,
-     "start": 16.25,
-     "text": ":"
-    },
-    {
-     "end": 16.725,
-     "start": 16.65,
-     "text": "it"
-    },
-    {
-     "end": 16.85,
-     "start": 16.725,
-     "text": "is"
-    },
-    {
-     "end": 17.325,
-     "start": 16.85,
-     "text": "refused"
-    },
-    {
-     "end": 17.375,
-     "start": 17.325,
-     "text": ","
-    },
-    {
-     "end": 17.612,
-     "start": 17.375,
+     "end": 3.35,
+     "start": 3.075,
      "text": "never"
     },
     {
-     "end": 18.5,
-     "start": 17.612,
-     "text": "repaired"
+     "end": 3.875,
+     "start": 3.35,
+     "text": "supplies"
     },
     {
-     "end": 18.7,
-     "start": 18.5,
-     "text": "."
+     "end": 3.975,
+     "start": 3.875,
+     "text": "a"
     },
     {
-     "end": 19.025,
-     "start": 18.9,
-     "text": "The"
+     "end": 4.463,
+     "start": 3.975,
+     "text": "replay"
     },
     {
-     "end": 19.8,
-     "start": 19.025,
-     "text": "observation"
+     "end": 4.85,
+     "start": 4.463,
+     "text": "edge"
     },
     {
-     "end": 19.962,
-     "start": 19.8,
-     "text": "is"
-    },
-    {
-     "end": 20.3,
-     "start": 19.962,
-     "text": "made"
-    },
-    {
-     "end": 20.413,
-     "start": 20.3,
-     "text": "for"
-    },
-    {
-     "end": 20.538,
-     "start": 20.413,
-     "text": "the"
-    },
-    {
-     "end": 20.85,
-     "start": 20.538,
-     "text": "key"
-    },
-    {
-     "end": 21.0,
-     "start": 20.85,
-     "text": "the"
-    },
-    {
-     "end": 21.6,
-     "start": 21.0,
-     "text": "interrupted"
-    },
-    {
-     "end": 21.9,
-     "start": 21.6,
-     "text": "step"
-    },
-    {
-     "end": 22.7,
-     "start": 21.9,
-     "text": "concerned"
-    },
-    {
-     "end": 22.775,
-     "start": 22.7,
+     "end": 4.963,
+     "start": 4.85,
      "text": ","
     },
     {
-     "end": 23.237,
-     "start": 22.775,
-     "text": "whichever"
+     "end": 5.438,
+     "start": 4.963,
+     "text": "proof"
     },
     {
-     "end": 23.525,
-     "start": 23.237,
-     "text": "key"
+     "end": 5.613,
+     "start": 5.438,
+     "text": "or"
     },
     {
-     "end": 23.65,
-     "start": 23.525,
+     "end": 6.15,
+     "start": 5.613,
+     "text": "root"
+    },
+    {
+     "end": 6.287,
+     "start": 6.15,
+     "text": "."
+    },
+    {
+     "end": 6.625,
+     "start": 6.287,
+     "text": "Missing"
+    },
+    {
+     "end": 7.175,
+     "start": 6.625,
+     "text": "history"
+    },
+    {
+     "end": 7.287,
+     "start": 7.175,
+     "text": "and"
+    },
+    {
+     "end": 7.387,
+     "start": 7.287,
+     "text": "a"
+    },
+    {
+     "end": 7.7,
+     "start": 7.387,
+     "text": "root"
+    },
+    {
+     "end": 7.838,
+     "start": 7.7,
+     "text": "that"
+    },
+    {
+     "end": 8.025,
+     "start": 7.838,
+     "text": "does"
+    },
+    {
+     "end": 8.288,
+     "start": 8.025,
+     "text": "not"
+    },
+    {
+     "end": 8.675,
+     "start": 8.288,
+     "text": "chain"
+    },
+    {
+     "end": 8.825,
+     "start": 8.675,
+     "text": "are"
+    },
+    {
+     "end": 9.175,
+     "start": 8.825,
+     "text": "named"
+    },
+    {
+     "end": 10.6,
+     "start": 9.175,
+     "text": "refusals"
+    },
+    {
+     "end": 10.825,
+     "start": 10.6,
+     "text": ";"
+    },
+    {
+     "end": 11.075,
+     "start": 11.0,
+     "text": "an"
+    },
+    {
+     "end": 11.375,
+     "start": 11.075,
+     "text": "empty"
+    },
+    {
+     "end": 11.725,
+     "start": 11.375,
+     "text": "trie"
+    },
+    {
+     "end": 12.1,
+     "start": 11.725,
+     "text": "cannot"
+    },
+    {
+     "end": 12.775,
+     "start": 12.1,
+     "text": "substitute"
+    },
+    {
+     "end": 12.925,
+     "start": 12.775,
+     "text": "for"
+    },
+    {
+     "end": 13.575,
+     "start": 12.925,
+     "text": "unavailable"
+    },
+    {
+     "end": 14.575,
+     "start": 13.575,
+     "text": "history"
+    },
+    {
+     "end": 14.775,
+     "start": 14.575,
+     "text": "."
+    },
+    {
+     "end": 15.1,
+     "start": 14.975,
+     "text": "The"
+    },
+    {
+     "end": 15.875,
+     "start": 15.1,
+     "text": "observation"
+    },
+    {
+     "end": 16.5,
+     "start": 15.875,
+     "text": "concerns"
+    },
+    {
+     "end": 16.625,
+     "start": 16.5,
      "text": "the"
     },
     {
-     "end": 24.0,
-     "start": 23.65,
+     "end": 17.225,
+     "start": 16.625,
+     "text": "interrupted"
+    },
+    {
+     "end": 17.638,
+     "start": 17.225,
+     "text": "step's"
+    },
+    {
+     "end": 18.075,
+     "start": 17.638,
+     "text": "key"
+    },
+    {
+     "end": 18.2,
+     "start": 18.075,
+     "text": ","
+    },
+    {
+     "end": 18.487,
+     "start": 18.2,
+     "text": "even"
+    },
+    {
+     "end": 18.612,
+     "start": 18.487,
+     "text": "when"
+    },
+    {
+     "end": 18.7,
+     "start": 18.612,
+     "text": "the"
+    },
+    {
+     "end": 19.025,
+     "start": 18.7,
      "text": "current"
     },
     {
-     "end": 24.4,
-     "start": 24.0,
+     "end": 19.587,
+     "start": 19.025,
      "text": "command"
     },
     {
-     "end": 25.55,
-     "start": 24.4,
+     "end": 20.05,
+     "start": 19.587,
      "text": "targets"
     },
     {
-     "end": 25.75,
-     "start": 25.55,
+     "end": 20.438,
+     "start": 20.05,
+     "text": "another"
+    },
+    {
+     "end": 21.4,
+     "start": 20.438,
+     "text": "key"
+    },
+    {
+     "end": 21.625,
+     "start": 21.4,
      "text": "."
     }
    ]
   },
   "docs-cli-recovery/the-next-command-reconciles-03": {
-   "audio_sha256": "d16a0f4d3bfeebec1f136d48e60bd22d2f0c57f4f921a3f848d1d5e3acebf748",
-   "characters": 561,
-   "cost": 0.00034782,
-   "duration": 36.45,
+   "audio_sha256": "0c6e69628ec5d6ad572e39569df7db1af881873a470de97e4ffdd00b2cc88737",
+   "characters": 287,
+   "cost": 0.00017794000000000002,
+   "duration": 19.7,
    "index": 3,
-   "key": "e87ff4d8db2047f126af400af7488ed0b7bb65592da3c1636c86c00eb5d60a26",
+   "key": "b355c29650fa7c424f444494eba4f419ee0ad70af1d1cfeaeb135a2217fd9f47",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "the-next-command-reconciles",
-   "sent_text": "A write's receipt carries what the reconciliation did under reconciled: the transactions it journalled rolled back, those it found unresolved, those it excluded, the root it returned the mirror to after a rollback, the folds whose edge it applied, whether it brought state.json along, and the transactions it observed. inspect reports the same under rolledBack, recovery, excluded, mirrorRewound, mirrorAdvanced and observed. inspect reconciles only while no other singular process is writing to the registry; otherwise it reads without reconciling and says so.",
-   "text": "A write's receipt carries what the reconciliation did under reconciled: the transactions it journalled rolled back, those it found unresolved, those it excluded, the root it returned the mirror to after a rollback, the folds whose edge it applied, whether it brought state.json along, and the transactions it observed. inspect reports the same under rolledBack, recovery, excluded, mirrorRewound, mirrorAdvanced and observed. inspect reconciles only while no other singular process is writing to the registry; otherwise it reads without reconciling and says so.",
+   "sent_text": "A write reports reconciliation under reconciled: rolledBack, recovery, excluded and observed. Inspect reports the same fields at the receipt's top level. Inspect reconciles only while no other process holds this directory's write lock; otherwise it reads without reconciling and says so.",
+   "text": "A write reports reconciliation under reconciled: rolledBack, recovery, excluded and observed. Inspect reports the same fields at the receipt's top level. Inspect reconciles only while no other process holds this directory's write lock; otherwise it reads without reconciling and says so.",
    "words": [
     {
      "end": 0.287,
@@ -33289,483 +33019,238 @@
      "text": "A"
     },
     {
-     "end": 0.625,
+     "end": 0.6,
      "start": 0.287,
-     "text": "write's"
+     "text": "write"
     },
     {
-     "end": 1.087,
-     "start": 0.625,
-     "text": "receipt"
-    },
-    {
-     "end": 1.525,
-     "start": 1.087,
-     "text": "carries"
-    },
-    {
-     "end": 1.663,
-     "start": 1.525,
-     "text": "what"
-    },
-    {
-     "end": 1.75,
-     "start": 1.663,
-     "text": "the"
-    },
-    {
-     "end": 2.713,
-     "start": 1.75,
-     "text": "reconciliation"
-    },
-    {
-     "end": 2.975,
-     "start": 2.713,
-     "text": "did"
-    },
-    {
-     "end": 3.2,
-     "start": 2.975,
-     "text": "under"
-    },
-    {
-     "end": 4.375,
-     "start": 3.2,
-     "text": "reconciled"
-    },
-    {
-     "end": 4.575,
-     "start": 4.375,
-     "text": ":"
-    },
-    {
-     "end": 4.825,
-     "start": 4.75,
-     "text": "the"
-    },
-    {
-     "end": 5.55,
-     "start": 4.825,
-     "text": "transactions"
-    },
-    {
-     "end": 5.65,
-     "start": 5.55,
-     "text": "it"
-    },
-    {
-     "end": 6.025,
-     "start": 5.65,
-     "text": "journalled"
-    },
-    {
-     "end": 6.325,
-     "start": 6.025,
-     "text": "rolled"
-    },
-    {
-     "end": 6.7,
-     "start": 6.325,
-     "text": "back"
-    },
-    {
-     "end": 6.8,
-     "start": 6.7,
-     "text": ","
-    },
-    {
-     "end": 7.05,
-     "start": 6.8,
-     "text": "those"
-    },
-    {
-     "end": 7.15,
-     "start": 7.05,
-     "text": "it"
-    },
-    {
-     "end": 7.45,
-     "start": 7.15,
-     "text": "found"
-    },
-    {
-     "end": 8.65,
-     "start": 7.45,
-     "text": "unresolved"
-    },
-    {
-     "end": 8.85,
-     "start": 8.65,
-     "text": ","
-    },
-    {
-     "end": 9.275,
-     "start": 9.05,
-     "text": "those"
-    },
-    {
-     "end": 9.375,
-     "start": 9.275,
-     "text": "it"
-    },
-    {
-     "end": 10.025,
-     "start": 9.375,
-     "text": "excluded"
-    },
-    {
-     "end": 10.1,
-     "start": 10.025,
-     "text": ","
-    },
-    {
-     "end": 10.238,
-     "start": 10.1,
-     "text": "the"
-    },
-    {
-     "end": 10.462,
-     "start": 10.238,
-     "text": "root"
-    },
-    {
-     "end": 10.55,
-     "start": 10.462,
-     "text": "it"
-    },
-    {
-     "end": 10.962,
-     "start": 10.55,
-     "text": "returned"
-    },
-    {
-     "end": 11.05,
-     "start": 10.962,
-     "text": "the"
-    },
-    {
-     "end": 11.375,
-     "start": 11.05,
-     "text": "mirror"
-    },
-    {
-     "end": 11.538,
-     "start": 11.375,
-     "text": "to"
-    },
-    {
-     "end": 11.863,
-     "start": 11.538,
-     "text": "after"
-    },
-    {
-     "end": 11.925,
-     "start": 11.863,
-     "text": "a"
-    },
-    {
-     "end": 12.975,
-     "start": 11.925,
-     "text": "rollback"
-    },
-    {
-     "end": 13.2,
-     "start": 12.975,
-     "text": ","
-    },
-    {
-     "end": 13.475,
-     "start": 13.375,
-     "text": "the"
-    },
-    {
-     "end": 13.837,
-     "start": 13.475,
-     "text": "folds"
-    },
-    {
-     "end": 14.025,
-     "start": 13.837,
-     "text": "whose"
-    },
-    {
-     "end": 14.212,
-     "start": 14.025,
-     "text": "edge"
-    },
-    {
-     "end": 14.288,
-     "start": 14.212,
-     "text": "it"
-    },
-    {
-     "end": 14.8,
-     "start": 14.288,
-     "text": "applied"
-    },
-    {
-     "end": 14.85,
-     "start": 14.8,
-     "text": ","
-    },
-    {
-     "end": 15.113,
-     "start": 14.85,
-     "text": "whether"
-    },
-    {
-     "end": 15.2,
-     "start": 15.113,
-     "text": "it"
-    },
-    {
-     "end": 15.475,
-     "start": 15.2,
-     "text": "brought"
-    },
-    {
-     "end": 16.525,
-     "start": 15.475,
-     "text": "state.json"
-    },
-    {
-     "end": 17.425,
-     "start": 16.525,
-     "text": "along"
-    },
-    {
-     "end": 17.625,
-     "start": 17.425,
-     "text": ","
-    },
-    {
-     "end": 17.888,
-     "start": 17.8,
-     "text": "and"
-    },
-    {
-     "end": 17.975,
-     "start": 17.888,
-     "text": "the"
-    },
-    {
-     "end": 18.612,
-     "start": 17.975,
-     "text": "transactions"
-    },
-    {
-     "end": 18.688,
-     "start": 18.612,
-     "text": "it"
-    },
-    {
-     "end": 19.625,
-     "start": 18.688,
-     "text": "observed"
-    },
-    {
-     "end": 19.825,
-     "start": 19.625,
-     "text": "."
-    },
-    {
-     "end": 20.575,
-     "start": 20.05,
-     "text": "inspect"
-    },
-    {
-     "end": 21.05,
-     "start": 20.575,
+     "end": 1.075,
+     "start": 0.6,
      "text": "reports"
     },
     {
-     "end": 21.188,
-     "start": 21.05,
-     "text": "the"
+     "end": 1.95,
+     "start": 1.075,
+     "text": "reconciliation"
     },
     {
-     "end": 21.513,
-     "start": 21.188,
-     "text": "same"
-    },
-    {
-     "end": 21.75,
-     "start": 21.513,
+     "end": 2.15,
+     "start": 1.95,
      "text": "under"
     },
     {
-     "end": 22.4,
-     "start": 21.75,
+     "end": 3.25,
+     "start": 2.15,
+     "text": "reconciled"
+    },
+    {
+     "end": 3.45,
+     "start": 3.25,
+     "text": ":"
+    },
+    {
+     "end": 4.275,
+     "start": 3.675,
      "text": "rolledBack"
     },
     {
-     "end": 22.475,
-     "start": 22.4,
+     "end": 4.325,
+     "start": 4.275,
      "text": ","
     },
     {
-     "end": 23.125,
-     "start": 22.475,
+     "end": 4.925,
+     "start": 4.325,
      "text": "recovery"
     },
     {
-     "end": 23.225,
-     "start": 23.125,
+     "end": 5.0,
+     "start": 4.925,
      "text": ","
     },
     {
-     "end": 23.85,
-     "start": 23.225,
+     "end": 5.738,
+     "start": 5.0,
      "text": "excluded"
     },
     {
-     "end": 23.938,
-     "start": 23.85,
-     "text": ","
-    },
-    {
-     "end": 24.775,
-     "start": 23.938,
-     "text": "mirrorRewound"
-    },
-    {
-     "end": 24.85,
-     "start": 24.775,
-     "text": ","
-    },
-    {
-     "end": 25.675,
-     "start": 24.85,
-     "text": "mirrorAdvanced"
-    },
-    {
-     "end": 25.788,
-     "start": 25.675,
+     "end": 5.887,
+     "start": 5.738,
      "text": "and"
     },
     {
-     "end": 26.95,
-     "start": 25.788,
+     "end": 6.6,
+     "start": 5.887,
      "text": "observed"
     },
     {
-     "end": 27.175,
-     "start": 26.95,
+     "end": 6.738,
+     "start": 6.6,
      "text": "."
     },
     {
-     "end": 27.85,
-     "start": 27.375,
-     "text": "inspect"
+     "end": 7.325,
+     "start": 6.738,
+     "text": "Inspect"
     },
     {
-     "end": 28.638,
-     "start": 27.85,
-     "text": "reconciles"
+     "end": 7.8,
+     "start": 7.325,
+     "text": "reports"
     },
     {
-     "end": 28.975,
-     "start": 28.638,
-     "text": "only"
-    },
-    {
-     "end": 29.212,
-     "start": 28.975,
-     "text": "while"
-    },
-    {
-     "end": 29.5,
-     "start": 29.212,
-     "text": "no"
-    },
-    {
-     "end": 29.812,
-     "start": 29.5,
-     "text": "other"
-    },
-    {
-     "end": 30.325,
-     "start": 29.812,
-     "text": "singular"
-    },
-    {
-     "end": 30.987,
-     "start": 30.325,
-     "text": "process"
-    },
-    {
-     "end": 31.163,
-     "start": 30.987,
-     "text": "is"
-    },
-    {
-     "end": 31.55,
-     "start": 31.163,
-     "text": "writing"
-    },
-    {
-     "end": 31.638,
-     "start": 31.55,
-     "text": "to"
-    },
-    {
-     "end": 31.725,
-     "start": 31.638,
+     "end": 7.938,
+     "start": 7.8,
      "text": "the"
     },
     {
-     "end": 32.925,
-     "start": 31.725,
-     "text": "registry"
+     "end": 8.288,
+     "start": 7.938,
+     "text": "same"
     },
     {
-     "end": 33.15,
-     "start": 32.925,
+     "end": 8.75,
+     "start": 8.288,
+     "text": "fields"
+    },
+    {
+     "end": 8.837,
+     "start": 8.75,
+     "text": "at"
+    },
+    {
+     "end": 8.925,
+     "start": 8.837,
+     "text": "the"
+    },
+    {
+     "end": 9.425,
+     "start": 8.925,
+     "text": "receipt's"
+    },
+    {
+     "end": 9.7,
+     "start": 9.425,
+     "text": "top"
+    },
+    {
+     "end": 10.625,
+     "start": 9.7,
+     "text": "level"
+    },
+    {
+     "end": 10.85,
+     "start": 10.625,
+     "text": "."
+    },
+    {
+     "end": 11.5,
+     "start": 11.05,
+     "text": "Inspect"
+    },
+    {
+     "end": 12.212,
+     "start": 11.5,
+     "text": "reconciles"
+    },
+    {
+     "end": 12.55,
+     "start": 12.212,
+     "text": "only"
+    },
+    {
+     "end": 12.788,
+     "start": 12.55,
+     "text": "while"
+    },
+    {
+     "end": 13.025,
+     "start": 12.788,
+     "text": "no"
+    },
+    {
+     "end": 13.275,
+     "start": 13.025,
+     "text": "other"
+    },
+    {
+     "end": 13.825,
+     "start": 13.275,
+     "text": "process"
+    },
+    {
+     "end": 14.15,
+     "start": 13.825,
+     "text": "holds"
+    },
+    {
+     "end": 14.35,
+     "start": 14.15,
+     "text": "this"
+    },
+    {
+     "end": 15.012,
+     "start": 14.35,
+     "text": "directory's"
+    },
+    {
+     "end": 15.3,
+     "start": 15.012,
+     "text": "write"
+    },
+    {
+     "end": 16.175,
+     "start": 15.3,
+     "text": "lock"
+    },
+    {
+     "end": 16.4,
+     "start": 16.175,
      "text": ";"
     },
     {
-     "end": 33.737,
-     "start": 33.325,
+     "end": 16.987,
+     "start": 16.575,
      "text": "otherwise"
     },
     {
-     "end": 33.825,
-     "start": 33.737,
+     "end": 17.075,
+     "start": 16.987,
      "text": "it"
     },
     {
-     "end": 34.138,
-     "start": 33.825,
+     "end": 17.388,
+     "start": 17.075,
      "text": "reads"
     },
     {
-     "end": 34.45,
-     "start": 34.138,
+     "end": 17.7,
+     "start": 17.388,
      "text": "without"
     },
     {
-     "end": 35.1,
-     "start": 34.45,
+     "end": 18.35,
+     "start": 17.7,
      "text": "reconciling"
     },
     {
-     "end": 35.225,
-     "start": 35.1,
+     "end": 18.475,
+     "start": 18.35,
      "text": "and"
     },
     {
-     "end": 35.487,
-     "start": 35.225,
+     "end": 18.737,
+     "start": 18.475,
      "text": "says"
     },
     {
-     "end": 36.225,
-     "start": 35.487,
+     "end": 19.475,
+     "start": 18.737,
      "text": "so"
     },
     {
-     "end": 36.45,
-     "start": 36.225,
+     "end": 19.7,
+     "start": 19.475,
      "text": "."
     }
    ]
@@ -35316,17 +34801,17 @@
    ]
   },
   "docs-cli-recovery/when-a-transaction-can-never-land-01": {
-   "audio_sha256": "0b9b618205af3a03a67ec18fc9b48c557e566b173c5f0c5c09f22289051f9ed4",
-   "characters": 501,
-   "cost": 0.00031062,
-   "duration": 32.275,
+   "audio_sha256": "eabff8de253892b3e0b7e28f3e121048fcd3ba681ef88b40e82fe22aa7a2ed54",
+   "characters": 508,
+   "cost": 0.00031496000000000003,
+   "duration": 33.2,
    "index": 1,
-   "key": "723dd790e8c2c98b2bf8a6e4de3e08542c62cb5c6f49b508a77ed44b90f90d49",
+   "key": "311dee06da8386d1097904f36a47f7c48cd81190f515f2fc4665def081be850e",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "when-a-transaction-can-never-land",
-   "sent_text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root the mirror already holds.",
-   "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root the mirror already holds.",
+   "sent_text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root selected by fresh public replay.",
+   "text": "A transaction carries a validity window. Once the chain's tip has reached the end of that window and an input the transaction spends is still live — so it is not on the chain — it can never be included. The next command appends an excluded line naming the chain point it read and the live inputs. The transaction is settled in the journal: no later command stops on it, and its edge was never applied. A write that excluded a transaction then proceeds, building from the root selected by fresh public replay.",
    "words": [
     {
      "end": 0.225,
@@ -35769,79 +35254,84 @@
      "text": "transaction"
     },
     {
-     "end": 28.425,
+     "end": 28.45,
      "start": 28.188,
      "text": "then"
     },
     {
-     "end": 29.2,
-     "start": 28.425,
+     "end": 29.225,
+     "start": 28.45,
      "text": "proceeds"
     },
     {
-     "end": 29.3,
-     "start": 29.2,
+     "end": 29.325,
+     "start": 29.225,
      "text": ","
     },
     {
-     "end": 29.675,
-     "start": 29.3,
+     "end": 29.7,
+     "start": 29.325,
      "text": "building"
     },
     {
-     "end": 29.812,
-     "start": 29.675,
+     "end": 29.862,
+     "start": 29.7,
      "text": "from"
     },
     {
-     "end": 29.938,
-     "start": 29.812,
+     "end": 29.987,
+     "start": 29.862,
      "text": "the"
     },
     {
-     "end": 30.2,
-     "start": 29.938,
+     "end": 30.3,
+     "start": 29.987,
      "text": "root"
     },
     {
-     "end": 30.337,
-     "start": 30.2,
-     "text": "the"
+     "end": 30.825,
+     "start": 30.3,
+     "text": "selected"
     },
     {
-     "end": 30.7,
-     "start": 30.337,
-     "text": "mirror"
+     "end": 31.05,
+     "start": 30.825,
+     "text": "by"
     },
     {
-     "end": 31.075,
-     "start": 30.7,
-     "text": "already"
+     "end": 31.413,
+     "start": 31.05,
+     "text": "fresh"
     },
     {
-     "end": 32.075,
-     "start": 31.075,
-     "text": "holds"
+     "end": 31.825,
+     "start": 31.413,
+     "text": "public"
     },
     {
-     "end": 32.275,
-     "start": 32.075,
+     "end": 32.925,
+     "start": 31.825,
+     "text": "replay"
+    },
+    {
+     "end": 33.2,
+     "start": 32.925,
      "text": "."
     }
    ]
   },
   "docs-cli-recovery/when-a-transaction-can-never-land-02": {
-   "audio_sha256": "acfe831fd29c18af7d12aae0a6945b15f79c557ead426fa914b2a7b487d10579",
-   "characters": 700,
-   "cost": 0.00043400000000000003,
-   "duration": 45.725,
+   "audio_sha256": "c3269b6059d6a31555a1b043936de66c3156557e53a6d0e2108150e4c4a0b621",
+   "characters": 640,
+   "cost": 0.0003968,
+   "duration": 42.725,
    "index": 2,
-   "key": "0392a24fd853f6057ecd6b6a3d4c502f30f50c984adc7d1ec0a40dac472a1f9e",
+   "key": "505e9ff7e251ef042b96d04938ed58bf674bd310c564de5daa451d74db3e6966",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "when-a-transaction-can-never-land",
-   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
-   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. The ordinary commands have no way to fold or retract that request, and while it is pending every later insert or terminate on the registry is refused concurrent-writer before its fold is built — a rerun of the same command books a second request, with a second deposit, and is refused the same way. update and inspect still run. That is a limit of these commands: releasing the pending request needs a tool outside them.",
+   "sent_text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
+   "text": "What the excluded transaction leaves on chain depends on the command. An excluded update leaves nothing: run it again. The fold of an insert or a terminate is the second of two transactions, and the first, its booking, is on chain: its request stays pending, holding its deposit. Use registry fold while its processing window allows it, registry reclaim with the owner's wallet in its retract window, or registry reject after both windows expire. An insertion's request carries its envelope on chain. A folder reads it publicly and reconstructs proofs from history; neither an insertion fold nor a termination fold needs the booker's files.",
    "words": [
     {
      "end": 0.287,
@@ -36129,413 +35619,313 @@
      "text": "."
     },
     {
-     "end": 18.55,
-     "start": 18.425,
-     "text": "The"
+     "end": 18.675,
+     "start": 18.45,
+     "text": "Use"
     },
     {
-     "end": 19.0,
-     "start": 18.55,
-     "text": "ordinary"
-    },
-    {
-     "end": 19.55,
-     "start": 19.0,
-     "text": "commands"
-    },
-    {
-     "end": 19.775,
-     "start": 19.55,
-     "text": "have"
-    },
-    {
-     "end": 19.95,
-     "start": 19.775,
-     "text": "no"
-    },
-    {
-     "end": 20.087,
-     "start": 19.95,
-     "text": "way"
-    },
-    {
-     "end": 20.212,
-     "start": 20.087,
-     "text": "to"
-    },
-    {
-     "end": 20.712,
-     "start": 20.212,
-     "text": "fold"
-    },
-    {
-     "end": 20.875,
-     "start": 20.712,
-     "text": "or"
-    },
-    {
-     "end": 21.375,
-     "start": 20.875,
-     "text": "retract"
-    },
-    {
-     "end": 21.538,
-     "start": 21.375,
-     "text": "that"
-    },
-    {
-     "end": 22.525,
-     "start": 21.538,
-     "text": "request"
-    },
-    {
-     "end": 22.75,
-     "start": 22.525,
-     "text": ","
-    },
-    {
-     "end": 23.125,
-     "start": 23.025,
-     "text": "and"
-    },
-    {
-     "end": 23.375,
-     "start": 23.125,
-     "text": "while"
-    },
-    {
-     "end": 23.475,
-     "start": 23.375,
-     "text": "it"
-    },
-    {
-     "end": 23.638,
-     "start": 23.475,
-     "text": "is"
-    },
-    {
-     "end": 24.138,
-     "start": 23.638,
-     "text": "pending"
-    },
-    {
-     "end": 24.513,
-     "start": 24.138,
-     "text": "every"
-    },
-    {
-     "end": 24.875,
-     "start": 24.513,
-     "text": "later"
-    },
-    {
-     "end": 25.413,
-     "start": 24.875,
-     "text": "insert"
-    },
-    {
-     "end": 25.587,
-     "start": 25.413,
-     "text": "or"
-    },
-    {
-     "end": 26.175,
-     "start": 25.587,
-     "text": "terminate"
-    },
-    {
-     "end": 26.312,
-     "start": 26.175,
-     "text": "on"
-    },
-    {
-     "end": 26.4,
-     "start": 26.312,
-     "text": "the"
-    },
-    {
-     "end": 27.062,
-     "start": 26.4,
+     "end": 19.188,
+     "start": 18.675,
      "text": "registry"
     },
     {
-     "end": 27.225,
-     "start": 27.062,
-     "text": "is"
-    },
-    {
-     "end": 27.875,
-     "start": 27.225,
-     "text": "refused"
-    },
-    {
-     "end": 28.75,
-     "start": 27.875,
-     "text": "concurrent-writer"
-    },
-    {
-     "end": 29.125,
-     "start": 28.75,
-     "text": "before"
-    },
-    {
-     "end": 29.337,
-     "start": 29.125,
-     "text": "its"
-    },
-    {
-     "end": 29.725,
-     "start": 29.337,
+     "end": 19.6,
+     "start": 19.188,
      "text": "fold"
     },
     {
-     "end": 29.888,
-     "start": 29.725,
-     "text": "is"
+     "end": 19.763,
+     "start": 19.6,
+     "text": "while"
     },
     {
-     "end": 30.513,
-     "start": 29.888,
-     "text": "built"
+     "end": 19.9,
+     "start": 19.763,
+     "text": "its"
     },
     {
-     "end": 30.612,
-     "start": 30.513,
-     "text": "—"
+     "end": 20.45,
+     "start": 19.9,
+     "text": "processing"
     },
     {
-     "end": 30.737,
-     "start": 30.612,
-     "text": "a"
+     "end": 20.8,
+     "start": 20.45,
+     "text": "window"
     },
     {
-     "end": 31.188,
-     "start": 30.737,
-     "text": "rerun"
+     "end": 21.212,
+     "start": 20.8,
+     "text": "allows"
     },
     {
-     "end": 31.263,
-     "start": 31.188,
-     "text": "of"
+     "end": 21.8,
+     "start": 21.212,
+     "text": "it"
     },
     {
-     "end": 31.388,
-     "start": 31.263,
-     "text": "the"
-    },
-    {
-     "end": 31.725,
-     "start": 31.388,
-     "text": "same"
-    },
-    {
-     "end": 32.25,
-     "start": 31.725,
-     "text": "command"
-    },
-    {
-     "end": 32.525,
-     "start": 32.25,
-     "text": "books"
-    },
-    {
-     "end": 32.638,
-     "start": 32.525,
-     "text": "a"
-    },
-    {
-     "end": 33.0,
-     "start": 32.638,
-     "text": "second"
-    },
-    {
-     "end": 34.225,
-     "start": 33.0,
-     "text": "request"
-    },
-    {
-     "end": 34.475,
-     "start": 34.225,
+     "end": 22.0,
+     "start": 21.8,
      "text": ","
     },
     {
-     "end": 34.787,
-     "start": 34.65,
+     "end": 22.675,
+     "start": 22.2,
+     "text": "registry"
+    },
+    {
+     "end": 23.2,
+     "start": 22.675,
+     "text": "reclaim"
+    },
+    {
+     "end": 23.337,
+     "start": 23.2,
      "text": "with"
     },
     {
-     "end": 34.85,
-     "start": 34.787,
-     "text": "a"
+     "end": 23.487,
+     "start": 23.337,
+     "text": "the"
     },
     {
-     "end": 35.162,
-     "start": 34.85,
-     "text": "second"
+     "end": 23.888,
+     "start": 23.487,
+     "text": "owner's"
     },
     {
-     "end": 35.825,
-     "start": 35.162,
-     "text": "deposit"
+     "end": 24.325,
+     "start": 23.888,
+     "text": "wallet"
     },
     {
-     "end": 35.9,
-     "start": 35.825,
+     "end": 24.438,
+     "start": 24.325,
+     "text": "in"
+    },
+    {
+     "end": 24.575,
+     "start": 24.438,
+     "text": "its"
+    },
+    {
+     "end": 25.1,
+     "start": 24.575,
+     "text": "retract"
+    },
+    {
+     "end": 25.975,
+     "start": 25.1,
+     "text": "window"
+    },
+    {
+     "end": 26.225,
+     "start": 25.975,
      "text": ","
     },
     {
-     "end": 36.013,
-     "start": 35.9,
-     "text": "and"
+     "end": 26.525,
+     "start": 26.425,
+     "text": "or"
     },
     {
-     "end": 36.15,
-     "start": 36.013,
-     "text": "is"
+     "end": 27.025,
+     "start": 26.525,
+     "text": "registry"
     },
     {
-     "end": 36.688,
-     "start": 36.15,
-     "text": "refused"
+     "end": 27.475,
+     "start": 27.025,
+     "text": "reject"
     },
     {
-     "end": 36.775,
-     "start": 36.688,
-     "text": "the"
+     "end": 27.75,
+     "start": 27.475,
+     "text": "after"
     },
     {
-     "end": 37.05,
-     "start": 36.775,
-     "text": "same"
+     "end": 28.05,
+     "start": 27.75,
+     "text": "both"
     },
     {
-     "end": 37.825,
-     "start": 37.05,
-     "text": "way"
+     "end": 28.45,
+     "start": 28.05,
+     "text": "windows"
     },
     {
-     "end": 38.05,
-     "start": 37.825,
+     "end": 29.475,
+     "start": 28.45,
+     "text": "expire"
+    },
+    {
+     "end": 29.675,
+     "start": 29.475,
      "text": "."
     },
     {
-     "end": 38.7,
-     "start": 38.25,
-     "text": "update"
+     "end": 29.925,
+     "start": 29.85,
+     "text": "An"
     },
     {
-     "end": 38.812,
-     "start": 38.7,
-     "text": "and"
+     "end": 30.487,
+     "start": 29.925,
+     "text": "insertion's"
     },
     {
-     "end": 39.225,
-     "start": 38.812,
-     "text": "inspect"
-    },
-    {
-     "end": 39.5,
-     "start": 39.225,
-     "text": "still"
-    },
-    {
-     "end": 39.925,
-     "start": 39.5,
-     "text": "run"
-    },
-    {
-     "end": 40.025,
-     "start": 39.925,
-     "text": "."
-    },
-    {
-     "end": 40.237,
-     "start": 40.025,
-     "text": "That"
-    },
-    {
-     "end": 40.338,
-     "start": 40.237,
-     "text": "is"
-    },
-    {
-     "end": 40.425,
-     "start": 40.338,
-     "text": "a"
-    },
-    {
-     "end": 40.688,
-     "start": 40.425,
-     "text": "limit"
-    },
-    {
-     "end": 40.763,
-     "start": 40.688,
-     "text": "of"
-    },
-    {
-     "end": 40.975,
-     "start": 40.763,
-     "text": "these"
-    },
-    {
-     "end": 42.0,
-     "start": 40.975,
-     "text": "commands"
-    },
-    {
-     "end": 42.2,
-     "start": 42.0,
-     "text": ":"
-    },
-    {
-     "end": 42.838,
-     "start": 42.4,
-     "text": "releasing"
-    },
-    {
-     "end": 42.925,
-     "start": 42.838,
-     "text": "the"
-    },
-    {
-     "end": 43.287,
-     "start": 42.925,
-     "text": "pending"
-    },
-    {
-     "end": 43.75,
-     "start": 43.287,
+     "end": 30.962,
+     "start": 30.487,
      "text": "request"
     },
     {
-     "end": 43.987,
-     "start": 43.75,
-     "text": "needs"
+     "end": 31.288,
+     "start": 30.962,
+     "text": "carries"
     },
     {
-     "end": 44.062,
-     "start": 43.987,
+     "end": 31.425,
+     "start": 31.288,
+     "text": "its"
+    },
+    {
+     "end": 31.9,
+     "start": 31.425,
+     "text": "envelope"
+    },
+    {
+     "end": 32.112,
+     "start": 31.9,
+     "text": "on"
+    },
+    {
+     "end": 32.975,
+     "start": 32.112,
+     "text": "chain"
+    },
+    {
+     "end": 33.175,
+     "start": 32.975,
+     "text": "."
+    },
+    {
+     "end": 33.463,
+     "start": 33.375,
+     "text": "A"
+    },
+    {
+     "end": 33.9,
+     "start": 33.463,
+     "text": "folder"
+    },
+    {
+     "end": 34.175,
+     "start": 33.9,
+     "text": "reads"
+    },
+    {
+     "end": 34.3,
+     "start": 34.175,
+     "text": "it"
+    },
+    {
+     "end": 34.963,
+     "start": 34.3,
+     "text": "publicly"
+    },
+    {
+     "end": 35.1,
+     "start": 34.963,
+     "text": "and"
+    },
+    {
+     "end": 35.812,
+     "start": 35.1,
+     "text": "reconstructs"
+    },
+    {
+     "end": 36.2,
+     "start": 35.812,
+     "text": "proofs"
+    },
+    {
+     "end": 36.35,
+     "start": 36.2,
+     "text": "from"
+    },
+    {
+     "end": 37.375,
+     "start": 36.35,
+     "text": "history"
+    },
+    {
+     "end": 37.575,
+     "start": 37.375,
+     "text": ";"
+    },
+    {
+     "end": 38.062,
+     "start": 37.775,
+     "text": "neither"
+    },
+    {
+     "end": 38.15,
+     "start": 38.062,
+     "text": "an"
+    },
+    {
+     "end": 38.763,
+     "start": 38.15,
+     "text": "insertion"
+    },
+    {
+     "end": 39.3,
+     "start": 38.763,
+     "text": "fold"
+    },
+    {
+     "end": 39.513,
+     "start": 39.3,
+     "text": "nor"
+    },
+    {
+     "end": 39.575,
+     "start": 39.513,
      "text": "a"
     },
     {
-     "end": 44.375,
-     "start": 44.062,
-     "text": "tool"
+     "end": 40.287,
+     "start": 39.575,
+     "text": "termination"
     },
     {
-     "end": 44.838,
-     "start": 44.375,
-     "text": "outside"
+     "end": 40.737,
+     "start": 40.287,
+     "text": "fold"
     },
     {
-     "end": 45.55,
-     "start": 44.838,
-     "text": "them"
+     "end": 41.037,
+     "start": 40.737,
+     "text": "needs"
     },
     {
-     "end": 45.725,
-     "start": 45.55,
+     "end": 41.125,
+     "start": 41.037,
+     "text": "the"
+    },
+    {
+     "end": 41.5,
+     "start": 41.125,
+     "text": "booker's"
+    },
+    {
+     "end": 42.525,
+     "start": 41.5,
+     "text": "files"
+    },
+    {
+     "end": 42.725,
+     "start": 42.525,
      "text": "."
     }
    ]
@@ -37421,721 +36811,321 @@
    ]
   },
   "docs-cli-recovery/when-the-chain-rolls-back-02": {
-   "audio_sha256": "b2d800b1ce632a4143323d707e92ac68d14735b1b4cb792770be9556635f79f6",
-   "characters": 731,
-   "cost": 0.00045322,
-   "duration": 46.225,
+   "audio_sha256": "2f8faa6b06c52403e8bb305263aac2ae953fad1387fad5223381ef6e715fbe7c",
+   "characters": 347,
+   "cost": 0.00021514000000000003,
+   "duration": 22.375,
    "index": 2,
-   "key": "ab7efa0789c51688cb2ff624d765cbc98652f4c2f5ea70a999f16de5b763c4e5",
+   "key": "4a793dc6f907c4cbc81ac7efb2b16c57c927424abfa1a6f906e7e45bab7fb351",
    "page": "docs/cli-recovery.md",
    "pause_ms": 400,
    "section": "when-the-chain-rolls-back",
-   "sent_text": "For a fold, the rolled-back line also names the root the mirror returns to: the root the fold was journalled to fold from. The mirror is rebuilt from the empty trie the registry was created with, by applying in journal order the edges of the folds still on the chain, each from its journalled root before to its journalled root after; state.json follows it. If that rebuild does not reach the fold's root before, the local files are stale and the command stops stale-state, writing nothing. The rolled-back transaction is never sent again. If the chain includes it again — another node still had it — the next command journals it confirmed and reconciles it as above; otherwise every write stops on it, naming the case rolled-back.",
-   "text": "For a fold, the rolled-back line also names the root the mirror returns to: the root the fold was journalled to fold from. The mirror is rebuilt from the empty trie the registry was created with, by applying in journal order the edges of the folds still on the chain, each from its journalled root before to its journalled root after; state.json follows it. If that rebuild does not reach the fold's root before, the local files are stale and the command stops stale-state, writing nothing. The rolled-back transaction is never sent again. If the chain includes it again — another node still had it — the next command journals it confirmed and reconciles it as above; otherwise every write stops on it, naming the case rolled-back.",
+   "sent_text": "Proof state follows the public history selected by the current command, including rollbacks. The journal does not rebuild a private trie. The rolled-back transaction is never sent again. If the chain includes it again, the next command journals it confirmed and reconciles its observation; otherwise writes stop on it, naming the case rolled-back.",
+   "text": "Proof state follows the public history selected by the current command, including rollbacks. The journal does not rebuild a private trie. The rolled-back transaction is never sent again. If the chain includes it again, the next command journals it confirmed and reconciles its observation; otherwise writes stop on it, naming the case rolled-back.",
    "words": [
     {
-     "end": 0.287,
-     "start": 0.175,
-     "text": "For"
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Proof"
     },
     {
-     "end": 0.387,
-     "start": 0.287,
-     "text": "a"
+     "end": 0.837,
+     "start": 0.475,
+     "text": "state"
     },
     {
-     "end": 0.75,
-     "start": 0.387,
-     "text": "fold"
-    },
-    {
-     "end": 0.788,
-     "start": 0.75,
-     "text": ","
-    },
-    {
-     "end": 0.875,
-     "start": 0.788,
-     "text": "the"
-    },
-    {
-     "end": 1.4,
-     "start": 0.875,
-     "text": "rolled-back"
-    },
-    {
-     "end": 1.763,
-     "start": 1.4,
-     "text": "line"
-    },
-    {
-     "end": 2.125,
-     "start": 1.763,
-     "text": "also"
-    },
-    {
-     "end": 2.425,
-     "start": 2.125,
-     "text": "names"
-    },
-    {
-     "end": 2.562,
-     "start": 2.425,
-     "text": "the"
-    },
-    {
-     "end": 2.875,
-     "start": 2.562,
-     "text": "root"
-    },
-    {
-     "end": 2.975,
-     "start": 2.875,
-     "text": "the"
-    },
-    {
-     "end": 3.3,
-     "start": 2.975,
-     "text": "mirror"
-    },
-    {
-     "end": 3.812,
-     "start": 3.3,
-     "text": "returns"
-    },
-    {
-     "end": 4.3,
-     "start": 3.812,
-     "text": "to"
-    },
-    {
-     "end": 4.85,
-     "start": 4.3,
-     "text": ":"
-    },
-    {
-     "end": 5.125,
-     "start": 5.025,
-     "text": "the"
-    },
-    {
-     "end": 5.338,
-     "start": 5.125,
-     "text": "root"
-    },
-    {
-     "end": 5.425,
-     "start": 5.338,
-     "text": "the"
-    },
-    {
-     "end": 5.738,
-     "start": 5.425,
-     "text": "fold"
-    },
-    {
-     "end": 5.875,
-     "start": 5.738,
-     "text": "was"
-    },
-    {
-     "end": 6.25,
-     "start": 5.875,
-     "text": "journalled"
-    },
-    {
-     "end": 6.375,
-     "start": 6.25,
-     "text": "to"
-    },
-    {
-     "end": 6.725,
-     "start": 6.375,
-     "text": "fold"
-    },
-    {
-     "end": 7.425,
-     "start": 6.725,
-     "text": "from"
-    },
-    {
-     "end": 7.625,
-     "start": 7.425,
-     "text": "."
-    },
-    {
-     "end": 7.9,
-     "start": 7.8,
-     "text": "The"
-    },
-    {
-     "end": 8.325,
-     "start": 7.9,
-     "text": "mirror"
-    },
-    {
-     "end": 8.475,
-     "start": 8.325,
-     "text": "is"
-    },
-    {
-     "end": 8.925,
-     "start": 8.475,
-     "text": "rebuilt"
-    },
-    {
-     "end": 9.062,
-     "start": 8.925,
-     "text": "from"
-    },
-    {
-     "end": 9.175,
-     "start": 9.062,
-     "text": "the"
-    },
-    {
-     "end": 9.5,
-     "start": 9.175,
-     "text": "empty"
-    },
-    {
-     "end": 10.0,
-     "start": 9.5,
-     "text": "trie"
-    },
-    {
-     "end": 10.15,
-     "start": 10.0,
-     "text": "the"
-    },
-    {
-     "end": 10.65,
-     "start": 10.15,
-     "text": "registry"
-    },
-    {
-     "end": 10.825,
-     "start": 10.65,
-     "text": "was"
-    },
-    {
-     "end": 11.275,
-     "start": 10.825,
-     "text": "created"
-    },
-    {
-     "end": 12.05,
-     "start": 11.275,
-     "text": "with"
-    },
-    {
-     "end": 12.275,
-     "start": 12.05,
-     "text": ","
-    },
-    {
-     "end": 12.6,
-     "start": 12.45,
-     "text": "by"
-    },
-    {
-     "end": 13.038,
-     "start": 12.6,
-     "text": "applying"
-    },
-    {
-     "end": 13.212,
-     "start": 13.038,
-     "text": "in"
-    },
-    {
-     "end": 13.675,
-     "start": 13.212,
-     "text": "journal"
-    },
-    {
-     "end": 13.887,
-     "start": 13.675,
-     "text": "order"
-    },
-    {
-     "end": 14.012,
-     "start": 13.887,
-     "text": "the"
-    },
-    {
-     "end": 14.337,
-     "start": 14.012,
-     "text": "edges"
-    },
-    {
-     "end": 14.413,
-     "start": 14.337,
-     "text": "of"
-    },
-    {
-     "end": 14.538,
-     "start": 14.413,
-     "text": "the"
-    },
-    {
-     "end": 14.988,
-     "start": 14.538,
-     "text": "folds"
-    },
-    {
-     "end": 15.288,
-     "start": 14.988,
-     "text": "still"
-    },
-    {
-     "end": 15.413,
-     "start": 15.288,
-     "text": "on"
-    },
-    {
-     "end": 15.512,
-     "start": 15.413,
-     "text": "the"
-    },
-    {
-     "end": 16.475,
-     "start": 15.512,
-     "text": "chain"
-    },
-    {
-     "end": 16.675,
-     "start": 16.475,
-     "text": ","
-    },
-    {
-     "end": 17.1,
-     "start": 16.875,
-     "text": "each"
-    },
-    {
-     "end": 17.237,
-     "start": 17.1,
-     "text": "from"
-    },
-    {
-     "end": 17.425,
-     "start": 17.237,
-     "text": "its"
-    },
-    {
-     "end": 17.75,
-     "start": 17.425,
-     "text": "journalled"
-    },
-    {
-     "end": 17.975,
-     "start": 17.75,
-     "text": "root"
-    },
-    {
-     "end": 18.487,
-     "start": 17.975,
-     "text": "before"
-    },
-    {
-     "end": 18.65,
-     "start": 18.487,
-     "text": "to"
-    },
-    {
-     "end": 18.85,
-     "start": 18.65,
-     "text": "its"
-    },
-    {
-     "end": 19.175,
-     "start": 18.85,
-     "text": "journalled"
-    },
-    {
-     "end": 19.375,
-     "start": 19.175,
-     "text": "root"
-    },
-    {
-     "end": 20.225,
-     "start": 19.375,
-     "text": "after"
-    },
-    {
-     "end": 20.45,
-     "start": 20.225,
-     "text": ";"
-    },
-    {
-     "end": 21.4,
-     "start": 20.65,
-     "text": "state.json"
-    },
-    {
-     "end": 21.812,
-     "start": 21.4,
+     "end": 1.225,
+     "start": 0.837,
      "text": "follows"
     },
     {
-     "end": 22.35,
-     "start": 21.812,
-     "text": "it"
-    },
-    {
-     "end": 22.525,
-     "start": 22.35,
-     "text": "."
-    },
-    {
-     "end": 22.85,
-     "start": 22.7,
-     "text": "If"
-    },
-    {
-     "end": 23.1,
-     "start": 22.85,
-     "text": "that"
-    },
-    {
-     "end": 23.487,
-     "start": 23.1,
-     "text": "rebuild"
-    },
-    {
-     "end": 23.675,
-     "start": 23.487,
-     "text": "does"
-    },
-    {
-     "end": 23.9,
-     "start": 23.675,
-     "text": "not"
-    },
-    {
-     "end": 24.15,
-     "start": 23.9,
-     "text": "reach"
-    },
-    {
-     "end": 24.288,
-     "start": 24.15,
+     "end": 1.325,
+     "start": 1.225,
      "text": "the"
     },
     {
-     "end": 24.7,
-     "start": 24.288,
-     "text": "fold's"
+     "end": 1.7,
+     "start": 1.325,
+     "text": "public"
     },
     {
-     "end": 24.925,
-     "start": 24.7,
-     "text": "root"
+     "end": 2.213,
+     "start": 1.7,
+     "text": "history"
     },
     {
-     "end": 25.85,
-     "start": 24.925,
-     "text": "before"
+     "end": 2.75,
+     "start": 2.213,
+     "text": "selected"
     },
     {
-     "end": 26.075,
-     "start": 25.85,
-     "text": ","
+     "end": 2.925,
+     "start": 2.75,
+     "text": "by"
     },
     {
-     "end": 26.325,
-     "start": 26.25,
+     "end": 3.025,
+     "start": 2.925,
      "text": "the"
     },
     {
-     "end": 26.65,
-     "start": 26.325,
-     "text": "local"
+     "end": 3.35,
+     "start": 3.025,
+     "text": "current"
     },
     {
-     "end": 26.962,
-     "start": 26.65,
-     "text": "files"
-    },
-    {
-     "end": 27.087,
-     "start": 26.962,
-     "text": "are"
-    },
-    {
-     "end": 27.575,
-     "start": 27.087,
-     "text": "stale"
-    },
-    {
-     "end": 27.688,
-     "start": 27.575,
-     "text": "and"
-    },
-    {
-     "end": 27.775,
-     "start": 27.688,
-     "text": "the"
-    },
-    {
-     "end": 28.175,
-     "start": 27.775,
+     "end": 4.025,
+     "start": 3.35,
      "text": "command"
     },
     {
-     "end": 28.525,
-     "start": 28.175,
-     "text": "stops"
-    },
-    {
-     "end": 29.25,
-     "start": 28.525,
-     "text": "stale-state"
-    },
-    {
-     "end": 29.325,
-     "start": 29.25,
+     "end": 4.125,
+     "start": 4.025,
      "text": ","
     },
     {
-     "end": 29.65,
-     "start": 29.325,
-     "text": "writing"
+     "end": 4.625,
+     "start": 4.125,
+     "text": "including"
     },
     {
-     "end": 30.6,
-     "start": 29.65,
-     "text": "nothing"
+     "end": 5.875,
+     "start": 4.625,
+     "text": "rollbacks"
     },
     {
-     "end": 30.8,
-     "start": 30.6,
+     "end": 6.075,
+     "start": 5.875,
      "text": "."
     },
     {
-     "end": 31.05,
-     "start": 30.975,
+     "end": 6.363,
+     "start": 6.25,
      "text": "The"
     },
     {
-     "end": 31.525,
-     "start": 31.05,
-     "text": "rolled-back"
+     "end": 6.775,
+     "start": 6.363,
+     "text": "journal"
     },
     {
-     "end": 32.213,
-     "start": 31.525,
-     "text": "transaction"
+     "end": 7.0,
+     "start": 6.775,
+     "text": "does"
     },
     {
-     "end": 32.388,
-     "start": 32.213,
-     "text": "is"
+     "end": 7.25,
+     "start": 7.0,
+     "text": "not"
     },
     {
-     "end": 32.7,
-     "start": 32.388,
-     "text": "never"
+     "end": 7.662,
+     "start": 7.25,
+     "text": "rebuild"
     },
     {
-     "end": 32.925,
-     "start": 32.7,
-     "text": "sent"
+     "end": 7.725,
+     "start": 7.662,
+     "text": "a"
     },
     {
-     "end": 33.725,
-     "start": 32.925,
-     "text": "again"
+     "end": 8.113,
+     "start": 7.725,
+     "text": "private"
     },
     {
-     "end": 33.925,
-     "start": 33.725,
+     "end": 8.625,
+     "start": 8.113,
+     "text": "trie"
+    },
+    {
+     "end": 8.75,
+     "start": 8.625,
      "text": "."
     },
     {
-     "end": 34.3,
-     "start": 34.125,
-     "text": "If"
+     "end": 8.875,
+     "start": 8.75,
+     "text": "The"
     },
     {
-     "end": 34.438,
-     "start": 34.3,
-     "text": "the"
-    },
-    {
-     "end": 34.8,
-     "start": 34.438,
-     "text": "chain"
-    },
-    {
-     "end": 35.275,
-     "start": 34.8,
-     "text": "includes"
-    },
-    {
-     "end": 35.4,
-     "start": 35.275,
-     "text": "it"
-    },
-    {
-     "end": 35.938,
-     "start": 35.4,
-     "text": "again"
-    },
-    {
-     "end": 36.025,
-     "start": 35.938,
-     "text": "—"
-    },
-    {
-     "end": 36.425,
-     "start": 36.025,
-     "text": "another"
-    },
-    {
-     "end": 36.775,
-     "start": 36.425,
-     "text": "node"
-    },
-    {
-     "end": 37.075,
-     "start": 36.775,
-     "text": "still"
-    },
-    {
-     "end": 37.3,
-     "start": 37.075,
-     "text": "had"
-    },
-    {
-     "end": 37.55,
-     "start": 37.3,
-     "text": "it"
-    },
-    {
-     "end": 37.625,
-     "start": 37.55,
-     "text": "—"
-    },
-    {
-     "end": 37.75,
-     "start": 37.625,
-     "text": "the"
-    },
-    {
-     "end": 38.05,
-     "start": 37.75,
-     "text": "next"
-    },
-    {
-     "end": 38.463,
-     "start": 38.05,
-     "text": "command"
-    },
-    {
-     "end": 38.9,
-     "start": 38.463,
-     "text": "journals"
-    },
-    {
-     "end": 39.025,
-     "start": 38.9,
-     "text": "it"
-    },
-    {
-     "end": 39.713,
-     "start": 39.025,
-     "text": "confirmed"
-    },
-    {
-     "end": 39.85,
-     "start": 39.713,
-     "text": "and"
-    },
-    {
-     "end": 40.475,
-     "start": 39.85,
-     "text": "reconciles"
-    },
-    {
-     "end": 40.638,
-     "start": 40.475,
-     "text": "it"
-    },
-    {
-     "end": 40.8,
-     "start": 40.638,
-     "text": "as"
-    },
-    {
-     "end": 41.9,
-     "start": 40.8,
-     "text": "above"
-    },
-    {
-     "end": 42.125,
-     "start": 41.9,
-     "text": ";"
-    },
-    {
-     "end": 42.838,
-     "start": 42.3,
-     "text": "otherwise"
-    },
-    {
-     "end": 43.15,
-     "start": 42.838,
-     "text": "every"
-    },
-    {
-     "end": 43.425,
-     "start": 43.15,
-     "text": "write"
-    },
-    {
-     "end": 43.8,
-     "start": 43.425,
-     "text": "stops"
-    },
-    {
-     "end": 44.0,
-     "start": 43.8,
-     "text": "on"
-    },
-    {
-     "end": 44.175,
-     "start": 44.0,
-     "text": "it"
-    },
-    {
-     "end": 44.25,
-     "start": 44.175,
-     "text": ","
-    },
-    {
-     "end": 44.562,
-     "start": 44.25,
-     "text": "naming"
-    },
-    {
-     "end": 44.65,
-     "start": 44.562,
-     "text": "the"
-    },
-    {
-     "end": 44.95,
-     "start": 44.65,
-     "text": "case"
-    },
-    {
-     "end": 46.0,
-     "start": 44.95,
+     "end": 9.425,
+     "start": 8.875,
      "text": "rolled-back"
     },
     {
-     "end": 46.225,
-     "start": 46.0,
+     "end": 10.262,
+     "start": 9.425,
+     "text": "transaction"
+    },
+    {
+     "end": 10.438,
+     "start": 10.262,
+     "text": "is"
+    },
+    {
+     "end": 10.762,
+     "start": 10.438,
+     "text": "never"
+    },
+    {
+     "end": 11.025,
+     "start": 10.762,
+     "text": "sent"
+    },
+    {
+     "end": 11.975,
+     "start": 11.025,
+     "text": "again"
+    },
+    {
+     "end": 12.2,
+     "start": 11.975,
+     "text": "."
+    },
+    {
+     "end": 12.55,
+     "start": 12.375,
+     "text": "If"
+    },
+    {
+     "end": 12.688,
+     "start": 12.55,
+     "text": "the"
+    },
+    {
+     "end": 13.05,
+     "start": 12.688,
+     "text": "chain"
+    },
+    {
+     "end": 13.55,
+     "start": 13.05,
+     "text": "includes"
+    },
+    {
+     "end": 13.675,
+     "start": 13.55,
+     "text": "it"
+    },
+    {
+     "end": 14.125,
+     "start": 13.675,
+     "text": "again"
+    },
+    {
+     "end": 14.2,
+     "start": 14.125,
+     "text": ","
+    },
+    {
+     "end": 14.3,
+     "start": 14.2,
+     "text": "the"
+    },
+    {
+     "end": 14.6,
+     "start": 14.3,
+     "text": "next"
+    },
+    {
+     "end": 15.038,
+     "start": 14.6,
+     "text": "command"
+    },
+    {
+     "end": 15.475,
+     "start": 15.038,
+     "text": "journals"
+    },
+    {
+     "end": 15.625,
+     "start": 15.475,
+     "text": "it"
+    },
+    {
+     "end": 16.362,
+     "start": 15.625,
+     "text": "confirmed"
+    },
+    {
+     "end": 16.5,
+     "start": 16.362,
+     "text": "and"
+    },
+    {
+     "end": 17.175,
+     "start": 16.5,
+     "text": "reconciles"
+    },
+    {
+     "end": 17.35,
+     "start": 17.175,
+     "text": "its"
+    },
+    {
+     "end": 18.75,
+     "start": 17.35,
+     "text": "observation"
+    },
+    {
+     "end": 18.95,
+     "start": 18.75,
+     "text": ";"
+    },
+    {
+     "end": 19.5,
+     "start": 19.125,
+     "text": "otherwise"
+    },
+    {
+     "end": 19.737,
+     "start": 19.5,
+     "text": "writes"
+    },
+    {
+     "end": 20.038,
+     "start": 19.737,
+     "text": "stop"
+    },
+    {
+     "end": 20.225,
+     "start": 20.038,
+     "text": "on"
+    },
+    {
+     "end": 20.375,
+     "start": 20.225,
+     "text": "it"
+    },
+    {
+     "end": 20.45,
+     "start": 20.375,
+     "text": ","
+    },
+    {
+     "end": 20.763,
+     "start": 20.45,
+     "text": "naming"
+    },
+    {
+     "end": 20.85,
+     "start": 20.763,
+     "text": "the"
+    },
+    {
+     "end": 21.15,
+     "start": 20.85,
+     "text": "case"
+    },
+    {
+     "end": 22.15,
+     "start": 21.15,
+     "text": "rolled-back"
+    },
+    {
+     "end": 22.375,
+     "start": 22.15,
      "text": "."
     }
    ]
@@ -39146,17 +38136,17 @@
    ]
   },
   "docs-cli-recovery/when-the-next-command-stops-04": {
-   "audio_sha256": "e8e5122d94e7401121b3a9ec6bc118a590752f1765dbf57ddc304cc459b2ccd2",
-   "characters": 214,
-   "cost": 0.00013268,
-   "duration": 14.375,
+   "audio_sha256": "c1a3a021bfbf1bd1173ff0f82d332c6161f6154a9839994e88a7db6dd9eff524",
+   "characters": 224,
+   "cost": 0.00013888,
+   "duration": 16.175,
    "index": 4,
-   "key": "56151ce22b239ff6ab4267b440d0e0b86e00219b39ee93286d4bbfb62a3e90f0",
+   "key": "2492a1b6c75025e8557e610cc7508da9b37619b7b63c18241bedc2d2128e1cf1",
    "page": "docs/cli-recovery.md",
    "pause_ms": 300,
    "section": "when-the-next-command-stops",
-   "sent_text": "included: the transaction is on chain, but its journalled edge does not take the mirror to the ledger's root. The outcome is stale-state (status 14): the local files no longer follow the chain and are not repaired.",
-   "text": "included: the transaction is on chain, but its journalled edge does not take the mirror to the ledger's root. The outcome is stale-state (status 14): the local files no longer follow the chain and are not repaired.",
+   "sent_text": "included: the transaction is on chain, but public history is incomplete or its reconstructed root does not chain. The named trie refusal preserves its existing outcome and exit status; the journal cannot repair public facts.",
+   "text": "included: the transaction is on chain, but public history is incomplete or its reconstructed root does not chain. The named trie refusal preserves its existing outcome and exit status; the journal cannot repair public facts.",
    "words": [
     {
      "end": 1.05,
@@ -39174,203 +38164,188 @@
      "text": "the"
     },
     {
-     "end": 2.325,
+     "end": 2.25,
      "start": 1.55,
      "text": "transaction"
     },
     {
-     "end": 2.475,
-     "start": 2.325,
+     "end": 2.375,
+     "start": 2.25,
      "text": "is"
     },
     {
-     "end": 2.713,
-     "start": 2.475,
+     "end": 2.612,
+     "start": 2.375,
      "text": "on"
     },
     {
-     "end": 3.225,
-     "start": 2.713,
+     "end": 3.05,
+     "start": 2.612,
      "text": "chain"
     },
     {
-     "end": 3.3,
-     "start": 3.225,
+     "end": 3.1,
+     "start": 3.05,
      "text": ","
     },
     {
-     "end": 3.438,
-     "start": 3.3,
+     "end": 3.263,
+     "start": 3.1,
      "text": "but"
     },
     {
-     "end": 3.638,
-     "start": 3.438,
-     "text": "its"
+     "end": 3.675,
+     "start": 3.263,
+     "text": "public"
     },
     {
-     "end": 4.088,
-     "start": 3.638,
-     "text": "journalled"
+     "end": 4.175,
+     "start": 3.675,
+     "text": "history"
     },
     {
-     "end": 4.45,
-     "start": 4.088,
-     "text": "edge"
-    },
-    {
-     "end": 4.65,
-     "start": 4.45,
-     "text": "does"
-    },
-    {
-     "end": 4.875,
-     "start": 4.65,
-     "text": "not"
-    },
-    {
-     "end": 5.125,
-     "start": 4.875,
-     "text": "take"
-    },
-    {
-     "end": 5.25,
-     "start": 5.125,
-     "text": "the"
-    },
-    {
-     "end": 5.6,
-     "start": 5.25,
-     "text": "mirror"
-    },
-    {
-     "end": 5.7,
-     "start": 5.6,
-     "text": "to"
-    },
-    {
-     "end": 5.825,
-     "start": 5.7,
-     "text": "the"
-    },
-    {
-     "end": 6.2,
-     "start": 5.825,
-     "text": "ledger's"
-    },
-    {
-     "end": 7.05,
-     "start": 6.2,
-     "text": "root"
-    },
-    {
-     "end": 7.275,
-     "start": 7.05,
-     "text": "."
-    },
-    {
-     "end": 7.613,
-     "start": 7.475,
-     "text": "The"
-    },
-    {
-     "end": 8.1,
-     "start": 7.613,
-     "text": "outcome"
-    },
-    {
-     "end": 8.225,
-     "start": 8.1,
+     "end": 4.325,
+     "start": 4.175,
      "text": "is"
     },
     {
-     "end": 8.925,
-     "start": 8.225,
-     "text": "stale-state"
+     "end": 5.175,
+     "start": 4.325,
+     "text": "incomplete"
     },
     {
-     "end": 9.0,
-     "start": 8.925,
-     "text": "("
+     "end": 5.425,
+     "start": 5.175,
+     "text": "or"
     },
     {
-     "end": 9.425,
-     "start": 9.0,
-     "text": "status"
+     "end": 5.625,
+     "start": 5.425,
+     "text": "its"
     },
     {
-     "end": 10.175,
-     "start": 9.425,
-     "text": "14"
+     "end": 6.438,
+     "start": 5.625,
+     "text": "reconstructed"
     },
     {
-     "end": 10.275,
-     "start": 10.175,
-     "text": ":"
+     "end": 6.75,
+     "start": 6.438,
+     "text": "root"
     },
     {
-     "end": 10.375,
-     "start": 10.275,
-     "text": "the"
+     "end": 6.95,
+     "start": 6.75,
+     "text": "does"
     },
     {
-     "end": 10.712,
-     "start": 10.375,
-     "text": "local"
-    },
-    {
-     "end": 11.113,
-     "start": 10.712,
-     "text": "files"
-    },
-    {
-     "end": 11.3,
-     "start": 11.113,
-     "text": "no"
-    },
-    {
-     "end": 11.663,
-     "start": 11.3,
-     "text": "longer"
-    },
-    {
-     "end": 12.0,
-     "start": 11.663,
-     "text": "follow"
-    },
-    {
-     "end": 12.137,
-     "start": 12.0,
-     "text": "the"
-    },
-    {
-     "end": 12.587,
-     "start": 12.137,
-     "text": "chain"
-    },
-    {
-     "end": 12.712,
-     "start": 12.587,
-     "text": "and"
-    },
-    {
-     "end": 12.8,
-     "start": 12.712,
-     "text": "are"
-    },
-    {
-     "end": 13.025,
-     "start": 12.8,
+     "end": 7.213,
+     "start": 6.95,
      "text": "not"
     },
     {
-     "end": 14.15,
-     "start": 13.025,
-     "text": "repaired"
+     "end": 8.25,
+     "start": 7.213,
+     "text": "chain"
     },
     {
-     "end": 14.375,
+     "end": 8.475,
+     "start": 8.25,
+     "text": "."
+    },
+    {
+     "end": 8.75,
+     "start": 8.65,
+     "text": "The"
+    },
+    {
+     "end": 9.113,
+     "start": 8.75,
+     "text": "named"
+    },
+    {
+     "end": 9.375,
+     "start": 9.113,
+     "text": "trie"
+    },
+    {
+     "end": 9.975,
+     "start": 9.375,
+     "text": "refusal"
+    },
+    {
+     "end": 10.475,
+     "start": 9.975,
+     "text": "preserves"
+    },
+    {
+     "end": 10.65,
+     "start": 10.475,
+     "text": "its"
+    },
+    {
+     "end": 11.175,
+     "start": 10.65,
+     "text": "existing"
+    },
+    {
+     "end": 11.812,
+     "start": 11.175,
+     "text": "outcome"
+    },
+    {
+     "end": 11.95,
+     "start": 11.812,
+     "text": "and"
+    },
+    {
+     "end": 12.325,
+     "start": 11.95,
+     "text": "exit"
+    },
+    {
+     "end": 13.4,
+     "start": 12.325,
+     "text": "status"
+    },
+    {
+     "end": 13.6,
+     "start": 13.4,
+     "text": ";"
+    },
+    {
+     "end": 13.85,
+     "start": 13.775,
+     "text": "the"
+    },
+    {
+     "end": 14.15,
+     "start": 13.85,
+     "text": "journal"
+    },
+    {
+     "end": 14.488,
      "start": 14.15,
+     "text": "cannot"
+    },
+    {
+     "end": 14.8,
+     "start": 14.488,
+     "text": "repair"
+    },
+    {
+     "end": 15.2,
+     "start": 14.8,
+     "text": "public"
+    },
+    {
+     "end": 16.0,
+     "start": 15.2,
+     "text": "facts"
+    },
+    {
+     "end": 16.175,
+     "start": 16.0,
      "text": "."
     }
    ]
@@ -86246,316 +85221,651 @@
    ]
   },
   "docs-consumer-onboarding/deployment-and-naming-availability-03": {
-   "audio_sha256": "ed9be9c969d11dad9ccccf002777e441228a29cf904078051252df2461c597e5",
-   "characters": 334,
-   "cost": 0.00020708,
-   "duration": 22.075,
+   "audio_sha256": "158adbec93ba9f76b2ee12c35daa971e193462e8df0fa781bee5821e0f34daca",
+   "characters": 690,
+   "cost": 0.0004278,
+   "duration": 48.675,
    "index": 3,
-   "key": "f38a865ca0ea289944549746aeb8e3dd37edf4ec40951650784246be507c41b6",
+   "key": "9450415634632b1ebe5be0f3774bf6f6a7e0c8b9e0e9c1608ee7ea7818dbc952",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "deployment-and-naming-availability",
-   "sent_text": "A deployment manifest and its mirror travel together. Writing a proof needs the trie, not only the root an API reports; a root mismatch must stop rather than build against the wrong registry. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
-   "text": "A deployment manifest and its mirror travel together. Writing a proof needs the trie, not only the root an API reports; a root mismatch must stop rather than build against the wrong registry. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+   "sent_text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+   "text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
    "words": [
     {
-     "end": 0.25,
+     "end": 0.55,
      "start": 0.2,
-     "text": "A"
+     "text": "Demo"
     },
     {
-     "end": 0.7,
-     "start": 0.25,
-     "text": "deployment"
+     "end": 0.775,
+     "start": 0.55,
+     "text": "1"
     },
     {
-     "end": 1.462,
-     "start": 0.7,
-     "text": "manifest"
+     "end": 1.013,
+     "start": 0.775,
+     "text": "has"
     },
     {
-     "end": 1.587,
-     "start": 1.462,
-     "text": "and"
+     "end": 1.237,
+     "start": 1.013,
+     "text": "two"
     },
     {
-     "end": 1.75,
-     "start": 1.587,
-     "text": "its"
+     "end": 1.775,
+     "start": 1.237,
+     "text": "users"
     },
     {
-     "end": 2.1,
-     "start": 1.75,
-     "text": "mirror"
-    },
-    {
-     "end": 2.525,
-     "start": 2.1,
-     "text": "travel"
-    },
-    {
-     "end": 3.425,
-     "start": 2.525,
-     "text": "together"
-    },
-    {
-     "end": 3.65,
-     "start": 3.425,
-     "text": "."
-    },
-    {
-     "end": 4.137,
-     "start": 3.85,
-     "text": "Writing"
-    },
-    {
-     "end": 4.2,
-     "start": 4.137,
-     "text": "a"
-    },
-    {
-     "end": 4.5,
-     "start": 4.2,
-     "text": "proof"
-    },
-    {
-     "end": 4.775,
-     "start": 4.5,
-     "text": "needs"
-    },
-    {
-     "end": 4.887,
-     "start": 4.775,
-     "text": "the"
-    },
-    {
-     "end": 5.375,
-     "start": 4.887,
-     "text": "trie"
-    },
-    {
-     "end": 5.475,
-     "start": 5.375,
+     "end": 1.862,
+     "start": 1.775,
      "text": ","
     },
     {
-     "end": 5.688,
-     "start": 5.475,
-     "text": "not"
+     "end": 2.25,
+     "start": 1.862,
+     "text": "Alice"
     },
     {
-     "end": 5.975,
-     "start": 5.688,
-     "text": "only"
+     "end": 2.375,
+     "start": 2.25,
+     "text": "and"
     },
     {
-     "end": 6.113,
-     "start": 5.975,
-     "text": "the"
+     "end": 2.85,
+     "start": 2.375,
+     "text": "Bob"
     },
     {
-     "end": 6.338,
-     "start": 6.113,
-     "text": "root"
+     "end": 2.95,
+     "start": 2.85,
+     "text": ","
     },
     {
-     "end": 6.425,
-     "start": 6.338,
-     "text": "an"
+     "end": 3.362,
+     "start": 2.95,
+     "text": "starting"
     },
     {
-     "end": 6.975,
-     "start": 6.425,
-     "text": "API"
+     "end": 3.537,
+     "start": 3.362,
+     "text": "with"
     },
     {
-     "end": 8.025,
-     "start": 6.975,
-     "text": "reports"
+     "end": 3.875,
+     "start": 3.537,
+     "text": "empty"
     },
     {
-     "end": 8.225,
-     "start": 8.025,
-     "text": ";"
+     "end": 4.3,
+     "start": 3.875,
+     "text": "homes"
     },
     {
-     "end": 8.512,
-     "start": 8.425,
-     "text": "a"
+     "end": 4.425,
+     "start": 4.3,
+     "text": "and"
     },
     {
-     "end": 8.775,
-     "start": 8.512,
-     "text": "root"
-    },
-    {
-     "end": 9.25,
-     "start": 8.775,
-     "text": "mismatch"
-    },
-    {
-     "end": 9.475,
-     "start": 9.25,
-     "text": "must"
-    },
-    {
-     "end": 9.875,
-     "start": 9.475,
-     "text": "stop"
-    },
-    {
-     "end": 10.188,
-     "start": 9.875,
-     "text": "rather"
-    },
-    {
-     "end": 10.35,
-     "start": 10.188,
-     "text": "than"
-    },
-    {
-     "end": 10.65,
-     "start": 10.35,
-     "text": "build"
-    },
-    {
-     "end": 10.988,
-     "start": 10.65,
-     "text": "against"
-    },
-    {
-     "end": 11.075,
-     "start": 10.988,
-     "text": "the"
-    },
-    {
-     "end": 11.35,
-     "start": 11.075,
-     "text": "wrong"
-    },
-    {
-     "end": 12.375,
-     "start": 11.35,
+     "end": 4.925,
+     "start": 4.425,
      "text": "registry"
     },
     {
-     "end": 12.6,
-     "start": 12.375,
+     "end": 6.2,
+     "start": 4.925,
+     "text": "directories"
+    },
+    {
+     "end": 6.4,
+     "start": 6.2,
      "text": "."
     },
     {
-     "end": 13.425,
-     "start": 12.8,
-     "text": "Historical"
+     "end": 6.925,
+     "start": 6.6,
+     "text": "Neither"
     },
     {
-     "end": 14.062,
-     "start": 13.425,
-     "text": "deployment"
+     "end": 7.312,
+     "start": 6.925,
+     "text": "creates"
     },
     {
-     "end": 14.2,
-     "start": 14.062,
-     "text": "and"
+     "end": 7.4,
+     "start": 7.312,
+     "text": "the"
     },
     {
-     "end": 14.625,
-     "start": 14.2,
-     "text": "naming"
+     "end": 8.075,
+     "start": 7.4,
+     "text": "registry"
     },
     {
-     "end": 15.238,
-     "start": 14.625,
-     "text": "receipts"
+     "end": 8.225,
+     "start": 8.075,
+     "text": "or"
     },
     {
-     "end": 15.738,
-     "start": 15.238,
-     "text": "remain"
+     "end": 8.637,
+     "start": 8.225,
+     "text": "receives"
     },
     {
-     "end": 16.25,
-     "start": 15.738,
-     "text": "evidence"
+     "end": 8.75,
+     "start": 8.637,
+     "text": "its"
     },
     {
-     "end": 16.35,
-     "start": 16.25,
-     "text": "of"
+     "end": 9.225,
+     "start": 8.75,
+     "text": "creation"
     },
     {
-     "end": 16.55,
-     "start": 16.35,
-     "text": "their"
+     "end": 10.125,
+     "start": 9.225,
+     "text": "files"
     },
     {
-     "end": 17.075,
-     "start": 16.55,
-     "text": "recorded"
+     "end": 10.325,
+     "start": 10.125,
+     "text": ";"
     },
     {
-     "end": 17.725,
-     "start": 17.075,
-     "text": "revision"
+     "end": 10.812,
+     "start": 10.525,
+     "text": "each"
     },
     {
-     "end": 17.875,
-     "start": 17.725,
-     "text": "and"
+     "end": 11.175,
+     "start": 10.812,
+     "text": "reads"
     },
     {
-     "end": 18.288,
-     "start": 17.875,
-     "text": "public"
+     "end": 11.275,
+     "start": 11.175,
+     "text": "the"
     },
     {
-     "end": 19.275,
-     "start": 18.288,
+     "end": 11.863,
+     "start": 11.275,
+     "text": "registry's"
+    },
+    {
+     "end": 12.125,
+     "start": 11.863,
+     "text": "web"
+    },
+    {
+     "end": 12.5,
+     "start": 12.125,
+     "text": "page"
+    },
+    {
+     "end": 13.075,
+     "start": 12.5,
+     "text": "generated"
+    },
+    {
+     "end": 13.212,
+     "start": 13.075,
+     "text": "from"
+    },
+    {
+     "end": 13.312,
+     "start": 13.212,
+     "text": "the"
+    },
+    {
+     "end": 13.7,
+     "start": 13.312,
      "text": "chain"
     },
     {
-     "end": 19.475,
-     "start": 19.275,
+     "end": 13.825,
+     "start": 13.7,
+     "text": "and"
+    },
+    {
+     "end": 14.85,
+     "start": 13.825,
+     "text": "Koios"
+    },
+    {
+     "end": 15.05,
+     "start": 14.85,
+     "text": "."
+    },
+    {
+     "end": 15.65,
+     "start": 15.275,
+     "text": "Joining"
+    },
+    {
+     "end": 15.85,
+     "start": 15.65,
+     "text": "by"
+    },
+    {
+     "end": 16.175,
+     "start": 15.85,
+     "text": "state"
+    },
+    {
+     "end": 16.6,
+     "start": 16.175,
+     "text": "token"
+    },
+    {
+     "end": 16.763,
+     "start": 16.6,
+     "text": "is"
+    },
+    {
+     "end": 17.25,
+     "start": 16.763,
+     "text": "pending"
+    },
+    {
+     "end": 17.525,
+     "start": 17.25,
+     "text": "under"
+    },
+    {
+     "end": 17.9,
+     "start": 17.525,
+     "text": "issue"
+    },
+    {
+     "end": 19.35,
+     "start": 17.9,
+     "text": "437"
+    },
+    {
+     "end": 19.45,
+     "start": 19.35,
      "text": ","
     },
     {
-     "end": 19.788,
-     "start": 19.65,
-     "text": "not"
+     "end": 19.688,
+     "start": 19.45,
+     "text": "which"
     },
     {
-     "end": 19.85,
-     "start": 19.788,
+     "end": 20.075,
+     "start": 19.688,
+     "text": "owns"
+    },
+    {
+     "end": 20.587,
+     "start": 20.075,
+     "text": "deriving"
+    },
+    {
+     "end": 20.712,
+     "start": 20.587,
+     "text": "the"
+    },
+    {
+     "end": 21.7,
+     "start": 20.712,
+     "text": "seed"
+    },
+    {
+     "end": 21.925,
+     "start": 21.7,
+     "text": ","
+    },
+    {
+     "end": 22.5,
+     "start": 22.125,
+     "text": "pins"
+    },
+    {
+     "end": 22.55,
+     "start": 22.5,
+     "text": ","
+    },
+    {
+     "end": 23.05,
+     "start": 22.55,
+     "text": "windows"
+    },
+    {
+     "end": 23.112,
+     "start": 23.05,
+     "text": ","
+    },
+    {
+     "end": 23.4,
+     "start": 23.112,
+     "text": "tip"
+    },
+    {
+     "end": 23.525,
+     "start": 23.4,
+     "text": "and"
+    },
+    {
+     "end": 24.0,
+     "start": 23.525,
+     "text": "reference"
+    },
+    {
+     "end": 24.475,
+     "start": 24.0,
+     "text": "outputs"
+    },
+    {
+     "end": 24.612,
+     "start": 24.475,
+     "text": "from"
+    },
+    {
+     "end": 24.7,
+     "start": 24.612,
+     "text": "the"
+    },
+    {
+     "end": 25.0,
+     "start": 24.7,
+     "text": "state"
+    },
+    {
+     "end": 25.55,
+     "start": 25.0,
+     "text": "token"
+    },
+    {
+     "end": 25.663,
+     "start": 25.55,
+     "text": ","
+    },
+    {
+     "end": 26.0,
+     "start": 25.663,
+     "text": "state"
+    },
+    {
+     "end": 26.425,
+     "start": 26.0,
+     "text": "datum"
+    },
+    {
+     "end": 26.55,
+     "start": 26.425,
+     "text": "and"
+    },
+    {
+     "end": 27.65,
+     "start": 26.55,
+     "text": "release"
+    },
+    {
+     "end": 27.85,
+     "start": 27.65,
+     "text": "."
+    },
+    {
+     "end": 28.475,
+     "start": 28.075,
+     "text": "Joining"
+    },
+    {
+     "end": 28.65,
+     "start": 28.475,
+     "text": "by"
+    },
+    {
+     "end": 28.763,
+     "start": 28.65,
      "text": "a"
     },
     {
-     "end": 20.138,
-     "start": 19.85,
+     "end": 29.237,
+     "start": 28.763,
+     "text": "copied"
+    },
+    {
+     "end": 29.812,
+     "start": 29.237,
+     "text": "identity"
+    },
+    {
+     "end": 30.237,
+     "start": 29.812,
+     "text": "file"
+    },
+    {
+     "end": 30.388,
+     "start": 30.237,
+     "text": "is"
+    },
+    {
+     "end": 31.325,
+     "start": 30.388,
+     "text": "superseded"
+    },
+    {
+     "end": 31.462,
+     "start": 31.325,
+     "text": "."
+    },
+    {
+     "end": 31.875,
+     "start": 31.462,
+     "text": "Public"
+    },
+    {
+     "end": 32.325,
+     "start": 31.875,
+     "text": "replay"
+    },
+    {
+     "end": 33.025,
+     "start": 32.325,
+     "text": "reconstructs"
+    },
+    {
+     "end": 33.125,
+     "start": 33.025,
+     "text": "the"
+    },
+    {
+     "end": 34.075,
+     "start": 33.125,
+     "text": "trie"
+    },
+    {
+     "end": 34.3,
+     "start": 34.075,
+     "text": ";"
+    },
+    {
+     "end": 34.8,
+     "start": 34.5,
+     "text": "missing"
+    },
+    {
+     "end": 35.338,
+     "start": 34.8,
+     "text": "history"
+    },
+    {
+     "end": 35.475,
+     "start": 35.338,
+     "text": "or"
+    },
+    {
+     "end": 35.588,
+     "start": 35.475,
+     "text": "a"
+    },
+    {
+     "end": 35.95,
+     "start": 35.588,
+     "text": "root"
+    },
+    {
+     "end": 36.088,
+     "start": 35.95,
+     "text": "that"
+    },
+    {
+     "end": 36.275,
+     "start": 36.088,
+     "text": "does"
+    },
+    {
+     "end": 36.537,
+     "start": 36.275,
+     "text": "not"
+    },
+    {
+     "end": 36.875,
+     "start": 36.537,
+     "text": "chain"
+    },
+    {
+     "end": 37.375,
+     "start": 36.875,
+     "text": "remains"
+    },
+    {
+     "end": 37.487,
+     "start": 37.375,
+     "text": "a"
+    },
+    {
+     "end": 37.875,
+     "start": 37.487,
+     "text": "named"
+    },
+    {
+     "end": 39.0,
+     "start": 37.875,
+     "text": "refusal"
+    },
+    {
+     "end": 39.2,
+     "start": 39.0,
+     "text": "."
+    },
+    {
+     "end": 40.025,
+     "start": 39.4,
+     "text": "Historical"
+    },
+    {
+     "end": 40.662,
+     "start": 40.025,
+     "text": "deployment"
+    },
+    {
+     "end": 40.8,
+     "start": 40.662,
+     "text": "and"
+    },
+    {
+     "end": 41.225,
+     "start": 40.8,
+     "text": "naming"
+    },
+    {
+     "end": 41.838,
+     "start": 41.225,
+     "text": "receipts"
+    },
+    {
+     "end": 42.338,
+     "start": 41.838,
+     "text": "remain"
+    },
+    {
+     "end": 42.85,
+     "start": 42.338,
+     "text": "evidence"
+    },
+    {
+     "end": 42.95,
+     "start": 42.85,
+     "text": "of"
+    },
+    {
+     "end": 43.15,
+     "start": 42.95,
+     "text": "their"
+    },
+    {
+     "end": 43.675,
+     "start": 43.15,
+     "text": "recorded"
+    },
+    {
+     "end": 44.325,
+     "start": 43.675,
+     "text": "revision"
+    },
+    {
+     "end": 44.475,
+     "start": 44.325,
+     "text": "and"
+    },
+    {
+     "end": 44.888,
+     "start": 44.475,
+     "text": "public"
+    },
+    {
+     "end": 45.875,
+     "start": 44.888,
+     "text": "chain"
+    },
+    {
+     "end": 46.075,
+     "start": 45.875,
+     "text": ","
+    },
+    {
+     "end": 46.388,
+     "start": 46.25,
+     "text": "not"
+    },
+    {
+     "end": 46.45,
+     "start": 46.388,
+     "text": "a"
+    },
+    {
+     "end": 46.737,
+     "start": 46.45,
      "text": "pass"
     },
     {
-     "end": 20.237,
-     "start": 20.138,
+     "end": 46.838,
+     "start": 46.737,
      "text": "for"
     },
     {
-     "end": 20.425,
-     "start": 20.237,
+     "end": 47.025,
+     "start": 46.838,
      "text": "this"
     },
     {
-     "end": 20.9,
-     "start": 20.425,
+     "end": 47.5,
+     "start": 47.025,
      "text": "provider"
     },
     {
-     "end": 21.875,
-     "start": 20.9,
+     "end": 48.475,
+     "start": 47.5,
      "text": "candidate"
     },
     {
-     "end": 22.075,
-     "start": 21.875,
+     "end": 48.675,
+     "start": 48.475,
      "text": "."
     }
    ]
@@ -140186,9 +139496,9 @@
    ]
   },
   "docs-offchain-api-reference/off-chain-api-reference-01": {
-   "audio_sha256": "c6019a5ceccfa8319d1c14e48d511b00210212b04323af4640e4a30506edbc01",
+   "audio_sha256": "bfda96ea07a513e4ef93da0059875a3c69f70eac6c3bff3197e7dba6b4da3859",
    "characters": 828,
-   "cost": 0.00051336,
+   "cost": 0.0008197199999999999,
    "duration": 53.825,
    "index": 1,
    "key": "ff0e3c41864b92af274908d19b6d7ff0af80bdd6885fe217a9ccc5a4c9808767",
@@ -164061,11 +163371,331 @@
    ]
   },
   "docs-offchain-deployment-owners/who-owns-a-deployment-record-01": {
-   "audio_sha256": "e980576d959b271ac948efc950773be6029ca2334ab6f41426e388481e546d5e",
+   "audio_sha256": "d343351594098ce6c9dae87ead62860766ba029d7d7287321904e7c763ee136f",
+   "characters": 367,
+   "cost": 0.00022754,
+   "duration": 28.025,
+   "index": 1,
+   "key": "f1f6571aad0dff68f31f7784c3376563abf06c5aa4baa8e6850f155c3c2f053b",
+   "page": "docs/offchain-deployment-owners.md",
+   "pause_ms": 400,
+   "section": "who-owns-a-deployment-record",
+   "sent_text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+   "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.25,
+     "text": "deployment"
+    },
+    {
+     "end": 1.038,
+     "start": 0.7,
+     "text": "mirror"
+    },
+    {
+     "end": 1.837,
+     "start": 1.038,
+     "text": "API"
+    },
+    {
+     "end": 2.35,
+     "start": 1.837,
+     "text": "remains"
+    },
+    {
+     "end": 2.475,
+     "start": 2.35,
+     "text": "for"
+    },
+    {
+     "end": 2.912,
+     "start": 2.475,
+     "text": "retained"
+    },
+    {
+     "end": 3.35,
+     "start": 2.912,
+     "text": "deployment"
+    },
+    {
+     "end": 4.325,
+     "start": 3.35,
+     "text": "journeys"
+    },
+    {
+     "end": 4.525,
+     "start": 4.325,
+     "text": "."
+    },
+    {
+     "end": 5.4,
+     "start": 4.8,
+     "text": "Ordinary"
+    },
+    {
+     "end": 5.95,
+     "start": 5.4,
+     "text": "singular"
+    },
+    {
+     "end": 6.537,
+     "start": 5.95,
+     "text": "registry"
+    },
+    {
+     "end": 7.075,
+     "start": 6.537,
+     "text": "commands"
+    },
+    {
+     "end": 7.338,
+     "start": 7.075,
+     "text": "under"
+    },
+    {
+     "end": 8.738,
+     "start": 7.338,
+     "text": "381"
+    },
+    {
+     "end": 9.488,
+     "start": 8.738,
+     "text": "reconstruct"
+    },
+    {
+     "end": 9.837,
+     "start": 9.488,
+     "text": "proof"
+    },
+    {
+     "end": 10.2,
+     "start": 9.837,
+     "text": "state"
+    },
+    {
+     "end": 10.413,
+     "start": 10.2,
+     "text": "from"
+    },
+    {
+     "end": 10.825,
+     "start": 10.413,
+     "text": "public"
+    },
+    {
+     "end": 11.475,
+     "start": 10.825,
+     "text": "state-token"
+    },
+    {
+     "end": 12.2,
+     "start": 11.475,
+     "text": "history"
+    },
+    {
+     "end": 12.337,
+     "start": 12.2,
+     "text": "and"
+    },
+    {
+     "end": 12.45,
+     "start": 12.337,
+     "text": "do"
+    },
+    {
+     "end": 12.712,
+     "start": 12.45,
+     "text": "not"
+    },
+    {
+     "end": 13.113,
+     "start": 12.712,
+     "text": "read"
+    },
+    {
+     "end": 13.288,
+     "start": 13.113,
+     "text": "or"
+    },
+    {
+     "end": 13.6,
+     "start": 13.288,
+     "text": "write"
+    },
+    {
+     "end": 13.837,
+     "start": 13.6,
+     "text": "that"
+    },
+    {
+     "end": 14.363,
+     "start": 13.837,
+     "text": "mirror"
+    },
+    {
+     "end": 14.525,
+     "start": 14.363,
+     "text": "or"
+    },
+    {
+     "end": 14.637,
+     "start": 14.525,
+     "text": "a"
+    },
+    {
+     "end": 15.188,
+     "start": 14.637,
+     "text": "saved-root"
+    },
+    {
+     "end": 16.325,
+     "start": 15.188,
+     "text": "file"
+    },
+    {
+     "end": 16.55,
+     "start": 16.325,
+     "text": "."
+    },
+    {
+     "end": 17.163,
+     "start": 16.775,
+     "text": "Demo"
+    },
+    {
+     "end": 17.5,
+     "start": 17.163,
+     "text": "1"
+    },
+    {
+     "end": 17.888,
+     "start": 17.5,
+     "text": "starts"
+    },
+    {
+     "end": 18.15,
+     "start": 17.888,
+     "text": "two"
+    },
+    {
+     "end": 18.8,
+     "start": 18.15,
+     "text": "independent"
+    },
+    {
+     "end": 19.237,
+     "start": 18.8,
+     "text": "users"
+    },
+    {
+     "end": 19.825,
+     "start": 19.237,
+     "text": "empty"
+    },
+    {
+     "end": 19.962,
+     "start": 19.825,
+     "text": ";"
+    },
+    {
+     "end": 20.425,
+     "start": 19.962,
+     "text": "joining"
+    },
+    {
+     "end": 20.625,
+     "start": 20.425,
+     "text": "by"
+    },
+    {
+     "end": 20.962,
+     "start": 20.625,
+     "text": "state"
+    },
+    {
+     "end": 21.4,
+     "start": 20.962,
+     "text": "token"
+    },
+    {
+     "end": 21.562,
+     "start": 21.4,
+     "text": "is"
+    },
+    {
+     "end": 22.025,
+     "start": 21.562,
+     "text": "pending"
+    },
+    {
+     "end": 22.263,
+     "start": 22.025,
+     "text": "under"
+    },
+    {
+     "end": 24.275,
+     "start": 22.263,
+     "text": "437"
+    },
+    {
+     "end": 24.55,
+     "start": 24.275,
+     "text": "."
+    },
+    {
+     "end": 25.188,
+     "start": 24.75,
+     "text": "Importing"
+    },
+    {
+     "end": 25.25,
+     "start": 25.188,
+     "text": "a"
+    },
+    {
+     "end": 25.65,
+     "start": 25.25,
+     "text": "creator"
+    },
+    {
+     "end": 26.138,
+     "start": 25.65,
+     "text": "identity"
+    },
+    {
+     "end": 26.5,
+     "start": 26.138,
+     "text": "file"
+    },
+    {
+     "end": 26.625,
+     "start": 26.5,
+     "text": "is"
+    },
+    {
+     "end": 27.825,
+     "start": 26.625,
+     "text": "superseded"
+    },
+    {
+     "end": 28.025,
+     "start": 27.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-deployment-owners/who-owns-a-deployment-record-02": {
+   "audio_sha256": "e240ed083b30d15c748696f81c3a16df7e52815ecb786a146b295107e4f694f0",
    "characters": 703,
    "cost": 0.00043586,
    "duration": 47.275,
-   "index": 1,
+   "index": 2,
    "key": "1b591bfbac48e708c50903d2a8ee2064fc1599cac864d1e473516c4411bf92c0",
    "page": "docs/offchain-deployment-owners.md",
    "pause_ms": 400,
@@ -254976,9 +254606,9 @@
    ]
   },
   "docs-singular-node/booking-and-folding-01": {
-   "audio_sha256": "28facd1ba9dc7894ae41b0a375fdee70ef41fa826010f4ce6f7407f783705830",
+   "audio_sha256": "4cf0e15c574c747ce95f153b79e170afe7c75a5f3e86d23344e822275013326c",
    "characters": 386,
-   "cost": 0.00023932,
+   "cost": 0.00038214,
    "duration": 24.35,
    "index": 1,
    "key": "e245b8695ffb0932babed5aac88a78be7627547833b7d38cd9c3c2edcc699f88",
@@ -255781,9 +255411,9 @@
    ]
   },
   "docs-singular-node/booking-and-folding-03": {
-   "audio_sha256": "990c1fabf54cd435a30e183c17af9f098e2c1a111f136da472adc01694ab6dfc",
+   "audio_sha256": "cf86b2348e74399819ad16cc2f71f6a7a4e8c6b5387ed3aba34a34219ac31c05",
    "characters": 210,
-   "cost": 0.0001302,
+   "cost": 0.00020789999999999998,
    "duration": 13.95,
    "index": 3,
    "key": "208e8575112095dec0c52e13380cb7b5db19936a8bd5c3e1ce18bbc99cc5c4c4",
@@ -262386,9 +262016,9 @@
    ]
   },
   "docs-singular-node/harness-appendix-test-hooks-01": {
-   "audio_sha256": "c2f453c17e54a951820906b3db311c6e99f1006f87a650115f4dc5d96be68eae",
+   "audio_sha256": "b1ba9f578639e202a1203f694d71f2d0cb9d653920f66e91b5d8e685ac0d3e5c",
    "characters": 598,
-   "cost": 0.00037076000000000003,
+   "cost": 0.00059202,
    "duration": 39.725,
    "index": 1,
    "key": "fd091351f25fbb334e7bd7a0662e118caff4aebf1aa5a12f4d901fb7d6e83c85",
@@ -267101,9 +266731,9 @@
    ]
   },
   "docs-singular-node/reclaiming-your-pending-request-03": {
-   "audio_sha256": "f60db4ff36db8f79e6fdd9e5f09c2ec6bf069e077cf6edcab5a1ab7db54d3c58",
+   "audio_sha256": "3208fdbe84255ce1ab6622dfa101701313b68d4996ca7db76a02b266585e167b",
    "characters": 847,
-   "cost": 0.00052514,
+   "cost": 0.00083853,
    "duration": 55.95,
    "index": 3,
    "key": "d257fb2721dd963172fac9d326de6a7ad330fd9a2e120cb703b90731c4be523f",
@@ -267906,9 +267536,9 @@
    ]
   },
   "docs-singular-node/rejecting-expired-requests-01": {
-   "audio_sha256": "df52f4246c442b14609c7820bb269443aac2bfa25be9c3b41198bcdb34d8493d",
+   "audio_sha256": "58deb9a676fbbbb99864d87a778f2e0033fc3c6dabf3e0fe4c4130861e0a44c0",
    "characters": 470,
-   "cost": 0.00029140000000000004,
+   "cost": 0.0004652999999999999,
    "duration": 30.85,
    "index": 1,
    "key": "6e8bc296d74dc33f314fe77cdce49eab630b6667b9db4e142c3ae0d7458f67e7",
