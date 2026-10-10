@@ -894,6 +894,7 @@ def test_trim_derived_from_reads(mod, tmp):
     wlegs, _ = _wrong_valid_base(tmp)
     glegs, _ = _refusal_valid_base(tmp)
     flegs, _ = _foldroots_valid_base(tmp)
+    hist_wlegs, hist_alegs, _ = _history_valid_bases(tmp)
     real_load = journey.load_receipt
 
     def spy_load(name, receipts=None):
@@ -910,6 +911,8 @@ def test_trim_derived_from_reads(mod, tmp):
         ("owner", journey.owner_reclaim_agreement(olegs, receipts)),
         ("refusal", journey.refusal_agreement(glegs, receipts)),
         ("foldroots", journey.fold_roots_agreement(flegs, receipts)),
+        ("withheld", journey.withheld_fold_agreement(hist_wlegs, receipts)),
+        ("altered", journey.altered_edge_agreement(hist_alegs, receipts)),
     ]
     for name, (passed, _, _) in checks:
         check(f"derived-valid-{name}-passes", passed, f"the {name} base did not pass")
@@ -1443,6 +1446,203 @@ def test_setup_names_devnet_cause(mod, tmp):
                 )
 
 
+def _history_valid_bases(tmp):
+    policy = "aa" * 28
+    name = "bb" * 16
+    token = f"{policy}.{name}"
+    root = "cc" * 32
+    fold_tx = "dd" * 32
+    create = {"command": "create", "outcome": "success", "stateToken": token}
+    positive = {
+        "command": "inspect",
+        "outcome": "success",
+        "root": root,
+        "leaf": "active",
+        "pendingRequests": [],
+    }
+    fold = {
+        "command": "fold",
+        "outcome": "success",
+        "request": "histreq#0",
+        "edge": "insertActive",
+        "folder": "ff",
+        "root": root,
+        "fold": fold_tx,
+    }
+    withheld_refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState HistoryIncomplete",
+        "trieRefusal": {
+            "registry": {"policy": policy, "name": name},
+            "cause": "missing-transaction",
+        },
+    }
+    altered_refusal = {
+        "command": "inspect",
+        "outcome": "stale-state",
+        "reason": "TrieState RootDoesNotChain",
+        "trieRefusal": {
+            "registry": {"policy": policy, "name": name},
+            "transaction": fold_tx,
+            "cause": "roots-part",
+            "rebuiltRoot": "ee" * 32,
+            "recordedRoot": root,
+        },
+    }
+    _write_receipt(tmp, "history-create", create)
+    _write_receipt(tmp, "history-positive", positive)
+    _write_receipt(tmp, "history-fold", fold)
+    _write_receipt(tmp, "history-withheld", withheld_refusal, exit_code=14)
+    _write_receipt(tmp, "history-altered", altered_refusal, exit_code=14)
+    wlegs = {
+        "withheld": {
+            "create": "history-create",
+            "positive_inspect": "history-positive",
+            "withheld_inspect": "history-withheld",
+        },
+        "alice": {"fold": "history-fold"},
+    }
+    alegs = {
+        "altered": {
+            "create": "history-create",
+            "positive_inspect": "history-positive",
+            "altered_inspect": "history-altered",
+        },
+        "alice": {"fold": "history-fold"},
+    }
+    return wlegs, alegs, Path(tmp)
+
+
+def test_history_refusals_bind_identity(mod, tmp):
+    import json as _json
+
+    journey = bare(mod, tmp)
+    wlegs, alegs, receipts = _history_valid_bases(tmp)
+    passed_w, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    check(
+        "history-valid-withheld-passes",
+        passed_w,
+        "the valid withheld base did not pass",
+    )
+    passed_a, _, _ = journey.altered_edge_agreement(alegs, receipts)
+    check(
+        "history-valid-altered-passes",
+        passed_a,
+        "the valid altered base did not pass",
+    )
+    raw = Path(tmp, "history-withheld.json").read_text()
+    doc = _json.loads(raw)
+    doc["trieRefusal"]["registry"] = {"policy": "00" * 28, "name": "11" * 16}
+    Path(tmp, "history-withheld.json").write_text(_json.dumps(doc) + "\n")
+    passed_other, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    check(
+        "history-other-registry-does-not-pass",
+        not passed_other,
+        "a refusal naming another registry still passed",
+    )
+    Path(tmp, "history-withheld.json").write_text(raw)
+    raw_a = Path(tmp, "history-altered.json").read_text()
+    doc_a = _json.loads(raw_a)
+    doc_a["trieRefusal"]["transaction"] = "00" * 32
+    Path(tmp, "history-altered.json").write_text(_json.dumps(doc_a) + "\n")
+    passed_tx, _, _ = journey.altered_edge_agreement(alegs, receipts)
+    check(
+        "history-other-transaction-does-not-pass",
+        not passed_tx,
+        "a refusal naming another transaction still passed",
+    )
+    Path(tmp, "history-altered.json").write_text(raw_a)
+    doc_bare = _json.loads(raw)
+    del doc_bare["trieRefusal"]
+    Path(tmp, "history-withheld.json").write_text(_json.dumps(doc_bare) + "\n")
+    passed_noref, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    check(
+        "history-missing-trierefusal-does-not-pass",
+        not passed_noref,
+        "a refusal with no trieRefusal still passed",
+    )
+    Path(tmp, "history-withheld.json").write_text(raw)
+
+
+def test_history_reads_covered_and_load_bearing(mod, tmp):
+    import json as _json
+
+    kept = set(getattr(mod, "RECORD_KEPT_FIELDS", ()))
+    check(
+        "history-kept-has-trierefusal",
+        "trieRefusal" in kept,
+        "kept fields omit trieRefusal",
+    )
+    journey = bare(mod, tmp)
+    wlegs, alegs, receipts = _history_valid_bases(tmp)
+    log = []
+    real_load = journey.load_receipt
+
+    def spy_load(name, receipts=None):
+        doc = real_load(name, receipts)
+        if doc is None:
+            return None
+        return _SpyDict(doc, log, (name,))
+
+    journey.load_receipt = spy_load
+    passed_w, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    passed_a, _, _ = journey.altered_edge_agreement(alegs, receipts)
+    check(
+        "history-covered-withheld-passes",
+        passed_w,
+        "the covered withheld base did not pass",
+    )
+    check(
+        "history-covered-altered-passes",
+        passed_a,
+        "the covered altered base did not pass",
+    )
+    roots = {path[1] for path in log if len(path) == 2}
+    check(
+        "history-contract-reads-trierefusal",
+        "trieRefusal" in roots,
+        "the history agreements never read trieRefusal, coverage is vacuous",
+    )
+    missing = {key for key in roots if key not in kept}
+    check(
+        "history-reads-stay-kept",
+        not missing,
+        f"history reads escape the kept set: {sorted(missing)}" if missing else "",
+    )
+    journey.load_receipt = real_load
+    threshold = getattr(mod, "TRIM_THRESHOLD_BYTES", 262144)
+    raw = Path(tmp, "history-withheld.json").read_text()
+    doc = _json.loads(raw)
+    doc["sessionEvidence"] = "x" * (threshold + 1)
+    trimmed = mod.trim_record("inspect", 14, _json.dumps(doc))
+    Path(tmp, "history-withheld.json").write_text(trimmed)
+    error = mod.check_record("history-withheld.json", trimmed.encode())
+    check("history-trimmed-is-record", error is None, error or "")
+    kept_doc = _json.loads(trimmed)
+    check(
+        "history-trim-keeps-trierefusal",
+        kept_doc.get("trieRefusal", {}).get("registry", {}).get("policy") == "aa" * 28,
+        "the trim dropped the refused registry",
+    )
+    passed_trimmed, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    check(
+        "history-passes-trimmed",
+        passed_trimmed,
+        "the withheld row did not pass on its trimmed record",
+    )
+    doc_dropped = _json.loads(raw)
+    del doc_dropped["trieRefusal"]
+    Path(tmp, "history-withheld.json").write_text(_json.dumps(doc_dropped) + "\n")
+    passed_dropped, _, _ = journey.withheld_fold_agreement(wlegs, receipts)
+    check(
+        "history-dropped-trierefusal-does-not-pass",
+        not passed_dropped,
+        "a trimmed-shaped refusal without trieRefusal still passed",
+    )
+    Path(tmp, "history-withheld.json").write_text(raw)
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -1474,6 +1674,8 @@ def main():
         test_oversize_untrimmed_is_detected,
         test_long_root_uses_short_runtime,
         test_setup_names_devnet_cause,
+        test_history_refusals_bind_identity,
+        test_history_reads_covered_and_load_bearing,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
         test_teardown_failure_after_success_is_setup,
