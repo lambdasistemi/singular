@@ -567,6 +567,7 @@ RECORD_KEPT_FIELDS = (
     "requester",
     "edge",
     "folder",
+    "fold",
     "stateToken",
     "reject",
     "rejected",
@@ -585,6 +586,7 @@ RECORD_KEPT_FIELDS = (
     "wallet",
     "topUp",
     "stateMaxFee",
+    "trieRefusal",
 )
 
 
@@ -2273,24 +2275,76 @@ class Journey:
                 return False, found, "both actors' root readback"
         return True, found, ""
 
+    def _refusal_registry_bound(self, refused, create):
+        """Bind a history refusal to the journey-created registry.
+
+        The refusal's `trieRefusal.registry` must equal the registry the
+        journey created, read from the creator's receipt (never from the
+        refused receipt). Returns (True, "") or (None, waiting)."""
+        token = create.get("stateToken")
+        if not isinstance(token, str) or "." not in token:
+            return None, "the creator state token"
+        policy, _, name = token.partition(".")
+        if not policy or not name:
+            return None, "the creator state token"
+        refusal = refused.get("trieRefusal")
+        if not isinstance(refusal, dict):
+            return None, "the refusal trieRefusal"
+        registry = refusal.get("registry")
+        if not isinstance(registry, dict):
+            return None, "the refusal registry"
+        if registry.get("policy") != policy or registry.get("name") != name:
+            return None, "the refused registry"
+        return True, ""
+
+    def _journey_fold_txs(self, legs, receipts=None):
+        """Every fold transaction the journey holds, from its fold receipts."""
+        names = []
+        for actor in ("alice", "bob"):
+            slot = legs.get(actor, {}).get("fold")
+            if slot:
+                names.append(slot)
+        for direction in ("terminate-bob-by-alice", "terminate-alice-by-bob"):
+            slot = legs.get(direction, {}).get("fold")
+            if slot:
+                names.append(slot)
+        cross = legs.get("cross-insert", {})
+        for direction in ("alice-books", "bob-books"):
+            slot = cross.get(direction, {}).get("fold")
+            if slot:
+                names.append(slot)
+        txs = set()
+        for name in names:
+            doc = self.load_receipt(name, receipts)
+            if isinstance(doc, dict) and isinstance(doc.get("fold"), str):
+                txs.add(doc["fold"])
+        return txs
+
     def withheld_fold_agreement(self, legs, receipts=None):
         """Recompute the withheld-history row from its receipts.
 
         A forwarding provider answers an empty list for the state token's
         transactions; the actor's real `inspect` through it refuses
         `HistoryIncomplete` with no root, after a positive `inspect` on the
-        unforwarded provider returned a root. No leg produces their receipts
-        yet, so this row is pending for lack of receipts.
+        unforwarded provider returned a root. The refusal is bound to the
+        journey-created registry read from the creator's receipt. No leg
+        produces their receipts yet, so this row is pending for lack of
+        receipts. The leg, when built, records `create` (the creator's
+        create receipt), `positive_inspect` and `withheld_inspect`.
         """
         leg = legs.get("withheld", {})
         docs = {
             slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
-            for slot in ("positive_inspect", "withheld_inspect")
+            for slot in ("create", "positive_inspect", "withheld_inspect")
         }
         missing = [slot for slot, doc in docs.items() if doc is None]
         if missing:
             return False, [], f"the withheld history's {', '.join(missing)} receipt"
-        positive, withheld = docs["positive_inspect"], docs["withheld_inspect"]
+        create, positive, withheld = (
+            docs["create"],
+            docs["positive_inspect"],
+            docs["withheld_inspect"],
+        )
         if positive.get("outcome") != "success":
             return False, list(leg.values()), "the positive inspect"
         if not positive.get("root"):
@@ -2303,6 +2357,9 @@ class Journey:
             return False, list(leg.values()), "the withheld refusal name"
         if withheld.get("root"):
             return False, list(leg.values()), "no withheld root"
+        bound, waiting = self._refusal_registry_bound(withheld, create)
+        if bound is None:
+            return False, list(leg.values()), waiting
         return True, list(leg.values()), ""
 
     def altered_edge_agreement(self, legs, receipts=None):
@@ -2311,18 +2368,26 @@ class Journey:
         The control runs a real actor `inspect` against the real devnet and
         provider with a binary built only for this control, whose replay maps
         one edge to another, and requires `RootDoesNotChain` naming the
-        registry and the fold, with no root. No leg produces their receipts
-        yet, so this row is pending for lack of receipts.
+        registry and the fold, with no root. The refusal is bound to the
+        journey-created registry read from the creator's receipt, and its
+        transaction must be a fold transaction the journey holds. No leg
+        produces their receipts yet, so this row is pending for lack of
+        receipts. The leg, when built, records `create` (the creator's
+        create receipt), `positive_inspect` and `altered_inspect`.
         """
         leg = legs.get("altered", {})
         docs = {
             slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
-            for slot in ("positive_inspect", "altered_inspect")
+            for slot in ("create", "positive_inspect", "altered_inspect")
         }
         missing = [slot for slot, doc in docs.items() if doc is None]
         if missing:
             return False, [], f"the altered edge's {', '.join(missing)} receipt"
-        positive, altered = docs["positive_inspect"], docs["altered_inspect"]
+        create, positive, altered = (
+            docs["create"],
+            docs["positive_inspect"],
+            docs["altered_inspect"],
+        )
         if positive.get("outcome") != "success":
             return False, list(leg.values()), "the positive inspect"
         if not positive.get("root"):
@@ -2335,6 +2400,13 @@ class Journey:
             return False, list(leg.values()), "the altered refusal name"
         if altered.get("root"):
             return False, list(leg.values()), "no altered root"
+        bound, waiting = self._refusal_registry_bound(altered, create)
+        if bound is None:
+            return False, list(leg.values()), waiting
+        refusal = altered.get("trieRefusal")
+        transaction = refusal.get("transaction") if isinstance(refusal, dict) else None
+        if transaction not in self._journey_fold_txs(legs, receipts):
+            return False, list(leg.values()), "the refused transaction"
         return True, list(leg.values()), ""
 
     def reject_agreement(self, legs, receipts=None):
