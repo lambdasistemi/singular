@@ -90,6 +90,7 @@ import Negative.Read (Around (..), readAround)
 import Negative.Submit
     ( FailedScript (..)
     , NodeAnswer (..)
+    , TxKind (..)
     , applicationHashOf
     , failedScripts
     , scriptRoleName
@@ -218,6 +219,7 @@ runNegativeUpdate env args tamper = case entryMode args of
                                     failed =
                                         failedScripts
                                             registry
+                                            TxOther
                                             (AnswerRefused (T.pack why))
                                 pure
                                     ( receipt
@@ -329,6 +331,7 @@ runNegativeTerminate env args = case entryMode args of
                                     failed =
                                         failedScripts
                                             registry
+                                            TxOther
                                             (AnswerRefused (T.pack why))
                                 pure
                                     ( receipt
@@ -443,6 +446,7 @@ runNegativeWithdraw env args = case entryMode args of
                                     failed =
                                         failedScripts
                                             registry
+                                            TxOther
                                             (AnswerRefused (T.pack why))
                                 pure
                                     ( receipt
@@ -552,6 +556,7 @@ runNegativeFold env args short = do
                                 failed =
                                     failedScripts
                                         registry
+                                        TxFold
                                         (AnswerRefused (T.pack why))
                             pure
                                 ( receipt
@@ -609,4 +614,6 @@ aroundJson around =
         [ ("state", aroundState around)
         , ("holding", aroundHolding around)
         , ("wallet", aroundWallet around)
+        , ("pending", aroundPending around)
+        , ("deposit", aroundDeposit around)
         ]
