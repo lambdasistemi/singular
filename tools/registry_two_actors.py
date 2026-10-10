@@ -702,18 +702,31 @@ class _WithholdingForwarder:
             self.server = ThreadingHTTPServer(("127.0.0.1", self.port), handler)
         except OSError as error:
             raise SetupFailure(f"the withholding forwarder did not start: {error}")
-        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
-        self.thread.start()
+        try:
+            self.thread = threading.Thread(
+                target=self.server.serve_forever, daemon=True
+            )
+            self.thread.start()
+        except Exception as error:
+            self.server.server_close()
+            self.server = None
+            self.thread = None
+            raise SetupFailure(
+                f"the withholding forwarder thread did not start: {error}"
+            )
         return self.url
 
     def stop(self):
-        if self.server is not None:
-            self.server.shutdown()
-            self.server.server_close()
-            self.server = None
-        if self.thread is not None:
-            self.thread.join(timeout=30)
-            self.thread = None
+        thread, self.thread = self.thread, None
+        server, self.server = self.server, None
+        if server is not None:
+            # shutdown() waits on the serving loop: only wait when a thread
+            # is actually serving, never on a loop that never started.
+            if thread is not None and thread.is_alive():
+                server.shutdown()
+            server.server_close()
+        if thread is not None:
+            thread.join(timeout=30)
 
     def _handler(self):
         root, policy, name = self._root, self.policy, self.name
@@ -787,6 +800,26 @@ class _WithholdingForwarder:
                 pass
 
         return _Forward
+
+
+def check_absent(pattern):
+    """True when no process matches; a failed query is never absence.
+
+    Only the documented no-match exit (1) means nothing was found. Any
+    other nonzero exit is a named setup failure carrying the command's
+    own diagnostic.
+    """
+    probe = subprocess.run(
+        ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
+    )
+    if probe.returncode == 0:
+        return False
+    if probe.returncode == 1:
+        return True
+    raise SetupFailure(
+        f"the process query failed: pgrep -f {pattern} "
+        f"exited {probe.returncode}: {(probe.stderr or '').strip()}"
+    )
 
 
 class Journey:
@@ -1049,18 +1082,11 @@ class Journey:
             subprocess.run(["pkill", "-f", pattern], check=False)
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
-            alive = False
-            for pattern in patterns:
-                probe = subprocess.run(["pgrep", "-f", pattern], check=False)
-                if probe.returncode == 0:
-                    alive = True
-                    break
-            if not alive:
+            if all(check_absent(pattern) for pattern in patterns):
                 break
             time.sleep(0.5)
         for pattern in patterns:
-            probe = subprocess.run(["pgrep", "-f", pattern], check=False)
-            setup_require(probe.returncode != 0, "a node of this run survives")
+            setup_require(check_absent(pattern), "a node of this run survives")
         if runtime is not None:
             try:
                 shutil.rmtree(runtime, ignore_errors=False)
