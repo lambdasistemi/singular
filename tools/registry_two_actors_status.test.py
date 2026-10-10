@@ -1766,10 +1766,16 @@ def test_forwarder_withholds_state_asset(mod, tmp):
                 timeout=10,
             ) as answer:
                 withheld = _json.loads(answer.read().decode())
+                withheld_range = answer.headers.get("Content-Range")
             check(
                 "forwarder-withholds-state-asset",
                 withheld == [],
                 f"state asset_txs answered {withheld!r}",
+            )
+            check(
+                "forwarder-withheld-page-has-total",
+                withheld_range == "*/0",
+                f"withheld page range is {withheld_range!r}, want '*/0'",
             )
             with _url.urlopen(
                 forward.url

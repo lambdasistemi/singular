@@ -742,7 +742,10 @@ class _WithholdingForwarder:
                     and (query.get("_asset_policy", [""])[0] or "").lower() == policy
                     and (query.get("_asset_name", [""])[0] or "").lower() == name
                 ):
-                    self._answer(200, b"[]")
+                    # A well-formed empty page: the exact total `*/0`, so the
+                    # caller reads an empty history instead of blaming the
+                    # provider and the replay refuses HistoryIncomplete.
+                    self._answer(200, b"[]", "*/0")
                     return
                 target = root + parts.path
                 if parts.query:
