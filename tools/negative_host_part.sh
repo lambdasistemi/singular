@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# negative-host-part (second slice plus the registry pairs): the application
-# pairs from the release archive, the stranger's taken key
-# (stranger-registers-a-taken-key), the owner's taken key
-# (owner-registers-a-taken-key-again), and the two revivals of a terminated
-# key (owner-revives-a-terminated-key, stranger-revives-a-terminated-key).
+# negative-host-part (second slice plus the registry pairs and the short-fold
+# sequence): the application pairs from the release archive, the stranger's
+# taken key (stranger-registers-a-taken-key), the owner's taken key
+# (owner-registers-a-taken-key-again), the two revivals of a terminated key
+# (owner-revives-a-terminated-key, stranger-revives-a-terminated-key), and the
+# connected short-fold sequence (short-fold-of-a-booked-termination).
 # Parts: stranger-updates-the-key (first slice), the controller-signed
 # tamper family (controller-tamper-controller|deposit|token|address|datum),
 # the stranger's termination booking (stranger-terminates-the-key), the
@@ -27,7 +28,7 @@ set -euo pipefail
 root="$1"
 part="$2"
 case "$part" in
-  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key | owner-registers-a-taken-key-again | owner-revives-a-terminated-key | stranger-revives-a-terminated-key) ;;
+  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key | owner-registers-a-taken-key-again | owner-revives-a-terminated-key | stranger-revives-a-terminated-key | short-fold-of-a-booked-termination) ;;
   *)
     echo "negative-host-part: unknown part: $part" >&2
     exit 2
@@ -389,6 +390,68 @@ case "$part" in
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
     ;;
+  short-fold-of-a-booked-termination)
+    # One connected sequence over one request: Alice inserts alice-2 and folds
+    # it active (ordinary), books its termination (ordinary, no --fold, one
+    # pending), Bob's short fold is refused with the request still pending,
+    # then Bob's honest fold of the same request settles it terminal and pays
+    # the controller in full. Same folder (Bob), same request, same state,
+    # same path; the one difference is the payment (1 less vs exactly owed).
+    # No `--fold` on any command line (issue 486).
+    run_ok setup-insert "$open_datum" open-datum insert --key alice-2 --payload "$work/payload-insert.json" \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup insert alice-2 failed"
+    run_ok setup-fold "$open_datum" open-datum fold \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/bob.skey" \
+      || setup_fail "setup fold alice-2 failed"
+    run_ok setup-inspect-active "$open_datum" open-datum inspect --key alice-2 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "setup inspect alice-2 failed"
+    [ "$(jq -er .leaf "$receipts/setup-inspect-active.json")" = active ] \
+      || setup_fail "alice-2 is not active after setup fold"
+    run_ok setup-book "$open_datum" open-datum terminate --key alice-2 \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "setup termination booking failed"
+    run_ok setup-pending-inspect "$open_datum" open-datum inspect --key alice-2 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "setup pending inspect failed"
+    [ "$(jq -er '.pendingRequests | length' "$receipts/setup-pending-inspect.json")" = 1 ] \
+      || setup_fail "exactly one request must be pending after setup booking"
+    alice_addr="$(jq -er .wallet "$receipts/preview.json")" \
+      || setup_fail "preview names no wallet address"
+    run_ok outputs-before "$open_datum" open-datum inspect --key alice-2 --outputs-at "$alice_addr" \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "outputs-before inspect failed"
+    mkdir -p "$work/host-bob-short" "$work/host-bob-short-control"
+    "$host" registry fold --pay-short 1 \
+      --state-dir "$work/host-bob-short" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    "$host" registry fold \
+      --state-dir "$work/host-bob-short-control" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
+      >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
+    # Both stages name the same request; a run whose second stage names
+    # another request reports a setup failure and is never credited.
+    [ -f "$receipts/forbidden.json" ] \
+      || setup_fail "forbidden produced no receipt: setup failure, never counted"
+    [ -f "$receipts/control.json" ] \
+      || setup_fail "control produced no receipt: setup failure, never counted"
+    forb_reqs="$(jq -c .requests "$receipts/forbidden.json")" \
+      || setup_fail "forbidden names no requests"
+    ctrl_reqs="$(jq -c .requests "$receipts/control.json")" \
+      || setup_fail "control names no requests"
+    [ "$forb_reqs" = "$ctrl_reqs" ] \
+      || setup_fail "second stage names another request ($ctrl_reqs vs $forb_reqs): setup failure, never a refusal"
+    [ "$(jq -r '.requests | length' "$receipts/forbidden.json")" = 1 ] \
+      || setup_fail "exactly one request must be folded"
+    run_ok control-inspect "$open_datum" open-datum inspect --key alice-2 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "control inspect failed"
+    run_ok outputs-after "$open_datum" open-datum inspect --key alice-2 --outputs-at "$alice_addr" \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "outputs-after inspect failed"
+    ;;
 esac
 
 # Enforce the receipt cap.
@@ -401,9 +464,10 @@ bytes="$(receipt_bytes "$receipts")"
 # against pinApplication, or stateHash against pinState from the create
 # receipt); the failing role (application-spending, state-validator, and
 # application-at-fold for the sequence); and the positive-read clause
-# (holding-ref today, and no-holding for a key with no holding, which
-# later revival pairs need). Delivered parts pass exactly what they
-# hardwire today.
+# (holding-ref, no-holding for a key with no holding, and pending-deposit
+# for the connected short-fold sequence: root and wallet readable,
+# before.pending non-empty, before.deposit positive, holding present).
+# Delivered parts pass exactly what they hardwire today.
 expect_hash_field="applicationHash"
 expect_pin="$pin_app"
 expect_role="application-spending"
@@ -420,6 +484,12 @@ case "$part" in
     expect_pin="$pin_state"
     expect_role="state-validator"
     expect_read="no-holding"
+    ;;
+  short-fold-of-a-booked-termination)
+    expect_hash_field="applicationHash"
+    expect_pin="$pin_app"
+    expect_role="application-at-fold"
+    expect_read="pending-deposit"
     ;;
 esac
 
@@ -455,6 +525,17 @@ judge() {
           jq -e '.before.wallet | type == "array"' "$receipt" >/dev/null || return 1
           jq -e '.before.holding == null or .before.holding.output == "none"' "$receipt" >/dev/null || return 1
           ;;
+        pending-deposit)
+          # The connected short-fold sequence: root already readable above;
+          # wallet readable, holding present (a real output reference),
+          # exactly one pending request (hence non-empty), deposit a positive
+          # amount. `length == 1` enforces the setup's exactly-one-pending.
+          jq -e '.before.wallet | type == "array"' "$receipt" >/dev/null || return 1
+          holding="$(jq -er .before.holding.output "$receipt")" || return 1
+          printf '%s' "$holding" | grep -Eq '^[0-9a-f]{64}#[0-9]+$' || return 1
+          jq -e '.before.pending | type == "array" and length == 1' "$receipt" >/dev/null || return 1
+          jq -e '.before.deposit | type == "number" and . > 0' "$receipt" >/dev/null || return 1
+          ;;
         *) return 2 ;;
       esac
       jq -e '.before == .after' "$receipt" >/dev/null || return 1
@@ -481,6 +562,51 @@ else
     || fail "control $part not accepted: outcome=$(jq -r .outcome "$receipts/control.json")"
   [ "$control_status" -eq 0 ] \
     || fail "control exit $control_status, expected 0"
+fi
+# The settlement check as one function (terminal leaf, and paid against
+# owed), called by the real control stage and every altered control; do not
+# recompute inside a control. Owed is the request's deposit plus the holding's
+# protected deposit, both from the forbidden before (same request the control
+# folds): requestDeposit is `.before.pending[0].datum.fields[0].fields[4].int`
+# (outer CageDatum `Constr 0 [request]`, inner wire order
+# token,owner,key,edge,deposit,submittedAt,destination), envelopeDeposit is
+# `.before.holding.envelope.fields[0].fields[5].int` (control fields
+# version,[policy,name],active,key,controller,deposit). This is what the
+# application sums: `validRelease` fails `release-additive` iff
+# `paid < owed + releasedTo`, where `owed` is `held-tip = requestDeposit`
+# (`rowDuties` floor, `registryOwed`/`payeeOwed`) and `releasedTo` is
+# `control.deposit` (`releasedTo` over `Release` spends at this script); `paid`
+# sums the fold outputs at the controller's key that settle (`settlesOf` off
+# the cage credential, no delivered tokens for a pure termination, so every
+# new output at Alice settles). Paid is the new Alice outputs after the
+# control (outputs-at after minus outputs-at before at `preview.wallet`),
+# lovelace summed, `>= owed` (floors, surplus unobservable). On success sets
+# `settles_paid` and `settles_owed` for the message; verdict is the return
+# code alone.
+settles_and_pays() {
+  local leaf_json="$1" before_json="$2" after_json="$3" forb_json="$4"
+  [ "$(jq -er .leaf "$leaf_json")" = terminal ] || return 1
+  local req_dep env_dep owed paid
+  req_dep="$(jq -er '.before.pending[0].datum.fields[0].fields[4].int' "$forb_json")" || return 1
+  env_dep="$(jq -er '.before.holding.envelope.fields[0].fields[5].int' "$forb_json")" || return 1
+  owed=$((req_dep + env_dep))
+  [ "$owed" -gt 0 ] || return 1
+  paid="$(jq -n --slurpfile b "$before_json" --slurpfile a "$after_json" '
+    ($b[0].outputsAt.outputs // []) as $bo
+    | ($a[0].outputsAt.outputs // []) as $ao
+    | ($bo | map(.output) | sort) as $bos
+    | [$ao[] | select(.output as $o | $bos | index($o) | not) | .locked.lovelace] | add // 0
+  ')" || return 1
+  [ "$paid" -ge "$owed" ] || return 1
+  settles_paid="$paid"
+  settles_owed="$owed"
+}
+if [ "$part" = short-fold-of-a-booked-termination ]; then
+  settles_paid=""
+  settles_owed=""
+  settles_and_pays "$receipts/control-inspect.json" "$receipts/outputs-before.json" "$receipts/outputs-after.json" "$receipts/forbidden.json" \
+    || fail "control did not settle alice-2 terminal and paid in full (leaf=$(jq -r .leaf "$receipts/control-inspect.json"))"
+  say "control settles: alice-2 terminal, paid $settles_paid >= owed $settles_owed"
 fi
 say "judged: forbidden refused by the registry pin $expect_pin role $expect_role with reads equal; control accepted"
 
@@ -530,6 +656,69 @@ if [ "$expect_read" = no-holding ]; then
     "$receipts/forbidden.json" >"$altered/forbidden-unreadable-wallet.json"
   if judge "$altered/forbidden-unreadable-wallet.json" refused-by-expected; then
     fail "control: unreadable wallet passed the no-holding clause"
+  fi
+fi
+# (viii) pending-deposit predicates, each the only reason to reject: built
+# from the valid receipt with before equal to after. Only for the
+# pending-deposit form; every other part and its controls are untouched.
+if [ "$expect_read" = pending-deposit ]; then
+  # Empty pending (hence not exactly one).
+  jq '.before.pending = [] | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-empty-pending.json"
+  if judge "$altered/forbidden-empty-pending.json" refused-by-expected; then
+    fail "control: empty pending passed the pending-deposit clause"
+  fi
+  # Non-positive deposit (zero): wallet array, holding present, one pending,
+  # root readable and reads equal all hold; only the positive-deposit guard
+  # fails.
+  jq '.before.deposit = 0 | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-zero-deposit.json"
+  if judge "$altered/forbidden-zero-deposit.json" refused-by-expected; then
+    fail "control: zero deposit passed the pending-deposit clause"
+  fi
+  # Unreadable wallet (non-array): holding present, one pending, positive
+  # deposit, root readable and reads equal all hold; only the wallet guard
+  # fails.
+  jq '.before.wallet = "unreadable" | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-unreadable-wallet.json"
+  if judge "$altered/forbidden-unreadable-wallet.json" refused-by-expected; then
+    fail "control: unreadable wallet passed the pending-deposit clause"
+  fi
+  # Holding that is not a real output reference: wallet array, one pending,
+  # positive deposit, root readable and reads equal all hold; only the
+  # holding guard fails.
+  jq '.before.holding.output = "none" | .after = .before' \
+    "$receipts/forbidden.json" >"$altered/forbidden-none-holding.json"
+  if judge "$altered/forbidden-none-holding.json" refused-by-expected; then
+    fail "control: none holding passed the pending-deposit clause"
+  fi
+fi
+# (ix) settlement controls, each the only reason to be rejected, each calling
+# the live `settles_and_pays` function itself (never recomputed): leaf not
+# terminal, nothing paid, and one lovelace short. Only for the short-fold
+# sequence.
+if [ "$part" = short-fold-of-a-booked-termination ]; then
+  # Leaf not terminal (active): owed and paid unchanged and valid; only the
+  # leaf guard fails inside the function.
+  jq '.leaf = "active"' \
+    "$receipts/control-inspect.json" >"$altered/control-inspect-active.json"
+  if settles_and_pays "$altered/control-inspect-active.json" "$receipts/outputs-before.json" "$receipts/outputs-after.json" "$receipts/forbidden.json"; then
+    fail "control: active leaf passed the settlement function"
+  fi
+  # Nothing paid: leaf still terminal, owed unchanged; only paid fails.
+  jq --slurpfile b "$receipts/outputs-before.json" '.outputsAt.outputs = $b[0].outputsAt.outputs' \
+    "$receipts/outputs-after.json" >"$altered/outputs-after-no-payment.json"
+  if settles_and_pays "$receipts/control-inspect.json" "$receipts/outputs-before.json" "$altered/outputs-after-no-payment.json" "$receipts/forbidden.json"; then
+    fail "control: no new payment passed the settlement function"
+  fi
+  # One lovelace short: the new payment lowered by exactly 1; leaf terminal
+  # and owed unchanged; only `paid >= owed` fails.
+  jq --slurpfile b "$receipts/outputs-before.json" '
+    ($b[0].outputsAt.outputs | map(.output) | sort) as $bos
+    | .outputsAt.outputs |= map(if (.output as $o | $bos | index($o) | not) then .locked.lovelace -= 1 else . end)
+  ' "$receipts/outputs-after.json" >"$altered/outputs-after-short.json"
+  if settles_and_pays "$receipts/control-inspect.json" "$receipts/outputs-before.json" "$altered/outputs-after-short.json" "$receipts/forbidden.json"; then
+    fail "control: short-by-one payment passed the settlement function"
   fi
 fi
 # (iv) control in forbidden form is refused (it would be refused, not accepted).

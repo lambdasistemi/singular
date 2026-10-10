@@ -44,7 +44,7 @@ fi
 begin_leg
 if nix run --quiet .#negative-host-parts >"$receipts/parts.out" 2>"$receipts/parts.err"; then
   parts_ok=0
-  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key; do
+  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key short-fold-of-a-booked-termination; do
     if grep -q "$want" "$receipts/parts.out"; then
       say "parts list carries $want"
     else
