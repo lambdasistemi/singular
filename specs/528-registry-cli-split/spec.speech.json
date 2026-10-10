@@ -47,7 +47,11 @@
       "pause": 300
     },
     {
-      "text": "Lean binding: the model does not change. Lean tree d9161edd0274b67151f331949521f34bbf18612f, onchain validators tree 232c5cbaf94a03eb313e72f83287a05a944511b7, constitution 1.14.0, all at base e3c9ab01. No validator, blueprint, script identity or Lean file is edited.",
+      "text": "Operator amendment, 2026-10-10 (released by the desk): \"make sure the 2 applications live in completely separated hierarchies\", on-chain and off-chain. Each application owns one top-level tree: applications/open-datum/ and applications/keri-stub/. Everything of an application lives in its tree: Lean, on-chain sources in its own Aiken project, off-chain sources in its own cabal package (library, executable, tests), scripts and fixtures. offchain/ and onchain/ hold the registry only. Dependencies point one way: an application depends on the registry packages; the registry never depends on an application; neither application references the other's tree. Every validator hash and published identity is unchanged by the move.",
+      "pause": 300
+    },
+    {
+      "text": "Lean binding: the model does not change. Lean tree d9161edd0274b67151f331949521f34bbf18612f, onchain validators tree 232c5cbaf94a03eb313e72f83287a05a944511b7, constitution 1.14.0, all at base e3c9ab01. No validator logic, script hash or Lean file changes; the open-datum validators move to the application's Aiken project and every hash stays byte-identical.",
       "pause": 300
     }
   ],
@@ -81,7 +85,15 @@
       "pause": 300
     },
     {
-      "text": "[ ] The open datum is an executable of its own, built from this repository against the library, with create, insert, update, terminate, fold and inspect; insert and terminate accept --fold. Proof: offchain-component-build, demo1-cli-check.",
+      "text": "[ ] The open datum is an executable of its own, built from its own tree applications/open-datum/ against the registry packages, with create, insert, update, terminate, fold and inspect; insert and terminate accept --fold. Proof: offchain-component-build, demo1-cli-check.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The registry trees hold no application: no file under offchain/ or onchain/ names an application module, path or validator title. An application's package and Aiken project reach outside their own tree only to depend on the registry packages. Proof: new control application-separation-check and application-separation-controls, which plant a registry-side naming and an application-side reach and must fail.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Every validator hash is unchanged by the move: the hashes of the registry's Aiken project and of the open datum's Aiken project together equal the hashes of the single project at base. Proof: new control script-hash-comparison against the base hashes recorded in this specification's evidence, which plants a changed hash and must fail; script-identity and blueprint stay green.",
       "pause": 300
     },
     {
@@ -101,7 +113,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] Lean binding, receipt-derived conformance state and exact-head checks are recorded per the PR template; no Lean, validator or blueprint file changes. Proof: model, script-identity, blueprint, coverage unchanged and green.",
+      "text": "[ ] Lean binding, receipt-derived conformance state and exact-head checks are recorded per the PR template; no Lean file changes and no validator logic changes. Proof: model, script-identity, blueprint, coverage green.",
       "pause": 300
     }
   ],
@@ -111,7 +123,7 @@
       "pause": 500
     },
     {
-      "text": "Any validator, blueprint, script identity or Lean change (#505 landed them; #494, #495, #529, #506 follow).",
+      "text": "Any validator logic, script hash or Lean change (#505 landed them; #494, #495, #529, #506 follow). Moving a validator's source file to the application's project is in scope; changing what it compiles to is not.",
       "pause": 300
     },
     {
@@ -143,6 +155,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "5baa8f1a16183ac381272340139fd4de10526845288f4c6057123eff240e3622"
+    "sha256": "469611aca37c7068d55afdafe9c747ade66da04289223a04003cec0548d2e845"
   }
 }

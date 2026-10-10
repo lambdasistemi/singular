@@ -21,9 +21,9 @@
       "pause": 500
     }
   ],
-  "open-datum-application": [
+  "open-datum-package": [
     {
-      "text": "open-datum-application.",
+      "text": "open-datum-package.",
       "pause": 500
     }
   ],
@@ -33,8 +33,14 @@
       "pause": 500
     }
   ],
+  "separation-controls": [
+    {
+      "text": "separation controls.",
+      "pause": 500
+    }
+  ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "e5379f4f7b9f9a3a3dc84876907aed342480a05f07b3d865f7655231d47de39b"
+    "sha256": "1466299977d5f5ca18b3ba459dcc78ba69a975ca4b27540e42d491326d3e1458"
   }
 }

@@ -26,13 +26,25 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## open-datum-executable
 
+- [ ] open-datum-package-in-its-own-tree
 - [ ] open-datum-verbs-and-executable
+- [ ] known-scripts-come-from-the-application
+- [ ] negative-host-moves-with-the-open-datum
 - [ ] singular-refuses-insert-update-terminate
 - [ ] demo1-scripts-and-controls-use-the-new-binaries
 - [ ] release-archive-and-documented-flags
 - [ ] docs-name-the-new-commands
-- [ ] boundary-control-covers-every-component
-- [ ] classify-the-open-datum-executable-in-the-component-inventory
+- [ ] separation-control-covers-the-offchain-trees
+- [ ] classify-the-open-datum-package-in-the-inventory
+
+## application-onchain-tree
+
+- [ ] registry-shared-modules-move-to-the-lib-directory
+- [ ] open-datum-validator-moves-to-its-own-aiken-project
+- [ ] open-datum-deployment-blueprint-is-registry-plus-application
+- [ ] script-hash-comparison-control
+- [ ] registry-onchain-names-no-application-control
+- [ ] classify-the-application-aiken-project-in-the-inventory
 
 ## booking-refusal
 
@@ -42,6 +54,6 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## keri-stub
 
-- [ ] stub-executable-and-policy
+- [ ] stub-executable-and-policy-in-its-own-tree
 - [ ] keri-stub-check-and-job
-- [ ] classify-the-stub-in-the-component-inventory
+- [ ] classify-the-stub-in-the-inventory

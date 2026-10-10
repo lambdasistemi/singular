@@ -11,6 +11,7 @@ Fields, relationships, validation. Types are the registry's existing ones unless
 | pin | how the registry's application policy is fixed | one of the three forms below |
 | decoder | reads a datum into a holding view; absent on the neutral value | a datum it cannot read yields a named reason, never a partial view |
 | holding rules | find this registry's holding of a key among the outputs at the application, and release it in a fold; absent on the neutral value | a termination requires them |
+| recognised scripts | the application's script names and hashes that `inspect` labels in an output; empty on the neutral value | hashes come from the application's own identity record, never from the registry |
 
 ## Pin forms
 
@@ -41,3 +42,10 @@ A **booking refusal** names the key, the edge, the leaf found and the leaf requi
 - `singular registry inspect`: raw datums for the key's outputs; no envelope fields.
 - The application-policy input of `create`, a HEX policy hash, wired with the open-datum executable: pins that hash; publishes the other reference outputs as today.
 - Reconcile matches a journalled `active:` or `payload:` expectation against the hash of the live output's datum bytes; for the open-datum value that hash is the envelope hash, as today.
+
+## Separation records
+
+| record | meaning | validation |
+|---|---|---|
+| base hashes | the hashes of every validator of the single Aiken project at base, one row per title, recorded under `specs/528-registry-cli-split/evidence/` | the registry project and the open-datum project together reproduce exactly this set; a title may change when only its module path changed, a hash may not |
+| tree rule | the names that mark an application (module names, validator titles, the application tree paths) | no file under `offchain/` or `onchain/` contains one; an application tree contains no path outside itself other than the registry packages it depends on |

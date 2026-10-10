@@ -85,7 +85,19 @@
       "pause": 500
     },
     {
+      "text": "[ ] open-datum-package-in-its-own-tree",
+      "pause": 300
+    },
+    {
       "text": "[ ] open-datum-verbs-and-executable",
+      "pause": 300
+    },
+    {
+      "text": "[ ] known-scripts-come-from-the-application",
+      "pause": 300
+    },
+    {
+      "text": "[ ] negative-host-moves-with-the-open-datum",
       "pause": 300
     },
     {
@@ -105,11 +117,41 @@
       "pause": 300
     },
     {
-      "text": "[ ] boundary-control-covers-every-component",
+      "text": "[ ] separation-control-covers-the-offchain-trees",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-open-datum-executable-in-the-component-inventory",
+      "text": "[ ] classify-the-open-datum-package-in-the-inventory",
+      "pause": 300
+    }
+  ],
+  "application-onchain-tree": [
+    {
+      "text": "application-onchain-tree.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] registry-shared-modules-move-to-the-lib-directory",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-validator-moves-to-its-own-aiken-project",
+      "pause": 300
+    },
+    {
+      "text": "[ ] open-datum-deployment-blueprint-is-registry-plus-application",
+      "pause": 300
+    },
+    {
+      "text": "[ ] script-hash-comparison-control",
+      "pause": 300
+    },
+    {
+      "text": "[ ] registry-onchain-names-no-application-control",
+      "pause": 300
+    },
+    {
+      "text": "[ ] classify-the-application-aiken-project-in-the-inventory",
       "pause": 300
     }
   ],
@@ -137,7 +179,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] stub-executable-and-policy",
+      "text": "[ ] stub-executable-and-policy-in-its-own-tree",
       "pause": 300
     },
     {
@@ -145,12 +187,12 @@
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-stub-in-the-component-inventory",
+      "text": "[ ] classify-the-stub-in-the-inventory",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "da0d0f8646c0fa25c492ff5fcb57ea1818f9eafdcf627b47edcde873d171aa90"
+    "sha256": "5ba595dea5391dd45fab1acce99610fa16a7ba6faed4a0c686b3a23c6fd7d932"
   }
 }

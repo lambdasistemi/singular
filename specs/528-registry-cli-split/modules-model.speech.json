@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Responsibilities, dependency direction and promotion. Names and fields are in data-model.md, signatures in functions-model.md. Output ceiling: 6 KB.",
+      "text": "Responsibilities, dependency direction and promotion. Names and fields are in data-model.md, signatures in functions-model.md. Output ceiling: 8 KB.",
       "pause": 400
     }
   ],
@@ -15,21 +15,39 @@
       "pause": 500
     }
   ],
+  "classification-of-the-on-chain-modules": [
+    {
+      "text": "Classification of the on-chain modules.",
+      "pause": 500
+    }
+  ],
   "rules": [
     {
       "text": "Rules.",
       "pause": 500
     },
     {
-      "text": "application-boundary (invariant): no module of registry-library, registry-cli, singular or keri-stub imports Singular.Application.OpenDatum.*, and none of those components lists open-datum-application in build-depends. Enforced by application-boundary-check and by the cabal dependency graph.",
+      "text": "application-boundary (invariant): no module of registry-library, registry-cli or singular imports Singular.Application.OpenDatum.*, and none of those components lists the open-datum library in build-depends. Enforced by application-boundary-check and by the cabal dependency graph until slice 4 widens it into the separation rule.",
       "pause": 300
     },
     {
-      "text": "one-flag-group (invariant): the flag group lives in registry-cli and is parsed by one function; singular and open-datum call it, neither re-spells a flag.",
+      "text": "registry-names-no-application (invariant, from slice 4 for offchain/, slice 5 for onchain/): no file under offchain/ or onchain/ names an application's module, path or validator title. Enforced by application-separation-check.",
       "pause": 300
     },
     {
-      "text": "value-is-the-only-door (invariant): the open-datum knowledge Fold, Live, Reconcile, Inspect, Create, Registry, Preview hold today (envelope check, holding lookup, release, decode, pin title) is reached only through the application value.",
+      "text": "application-reaches-only-the-registry (invariant): an application's package, Aiken project and flake name nothing outside their own tree except the registry packages they depend on, and neither application names the other's tree. Enforced by application-separation-check.",
+      "pause": 300
+    },
+    {
+      "text": "hashes-unchanged (invariant): the hashes of the registry project and the open-datum project together equal the base hashes. Enforced by script-hash-comparison.",
+      "pause": 300
+    },
+    {
+      "text": "one-flag-group (invariant): the flag group lives in registry-cli and is parsed by one function; singular, open-datum and keri-stub call it, none re-spells a flag.",
+      "pause": 300
+    },
+    {
+      "text": "value-is-the-only-door (invariant): the open-datum knowledge Fold, Live, Reconcile, Inspect, Create, Registry, Preview hold today (envelope check, holding lookup, release, decode, pin title, recognised script hash) is reached only through the application value.",
       "pause": 300
     },
     {
@@ -43,6 +61,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "3d1ecba5d07c191c5d4a5bba507f3e26a5a2ad14dfb6ad23341a84e6c7a80d5a"
+    "sha256": "810dceb838dadd2b253decd740351d2146b38d6f3ed40b2084521cc6debad3c1"
   }
 }

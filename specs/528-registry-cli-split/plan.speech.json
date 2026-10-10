@@ -1,11 +1,11 @@
 {
-  "plan-six-ordered-slices-one-pull-request": [
+  "plan-seven-ordered-slices-six-in-one-pull-request": [
     {
-      "text": "Plan: six ordered slices, one pull request.",
+      "text": "Plan: seven ordered slices, six in one pull request.",
       "pause": 500
     },
     {
-      "text": "Base e3c9ab01 (the #505 merge). Branch feat/528-registry-cli-split, worktree /code/singular-issue-528. The branch is a stack of patches, one per slice, no journey commits. Hosted CI at the exact head is the gate; each slice's candidate gate is the table in the gate record, run once per checkpoint.",
+      "text": "Base e3c9ab01 (the #505 merge), rebased on 7d76efb0 at the desk's release of 2026-10-10. Branch feat/528-registry-cli-split, worktree /code/singular-issue-528. The branch is a stack of patches, one per slice, no journey commits. Hosted CI at the exact head is the gate; each slice's candidate gate is the table in the gate record, run once per checkpoint.",
       "pause": 400
     }
   ],
@@ -19,7 +19,11 @@
       "pause": 400
     },
     {
-      "text": "Dependency direction is the control: nothing on the left of an arrow depends on anything to its right, so registry-cli, singular and keri-stub cannot import the open-datum package.",
+      "text": "The operator's amendment of 2026-10-10 adds a second cut, by tree. The registry trees (offchain/, onchain/) hold the registry only. Each application owns one top-level tree, on-chain and off-chain alike.",
+      "pause": 400
+    },
+    {
+      "text": "Dependency direction is the control: an arrow leaves the registry trees for an application only as a dependency of the application on the registry. Nothing in the registry trees names an application, and neither application references the other's tree.",
       "pause": 400
     }
   ],
@@ -29,7 +33,7 @@
       "pause": 500
     },
     {
-      "text": "Each slice is bisect-safe: it builds, passes its candidate gate and leaves every hosted journey green.",
+      "text": "Each slice is bisect-safe: it builds, passes its candidate gate and leaves every hosted journey green. Slices 1 to 3 are done at the time of the amendment.",
       "pause": 400
     },
     {
@@ -45,7 +49,11 @@
       "pause": 300
     },
     {
-      "text": "open-datum-executable. The open-datum verbs leave singular for the open-datum executable (create, insert, update, terminate, fold, inspect), parsed with the registry library's flag group. singular composes the neutral value and refuses insert, update, terminate as unknown commands. Demo 1 scripts, control journeys, the release archive, the documented-flags table and the docs change binaries in this slice, because they cannot be green between. RED: refusal control for the three removed verbs; boundary control scoped to everything including Main.",
+      "text": "open-datum-executable. The open-datum code leaves the registry's cabal package for the package open-datum at applications/open-datum/offchain/, with its own project and flake depending on the registry packages: the library (Singular.Application.OpenDatum.*, the value, the entry commands, the verbs and their parser, the recognised open-datum script generated from the application's identity record), the executable open-datum (create, insert, update, terminate, fold, inspect, parsed with the registry library's flag group), the application's specs, and the negative host singular-negative that crafts open-datum shapes. offchain/open-datum, offchain/negative and the open-datum-application sublibrary disappear, and the registry's generated list of known scripts stops naming the open-datum hash. singular composes the neutral value and refuses insert, update, terminate as unknown commands. The application's flake reads the deployment blueprint from the registry's project, which still holds the open-datum validator at this slice. Demo 1 scripts, control journeys, the release archive, the documented-flags table and the docs change binaries in this slice, because they cannot be green between. RED: refusal control for the three removed verbs; the separation control, scoped to offchain/ and to the application's package.",
+      "pause": 300
+    },
+    {
+      "text": "application-onchain-tree. The open-datum validator (open_datum), its module application/envelope and their tests move from onchain/ into the Aiken project applications/open-datum/onchain/. The registry modules those files import move from onchain/validators/ to onchain/lib/ with their module names unchanged, where an Aiken dependent can import them; the application's project depends on the registry's. The open approval policy open stays with the registry (see the classification in the modules model). The open datum's deployment blueprint becomes the registry's blueprint plus the open-datum validators, produced from the application's tree, so the --blueprint input of every executable is unchanged; the registry's identity records split with it. RED: the hash comparison control fails while the application's project is empty, and the separation control, now scoped to onchain/, lists the open-datum modules there at the slice's base. If the separated project cannot reproduce a hash, the slice stops with a question and changes no identity; slices 4, 6 and 7 do not wait for it.",
       "pause": 300
     },
     {
@@ -53,11 +61,11 @@
       "pause": 300
     },
     {
-      "text": "keri-stub. The keri-stub executable (register, convict, status) with its own approval policy, built on registry-cli and the registry library only; the keri-stub-check flake app and the keri-stub job in registry.yml. RED: the job's command on the base has no executable to run.",
+      "text": "keri-stub. The keri-stub executable (register, convict, status) with its own approval policy, born in applications/keri-stub/ under the same rules, built on registry-cli and the registry library only; the keri-stub-check flake app and the keri-stub job in registry.yml. RED: the job's command on the base has no executable to run.",
       "pause": 300
     },
     {
-      "text": "Slices 1 to 4 are mechanical in intent. Slices 5 and 6 add behaviour and evidence. Slice 6 is its own pull request, cut from the merge of slices 1 to 5 (desk ruling at plan review): slices 1 to 5 are the exclusive window, the stub is additive and takes no window.",
+      "text": "Slices 1 to 5 are mechanical in intent. Slices 6 and 7 add behaviour and evidence. Slice 7 is its own pull request, cut from the merge of slices 1 to 6 (desk ruling at plan review): slices 1 to 6 are the exclusive window, the stub is additive and takes no window.",
       "pause": 400
     }
   ],
@@ -67,7 +75,7 @@
       "pause": 500
     },
     {
-      "text": "The desk orders merges. This ticket plans for the exclusive window: it builds on e3c9ab01, rebases at a slice boundary after each merge the desk announces (#485 first), and rebases once more in its slot. Touched-file overlap with #485 (PR 525: Command, Create, Entry, Fold, Inspect, Preview, Reclaim, Reject, the cabal file), #471 (PR 516: moves library modules into kernel, surface, history, harness components) and #381 (PR 433, stacked on #485) is expected; none lands inside this ticket's scope.",
+      "text": "The desk granted this ticket the exclusive merge window on 2026-10-10: no other lane merges until this pull request merges. The branch is rebased on 7d76efb0 (the #358 slice 2 merge). Touched-file overlap with #471 (PR 516: moves library modules into kernel, surface, history, harness components) and #381 (PR 433) is expected; none lands inside this ticket's scope. The negative host of #358 moves with slice 4 because it crafts open-datum shapes; the desk is told.",
       "pause": 400
     }
   ],
@@ -77,15 +85,15 @@
       "pause": 500
     },
     {
-      "text": "No Lean, Aiken, blueprint, script-identity or lean/ change. The keri-stub policy is a script built by the stub itself (an always-succeeding minting policy), not a new on-chain validator.",
+      "text": "No Lean change and no validator logic change. Validator sources move between projects; every hash stays byte-identical, which a control compares. The keri-stub policy is a script built by the stub itself (an always-succeeding minting policy), not a new on-chain validator.",
       "pause": 300
     },
     {
-      "text": "Every new component is classified in offchain/nix/component-inventory.nix, whose carrier (component-build) fails on an unclassified component.",
+      "text": "Every new component is classified in offchain/nix/component-inventory.nix (registry components) or the application's own inventory entry, whose carrier fails on an unclassified component.",
       "pause": 300
     },
     {
-      "text": "No new cabal package: new components live in offchain/singular-registry.cabal, so the conformance flake's rewrite of the . line in offchain/cabal.project is not triggered. A slice that needs a second package stops and asks (it then replaces that rewrite).",
+      "text": "Application packages live in their own trees, open-datum (slice 4) and keri-stub (slice 7), with their own flake and project. The conformance flake builds the registry and application packages together without the registry tree naming the application.",
       "pause": 300
     },
     {
@@ -103,12 +111,12 @@
       "pause": 500
     },
     {
-      "text": "From slice 3 until slice 4, registry-cli still holds the entry commands and depends on open-datum-application. Slice 4 moves those commands into open-datum-application, which depends on registry-cli, and removes the arrow. The boundary control's scope widens slice by slice and covers every component, Main included, at slice 4.",
+      "text": "From slice 3 until slice 4, registry-cli still holds the entry commands and depends on open-datum-application, inside the registry's cabal package. Slice 4 moves those commands and the library into the application's package, which depends on registry-cli, and removes the arrow. The separation control covers every component of offchain/, Main included, at slice 4, and onchain/ at slice 5.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "bdd5603cae7065b13779bc85aaa6d6a1ee9148b9463dfd777ebd9b72c4a5437e"
+    "sha256": "c5ebc3e3d657dc66d6fa81990e4c8616a4ff29ea4c7a0976c3092dc37d2a3cba"
   }
 }

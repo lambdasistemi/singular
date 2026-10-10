@@ -61,8 +61,14 @@
       "pause": 300
     }
   ],
+  "separation-records": [
+    {
+      "text": "Separation records.",
+      "pause": 500
+    }
+  ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "17a7800dfd1ad9cc7663d1fa4b21e7800342fd86d71c334a88e009f4810a2477"
+    "sha256": "1db394ec68d6d91e7fc13cacd2cd1647791cdcd0c21e7c4efd406d7ef305272d"
   }
 }
