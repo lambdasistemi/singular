@@ -1,0 +1,16 @@
+diff --git a/lib/Singular/Registry/TxBuilder/Internal/Edges.hs b/lib/Singular/Registry/TxBuilder/Internal/Edges.hs
+index d6b0df8..2a088f6 100644
+--- a/lib/Singular/Registry/TxBuilder/Internal/Edges.hs
++++ b/lib/Singular/Registry/TxBuilder/Internal/Edges.hs
+@@ -115,7 +115,10 @@ apart about what an edge does to the trie.
+ -}
+ walkEdge :: (Monad m) => Trie m -> ByteString -> Edge -> m [ProofStep]
+ walkEdge trie key edge
+-    | edge == edgeInsertActive = inserting leafActive
++    -- CONTROL BUILD ONLY (#381 replay fault): the replay maps an
++    -- insertion edge to the Absent leaf, so the rebuilt root does not
++    -- chain with the recorded fold root. Never the packaged product.
++    | edge == edgeInsertActive = inserting leafAbsent
+     | edge == edgeUpdateTerminal = replacing leafTerminal
+     | otherwise = steps
+   where

@@ -189,6 +189,21 @@
         # #451 re-cut R1: the collector as a buildable package; the app below
         # refers to this same writeShellApplication derivation.
         cli-recovery-cross-wallet-evidence = (recoveryTools system).evidence;
+        # #381: the replay-fault control build — the packaged singular with
+        # the committed replay-fault patch applied as a derivation over the
+        # existing source. Never the packaged product: the journey apps keep
+        # the unpatched binary; only the replay-fault control app runs this.
+        singular-replay-fault =
+          let
+            pkgs = import nixpkgs { inherit system; };
+            unpatched = offchain.packages.${system}.singular;
+          in
+          unpatched.overrideAttrs (previous: {
+            src = pkgs.applyPatches {
+              inherit (previous) src;
+              patches = [ ./tools/replay-fault.patch ];
+            };
+          });
       };
       buildGate =
         system:
@@ -636,6 +651,47 @@
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;
           })
+          // {
+            # #381: the replay-fault control — one genuine insertion booked
+            # and folded, then a real actor inspect with the control build
+            # whose replay maps one edge to another. The job passes only on
+            # exit 0, which the harness returns only for RootDoesNotChain
+            # naming the registry and the fold, with no root:
+            # `nix run --quiet .#registry-two-actors-replay-fault`.
+            registry-two-actors-replay-fault = {
+              type = "app";
+              program =
+                let
+                  pkgs = import nixpkgs { inherit system; };
+                in
+                pkgs.lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "registry-two-actors-replay-fault";
+                    runtimeInputs = with pkgs; [
+                      bash
+                      coreutils
+                      gnugrep
+                      procps
+                      python3
+                      strace
+                    ];
+                    text = ''
+                      base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
+                      mkdir -p "$base"
+                      work="$(mktemp -d "$base/replay-fault.XXXXXX")"
+                      echo "replay-fault control: receipts in $work"
+                      export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                      SINGULAR_UNFAULTED=${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                      SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
+                        python3 ${./tools/registry_two_actors.py} \
+                        ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
+                        ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
+                        ${onchain.packages.${system}.plutus-blueprint} "$work/journey"
+                    '';
+                  }
+                );
+            };
+          }
           // (import ./nix/negative-host.nix { pkgs = import nixpkgs { inherit system; }; })
         )
       );
