@@ -49,7 +49,7 @@
       "pause": 300
     },
     {
-      "text": "Staffing ruling of 9 October: ticket owner Claude Sonnet 5.5 at extra-high effort; commit owner Muse through the pi harness (/home/paolino/.local/bin/muse --approve); mute persistent auditor GLM through the pi harness (/code/llm-settings/pi/glm --approve); \"gate authors | the ticket owner and the auditor seat\". No other seat, no draft tool, no Codex.",
+      "text": "Staffing ruling of 9 October: ticket owner Claude Sonnet 5.5 at extra-high effort; commit owner Muse through the pi harness (/home/paolino/.local/bin/muse --approve); mute persistent auditor GLM through the pi harness (/code/llm-settings/pi/glm --approve); \"gate authors | the ticket owner and the auditor seat\". No other seat, no draft tool. Amended the same day by the operator: the mute persistent auditor is Codex (codex --dangerously-bypass-approvals-and-sandbox -m gpt-6.1-sol -c model_reasoning_effort=high) on every slice launched after the amendment; the first slice's GLM auditor finished that slice, and the second and third slices use Codex.",
       "pause": 300
     },
     {
@@ -87,6 +87,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "f651acd9e17669c54ba8707da42189c27affca885d886df9d2283d738f4fc0b9"
+    "sha256": "c4c4eb2800cfd211ffed1876da65b60189e34c2f3bf69bbae4f518868b9781d7"
   }
 }

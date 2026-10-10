@@ -69,25 +69,47 @@
       "pause": 300
     }
   ],
-  "third-slice-the-registry-pairs-the-sequence-mutants-and-the-page": [
+  "third-slice-part-one-the-registry-pairs-and-the-sequence": [
     {
-      "text": "Third slice: the registry pairs, the sequence, mutants and the page.",
+      "text": "Third slice, part one: the registry pairs and the sequence.",
       "pause": 500
     },
     {
-      "text": "[ ] duplicate-insertion-pairs: the stranger's and the owner's insertion of a taken key, refused by the registry state validator at the fold.",
+      "text": "[x] host-insert-and-fold-crafting: the host books an insertion for any signer and folds a pending request without local evaluation, honestly or paying the controller a given amount less, written once in the host.",
       "pause": 300
     },
     {
-      "text": "[ ] resurrection-pairs: the owner's and a stranger's insertion of a terminated key, refused by the registry state validator.",
+      "text": "[x] pay-less-reads-and-role: the host's before and after read carries the pending request and the held deposit, and a refusal by the application at a fold is labelled with that role.",
       "pause": 300
     },
     {
-      "text": "[ ] connected-short-fold-sequence: terminate and stop at the pending request, the short fold refused with the request pending and the deposit held, the honest fold of the same request paying the controller in full.",
+      "text": "[x] taken-key-stranger-pair: the stranger's insertion of a taken key is refused by the registry state validator at the fold, judged against the registry's own state script, beside the stranger's insertion of a fresh key from the same state.",
       "pause": 300
     },
     {
-      "text": "[ ] mutant-validators-fail-their-rows: one mutant per pair removes exactly the refusing rule; the forbidden check reports failure; every other pair is unchanged; a mutant that changes nothing is itself a failure.",
+      "text": "[x] taken-key-owner-and-revival-pairs: the owner's insertion of a taken key, and the owner's and a stranger's insertion of a terminated key, each refused by the registry state validator and each beside an insertion of a fresh key run from the same state.",
+      "pause": 300
+    },
+    {
+      "text": "[x] connected-short-fold-sequence: terminate and stop at the pending request, the short fold refused by the application at the fold with the request pending and the deposit held, the host's fold with no deviation of the same request paying the controller in full.",
+      "pause": 300
+    }
+  ],
+  "third-slice-part-two-mutants-the-page-and-the-aggregate-check": [
+    {
+      "text": "Third slice, part two: mutants, the page and the aggregate check.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] mutants-first: the way a changed application validator reaches a generated node from the archive's own sources, one mutant, a hosted job per mutant, and one aggregate check name for the pair jobs.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] mutants-application-rest: one mutant for each remaining application rule, each failing exactly its pairs and no other pair.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] mutant-registry-state: the mutant of the registry state validator failing its four pairs, or the four pairs' mutant check named pending with a ticket.",
       "pause": 300
     },
     {
@@ -111,6 +133,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "49e3cefcb043da7d1f510423ea228a41c8326bc1a89f33ee51121df612e7d154"
+    "sha256": "10cadf3ebeff498bbf1c6c25c2679a58cc7b8f59649d8a69075d0478b2a5ce70"
   }
 }
