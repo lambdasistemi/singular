@@ -236,7 +236,7 @@
               };
             });
           in
-          faultProject.project.hsPkgs.singular-registry.components.exes.singular;
+          faultProject.hsPkgs.singular-registry.components.exes.singular;
       };
       buildGate =
         system:
