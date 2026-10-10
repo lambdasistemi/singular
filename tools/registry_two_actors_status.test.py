@@ -3646,17 +3646,22 @@ def test_first_pattern_failure_reaches_second(mod, tmp):
             journey.fixture = _boom.__get__(journey, mod.Journey)
             with mock.patch.object(mod.subprocess, "run", fake_run):
                 status, text = quiet_execute(journey)
-            second_ran = any(patterns[1] in " ".join(argv) for argv in seen)
-            pgrep_calls = sum(1 for argv in seen if argv[0] == "pgrep")
+            second_cmd = "pkill" if op == "kill" else "pgrep"
+            second_ran = any(
+                argv and argv[0] == second_cmd and patterns[1] in " ".join(argv)
+                for argv in seen
+            )
+            cmd_calls = sum(1 for argv in seen if argv and argv[0] == second_cmd)
+            want_calls = 2 if op == "kill" else 4
             check(
                 f"first-failure-reaches-second-{op}-{fail_index}-{fail_kind}",
                 status == 3
                 and second_ran
-                and pgrep_calls == 4
+                and cmd_calls == want_calls
                 and not runtime.exists()
                 and "two actors: FAIL:" not in text
                 and "owned processes: none" not in text,
-                f"{op} call {fail_index} gave status={status} second-ran={second_ran} pgrep-calls={pgrep_calls}",
+                f"{op} call {fail_index} gave status={status} second-ran={second_ran} {second_cmd}-calls={cmd_calls}",
             )
             if op in ("settle", "verify"):
                 check(
@@ -3674,14 +3679,19 @@ def test_first_pattern_failure_reaches_second(mod, tmp):
                     else:
                         stopped = "clean"
             text = out.getvalue()
-            second_ran = any(patterns[1] in " ".join(argv) for argv in seen)
+            second_ran = any(
+                argv and argv[0] == "pkill" and patterns[1] in " ".join(argv)
+                for argv in seen
+            )
+            pkill_calls = sum(1 for argv in seen if argv and argv[0] == "pkill")
             check(
                 f"first-failure-reaches-second-{op}-{fail_index}",
                 stopped == "clean"
                 and second_ran
+                and pkill_calls == 2
                 and not runtime.exists()
                 and "owned processes: none" in text,
-                f"best-effort kill exit gave {stopped} second-ran={second_ran}",
+                f"best-effort kill exit gave {stopped} second-ran={second_ran} pkill-calls={pkill_calls}",
             )
 
 
