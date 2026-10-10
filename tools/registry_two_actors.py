@@ -833,13 +833,21 @@ def check_absent(pattern):
     probe = subprocess.run(
         ["pgrep", "-f", pattern], check=False, capture_output=True, text=True
     )
-    if probe.returncode == 0:
-        return False
-    if probe.returncode == 1:
-        return True
-    raise SetupFailure(
+    clean, error = classify_pgrep_exit(pattern, probe.returncode, probe.stderr)
+    if error is not None:
+        raise SetupFailure(error)
+    return clean
+
+
+def classify_pgrep_exit(pattern, returncode, stderr):
+    """The one rule for reading a survivor query: exit and diagnostic."""
+    if returncode == 0:
+        return False, None
+    if returncode == 1:
+        return True, None
+    return None, (
         f"the process query failed: pgrep -f {pattern} "
-        f"exited {probe.returncode}: {(probe.stderr or '').strip()}"
+        f"exited {returncode}: {(stderr or '').strip()}"
     )
 
 
@@ -1120,11 +1128,21 @@ class Journey:
                     errors.append(str(failed))
                     break
                 time.sleep(0.5)
-            for pattern in patterns:
-                try:
-                    setup_require(check_absent(pattern), "a node of this run survives")
-                except SetupFailure as failed:
-                    errors.append(str(failed))
+            for label, pattern in zip(("neutral", "runtime"), patterns):
+                probe = subprocess.run(
+                    ["pgrep", "-f", pattern],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                print(f"survivor query {label} exit={probe.returncode}", flush=True)
+                clean, error = classify_pgrep_exit(
+                    pattern, probe.returncode, probe.stderr
+                )
+                if error is not None:
+                    errors.append(error)
+                elif not clean:
+                    errors.append("a node of this run survives")
         if runtime is not None:
             try:
                 shutil.rmtree(runtime, ignore_errors=False)

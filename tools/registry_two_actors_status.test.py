@@ -2810,6 +2810,12 @@ def test_pgrep_exit_2_and_3_are_setup(mod, tmp):
         and any("rt-clean" in pattern for pattern in seen),
         f"patterns seen: {seen}",
     )
+    check(
+        "stop-receipt-prints-query-exits",
+        "survivor query neutral exit=1" in out.getvalue()
+        and "survivor query runtime exit=1" in out.getvalue(),
+        "the stop receipt names no per-pattern query exit",
+    )
 
 
 def test_pkill_failure_is_best_effort(mod, tmp):
@@ -3196,6 +3202,41 @@ def test_which_missing_still_removes_runtime(mod, tmp):
     )
 
 
+def test_apps_supply_process_tools(mod, tmp):
+    # The harness needs pkill/pgrep at teardown; an app that runs it must
+    # supply procps, or any runner whose PATH lacks it fails setup. The
+    # flake is resolved beside the harness, else beside the working tree.
+    candidates = [
+        Path(getattr(mod, "__file__", "tools/registry_two_actors.py")).parent.parent
+        / "flake.nix",
+        Path("flake.nix"),
+    ]
+    flake = next((path for path in candidates if path.exists()), None)
+    if flake is None:
+        check(
+            "apps-supply-process-tools",
+            False,
+            "flake.nix not found beside the harness or the working tree",
+        )
+        return
+    text = flake.read_text()
+    missing = []
+    for app in (
+        "registry-two-actors",
+        "registry-two-actors-control",
+        "registry-two-actors-replay-fault",
+    ):
+        start = text.find(f'name = "{app}"')
+        segment = text[start : start + 1200] if start >= 0 else ""
+        if "runtimeInputs" not in segment or "procps" not in segment:
+            missing.append(app)
+    check(
+        "apps-supply-process-tools",
+        not missing,
+        f"apps without procps: {missing}" if missing else "",
+    )
+
+
 def main():
     path = (
         Path(sys.argv[1])
@@ -3256,6 +3297,7 @@ def main():
         test_forwarder_relay_failure_is_502,
         test_node_wait_timeout_continues_teardown,
         test_which_missing_still_removes_runtime,
+        test_apps_supply_process_tools,
         test_altered_leg_records_and_passes,
         test_altered_leg_skips_without_faulted_binary,
         test_altered_leg_accepted_is_row_failure,

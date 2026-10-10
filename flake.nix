@@ -495,6 +495,8 @@
                   pkgs.coreutils
                   pkgs.strace
                   pkgs.python3
+                  # the stop path verifies no surviving node with pkill/pgrep
+                  pkgs.procps
                 ];
                 text = ''
                   base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-two-actors}"
