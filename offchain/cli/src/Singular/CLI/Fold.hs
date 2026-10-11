@@ -20,9 +20,10 @@ edge, whether the request's processing window still leaves time, the
 envelope an insertion delivers (carried by its request on the chain, so
 any wallet can fold it) or the live output a termination releases, the
 replayed root after the edge, the built transaction, and its outlay. The
-production fold takes every request pending for the registry, so a fold is
-built only while exactly one is pending, and a built fold that spends any
-request input but that one is refused before it is signed.
+fold takes the pure selection over every pending request and settles its
+first included request; several pending requests never refuse on count,
+and a built fold that spends other than the selection is refused before
+it is signed.
 
 The fold is judged against the funding the caller named, or else the
 wallet's largest ada-only output, and against the allowance the caller
@@ -60,7 +61,7 @@ import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -84,6 +85,7 @@ import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Data.ByteString.Short qualified as SBS
+import Data.Map.Strict qualified as Map
 import PlutusCore.Data qualified as PLC
 
 import Singular.CLI.Attached
@@ -125,6 +127,16 @@ import Singular.Registry.Application
     )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.FoldSelection
+    ( Exclusion (..)
+    , Leaf (..)
+    , PendingRequest (..)
+    , Reason (..)
+    , Selection (..)
+    , exclusionName
+    , foldCapacity
+    , selectFold
+    )
 import Singular.Registry.Ledger
     ( ConwayEra
     , Root (..)
@@ -140,7 +152,7 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , requestAddrFromCfg
     )
-import Singular.Registry.TxBuilder.Update (updateTokenWithTrieState)
+import Singular.Registry.TxBuilder.Update (updateTokenSelected)
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
@@ -255,6 +267,14 @@ data Folded = Folded
     -- ^ The host's UTC clock, in POSIX milliseconds, when the fold was decided
     , fdRemaining :: Integer
     -- ^ Milliseconds between the moment the fold was decided and the deadline
+    , fdOwnerHex :: Text
+    -- ^ The settled request's owner hex, as the selection carries it
+    , fdExcluded :: [(TxIn, Exclusion)]
+    -- ^ Every excluded pending request with its reason, in ledger order
+    , fdCapacityBound :: Int
+    -- ^ The capacity bound the selection used
+    , fdCapacityProvenance :: Text
+    -- ^ Why the bound is what it is
     }
 
 -- | What the fold's view decided before anything was signed.
@@ -275,6 +295,10 @@ data Plan = Plan
     , plDecidedAt :: Integer
     , plPostBuild :: Value
     , plRemaining :: Integer
+    , plOwnerHex :: Text
+    , plExcluded :: [(TxIn, Exclusion)]
+    , plCapacityBound :: Int
+    , plCapacityProvenance :: Text
     }
 
 {- | Why a termination with no holding rules is refused, before anything is
@@ -331,36 +355,70 @@ runFold app env a = do
                         }
             pure (receipt "fold" Success (foldedFields folded))
 
--- | A fold's receipt fields, in the order a reader meets them.
+{- | A fold's receipt fields, in the order a reader meets them.
+The earlier single-request fields stay unchanged for the one settled
+request; the lists (@settled@, @excluded@, @capacity@) are added beside
+them, so no existing reader changes (pull request 1 is additive).
+-}
 foldedFields :: Folded -> [(Text, Value)]
-foldedFields f =
-    [ ("request", toJSON (txInText (fdRequest f)))
-    , ("key", toJSON (hexT (fdKey f)))
-    , ("edge", toJSON (edgeName (fdEdge f)))
-    , ("folder", toJSON (hexT (fdFolder f)))
-    , ("fold", toJSON (txIdHex (fdTx f)))
-    ]
-        <> case fdDelivery f of
-            Delivered out holding ->
-                [ ("liveOutput", toJSON (txInText out))
-                , ("envelope", dhDatumJson holding)
+foldedFields f = combineReceiptFields earlier additions
+  where
+    earlier =
+        earlierReceiptFields
+            EarlierReceipt
+                { earRequest = txInText (fdRequest f)
+                , earKey = hexT (fdKey f)
+                , earEdge = edgeText (fdEdge f)
+                , earFolder = hexT (fdFolder f)
+                , earFold = txIdHex (fdTx f)
+                , earDelivery = case fdDelivery f of
+                    Delivered out holding ->
+                        EarlierDelivered (txInText out) (dhDatumJson holding)
+                    DeliveredDatum out datum ->
+                        EarlierDeliveredDatum
+                            (txInText out)
+                            (hexT (datumHash datum))
+                            (hexT (datumCbor datum))
+                    Released out deposit ->
+                        EarlierReleased (txInText out) (toInteger deposit)
+                , earRoot = hexT (fdRoot f)
+                , earDeadline = deadlineJson (fdDeadline f)
+                , earUpperSlot = toInteger . unSlotNo <$> fdUpperSlot f
+                , earPostBuild = fdPostBuild f
+                , earHostClockMs = fdDecidedAt f
+                , earRemainingMs = fdRemaining f
+                }
+    additions =
+        foldReceiptLists
+            [settledEntry]
+            (fdExcluded f)
+            (fdCapacityBound f)
+            (fdCapacityProvenance f)
+    settledEntry =
+        SettledForReceipt
+            (fdRequest f)
+            (hexT (fdKey f))
+            (T.pack (edgeName (fdEdge f)))
+            (fdOwnerHex f)
+            settlement
+            (deadlineJson (fdDeadline f))
+    settlement = case fdDelivery f of
+        Delivered out holding ->
+            object
+                [ "liveOutput" .= txInText out
+                , "envelope" .= dhDatumJson holding
                 ]
-            DeliveredDatum out datum ->
-                [ ("liveOutput", toJSON (txInText out))
-                , ("datumHash", toJSON (hexT (datumHash datum)))
-                , ("datumCbor", toJSON (hexT (datumCbor datum)))
+        DeliveredDatum out datum ->
+            object
+                [ "liveOutput" .= txInText out
+                , "datumHash" .= hexT (datumHash datum)
+                , "datumCbor" .= hexT (datumCbor datum)
                 ]
-            Released out deposit ->
-                [ ("released", toJSON (txInText out))
-                , ("deposit", toJSON deposit)
+        Released out deposit ->
+            object
+                [ "released" .= txInText out
+                , "deposit" .= deposit
                 ]
-        <> [ ("root", toJSON (hexT (fdRoot f)))
-           , ("foldDeadline", deadlineJson (fdDeadline f))
-           , ("validUntilSlot", toJSON (unSlotNo <$> fdUpperSlot f))
-           , ("postBuild", fdPostBuild f)
-           , ("hostClockMs", toJSON (fdDecidedAt f))
-           , ("remainingMs", toJSON (fdRemaining f))
-           ]
 
 {- | Fold the one pending request with the application's context, commit its
 edge speculatively, replay the new public root, and journal the fold observed.
@@ -398,21 +456,191 @@ foldPending app at FoldSpec{..} = do
                     (Just (plRootAfter p))
             )
             ( \building v -> do
-                pending <-
+                pendingRaw <-
                     Cage.outputsAt v (requestAddrFromCfg cfg (savedToken s) Testnet)
-                let pendingIns = map fst pending
+                let pending = sortOn fst pendingRaw
+                    pendingIns = map fst pending
                     stop' = stop fsOrigin named
-                request <- case foldTarget named pendingIns of
-                    Right r -> pure r
-                    Left refusal ->
+                    decodedList =
+                        [ (tx, out, decoded)
+                        | (tx, out) <- pending
+                        , let decoded = case extractCageDatum out of
+                                Just (RequestDatum r) -> Right r
+                                _ -> Left "undecodable" :: Either String OnChainRequest
+                        ]
+                case named of
+                    Just r -> case lookup r pending of
+                        Just out -> case extractCageDatum out of
+                            Just (RequestDatum req) -> case foldKind (requestEdge req) of
+                                Left why
+                                    | refuseNamedEdgeEarly named pendingIns -> do
+                                        found
+                                            building
+                                            [InRequest (txInText r)]
+                                            ( RequestSeen
+                                                (txInText r)
+                                                (edgeText (requestEdge req))
+                                                (requestKey req)
+                                                Nothing
+                                                Nothing
+                                            )
+                                        stop' ClientRefusal why []
+                                    | otherwise ->
+                                        -- another request is pending too: the
+                                        -- selection's refusal names this
+                                        -- request's cause and every other
+                                        -- exclusion, so nothing is dropped
+                                        pure ()
+                                Right _ -> pure ()
+                            _ -> pure ()
+                        Nothing -> pure ()
+                    Nothing -> pure ()
+                live <- attachLive v s
+                st <- case extractCageDatum (snd (liveState live)) of
+                    Just (StateDatum st') -> pure st'
+                    _ ->
                         stop'
-                            ( case refusal of
-                                SeveralPending _ -> ConcurrentWriter
-                                _ -> ClientRefusal
-                            )
-                            (renderTargetRefusal refusal)
+                            ClientRefusal
+                            "the registry's state output carries no state datum"
                             []
-                reqOut <- case lookup request pending of
+                let process = stateProcessTime st
+                    pinned = cfgApplicationPolicy cfg
+                    (pendings, pairing) = buildPendingRequests decodedList pinned app process
+                outsApp <- liveOutputs app v s
+                let keyBytesList =
+                        [ either (const mempty) requestKey dec
+                        | (_, _, dec) <- decodedList
+                        ]
+                    keyInts = assignKeyInts keyBytesList
+                    keyMap = Map.fromList (zip keyBytesList keyInts)
+                    activePolicy = cfgActivePolicy cfg
+                    presentMap =
+                        Map.fromList
+                            [ (kb, holdsActiveToken activePolicy kb outsApp)
+                            | kb <- Map.keys keyMap
+                            ]
+                freshRootEarly <-
+                    either (failWith ClientRefusal) pure (observedRoot live)
+                unless (freshRootEarly == rootBefore) $
+                    failTrie
+                        ( TS.StaleState
+                            (savedIdentity s)
+                            Nothing
+                            (TS.StaleRoot (Root rootBefore) (Root freshRootEarly))
+                        )
+                requireTrieSelection s live (atTrie at)
+                leavesPairs <- withTrie (atTrie at) $ \snap ->
+                    traverse
+                        ( \kb -> case kb == mempty of
+                            True -> pure (kb, LeafUnknown)
+                            False -> do
+                                got <- TS.leafAt snap kb
+                                case got of
+                                    Right TS.Unknown -> pure (kb, LeafUnknown)
+                                    Right TS.Absent -> pure (kb, LeafAbsent)
+                                    Right TS.Active -> pure (kb, LeafActive)
+                                    Right TS.Terminal -> pure (kb, LeafTerminal)
+                                    Left why -> failTrie why
+                        )
+                        (Map.keys keyMap)
+                let leavesMap = Map.fromList leavesPairs
+                    liveFacts = buildLiveFacts leavesMap presentMap keyMap
+                nowSel <- currentPosixMs
+                let selection = selectFold foldCapacity nowSel foldMarginMs liveFacts pendings
+                    intToTx = [(r, tx) | (tx, r) <- pairing]
+                    excludedTxs =
+                        [ (tx, exc)
+                        | (q, exc) <- selectionExcluded selection
+                        , Just tx <- [lookup (prRef q) intToTx]
+                        ]
+                    isWindowClosed exc = exclusionName exc == "window-closed"
+                    refuseWindowClosed tx = refuseWindowClosedWith tx []
+                    refuseWindowClosedWith tx others = do
+                        reqOutW <- case lookup tx pending of
+                            Just o -> pure o
+                            Nothing -> stop' ClientRefusal "the pending request vanished" []
+                        reqW <- case extractCageDatum reqOutW of
+                            Just (RequestDatum r) -> pure r
+                            _ ->
+                                stop' ClientRefusal "the pending request carries no request datum" []
+                        deadlineW <- deadlineOf v reqW st
+                        nowW <- currentPosixMs
+                        case foldWindow foldMarginMs nowW (deadlineMs deadlineW) of
+                            FoldOpen _ ->
+                                stop'
+                                    ClientRefusal
+                                    ( renderFoldRequestsRefusal
+                                        ( FoldNamedExcluded
+                                            tx
+                                            ( Exclusion
+                                                ReasonWindowClosed
+                                                "the processing window is not open beyond the fold margin"
+                                            )
+                                        )
+                                    )
+                                    []
+                            FoldClosed left ->
+                                let legacyMsg =
+                                        "the request's processing deadline, "
+                                            <> show (deadlineMs deadlineW)
+                                            <> " ms"
+                                            <> maybe
+                                                ""
+                                                ((" (slot " <>) . (<> ")") . show . unSlotNo)
+                                                (deadlineSlot deadlineW)
+                                            <> ", "
+                                            <> ( if left <= 0
+                                                    then "has passed"
+                                                    else
+                                                        "is only "
+                                                            <> show (left `div` 1000)
+                                                            <> " s ahead, within the "
+                                                            <> show (foldMarginMs `div` 1000)
+                                                            <> " s a fold needs to be included"
+                                               )
+                                            <> ": no fold is built"
+                                in  stop'
+                                        ClientRefusal
+                                        (combineWindowClosedMessage legacyMsg others)
+                                        [ ("foldDeadline", deadlineJson deadlineW)
+                                        , ("hostClockMs", toJSON nowW)
+                                        , ("remainingMs", toJSON left)
+                                        ]
+                settledNE <- case foldRequests named pairing selection of
+                    Right ne -> pure ne
+                    Left refusal -> case refusal of
+                        FoldNothingPending ->
+                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                        FoldNamedNotPending _ ->
+                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                        FoldNamedExcluded tx exc -> case isWindowClosed exc of
+                            True -> refuseWindowClosed tx
+                            False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                        FoldNothingToFold pairs -> case pairs of
+                            [(tx, exc)] -> case isWindowClosed exc of
+                                True -> refuseWindowClosed tx
+                                False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                            _ -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                        FoldInconsistentInput _ _ ->
+                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                        FoldNamedNothingSettled tx mExc others -> case mExc of
+                            Just exc -> case isWindowClosed exc of
+                                True -> refuseWindowClosedWith tx others
+                                False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                            Nothing -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                let selectedTxs = case settledNE of
+                        x :| xs -> x : xs
+                    chosen = case settledNE of
+                        c :| _ -> c
+                    chosenRef = case lookup chosen pairing of
+                        Just r -> r
+                        Nothing -> -1
+                    ownerHex = case [prOwner p | p <- pendings, prRef p == chosenRef] of
+                        o : _ -> o
+                        [] -> ""
+                    boundUsed = selectionBound selection
+                    provUsed = selectionProvenance selection
+                reqOut <- case lookup chosen pending of
                     Just o -> pure o
                     Nothing -> stop' ClientRefusal "the pending request vanished" []
                 req <- case extractCageDatum reqOut of
@@ -422,27 +650,20 @@ foldPending app at FoldSpec{..} = do
                 let seen dl =
                         found
                             building
-                            [InRequest (txInText request)]
+                            [InRequest (txInText chosen)]
                             ( RequestSeen
-                                (txInText request)
+                                (txInText chosen)
                                 (edgeText (requestEdge req))
                                 (requestKey req)
                                 (deadlineMs <$> dl)
                                 (unSlotNo <$> (dl >>= deadlineSlot))
                             )
+                    request = chosen
                 kind <-
                     either
                         (\why -> seen Nothing >> stop' ClientRefusal why [])
                         pure
                         (foldKind (requestEdge req))
-                live <- attachLive v s
-                st <- case extractCageDatum (snd (liveState live)) of
-                    Just (StateDatum st) -> pure st
-                    _ ->
-                        stop'
-                            ClientRefusal
-                            "the registry's state output carries no state datum"
-                            []
                 deadline <- deadlineOf v req st
                 seen (Just deadline)
                 place
@@ -482,11 +703,6 @@ foldPending app at FoldSpec{..} = do
                             ]
                 let key = requestKey req
                     dest = requestDestination req
-                case (kind, appHolding app) of
-                    (FoldTermination, Nothing) -> do
-                        seen Nothing
-                        stop' ClientRefusal (neutralTerminationRefusal app cfg) []
-                    _ -> pure ()
                 (datum, holding) <- case kind of
                     FoldInsertion -> do
                         d <-
@@ -549,7 +765,7 @@ foldPending app at FoldSpec{..} = do
                 built <-
                     try
                         ( withTrie (atTrie at) $ \snap ->
-                            updateTokenWithTrieState cfg funded snap (savedToken s) addr ctx
+                            updateTokenSelected cfg funded snap (savedToken s) addr ctx settledNE
                         )
                 unsigned <- case built of
                     Right tx -> pure tx
@@ -563,17 +779,14 @@ foldPending app at FoldSpec{..} = do
                                 )
                                 []
                 let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
-                    strays = [i | i <- spent, i `elem` pendingIns, i /= request]
-                unless (request `elem` spent && null strays) $
-                    stop'
-                        ConcurrentWriter
-                        ( "the built fold spends request inputs other than "
-                            <> T.unpack (txInText request)
-                            <> " ("
-                            <> T.unpack (T.intercalate ", " (map txInText strays))
-                            <> "); the fold is not submitted"
-                        )
-                        []
+                    stateTx = fst (liveState live)
+                case spendsSelection stateTx selectedTxs pendingIns spent of
+                    Right _ -> pure ()
+                    Left why ->
+                        stop'
+                            ConcurrentWriter
+                            (renderSpendsRefusal why)
+                            []
                 case fsOrigin of
                     Combined booking ->
                         forM_ (foldPastAllowance fsAllowance booking unsigned) $
@@ -640,6 +853,10 @@ foldPending app at FoldSpec{..} = do
                                 ]
                         , plDecidedAt = now
                         , plRemaining = remaining
+                        , plOwnerHex = ownerHex
+                        , plExcluded = excludedTxs
+                        , plCapacityBound = boundUsed
+                        , plCapacityProvenance = provUsed
                         }
                     )
             )
@@ -748,6 +965,10 @@ foldPending app at FoldSpec{..} = do
             , fdPostBuild = plPostBuild plan
             , fdDecidedAt = plDecidedAt plan
             , fdRemaining = plRemaining plan
+            , fdOwnerHex = plOwnerHex plan
+            , fdExcluded = plExcluded plan
+            , fdCapacityBound = plCapacityBound plan
+            , fdCapacityProvenance = plCapacityProvenance plan
             }
 
 -- | The verdict's short name, as a receipt states it.

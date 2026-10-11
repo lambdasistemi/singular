@@ -669,8 +669,11 @@ run create-seed-not-owned client-refusal -- create --process-time 120000 --retra
 
 # Leave room for the unchanged 30-second CLI margin and the assertion
 # requiring three measured fold builds, including the traced second actor.
+# The retract window must also stay open across the selection scenario the
+# late request's section runs between the refused late fold and the early
+# reject: a booking and a fold of a fresh request happen there (#518).
 process_time=120000
-retract_time=30000
+retract_time=60000
 run create success -- create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 state="$(field create .pins.pinState)"
 token="$(field create .token)"
@@ -1594,6 +1597,77 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
   "$receipts/fold-late.json" >/dev/null \
   || fail "the late fold does not name the deadline and the request it left pending: $(field fold-late .reason)"
 [ "$took" -le 30 ] || fail "the late fold took ${took}s to be refused; a client refusal reads one view and stops"
+
+# The fold takes the selection (#518): the late request above is past its
+# processing deadline and still pending. A fresh eligible insertion is
+# booked beside it, and `registry fold` names no request: the fold settles
+# the fresh one and leaves the late one out, named with its reason and its
+# source. The earlier top-level fields still describe the settled request
+# alone — a reader written before the lists keeps working — and the capacity
+# bound of 1 states its provenance. Each new assertion is shown able to fail
+# on a copy of the receipt altered so its property is false.
+eligible_files="$(local_files)"
+eligible_journal_before="$(journal_count "$alice_journal")"
+run eligible-insert success -- insert --key keyH --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${alice[@]}"
+booked eligible-insert
+booking_only eligible-insert "$alice_journal" "$eligible_journal_before" "$eligible_files"
+run fold-selection success -- registry fold "${common[@]}" "${node[@]}" "${bob[@]}"
+fold_selection_settled() {
+  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" --arg owner "$alicekey" '
+      (.settled | length == 1)
+      and .settled[0].request == $e[0].request
+      and .settled[0].key == $k and .settled[0].edge == "insertActive"
+      and .settled[0].owner == $owner
+      and .settled[0].settlement.liveOutput == .liveOutput
+      and (.settled[0].settlement.datumHash | type == "string" and length > 0)
+      and .settled[0].deadline.posixMs == $e[0].foldDeadline.posixMs
+      and (.settled[0].deadline.slot == $e[0].foldDeadline.slot)' "$1" >/dev/null
+}
+fold_selection_excluded() {
+  jq -e --slurpfile l "$receipts/late-insert.json" '
+      (.excluded | length == 1)
+      and .excluded[0].request == $l[0].request
+      and .excluded[0].reason == "window-closed"
+      and .excluded[0].source == "selection-policy"
+      and (.excluded[0].detail | type == "string" and length > 0)' "$1" >/dev/null
+}
+fold_selection_earlier() {
+  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" '
+      .capacity.bound == 1
+      and (.capacity.provenance | type == "string" and length > 0)
+      and .request == $e[0].request and .key == $k and .edge == "insertActive"
+      and (.fold | test("^[0-9a-f]{64}$"))
+      and (.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
+      and (.datumHash | type == "string" and length > 0)
+      and (.datumCbor | type == "string" and length > 0)' "$1" >/dev/null
+}
+fold_selection_settled "$receipts/fold-selection.json" \
+  || fail "the fold's settled list is not exactly the fresh request: $(jq -c .settled "$receipts/fold-selection.json")"
+fold_selection_excluded "$receipts/fold-selection.json" \
+  || fail "the fold did not leave the late request out and named: $(jq -c .excluded "$receipts/fold-selection.json")"
+fold_selection_earlier "$receipts/fold-selection.json" \
+  || fail "the fold's earlier fields no longer describe the settled request beside the capacity bound: $(jq -c '{request, key, edge, liveOutput, capacity}' "$receipts/fold-selection.json")"
+fold_selection_tamper() { # NAME JQ-EDIT FILTER
+  jq "$2" "$receipts/fold-selection.json" >"$receipts/fold-selection-tampered-$1.json"
+  if "$3" "$receipts/fold-selection-tampered-$1.json"; then
+    fail "the fold-selection receipt edited in $1 still passed its assertion"
+  fi
+}
+fold_selection_tamper settled-empty '.settled = []' fold_selection_settled
+fold_selection_tamper reason-changed '.excluded[0].reason = "capacity"' fold_selection_excluded
+fold_selection_tamper excluded-empty '.excluded = []' fold_selection_excluded
+fold_selection_tamper earlier-request '.request = .excluded[0].request' fold_selection_earlier
+fold_selection_tamper capacity-bound '.capacity.bound = 9' fold_selection_earlier
+run inspect-eligible success -- inspect --key keyH "${common[@]}" "${node[@]}"
+[ "$(field inspect-eligible .leaf)" = active ] \
+  || fail "the fold's settled key did not read active: $(field inspect-eligible .leaf)"
+jq -e --slurpfile l "$receipts/late-insert.json" '
+    (.pendingRequests | length == 1) and .pendingRequests[0].request == $l[0].request' \
+  "$receipts/inspect-eligible.json" >/dev/null \
+  || fail "the late request is not the one request the registry still holds pending: $(jq -c .pendingRequests "$receipts/inspect-eligible.json")"
+say "the fold settled the eligible request and left the late one out, named; the late one is still the only pending request"
+
 # The same request is past its processing deadline but still inside its
 # retract window, where its owner may take it back: a reject, which takes
 # every pending request, is refused by the client before anything is signed,

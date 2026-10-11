@@ -30,6 +30,7 @@ module Singular.Registry.TxBuilder.Update.Context
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import Data.List (sortOn)
+import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Time.Clock (getCurrentTime)
@@ -200,9 +201,16 @@ completeContext cfg view addr script ctx0 = do
 
 {- | Query cage UTxOs, find the state and request
 UTxOs, pick a fee-paying wallet UTxO.
+
+The pending-request query takes the chosen set: folding every pending
+request (absent selection) still refuses an empty pending set with the
+long-standing generic error, while folding a chosen set returns whatever
+is pending (possibly none) so the caller can name every chosen reference
+that is not among them, at every live pending-set size including zero.
 -}
 queryContext
-    :: CageConfig
+    :: Maybe (NE.NonEmpty TxIn)
+    -> CageConfig
     -> Session NoWitness IO
     -> TokenId
     -> Addr
@@ -212,7 +220,7 @@ queryContext
         , (TxIn, TxOut ConwayEra)
         , PParams ConwayEra
         )
-queryContext cfg view tid addr = do
+queryContext selected cfg view tid addr = do
     let stateAddr =
             cageAddrFromCfg cfg (network cfg)
         reqAddr =
@@ -232,8 +240,11 @@ queryContext cfg view tid addr = do
     let reqUtxos =
             sortOn fst $
                 findRequestUtxos tid requestUtxos
-    when (null reqUtxos) $
-        error "updateToken: no pending requests"
+    case selected of
+        Nothing ->
+            when (null reqUtxos) $
+                error "updateToken: no pending requests"
+        Just _ -> pure ()
     pp <- parameters view
     walletUtxos <- outputsAt view addr
     -- #157: an approval is not burned at the fold, so it returns to the

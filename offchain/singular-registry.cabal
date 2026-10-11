@@ -112,6 +112,7 @@ library
     Singular.Registry.Confirmation
     Singular.Registry.Deployment
     Singular.Registry.Driver
+    Singular.Registry.FoldSelection
     Singular.Registry.Funding
     Singular.Registry.Lifecycle
     Singular.Registry.Proof
@@ -958,6 +959,7 @@ test-suite cage-tests
     Paths_singular_registry
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
+    Singular.CLI.FoldRulesSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.TrieRefusalSpec
@@ -976,6 +978,7 @@ test-suite cage-tests
     Singular.Registry.ContractSuite
     Singular.Registry.DeploymentSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.FoldSelectionSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.LineageSpec
     Singular.Registry.LocalEvaluationSpec
@@ -997,6 +1000,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.CollateralJudgement
+    Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec

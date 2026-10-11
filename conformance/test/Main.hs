@@ -17,6 +17,7 @@ import Conformance.Support.FixtureChild
     , holdScopedDirectories
     )
 import Conformance.Support.FoldHistory qualified as FoldHistory
+import Conformance.Support.FoldSelection qualified as FoldSelection
 import Conformance.Support.HeldView qualified as HeldView
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.ObservedTx qualified as ObservedTx
@@ -98,6 +99,8 @@ suite = do
         describe "Appendix — how we check the evidence" Specification.spec
     describe (tagged "Conformance.Support.HeldView" [Conformance]) $
         describe "Appendix — how we check the evidence" HeldView.spec
+    describe (tagged "Conformance.Support.FoldSelection" [Conformance]) $
+        describe "Appendix — how we check the evidence" FoldSelection.spec
     describe
         (tagged "Conformance.Support.PurposeUnits" [Conformance, Evaluation])
         $ describe "Appendix — how we check the evidence" PurposeUnits.spec

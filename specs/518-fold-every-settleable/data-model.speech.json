@@ -1,0 +1,46 @@
+{
+  "data-model": [
+    {
+      "text": "Data model.",
+      "pause": 500
+    },
+    {
+      "text": "Fields, relationships, validation and state invariants of the new or changed data. Signatures are in the functions model. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "selection-data-registry-library": [
+    {
+      "text": "Selection data (registry library).",
+      "pause": 500
+    },
+    {
+      "text": "Reason names by source:",
+      "pause": 400
+    }
+  ],
+  "journal-data-command-line-pull-request-2": [
+    {
+      "text": "Journal data (command line, pull request 2).",
+      "pause": 500
+    },
+    {
+      "text": "At a fold's rolled-back line the restored public root is the first transition's root before.",
+      "pause": 400
+    }
+  ],
+  "receipt-data-command-line": [
+    {
+      "text": "Receipt data (command line).",
+      "pause": 500
+    },
+    {
+      "text": "The earlier single-request fields (request, key, edge, liveOutput, envelope, released, deposit) describe the one settled request of a fold of one. In pull request 1 they stay at the top level of the receipt, unchanged, and the lists (settled, excluded, the capacity bound with its provenance) are added beside them, so that no existing reader changes while main stays green; the lists repeat the settled request in the shape of the table above. In pull request 2 the readers move to the lists and the top-level duplicates are removed in the same change. Readers of the receipt are listed in the plan.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "deb9c294fba0d9ad932398dfa34ebbac626046eba0ad71b769aab8a9a40ce8b4"
+  }
+}

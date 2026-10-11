@@ -15,7 +15,7 @@ below happens before anything is read or submitted.
 * @open-datum terminate@ books one @updateTerminal@ at a key, each leaving
   its request pending for the registry's fold; with @--fold@ either
   also folds it in the same command;
-* @open-datum fold@ folds the one pending request, signed and funded by
+* @open-datum fold@ takes the selection and folds its first included request, signed and funded by
   the wallet that runs it;
 * @open-datum inspect@ reads the registry and one key back, and accepts
   no signing key at all.

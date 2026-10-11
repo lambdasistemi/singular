@@ -1,0 +1,72 @@
+{
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The acceptance of #518 is the repository's own CI: each acceptance line of the spec is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v1, frozen before any code is written (amended once before dispatch, after the plan review, to add the pull request each line belongs to; amended a second time at the stacked base for workflow line numbers and one open row below; amended a third time as v1.2 after the base moved to 58335316, for workflow line numbers again and the rows under \"Gate additions at 58335316\"; v1.3 maps one more acceptance line to an existing row and widens when it runs, at the auditor's addition during the builder run; no settled check changed); changes after the freeze are a new version with the settled rows unchanged.",
+      "pause": 400
+    }
+  ],
+  "how-it-was-written": [
+    {
+      "text": "How it was written.",
+      "pause": 500
+    },
+    {
+      "text": "Two tables were written independently, then synthesized once. The ticket owner's table has sha256 af9b40091a642895d4f48cfff57c8395654062b44b169f3cd37cbddc48370cae; the table of the gate-author auditor seat (GLM through the pi harness) has sha256 cd2df8ebd9059d99034ebb047ebc25afd5f979e62ffeb4a90a3b322edccb542b. The owner wrote its table before reading the auditor's. Both start from the same acceptance lines (sha256 7a4ab83c5558ef9add3c09cfcc8e83facd9c684a7f0e0f34587da7e9ccb1a438). The auditor read the workflows at base 76bb0993; every command below was read again at e3c9ab01 and then at 24e0c9ba, and once more at 58335316, the base of this branch (the split's approved head); the line numbers are those of 58335316. Against 24e0c9ba the lines of ci.yml after offchain-component-build moved by 43 (the split added the application-separation steps and two jobs for the open-datum package) and the lines of registry.yml after the focused-suite step moved by one; conformance.yml and the first two ci.yml rows did not move; no command or check changed. The one wording change since the auditor's table: edge-unsupported became the model's own edge-inadmissible, because the base now admits two edges only.",
+      "pause": 400
+    }
+  ],
+  "commands": [
+    {
+      "text": "Commands.",
+      "pause": 500
+    },
+    {
+      "text": "Local rows run in minutes on a developer machine; hosted rows run only on the pushed head. Minutes are estimates from the job shape and timeout-minutes. A \"red run\" is a failed GitHub Actions run of that job, the evidence that the command can fail; where none exists in the last eighty failed runs the commit owner shows the focused product RED instead.",
+      "pause": 400
+    }
+  ],
+  "acceptance-line-to-commands": [
+    {
+      "text": "Acceptance line to commands.",
+      "pause": 500
+    },
+    {
+      "text": "The PR column says which pull request the line belongs to (1, 2 or both); the commands are the same in both.",
+      "pause": 400
+    }
+  ],
+  "gate-additions-at-58335316": [
+    {
+      "text": "Gate additions at 58335316.",
+      "pause": 500
+    },
+    {
+      "text": "Three rows added in v1.2, none replacing a settled one. Each is the verbatim command of an existing job at 58335316. They are the ticket owner's own rows: neither gate-author table could cover them, because the jobs did not exist (the open-datum jobs) or the step was not read as a gate row (the separation pair).",
+      "pause": 400
+    }
+  ],
+  "root-gate": [
+    {
+      "text": "Root gate.",
+      "pause": 500
+    },
+    {
+      "text": "Every required status check of the main ruleset (id 22633401), 67 at e3c9ab01, must be green on the exact pushed head, each one individually: Aiken blueprint builds first; Backend contract suite on every adapter; Build Gate; Cage vectors match the generator; CLI recovery — a lost acknowledgement; CLI recovery — a process killed at its hold points; CLI recovery — the accepting path; Code inventory; Compiled script identity matches the manifest; Conformance checks without a devnet; Conformance devnet: a wrong model reason fails the row; Conformance devnet: batch instructions asked of the model; Conformance devnet: early rejection inside the windows; Conformance devnet: honest fold budget regression; Conformance devnet: reject and retract refund controls; Conformance devnet: retire-active-key; Conformance devnet: the canonical-identity rows; Conformance devnet: the generic rows; Conformance devnet: the retraction window; Conformance devnet: the running book; Conformance devnet: the serialization rows; Conformance Haskell format and lint check; Demo 1 journey from the release archive; Demo 1 public-indexer readback; Demo 1 refusals on one existing registry; Demo 1 refusals on one existing registry — indexer-reads; Demo 1 refusals on one existing registry — over-allowance; Demo 1 refusals on one existing registry — takes; Demo 1 refusals on one existing registry — tampered-a; Demo 1 refusals on one existing registry — tampered-b; Development shell build; Devnet E2E lanes select the whole suite; Devnet E2E on the fresh blueprint; Devnet E2E part: cage; Devnet E2E part: criterion 3; Devnet E2E part: driver and replay; Devnet E2E part: fork recovery; Devnet E2E part: node, boot, insert and config; Devnet E2E part: update to terminal; Documentation release checks; Documented CLI flags and refusal controls; Generic, canonical-identity and serialization rows on a real devnet; Lean model and exact statement debt; Live documentation preview; Naming validators build, refuse, and match their pinned identity; Naming wire vectors match the epic-15 contract; Off-chain component build; Off-chain lint; Onchain Aiken unit and property suite passes; On-chain release assembly and artifact checks; Rendered documentation; Simulator browser checks; Simulator corpus parity and controls; The bounded registry journey, narrated end to end; Theorem coverage gate — inventory, ratchet and completion as distinct results; Theorem coverage strict completion (reporting); Vendored v0.2.0 vectors match the live corpus; Workflow parses, lints clean, owned docs page bound; CLI recovery — another wallet's fold: cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND; CLI recovery — another wallet's fold: cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer; CLI recovery — another wallet's fold: cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SUBMIT; CLI recovery — another wallet's fold: cross-wallet:SINGULAR_HARNESS_HOLD_BEFORE_COMMIT; CLI recovery — another wallet's fold: cross-wallet:SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED; CLI recovery — discover the cross-wallet case matrix; Demo 1 ordinary CLI refusal controls; Demo 1 two actors — Bob opening Alice's file fails the journey; Development shell checks.",
+      "pause": 400
+    }
+  ],
+  "rows-without-an-existing-command-or-resting-on-this-tickets-own-change": [
+    {
+      "text": "Rows without an existing command, or resting on this ticket's own change.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "405686b36035337d30e9db720f414cbab3d110e405fc6cd40306adc94f1f643c"
+  }
+}

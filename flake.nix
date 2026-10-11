@@ -317,24 +317,28 @@
               }
             );
           };
+          # Every direct/wrapped recovery controller carries the same tools.
+          # The lifecycle composition must not inherit them from an ambient
+          # developer PATH after eliminating the old launcher wrapper chain.
+          recoveryRuntimeInputs = with pkgs; [
+            bash
+            coreutils
+            diffutils
+            findutils
+            gawk
+            gnugrep
+            gnused
+            jq
+            nix
+            procps
+            python3
+          ];
           recoveryApp = name: parts: {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 inherit name;
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  jq
-                  nix
-                  # the controls find and stop their own development node
-                  procps
-                  # read-root.py and the CBOR reader; without it the check
-                  # script falls back to nix develop
-                  python3
-                ];
+                runtimeInputs = recoveryRuntimeInputs;
                 text = ''
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
                   CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
@@ -354,16 +358,7 @@
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-recovery-cross-wallet-part";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  jq
-                  nix
-                  procps
-                  python3
-                ];
+                runtimeInputs = recoveryRuntimeInputs;
                 text = ''
                   [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
@@ -776,12 +771,7 @@
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "facade-lifecycle-controls";
-                runtimeInputs = [
-                  pkgs.python3
-                  pkgs.coreutils
-                  pkgs.bash
-                  pkgs.nix
-                ];
+                runtimeInputs = recoveryRuntimeInputs;
                 text = ''
                   work="$(mktemp -d)/controls"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}

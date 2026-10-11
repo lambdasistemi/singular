@@ -1,0 +1,38 @@
+{
+  "functions-model": [
+    {
+      "text": "Functions model.",
+      "pause": 500
+    },
+    {
+      "text": "New or changed signatures only: names, explicit arguments, argument and result types, constraints and effects. No bodies. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "registry-library": [
+    {
+      "text": "Registry library.",
+      "pause": 500
+    }
+  ],
+  "command-line": [
+    {
+      "text": "Command line.",
+      "pause": 500
+    }
+  ],
+  "conformance": [
+    {
+      "text": "Conformance.",
+      "pause": 500
+    },
+    {
+      "text": "Removed: foldTarget, FoldTargetRefusal, renderTargetRefusal.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "a659a76708b0dc2d50a6f9492cab4aa85ff6f960cf2359e52a68ea276db354c7"
+  }
+}

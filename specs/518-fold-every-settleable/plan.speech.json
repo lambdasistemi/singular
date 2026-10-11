@@ -1,0 +1,108 @@
+{
+  "plan-fold-the-whole-selection": [
+    {
+      "text": "Plan: fold the whole selection.",
+      "pause": 500
+    },
+    {
+      "text": "Read the spec for the stories, the rulings and the acceptance, the gate for the checks, the touch list for every file, and the tasks for the commit boundaries.",
+      "pause": 400
+    }
+  ],
+  "where-the-work-stands": [
+    {
+      "text": "Where the work stands.",
+      "pause": 500
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The library's fold already speculates every pending request at the request address; it gains an explicit selection, and the validity bound follows the selection. The command chooses the selection purely, from the pending outputs, the live state, the clock and the capacity bound, and carries a list through the receipt, the journal and reconciliation. The selection itself is a pure library module with no command-line and no open-datum import, so a conformance test can ask the model about its output, and the registry's command line and the open-datum executable use it without it knowing either.",
+      "pause": 400
+    }
+  ],
+  "three-pull-requests": [
+    {
+      "text": "Three pull requests.",
+      "pause": 500
+    },
+    {
+      "text": "The slice is cut into pull requests that each ship a runnable outcome. The first cut (two pull requests) was made before dispatch; on 2026-10-11 the epic owner ruled a second cut (the desk's option B): the receipt readers and the other pages move behind pull request 1, and the former pull request 2 (\"many per fold\") becomes pull request 3. The spec and the gate were frozen under the first numbering and still say \"2\" for what is now pull request 3 (their lines marked 1 are pull request 1, except where the touch list moves a reader or a page to pull request 2). One patch per slice in a patch stack, no journey commits. Each slice builds and passes its candidate gate; hosted CI at the exact head is the net. Merge order: #528, #381, pull request 1, #358 slice 3, pull request 2, then pull request 3.",
+      "pause": 400
+    }
+  ],
+  "pull-request-1-each-request-judged-alone-one-settled-per-fold": [
+    {
+      "text": "Pull request 1: each request judged alone, one settled per fold.",
+      "pause": 500
+    },
+    {
+      "text": "Runnable outcome: with two pending requests, one of them stuck, registry fold settles the other and names the stuck one; the refusal of the 2026-10-07 rehearsal is gone.",
+      "pause": 400
+    }
+  ],
+  "pull-request-2-the-receipt-readers-and-the-other-pages": [
+    {
+      "text": "Pull request 2: the receipt readers and the other pages.",
+      "pause": 500
+    },
+    {
+      "text": "Runnable outcome: the conformance command-line controls, the recovery controls, the Demo 1 control check and the pages read and state the list receipt; the top-level single-request fields are gone. Started from the approved head that #528 pushes at its pre-push checkpoint (the desk's ruling), so the files #528 still changes (the conformance controls, the control check, the audio index and manifest) are edited once.",
+      "pause": 400
+    }
+  ],
+  "pull-request-3-many-per-fold": [
+    {
+      "text": "Pull request 3: many per fold.",
+      "pause": 500
+    },
+    {
+      "text": "Runnable outcome: one fold settles every settleable pending request up to the bound of 9, and an interrupted multi-request fold recovers.",
+      "pause": 400
+    }
+  ],
+  "the-command-line-split-528-is-the-base": [
+    {
+      "text": "The command-line split (#528) is the base.",
+      "pause": 500
+    },
+    {
+      "text": "#528 makes the Singular command line registry-only, moves the open datum into its own executable and package, and introduces an application value that carries everything the registry needs to know of an application. Its mandate is specs/528-registry-cli-split/ in the repository. #528 has merged (c6748950); this plan was written against the code as #528 left it on its approved heads, and the branch now sits on main.",
+      "pause": 400
+    }
+  ],
+  "team-process-and-merge-order": [
+    {
+      "text": "Team, process and merge order.",
+      "pause": 500
+    }
+  ],
+  "evidence-this-ticket-produces": [
+    {
+      "text": "Evidence this ticket produces.",
+      "pause": 500
+    },
+    {
+      "text": "Receipts: the failing and passing runs of each slice's focused suite; the conformance unit run with its same-key control; the hosted run links for the three executed devnet items (two actors one fold, an excluded request left and named, an interrupted two-request fold reconciled) and for every required check at the exact head. The pull request body is a fill-in of the repository template:",
+      "pause": 400
+    }
+  ],
+  "budget-and-size": [
+    {
+      "text": "Budget and size.",
+      "pause": 500
+    },
+    {
+      "text": "One team per epic at a time; the operator is on credits. The split is decided above with an estimate per pull request, each followed by 60 to 90 minutes of hosted CI that the merge waits for. The estimates of the first cut were 2 to 3 hours of commit-owner time for pull request 1 and 3 to 4 hours for the former pull request 2; the observed ratio over the estimates is about 1.4, 41 of the first 133 minutes came from the stacked base, and the epic owner ruled an allowance of 7.5 hours for pull request 1. Commit owners are launched one task at a time, each with the terminal condition green, blocked or at capacity. Pull requests 2 and 3 are new dispatches after the pull request before them merges; pull request 3 also waits for the desk to rule on the session-layer collision. A pull request that would run past its estimate by a working day is stopped at its last green checkpoint and the remainder is proposed to the epic owner as a question, not ground out.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "3cfd7c2b6d5410a070c084c33a79c4d8f882cb9a48e91c32698f4873f8140161"
+  }
+}

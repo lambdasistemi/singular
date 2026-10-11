@@ -57,108 +57,86 @@ def control(devnet, root, case):
     if case == "missing-resume":
         arguments += ["--restart-resume-timeout-ms", "1000"]
     environment = dict(os.environ, TMPDIR=str(work))
-    with (work / "stdout").open("w") as output, (work / "stderr").open("w") as errors:
-        # This scope owns and waits for its direct fixture child. No watcher.
-        process = subprocess.Popen(
-            arguments, env=environment, stdout=output, stderr=errors
+    node = None
+    settings = None
+    result = {"case": case, "command": arguments}
+    with owned_process(
+        arguments, environment, work, "fixture", "stdout", "stderr"
+    ) as process:
+
+        def published():
+            lines = (work / "stdout").read_text().splitlines()
+            if not lines:
+                return None
+            try:
+                return json.loads(lines[-1])
+            except json.JSONDecodeError:
+                return None
+
+        settings = wait_for(published, process)
+        if case != "ordinary-unexpected-death":
+            wait_for(lambda: (markers / "ready.0").is_file(), process)
+        node = find_node(
+            str(work / "cardano-e2e/node-config.json"),
+            settings["privateProbeSocket"],
+            process.pid,
         )
-        node = None
-        settings = None
-        result = {"case": case, "command": arguments}
-        try:
-
-            def published():
-                lines = (work / "stdout").read_text().splitlines()
-                if not lines:
-                    return None
-                try:
-                    return json.loads(lines[-1])
-                except json.JSONDecodeError:
-                    return None
-
-            settings = wait_for(published, process)
-            if case != "ordinary-unexpected-death":
-                wait_for(lambda: (markers / "ready.0").is_file(), process)
-            node = find_node(
-                str(work / "cardano-e2e/node-config.json"),
-                settings["privateProbeSocket"],
-                process.pid,
+        result.update(node=node, fixture=observe(process.pid), settings=settings)
+        (work / "fixture-node.json").write_text(json.dumps(node, indent=2) + "\n")
+        if "unexpected-death" in case:
+            stop(node, "KILL", 5)
+            code = process.wait(timeout=15)
+            diagnostic = (work / "stderr").read_text()
+            assert code != 0 and (
+                "ExceptionInLinkedThread" in diagnostic
+                or "source connection closed" in diagnostic
+            ), diagnostic
+        elif case == "out-of-order":
+            (markers / "pause.2").touch(exist_ok=False)
+            code = process.wait(timeout=15)
+            assert (
+                code != 0
+                and "out-of-order facade request" in (work / "stderr").read_text()
             )
-            result.update(node=node, fixture=observe(process.pid), settings=settings)
-            if "unexpected-death" in case:
-                stop(node, "KILL", 5)
-                code = process.wait(timeout=15)
-                diagnostic = (work / "stderr").read_text()
-                assert code != 0 and (
-                    "ExceptionInLinkedThread" in diagnostic
-                    or "source connection closed" in diagnostic
-                ), diagnostic
-            elif case == "out-of-order":
-                (markers / "pause.2").touch(exist_ok=False)
+        else:
+            (markers / "pause.1").touch(exist_ok=False)
+            wait_for(lambda: (markers / "paused.1").is_file(), process)
+            assert endpoint_refuses(settings["providerUrl"]), (
+                "paused endpoint returned an answer"
+            )
+            result["paused_endpoint_refuses"] = True
+            if case == "missing-resume":
                 code = process.wait(timeout=15)
                 assert (
                     code != 0
-                    and "out-of-order facade request" in (work / "stderr").read_text()
+                    and "missing facade request: resume.1"
+                    in (work / "stderr").read_text()
+                )
+            elif case == "caller-cancel":
+                process.terminate()
+                code = process.wait(timeout=30)
+                assert code != 0
+            elif case == "stale-request":
+                (markers / "pause.1").touch(exist_ok=False)
+                code = process.wait(timeout=15)
+                assert (
+                    code != 0
+                    and "stale, duplicate or out-of-order"
+                    in (work / "stderr").read_text()
                 )
             else:
-                (markers / "pause.1").touch(exist_ok=False)
-                wait_for(lambda: (markers / "paused.1").is_file(), process)
-                assert endpoint_refuses(settings["providerUrl"]), (
-                    "paused endpoint returned an answer"
-                )
-                result["paused_endpoint_refuses"] = True
-                if case == "missing-resume":
-                    code = process.wait(timeout=15)
-                    assert (
-                        code != 0
-                        and "missing facade request: resume.1"
-                        in (work / "stderr").read_text()
-                    )
-                elif case == "caller-cancel":
-                    process.terminate()
-                    code = process.wait(timeout=30)
-                    assert code != 0
-                elif case == "stale-request":
-                    (markers / "pause.1").touch(exist_ok=False)
-                    code = process.wait(timeout=15)
-                    assert (
-                        code != 0
-                        and "stale, duplicate or out-of-order"
-                        in (work / "stderr").read_text()
-                    )
-                else:
-                    raise RuntimeError(f"unmapped control: {case}")
-            assert gone(node), "fixture exit left its original node live"
-            assert endpoint_refuses(settings["providerUrl"]), (
-                "fixture exit left HTTP live"
-            )
-            result.update(
-                exit=code, original_node_gone=True, endpoint_refuses_after_exit=True
-            )
-            (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
-            print(json.dumps(result), flush=True)
-        finally:
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=30)
-                except subprocess.TimeoutExpired:
-                    # Keep the directory and original result. This is a failed
-                    # cleanup, not evidence that the fixture bracket joined.
-                    if node is not None and not gone(node):
-                        stop(node, "KILL", 5)
-                    process.kill()
-                    process.wait()
-                    raise RuntimeError(
-                        "fixture cancellation did not join its owner"
-                    ) from None
-            if node is not None and not gone(node):
-                stop(node, "KILL", 5)
-                raise RuntimeError("control cleanup found an unjoined original node")
+                raise RuntimeError(f"unmapped control: {case}")
+        assert gone(node), "fixture exit left its original node live"
+        assert endpoint_refuses(settings["providerUrl"]), "fixture exit left HTTP live"
+        result.update(
+            exit=code, original_node_gone=True, endpoint_refuses_after_exit=True
+        )
+        (work / "result.json").write_text(json.dumps(result, indent=2) + "\n")
+        print(json.dumps(result), flush=True)
 
 
 @contextmanager
-def owned_process(command, environment, work, name):
+def owned_process(command, environment, work, name, stdout_name=None, stderr_name=None):
     """Own the direct child across normal completion, timeout and interruption.
 
     The experiment is a direct Bash controller, in its own session so caller
@@ -169,8 +147,8 @@ def owned_process(command, environment, work, name):
     original_error = None
     cleanup_error = None
     with (
-        (work / (name + ".out")).open("w") as output,
-        (work / (name + ".err")).open("w") as errors,
+        (work / (stdout_name or name + ".out")).open("w") as output,
+        (work / (stderr_name or name + ".err")).open("w") as errors,
     ):
         process = None
         pending = []
@@ -232,6 +210,23 @@ def owned_process(command, environment, work, name):
                     process.wait(timeout=5)
                 # These checks also run when an unexpected caller interrupt
                 # propagates: cleanup is not inferred from wrapper exit alone.
+                fixture_node = work / "fixture-node.json"
+                if fixture_node.is_file() and not gone(
+                    json.loads(fixture_node.read_text())
+                ):
+                    raise RuntimeError("owned fixture left its original node live")
+                direct_settings = work / (stdout_name or name + ".out")
+                if direct_settings.is_file():
+                    for line in direct_settings.read_text().splitlines():
+                        try:
+                            settings = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if isinstance(settings, dict) and "providerUrl" in settings:
+                            if not endpoint_refuses(settings["providerUrl"]):
+                                raise RuntimeError(
+                                    "owned fixture left its HTTP endpoint live"
+                                )
                 experiment = work / "run"
                 if experiment.exists():
                     paths = [
@@ -266,6 +261,9 @@ def owned_process(command, environment, work, name):
                 # A failed owner is not allowed to abandon the experiment.
                 # Bind the exact starting child before any fallback signal;
                 # stop replacement, then fixture, then the controller itself.
+                fixture_node = work / "fixture-node.json"
+                if fixture_node.is_file():
+                    stop(json.loads(fixture_node.read_text()), "KILL", 5)
                 experiment = work / "run"
                 point = experiment / "startup-cancellation-point"
                 replacement_records = list(experiment.glob("replacement-node-*.json"))
