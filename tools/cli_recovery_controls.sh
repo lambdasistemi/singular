@@ -519,14 +519,14 @@ for command in update terminate; do
   run "$command-absent" "$command" --key-hex 6d697373696e672d6b6579 \
     "${extra[@]}" "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "$command of an absent key is refused before signing" exit_is "$command-absent" 10
-  clause "$command names the absent source holding" is_equal \
+  clause "$command names the key as not registered, labelled client policy" is_equal \
     "$(field "$command-absent" '.outcome + "/" + .reason')" \
-    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+    'client-refusal/missing-key is not registered (client policy)'
   run "$command-absent-preview" "$command" --preview --key-hex 6d697373696e672d6b6579 \
     "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
-  clause "$command preview names the same absent source holding" is_equal \
+  clause "$command preview names the same key as not registered, labelled client policy" is_equal \
     "$(field "$command-absent-preview" '.outcome + "/" + .reason')" \
-    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+    'client-refusal/missing-key is not registered (client policy)'
   clause "$command preview is refused" exit_is "$command-absent-preview" 10
 done
 clause "absent-source write and preview refusals leave every registry file unchanged" is_equal \
