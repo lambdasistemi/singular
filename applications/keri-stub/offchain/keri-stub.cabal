@@ -1,0 +1,104 @@
+cabal-version: 3.4
+name:          keri-stub
+version:       0.1.0.0
+synopsis:      Keri stub application against the Singular registry library
+description:
+  The keri stub application: holding datum, always-succeeding script,
+  application value, entry commands and verbs, built against the
+  singular-registry library and registry-cli. A second application
+  starts from this tree.
+
+license:       Apache-2.0
+license-file:  LICENSE
+author:        Paolo Veronelli
+maintainer:    paolo.veronelli@gmail.com
+category:      Cardano
+build-type:    Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+library
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   src
+  exposed-modules:
+    Singular.Application.KeriStub.Command
+    Singular.Application.KeriStub.Datum
+    Singular.Application.KeriStub.Root
+    Singular.Application.KeriStub.Run
+    Singular.Application.KeriStub.Script
+    Singular.Application.KeriStub.Value
+
+  build-depends:
+    , base                               >=4.14 && <5
+    , base16-bytestring
+    , bytestring                         >=0.11 && <0.13
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , containers                         >=0.6  && <0.8
+    , contra-tracer
+    , microlens
+    , plutus-core
+    , plutus-ledger-api
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+    , text                               >=2.0  && <2.2
+
+executable keri-stub
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:
+    , base                    >=4.14 && <5
+    , keri-stub
+  ghc-options: -threaded -with-rtsopts=-N
+
+test-suite keri-stub-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   test test-tags
+  main-is:          Main.hs
+  other-modules:
+    Singular.Application.KeriStub.CLISpec
+    Singular.Application.KeriStub.DatumSpec
+    Singular.Application.KeriStub.FlagGroupExtentSpec
+    Singular.Application.KeriStub.RulesSpec
+    Singular.Application.KeriStub.ValueSpec
+    Test.Tags
+
+  build-depends:
+    , base
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , containers
+    , hspec
+    , keri-stub
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , QuickCheck
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+    , text
+
+  ghc-options:      -threaded

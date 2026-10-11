@@ -1,0 +1,27 @@
+module Main (main) where
+
+import Singular.Application.KeriStub.CLISpec qualified
+import Singular.Application.KeriStub.DatumSpec qualified
+import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
+import Singular.Application.KeriStub.RulesSpec qualified
+import Singular.Application.KeriStub.ValueSpec qualified
+import Test.Hspec (describe, hspec)
+import Test.Tags (Area (..), tagged)
+
+main :: IO ()
+main = hspec $ do
+    describe
+        (tagged "Singular.Application.KeriStub.CLI" [Cli])
+        Singular.Application.KeriStub.CLISpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Datum" [Application])
+        Singular.Application.KeriStub.DatumSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.FlagGroupExtent" [Cli])
+        Singular.Application.KeriStub.FlagGroupExtentSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Rules" [Application])
+        Singular.Application.KeriStub.RulesSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Value" [Application])
+        Singular.Application.KeriStub.ValueSpec.spec
