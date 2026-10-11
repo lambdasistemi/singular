@@ -13,7 +13,7 @@ These rows exercise replay, speculative termination proofs, controller and
 request-window decisions; they do not claim a signed fold, refund or CLI join.
 The packaged two-terminal journey retains those integrations as pending #437.
 -}
-module Singular.CLI.IndependentActorsSpec (spec) where
+module Singular.Application.OpenDatum.IndependentActorsSpec (spec) where
 
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..))
@@ -50,12 +50,13 @@ import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
+import MPF.Backend.Pure (MPFInMemoryDB (..))
 import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.Envelope (Envelope (..))
 import Singular.CLI.FoldRules (FoldKind (FoldTermination), foldKind)
-import Singular.CLI.InsertEnvelope (insertEnvelope)
+import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
 import Singular.CLI.Live (failTrie)
-import Singular.CLI.Plan (controllerCheck)
+import Singular.Application.OpenDatum.Plan (controllerCheck)
 import Singular.CLI.Receipt (OutcomeClass (..), exitCodeOf)
 import Singular.CLI.ReclaimRules qualified as Reclaim
 import Singular.CLI.RejectRules qualified as Reject
@@ -74,9 +75,10 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as LP
 import Singular.Registry.StubSession (stubSession)
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TrieState hiding (StaleState)
 import Singular.Registry.TrieState.Lineage (lineageTrieState)
-import Singular.Registry.TrieStateSpec (produced)
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
@@ -87,11 +89,13 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     , toPlcData
     , txInToRef
+    , walkEdge
     )
 import Singular.Registry.Types
     ( CageDatum (..)
     , MintRedeemer (..)
     , OnChainRoot (..)
+    , ProofStep
     , RequestAction (..)
     , UpdateRedeemer (..)
     , edgeInsertAbsent
@@ -422,6 +426,33 @@ recordOf spent tx =
         | (index, out) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
         ]
         True
+
+{- | Both the nodes and comparisons come from the existing edge/proof
+producer. No root or proof is entered as a fixture constant. Copied with
+the spec move from `Singular.Registry.TrieStateSpec`, which the application
+test suite cannot import (a registry test component, not a library); the
+producer and every assertion using it are unchanged.
+-}
+walkReport
+    :: (Monad m)
+    => Trie m -> [(ByteString, Integer)] -> m (Root, [[ProofStep]])
+walkReport trie moves = do
+    proofs <- mapM (uncurry (walkEdge trie)) moves
+    r <- getRoot trie
+    pure (r, proofs)
+
+produced
+    :: TokenId
+    -> [(ByteString, Integer)]
+    -> IO (MPFInMemoryDB, Root, [[ProofStep]])
+produced tid moves = do
+    (manager, dump) <- mkPureTrieManagerFrom Map.empty
+    createTrie manager tid
+    (r, proofs) <- withTrie manager tid (`walkReport` moves)
+    nodes <- dump
+    case Map.lookup tid nodes of
+        Nothing -> fail "the actual producer lost its registry"
+        Just db -> pure (db, r, proofs)
 
 history :: IO [(Root, LP.HistoricalTransaction)]
 history = do
