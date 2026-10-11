@@ -356,44 +356,31 @@ runFold app env a = do
             pure (receipt "fold" Success (foldedFields folded))
 
 {- | A fold's receipt fields, in the order a reader meets them.
-The earlier single-request fields stay unchanged for the one settled
-request; the lists (@settled@, @excluded@, @capacity@) are added beside
-them, so no existing reader changes (pull request 1 is additive).
+The earlier single-request fields are gone; each settled request's facts
+live in the @settled@ list. What stays at the top level are the facts of
+the transaction: the folder, the fold, the root, the deadline, the validity
+bound, the post-build verdict, the host clock and the time remaining, then
+the three lists.
 -}
 foldedFields :: Folded -> [(Text, Value)]
-foldedFields f = combineReceiptFields earlier additions
-  where
-    earlier =
-        earlierReceiptFields
-            EarlierReceipt
-                { earRequest = txInText (fdRequest f)
-                , earKey = hexT (fdKey f)
-                , earEdge = edgeText (fdEdge f)
-                , earFolder = hexT (fdFolder f)
-                , earFold = txIdHex (fdTx f)
-                , earDelivery = case fdDelivery f of
-                    Delivered out holding ->
-                        EarlierDelivered (txInText out) (dhDatumJson holding)
-                    DeliveredDatum out datum ->
-                        EarlierDeliveredDatum
-                            (txInText out)
-                            (hexT (datumHash datum))
-                            (hexT (datumCbor datum))
-                    Released out deposit ->
-                        EarlierReleased (txInText out) (toInteger deposit)
-                , earRoot = hexT (fdRoot f)
-                , earDeadline = deadlineJson (fdDeadline f)
-                , earUpperSlot = toInteger . unSlotNo <$> fdUpperSlot f
-                , earPostBuild = fdPostBuild f
-                , earHostClockMs = fdDecidedAt f
-                , earRemainingMs = fdRemaining f
-                }
-    additions =
-        foldReceiptLists
+foldedFields f =
+    keptReceiptFields
+        KeptReceipt
+            { keptFolder = hexT (fdFolder f)
+            , keptFold = txIdHex (fdTx f)
+            , keptRoot = hexT (fdRoot f)
+            , keptDeadline = deadlineJson (fdDeadline f)
+            , keptUpperSlot = toInteger . unSlotNo <$> fdUpperSlot f
+            , keptPostBuild = fdPostBuild f
+            , keptHostClockMs = fdDecidedAt f
+            , keptRemainingMs = fdRemaining f
+            }
+        <> foldReceiptLists
             [settledEntry]
             (fdExcluded f)
             (fdCapacityBound f)
             (fdCapacityProvenance f)
+  where
     settledEntry =
         SettledForReceipt
             (fdRequest f)

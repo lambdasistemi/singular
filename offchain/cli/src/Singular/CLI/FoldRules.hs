@@ -56,13 +56,11 @@ module Singular.CLI.FoldRules
     , buildPendingRequests
     , buildLiveFacts
 
-      -- * Additive receipt lists (#518, pull request 1)
+      -- * Receipt lists and kept top-level fields (#518)
     , SettledForReceipt (..)
     , foldReceiptLists
-    , EarlierDelivery (..)
-    , EarlierReceipt (..)
-    , earlierReceiptFields
-    , combineReceiptFields
+    , KeptReceipt (..)
+    , keptReceiptFields
     , combineWindowClosedMessage
     , holdsActiveToken
 
@@ -873,10 +871,10 @@ holdsActiveToken active key outs =
     holds out = any (\(p, n) -> p == active && n == key) (outputAssets out)
 
 -- ---------------------------------------------------------
--- Additive receipt lists (#518, pull request 1)
+-- Receipt lists and kept top-level fields (#518)
 -- ---------------------------------------------------------
 
-{- | One settled request as the additive receipt lists it: the output
+{- | One settled request as the receipt lists it: the output
 reference, the key and edge as the receipt names them, the owner hex,
 the settlement object (the delivered output with its datum, or the
 released holding with the deposit paid back) and the deadline object.
@@ -891,7 +889,7 @@ data SettledForReceipt = SettledForReceipt
     }
     deriving stock (Eq, Show)
 
-{- | The three additive receipt fields beside the earlier top-level ones:
+{- | The three receipt list fields:
 @settled@ (each settled request in ledger order), @excluded@ (each
 excluded request with reason, source and detail, in ledger order) and
 @capacity@ (the bound with its provenance text). Pure over simple data
@@ -926,89 +924,43 @@ foldReceiptLists settled excluded bound provenance =
             , "detail" .= excDetail exc
             ]
 
-{- | The delivery of the earlier top-level receipt fields as simple
-components: the delivered output with its envelope, the delivered datum
-with its hash and cbor, or the released output with the deposit paid back.
+{- | The kept top-level receipt fields as one record of simple
+components, each already spelled as the receipt states it: the folder and
+fold transaction as text, the root after, the deadline object, the validity
+upper bound slot, the post-build verdict, the host clock and the
+milliseconds remaining. The earlier single-request fields (@request@,
+@key@, @edge@ and the delivery fields of every branch) are gone; each
+settled request's facts live in the @settled@ list.
 -}
-data EarlierDelivery
-    = -- | The output now holding the key, with its envelope as the receipt states it
-      EarlierDelivered T.Text Value
-    | -- | The output now holding the key's datum, with the datum's hash and cbor
-      EarlierDeliveredDatum T.Text T.Text T.Text
-    | -- | The live output the fold released, and the deposit it paid back
-      EarlierReleased T.Text Integer
-    deriving stock (Eq, Show)
-
-{- | The earlier top-level receipt fields as one record of simple
-components, each already spelled as the receipt states it: the settled
-request, key, edge, folder and fold transaction as text, the delivery, the
-root after, the deadline object, the validity upper bound slot, the
-post-build verdict, the host clock and the milliseconds remaining.
--}
-data EarlierReceipt = EarlierReceipt
-    { earRequest :: T.Text
-    , earKey :: T.Text
-    , earEdge :: T.Text
-    , earFolder :: T.Text
-    , earFold :: T.Text
-    , earDelivery :: EarlierDelivery
-    , earRoot :: T.Text
-    , earDeadline :: Value
-    , earUpperSlot :: Maybe Integer
-    , earPostBuild :: Value
-    , earHostClockMs :: Integer
-    , earRemainingMs :: Integer
+data KeptReceipt = KeptReceipt
+    { keptFolder :: T.Text
+    , keptFold :: T.Text
+    , keptRoot :: T.Text
+    , keptDeadline :: Value
+    , keptUpperSlot :: Maybe Integer
+    , keptPostBuild :: Value
+    , keptHostClockMs :: Integer
+    , keptRemainingMs :: Integer
     }
     deriving stock (Eq, Show)
 
-{- | The earlier top-level receipt fields in the order a reader meets them,
+{- | The kept top-level receipt fields in the order a reader meets them,
 projected from simple components. The production 'foldedFields' in
 "Singular.CLI.Fold" builds the record and calls this function, so rows over
-it pin the production projection: every earlier pair unchanged and in
-order, nothing added or removed, per delivery branch.
+it pin the production projection: every kept pair unchanged and in order,
+none of the removed fields present, the three lists following.
 -}
-earlierReceiptFields :: EarlierReceipt -> [(T.Text, Value)]
-earlierReceiptFields r =
-    [ ("request", toJSON (earRequest r))
-    , ("key", toJSON (earKey r))
-    , ("edge", toJSON (earEdge r))
-    , ("folder", toJSON (earFolder r))
-    , ("fold", toJSON (earFold r))
+keptReceiptFields :: KeptReceipt -> [(T.Text, Value)]
+keptReceiptFields r =
+    [ ("folder", toJSON (keptFolder r))
+    , ("fold", toJSON (keptFold r))
+    , ("root", toJSON (keptRoot r))
+    , ("foldDeadline", keptDeadline r)
+    , ("validUntilSlot", toJSON (keptUpperSlot r))
+    , ("postBuild", keptPostBuild r)
+    , ("hostClockMs", toJSON (keptHostClockMs r))
+    , ("remainingMs", toJSON (keptRemainingMs r))
     ]
-        <> deliveryFields (earDelivery r)
-        <> [ ("root", toJSON (earRoot r))
-           , ("foldDeadline", earDeadline r)
-           , ("validUntilSlot", toJSON (earUpperSlot r))
-           , ("postBuild", earPostBuild r)
-           , ("hostClockMs", toJSON (earHostClockMs r))
-           , ("remainingMs", toJSON (earRemainingMs r))
-           ]
-  where
-    deliveryFields = \case
-        EarlierDelivered live envelope ->
-            [ ("liveOutput", toJSON live)
-            , ("envelope", envelope)
-            ]
-        EarlierDeliveredDatum live dHash dCbor ->
-            [ ("liveOutput", toJSON live)
-            , ("datumHash", toJSON dHash)
-            , ("datumCbor", toJSON dCbor)
-            ]
-        EarlierReleased out deposit ->
-            [ ("released", toJSON out)
-            , ("deposit", toJSON deposit)
-            ]
-
-{- | Combine the earlier top-level receipt fields with the three additions:
-the earlier pairs survive unchanged and in order, the additions follow them,
-nothing else added or removed. The production @foldedFields@ calls this, so
-rows over realistic earlier projections pin the production path.
--}
-combineReceiptFields
-    :: [(T.Text, Value)]
-    -> [(T.Text, Value)]
-    -> [(T.Text, Value)]
-combineReceiptFields earlier additions = earlier ++ additions
 
 {- | Combine a legacy window-closed message with every other exclusion.
 Sole cause returns the legacy message unchanged, so the Demo 1 readers of

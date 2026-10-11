@@ -1610,9 +1610,8 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
 # processing deadline and still pending. A fresh eligible insertion is
 # booked beside it, and `registry fold` names no request: the fold settles
 # the fresh one and leaves the late one out, named with its reason and its
-# source. The earlier top-level fields still describe the settled request
-# alone — a reader written before the lists keeps working — and the capacity
-# bound of 1 states its provenance. Each new assertion is shown able to fail
+# source. The earlier top-level single-request fields are gone; the settled
+# list carries the facts, and the capacity bound of 1 states its provenance. Each new assertion is shown able to fail
 # on a copy of the receipt altered so its property is false.
 eligible_files="$(local_files)"
 eligible_journal_before="$(journal_count "$alice_journal")"
@@ -1627,7 +1626,7 @@ fold_selection_settled() {
       and .settled[0].request == $e[0].request
       and .settled[0].key == $k and .settled[0].edge == "insertActive"
       and .settled[0].owner == $owner
-      and .settled[0].settlement.liveOutput == .liveOutput
+      and (.settled[0].settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
       and (.settled[0].settlement.datumHash | type == "string" and length > 0)
       and .settled[0].deadline.posixMs == $e[0].foldDeadline.posixMs
       and (.settled[0].deadline.slot == $e[0].foldDeadline.slot)' "$1" >/dev/null
@@ -1641,21 +1640,25 @@ fold_selection_excluded() {
       and (.excluded[0].detail | type == "string" and length > 0)' "$1" >/dev/null
 }
 fold_selection_earlier() {
-  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" '
+  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" --arg owner "$alicekey" '
       .capacity.bound == 1
       and (.capacity.provenance | type == "string" and length > 0)
-      and .request == $e[0].request and .key == $k and .edge == "insertActive"
+      and ([has("request"), has("key"), has("edge"), has("liveOutput"), has("envelope"), has("released"), has("deposit"), has("datumHash"), has("datumCbor")] | any | not)
       and (.fold | test("^[0-9a-f]{64}$"))
-      and (.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
-      and (.datumHash | type == "string" and length > 0)
-      and (.datumCbor | type == "string" and length > 0)' "$1" >/dev/null
+      and (.settled | length == 1)
+      and .settled[0].request == $e[0].request
+      and .settled[0].key == $k and .settled[0].edge == "insertActive"
+      and .settled[0].owner == $owner
+      and (.settled[0].settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
+      and (.settled[0].settlement.datumHash | type == "string" and length > 0)
+      and .settled[0].deadline.posixMs == $e[0].foldDeadline.posixMs' "$1" >/dev/null
 }
 fold_selection_settled "$receipts/fold-selection.json" \
   || fail "the fold's settled list is not exactly the fresh request: $(jq -c .settled "$receipts/fold-selection.json")"
 fold_selection_excluded "$receipts/fold-selection.json" \
   || fail "the fold did not leave the late request out and named: $(jq -c .excluded "$receipts/fold-selection.json")"
 fold_selection_earlier "$receipts/fold-selection.json" \
-  || fail "the fold's earlier fields no longer describe the settled request beside the capacity bound: $(jq -c '{request, key, edge, liveOutput, capacity}' "$receipts/fold-selection.json")"
+  || fail "the fold still prints an earlier single-request field, or its settled list does not carry the request: $(jq -c '{settled, excluded, capacity}' "$receipts/fold-selection.json")"
 fold_selection_tamper() { # NAME JQ-EDIT FILTER
   jq "$2" "$receipts/fold-selection.json" >"$receipts/fold-selection-tampered-$1.json"
   if "$3" "$receipts/fold-selection-tampered-$1.json"; then
