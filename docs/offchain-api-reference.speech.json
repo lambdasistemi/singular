@@ -31,6 +31,24 @@
       "pause": 400
     }
   ],
+  "interruptible-confirmation": [
+    {
+      "text": "Interruptible confirmation.",
+      "pause": 500
+    },
+    {
+      "text": "An application author supplying registry capabilities wants a cancelled or expired command to stop its confirmation wait while retaining the transaction it already submitted. Registry commands and open-datum writes call capConfirm on the command's calling thread under the confirmation deadline. The callback confirms exactly the supplied signed transaction; it does not submit it again or start a background confirmation worker.",
+      "pause": 400
+    },
+    {
+      "text": "The command owns the wait and its cleanup. An IO callback must be interruptible through its transport reads, polling and resource cleanup, and must propagate asynchronous exceptions. A replacement that holds an uninterruptible block delays both deadline return and caller cancellation until that block releases. That is a capability limitation: it does not create a worker that can escape the command. Test harnesses observing this limit must release their barrier and join their command.",
+      "pause": 400
+    },
+    {
+      "text": "After acceptance by the submission endpoint, confirmation failure or deadline expiry leaves the signed identity journalled as unconfirmed. Caller cancellation also preserves that unresolved identity before propagating the original interruption. A provider failure is partial evidence, a deadline is a timeout, and neither is a ledger refusal or permission to resubmit. Success records confirmation; the command's independent readback remains a later step. The final receipt boundary rethrows asynchronous interruptions and a concrete WaitFailure unchanged: an infrastructure wait failure supplies no verdict and does not become a client or ledger refusal. Ordinary synchronous command failures and fallback receipts retain their existing classification. The module and field contract are in Singular.Registry.Capabilities. This effect contract leaves Lean's transaction law and the public capability signature unchanged.",
+      "pause": 400
+    }
+  ],
   "snapshot-computations-and-mutable-compatibility": [
     {
       "text": "Snapshot computations and mutable compatibility.",
@@ -101,6 +119,6 @@
   ],
   "_source": {
     "file": "offchain-api-reference.md",
-    "sha256": "d9cad16e706328afc4f204c4295d4960c2b73887cc4af6d6c8bc8f2a9fa53622"
+    "sha256": "4e9d799ec417ab396ec9b535b367bb8f9712b19fb89b0010fb4daca8aa584e0d"
   }
 }

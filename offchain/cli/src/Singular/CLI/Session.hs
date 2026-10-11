@@ -66,8 +66,7 @@ module Singular.CLI.Session
     , harnessHoldAt
     ) where
 
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.Async (async, cancel, waitCatch)
+import Control.Concurrent (threadDelay)
 import Control.Exception
     ( ErrorCall (..)
     , Exception (..)
@@ -82,7 +81,7 @@ import Control.Exception
     , try
     , tryJust
     )
-import Control.Monad (void, when)
+import Control.Monad (when)
 import Control.Tracer (Tracer (..), traceWith)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -101,7 +100,7 @@ import Data.IORef
 import Data.List (nub)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Typeable (cast)
@@ -864,31 +863,25 @@ journalledSubmit tracer wc step ex scope unsigned = do
         Right (Cage.SubmitAccepted _) -> do
             journal "submitted" Nothing
             harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT" (Just step)
-    -- The wait runs on its own thread and this thread only waits for its
-    -- result, bounded by the caller's --confirm-timeout or, when none is
-    -- given, by the default bound. The bound therefore holds whatever
-    -- the wait does inside — including when the node is gone and the
-    -- wait never returns. A wait abandoned at the bound is cancelled
-    -- without this thread waiting for that cancellation to finish.
+    -- Confirmation belongs to this calling thread. capConfirm must be
+    -- interruptible: its deadline and caller cancellation unwind the same
+    -- action, including provider cleanup. An uninterruptible capability
+    -- delays return until it cooperates; no confirmation worker escapes.
     let limit = fromMaybe defaultConfirmSeconds (wcTimeout wc) * 1_000_000
     seen <-
         timedTrace
             txs
             ( \ms end ->
                 TxConfirmed step txid ms $ case end of
-                    Right (Left e) -> ConfirmFailed (errorClassOf e)
+                    Right (Left e)
+                        | Just (_ :: SomeAsyncException) <- fromException e ->
+                            ConfirmThrew (errorClassOf e)
+                        | otherwise -> ConfirmFailed (errorClassOf e)
                     Right (Right Nothing) -> ConfirmTimedOut
                     Right (Right (Just ())) -> Confirmed
                     Left c -> ConfirmThrew c
             )
-            $ do
-                waiter <- async (capConfirm caps signed)
-                outcome <- timeout limit (waitCatch waiter)
-                when (isNothing outcome) $ void (forkIO (cancel waiter))
-                pure $ case outcome of
-                    Nothing -> Right Nothing
-                    Just (Left e) -> Left e
-                    Just (Right ()) -> Right (Just ())
+            $ try (timeout limit (capConfirm caps signed))
     case seen of
         Left (e :: SomeException) -> do
             -- The node accepted the transaction; only the wait for its

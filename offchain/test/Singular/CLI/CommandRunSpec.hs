@@ -28,7 +28,32 @@ listed here; a constructor no run exercises fails the extent row.
 module Singular.CLI.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (bracket)
+import Control.Concurrent
+    ( myThreadId
+    , newEmptyMVar
+    , putMVar
+    , readMVar
+    , threadDelay
+    , throwTo
+    , tryPutMVar
+    )
+import Control.Concurrent.Async
+    ( asyncThreadId
+    , cancel
+    , waitCatch
+    , withAsync
+    )
+import Control.Exception
+    ( AsyncException (..)
+    , ErrorCall (..)
+    , bracket
+    , finally
+    , fromException
+    , throwIO
+    , try
+    , uninterruptibleMask_
+    )
+import Control.Monad (void)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -95,6 +120,7 @@ import System.Posix.IO
     , stdOutput
     )
 import System.Posix.Types (Fd)
+import System.Timeout (timeout)
 import Test.Hspec
 
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
@@ -104,6 +130,7 @@ import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import Data.Word (Word64)
 
 import Singular.CLI (runCommand)
@@ -120,7 +147,7 @@ import Singular.CLI.Registry
     , registryConfigFor
     )
 import Singular.CLI.Root (runPackagedVia)
-import Singular.CLI.Session (Env (..))
+import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
@@ -176,6 +203,7 @@ import Singular.Registry.Types
     , edgeUpdateTerminal
     , stateAppPolicyBytes
     )
+import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
@@ -185,6 +213,248 @@ spec =
         >> readbackRows
         >> permanentRecognition
         >> applicationPolicyRows
+        >> confirmationLifetime
+
+confirmationLifetime :: Spec
+confirmationLifetime = describe "CLI confirmation lifetime" $ do
+    -- Observation needs a second harness thread so cancellation occurs only
+    -- after command entry. withAsync joins it; the fake's finally releases
+    -- its barrier even when an assertion fails. This is the preserved RED.
+    it
+        "releases confirmation when the submitted command's parent is cancelled"
+        $ withRig
+        $ \rig -> do
+            started <- newEmptyMVar
+            released <- newEmptyMVar
+            hold <- newEmptyMVar
+            let confirm _ =
+                    (myThreadId >>= putMVar started >> readMVar hold)
+                        `finally` putMVar released ()
+                env =
+                    (envOf rig)
+                        { envWrites = \_ _ action ->
+                            action (capabilities rig){capConfirm = confirm}
+                        }
+            seed <- fundSeed rig
+            withAsync
+                ( runVia
+                    rig
+                    env
+                    "registry"
+                    "cancel-create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+                )
+                $ \parent -> do
+                    worker <- timeout 10_000_000 (readMVar started)
+                    case worker of
+                        Nothing -> expectationFailure "confirmation was never allocated"
+                        Just tid ->
+                            ( do
+                                timeout 3_000_000 (cancel parent) `shouldReturn` Just ()
+                                timeout 1_000_000 (readMVar released) `shouldReturn` Just ()
+                            )
+                                `finally` (throwTo tid ThreadKilled >> readMVar released)
+
+    it "confirms each signed transaction on the command's calling thread" $
+        withRig $ \rig -> do
+            caller <- myThreadId
+            confirmed <- newIORef []
+            let confirm tx = do
+                    myThreadId `shouldReturn` caller
+                    modifyIORef' confirmed (<> [txIdHex tx])
+            withConfirmationEnv rig confirm $ \env submitted -> do
+                result <- confirmationCreate rig env []
+                outcomeOf (runReceipt result) `shouldBe` Just "success"
+                runExit result `shouldBe` ExitSuccess
+                identities <- submitted
+                identities `shouldSatisfy` (not . null)
+                nub identities `shouldBe` identities
+                readIORef confirmed `shouldReturn` identities
+                confirmationJournal rig "confirmed" `shouldReturn` map Just identities
+
+    it "journals accepted bytes once when the confirmation provider fails" $
+        withRig $ \rig ->
+            withConfirmationEnv
+                rig
+                (const (throwIO (ErrorCall "confirmation provider failed")))
+                $ \env submitted -> do
+                    result <- confirmationCreate rig env []
+                    outcomeOf (runReceipt result) `shouldBe` Just "partial"
+                    assertUnconfirmed rig submitted
+
+    it "keeps the synchronous fallback receipt before submission" $
+        withRig $ \rig ->
+            withConfirmationEnv rig (const (pure ())) $ \env submitted -> do
+                let failing =
+                        env
+                            { envLoadRelease = \_ _ ->
+                                throwIO (ErrorCall "release loading failed")
+                            }
+                result <- confirmationCreate rig failing []
+                outcomeOf (runReceipt result) `shouldBe` Just "client-refusal"
+                runExit result `shouldBe` ExitFailure 10
+                textAt "reason" (runReceipt result)
+                    `shouldBe` Just "release loading failed"
+                submitted `shouldReturn` []
+                confirmationJournal rig "submitted" `shouldReturn` []
+
+    it "interrupts an entered confirmation at a positive command deadline" $
+        withRig $ \rig -> do
+            entered <- newIORef False
+            released <- newIORef False
+            let confirm _ =
+                    (writeIORef entered True >> threadDelay 10_000_000)
+                        `finally` writeIORef released True
+            withConfirmationEnv rig confirm $ \env submitted -> do
+                result <- confirmationCreate rig env ["--confirm-timeout", "1"]
+                outcomeOf (runReceipt result) `shouldBe` Just "timeout"
+                readIORef entered `shouldReturn` True
+                readIORef released `shouldReturn` True
+                assertUnconfirmed rig submitted
+
+    it "preserves caller cancellation and the unresolved signed identity" $
+        withRig $ \rig -> do
+            entered <- newEmptyMVar
+            released <- newEmptyMVar
+            hold <- newEmptyMVar
+            let confirm _ =
+                    (putMVar entered () >> readMVar hold)
+                        `finally` putMVar released ()
+            withConfirmationEnv rig confirm $ \env submitted ->
+                -- The harness must observe entry before interrupting the
+                -- command. It owns and joins this one observation thread.
+                withAsync (confirmationCreate rig env []) $ \command -> do
+                    timeout 10_000_000 (readMVar entered) `shouldReturn` Just ()
+                    throwTo (asyncThreadId command) ThreadKilled
+                    waitCatch command >>= \case
+                        Left failure -> fromException failure `shouldBe` Just ThreadKilled
+                        Right _ -> expectationFailure "caller cancellation became a command verdict"
+                    timeout 1_000_000 (readMVar released) `shouldReturn` Just ()
+                    assertUnconfirmed rig submitted
+
+    it "preserves an entered confirmation's infrastructure wait failure" $
+        withRig $ \rig -> do
+            entered <- newIORef Nothing
+            let confirm tx = do
+                    let failure =
+                            WaitFailure
+                                SessionConfirmationWait
+                                (txIdTx tx)
+                                1.25
+                                1
+                                (Just 12_345)
+                    writeIORef entered (Just failure)
+                    throwIO failure
+                identity failure =
+                    ( waitStage failure
+                    , waitTxId failure
+                    , waitElapsed failure
+                    , waitBound failure
+                    , waitClosedAt failure
+                    )
+            withConfirmationEnv rig confirm $ \env submitted -> do
+                result <- try (confirmationCreate rig env [])
+                case result of
+                    Left failure -> do
+                        expected <- readIORef entered
+                        Just (identity failure) `shouldBe` fmap identity expected
+                    Right _ ->
+                        expectationFailure
+                            "infrastructure wait failure became a command verdict"
+                assertUnconfirmed rig submitted
+
+    it
+        "does not return while an uninterruptible confirmation is held, then joins it"
+        $ withRig
+        $ \rig -> do
+            entered <- newEmptyMVar
+            released <- newEmptyMVar
+            hold <- newEmptyMVar
+            let confirm _ =
+                    uninterruptibleMask_ (myThreadId >>= putMVar entered >> readMVar hold)
+                        `finally` putMVar released ()
+            withConfirmationEnv rig confirm $ \env submitted ->
+                -- A second harness thread is necessary to observe nonreturn
+                -- and release the deliberate obstruction. Its finally opens
+                -- the gate and joins the command, including on assertion failure.
+                withAsync (confirmationCreate rig env ["--confirm-timeout", "1"]) $ \command ->
+                    ( do
+                        timeout 10_000_000 (readMVar entered)
+                            `shouldReturn` Just (asyncThreadId command)
+                        observed <- timeout 1_500_000 (waitCatch command)
+                        isNothing observed `shouldBe` True
+                    )
+                        `finally` do
+                            void (tryPutMVar hold ())
+                            joined <- timeout 5_000_000 (waitCatch command)
+                            case joined of
+                                Just (Right result) -> do
+                                    outcomeOf (runReceipt result) `shouldBe` Just "timeout"
+                                    assertUnconfirmed rig submitted
+                                _ ->
+                                    expectationFailure
+                                        "released command did not join with its deadline outcome"
+                            timeout 1_000_000 (readMVar released) `shouldReturn` Just ()
+
+withConfirmationEnv
+    :: Rig -> (ConwayTx -> IO ()) -> (Env -> IO [Text] -> IO a) -> IO a
+withConfirmationEnv rig confirm use = do
+    submitted <- newIORef []
+    let original = capabilities rig
+        caps =
+            original
+                { capConfirm = confirm
+                , capSubmit = \signed -> do
+                    modifyIORef' submitted (<> [txIdHex (signedTx signed)])
+                    capSubmit original signed
+                }
+        env = (envOf rig){envWrites = \_ _ action -> action caps}
+    use env (readIORef submitted)
+
+confirmationCreate :: Rig -> Env -> [String] -> IO Run
+confirmationCreate rig env flags = do
+    seed <- fundSeed rig
+    runVia
+        rig
+        env
+        "registry"
+        "confirmation-create"
+        (["registry", "create", "--seed", seed] <> policyArgs <> flags)
+
+confirmationJournal :: Rig -> Text -> IO [Maybe Text]
+confirmationJournal rig event = do
+    files <- listDirectoryRecursive (rigDir rig)
+    rows <-
+        concat
+            <$> mapM
+                readRows
+                [ rigDir rig </> path
+                | path <- files
+                , takeFileName path == "journal.jsonl"
+                ]
+    pure
+        [ textAt "journalTxId" row
+        | row <- rows
+        , textAt "journalEvent" row == Just event
+        ]
+  where
+    readRows file =
+        mapM
+            ( maybe (fail "invalid confirmation journal JSON") pure
+                . Aeson.decodeStrict
+            )
+            . BC.lines
+            =<< BS.readFile file
+
+assertUnconfirmed :: Rig -> IO [Text] -> IO ()
+assertUnconfirmed rig submitted = do
+    identities <- submitted
+    length identities `shouldBe` 1
+    confirmationJournal rig "submitted" `shouldReturn` map Just identities
+    confirmationJournal rig "unconfirmed"
+        `shouldReturn` map Just identities
+    confirmationJournal rig "confirmed" `shouldReturn` []
+    confirmationJournal rig "rejected" `shouldReturn` []
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"

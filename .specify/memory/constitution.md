@@ -1,5 +1,31 @@
 <!--
 Sync impact report
+Version: 1.14.0 -> 1.15.0 (effects and state have named owners)
+Amended: 2026-10-11
+Authority: the operator's 11 October 2026 ruling to constitutionalize the
+architectural invariants in issue #545, followed by the single-thread ruling
+recorded under Governance below. The affected contributor and CLI stories are
+recorded there and in Principle VII. Rationale: explicit inputs, resource
+ownership, interruptible effects and independent exceptional evidence.
+Added principle: VII. Principles I-VI and both complete model translations
+are unchanged. Lean source remains 20b35407c8a8e955dea396e59ae926b7c9e13d03,
+model tree d9161edd0274b67151f331949521f34bbf18612f. No runtime, model,
+validator, wire, public interface or evidence-row behavior changes here.
+Dependent guidance: AGENTS.md checked; it already links here rather than
+restating principles. .github/pull_request_template.md now requires explicit
+effect/resource ownership, lifetimes, concurrency reasons, inputs, test-only
+controls and exceptional evidence under VII.
+Existing obligations: issue #545 maps confirmation to #540, selected CLI state
+to #541, release-hook exclusion to #343, ancillary bookkeeping to #543,
+conformance state to existing #425/#426 through #432, and discovered inventory,
+module guidance and integrated evidence to #544. #539 and #542 have preceding
+accepted repairs; their scoped evidence is not programme completion. Adoption
+of this prose does not implement or accept any remaining repair. The requested
+amendment-before-#539 ordering was missed; this is a forward amendment.
+-->
+
+<!--
+Sync impact report
 Version: 1.13.1 -> 1.14.0 (the two-edge law becomes the single active model)
 Amended: 2026-10-08
 Authority: NOTE-005 operator ruling "ok, now, big delete", recorded in
@@ -485,6 +511,58 @@ change to it is a product change and is held to the same bar. A restructure
 MUST NOT move any row's state by one increment and MUST NOT make an uncovered
 row look covered.
 
+### VII. Effects and state have named owners
+
+As a contributor or reviewer, I want to trace every effect and mutable resource
+to explicit inputs, an owner, a lifetime and a concurrency contract, so that I
+can check what a command does and see which obligations remain unmet.
+
+Code MUST make what it does and what it holds visible in its types and owners.
+
+1. **Calculations are values.** A deterministic computation MUST return its
+   result from explicit inputs; it MUST NOT read or write process state, files
+   or clocks to produce it. No unsafe IO escape or top-level mutable singleton
+   is permitted.
+2. **Mutable resources have named owners.** Mutable cells, workers, temporary
+   directories, caches, sessions and evidence files MUST have a named owner,
+   a bounded lifetime and a stated concurrency contract. Moving mutation into
+   a different container or environment does not establish ownership.
+   Necessary synchronization remains allowed with its owner and justification
+   written beside the implementation.
+3. **Inputs are explicit.** Command arguments and an explicitly supplied
+   environment value MAY be resolved at the composition boundary, preserving
+   the documented configuration precedence. Hidden environment reads,
+   fault-injection hooks and test-only controls MUST NOT enter ordinary release
+   builds. This rule does not authorize removal of documented configuration.
+4. The product is single-threaded unless a written, compelling reason says otherwise. No thread outlives the command that started it. Effectful code a command waits on must be interruptible.
+   Any retained concurrency site MUST carry that reason beside it, including
+   a harness that must run a node and client together or observe a blocked
+   command. The harness MUST release and join its own activity.
+5. **Failure keeps its evidence.** Exceptions and cancellation MUST preserve
+   and report partial diagnostics and receipts. Observations MUST remain
+   independent of builder expectations. Uncertain submission or confirmation
+   MUST NOT authorize automatic resubmission or be relabelled a ledger refusal.
+6. **Names describe the implementation.** Types, modules and architecture
+   guidance MUST describe what the code does, including retained mutable
+   adapters. The documented module graph and discovered inventory MUST be
+   checked against the implementation by controls capable of rejecting drift.
+   Documentation alone does not discharge these checks.
+
+The architectural inventory in [issue #545](https://github.com/lambdasistemi/singular/issues/545)
+maps existing debt to its delivery owners: confirmation lifetime to
+[#540](https://github.com/lambdasistemi/singular/issues/540), selected CLI state
+to [#541](https://github.com/lambdasistemi/singular/issues/541), release-hook
+exclusion to [#343](https://github.com/lambdasistemi/singular/issues/343),
+ancillary bookkeeping to [#543](https://github.com/lambdasistemi/singular/issues/543),
+conformance state to existing [#425](https://github.com/lambdasistemi/singular/issues/425)
+and [#426](https://github.com/lambdasistemi/singular/issues/426) through
+[#432](https://github.com/lambdasistemi/singular/issues/432), and final inventory,
+module guidance and integrated evidence to
+[#544](https://github.com/lambdasistemi/singular/issues/544). Preceding scoped
+repairs for temporary-directory isolation and pure trie calculations retain
+their own evidence. Adopting this principle does not implement the remaining
+repairs, release paused work, or establish programme completion.
+
 ## The model driver translation
 
 The driver at `Singular.Driver.runSurface` executes the model's law and reports
@@ -608,10 +686,40 @@ suite is the product bible, written for stakeholders rather than for this
 project, and that this value is constitutional rather than the scope of the
 ticket that first applied it.
 
+Principle VII records the operator's 11 October 2026 instruction to put the
+architectural invariants of issue #545 in this constitution and the subsequent
+ruling: “we don't need the multi-thread in this application unless you have a
+compelling reason to do so”. Explicit environment values remain allowed;
+hidden reads are banned. The requested amendment before the merge of #539 was
+missed: that repair merged as PR #546 at 07:40:36 UTC on 11 October 2026.
+This amendment is forward-only and does not imply retroactive compliance.
+
+The affected story is: as a CLI operator, I cancel or time out a submitted
+command and retain its signed transaction identity and accurate journal outcome,
+with no unowned confirmation worker. The ruling resolves the former competing
+bounded-return and arbitrary-uninterruptible-effect requirements: #540 MUST run
+`timeout limit (capConfirm caps signed)` on the calling thread and document
+`capConfirm` as interruptible in its module and API reference. No owner object,
+embedding interface change or process isolation is adopted. Real Koios and
+private-node-backed confirmation MUST be shown to enter their real transport,
+read or poll wait before a positive short forced deadline and stop at it;
+zero-deadline or setup-failure results are not that proof. A controlled
+uninterruptible fake MUST show nonreturn while held, then be released and joined
+by its harness. That is the documented capability limit, not production-client
+deadline evidence. Success, provider failure, timeout and caller cancellation
+retain their identities and partial evidence, with no automatic resubmission.
+The bound implementation before this repair is integration base
+`f9652eb7118a085ef7190fc8e39f62dddf374497`, tree
+`8e3faf18ea163ce2f42e3e581b5f55e34b14e732`; its Lean source is
+`20b35407c8a8e955dea396e59ae926b7c9e13d03`, model tree
+`d9161edd0274b67151f331949521f34bbf18612f`. This operational ruling changes
+the effect contract, not Lean transaction law. Its implementation and evidence
+remain prerequisites for affected acceptance.
+
 Amendments MUST record their authority, rationale, affected principles and
 dependent guidance. Use a major version for incompatible principle changes, a
 minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.14.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-08
+**Version**: 1.15.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-11

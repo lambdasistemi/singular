@@ -132,6 +132,45 @@ are described module by module in the
 the registry wire's five owners behind the `Types` facade in
 [Who owns the registry wire](offchain-wire-types.md).
 
+## Interruptible confirmation
+
+An application author supplying registry capabilities wants a cancelled or
+expired command to stop its confirmation wait while retaining the transaction
+it already submitted. Registry commands and open-datum writes call
+`capConfirm` on the command's calling thread under the confirmation deadline.
+The callback confirms exactly the supplied signed transaction; it does not
+submit it again or start a background confirmation worker.
+
+```mermaid
+flowchart TD
+    Cmd["Command<br/>calling thread"] -->|Deadline| Cap["capConfirm<br/>signed transaction"]
+    Cap -->|Read| Http["Koios HTTP<br/>client"]
+    Http -->|Query| Provider["Configured<br/>provider"]
+```
+
+The command owns the wait and its cleanup. An IO callback must be interruptible
+through its transport reads, polling and resource cleanup, and must propagate
+asynchronous exceptions. A replacement that holds an uninterruptible block
+delays both deadline return and caller cancellation until that block releases.
+That is a capability limitation: it does not create a worker that can escape
+the command. Test harnesses observing this limit must release their barrier
+and join their command.
+
+After acceptance by the submission endpoint, confirmation failure or deadline
+expiry leaves the signed identity journalled as unconfirmed. Caller
+cancellation also preserves that unresolved identity before propagating the
+original interruption. A provider failure is partial evidence, a deadline is
+a timeout, and neither is a ledger refusal or permission to resubmit. Success
+records confirmation; the command's independent readback remains a later step.
+The final receipt boundary rethrows asynchronous interruptions and a concrete
+`WaitFailure` unchanged: an infrastructure wait failure supplies no verdict
+and does not become a client or ledger refusal. Ordinary synchronous command
+failures and fallback receipts retain their existing classification.
+The module and field contract are in
+<a href="../offchain/lib/Singular/Registry/Capabilities.hs" data-api="module">Singular.Registry.Capabilities</a>.
+This effect contract leaves Lean's transaction law and the public capability
+signature unchanged.
+
 ## Snapshot computations and mutable compatibility
 
 As a library consumer, you can compute a root, membership or exclusion proof,

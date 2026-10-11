@@ -4427,6 +4427,36 @@
     "v": "eaedc977cbc7"
    }
   ],
+  "interruptible-confirmation": [
+   {
+    "index": 0,
+    "name": "docs-offchain-api-reference/interruptible-confirmation-00",
+    "pause_ms": 500,
+    "text": "Interruptible confirmation.",
+    "v": "cb8c42a3400c"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-api-reference/interruptible-confirmation-01",
+    "pause_ms": 400,
+    "text": "An application author supplying registry capabilities wants a cancelled or expired command to stop its confirmation wait while retaining the transaction it already submitted. Registry commands and open-datum writes call capConfirm on the command's calling thread under the confirmation deadline. The callback confirms exactly the supplied signed transaction; it does not submit it again or start a background confirmation worker.",
+    "v": "a1c08dbcf7e5"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-api-reference/interruptible-confirmation-02",
+    "pause_ms": 400,
+    "text": "The command owns the wait and its cleanup. An IO callback must be interruptible through its transport reads, polling and resource cleanup, and must propagate asynchronous exceptions. A replacement that holds an uninterruptible block delays both deadline return and caller cancellation until that block releases. That is a capability limitation: it does not create a worker that can escape the command. Test harnesses observing this limit must release their barrier and join their command.",
+    "v": "99f915a2ddd1"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-api-reference/interruptible-confirmation-03",
+    "pause_ms": 400,
+    "text": "After acceptance by the submission endpoint, confirmation failure or deadline expiry leaves the signed identity journalled as unconfirmed. Caller cancellation also preserves that unresolved identity before propagating the original interruption. A provider failure is partial evidence, a deadline is a timeout, and neither is a ledger refusal or permission to resubmit. Success records confirmation; the command's independent readback remains a later step. The final receipt boundary rethrows asynchronous interruptions and a concrete WaitFailure unchanged: an infrastructure wait failure supplies no verdict and does not become a client or ledger refusal. Ordinary synchronous command failures and fallback receipts retain their existing classification. The module and field contract are in Singular.Registry.Capabilities. This effect contract leaves Lean's transaction law and the public capability signature unchanged.",
+    "v": "ce27acc4f7ff"
+   }
+  ],
   "off-chain-api-reference": [
    {
     "index": 0,
