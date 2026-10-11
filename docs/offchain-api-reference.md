@@ -149,7 +149,7 @@ exception boundary.
 | `membershipFromDb`, `exclusionFromDb` | Pure proofs from authenticated nodes; `Nothing` when no proof can be produced. |
 | `provesMember`, `provesAbsent`, `verifyExclusion` | Pure verification against the caller's trusted root. |
 | `Singular.CLI.Proof.rootOfDbPure`, `authenticatedLeafPure` | Pure root bytes and `Either AuthError Leaf`; explicit root mismatch or inconsistent-proof refusal. These receive a concrete snapshot, so there is no missing or hidden registry lookup. |
-| `rootOfDb`, `authenticatedLeaf` | Retained IO compatibility exports, with no manager allocation. The leaf wrapper still compares roots during the IO action; decode failures remain inside a caller's handler at that stage. It does not catch exceptions or force the later leaf result. |
+| `rootOfDb`, `authenticatedLeaf` | Retained IO compatibility exports, with no manager allocation. The root wrapper forces the snapshot constructor inside IO while leaving the computed root lazy. The leaf wrapper still compares roots during the IO action; decode failures remain inside a caller's handler at that stage. Neither catches exceptions or forces the later leaf result. |
 | `Conformance.Cli.Proof.provenLeaf` | Independent observed-leaf computation using the same MPF primitives, with its own `try`/`evaluate` boundary: synchronous decode damage refuses an answer and asynchronous exceptions propagate. It does not call the builder's expected-leaf function. |
 
 The legacy names `mkPureTrie`, `mkPureTrieFromRef`, `mkPureTrieManager` and

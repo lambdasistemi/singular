@@ -27,6 +27,7 @@ module Singular.CLI.Proof
     , rootOfDb
     ) where
 
+import Control.Exception (evaluate)
 import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -89,9 +90,14 @@ authErrorFields = \case
 rootOfDbPure :: MPFInMemoryDB -> ByteString
 rootOfDbPure = unRoot . rootFromDb
 
--- | Compatibility IO wrapper for 'rootOfDbPure'; allocates no manager.
+{- | Compatibility IO wrapper for 'rootOfDbPure'; allocates no manager.
+As the old strict manager seed did, force the snapshot constructor inside IO,
+but leave the computed root lazy for the caller.
+-}
 rootOfDb :: MPFInMemoryDB -> IO ByteString
-rootOfDb = pure . rootOfDbPure
+rootOfDb db = do
+    snapshot <- evaluate db
+    pure (rootOfDbPure snapshot)
 
 {- | The leaf at a key, proven against the observed root. The saved
 trie's root must equal it; then a leaf is reported only when the saved
