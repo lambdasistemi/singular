@@ -2512,7 +2512,12 @@ class Journey:
         `inspect` before and after shows the root and the pending requests
         unchanged (one inspector suffices: both actors read the same chain
         root). `update` is not a booking verb, so its command is assembled
-        in `update_command`, at the one place that attempts it.
+        in `update_command`, at the one place that attempts it. The refusal
+        is about who signs, not the key's entry: this leg runs while the
+        key is active, so the early booking check (#486) passes the entry
+        and the envelope's controller check refuses (client-refusal, exit
+        10). A booking the entry rules out refuses earlier with the
+        library's client-policy reason instead.
         """
         direction = f"refuse-{key}-by-{foreign}"
         leg = {}
