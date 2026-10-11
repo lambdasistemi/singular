@@ -44,9 +44,8 @@ flowchart TD
     M -->|same revision| E[Check required members]
     E -->|present| B[Build ordinary binaries]
     B -->|built| H[Inspect stripped bytes and flags]
-    H -->|hooks excluded| J[Run ordinary registry journey]
-    J -->|receipts agree and inputs ordinary| P[PASS]
-    H -.->|hooks or wrong flags| R[harness-code-present]
+    H -->|hooks excluded| J[Run ordinary journey]
+    J -->|receipts agree| P[PASS]
 ```
 
 The model revision is the commit of the application model, the formal

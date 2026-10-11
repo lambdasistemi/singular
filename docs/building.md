@@ -53,11 +53,15 @@ ordinary release artifacts.
 ```mermaid
 flowchart TB
     Source[Registry CLI source] -->|flag disabled| Ordinary[Ordinary binaries]
-    Source -->|flag enabled explicitly| Tests[Test binaries]
-    Ordinary -->|stripped bytes and flags| Exclusion[Release build control]
-    Tests -->|must be refused as ordinary| Exclusion
-    Ordinary -->|extracted archive| Journey[Ordinary release journey]
-    Tests -->|holds and diagnostic observations| Recovery[Recovery test carriers]
+    Ordinary -->|inspect bytes and flags| Exclusion[Release build control]
+    Exclusion -->|checks pass| Journey[Ordinary archive journey]
+```
+
+```mermaid
+flowchart TB
+    Source[Registry CLI source] -->|flag enabled explicitly| Tests[Test binaries]
+    Tests -->|faults and diagnostics| Recovery[Recovery controls]
+    Recovery -->|assertions pass| Evidence[Test receipts]
 ```
 
 ## Generated API references
