@@ -90,6 +90,7 @@ import Data.Char (isDigit, ord)
 import Data.Either (isLeft)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
+import Data.Maybe (listToMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((&), (.~))
@@ -1193,14 +1194,16 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         "does not hold a booking refusal whose pre/post state moved but post/post stable"
         $ do
             rs <- honestReceipts controlsStory
-            let refused =
-                    [ r
-                    | r <- rs
-                    , rcAction r == "run insert"
-                    , rcTarget r == "duplicate"
-                    , rcOutcome r == "client-refusal"
-                    ]
-                        !! 0
+            let refused = case listToMaybe
+                    ( [ r
+                      | r <- rs
+                      , rcAction r == "run insert"
+                      , rcTarget r == "duplicate"
+                      , rcOutcome r == "client-refusal"
+                      ]
+                    ) of
+                    Just r -> r
+                    Nothing -> error "CliControls: no refused duplicate insert"
                 posts =
                     take
                         2
@@ -1905,7 +1908,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         it "takes no fold and no retraction on an existing registry" $ do
             let story = permanentStory "demo1-take"
             length (outline story) `shouldBe` 25
-            actionsOf story `shouldSatisfy` all (/= "reclaim")
+            actionsOf story `shouldSatisfy` notElem "reclaim"
     describe "one take on a registry that already exists" $ do
         let key = "demo1-take"
             story = permanentStory key

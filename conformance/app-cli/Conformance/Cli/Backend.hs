@@ -1628,7 +1628,10 @@ previewSeed
 previewSeed env r label skey dir seed = do
     let o = envOptions env
     (_, preview, _) <-
-        singular env r label $
+        singular
+            env
+            r
+            label
             ( commandPrefix Create
                 <> [ "--preview"
                    , "--state-dir"
@@ -1860,25 +1863,25 @@ provoke env p target key r = do
                     env
                     r
                     "seed-spent-after"
-                    $ ( commandPrefix Create
-                            <> [ "--preview"
-                               , "--state-dir"
-                               , work </> "probe-after"
-                               , "--blueprint"
-                               , optBlueprint o
-                               , "--koios-url"
-                               , optProviderUrl o
-                               , "--network-time"
-                               , optNetworkTime o
-                               , "--network-magic"
-                               , show (optMagic o)
-                               , "--wallet-skey"
-                               , optWalletKey o
-                               , "--seed"
-                               , first
-                               ]
-                            <> developmentWindows
-                      )
+                    ( commandPrefix Create
+                        <> [ "--preview"
+                           , "--state-dir"
+                           , work </> "probe-after"
+                           , "--blueprint"
+                           , optBlueprint o
+                           , "--koios-url"
+                           , optProviderUrl o
+                           , "--network-time"
+                           , optNetworkTime o
+                           , "--network-magic"
+                           , show (optMagic o)
+                           , "--wallet-skey"
+                           , optWalletKey o
+                           , "--seed"
+                           , first
+                           ]
+                        <> developmentWindows
+                    )
             when
                 ( spentStatus == ExitSuccess
                     && printedField "outcome" spentPrinted == Just (String "success")
@@ -1972,25 +1975,25 @@ provoke env p target key r = do
                     env
                     r
                     "seed-poor-after"
-                    $ ( commandPrefix Create
-                            <> [ "--preview"
-                               , "--state-dir"
-                               , work </> "probe-poor-after"
-                               , "--blueprint"
-                               , optBlueprint o
-                               , "--koios-url"
-                               , optProviderUrl o
-                               , "--network-time"
-                               , optNetworkTime o
-                               , "--network-magic"
-                               , show (optMagic o)
-                               , "--wallet-skey"
-                               , poor
-                               , "--seed"
-                               , seedPoor
-                               ]
-                            <> developmentWindows
-                      )
+                    ( commandPrefix Create
+                        <> [ "--preview"
+                           , "--state-dir"
+                           , work </> "probe-poor-after"
+                           , "--blueprint"
+                           , optBlueprint o
+                           , "--koios-url"
+                           , optProviderUrl o
+                           , "--network-time"
+                           , optNetworkTime o
+                           , "--network-magic"
+                           , show (optMagic o)
+                           , "--wallet-skey"
+                           , poor
+                           , "--seed"
+                           , seedPoor
+                           ]
+                        <> developmentWindows
+                    )
             unless
                 (printedField "outcome" probePrinted == Just (String "success"))
                 $ fail "the underfunded wallet's seed did not stay unspent"
