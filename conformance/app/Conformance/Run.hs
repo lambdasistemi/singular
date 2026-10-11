@@ -107,8 +107,8 @@ import Conformance.ScriptParameters (runScriptParameterApplication)
 -- Entry point
 -- ---------------------------------------------------------
 
-runRows :: [String] -> FilePath -> IO ()
-runRows rawRows receiptsDir = do
+runRows :: TmpDirOwner -> [String] -> FilePath -> IO ()
+runRows owner rawRows receiptsDir = do
     rows <- validateRows rawRows
     control <- readControl
     emit "control" (show control)
@@ -173,7 +173,7 @@ runRows rawRows receiptsDir = do
         emit "node" nodeVer
         let session sessionRows =
                 unless (null sessionRows) $
-                    bracketTmpDir $
+                    bracketTmpDir owner $
                         withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                             runSession
                                 sessionRows
@@ -189,7 +189,7 @@ runRows rawRows receiptsDir = do
         session caDevnet
         session cgDevnet
         unless (null csDevnet) $
-            bracketTmpDir $ do
+            bracketTmpDir owner $ do
                 withReplayingNode blueprintPath receiptsDir (T.pack nodeVer) $ \caps replayIndex ->
                     runCSSession
                         csDevnet

@@ -146,6 +146,7 @@ common live-runner
     Conformance.Run.Retraction
     Conformance.Run.Step
     Conformance.Run.Submit
+    Conformance.Run.Temporary
     Conformance.Run.Units
     Conformance.Run.Wallet
     Conformance.ScriptParameters
@@ -201,6 +202,7 @@ common live-runner
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , temporary                         >=1.3     && <1.4
     , text                              >=2.0     && <2.2
     , time
     , transformers
@@ -321,6 +323,7 @@ test-suite conformance-tests
     Conformance.Run.Retraction
     Conformance.Run.Step
     Conformance.Run.Submit
+    Conformance.Run.Temporary
     Conformance.Run.Units
     Conformance.Run.Wallet
     Conformance.Story.Usage

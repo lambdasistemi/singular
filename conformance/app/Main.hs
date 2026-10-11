@@ -46,6 +46,7 @@ import Conformance.Rows
     )
 import Conformance.Run (runForkProbe, runRows)
 import Conformance.Run.Replay (runReplayCapsule)
+import Conformance.Run.Temporary (TmpDirOwner, newTmpDirOwner)
 import Paths_conformance (getDataFileName)
 
 defaultReceiptsDir :: FilePath
@@ -53,18 +54,19 @@ defaultReceiptsDir = "conformance-receipts"
 
 main :: IO ()
 main = do
+    owner <- newTmpDirOwner
     args <- getArgs
     case args of
         ["find-fork-keys"] -> runFindForkKeys
         ["check-fork-exclusion"] -> runCheckForkExclusion
         ["grind-present-fork"] -> runGrindPresentFork
-        ["probe-present-fork"] -> runForkProbe
+        ["probe-present-fork"] -> runForkProbe owner
         ["show-nibbles"] -> runShowNibbles
         ["show-d-proof"] -> runShowDProof
         ["show-all-proofs"] -> runShowAllProofs
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
-        "run" : rest -> runDispatch rest
+        "run" : rest -> runDispatch owner rest
         [ "replay-capsule"
             , "--capsule"
             , capsule
@@ -85,14 +87,14 @@ main = do
             , diagnostic
             ] ->
                 runReplayCapsule args capsule deployed traced (Just diagnostic)
-        ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["permanent-retire-active-key"] dir
-        ["example", "registration", "--receipts-dir", dir] -> runGuarded ["register-active-key"] dir
+        ["example", "retirement", "--receipts-dir", dir] -> runGuarded owner ["permanent-retire-active-key"] dir
+        ["example", "registration", "--receipts-dir", dir] -> runGuarded owner ["register-active-key"] dir
         ["evidence-page"] -> runEvidencePage "." False
         ["evidence-page", "--write"] -> runEvidencePage "." True
         ["evidence-page", "--root", root] -> runEvidencePage root False
         ["evidence-page", "--root", root, "--write"] -> runEvidencePage root True
-        ["book", "--receipts-dir", dir] -> runBook dir Nothing
-        ["book", "--receipts-dir", dir, "--output", output] -> runBook dir (Just output)
+        ["book", "--receipts-dir", dir] -> runBook owner dir Nothing
+        ["book", "--receipts-dir", dir, "--output", output] -> runBook owner dir (Just output)
         _ -> usage
 
 usage :: IO ()
@@ -125,9 +127,9 @@ usage = do
 {- | Execute every live chapter and the unnamed sequence first. A book cannot be generated from fixtures or
 an old receipt directory supplied in place of an actual run.
 -}
-runBook :: FilePath -> Maybe FilePath -> IO ()
-runBook dir output = do
-    runGuarded bookStories dir
+runBook :: TmpDirOwner -> FilePath -> Maybe FilePath -> IO ()
+runBook owner dir output = do
+    runGuarded owner bookStories dir
     receipts <- loadReceipts dir >>= either fail pure
     case bookReceipts receipts of
         Left problem ->
@@ -143,15 +145,16 @@ runBook dir output = do
                 Just target -> writeFile target (renderBook rows chapters)
             putStrLn ("Live run receipts: " <> dir)
 
-runDispatch :: [String] -> IO ()
-runDispatch rest = case break (== "--receipts-dir") rest of
-    (rows, []) -> runGuarded rows defaultReceiptsDir
-    (rows, [_, dir]) -> runGuarded rows dir
+runDispatch :: TmpDirOwner -> [String] -> IO ()
+runDispatch owner rest = case break (== "--receipts-dir") rest of
+    (rows, []) -> runGuarded owner rows defaultReceiptsDir
+    (rows, [_, dir]) -> runGuarded owner rows dir
     _ -> usage
 
-runGuarded :: [String] -> FilePath -> IO ()
-runGuarded rows dir = do
-    outcome <- try (runRows rows dir) :: IO (Either SomeException ())
+runGuarded :: TmpDirOwner -> [String] -> FilePath -> IO ()
+runGuarded owner rows dir = do
+    outcome <-
+        try (runRows owner rows dir) :: IO (Either SomeException ())
     case outcome of
         Right () -> putStrLn "exit_status: 0"
         Left e -> do
