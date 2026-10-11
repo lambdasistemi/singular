@@ -239,6 +239,11 @@ jobs:
       # controls proving each discovery signal runs in the dev-shell job via
       # `just inventory-controls`.
       - run: nix run --quiet .#inventory-check
+      # #562 item 5a: the inventory orphan controls only (the test-tag
+      # controls already run inside inventory-check above). The step refuses
+      # unclassified sources with their intended diagnostics.
+      - name: Refuse unclassified sources
+        run: nix run --quiet .#inventory-controls
   workflow-commands-resolve:
     if: github.event.action != 'closed'
     needs: build-gate

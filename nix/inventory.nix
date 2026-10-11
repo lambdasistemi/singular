@@ -19,6 +19,27 @@ in
     type = "app";
     program = pkgs.lib.getExe checker;
   };
+  # #562 item 5a: the inventory orphan controls only. The test-tag controls
+  # already run inside inventory-check above; they are not added a second
+  # time. The script owns its scratch exports (mktemp with trap cleanup,
+  # bounded to the run, no process stopped) and never touches the tree.
+  apps.inventory-controls = {
+    type = "app";
+    program = pkgs.lib.getExe (
+      pkgs.writeShellApplication {
+        name = "inventory-controls";
+        runtimeInputs = with pkgs; [
+          bash
+          coreutils
+          git
+          gnugrep
+          gnused
+          python3
+        ];
+        text = ''bash tools/code_inventory_controls.sh'';
+      }
+    );
+  };
   check = pkgs.runCommand "singular-inventory-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"

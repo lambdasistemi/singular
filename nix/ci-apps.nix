@@ -109,4 +109,26 @@ in
       text = ''bash tools/workflow_commands_resolve_controls.sh "$PWD"'';
     }
   );
+
+  # #562 item 5b: the Haskell format check's negative and positive controls.
+  # Supplies the pinned house Fourmolu the offchain lock resolves (the same
+  # binary the lint checks run) plus git and core tools the script needs.
+  # The script owns its scratch copies (mktemp with trap cleanup, bounded to
+  # the run, no process stopped) and never touches the working tree.
+  format-controls = app (
+    pkgs.writeShellApplication {
+      name = "format-controls";
+      runtimeInputs = [
+        offchain.packages.${system}.fourmolu
+        pkgs.bash
+        pkgs.coreutils
+        pkgs.findutils
+        pkgs.gawk
+        pkgs.git
+        pkgs.gnugrep
+        pkgs.gnused
+      ];
+      text = ''bash tools/format_controls.sh'';
+    }
+  );
 }

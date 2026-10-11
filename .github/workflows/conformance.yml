@@ -89,6 +89,10 @@ jobs:
       # HLint the off-chain lint resolves; no exclusions, no ignore file.
       - run: nix run --quiet .#hlint-check
         working-directory: conformance
+      # #562 item 5b: the house formatter controls over the whole-tree
+      # checkout extent with the pinned house Fourmolu. Runs from the
+      # repository root (no working-directory), scratch owned and cleaned.
+      - run: nix run --quiet .#format-controls
   conformance-checks:
     name: Conformance checks without a devnet
     runs-on: nixos
