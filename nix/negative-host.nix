@@ -66,6 +66,7 @@ let
       findutils
       gnugrep
       nix
+      yq-go
     ];
     text = ''
       bash ${./../tools/negative_host_lint.sh} "$PWD"
