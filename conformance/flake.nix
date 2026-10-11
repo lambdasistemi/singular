@@ -822,6 +822,83 @@
           touch "$out"
         '';
 
+        # #562 item 2: the pinned cabal the conformance shell carries, so
+        # the evaluation cleanup wrapper runs under the pinned toolchain
+        # without entering a dev shell. Fail-closed on anything but one
+        # match (the same extraction the offchain build-graph wrappers
+        # use).
+        evaluationCabal =
+          let
+            matches = builtins.filter (
+              p: builtins.match "cabal-install-exe-cabal-.*" (p.name or "") != null
+            ) project.project.shell.nativeBuildInputs;
+          in
+          assert builtins.length matches == 1;
+          builtins.head matches;
+
+        # #562 item 4 (slice S1): the evaluation cleanup-control suite as a
+        # conformance flake app. The suite (four cases over the factored
+        # cleanup predicate) is a plain cabal test-suite pinned to its own
+        # tasty-bdd source package, so it runs under the pinned cabal and
+        # GHC this flake's shell already resolves — without entering a dev
+        # shell. The wrapper owns its state: the evaluation tree is copied
+        # to a scratch directory the wrapper creates and removes on every
+        # exit (cabal's dist-newstyle build state lives inside that copy,
+        # never in the checkout), and the cabal download cache (Hackage
+        # index plus the pinned tasty-bdd fetch) lives under a named
+        # directory the wrapper creates under XDG_CACHE_HOME (or HOME),
+        # reusable across runs like the runner's Nix cache — a cache, not
+        # build state. Every acquisition and population step (scratch
+        # creation, tree copy, cache directory) maps its failure to exit 2
+        # with its diagnostic, never a verdict; cabal's own exit stays the
+        # verdict. No process is started or stopped.
+        evaluationCleanupControls = pkgs.writeShellApplication {
+          name = "evaluation-cleanup-controls";
+          runtimeInputs = [
+            evaluationCabal
+            project.project.pkg-set.config.ghc.package
+            pkgs.bash
+            pkgs.coreutils
+            pkgs.git
+          ];
+          text = ''
+            if ! work="$(mktemp -d)"; then
+              echo "evaluation-cleanup-controls: setup failed creating the scratch directory (TMPDIR=''${TMPDIR:-unset})" >&2
+              exit 2
+            fi
+            trap 'rm -rf "$work"' EXIT
+            src="$PWD/conformance/coverage/evaluation"
+            [ -d "$src" ] || {
+              echo "evaluation-cleanup-controls: no conformance/coverage/evaluation under $PWD (run from the repository root)" >&2
+              exit 2
+            }
+            if ! cp -a "$src" "$work/evaluation"; then
+              echo "evaluation-cleanup-controls: setup failed copying the evaluation tree to scratch" >&2
+              exit 2
+            fi
+            cache_root="''${XDG_CACHE_HOME:-''${HOME:+$HOME/.cache}}"
+            [ -n "''${cache_root:-}" ] || {
+              echo "evaluation-cleanup-controls: no cache location: set XDG_CACHE_HOME or HOME" >&2
+              exit 2
+            }
+            if ! mkdir -p "$cache_root/singular-evaluation-cleanup-cabal"; then
+              echo "evaluation-cleanup-controls: setup failed creating the cabal download cache directory" >&2
+              exit 2
+            fi
+            export CABAL_DIR="$cache_root/singular-evaluation-cleanup-cabal"
+            # Acquisition: the Hackage package index (the pinned tasty-bdd
+            # fetch rides the same cache). A missing or failed update is
+            # setup failure, never a verdict; on a warm cache it is a fast
+            # incremental check.
+            if ! cabal update; then
+              echo "evaluation-cleanup-controls: setup failed updating the Hackage package index" >&2
+              exit 2
+            fi
+            cd "$work/evaluation"
+            cabal test cleanup-control
+          '';
+        };
+
       in
       {
         packages = {
@@ -925,6 +1002,13 @@
           coverage-gate = {
             type = "app";
             program = "${coverageGate}/bin/coverage-gate";
+          };
+          # #562 item 4 (slice S1): the evaluation cleanup-control suite,
+          # `cabal test cleanup-control` of conformance/coverage/evaluation
+          # under the pinned toolchain, scratch owned.
+          evaluation-cleanup-controls = {
+            type = "app";
+            program = pkgs.lib.getExe evaluationCleanupControls;
           };
         };
 
