@@ -5,7 +5,7 @@
 #
 #   controls.sh CHECK_SH PROJECT_DIR [AIKEN]
 #
-# PROJECT_DIR is the Aiken project (aiken.toml, validators/, and its staged
+# PROJECT_DIR is the Aiken project (aiken.toml, validators/, lib/, and its staged
 # build/packages). The guard must pass the real tree, then refuse copies of it
 # with one real gap planted each, found from the guard's own inventory rather
 # than named here, each for its intended reason (the FAIL line is matched,
@@ -43,6 +43,7 @@ fresh() {
   rm -rf "$work/p"
   mkdir -p "$work/p"
   cp -r "$project/aiken.toml" "$project/validators" "$work/p/"
+  [ -d "$project/lib" ] && cp -r "$project/lib" "$work/p/"
   [ -f "$project/aiken.lock" ] && cp "$project/aiken.lock" "$work/p/"
   if [ -n "$aiken" ]; then
     mkdir -p "$work/p/build"
@@ -148,7 +149,7 @@ planted "undocumented export added to $rel" "'pub fn undocumentedControl' has no
 
 # 4. An undocumented module added.
 fresh
-printf 'pub fn undocumentedModuleControl() -> Bool {\n  True\n}\n' >"$work/p/validators/registry/undocumented_control.ak"
+printf 'pub fn undocumentedModuleControl() -> Bool {\n  True\n}\n' >"$work/p/lib/registry/undocumented_control.ak"
 planted "undocumented module added" "undocumented_control.ak: module doc lacks" "undocumented_control.html: module doc lacks"
 
 # 5. Empty extent.

@@ -111,6 +111,21 @@ POLICIES: dict[str, dict] = {
         "check)",
         "note": "unit and property suite over the naming validators.",
     },
+    "aiken-check-open-datum": {
+        "kind": "lint",
+        "tool": "aiken check",
+        "status": "enforced",
+        "carrier": "registry.yml job 'Onchain Aiken unit and property suite "
+        "passes' step 'Run the application Aiken suite as a flake check' "
+        "(applications/open-datum/onchain nix flake check → "
+        "open-datum-aiken-tests: the composed assembly running the moved "
+        "suite against the registry project, plus the application's own "
+        "formatter and identity checks)",
+        "note": "unit and property suite over the open-datum application "
+        "validators; the tests call the registry state validator, so they "
+        "run in the composed assembly, never as a check over the "
+        "application project alone.",
+    },
     "lean-static": {
         "kind": "lint",
         "tool": "Lean style rules (tools/lint_code.py)",
@@ -275,9 +290,11 @@ POLICIES: dict[str, dict] = {
         "kind": "format",
         "tool": "aiken fmt --check",
         "status": "enforced",
-        "carrier": "the onchain and naming-onchain flake checks (aiken-fmt), "
+        "carrier": "the onchain, naming-onchain and open-datum onchain flake "
+        "checks (aiken-fmt), "
         "run by registry.yml jobs 'Run the onchain Aiken suite as a "
-        "flake check' and 'Naming validators build, refuse, and match "
+        "flake check', 'Run the application Aiken suite as a flake check' "
+        "and 'Naming validators build, refuse, and match "
         "their pinned identity' (nix flake check)",
         "note": "the Aiken each flake pins; formatting leaves every "
         "compiled validator and hash unchanged (script-identity).",
@@ -420,6 +437,29 @@ CODE_RULES: list[dict] = [
         "family": "aiken",
         "pattern": "onchain/validators/**/*.ak",
         "lint": "aiken-check-onchain",
+        "format": "aiken-fmt",
+        "generated": False,
+        "note": VENDOR_NOTE,
+    },
+    {
+        # S5.1 split: the registry owners moved to onchain/lib/ with
+        # module names unchanged; the same lint and format apply there.
+        "id": "aiken-lib-onchain",
+        "family": "aiken",
+        "pattern": "onchain/lib/**/*.ak",
+        "lint": "aiken-check-onchain",
+        "format": "aiken-fmt",
+        "generated": False,
+        "note": VENDOR_NOTE,
+    },
+    {
+        # S5.1 split: the open-datum application validators moved to
+        # applications/open-datum/onchain/ with module names unchanged;
+        # the moved suite runs in the composed assembly (A-002).
+        "id": "aiken-validators-open-datum",
+        "family": "aiken",
+        "pattern": "applications/open-datum/onchain/validators/**/*.ak",
+        "lint": "aiken-check-open-datum",
         "format": "aiken-fmt",
         "generated": False,
         "note": VENDOR_NOTE,

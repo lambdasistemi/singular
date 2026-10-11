@@ -23,12 +23,6 @@
       "hash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575",
       "compiledCodeSha256": "f759321c1d7dad7364b6809f5798d0fccd0c728c684c58f7c85fee33f4e637f2",
       "parameters": 2
-    },
-    {
-      "title": "open_datum.open_datum",
-      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
-      "compiledCodeSha256": "897dadc512c7fcff3938972cbe6e70a9158c89cbc16e4a8718cbb31f01c6c8bf",
-      "parameters": 1
     }
   ],
   "registryEdges": [

@@ -632,6 +632,255 @@
               };
             }
           )
+          // (
+            let
+              pkgs = import nixpkgs { inherit system; };
+              # #528 S5.1: the split-blueprint hash comparison. The open-datum
+              # validators build in their own Aiken project now, so no single
+              # blueprint holds the whole contract: this app rebuilds the
+              # registry blueprint and the application blueprint, unions
+              # their validator sets, and requires the union to equal the
+              # base set recorded in base-hashes.json exactly — every hash
+              # byte-identical. Titles are compared modulo the module path
+              # (the first segment), so a move that renames only the module
+              # path is tolerated while a changed hash, a missing validator
+              # and an extra validator all fail. The two plants below run on
+              # every invocation: a changed hash and a missing validator
+              # must each be refused, naming the validator — a comparison
+              # that cannot fail guards nothing. Takes the repository root
+              # (default: the working tree) and builds both blueprints
+              # itself, so CI runs it with no other setup.
+              scriptHashComparison = pkgs.writeShellApplication {
+                name = "script-hash-comparison";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                  pkgs.jq
+                  pkgs.nix
+                ];
+                text = ''
+                  set -euo pipefail
+                  root="''${1:-$PWD}"
+                  root=$(realpath -m "$root")
+                  base="$root/specs/528-registry-cli-split/evidence/base-hashes.json"
+                  [ -f "$base" ] || {
+                    echo "script-hash-comparison: no base-hashes.json under $root" >&2
+                    exit 2
+                  }
+                  registry_bp="$(nix build --quiet --no-link --print-out-paths "$root/onchain#plutus-blueprint")"
+                  app_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#plutus-blueprint")"
+                  for bp in "$registry_bp" "$app_bp"; do
+                    [ -f "$bp" ] || {
+                      echo "script-hash-comparison: blueprint build produced no file: $bp" >&2
+                      exit 2
+                    }
+                  done
+                  base_compiler="$(jq -r '.compiler' "$base")"
+                  for bp in "$registry_bp" "$app_bp"; do
+                    built_compiler="$(jq -r '.preamble.compiler.version' "$bp")"
+                    [ "$built_compiler" = "$base_compiler" ] || {
+                      echo "script-hash-comparison: compiler moved: base records $base_compiler, build reports $built_compiler ($bp)" >&2
+                      exit 1
+                    }
+                  done
+                  work=$(mktemp -d)
+                  trap 'rm -rf "$work"' EXIT
+                  jq -s '{validators: (.[0].validators + .[1].validators)}' "$registry_bp" "$app_bp" >"$work/union.json"
+                  # S5-1d-r2: one-to-one title correspondence with pre-map
+                  # rejection. Raw checks (duplicate full titles, ambiguous
+                  # normalised keys, empty sets, raw-count equality) run in
+                  # their own jq invocation with no from_entries anywhere —
+                  # a collision fails before any map exists. Only when raw
+                  # passes do we build the normalised maps and compare
+                  # hashes; then from_entries is one-to-one and lossless, so
+                  # every validator and hash stays in the comparison.
+                  compare() {
+                    local raw problems
+                    raw="$(jq -r -n --slurpfile b "$1" --slurpfile u "$2" '
+                      ($b[0].validators) as $baseVals
+                      | ($u[0].validators) as $unionVals
+                      | ($baseVals | length) as $baseCount
+                      | ($unionVals | length) as $unionCount
+                      | ($baseVals | map(.title)) as $baseTitles
+                      | ($unionVals | map(.title)) as $unionTitles
+                      | ($baseTitles | unique | length) as $baseUnique
+                      | ($unionTitles | unique | length) as $unionUnique
+                      | ($baseVals | map(.title | split(".") | .[length - 2:] | join("."))) as $baseNorm
+                      | ($unionVals | map(.title | split(".") | .[length - 2:] | join("."))) as $unionNorm
+                      | ($baseNorm | unique | length) as $baseNormUnique
+                      | ($unionNorm | unique | length) as $unionNormUnique
+                      | (if $baseCount == 0
+                         then ["FAIL: the base set records zero validators"] else [] end)
+                        + (if $unionCount == 0
+                           then ["FAIL: the union builds zero validators"] else [] end)
+                        + (if $baseUnique != $baseCount
+                           then ["FAIL: base has duplicate validator titles"] else [] end)
+                        + (if $unionUnique != $unionCount
+                           then ["FAIL: union has duplicate validator titles"] else [] end)
+                        + (if $baseNormUnique != $baseCount
+                           then ["FAIL: base has ambiguous normalised titles (collision)"] else [] end)
+                        + (if $unionNormUnique != $unionCount
+                           then ["FAIL: union has ambiguous normalised titles (collision)"] else [] end)
+                        + (if $baseCount != $unionCount
+                           then ["FAIL: count mismatch: base has \($baseCount), union has \($unionCount)"] else [] end)
+                      | .[]
+                    ')" || return 2
+                    if [ -n "$raw" ]; then
+                      printf '%s\n' "$raw"
+                      return 1
+                    fi
+                    problems="$(jq -r -n --slurpfile b "$1" --slurpfile u "$2" '
+                      ($b[0].validators | map({key: (.title | split(".") | .[length - 2:] | join(".")), value: .hash}) | from_entries) as $want
+                      | ($u[0].validators | map({key: (.title | split(".") | .[length - 2:] | join(".")), value: .hash}) | from_entries) as $got
+                      | (if ($want | length) == 0
+                         then ["FAIL: the base set records zero validators"] else [] end)
+                        + (if ($got | length) == 0
+                           then ["FAIL: the union builds zero validators"] else [] end)
+                        + [$want | to_entries[] | .key as $k |
+                             if ($got | has($k) | not) then
+                               "FAIL: base validator \($k) (hash \(.value)) has no counterpart in the union"
+                             elif $got[$k] != .value then
+                               "FAIL: validator \($k) moved: base expects \(.value), union builds \($got[$k])"
+                             else empty end]
+                        + [$got | to_entries[] | .key as $k |
+                             if ($want | has($k) | not) then
+                               "FAIL: union validator \($k) (hash \(.value)) is not in the base set"
+                             else empty end]
+                      | .[]
+                    ')" || return 2
+                    if [ -n "$problems" ]; then
+                      printf '%s\n' "$problems"
+                      return 1
+                    fi
+                    return 0
+                  }
+                  if ! compare "$base" "$work/union.json" >"$work/live.log" 2>&1; then
+                    echo "script-hash-comparison: union differs from the base set:" >&2
+                    cat "$work/live.log" >&2
+                    exit 1
+                  fi
+                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the base set ($(jq '.validators | length' "$base") recorded, compiler $base_compiler)"
+                  jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$work/union.json"
+                  jq '.validators[0].hash = "00000000000000000000000000000000000000000000000000000000"' "$work/union.json" >"$work/plant-changed.json"
+                  grep -q '00000000000000000000000000000000000000000000000000000000' "$work/plant-changed.json" || {
+                    echo "script-hash-comparison: changed-hash plant did not apply" >&2
+                    exit 2
+                  }
+                  if compare "$base" "$work/plant-changed.json" >"$work/plant-changed.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the changed-hash plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-changed.log" || {
+                    echo "script-hash-comparison: changed-hash plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-changed.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: changed-hash plant refused" >&2
+                  jq 'del(.validators[0])' "$work/union.json" >"$work/plant-missing.json"
+                  [ "$(jq '.validators | length' "$work/plant-missing.json")" = "$(($(jq '.validators | length' "$work/union.json") - 1))" ] || {
+                    echo "script-hash-comparison: missing-validator plant did not apply" >&2
+                    exit 2
+                  }
+                  if compare "$base" "$work/plant-missing.json" >"$work/plant-missing.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the missing-validator plant" >&2
+                    exit 1
+                  fi
+                  # S5-1d-r2: the missing row fails pre-map on raw-count
+                  # equality (13 vs 14) before any map exists; that count
+                  # mismatch is its reason.
+                  grep -q 'count mismatch' "$work/plant-missing.log" || {
+                    echo "script-hash-comparison: missing-validator plant refused without its count reason:" >&2
+                    cat "$work/plant-missing.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: missing-validator plant refused" >&2
+                  # S5-1d-r1 collision control: an extra validator under a path
+                  # that normalises onto an existing title but carries another
+                  # hash must fail (ambiguous normalised key and count
+                  # mismatch) — the class the changed/missing plants do not
+                  # exercise on the current 14-row subject.
+                  jq '.validators += [{"title": "alternate.open_datum.mint", "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "compiledCode": "00"}]' "$work/union.json" >"$work/plant-collision.json"
+                  [ "$(jq '.validators | length' "$work/plant-collision.json")" = "$(($(jq '.validators | length' "$work/union.json") + 1))" ] || {
+                    echo "script-hash-comparison: collision plant did not apply" >&2
+                    exit 2
+                  }
+                  grep -q 'alternate.open_datum.mint' "$work/plant-collision.json" || {
+                    echo "script-hash-comparison: collision plant title missing" >&2
+                    exit 2
+                  }
+                  if compare "$base" "$work/plant-collision.json" >"$work/plant-collision.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the collision plant" >&2
+                    exit 1
+                  fi
+                  grep -Eq 'ambiguous|count mismatch|not in the base' "$work/plant-collision.log" || {
+                    echo "script-hash-comparison: collision plant refused without naming the collision:" >&2
+                    cat "$work/plant-collision.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: collision plant refused" >&2
+                  # S5.2: the deployment blueprint itself. Built in the
+                  # application's onchain flake from the same two trees
+                  # (jq merge, preamble from the registry's), it must equal
+                  # the base set exactly and carry byte-identical
+                  # compiledCode for all 14 validators — the pairing
+                  # guarantee every executable's --blueprint relies on.
+                  merged_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")"
+                  [ -f "$merged_bp" ] || {
+                    echo "script-hash-comparison: merged blueprint build produced no file" >&2
+                    exit 2
+                  }
+                  merged_compiler="$(jq -r '.preamble.compiler.version' "$merged_bp")"
+                  [ "$merged_compiler" = "$base_compiler" ] || {
+                    echo "script-hash-comparison: compiler moved: base records $base_compiler, merged reports $merged_compiler" >&2
+                    exit 1
+                  }
+                  if ! compare "$base" "$merged_bp" >"$work/merged.log" 2>&1; then
+                    echo "script-hash-comparison: merged blueprint differs from the base set:" >&2
+                    cat "$work/merged.log" >&2
+                    exit 1
+                  fi
+                  echo "script-hash-comparison: OK — merged deployment blueprint equals the base set ($(jq '.validators | length' "$merged_bp") validators, compiler $base_compiler)"
+                  jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$merged_bp"
+                  # Byte-identical compiledCode: every merged validator must
+                  # match the union's title, hash and compiledCode exactly.
+                  # Empty output means identical; any DIFFER line fails.
+                  diff_out="$(jq -s -r '
+                    (.[0].validators | sort_by(.title)) as $m
+                    | (.[1].validators | sort_by(.title)) as $u
+                    | if ($m | length) != ($u | length) then "DIFFER: length \(($m | length)) vs \(($u | length))"
+                      else range(0; ($m | length)) | select($m[.].title != $u[.].title or $m[.].hash != $u[.].hash or $m[.].compiledCode != $u[.].compiledCode) | "DIFFER: \($m[.].title)"
+                      end
+                  ' "$merged_bp" "$work/union.json")" || {
+                    echo "script-hash-comparison: jq could not compare merged compiledCode" >&2
+                    exit 2
+                  }
+                  [ -z "$diff_out" ] || {
+                    echo "script-hash-comparison: merged compiledCode differs from the union:" >&2
+                    printf '%s\n' "$diff_out" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: merged compiledCode byte-identical to the union" >&2
+                  jq '.validators[0].hash = "00000000000000000000000000000000000000000000000000000000"' "$merged_bp" >"$work/plant-merged-changed.json"
+                  if compare "$base" "$work/plant-merged-changed.json" >"$work/plant-merged-changed.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the merged changed-hash plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-merged-changed.log" || {
+                    echo "script-hash-comparison: merged changed-hash plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-merged-changed.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: merged changed-hash plant refused" >&2
+                '';
+              };
+            in
+            {
+              script-hash-comparison = {
+                type = "app";
+                program = pkgs.lib.getExe scriptHashComparison;
+              };
+            }
+          )
         )
       );
       # #278 terminal-attestation-permanent: the root development shell carries the pinned house

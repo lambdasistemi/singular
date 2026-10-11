@@ -1,0 +1,37 @@
+name = "singular/open-datum"
+version = "0.0.0"
+compiler = "v1.1.21"
+plutus = "v3"
+license = "Apache-2.0"
+description = "Singular open-datum application validators"
+
+[repository]
+user = "lambdasistemi"
+project = "singular"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "v2.2.0"
+source = "github"
+
+[[dependencies]]
+name = "aiken-lang/fuzz"
+version = "v2.1.1"
+source = "github"
+
+[[dependencies]]
+name = "singular/registry"
+version = "0.0.0"
+source = "github"
+
+# Transitive through singular/registry's lib/ modules (lib/types.ak
+# imports it): declared direct so the hermetic staging resolves it when
+# compiling the dependency, exactly as the registry project stages it.
+[[dependencies]]
+name = "aiken-lang/merkle-patricia-forestry"
+version = "v2.1.0"
+source = "github"
+
+
+[config]

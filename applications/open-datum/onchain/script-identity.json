@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "upstream": {
+    "source_revision": "34a5bfbb8cca2cb1911b7060d0e61db28ba21e83"
+  },
+  "compiler": "v1.1.21+unknown",
+  "validators": [
+    {
+      "title": "open_datum.open_datum.mint",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "parameters": 1
+    },
+    {
+      "title": "open_datum.open_datum.spend",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "parameters": 1
+    },
+    {
+      "title": "open_datum.open_datum.else",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "parameters": 1
+    }
+  ]
+}

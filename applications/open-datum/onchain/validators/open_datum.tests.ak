@@ -25,12 +25,12 @@ use cardano/transaction.{
 use lib.{approvalDestination, approvalName}
 use open_datum as open_datum
 use registry_fixtures as fx
+use registry_pin.{registryStateHash}
 use state as state
 use types.{
   Modify, Rejected, Request, RequestAction, RequestDatum, State, StateDatum,
   TokenId, UpdateAction,
 }
-use witness.{registryStateHash}
 
 // ----------------------------------------------------------------------------
 // Fixtures

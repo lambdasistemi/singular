@@ -209,15 +209,16 @@
 
         # A build that differs from the deployed recipe by one compiler
         # input other than the trace flags: the source literal pinning the
-        # state script's hash in witness.ak. The edit checks that it applied,
-        # so a pattern that stopped matching fails here, not silently.
+        # state script's hash in lib/registry_pin.ak. The edit checks that
+        # it applied, so a pattern that stopped matching fails here, not
+        # silently.
         registryMismatchedBlueprint = registryBlueprint {
           pname = "singular-registry-mismatched-blueprint";
           flags = "";
           prepare = ''
-            grep -qE '^  #"[0-9a-f]{56}"$' validators/witness.ak
-            sed -i -E 's/^  #"[0-9a-f]{56}"$/  #"00000000000000000000000000000000000000000000000000000000"/' validators/witness.ak
-            grep -qE '^  #"0{56}"$' validators/witness.ak
+            grep -qE '^  #"[0-9a-f]{56}"$' lib/registry_pin.ak
+            sed -i -E 's/^  #"[0-9a-f]{56}"$/  #"00000000000000000000000000000000000000000000000000000000"/' lib/registry_pin.ak
+            grep -qE '^  #"0{56}"$' lib/registry_pin.ak
           '';
         };
 
@@ -675,6 +676,12 @@
               echo 'For report-unit-test filters, use conformance-appendix-tests.' >&2
               exit 2
             fi
+            # S5-2-r1: the generic runner loads only registry codes
+            # (state.state/request.request in Conformance.Run, open.open/
+            # witness.witness in loadRegistryCodesFromEnv); only app-cli's
+            # Backend.hs runRelease reads open_datum.open_datum, so the
+            # default stays the registry blueprint; an explicit
+            # REGISTRY_BLUEPRINT still wins.
             if [ -z "''${REGISTRY_BLUEPRINT:-}" ]; then
               REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
               export REGISTRY_BLUEPRINT

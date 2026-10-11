@@ -9,28 +9,8 @@ use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{PolicyId, Value, tokens}
 use cardano/transaction.{Input, Spend, Transaction}
+use registry_pin.{registryStateHash}
 use types.{Modify, UpdateRedeemer}
-
-/// The state script this registry family's witnesses co-locate with
-/// (#157 N1). It is the compiled hash of `state.ak` in this same
-/// partition, pinned rather than derived: Aiken cannot name a
-/// validator's own hash, and deriving it from the `registry` parameter
-/// instead would admit a witness parametrised against a fabricated
-/// script whose hash merely prefixes the parameter.
-///
-/// The pin has no compile-time check. It has two EXECUTABLE ones.
-///
-/// A stale pin makes `foldPresent` find no registry, so every mint
-/// under every kind refuses and the devnet rows go red on the first
-/// token this registry tries to move.
-///
-/// #177 I177-COPIES closes the gap that left: the `script-identity`
-/// check now reads THIS constant out of this file and requires it to
-/// equal the `state.state.spend` hash of the blueprint it just built,
-/// so a stale pin is a red identity check on every commit rather than
-/// a red devnet row on whichever ticket next moves a token.
-pub const registryStateHash: ByteArray =
-  #"68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
 
 /// The three token policies of a registry instance (#157 N1).
 ///

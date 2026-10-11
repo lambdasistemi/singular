@@ -58,7 +58,9 @@ build() { nix build --quiet --no-link --print-out-paths "$@"; }
 cd "$root/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
-blueprint="$(build ../onchain#plutus-blueprint)"
+# S5.2: recovery runs open-datum alongside singular, so the blueprint is
+# the merged deployment document (application + witnesses, one build).
+blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
 cd "$root/applications/open-datum/offchain"
 open_datum="$(build .#open-datum)/bin/open-datum"
 

@@ -24,6 +24,11 @@
 # a slash-only token in a path position is a real outside destination);
 # (i) `cd /` in an application script (the same finding for shell
 # cd targets).
+# (j) a registry-side naming in an onchain/ source file (the S5.1
+# extension: the onchain tree names no application either).
+# (k) the bound Aiken module spelling application/envelope alone in an
+# onchain/ source file (the S5-1d-r1 finding: none of the earlier tokens
+# matches it).
 # The check must refuse each with the right reason (naming the file, the
 # line and the name). The controls then run the clean tree through the
 # check and require exit 0. They never edit the tracked tree. Each plant
@@ -61,10 +66,15 @@ copy_tree() {
   cp -r "$root/offchain" "$work/$1/offchain"
   rm -rf "$work/$1/offchain/dist-newstyle" "$work/$1/offchain/result" "$work/$1/offchain/.git"
   mkdir -p "$work/$1/onchain"
-  cp "$root/onchain/permanent-contract.json" "$work/$1/onchain/permanent-contract.json"
+  cp -r "$root/onchain" "$work/$1/onchain-tmp"
+  rm -rf "$work/$1/onchain-tmp/build" "$work/$1/onchain-tmp/result" "$work/$1/onchain-tmp/.git"
+  cp -r "$work/$1/onchain-tmp/." "$work/$1/onchain/"
+  rm -rf "$work/$1/onchain-tmp"
   mkdir -p "$work/$1/applications/open-datum"
   cp -r "$root/applications/open-datum/offchain" "$work/$1/applications/open-datum/offchain"
   cp -r "$root/applications/open-datum/negative" "$work/$1/applications/open-datum/negative"
+  mkdir -p "$work/$1/applications/open-datum/onchain"
+  cp "$root/applications/open-datum/onchain/permanent-contract.json" "$work/$1/applications/open-datum/onchain/permanent-contract.json"
 }
 
 # Plant (a): a registry-side naming — the application module prefix in a
@@ -144,7 +154,7 @@ echo "application-separation-controls: planted build-depends entry caught" >&2
 # Plant (d): the open-datum script hash itself in an offchain/ source
 # file. Read from the contract at run time, never typed.
 copy_tree plant-hash
-app_hash=$(jq -r '.scripts[] | select(.title == "open_datum.open_datum") | .hash' "$root/onchain/permanent-contract.json")
+app_hash=$(jq -r '.scripts[] | select(.title == "open_datum.open_datum") | .hash' "$root/applications/open-datum/onchain/permanent-contract.json")
 [ -n "$app_hash" ] || {
   echo "application-separation-controls: cannot read the open-datum hash" >&2
   exit 2
@@ -325,6 +335,63 @@ printf '%s\n' "$out" | grep -q 'reach' \
     exit 1
   }
 echo "application-separation-controls: planted cd-root reach caught" >&2
+
+# Plant (j): a registry-side naming in an onchain/ source file — the
+# S5.1 extension's case. The check must refuse an onchain naming with
+# the file, the line and the name.
+copy_tree plant-onchain-naming
+printf '%s\n' "-- probe: Singular.Application.OpenDatum.Envelope" >>"$work/plant-onchain-naming/onchain/lib/registry_pin.ak"
+grep -q 'Singular.Application.OpenDatum.Envelope' "$work/plant-onchain-naming/onchain/lib/registry_pin.ak" \
+  || {
+    echo "application-separation-controls: onchain-naming plant did not apply" >&2
+    exit 2
+  }
+if out=$("$check" "$work/plant-onchain-naming" 2>&1); then
+  echo "application-separation-controls: check MISSED the planted onchain naming" >&2
+  exit 1
+fi
+printf '%s\n' "$out" | grep -q 'Singular.Application.OpenDatum' \
+  || {
+    echo "application-separation-controls: check failed but did not name the planted module:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
+printf '%s\n' "$out" | grep -q 'registry_pin.ak' \
+  || {
+    echo "application-separation-controls: check failed but did not name the planted file:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
+echo "application-separation-controls: planted onchain naming caught" >&2
+
+# Plant (k): the bound Aiken module spelling application/envelope alone in
+# an onchain/ source file (S5-1d-r1). None of the earlier tokens matches
+# this spelling, so the planted line names only it. The check must refuse
+# with the file and the token.
+copy_tree plant-onchain-envelope
+printf '%s\n' "-- probe: application/envelope" >>"$work/plant-onchain-envelope/onchain/lib/registry_pin.ak"
+grep -q 'application/envelope' "$work/plant-onchain-envelope/onchain/lib/registry_pin.ak" \
+  || {
+    echo "application-separation-controls: onchain-envelope plant did not apply" >&2
+    exit 2
+  }
+if out=$("$check" "$work/plant-onchain-envelope" 2>&1); then
+  echo "application-separation-controls: check MISSED the planted onchain envelope spelling" >&2
+  exit 1
+fi
+printf '%s\n' "$out" | grep -q 'application/envelope' \
+  || {
+    echo "application-separation-controls: check failed but did not name the planted envelope spelling:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
+printf '%s\n' "$out" | grep -q 'registry_pin.ak' \
+  || {
+    echo "application-separation-controls: check failed but did not name the planted file:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
+echo "application-separation-controls: planted onchain envelope spelling caught" >&2
 
 # The clean tree passes.
 if out=$("$check" "$root" 2>&1); then

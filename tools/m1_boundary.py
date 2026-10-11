@@ -143,32 +143,52 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--blueprint", type=Path, required=True)
     parser.add_argument("--contexts", type=Path, required=True)
-    parser.add_argument("--application-contexts", type=Path, required=True)
+    # S5.1 split (A-005): the application's contexts moved with
+    # `open_datum.tests.ak` to the application's tree and run over the
+    # merged deployment blueprint in S5.2. The registry-only mode below
+    # evaluates the registry contexts against the registry blueprint
+    # alone; the full mode (default) is unchanged and S5.2 owns its
+    # return over the merged blueprint.
+    parser.add_argument(
+        "--application-contexts", type=Path, required=False, default=None
+    )
+    parser.add_argument(
+        "--registry-only",
+        action="store_true",
+        help="evaluate registry contexts only; --application-contexts must be absent",
+    )
     parser.add_argument("--aiken", required=True)
     parser.add_argument("--receipts-dir", type=Path, required=True)
     parser.add_argument("--fault-child", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.registry_only and args.application_contexts is not None:
+        raise ValueError("--registry-only takes no --application-contexts")
+    if not args.registry_only and args.application_contexts is None:
+        raise ValueError(
+            "missing --application-contexts (or pass --registry-only for the registry part)"
+        )
     args.receipts_dir.mkdir(parents=True, exist_ok=False)
     blueprint = json.loads(args.blueprint.read_text())
     contexts, extras, routes = parse_contexts(args.contexts)
-    raw = args.application_contexts.read_text()
-    application_document, _ = json.JSONDecoder().raw_decode(raw[raw.index("{") :])
-    if (
-        application_document["summary"]["failed"]
-        or not application_document["summary"]["total"]
-    ):
-        raise ValueError("application fixture producer did not pass executed tests")
     application_contexts = {}
-    for module in application_document["modules"]:
-        for test in module["tests"]:
-            for trace in test.get("traces", []):
-                match = re.fullmatch(r"M1-APPLICATION:(\d+):([0-9A-Fa-f]+)", trace)
-                if match:
-                    number = int(match[1])
-                    if number in application_contexts:
-                        raise ValueError("duplicate application context")
-                    application_contexts[number] = bytes.fromhex(match[2])
-    if set(application_contexts) != set(range(4)):
+    if not args.registry_only:
+        raw = args.application_contexts.read_text()
+        application_document, _ = json.JSONDecoder().raw_decode(raw[raw.index("{") :])
+        if (
+            application_document["summary"]["failed"]
+            or not application_document["summary"]["total"]
+        ):
+            raise ValueError("application fixture producer did not pass executed tests")
+        for module in application_document["modules"]:
+            for test in module["tests"]:
+                for trace in test.get("traces", []):
+                    match = re.fullmatch(r"M1-APPLICATION:(\d+):([0-9A-Fa-f]+)", trace)
+                    if match:
+                        number = int(match[1])
+                        if number in application_contexts:
+                            raise ValueError("duplicate application context")
+                        application_contexts[number] = bytes.fromhex(match[2])
+    if not args.registry_only and set(application_contexts) != set(range(4)):
         raise ValueError("missing application booking/update/release contexts")
     rows = []
     failures = []
@@ -205,23 +225,24 @@ def main():
                 ],
             )
         )
-    for family, bounded in [("open_datum", True)]:
-        for purpose, numbers in [("mint", (0, 1)), ("spend", (2, 3))]:
-            evaluations.append(
-                (
-                    f"{family}.open_datum.{purpose}",
-                    [
-                        (
-                            f"application-{number}",
-                            None,
-                            application_contexts[number],
-                            bounded or number == 2,
-                            True,
-                        )
-                        for number in numbers
-                    ],
+    if not args.registry_only:
+        for family, bounded in [("open_datum", True)]:
+            for purpose, numbers in [("mint", (0, 1)), ("spend", (2, 3))]:
+                evaluations.append(
+                    (
+                        f"{family}.open_datum.{purpose}",
+                        [
+                            (
+                                f"application-{number}",
+                                None,
+                                application_contexts[number],
+                                bounded or number == 2,
+                                True,
+                            )
+                            for number in numbers
+                        ],
+                    )
                 )
-            )
     for title, cases in evaluations:
         entries = [v for v in blueprint["validators"] if v["title"] == title]
         if len(entries) != 1:
@@ -310,22 +331,27 @@ def main():
         ).hexdigest()
         fault_path = args.receipts_dir / "admitted-excluded-fault.json"
         fault_path.write_text(json.dumps(faulty) + "\n")
+        child_cmd = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--fault-child",
+            "--blueprint",
+            str(fault_path),
+            "--contexts",
+            str(args.contexts),
+        ]
+        if args.registry_only:
+            child_cmd += ["--registry-only"]
+        else:
+            child_cmd += ["--application-contexts", str(args.application_contexts)]
+        child_cmd += [
+            "--aiken",
+            args.aiken,
+            "--receipts-dir",
+            str(args.receipts_dir / "fault-replay"),
+        ]
         child = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).resolve()),
-                "--fault-child",
-                "--blueprint",
-                str(fault_path),
-                "--contexts",
-                str(args.contexts),
-                "--application-contexts",
-                str(args.application_contexts),
-                "--aiken",
-                args.aiken,
-                "--receipts-dir",
-                str(args.receipts_dir / "fault-replay"),
-            ],
+            child_cmd,
             capture_output=True,
             text=True,
             timeout=180,
@@ -347,9 +373,14 @@ def main():
     (args.receipts_dir / "results.json").write_text(json.dumps(report, indent=2) + "\n")
     if failures:
         raise SystemExit("\n".join(failures))
-    print(
-        f"Exported M1: {len(rows)} component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes, fixed application booking/update/release; excluded-admission artifact fault refused by checker"
-    )
+    if args.registry_only:
+        print(
+            f"Exported M1 registry-only (A-005 temporary): {len(rows)} component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes; excluded-admission artifact fault refused by checker (application booking/update/release return in S5.2 over the merged blueprint)"
+        )
+    else:
+        print(
+            f"Exported M1: {len(rows)} component evaluations; 2 allowed/5 excluded edges, mixed and 6 malformed controls, joined request/mint/state routes, fixed application booking/update/release; excluded-admission artifact fault refused by checker"
+        )
 
 
 if __name__ == "__main__":

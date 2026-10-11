@@ -18,7 +18,7 @@ that output under ``SITE/api/onchain`` and checks it:
   reason; the unmodified copy must pass.
 
 Module extent is discovered from the source: every ``.ak`` file under
-``validators/`` that is not a test (``*.tests.ak``) or property
+``validators/`` or ``lib/`` that is not a test (``*.tests.ak``) or property
 (``*.props.ak``) module. A module with a top-level ``pub`` declaration must
 have a page; a module without one (a bare validator module or a vector
 table) has none, and is reached through its source link instead.
@@ -73,15 +73,30 @@ def package_version(onchain_root: Path) -> str:
 
 
 def source_modules(onchain_root: Path) -> dict[str, Path]:
-    """Every non-test module under validators/, by Aiken module name."""
-    validators = onchain_root / "validators"
+    """Every non-test module under validators/ and lib/, by Aiken module name.
+
+    After the S5.1 split the registry owners live under lib/ while the
+    validators stay in validators/; both roots share one module namespace.
+    A name present in both roots is refused rather than resolved silently.
+    """
+    roots = [onchain_root / "validators", onchain_root / "lib"]
     modules = {}
-    for path in sorted(validators.rglob("*.ak")):
-        if path.name.endswith((".tests.ak", ".props.ak")):
+    for root in roots:
+        if not root.is_dir():
             continue
-        modules[path.relative_to(validators).as_posix()[: -len(".ak")]] = path
+        for path in sorted(root.rglob("*.ak")):
+            if path.name.endswith((".tests.ak", ".props.ak")):
+                continue
+            module = path.relative_to(root).as_posix()[: -len(".ak")]
+            if module in modules and modules[module] != path:
+                raise SystemExit(
+                    f"aiken_reference: module {module} in both {modules[module]} and {path}"
+                )
+            modules[module] = path
     if not modules:
-        raise SystemExit(f"aiken_reference: no source modules under {validators}")
+        raise SystemExit(
+            f"aiken_reference: no source modules under {roots[0]} or {roots[1]}"
+        )
     return modules
 
 
@@ -344,6 +359,8 @@ def controls(site: Path, onchain_root: Path, candidate_ref: str) -> None:
             )
             shutil.copytree(site.joinpath(*API_DIR), scratch_site.joinpath(*API_DIR))
             shutil.copytree(onchain_root / "validators", scratch_root / "validators")
+            if (onchain_root / "lib").is_dir():
+                shutil.copytree(onchain_root / "lib", scratch_root / "lib")
             shutil.copyfile(onchain_root / "aiken.toml", scratch_root / "aiken.toml")
             for path in Path(tmp).rglob("*"):
                 path.chmod(path.stat().st_mode | stat.S_IWUSR)

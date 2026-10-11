@@ -7,54 +7,77 @@ import json
 from pathlib import Path
 
 
-TITLES = [
+REGISTRY_TITLES = [
     "state.state.spend",
     "request.request.spend",
     "witness.witness.mint",
+]
+
+# The application's script title. Since #528 S5.3 each side derives its own
+# record from its own blueprint alone: the registry record from the registry
+# blueprint, the application record from the application's blueprint. Neither
+# side reads the other's record; --check covers both when both blueprints are
+# given and fails when either committed file is stale.
+APP_TITLE = "open_datum.open_datum"
+
+APP_BLUEPRINT_TITLES = [
     "open_datum.open_datum.mint",
+    "open_datum.open_datum.spend",
+    "open_datum.open_datum.else",
 ]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--blueprint", type=Path, required=True)
+    parser.add_argument(
+        "--blueprint",
+        type=Path,
+        required=False,
+        default=None,
+        help="registry blueprint (registry record + module)",
+    )
+    parser.add_argument(
+        "--application-blueprint",
+        type=Path,
+        required=False,
+        default=None,
+        help="application blueprint (application record + module)",
+    )
     parser.add_argument(
         "--root", type=Path, default=Path(__file__).resolve().parent.parent
     )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    blueprint = json.loads(args.blueprint.read_text())
-    pins = []
-    for title in TITLES:
-        found = [v for v in blueprint["validators"] if v["title"] == title]
-        if len(found) != 1:
-            raise ValueError(f"expected exactly one {title}")
-        validator = found[0]
-        pins.append(
-            {
-                "title": title.rsplit(".", 1)[0],
-                "hash": validator["hash"],
-                "compiledCodeSha256": hashlib.sha256(
-                    bytes.fromhex(validator["compiledCode"])
-                ).hexdigest(),
-                "parameters": len(validator.get("parameters", [])),
-            }
-        )
-    manifest = {
-        "contract": "permanent-m1",
-        "model": "Singular.M1",
-        "compiler": blueprint["preamble"]["compiler"],
-        "scripts": pins,
-        "registryEdges": ["insertActive", "updateTerminal"],
-    }
-    # Slice 4 split: the registry keeps three scripts, the open-datum
-    # application carries one, both from this same manifest (hashes unchanged).
-    registry_pins = [p for p in pins if p["title"] != "open_datum.open_datum"]
-    app_pins = [p for p in pins if p["title"] == "open_datum.open_datum"]
-    if len(registry_pins) != 3 or len(app_pins) != 1:
-        raise ValueError(
-            f"expected three registry pins and one open-datum pin, got {len(registry_pins)} and {len(app_pins)}"
-        )
+    if args.blueprint is None and args.application_blueprint is None:
+        raise SystemExit("m1_identity: give --blueprint and/or --application-blueprint")
+    outputs = []
+    if args.blueprint is not None:
+        blueprint = json.loads(args.blueprint.read_text())
+        pins = []
+        for title in REGISTRY_TITLES:
+            found = [v for v in blueprint["validators"] if v["title"] == title]
+            if len(found) != 1:
+                raise ValueError(f"expected exactly one {title}")
+            validator = found[0]
+            pins.append(
+                {
+                    "title": title.rsplit(".", 1)[0],
+                    "hash": validator["hash"],
+                    "compiledCodeSha256": hashlib.sha256(
+                        bytes.fromhex(validator["compiledCode"])
+                    ).hexdigest(),
+                    "parameters": len(validator.get("parameters", [])),
+                }
+            )
+        if len(pins) != 3:
+            raise ValueError(f"expected three registry pins, got {len(pins)}")
+        manifest = {
+            "contract": "permanent-m1",
+            "model": "Singular.M1",
+            "compiler": blueprint["preamble"]["compiler"],
+            "scripts": pins,
+            "registryEdges": ["insertActive", "updateTerminal"],
+        }
 
     def render_entries(selected):
         return (
@@ -65,7 +88,8 @@ def main():
             + "\n    ]\n"
         )
 
-    source = """{-# LANGUAGE OverloadedStrings #-}
+    if args.blueprint is not None:
+        source = """{-# LANGUAGE OverloadedStrings #-}
 
 {- |
 Module      : Singular.CLI.Permanent
@@ -83,8 +107,53 @@ import Data.Text (Text)
 knownScripts :: [(Text, Text)]
 knownScripts =
 """
-    source += render_entries(registry_pins)
-    app_source = """{-# LANGUAGE OverloadedStrings #-}
+        source += render_entries(pins)
+        outputs += [
+            (
+                args.root / "onchain/permanent-contract.json",
+                json.dumps(manifest, indent=2) + "\n",
+            ),
+            (args.root / "offchain/cli/src/Singular/CLI/Permanent.hs", source),
+        ]
+    if args.application_blueprint is not None:
+        app_blueprint = json.loads(args.application_blueprint.read_text())
+        found_app = [
+            v for v in app_blueprint["validators"] if v["title"] in APP_BLUEPRINT_TITLES
+        ]
+        if len(found_app) != 3:
+            raise ValueError(
+                f"expected exactly three {APP_TITLE} validators, got {len(found_app)}"
+            )
+        hashes = {v["hash"] for v in found_app}
+        if len(hashes) != 1:
+            raise ValueError("application validators disagree on hash")
+        codes = {v["compiledCode"] for v in found_app}
+        if len(codes) != 1:
+            raise ValueError("application validators disagree on compiledCode")
+        param_counts = {len(v.get("parameters", [])) for v in found_app}
+        if len(param_counts) != 1:
+            raise ValueError("application validators disagree on parameters")
+        mint = [v for v in found_app if v["title"] == "open_datum.open_datum.mint"]
+        if len(mint) != 1:
+            raise ValueError("expected exactly one open_datum.open_datum.mint")
+        validator = mint[0]
+        # Key order matches the committed application record byte-identically.
+        app_pin = {
+            "compiledCodeSha256": hashlib.sha256(
+                bytes.fromhex(validator["compiledCode"])
+            ).hexdigest(),
+            "hash": validator["hash"],
+            "parameters": len(validator.get("parameters", [])),
+            "title": APP_TITLE,
+        }
+        app_manifest = {
+            "contract": "permanent-m1",
+            "model": "Singular.M1",
+            "compiler": app_blueprint["preamble"]["compiler"],
+            "scripts": [app_pin],
+            "registryEdges": ["insertActive", "updateTerminal"],
+        }
+        app_source = """{-# LANGUAGE OverloadedStrings #-}
 
 {- |
 Module      : Singular.Application.OpenDatum.Permanent
@@ -104,28 +173,36 @@ import Data.Text (Text)
 knownScripts :: [(Text, Text)]
 knownScripts =
 """
-    app_source += render_entries(app_pins)
-    outputs = [
-        (
-            args.root / "onchain/permanent-contract.json",
-            json.dumps(manifest, indent=2) + "\n",
-        ),
-        (args.root / "offchain/cli/src/Singular/CLI/Permanent.hs", source),
-        (
-            args.root
-            / "applications/open-datum/offchain/src/Singular/Application/OpenDatum/Permanent.hs",
-            app_source,
-        ),
-    ]
+        app_source += render_entries([app_pin])
+        outputs += [
+            (
+                args.root / "applications/open-datum/onchain/permanent-contract.json",
+                json.dumps(app_manifest, indent=2) + "\n",
+            ),
+            (
+                args.root
+                / "applications/open-datum/offchain/src/Singular/Application/OpenDatum/Permanent.hs",
+                app_source,
+            ),
+        ]
     for path, text in outputs:
         if args.check:
             if path.read_text() != text:
                 raise SystemExit(f"stale permanent identity: {path}")
         else:
             path.write_text(text)
-    print(
-        "Permanent contract: 4 compiled script identities (3 registry + 1 open-datum application) and parameter counts bound"
-    )
+    if args.blueprint is not None and args.application_blueprint is not None:
+        print(
+            "Permanent contract: registry (3) and application (1) script identities each from its own blueprint, parameter counts bound"
+        )
+    elif args.blueprint is not None:
+        print(
+            "Permanent contract: 3 registry script identities from the registry blueprint, parameter counts bound"
+        )
+    else:
+        print(
+            "Permanent contract: 1 application script identity from the application blueprint, parameter counts bound"
+        )
 
 
 if __name__ == "__main__":

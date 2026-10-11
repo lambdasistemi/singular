@@ -1,0 +1,63 @@
+{
+  "base": "9ae9f134ac80d950fb4c19905924e7a68ac40f01",
+  "compiler": "v1.1.21+unknown",
+  "blueprint": "singular/registry",
+  "validators": [
+    {
+      "title": "open.open.mint",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"
+    },
+    {
+      "title": "open.open.else",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"
+    },
+    {
+      "title": "open_datum.open_datum.mint",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
+    },
+    {
+      "title": "open_datum.open_datum.spend",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
+    },
+    {
+      "title": "open_datum.open_datum.else",
+      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
+    },
+    {
+      "title": "request.request.spend",
+      "hash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320"
+    },
+    {
+      "title": "request.request.else",
+      "hash": "5daa275eaf32556a5527035996e37f11072c51b1b4acd64ca2bdd320"
+    },
+    {
+      "title": "staking.staking.withdraw",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "staking.staking.else",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "state.state.mint",
+      "hash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+    },
+    {
+      "title": "state.state.spend",
+      "hash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+    },
+    {
+      "title": "state.state.else",
+      "hash": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5"
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575"
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575"
+    }
+  ]
+}

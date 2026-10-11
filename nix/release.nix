@@ -47,8 +47,12 @@ let
       root="$1"; docs="$2"; out="$3"
       # Each blueprint: built from this checkout's own partition flake, its
       # own lock — the same builds CI's script-identity jobs verify.
+      # S5.2: the archive's onchain/plutus.json is the merged deployment
+      # document (the one the CLIs get as --blueprint, application plus
+      # witnesses from one build), built in the application's onchain flake
+      # from the same two trees the comparison verifies.
       cd "$root"
-      registry_bp="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
+      deployment_bp="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/onchain#open-datum-blueprint)"
       naming_bp="$(nix build --quiet --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
       # #528 slice 4: the release ships both executables. The assembly
       # obtains `open-datum` (and the negative-host pair's
@@ -69,7 +73,7 @@ let
       RELEASE_COMMIT="''${TAG_COMMIT:-${releaseCommit}}"
       export RELEASE_COMMIT
       python3 "$root/tools/assemble_onchain_release.py" \
-        "$root" "$docs" "$registry_bp" "$naming_bp" "$out"
+        "$root" "$docs" "$deployment_bp" "$naming_bp" "$out"
       # The full release check — version agreement, archive members, both
       # checksum manifests, release text, and identity verification run from
       # the extracted artifact — against the exact bytes to be published.

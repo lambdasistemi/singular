@@ -23,11 +23,11 @@ use lib.{
 use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
 use registry/refusal.{traceFalse}
 use registry/settlement.{payeeOwed, settlesOf}
+use registry_pin.{registryStateHash}
 use types.{
   CageDatum, Modify, Rejected, Request, RequestAction, RequestDatum, State,
   StateDatum, UpdateAction, UpdateRedeemer,
 }
-use witness.{registryStateHash}
 
 /// The open-datum application (#299, #310): a key's live value is an
 /// output at this script holding the key's active token under an inline

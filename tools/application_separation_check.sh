@@ -3,12 +3,13 @@
 # and each application tree reaches only the registry.
 #
 # Registry side: every text file under each registry tree (excluding build
-# output: dist-newstyle, result, .git) must name no application — neither
+# output: dist-newstyle, result, build, .git) must name no application — neither
 # the module prefix Singular.Application.OpenDatum, the path
 # applications/, the validator title open_datum, the words open-datum and
 # OpenDatum (comments and documentation included), nor the open-datum
 # script hash, read from the open_datum.open_datum entry of
-# onchain/permanent-contract.json at run time and never typed here. No
+# applications/open-datum/onchain/permanent-contract.json at run time and
+# never typed here. No
 # registry component lists an application package in build-depends either.
 #
 # Application side: for each application tree, a cabal file, cabal.project,
@@ -27,17 +28,18 @@ root="${1:-$PWD}"
 # Canonicalize: the reach leg compares resolved absolute paths.
 root=$(realpath -m "$root")
 
-# The registry trees this checkpoint covers, in one place: the later
-# Aiken slice only adds `onchain` here.
-registry_trees="offchain"
+# The registry trees this checkpoint covers, in one place: since the
+# S5.1 Aiken slice the onchain tree holds the registry only, so it is
+# covered here too.
+registry_trees="offchain onchain"
 # The application trees covered by the reach rule, in one place.
 application_trees="applications/open-datum"
 # The registry packages an application may reach (paths relative to root).
 registry_packages="offchain onchain"
 
-contract="$root/onchain/permanent-contract.json"
+contract="$root/applications/open-datum/onchain/permanent-contract.json"
 [ -f "$contract" ] || {
-  echo "application-separation-check: no onchain/permanent-contract.json under $root" >&2
+  echo "application-separation-check: no applications/open-datum/onchain/permanent-contract.json under $root" >&2
   exit 2
 }
 
@@ -68,7 +70,7 @@ done
 # Text files under a tree, excluding build output.
 tree_files() {
   find "$1" \
-    \( -type d \( -name dist-newstyle -o -name result -o -name .git \) \) -prune \
+    \( -type d \( -name dist-newstyle -o -name result -o -name build -o -name .git \) \) -prune \
     -o -type f -print
 }
 
@@ -102,6 +104,11 @@ scan_token "path applications/" "applications/"
 scan_token "validator open_datum" "open_datum"
 scan_token "word open-datum" "open-datum"
 scan_token "word OpenDatum" "OpenDatum"
+# S5-1d-r1: the brief binds the Aiken module spelling application/envelope
+# explicitly (no onchain file may name it, comments included). None of the
+# tokens above matches that spelling alone (open_datum needs an underscore,
+# applications/ needs the plural), so it gets its own token and plant.
+scan_token "Aiken module application/envelope" "application/envelope"
 scan_token "open-datum script hash" "$app_hash"
 
 # --- registry side: build-depends --------------------------------------

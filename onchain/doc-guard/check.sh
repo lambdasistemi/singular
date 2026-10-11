@@ -5,7 +5,9 @@
 #   check.sh --list VALIDATORS_DIR
 #
 # The extent is discovered, never listed: `state.ak` plus every `.ak` module
-# found under `registry/`, at any depth. Two layers, each able to fail alone:
+# found under `registry/`, at any depth. After the S5.1 split the registry
+# owners live under `lib/registry/` while `state.ak` stays in `validators/`;
+# invoked with `validators`, the guard also reads the sibling `../lib/registry`. Two layers, each able to fail alone:
 #
 # Source layer (always). For each module:
 # - a module doc (`////` lines) carries the four sections `## Responsibility`,
@@ -50,10 +52,18 @@ if [ "${3:-}" = "--reference-only" ]; then source_layer=0; fi
 
 modules=()
 [ -f "$dir/state.ak" ] && modules+=("$dir/state.ak")
-if [ -d "$dir/registry" ]; then
+# S5.1 split: registry owners moved from `$dir/registry` to the sibling
+# `../lib/registry`; accept either layout so the guard follows the move.
+# (Note: keep any literal `..` out of a `${var#...}` removal — this shell
+# misparses it — so the sibling is named once in `$libdir`.)
+libdir="$dir/../lib"
+regdirs=()
+[ -d "$dir/registry" ] && regdirs+=("$dir/registry")
+[ -d "$libdir/registry" ] && regdirs+=("$libdir/registry")
+for regdir in ${regdirs[@]+"${regdirs[@]}"}; do
   while IFS= read -r m; do modules+=("$m"); done \
-    < <(find "$dir/registry" -type f -name '*.ak' | LC_ALL=C sort)
-fi
+    < <(find "$regdir" -type f -name '*.ak' | LC_ALL=C sort)
+done
 
 # FILE:LINE:DECLARATION for every public declaration and validator, at any
 # indentation. `pub` and `validator` only open top-level declarations, and a
@@ -97,14 +107,17 @@ sections_check() {
 
 [ -f "$dir/state.ak" ] || report "no state.ak under $dir"
 registry=0
-for m in "${modules[@]}"; do case "$m" in "$dir/registry/"*) registry=$((registry + 1)) ;; esac done
-[ "$registry" -gt 0 ] || report "no registry module under $dir/registry"
+for m in ${modules[@]+"${modules[@]}"}; do case "$m" in "$dir/registry/"* | "$libdir/registry/"*) registry=$((registry + 1)) ;; esac done
+[ "$registry" -gt 0 ] || report "no registry module under $dir/registry or $libdir/registry"
 
 total=0
 checked=0
 members=0
-for m in "${modules[@]}"; do
-  rel="${m#"$dir"/}"
+for m in ${modules[@]+"${modules[@]}"}; do
+  case "$m" in
+    "$libdir/"*) rel="${m#"$libdir"/}" ;;
+    *) rel="${m#"$dir"/}" ;;
+  esac
   rel="${rel%.ak}"
   entries="$(exports "$m")"
 

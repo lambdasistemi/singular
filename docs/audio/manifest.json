@@ -202906,17 +202906,17 @@
    ]
   },
   "docs-onchain-api-reference/what-it-leaves-out-01": {
-   "audio_sha256": "824dcb3f098fc7e700535e8d418ff7b3cf521e5b79958f3d58f53eb629612de9",
-   "characters": 497,
-   "cost": 0.00049203,
-   "duration": 33.975,
+   "audio_sha256": "e7e6720abe41d557b5d080bbb1aadbb633b58347f91944523f6f3f59f55f8906",
+   "characters": 650,
+   "cost": 0.0006434999999999999,
+   "duration": 44.975,
    "index": 1,
-   "key": "57de5690ac947fa6e6c1dee3bb1382b214c96286a97918f49966232bcef4cede",
+   "key": "0659b19e266cf24f342e121c5f33ec628984a95abe969158a9b9064f4c99e377",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-it-leaves-out",
-   "sent_text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
-   "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+   "sent_text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, the witness and staking validators and the cage_vectors table — so their sources are their reference. The open-datum application's validators under applications/open-datum/onchain/ are a separate Aiken project and have no generated reference on this site. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+   "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, the witness and staking validators and the cage_vectors table — so their sources are their reference. The open-datum application's validators under applications/open-datum/onchain/ are a separate Aiken project and have no generated reference on this site. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
    "words": [
     {
      "end": 0.275,
@@ -203079,253 +203079,358 @@
      "text": ","
     },
     {
-     "end": 12.425,
-     "start": 11.85,
-     "text": "open_datum"
+     "end": 11.988,
+     "start": 11.875,
+     "text": "the"
     },
     {
-     "end": 13.45,
-     "start": 12.425,
-     "text": "validator"
+     "end": 12.475,
+     "start": 11.988,
+     "text": "witness"
     },
     {
-     "end": 13.65,
-     "start": 13.45,
-     "text": ","
+     "end": 12.6,
+     "start": 12.475,
+     "text": "and"
     },
     {
-     "end": 14.275,
-     "start": 13.85,
+     "end": 13.05,
+     "start": 12.6,
      "text": "staking"
     },
     {
-     "end": 14.9,
-     "start": 14.275,
-     "text": "validator"
-    },
-    {
-     "end": 15.025,
-     "start": 14.9,
-     "text": "and"
-    },
-    {
-     "end": 15.775,
-     "start": 15.025,
-     "text": "cage_vectors"
-    },
-    {
-     "end": 16.3,
-     "start": 15.775,
-     "text": "table"
-    },
-    {
-     "end": 16.375,
-     "start": 16.3,
-     "text": "—"
-    },
-    {
-     "end": 16.513,
-     "start": 16.375,
-     "text": "so"
-    },
-    {
-     "end": 16.688,
-     "start": 16.513,
-     "text": "their"
-    },
-    {
-     "end": 17.2,
-     "start": 16.688,
-     "text": "sources"
-    },
-    {
-     "end": 17.325,
-     "start": 17.2,
-     "text": "are"
-    },
-    {
-     "end": 17.525,
-     "start": 17.325,
-     "text": "their"
-    },
-    {
-     "end": 18.6,
-     "start": 17.525,
-     "text": "reference"
-    },
-    {
-     "end": 18.8,
-     "start": 18.6,
-     "text": "."
-    },
-    {
-     "end": 19.125,
-     "start": 19.025,
-     "text": "The"
-    },
-    {
-     "end": 19.525,
-     "start": 19.125,
-     "text": "naming"
-    },
-    {
-     "end": 20.312,
-     "start": 19.525,
-     "text": "application's"
-    },
-    {
-     "end": 21.025,
-     "start": 20.312,
+     "end": 13.8,
+     "start": 13.05,
      "text": "validators"
     },
     {
-     "end": 21.275,
-     "start": 21.025,
-     "text": "under"
-    },
-    {
-     "end": 22.638,
-     "start": 21.275,
-     "text": "naming-onchain/"
-    },
-    {
-     "end": 22.775,
-     "start": 22.638,
-     "text": "are"
-    },
-    {
-     "end": 22.9,
-     "start": 22.775,
-     "text": "a"
-    },
-    {
-     "end": 23.35,
-     "start": 22.9,
-     "text": "separate"
-    },
-    {
-     "end": 23.725,
-     "start": 23.35,
-     "text": "Aiken"
-    },
-    {
-     "end": 24.438,
-     "start": 23.725,
-     "text": "project"
-    },
-    {
-     "end": 24.575,
-     "start": 24.438,
+     "end": 13.913,
+     "start": 13.8,
      "text": "and"
     },
     {
-     "end": 24.812,
-     "start": 24.575,
-     "text": "have"
+     "end": 14.012,
+     "start": 13.913,
+     "text": "the"
     },
     {
-     "end": 25.1,
-     "start": 24.812,
-     "text": "no"
+     "end": 14.788,
+     "start": 14.012,
+     "text": "cage_vectors"
     },
     {
-     "end": 25.725,
-     "start": 25.1,
-     "text": "generated"
+     "end": 15.387,
+     "start": 14.788,
+     "text": "table"
     },
     {
-     "end": 26.2,
-     "start": 25.725,
+     "end": 15.475,
+     "start": 15.387,
+     "text": "—"
+    },
+    {
+     "end": 15.65,
+     "start": 15.475,
+     "text": "so"
+    },
+    {
+     "end": 15.863,
+     "start": 15.65,
+     "text": "their"
+    },
+    {
+     "end": 16.388,
+     "start": 15.863,
+     "text": "sources"
+    },
+    {
+     "end": 16.525,
+     "start": 16.388,
+     "text": "are"
+    },
+    {
+     "end": 16.725,
+     "start": 16.525,
+     "text": "their"
+    },
+    {
+     "end": 17.85,
+     "start": 16.725,
      "text": "reference"
     },
     {
-     "end": 26.375,
-     "start": 26.2,
-     "text": "on"
-    },
-    {
-     "end": 26.562,
-     "start": 26.375,
-     "text": "this"
-    },
-    {
-     "end": 27.575,
-     "start": 26.562,
-     "text": "site"
-    },
-    {
-     "end": 27.8,
-     "start": 27.575,
+     "end": 18.05,
+     "start": 17.85,
      "text": "."
     },
     {
-     "end": 28.45,
-     "start": 28.025,
-     "text": "Members"
+     "end": 18.4,
+     "start": 18.275,
+     "text": "The"
     },
     {
-     "end": 28.65,
-     "start": 28.45,
-     "text": "that"
+     "end": 19.125,
+     "start": 18.4,
+     "text": "open-datum"
     },
     {
-     "end": 29.05,
-     "start": 28.65,
-     "text": "belong"
+     "end": 19.913,
+     "start": 19.125,
+     "text": "application's"
     },
     {
-     "end": 29.188,
-     "start": 29.05,
-     "text": "to"
+     "end": 20.625,
+     "start": 19.913,
+     "text": "validators"
+    },
+    {
+     "end": 20.9,
+     "start": 20.625,
+     "text": "under"
+    },
+    {
+     "end": 24.612,
+     "start": 20.9,
+     "text": "applications/open-datum/onchain/"
+    },
+    {
+     "end": 24.75,
+     "start": 24.612,
+     "text": "are"
+    },
+    {
+     "end": 24.875,
+     "start": 24.75,
+     "text": "a"
+    },
+    {
+     "end": 25.325,
+     "start": 24.875,
+     "text": "separate"
+    },
+    {
+     "end": 25.7,
+     "start": 25.325,
+     "text": "Aiken"
+    },
+    {
+     "end": 26.413,
+     "start": 25.7,
+     "text": "project"
+    },
+    {
+     "end": 26.55,
+     "start": 26.413,
+     "text": "and"
+    },
+    {
+     "end": 26.788,
+     "start": 26.55,
+     "text": "have"
+    },
+    {
+     "end": 27.062,
+     "start": 26.788,
+     "text": "no"
+    },
+    {
+     "end": 27.675,
+     "start": 27.062,
+     "text": "generated"
+    },
+    {
+     "end": 28.15,
+     "start": 27.675,
+     "text": "reference"
+    },
+    {
+     "end": 28.325,
+     "start": 28.15,
+     "text": "on"
+    },
+    {
+     "end": 28.538,
+     "start": 28.325,
+     "text": "this"
+    },
+    {
+     "end": 29.575,
+     "start": 28.538,
+     "text": "site"
     },
     {
      "end": 29.8,
-     "start": 29.188,
-     "text": "Aiken's"
+     "start": 29.575,
+     "text": "."
     },
     {
-     "end": 30.3,
-     "start": 29.8,
-     "text": "standard"
+     "end": 30.125,
+     "start": 30.025,
+     "text": "The"
     },
     {
-     "end": 30.825,
-     "start": 30.3,
-     "text": "library"
+     "end": 30.525,
+     "start": 30.125,
+     "text": "naming"
     },
     {
-     "end": 31.163,
-     "start": 30.825,
-     "text": "link"
+     "end": 31.312,
+     "start": 30.525,
+     "text": "application's"
     },
     {
-     "end": 31.325,
-     "start": 31.163,
-     "text": "to"
+     "end": 32.025,
+     "start": 31.312,
+     "text": "validators"
     },
     {
-     "end": 31.538,
-     "start": 31.325,
-     "text": "its"
+     "end": 32.275,
+     "start": 32.025,
+     "text": "under"
     },
     {
-     "end": 31.862,
-     "start": 31.538,
-     "text": "own"
-    },
-    {
-     "end": 32.325,
-     "start": 31.862,
-     "text": "published"
+     "end": 33.638,
+     "start": 32.275,
+     "text": "naming-onchain/"
     },
     {
      "end": 33.775,
-     "start": 32.325,
+     "start": 33.638,
+     "text": "are"
+    },
+    {
+     "end": 33.9,
+     "start": 33.775,
+     "text": "a"
+    },
+    {
+     "end": 34.35,
+     "start": 33.9,
+     "text": "separate"
+    },
+    {
+     "end": 34.725,
+     "start": 34.35,
+     "text": "Aiken"
+    },
+    {
+     "end": 35.438,
+     "start": 34.725,
+     "text": "project"
+    },
+    {
+     "end": 35.575,
+     "start": 35.438,
+     "text": "and"
+    },
+    {
+     "end": 35.812,
+     "start": 35.575,
+     "text": "have"
+    },
+    {
+     "end": 36.1,
+     "start": 35.812,
+     "text": "no"
+    },
+    {
+     "end": 36.725,
+     "start": 36.1,
+     "text": "generated"
+    },
+    {
+     "end": 37.2,
+     "start": 36.725,
+     "text": "reference"
+    },
+    {
+     "end": 37.375,
+     "start": 37.2,
+     "text": "on"
+    },
+    {
+     "end": 37.562,
+     "start": 37.375,
+     "text": "this"
+    },
+    {
+     "end": 38.575,
+     "start": 37.562,
+     "text": "site"
+    },
+    {
+     "end": 38.8,
+     "start": 38.575,
+     "text": "."
+    },
+    {
+     "end": 39.45,
+     "start": 39.025,
+     "text": "Members"
+    },
+    {
+     "end": 39.65,
+     "start": 39.45,
+     "text": "that"
+    },
+    {
+     "end": 40.05,
+     "start": 39.65,
+     "text": "belong"
+    },
+    {
+     "end": 40.188,
+     "start": 40.05,
+     "text": "to"
+    },
+    {
+     "end": 40.8,
+     "start": 40.188,
+     "text": "Aiken's"
+    },
+    {
+     "end": 41.3,
+     "start": 40.8,
+     "text": "standard"
+    },
+    {
+     "end": 41.825,
+     "start": 41.3,
+     "text": "library"
+    },
+    {
+     "end": 42.162,
+     "start": 41.825,
+     "text": "link"
+    },
+    {
+     "end": 42.325,
+     "start": 42.162,
+     "text": "to"
+    },
+    {
+     "end": 42.537,
+     "start": 42.325,
+     "text": "its"
+    },
+    {
+     "end": 42.862,
+     "start": 42.537,
+     "text": "own"
+    },
+    {
+     "end": 43.325,
+     "start": 42.862,
+     "text": "published"
+    },
+    {
+     "end": 44.775,
+     "start": 43.325,
      "text": "documentation"
     },
     {
-     "end": 33.975,
-     "start": 33.775,
+     "end": 44.975,
+     "start": 44.775,
      "text": "."
     }
    ]
@@ -204861,136 +204966,11 @@
    ]
   },
   "docs-onchain-api-reference/what-this-reference-contains-14": {
-   "audio_sha256": "62f0a068d7b47a890a87a8f1b40d7603292d5f42ad63e24164780720276cd9f4",
-   "characters": 48,
-   "cost": 4.751999999999999e-05,
-   "duration": 3.425,
-   "index": 14,
-   "key": "a724ed02839ef461ba0751839143515a5434aec017ef8be352dcaa37ccd16b76",
-   "page": "docs/onchain-api-reference.md",
-   "pause_ms": 400,
-   "section": "what-this-reference-contains",
-   "sent_text": "The open-datum application's protected envelope:",
-   "text": "The open-datum application's protected envelope:",
-   "words": [
-    {
-     "end": 0.3,
-     "start": 0.175,
-     "text": "The"
-    },
-    {
-     "end": 0.95,
-     "start": 0.3,
-     "text": "open-datum"
-    },
-    {
-     "end": 1.725,
-     "start": 0.95,
-     "text": "application's"
-    },
-    {
-     "end": 2.25,
-     "start": 1.725,
-     "text": "protected"
-    },
-    {
-     "end": 3.2,
-     "start": 2.25,
-     "text": "envelope"
-    },
-    {
-     "end": 3.425,
-     "start": 3.2,
-     "text": ":"
-    }
-   ]
-  },
-  "docs-onchain-api-reference/what-this-reference-contains-15": {
-   "audio_sha256": "54ccdfcaa707a5f7f44e1e408c2634ac7135ded674802f599c7decae9f1af3f8",
-   "characters": 101,
-   "cost": 9.999e-05,
-   "duration": 7.1,
-   "index": 15,
-   "key": "da72c1c0fb6bd2465c65f34082bde3fceeaaedbb3d73e7c114fe254493e15ce5",
-   "page": "docs/onchain-api-reference.md",
-   "pause_ms": 300,
-   "section": "what-this-reference-contains",
-   "sent_text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
-   "text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
-   "words": [
-    {
-     "end": 1.45,
-     "start": 0.2,
-     "text": "application/envelope"
-    },
-    {
-     "end": 1.513,
-     "start": 1.45,
-     "text": "—"
-    },
-    {
-     "end": 1.6,
-     "start": 1.513,
-     "text": "the"
-    },
-    {
-     "end": 2.325,
-     "start": 1.6,
-     "text": "controller"
-    },
-    {
-     "end": 2.4,
-     "start": 2.325,
-     "text": ","
-    },
-    {
-     "end": 2.875,
-     "start": 2.4,
-     "text": "registry"
-    },
-    {
-     "end": 3.425,
-     "start": 2.875,
-     "text": "binding"
-    },
-    {
-     "end": 3.5,
-     "start": 3.425,
-     "text": ","
-    },
-    {
-     "end": 4.15,
-     "start": 3.5,
-     "text": "deposit"
-    },
-    {
-     "end": 4.287,
-     "start": 4.15,
-     "text": "and"
-    },
-    {
-     "end": 4.963,
-     "start": 4.287,
-     "text": "arbitrary"
-    },
-    {
-     "end": 5.45,
-     "start": 4.963,
-     "text": "payload"
-    },
-    {
-     "end": 7.1,
-     "start": 5.45,
-     "text": "representation"
-    }
-   ]
-  },
-  "docs-onchain-api-reference/what-this-reference-contains-16": {
-   "audio_sha256": "5a76e451a2688c019844448882cf76d4c0075147a55e1bc3a53dc8c42465a2a0",
+   "audio_sha256": "916d06f6fce174fafe5e74ca2d391bce1b700946cc7384fc8dfe282b5e4bcb62",
    "characters": 47,
    "cost": 4.6530000000000003e-05,
    "duration": 3.3,
-   "index": 16,
+   "index": 14,
    "key": "d5660e4865ebcb19645f33757678a4248d8d778f9518cb483ebf17467812942b",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -205040,12 +205020,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-17": {
-   "audio_sha256": "d0f264a085d8573b703842a10e4a072d8b75304dadac8610d782797ccf41d8ff",
+  "docs-onchain-api-reference/what-this-reference-contains-15": {
+   "audio_sha256": "65959215bedbc57b129648bc36688630c04de37b60342e9258f0b16639ed9549",
    "characters": 69,
    "cost": 6.830999999999999e-05,
    "duration": 4.45,
-   "index": 17,
+   "index": 15,
    "key": "043b81b32301bcf8ab173e7ff836501a0f26b8c0b63b1a8071e56eab471e2e77",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205125,12 +205105,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-18": {
-   "audio_sha256": "fd4719d31b091594479b5ed5b3b1a41f4c5623d89653bef8aa7d04e52868c9e2",
+  "docs-onchain-api-reference/what-this-reference-contains-16": {
+   "audio_sha256": "6722e627a9c48dda4b01ea5f0056c285095df020f4a35b538f50677554c182c5",
    "characters": 45,
    "cost": 4.455e-05,
    "duration": 2.675,
-   "index": 18,
+   "index": 16,
    "key": "ade5235e83a7b3048d062a90a3ac8273bce11cf90a589823c9f23e88c5a64b89",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205185,12 +205165,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-19": {
-   "audio_sha256": "095df2513a567b653a6d0241cdcae6af92a9fc5d4b80272c2193d286727c74e3",
+  "docs-onchain-api-reference/what-this-reference-contains-17": {
+   "audio_sha256": "389f70fed208ba33dadb98846dc29ea78f29ccd0154a5ac67cffc6ab479420f8",
    "characters": 56,
    "cost": 5.544e-05,
    "duration": 3.25,
-   "index": 19,
+   "index": 17,
    "key": "bad7ec4ade9a10d7be94d8beec5ec129a369fcbc2e46488cb96706fd6c062067",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205250,12 +205230,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-20": {
-   "audio_sha256": "8148ddff0ab03c1ca56ef65f4fe5f9a6d9b0f3d4faa254c588e15c9e43e7f315",
+  "docs-onchain-api-reference/what-this-reference-contains-18": {
+   "audio_sha256": "1a73cad088d1b90076581f62cdefe645062c253b70f57af02b2ad6acf703e1ba",
    "characters": 58,
    "cost": 5.7419999999999996e-05,
    "duration": 3.9,
-   "index": 20,
+   "index": 18,
    "key": "dbc253ea743ae935a5f9ab4c9e6a2346414434651612964adb9d985c9d83ff80",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205310,77 +205290,97 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-21": {
-   "audio_sha256": "7325861c608844fb6a0251297742591e94045ec15e4f10a5fe2ce13ecb59fc69",
-   "characters": 57,
-   "cost": 5.642999999999999e-05,
-   "duration": 3.35,
-   "index": 21,
-   "key": "f4943086c7e49ed675e251a3ff62757340b57354f515f319f87a4b2a89de67a5",
+  "docs-onchain-api-reference/what-this-reference-contains-19": {
+   "audio_sha256": "31959208bfe8f4fcf7040c166b690aabfc77bd2fa1c72d89cff14326a4c652c7",
+   "characters": 89,
+   "cost": 8.811e-05,
+   "duration": 5.575,
+   "index": 19,
+   "key": "602b105e757a1baa84f4e399496e8f844f4d0b63ed0c00e013a296fa58dca021",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
    "section": "what-this-reference-contains",
-   "sent_text": "witness — the witness validator and its pinned state hash",
-   "text": "witness — the witness validator and its pinned state hash",
+   "sent_text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
+   "text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
    "words": [
     {
-     "end": 0.587,
+     "end": 0.988,
      "start": 0.2,
-     "text": "witness"
+     "text": "registry_pin"
     },
     {
-     "end": 0.637,
-     "start": 0.587,
+     "end": 1.038,
+     "start": 0.988,
      "text": "—"
     },
     {
-     "end": 0.725,
-     "start": 0.637,
+     "end": 1.138,
+     "start": 1.038,
      "text": "the"
     },
     {
-     "end": 1.05,
-     "start": 0.725,
-     "text": "witness"
-    },
-    {
-     "end": 1.675,
-     "start": 1.05,
-     "text": "validator"
-    },
-    {
-     "end": 1.788,
-     "start": 1.675,
-     "text": "and"
-    },
-    {
-     "end": 1.925,
-     "start": 1.788,
-     "text": "its"
-    },
-    {
-     "end": 2.225,
-     "start": 1.925,
+     "end": 1.45,
+     "start": 1.138,
      "text": "pinned"
     },
     {
-     "end": 2.525,
-     "start": 2.225,
+     "end": 1.775,
+     "start": 1.45,
      "text": "state"
     },
     {
-     "end": 3.35,
-     "start": 2.525,
+     "end": 2.175,
+     "start": 1.775,
      "text": "hash"
+    },
+    {
+     "end": 2.475,
+     "start": 2.175,
+     "text": "shared"
+    },
+    {
+     "end": 2.625,
+     "start": 2.475,
+     "text": "by"
+    },
+    {
+     "end": 2.763,
+     "start": 2.625,
+     "text": "the"
+    },
+    {
+     "end": 3.312,
+     "start": 2.763,
+     "text": "witness"
+    },
+    {
+     "end": 3.438,
+     "start": 3.312,
+     "text": "and"
+    },
+    {
+     "end": 3.55,
+     "start": 3.438,
+     "text": "the"
+    },
+    {
+     "end": 4.225,
+     "start": 3.55,
+     "text": "open-datum"
+    },
+    {
+     "end": 5.575,
+     "start": 4.225,
+     "text": "application"
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-22": {
-   "audio_sha256": "115172e9ce47155dcccf71df3ef5be79d63c93b4b88239bfafe407db3411dfdd",
+  "docs-onchain-api-reference/what-this-reference-contains-20": {
+   "audio_sha256": "0f9fde43d2a60dd3b464edd79348782b3ebf72fae910c51f6ddcb145d17bb433",
    "characters": 50,
    "cost": 4.95e-05,
    "duration": 3.05,
-   "index": 22,
+   "index": 20,
    "key": "729dfbe56ca9c46e5589d932a50a22be96dcbdc90acd13deb8de6d661c764904",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205435,12 +205435,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-23": {
-   "audio_sha256": "e977025318d86c6d86e197319c64195da2f7e101ea24a58c1b785531666d3644",
+  "docs-onchain-api-reference/what-this-reference-contains-21": {
+   "audio_sha256": "b81c56d064d9705a98fe0093878d3d96e838526f4b9157a2037dc709769e25f3",
    "characters": 66,
    "cost": 6.534e-05,
    "duration": 4.475,
-   "index": 23,
+   "index": 21,
    "key": "c029518ecfb24c8e468e5549c31b81aa43df76739b216188c0be6e3f070a71be",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 400,
@@ -205515,12 +205515,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-24": {
-   "audio_sha256": "24c949bbb93544d474c33e4647fba20d1f53d41bdedb406bc5c6f85b7ec5eea2",
+  "docs-onchain-api-reference/what-this-reference-contains-22": {
+   "audio_sha256": "8ef0608a062a0235520b58368cc1616e4fca4d35769f4ec462ff4125c31458a7",
    "characters": 13,
    "cost": 1.2869999999999999e-05,
    "duration": 1.275,
-   "index": 24,
+   "index": 22,
    "key": "19587bcb008039bef8b09771de48bda212c64ebe7183b819b35385c1cde0706f",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,
@@ -205535,12 +205535,12 @@
     }
    ]
   },
-  "docs-onchain-api-reference/what-this-reference-contains-25": {
-   "audio_sha256": "7d4af3fce9e41cbcecd0b179dc8e5854110d66344bd426af5200eadc056609b0",
+  "docs-onchain-api-reference/what-this-reference-contains-23": {
+   "audio_sha256": "2325b4bae6de59dac883efa21f5e0e89121f2dcfe86a14dfd71d4eb6404019e2",
    "characters": 17,
    "cost": 1.683e-05,
    "duration": 1.575,
-   "index": 25,
+   "index": 23,
    "key": "f006d1d819c4336531745a7647abc0a598119d070268187c0993309c5b2fcd40",
    "page": "docs/onchain-api-reference.md",
    "pause_ms": 300,

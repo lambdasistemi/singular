@@ -119,7 +119,14 @@ def style_rules(paths: list[str]) -> bool:
 # carries a byte copy of its lock (conformance/flake.nix), so both trees
 # resolve one dependency graph. Merging the two flakes would rewrite both
 # locks; instead the copy is held equal here, so the duplicate cannot drift.
-LOCK_PAIRS = [("offchain/flake.lock", "conformance/flake.lock")]
+LOCK_PAIRS = [
+    ("offchain/flake.lock", "conformance/flake.lock"),
+    # #528 S5.1: the open-datum onchain project declares the registry
+    # onchain flake's inputs verbatim and carries a byte copy of its lock,
+    # so both trees resolve one Aiken toolchain and their pinned hashes
+    # stay directly comparable.
+    ("onchain/flake.lock", "applications/open-datum/onchain/flake.lock"),
+]
 
 
 def lock_parity() -> bool:

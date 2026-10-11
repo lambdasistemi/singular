@@ -64,7 +64,10 @@ cd "$root/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 controls="$(build ../conformance#cli-controls)/bin/cli-controls"
-blueprint="$(build ../onchain#plutus-blueprint)"
+# S5.2: the refusal controls run against the merged deployment blueprint
+# (the application and the witnesses from one build); registry-only rows
+# still pass against the superset.
+blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
 
 status=0
 bash "$controls_sh" "$singular" "$devnet" "$controls" "$blueprint" \

@@ -34,15 +34,15 @@ model question.
 | Rule | Source owner |
 | --- | --- |
 | Dispatch, state identity and named fold refusal | <a href="../onchain/validators/state.ak" data-api="module">state</a> |
-| Two admitted tags and action well-formedness | <a href="../onchain/validators/registry/admission.ak" data-api="module">registry/admission</a> |
-| State token genesis | <a href="../onchain/validators/registry/genesis.ak" data-api="module">registry/genesis</a> |
-| Continuation, pins, batch checks and check order | <a href="../onchain/validators/registry/modify.ak" data-api="module">registry/modify</a> |
-| Request carriage, phase, approval and supported trie move | <a href="../onchain/validators/registry/fold.ak" data-api="module">registry/fold</a> |
-| Retirement leaf refusals | <a href="../onchain/validators/registry/trie.ak" data-api="module">registry/trie</a> |
-| Active-token delivery, retirement burn and returned deposit | <a href="../onchain/validators/registry/duty.ak" data-api="module">registry/duty</a> |
-| Named carrier and single burn-source checks | <a href="../onchain/validators/registry/discharge.ak" data-api="module">registry/discharge</a> |
-| Positional reject refunds and per-payee deposit sums | <a href="../onchain/validators/registry/settlement.ak" data-api="module">registry/settlement</a> |
-| One traced reason and false result | <a href="../onchain/validators/registry/refusal.ak" data-api="module">registry/refusal</a> |
+| Two admitted tags and action well-formedness | <a href="../onchain/lib/registry/admission.ak" data-api="module">registry/admission</a> |
+| State token genesis | <a href="../onchain/lib/registry/genesis.ak" data-api="module">registry/genesis</a> |
+| Continuation, pins, batch checks and check order | <a href="../onchain/lib/registry/modify.ak" data-api="module">registry/modify</a> |
+| Request carriage, phase, approval and supported trie move | <a href="../onchain/lib/registry/fold.ak" data-api="module">registry/fold</a> |
+| Retirement leaf refusals | <a href="../onchain/lib/registry/trie.ak" data-api="module">registry/trie</a> |
+| Active-token delivery, retirement burn and returned deposit | <a href="../onchain/lib/registry/duty.ak" data-api="module">registry/duty</a> |
+| Named carrier and single burn-source checks | <a href="../onchain/lib/registry/discharge.ak" data-api="module">registry/discharge</a> |
+| Positional reject refunds and per-payee deposit sums | <a href="../onchain/lib/registry/settlement.ak" data-api="module">registry/settlement</a> |
+| One traced reason and false result | <a href="../onchain/lib/registry/refusal.ak" data-api="module">registry/refusal</a> |
 
 ## Evidence and limits
 
