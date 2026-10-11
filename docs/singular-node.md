@@ -179,7 +179,7 @@ Every request the fold leaves out is named in the receipt with its reason and wh
 
 A request refused in the model's words failed the model's own check — its edge, its approval, or its leaf against the live state — and stays refused while the state still rules it out. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its processing window is not open beyond the fold margin; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named `capacity` is for the next fold. A request named `window-closed` stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with `registry reclaim` after its processing deadline, while its retract window remains open, and `registry reject` clears requests past both their windows.
 
-The receipt keeps its earlier fields unchanged for the one settled request and adds two lists and a capacity object beside them: `settled` names the settled request with its request, key, edge, owner, settlement and deadline; `excluded` names each left-out request with its request, reason, source and detail, in ledger order; `capacity` states the bound with its provenance. The example shows the shape with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.
+The receipt no longer carries the single-request fields it once printed at the top level: `request`, `key`, `edge`, `liveOutput`, `envelope`, `released` and `deposit`, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in `settled`: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. `settled` names each settled request in ledger order; `excluded` names each left-out request with its request, reason, source and detail, in ledger order; `capacity` states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.
 
 ```json
 {
@@ -189,7 +189,7 @@ The receipt keeps its earlier fields unchanged for the one settled request and a
       "key": "6b657937",
       "edge": "insertActive",
       "owner": "…",
-      "settlement": {"liveOutput": "9a51d7e4…#1"},
+      "settlement": {"liveOutput": "9a51d7e4…#1", "envelope": {…}},
       "deadline": {"posixMs": 0, "slot": null}
     }
   ],
@@ -210,7 +210,7 @@ The receipt keeps its earlier fields unchanged for the one settled request and a
 
 `--request R` is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused `nothing-to-fold`, naming every exclusion with its reason and source. The window is the exception: when the request named by `--request` has run out of window, the refusal keeps the older deadline wording with its time fields instead of that request's reason and source, and, when nothing settles, lists the other exclusions after it; the same wording is kept when the only pending request has run out of window. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline, or within the thirty seconds a fold needs to be included.
 
-`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same receipt by the same routine `registry fold` runs. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
+`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same lists as `registry fold`. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the first entry of `settled`. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
 
 Before anything is signed the command still refuses the outlay past `--max-outlay` and a funding output that is not the wallet's.
 
