@@ -1246,11 +1246,11 @@ if part rollback; then
     window="$(
       tail -n +"$(($1 + 1))" "$nlog" | awk '
       { line[NR] = $0 }
-      index($0, "\"ns\":\"Forge.Loop.AdoptedBlock\"") { last = NR }
+      /Adopted block forged in slot / || index($0, "\"ns\":\"Forge.Loop.AdoptedBlock\"") { last = NR }
       END { for (i = 1; i <= last; i++) print line[i] }'
     )"
     forged="$(grep -c 'Forged block in slot' <<<"$window" || true)"
-    adopted="$(grep -cF '"ns":"Forge.Loop.AdoptedBlock"' <<<"$window" || true)"
+    adopted="$(grep -c -e '"ns":"Forge.Loop.AdoptedBlock"' -e 'Adopted block forged in slot ' <<<"$window" || true)"
     echo "$forged/$adopted"
   }
   # HASH is the restored tip or a block the node chained since the restore;
@@ -1512,10 +1512,10 @@ ARCHIVE
   }
   clause "the rebuilt facade archive omits both removed transactions" restored_archive_omits
 
-  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
+  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}" --wallet-address "$(field create-rb .wallet)"
   clause "the first inspect journals both rollbacks" \
     is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
-  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
+  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}" --wallet-address "$(field create-rb .wallet)"
   clause "a second inspect journals no second rollback" \
     jq -e '.rolledBack == []' "$receipts/inspect-rb.json"
   clause "the booking's rollback is journalled once, after its observation" \
