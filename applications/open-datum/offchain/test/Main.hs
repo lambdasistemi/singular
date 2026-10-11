@@ -7,6 +7,7 @@ import Singular.Application.OpenDatum.BurnSourceSpec qualified
 import Singular.Application.OpenDatum.CLISpec qualified
 import Singular.Application.OpenDatum.CommandRunSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
+import Singular.Application.OpenDatum.FlagGroupExtentSpec qualified
 import Singular.Application.OpenDatum.FoldSpec qualified
 import Singular.Application.OpenDatum.IndependentActorsSpec qualified
 import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
@@ -90,3 +91,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.NegativeParse" [Cli])
         Singular.Application.OpenDatum.NegativeParseSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.FlagGroupExtent" [Cli])
+        Singular.Application.OpenDatum.FlagGroupExtentSpec.spec
