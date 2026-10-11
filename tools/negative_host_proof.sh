@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Proof for #358 second slice (commit-owner-2): the slice subject, executed.
+# Proof for #358 third slice registry pairs (commit-owner-7): the slice subject, executed.
 # Rows: gate 1 (host builds; parts discovery fails closed on empty),
 # row 6a (negative-host-ordinary), row 6d (negative-host-lint).
 # Expected oracle: specs/358-singular-negative/tasks.md second slice.
@@ -40,11 +40,11 @@ else
   failures=$((failures + 1))
 fi
 
-# 2. Discovery lists the first- and second-slice parts (executes the parts subject).
+# 2. Discovery lists the first-, second- and third-slice-first-pair parts (executes the parts subject).
 begin_leg
 if nix run --quiet .#negative-host-parts >"$receipts/parts.out" 2>"$receipts/parts.err"; then
   parts_ok=0
-  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold; do
+  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key short-fold-of-a-booked-termination; do
     if grep -q "$want" "$receipts/parts.out"; then
       say "parts list carries $want"
     else
@@ -126,15 +126,15 @@ else
   failures=$((failures + 1))
 fi
 
-# 6. GREEN node-free legs (second slice): terminate books (its slice
-# refusal is gone: the handler runs and stops on the missing wallet
-# file), while insert bookings still stop at their third-slice refusal.
+# 6. GREEN node-free legs (third slice first pair): terminate and insert
+# book (their slice refusals are gone: each handler runs and stops with a
+# receipt, exit 10, against the unreachable provider).
 # The proof that each new part runs from the archive is the hosted matrix
 # (the net) beside the RED-tree first runs in handoffs/red-runs.
 # Controls: a bogus part is still refused as unknown (dispatch is real);
-# the insert slice text is found (the text grep can fail); the terminate
-# receipt names its command (the handler ran, so a missing command cannot
-# pass as delivered); the first-slice part is still listed.
+# both slice texts are gone (each text grep can fail); each receipt names
+# its command (the handler ran, so a missing command cannot pass as
+# delivered); the first-slice part is still listed.
 begin_leg
 red_ok=0
 if nix run --quiet .#negative-host-part -- "bogus-part-xyz" >"$receipts/red-bogus.out" 2>"$receipts/red-bogus.err"; then
@@ -161,11 +161,13 @@ else
   say "FAIL: host terminate exited $term_code with its slice refusal or no receipt"
   red_ok=1
 fi
-ins_out="$("$host_bin" registry insert --blueprint /tmp/nope.json --key alice-1 --payload /tmp/nope.json --state-token "$tok" --koios-url http://127.0.0.1:1 --network-magic 42 --wallet-skey /tmp/nope.skey 2>&1)" || true
-if printf '%s' "$ins_out" | grep -Fq "not in this slice: insert bookings arrive in the third slice"; then
-  say "control: insert still stops at its third-slice refusal"
+jq -n '{map:[{k:{bytes:"6e616d65"},v:{list:[{int:-7},{bytes:"616c696365"},{constructor:2,fields:[]}]}}]}' >"$receipts/payload.json"
+ins_out="$("$host_bin" registry insert --blueprint /tmp/nope.json --key alice-1 --payload "$receipts/payload.json" --state-token "$tok" --koios-url http://127.0.0.1:1 --network-magic 42 --wallet-skey /tmp/nope.skey 2>&1)" || ins_code=$?
+ins_code="${ins_code:-0}"
+if [ "$ins_code" -eq 10 ] && printf '%s' "$ins_out" | grep -Fq '"command": "insert"' && ! printf '%s' "$ins_out" | grep -Fq "not in this slice"; then
+  say "insert books: slice refusal gone, handler ran (exit 10)"
 else
-  say "FAIL: control: insert third-slice text missing"
+  say "FAIL: host insert exited $ins_code with its slice refusal or no receipt"
   red_ok=1
 fi
 if [ "$red_ok" -eq 0 ]; then

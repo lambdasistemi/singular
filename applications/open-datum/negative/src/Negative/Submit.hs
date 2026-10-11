@@ -18,6 +18,7 @@ module Negative.Submit
       -- * Verdicts
     , FailedScript (..)
     , ScriptRole (..)
+    , TxKind (..)
     , scriptRoleName
     , failedScripts
     , applicationHashOf
@@ -63,13 +64,24 @@ data FailedScript = FailedScript
     }
     deriving stock (Eq, Show)
 
+{- | What the refused transaction was: a fold, whose application failure
+is labelled at the fold, or any other transaction, whose labels stay as
+they are. The caller knows the kind and passes it in.
+-}
+data TxKind
+    = TxFold
+    | TxOther
+    deriving stock (Eq, Show)
+
 {- | Each failed script hash with its role in this registry, resolved
 from the registry the command opened, never a literal typed into the
 check. The applied application script and the state script are the
-registry's own pins; anything else carries no role.
+registry's own pins; anything else carries no role. A fold refused by
+the application is labelled at the fold; every other transaction keeps
+today's labels.
 -}
-failedScripts :: Live -> NodeAnswer -> [FailedScript]
-failedScripts live = \case
+failedScripts :: Live -> TxKind -> NodeAnswer -> [FailedScript]
+failedScripts live kind = \case
     AnswerAccepted _ -> []
     AnswerRefused text ->
         [ FailedScript h (roleOf h)
@@ -77,7 +89,9 @@ failedScripts live = \case
         ]
   where
     roleOf h
-        | h == applicationHashOf live = RoleApplicationSpending
+        | h == applicationHashOf live = case kind of
+            TxFold -> RoleApplicationAtFold
+            TxOther -> RoleApplicationSpending
         | h == stateHashOf live = RoleStateValidator
         | otherwise = RoleNone
 

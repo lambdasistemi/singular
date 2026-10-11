@@ -23,7 +23,11 @@
       "pause": 400
     },
     {
-      "text": "Each box is one pull request on this branch, merged with a merge commit in the desk's queue (slot 7) once every checkpoint is approved and the exact head's hosted checks are green, including the end-to-end Demo 1 jobs.",
+      "text": "After the command-line split (528) the host's files are in applications/open-datum/negative/ and it shares the registry command-line library and the open-datum run modules instead of offchain/cli/src. Where these pages say offchain/negative or offchain/cli/src, read the split layout. The third slice is built on the split's branch and merges after it.",
+      "pause": 400
+    },
+    {
+      "text": "Each box other than the split is one pull request, merged with a merge commit in the desk's queue (slot 7) once every checkpoint is approved and the exact head's hosted checks are green, including the end-to-end Demo 1 jobs.",
       "pause": 400
     }
   ],
@@ -63,7 +67,7 @@
       "pause": 500
     },
     {
-      "text": "Per pair: the forbidden receipt naming the refusing script by hash and role, the control's accepted receipt, and the two reads. Per slice: the hosted run of each part on the exact head. For the third slice: the mutant runs, one per pair. Left uncovered and named in the pull request: rejection pairs; the harness copy of the crafting; the pairs on the permanent contract until it lands; any pair the model cannot state.",
+      "text": "Per pair: the forbidden receipt naming the refusing script by hash and role, the control's accepted receipt, and the two reads. Per slice: the hosted run of each part on the exact head. For the third slice, part two: the mutant runs, one per refusing rule, with the pairs each must flip. Left uncovered and named in the pull request: rejection pairs; the harness copy of the crafting; the pairs on the permanent contract until it lands; any pair the model cannot state.",
       "pause": 400
     }
   ],
@@ -73,12 +77,12 @@
       "pause": 500
     },
     {
-      "text": "One team for this epic: the ticket owner, one commit owner (Muse through the pi harness) given the whole slice with a terminal condition of green, blocked or at capacity, and one mute persistent auditor (GLM through the pi harness) launched beside it. No nudges, no run counting, no extra seat, no draft tool. If the permanent-contract branch or the command-line split changes the layout under this branch, the ticket owner follows the desk's order and rebases only at a safe boundary.",
+      "text": "One team for this epic: the ticket owner, a commit owner (Muse through the pi harness) with a terminal condition of green, blocked or at capacity, and one mute persistent auditor launched beside it (GLM through the pi harness in the first slice, Codex from the second). The first two slices gave the commit owner the whole slice; the third slice gives a fresh commit owner one short brief at a time, each finishing well under an hour. No nudges, no run counting, no extra seat, no draft tool. If the permanent-contract branch or the command-line split changes the layout under this branch, the ticket owner follows the desk's order and rebases only at a safe boundary.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "0b81067f639f427d455066539ce3a9409213442cfa1dbfabf5a872ea136086af"
+    "sha256": "cceed608ab4c8b992f8a370c07b40a19e70e3d673c0f209b2df272e33e2b8c9a"
   }
 }
