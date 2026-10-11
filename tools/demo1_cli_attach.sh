@@ -272,18 +272,19 @@ if part takes; then
   }
   copy honest
   expect honest ""
-  reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json || true)"
-  reclaim="${reclaim%%$'\n'*}"
-  [ -n "$reclaim" ] || fail_control "the first take left no retraction receipt"
-  body="$(jq -r .bodyFile "$reclaim")"
-  copy retraction-body-missing
-  rm "$copies/retraction-body-missing/$body"
-  expect retraction-body-missing "the retained body $body is missing"
-  refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json || true)"
-  refusal="${refusal%%$'\n'*}"
-  copy bound-lowered
-  jq '.allowance = 1' "$refusal" >"$copies/bound-lowered/receipts/$(basename "$refusal")"
-  expect bound-lowered "over the bound of 1"
+  # Take one books nothing pending after the early booking refusal, so it
+  # leaves no retraction: the tamper controls below run on its first
+  # node-judged craft instead.
+  craft="$(grep -l '"action": "craft ' "$work"/one/receipts/*.json || true)"
+  craft="${craft%%$'\n'*}"
+  [ -n "$craft" ] || fail_control "the first take left no crafted refusal"
+  body="$(jq -r .bodyFile "$craft")"
+  copy craft-body-missing
+  rm "$copies/craft-body-missing/$body"
+  expect craft-body-missing "the retained body $body is missing"
+  copy craft-bound-lowered
+  jq '.allowance = 1' "$craft" >"$copies/craft-bound-lowered/receipts/$(basename "$craft")"
+  expect craft-bound-lowered "over the bound of 1"
   say "artifact controls: the honest copy holds; each changed copy fails for its reason"
   # The indexer verdict rests on the record's facts, not on what it says of them:
   # on copies of the first take's receipts, the Koios record changed in one raw
