@@ -28,19 +28,18 @@ import Control.Exception
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 
 import MPF.Backend.Pure (MPFInMemoryDB)
 
 import Singular.Registry.Ledger
-    ( AssetName (..)
-    , Root (..)
-    , TokenId (..)
+    ( Root (..)
     )
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
-import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
+import Singular.Registry.Trie.Pure
+    ( provesAbsent
+    , provesMember
+    , rootFromDb
+    )
 import Singular.Registry.TxBuilder.Internal
     ( leafAbsent
     , leafActive
@@ -65,7 +64,7 @@ provenLeaf
     :: MPFInMemoryDB -> ByteString -> ByteString -> IO (Either String Leaf)
 provenLeaf db key observed =
     -- Tree nodes that do not decode prove nothing: no answer, not a crash.
-    try (proven db key observed >>= evaluate) >>= \case
+    try (evaluate (proven db key observed)) >>= \case
         Right answer -> pure answer
         Left (e :: SomeException)
             | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
@@ -73,39 +72,33 @@ provenLeaf db key observed =
                 pure (Left ("the saved tree nodes do not decode: " <> show e))
 
 proven
-    :: MPFInMemoryDB -> ByteString -> ByteString -> IO (Either String Leaf)
-proven db key observed = do
-    (tm, _) <- mkPureTrieManagerFrom (Map.singleton session db)
-    Root local <- withTrie tm session getRoot
-    pure $
-        if local /= observed
-            then
+    :: MPFInMemoryDB -> ByteString -> ByteString -> Either String Leaf
+proven db key observed =
+    if local /= observed
+        then
+            Left
+                ( "the saved trie commits to 0x"
+                    <> hexS local
+                    <> ", not the chain's root 0x"
+                    <> hexS observed
+                )
+        else case [ leaf
+                  | (leaf, bytes) <-
+                        [ (Absent, leafAbsent)
+                        , (Active, leafActive)
+                        , (Terminal, leafTerminal)
+                        ]
+                  , provesMember db observed key bytes
+                  ] of
+            [leaf] -> Right leaf
+            []
+                | provesAbsent db observed key -> Right Unknown
+            _ ->
                 Left
-                    ( "the saved trie commits to 0x"
-                        <> hexS local
-                        <> ", not the chain's root 0x"
-                        <> hexS observed
+                    ( "the saved tree nodes prove no single leaf at 0x"
+                        <> hexS key
+                        <> " under the chain's root"
                     )
-            else case [ leaf
-                      | (leaf, bytes) <-
-                            [ (Absent, leafAbsent)
-                            , (Active, leafActive)
-                            , (Terminal, leafTerminal)
-                            ]
-                      , provesMember db observed key bytes
-                      ] of
-                [leaf] -> Right leaf
-                []
-                    | provesAbsent db observed key -> Right Unknown
-                _ ->
-                    Left
-                        ( "the saved tree nodes prove no single leaf at 0x"
-                            <> hexS key
-                            <> " under the chain's root"
-                        )
   where
+    Root local = rootFromDb db
     hexS = BC.unpack . B16.encode
-
--- | The one trie a proof session holds; its name is never observed.
-session :: TokenId
-session = TokenId (AssetName "")

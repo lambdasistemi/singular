@@ -2,15 +2,27 @@
 
 {- |
 Module      : Singular.Registry.Trie.PureManager
-Description : Pure in-memory TrieManager
+Description : Mutable in-memory TrieManager compatibility adapter
 License     : Apache-2.0
 
 In-memory implementation of the 'TrieManager'
 interface backed by a 'Map TokenId (IORef
 MPFInMemoryDB)'. Each token gets its own isolated
-in-memory MPF database; speculative sessions copy
-the 'IORef' contents so the original is never
-mutated.
+in-memory MPF database; speculative sessions compute in 'State' over a
+snapshot so the original is never mutated and no mutable copy is allocated.
+
+The legacy @PureManager@ and @mkPureTrieManager@ names describe the backend,
+not the effects. Each caller owns one manager for its serial transaction
+builder, replay, evolving fixture or persisted-mirror run. The manager and
+dump action must not escape that lifetime into overlapping sessions. There
+is no locking: creation, deletion, visibility, reads, writes, dumps and
+speculative copying all require external serialization if shared.
+
+Missing and hidden tries retain their legacy 'ErrorCall' failures, respectively
+@Trie not found: @ and @Trie is hidden: @ followed by the token's 'show'.
+Use the pure snapshot functions in "Singular.Registry.Trie.Pure" for
+deterministic computation; a snapshot has neither registry lookup nor hidden
+state. No mutable manager is needed to read its root or prove a leaf.
 -}
 module Singular.Registry.Trie.PureManager
     ( -- * Construction
@@ -21,6 +33,8 @@ module Singular.Registry.Trie.PureManager
     , dumpPureTries
     ) where
 
+import Control.Exception (evaluate)
+import Control.Monad.State.Strict (State, get, runState)
 import Data.IORef
     ( IORef
     , modifyIORef'
@@ -38,9 +52,10 @@ import MPF.Backend.Pure
     )
 
 import Singular.Registry.Ledger (TokenId)
-import Singular.Registry.Trie (Trie, TrieManager (..))
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure
     ( mkPureTrieFromRef
+    , stateTrie
     )
 
 {- | Create a new 'TrieManager IO' backed by a 'Map'
@@ -84,7 +99,8 @@ mkPureTrieManagerFrom initial = do
         )
 
 {- | Read every trie the manager holds back out, so a run can hand what
-it built to the next one.
+it built to the next one. This includes hidden tries. The owner must exclude
+concurrent mutation while dumping; the reads are not an atomic snapshot.
 -}
 dumpPureTries
     :: IORef (Map TokenId (IORef MPFInMemoryDB))
@@ -144,11 +160,24 @@ pureWithSpeculativeTrie
                                 ++ show tid
                     Just dbRef -> do
                         db <- readIORef dbRef
-                        copyRef <- newIORef db
-                        action
-                            ( mkPureTrieFromRef
-                                copyRef
-                            )
+                        -- Force execution inside IO, as the old callback
+                        -- did, while preserving a lazy returned value.
+                        (answer, _) <- evaluate (runState (action speculativeTrie) db)
+                        pure answer
+
+-- The IO adapter forces every changed database when writing its IORef.
+-- Keep that strictness locally; the public pure stateTrie stays unchanged.
+speculativeTrie :: Trie (State MPFInMemoryDB)
+speculativeTrie =
+    stateTrie
+        { insert = \key value -> strictMutation (insert stateTrie key value)
+        , delete = strictMutation . delete stateTrie
+        }
+  where
+    strictMutation action = do
+        answer <- action
+        changed <- get
+        changed `seq` pure answer
 
 -- | Create a new empty trie for a token.
 pureCreateTrie

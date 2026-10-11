@@ -4367,6 +4367,22 @@
   ]
  },
  "docs/offchain-api-reference.md": {
+  "appendix-discovered-adapter-consumers": [
+   {
+    "index": 0,
+    "name": "docs-offchain-api-reference/appendix-discovered-adapter-consumers-00",
+    "pause_ms": 500,
+    "text": "Appendix: discovered adapter consumers.",
+    "v": "d17d54ff223b"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-api-reference/appendix-discovered-adapter-consumers-01",
+    "pause_ms": 400,
+    "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
+    "v": "df70b8a0d4de"
+   }
+  ],
   "how-the-reference-stays-honest": [
    {
     "index": 0,
@@ -4425,6 +4441,36 @@
     "pause_ms": 400,
     "text": "A contributor reading the builder and blueprint guide wants to click a module of this library and land on its real interface — signatures, documentation, and the highlighted source — for exactly the code this repository ships. This page is the entry point of that reference for the off-chain registry library: a generated Haddock reference, rebuilt with the documentation site from this same source tree, so what you read here documents exactly the code this candidate was built from — and, as the extent below states, a few of its modules are documented for the contributor without being importable by a caller. One boundary on that promise is named below: identifiers and modules that belong to other packages are visible in the generated pages but are not clickable, because their documentation is not bundled with this site.",
     "v": "c6019a5ceccf"
+   }
+  ],
+  "snapshot-computations-and-mutable-compatibility": [
+   {
+    "index": 0,
+    "name": "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-00",
+    "pause_ms": 500,
+    "text": "Snapshot computations and mutable compatibility.",
+    "v": "c4908e0924ce"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-01",
+    "pause_ms": 400,
+    "text": "As a library consumer, you can compute a root, membership or exclusion proof, or an authenticated leaf from an MPF database value without allocating a mutable manager. The computation uses the existing MPF core and never treats the uncommitted key index as evidence for a leaf. A foreign observed root refuses authentication; inconsistent nodes prove no leaf. Malformed node decoding can still raise an exception, so the caller owns its evaluation and exception boundary.",
+    "v": "f41431ddbd04"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-02",
+    "pause_ms": 400,
+    "text": "The legacy names mkPureTrie, mkPureTrieFromRef, mkPureTrieManager and mkPureTrieManagerFrom identify the in-memory backend. Their IO adapters remain mutable. A caller owns the adapter and any dump action for the entire serial builder, replay or mirror lifetime. There is no locking or thread-safety guarantee. Sharing requires external serialization of complete sessions, including reads, writes, speculative snapshots, visibility changes and dumps. A dump includes hidden tries and is not an atomic concurrent snapshot. Missing and hidden manager lookups retain their existing exceptions, Trie not found: and Trie is hidden: followed by the shown token. Speculative sessions execute the existing pure stateTrie over a snapshot and discard the resulting database, without allocating a mutable copy. Action and mutation failures still occur during the IO callback; the returned value stays lazy, as it did with the mutable callback.",
+    "v": "20b6f2f6cd3c"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-03",
+    "pause_ms": 400,
+    "text": "Ordinary registry and open-datum commands already authenticate through TrieState; the direct executable callers of the older CLI.Proof snapshot functions are the preservation tests. Removing their allocation alone is therefore a library computation improvement, not a claim that command session ownership changed.",
+    "v": "d98ab6829054"
    }
   ],
   "what-the-reference-does-not-claim": [

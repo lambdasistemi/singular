@@ -2,6 +2,7 @@
 module Conformance.Support.CliProof (spec) where
 
 import Conformance.Cli.Proof (Leaf (..), provenLeaf)
+import Control.Exception (AsyncException (ThreadKilled), throw)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
@@ -16,7 +17,14 @@ import Singular.Registry.Ledger
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal (leafActive, leafTerminal)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec
+    ( Spec
+    , describe
+    , it
+    , shouldBe
+    , shouldSatisfy
+    , shouldThrow
+    )
 
 token :: TokenId
 token = TokenId (AssetName "registry")
@@ -81,3 +89,9 @@ spec = describe
                 changed `shouldSatisfy` all (\r -> r == Right Active || isLeft r)
                 missing `shouldSatisfy` any isLeft
                 changed `shouldSatisfy` any isLeft
+
+        it
+            "rethrows asynchronous exceptions raised while evaluating saved nodes"
+            $ do
+                provenLeaf (throw ThreadKilled) (BC.pack "held") (BS.replicate 32 0)
+                    `shouldThrow` (== ThreadKilled)
