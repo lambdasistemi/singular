@@ -3,7 +3,7 @@
 # against the archive's own build of the mutated source.
 #
 # A mutant is a source-only patch in the host's own tree that removes exactly
-# one refusing rule from the Aiken source. For one mutant the command builds
+# one refusing rule, or one named set of rules, from the Aiken source. For one mutant the command builds
 # a scratch git copy of the checkout, applies the patch there, regenerates
 # the identity manifest with the repo's own recipe (A-001: `just
 # script-identity-regen` in onchain, scratch copy only, never typed, never
@@ -27,11 +27,11 @@
 # usage: negative_host_mutants.sh REPO-ROOT [--list | --control-noop | MUTANT]
 #   --list          print {"mutant": [...]} from the host's own table of
 #                   mutants; starts nothing; fails on an empty list
-#   --control-noop  self-check: an empty patch over every flip pair (the
+#   --control-noop  self-check: an empty patch over every flip and side-flip pair (the
 #                   node still refuses, so nothing flips) plus the
 #                   classification controls on altered results, all driving
 #                   the same classify_mutant_run the live run calls
-#   MUTANT          run one mutant: every flip pair must flip, the declared
+#   MUTANT          run one mutant: every flip and side-flip pair must flip, the declared
 #                   control pair must pass
 #   (no argument)   run every mutant
 set -euo pipefail
@@ -176,37 +176,48 @@ regen_manifest_ok() {
 }
 
 # The patch-hygiene step (derivation: every mutant changes only its named
-# rule): before a mutant runs, its patch must touch exactly the one file
-# named in rules.json, name its rule's trace label among the removed lines,
-# and remove nothing outside that rule's branch (the label line and the
+# rule or rule set): before a mutant runs, its patch must touch exactly the one file
+# named in rules.json, name each of its rules' trace labels among the removed lines,
+# and remove nothing outside those rules' branches (per rule: the label line and the
 # condition line above it). Anything else is a setup failure, never a flip.
 # The live run calls it before any scratch copy; the self-check drives it
 # on good and fabricated patches. Each fabricated patch fails exactly one
 # guard, so deleting that guard's check makes it pass. (The labels
 # app-owner and app-controller-signature occur twice in the file; this
-# function fails closed unless the label occurs exactly once, which holds
-# for the four mutants in rules.json today.)
+# function fails closed unless each named label occurs exactly once, which holds
+# for the four single-rule mutants and for update-escape/update-control today.)
+# The second argument is a comma-separated rule list: single-rule callers pass one
+# name (behaviour unchanged); set-valued callers pass "a,b". Still one function.
 patch_hygiene_ok() {
-  local patch="$1" rule="$2" expected="$3" source="$4"
+  local patch="$1" rules_csv="$2" expected="$3" source="$4"
   local touched="" count="" at="" line="" stripped="" b1="" b2="" s1="" s2=""
+  local rule="" allowed_list=""
   [ -f "$patch" ] || return 1
   [ -f "$source" ] || return 1
+  [ -n "$rules_csv" ] || return 1
   count="$(grep -c '^diff --git ' "$patch" || true)" # GUARD-hfiles
   [ "$count" = 1 ] || return 1
   touched="$(grep '^diff --git ' "$patch" | awk '{print $4}' | sed 's|^b/||')" || return 1
   [ "$touched" = "$expected" ] || return 1
-  count="$(grep -c -F "@\"$rule\"" "$source" || true)"
-  [ "$count" = 1 ] || return 1
-  at="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1)" || return 1
-  [ "$at" -ge 2 ] || return 1
-  grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
-  b1="$(sed -n "$((at - 1))p" "$source")" || return 1
-  b2="$(sed -n "${at}p" "$source")" || return 1
-  s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
-  s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+  allowed_list=""
+  IFS=',' read -ra HYGIENE_RULES <<<"$rules_csv" || return 1
+  [ "${#HYGIENE_RULES[@]}" -ge 1 ] || return 1
+  for rule in "${HYGIENE_RULES[@]}"; do
+    [ -n "$rule" ] || return 1
+    count="$(grep -c -F "@\"$rule\"" "$source" || true)"
+    [ "$count" = 1 ] || return 1
+    at="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1)" || return 1
+    [ "$at" -ge 2 ] || return 1
+    grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
+    b1="$(sed -n "$((at - 1))p" "$source")" || return 1
+    b2="$(sed -n "${at}p" "$source")" || return 1
+    s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+    s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+    allowed_list+="${s1}"$'\n'"${s2}"$'\n'
+  done
   while IFS= read -r line; do # GUARD-hlines
     stripped="$(printf '%s' "${line#-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
-    [ "$stripped" = "$s1" ] || [ "$stripped" = "$s2" ] || return 1
+    printf '%s' "$allowed_list" | grep -qxF -- "$stripped" || return 1
   done < <(grep '^-[^-]' "$patch" || true)
 }
 # the patch and the rules are read from the checkout itself) and commit it,
@@ -389,7 +400,7 @@ regen_step_controls() {
 # mismatch.
 patch_hygiene_controls() {
   local source="$1" work="$2"
-  local name="" patch="" rule="" file="" st=""
+  local name="" patch="" rules_csv="" file="" st=""
   local base="" donor=""
   rm -rf "$work" || return 1
   mkdir -p "$work/check/onchain/validators" || return 1
@@ -397,9 +408,9 @@ patch_hygiene_controls() {
   while IFS= read -r name; do
     [ -n "$name" ] || continue
     patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
-    rule="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .rule' "$rules")" || return 1
+    rules_csv="$(mutant_rules_csv "$name")" || return 1
     file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
-    patch_hygiene_ok "$patch" "$rule" "$file" "$source" && st=0 || st=$?
+    patch_hygiene_ok "$patch" "$rules_csv" "$file" "$source" && st=0 || st=$?
     [ "$st" -eq 0 ] || {
       echo "negative-host-mutants: hygiene control good-$name rejected" >&2
       return 1
@@ -457,11 +468,190 @@ EOF
     return 1
   }
   echo "negative-host-mutants: hygiene control condition-only: rejected (as expected)"
+  joint="$mutants_dir/token-continuation-leaves-the-holding.patch"
+  [ -f "$joint" ] || return 1
+  cp "$joint" "$work/joint-extra-hunk.patch" || return 1
+  cat >>"$work/joint-extra-hunk.patch" <<'EOF'
+@@ -386,5 +386,5 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
+         } else if lovelace_of(next.value) < control.deposit {
+-          traceFalse(@"update-deposit")
++          True
+         } else {
+           True
+         }
+EOF
+  (cd "$work/check" && git apply --check "$work/joint-extra-hunk.patch") || {
+    echo "negative-host-mutants: hygiene control joint-extra-hunk does not apply" >&2
+    return 1
+  }
+  patch_hygiene_ok "$work/joint-extra-hunk.patch" "update-escape,update-control" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control joint-extra-hunk passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control joint-extra-hunk: rejected (as expected)"
+  cat >"$work/joint-only-one.patch" <<'EOF'
+diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
+--- a/onchain/validators/open_datum.ak
++++ b/onchain/validators/open_datum.ak
+@@ -379,7 +379,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
+       [next] ->
+         if next.address != self.address {
+-          traceFalse(@"update-escape")
++          True
+         } else if liveControl(next.datum) != Some(control) {
+           traceFalse(@"update-control")
+         } else if without_lovelace(next.value) != without_lovelace(self.value) {
+           traceFalse(@"update-assets")
+EOF
+  (cd "$work/check" && git apply --check "$work/joint-only-one.patch") || {
+    echo "negative-host-mutants: hygiene control joint-only-one does not apply" >&2
+    return 1
+  }
+  patch_hygiene_ok "$work/joint-only-one.patch" "update-escape,update-control" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control joint-only-one passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control joint-only-one: rejected (as expected)"
 }
 
 mutant_field() {
   local name="$1" field="$2"
   jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .[$f] // empty' --arg f "$field" "$rules" || return 1
+}
+
+mutant_rules_csv() {
+  local name="$1"
+  jq -er --arg n "$name" '.mutants[] | select(.name == $n) | if has("rules") then (.rules | join(",")) else .rule end' "$rules" || return 1
+}
+
+mutant_side_flips() {
+  local name="$1"
+  jq -c --arg n "$name" '.mutants[] | select(.name == $n) | (.side_flips // [])[]' "$rules" || return 1
+}
+
+# Side acceptance (NOTE-027, one function): the live side loop collects the
+# per-pair classifications and calls this; nothing else decides side acceptance.
+# Inputs: mutant name, and a results file with lines "<pair> <classification>"
+# (classification is the word classify_mutant_run prints: FLIPPED |
+# NOT-FLIPPED-REFUSED | OTHER-FAILURE | MISSING | SETUP | CONTROL-FAILED |
+# BAD-STATUS). Exactly two orthogonal guards:
+# G1 exact membership: the sorted list of pair names in the results equals the
+# sorted list of the entry's expected side pairs exactly (missing, unexpected
+# and duplicate each break the equality; never reads classifications).
+# G2 every result flipped: every classification present equals FLIPPED
+# (iterates the results that exist, never the expected list, so a missing pair
+# gives it nothing to fail on). Extra fails closed via G1.
+side_flips_accepted() {
+  local name="$1" results="$2"
+  local expected="" expected_sorted="" actual_sorted="" line="" class=""
+  [ -f "$results" ] || return 1
+  expected="$(jq -r --arg n "$name" '.mutants[] | select(.name == $n) | (.side_flips // [])[].pair' "$rules")" || return 1
+  expected_sorted="$(printf '%s' "$expected" | sort)" || return 1
+  actual_sorted="$(awk 'NF{print $1}' "$results" | sort)" || return 1
+  [ "$actual_sorted" = "$expected_sorted" ] || return 1 # GUARD-G1-membership
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    class="$(printf '%s' "$line" | awk '{print $2}')" || return 1
+    [ "$class" = FLIPPED ] || return 1 # GUARD-G2-all-flipped
+  done <"$results"
+}
+
+# Every side-acceptance control, driven through the live side_flips_accepted
+# on fabricated result files built mechanically from the real entry's own side
+# list (the same jq the live function reads, never a retyped list).
+# (a) every expected pair once, all FLIPPED: accepted; (b) one expected pair
+# missing, rest FLIPPED: rejected by G1 only; (c) all expected FLIPPED plus one
+# unexpected FLIPPED (controller-withdraws-outside-a-fold, asserted not in the
+# expected list): rejected by G1 only; (d) one expected pair duplicated, all
+# FLIPPED: rejected by G1 only; (e) every pair once, one NOT-FLIPPED-REFUSED,
+# rest FLIPPED: rejected by G2 only. Prints one line per control; returns
+# nonzero on the first mismatch.
+side_flip_controls() {
+  local work="$1"
+  local mutant="token-continuation-leaves-the-holding"
+  local expected="" pair="" first="" st="" unexpected=""
+  expected="$(jq -r --arg n "$mutant" '.mutants[] | select(.name == $n) | (.side_flips // [])[].pair' "$rules")" || return 1
+  [ -n "$expected" ] || return 1
+  mkdir -p "$work" || return 1
+  : >"$work/all-flipped.txt" || return 1
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    printf '%s FLIPPED\n' "$pair" >>"$work/all-flipped.txt" || return 1
+  done <<<"$expected"
+  side_flips_accepted "$mutant" "$work/all-flipped.txt" && st=0 || st=$?
+  [ "$st" -eq 0 ] || {
+    echo "negative-host-mutants: side control all-flipped rejected" >&2
+    return 1
+  }
+  echo "negative-host-mutants: side control all-flipped: accepted (as expected)"
+  : >"$work/one-missing.txt" || return 1
+  first=1
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    if [ "$first" = 1 ]; then
+      first=0
+      continue
+    fi
+    printf '%s FLIPPED\n' "$pair" >>"$work/one-missing.txt" || return 1
+  done <<<"$expected"
+  side_flips_accepted "$mutant" "$work/one-missing.txt" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: side control one-missing passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: side control one-missing: rejected (as expected)"
+  unexpected="controller-withdraws-outside-a-fold"
+  printf '%s\n' "$expected" | grep -qxF -- "$unexpected" && {
+    echo "negative-host-mutants: side control setup: unexpected pair is expected" >&2
+    return 1
+  } || true
+  : >"$work/one-unexpected.txt" || return 1
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    printf '%s FLIPPED\n' "$pair" >>"$work/one-unexpected.txt" || return 1
+  done <<<"$expected"
+  printf '%s FLIPPED\n' "$unexpected" >>"$work/one-unexpected.txt" || return 1
+  side_flips_accepted "$mutant" "$work/one-unexpected.txt" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: side control one-unexpected passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: side control one-unexpected: rejected (as expected)"
+  : >"$work/one-duplicated.txt" || return 1
+  first=1
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    printf '%s FLIPPED\n' "$pair" >>"$work/one-duplicated.txt" || return 1
+    if [ "$first" = 1 ]; then
+      printf '%s FLIPPED\n' "$pair" >>"$work/one-duplicated.txt" || return 1
+      first=0
+    fi
+  done <<<"$expected"
+  side_flips_accepted "$mutant" "$work/one-duplicated.txt" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: side control one-duplicated passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: side control one-duplicated: rejected (as expected)"
+  : >"$work/one-not-flipped.txt" || return 1
+  first=1
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    if [ "$first" = 1 ]; then
+      printf '%s NOT-FLIPPED-REFUSED\n' "$pair" >>"$work/one-not-flipped.txt" || return 1
+      first=0
+    else
+      printf '%s FLIPPED\n' "$pair" >>"$work/one-not-flipped.txt" || return 1
+    fi
+  done <<<"$expected"
+  side_flips_accepted "$mutant" "$work/one-not-flipped.txt" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: side control one-not-flipped passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: side control one-not-flipped: rejected (as expected)"
 }
 
 if [ "$mode" = list ]; then
@@ -516,17 +706,18 @@ release_kept() {
   mv "$tmp" "$kept_list"
 }
 
-# Run one mutant: every flip pair must flip on the mutated copy, the
-# declared control pair must pass there. Prints one verdict line per pair.
+# Run one mutant: every flip pair and every expected side flip must flip on the
+# mutated copy, the declared control pair must pass there. Prints one verdict line per pair.
 run_one_mutant() {
   local name="$1"
-  local patch flips control rule file copy
+  local patch flips side_flips control rules_csv file copy
   patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
   flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || return 1
+  side_flips="$(mutant_side_flips "$name")" || return 1
   control="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .control' "$rules")" || return 1
-  rule="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .rule' "$rules")" || return 1
+  rules_csv="$(mutant_rules_csv "$name")" || return 1
   file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
-  patch_hygiene_ok "$patch" "$rule" "$file" "$root/$file" || {
+  patch_hygiene_ok "$patch" "$rules_csv" "$file" "$root/$file" || {
     echo "negative-host-mutants [$name]: classified SETUP (patch hygiene)" >&2
     return 1
   }
@@ -590,6 +781,33 @@ run_one_mutant() {
     fi
     release_kept "$flip_kept"
   done <<<"$flips"
+  local side_results="$run_dir/side-results.txt"
+  : >"$side_results" || return 1
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    pair="$(jq -er .pair <<<"$entry")" || return 1
+    expect="$(jq -er .command <<<"$entry")" || return 1
+    t0="$SECONDS"
+    run_part "$copy" "$pair" "$run_dir/side-$pair"
+    t1="$SECONDS"
+    local side_status="$PART_STATUS" side_kept="$PART_KEPT"
+    record_kept "$side_kept"
+    set +e
+    class="$(classify_mutant_run "$REGEN_STATUS" "$control_status" "$side_status" "$side_kept/run/receipts/forbidden.json" "$expect")"
+    st=$?
+    set -e
+    printf '%s %s\n' "$pair" "$class" >>"$side_results" || return 1
+    if [ "$st" -eq 0 ]; then
+      echo "negative-host-mutants [$name]: side $pair: FLIPPED (the node accepted, part exit $side_status, $((t1 - t0))s)"
+    else
+      echo "negative-host-mutants [$name]: side $pair: $class (part exit $side_status, $((t1 - t0))s)" >&2
+    fi
+    release_kept "$side_kept"
+  done <<<"$side_flips"
+  side_flips_accepted "$name" "$side_results" || {
+    echo "negative-host-mutants [$name]: side acceptance failed" >&2
+    return 1
+  }
   echo "negative-host-mutants [$name]: PASS"
 }
 
@@ -603,7 +821,7 @@ if [ "$mode" = noop ]; then
   first_copy=""
   while IFS= read -r name; do
     [ -n "$name" ] || continue
-    flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || fail "cannot read flips"
+    flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | (.flip + (.side_flips // []))[]' "$rules")" || fail "cannot read flips"
     run_dir="$scratch_parent/noop-$name"
     mkdir -p "$run_dir" || fail "scratch failed (setup)"
     make_scratch_copy "$root" "$run_dir" || fail "scratch copy failed (setup)"
@@ -646,6 +864,7 @@ if [ "$mode" = noop ]; then
   classification_controls "$first_base" "$scratch_parent/controls" || fail "self-check classification controls failed"
   regen_step_controls "$scratch_parent/noop-base-manifest.json" "$scratch_parent/regen-controls" || fail "self-check regeneration-step controls failed"
   patch_hygiene_controls "$root/onchain/validators/open_datum.ak" "$scratch_parent/hygiene-controls" || fail "self-check patch-hygiene controls failed"
+  side_flip_controls "$scratch_parent/side-controls" || fail "self-check side-flip controls failed"
   echo "negative-host-mutants: SELF-CHECK PASS"
   exit 0
 fi

@@ -31,6 +31,15 @@
       "file": "onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-tamper-controller", "command": "update"}, {"pair": "controller-tamper-datum", "command": "update"}, {"pair": "controller-tamper-deposit", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
+    },
+    {
+      "name": "token-continuation-leaves-the-holding",
+      "patch": "token-continuation-leaves-the-holding.patch",
+      "rules": ["update-escape", "update-control"],
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "controller-tamper-token", "command": "update"}],
+      "side_flips": [{"pair": "controller-tamper-address", "command": "update"}, {"pair": "controller-tamper-controller", "command": "update"}, {"pair": "controller-tamper-datum", "command": "update"}, {"pair": "controller-tamper-deposit", "command": "update"}],
+      "control": "controller-withdraws-outside-a-fold"
     }
   ]
 }
