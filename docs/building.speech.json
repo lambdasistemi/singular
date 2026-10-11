@@ -27,6 +27,24 @@
       "pause": 400
     }
   ],
+  "ordinary-binaries-and-explicit-test-builds": [
+    {
+      "text": "Ordinary binaries and explicit test builds.",
+      "pause": 500
+    },
+    {
+      "text": "As a release operator, I build ordinary singular and open-datum with the manual Cabal test-harness flag disabled. Both executable closures use the ordinary registry CLI modules. The release archive and publication commands select these ordinary outputs.",
+      "pause": 400
+    },
+    {
+      "text": "As a contributor, I exercise crash windows and provider-answer loss with the separately named test outputs. Their registry CLI modules retain the original hold/drop controls and SINGULAR_HARNESS_TRIE_TRACE, an independent observation of the trie capability's actual operations. That diagnostic is a hidden test input and its evidence belongs to the test build.",
+      "pause": 400
+    },
+    {
+      "text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary extracted-release journey separately from the test journey's unchanged recovery, race, node-loss and trie-observation assertions. CLI recovery and conformance backend controls select the explicit test composition. The separate replay-fault project remains a deliberately altered test build; its named refusal proof retains its published pending cases. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
+      "pause": 400
+    }
+  ],
   "generated-api-references": [
     {
       "text": "Generated API references.",
@@ -151,6 +169,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "e437075c48467c5c1d6f73fd02e75d705b23273753897f674806bb954af4ebc9"
+    "sha256": "a3286096fecdc40f42ef177c0d6220b0e14e1533f7a90a9146bba768efa2e74d"
   }
 }

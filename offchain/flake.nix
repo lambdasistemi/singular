@@ -66,6 +66,14 @@
 
         inherit (project.project.hsPkgs.singular-registry) components;
 
+        # Recovery controllers run a separately configured whole package.
+        # No ordinary package or released executable consumes this project.
+        harnessProject = import ./nix/project.nix {
+          inherit CHaP pkgs;
+          testHarness = true;
+        };
+        harnessComponents = harnessProject.project.hsPkgs.singular-registry.components;
+
         # #264 T264-05 (epic answers A-005 and A-008/A-009/A-010): the
         # classified supported component carrier. EVERY declared Cabal
         # component is classified in ./nix/component-inventory.nix — built
@@ -523,6 +531,7 @@
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
           inherit (components.exes) singular;
+          singular-test-harness = harnessComponents.exes.singular;
           # #528 slice 4: the negative host moved to the application's
           # own tree with the application; this
           # flake no longer builds it (see the application's flake for

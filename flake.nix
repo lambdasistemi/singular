@@ -172,8 +172,8 @@
               jq
             ];
             text = ''
-              holds=$(grep -hoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
-                ${./offchain/cli/src/Singular/CLI/Session.hs} ${./offchain/cli/src/Singular/CLI/Fold.hs} \
+              holds=$(grep -rhoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
+                ${./offchain/cli} \
                 | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
               [ -n "$holds" ] || { echo "the fold path declares no hold points" >&2; exit 3; }
               printf '%s\n' "$holds" | jq -Rsc --arg lost "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer" \
@@ -233,7 +233,16 @@
               # application's own tree, and the fault build needs only
               # the registry executable (main's offchain project lists
               # no cabalProjectLocal either).
-              modules = [ fix-libs ];
+              # The replay alteration is its own package build, with no
+              # hold/drop/trace harness code linked into this variant.
+              cabalProjectLocal = ''
+                package singular-registry
+                  flags: -test-harness
+              '';
+              modules = [
+                fix-libs
+                { packages.singular-registry.flags.test-harness = false; }
+              ];
               inputMap = {
                 "https://chap.intersectmbo.org/" = offchain.inputs.CHaP;
               };
@@ -379,6 +388,8 @@
             name = "verify-release";
             runtimeInputs = with pkgs; [
               bash
+              python3
+              binutils
               coreutils
               curl
               diffutils
@@ -402,6 +413,7 @@
             ];
             text = ''
               export VERIFY_RELEASE_JOURNEY=${managedScripts}/demo1_cli_journey.sh
+              export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
               export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
               export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
               bash ${./tools/verify_release.sh} "$@"
@@ -430,6 +442,57 @@
                   gzip
                 ];
                 text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
+              }
+            );
+          };
+          # The control needs the Nix daemon and real output derivations.
+          release-build-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "release-build-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  binutils
+                  coreutils
+                  gnugrep
+                  nix
+                  python3
+                ];
+                text = ''
+                  export RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
+                  bash ${./tools/release_build_control.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # This mandatory carrier retains every original injected journey
+          # assertion and independent trie observation on explicit test builds.
+          demo1-cli-test-harness = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-test-harness";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  gawk
+                  git
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                  procps
+                  strace
+                  util-linux
+                ];
+                text = ''
+                  export DEMO1_TEST_JOURNEY=${managedScripts}/demo1_cli_journey.sh
+                  export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
+                  bash ${./tools/demo1_cli_test_harness_check.sh} "$PWD"
+                '';
               }
             );
           };

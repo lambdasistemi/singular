@@ -2,6 +2,7 @@
   CHaP,
   pkgs,
   src,
+  testHarness ? false,
   ...
 }:
 
@@ -45,7 +46,16 @@ let
       inherit src;
       compiler-nix-name = "ghc9123";
       shell = shell { inherit pkgs; };
-      modules = [ fix-libs ];
+      # One explicit flag controls the whole registry package in this
+      # project, including every executable's registry-cli dependency.
+      cabalProjectLocal = ''
+        package singular-registry
+          flags: ${if testHarness then "+" else "-"}test-harness
+      '';
+      modules = [
+        fix-libs
+        { packages.singular-registry.flags.test-harness = testHarness; }
+      ];
       inputMap = {
         "https://chap.intersectmbo.org/" = CHaP;
       };

@@ -56,7 +56,7 @@ trap release_scratch EXIT
 build() { nix build --quiet --no-link --print-out-paths "$@"; }
 
 cd "$root/offchain"
-singular="$(build .#singular)/bin/singular"
+singular="$(build .#singular-test-harness)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 # The raw devnet reads its genesis from E2E_GENESIS_DIR, falling back to a
 # relative `e2e-test/genesis` that only resolves from the registry tree.
@@ -67,8 +67,10 @@ export E2E_GENESIS_DIR="$root/offchain/e2e-test/genesis"
 # the merged deployment document (application + witnesses, one build).
 blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
 cd "$root/applications/open-datum/offchain"
-open_datum="$(build .#open-datum)/bin/open-datum"
+open_datum="$(build .#open-datum-test-harness)/bin/open-datum"
 
+echo "explicit test-build executables: singular=$singular open-datum=$open_datum"
+sha256sum "$singular" "$open_datum"
 status=0
 bash "$controls_sh" "$singular" "$open_datum" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"

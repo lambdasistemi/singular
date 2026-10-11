@@ -693,6 +693,8 @@ jobs:
       # this step fails at the page check or at the first invocation.
       - name: Run the Demo 1 singular journey from the extracted release archive
         run: nix run --quiet .#demo1-cli-check
+      - name: Retain recovery, race and independent trie assertions on the explicit test build
+        run: nix run --quiet .#demo1-cli-test-harness
   demo1-two-actor-control:
     name: Demo 1 two actors — Bob opening Alice's file fails the journey
     needs: blueprint

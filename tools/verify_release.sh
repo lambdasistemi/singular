@@ -22,11 +22,10 @@
 #   journey         create, insert, update, terminate and inspect run as
 #                   separate processes on one generated development network
 #                   (demo1_cli_journey.sh)
-#   harness hooks   computed from that run: every process of the five
-#                   commands ran at least once with no SINGULAR_HARNESS_*
-#                   variable set, and the hold points that fired (each
-#                   leaves PATH.waiting) are exactly the ones a process was
-#                   started with a variable for
+#   release build   the stripped compiled executables contain no harness inputs,
+#                   and their actual resolved registry-cli flags disable them
+#   ordinary run    every command invocation is free of hidden harness inputs;
+#                   no fault injection or test-only trie observation is claimed
 #
 # The archive is extracted under --work DIR (a fresh temporary directory,
 # removed at exit, when not given), which must not lie inside a git checkout.
@@ -35,7 +34,7 @@
 # and one `verify-release: REFUSED <name>: <detail>` line when one refuses.
 # The names: download-failed, sum-mismatch, model-revision-missing,
 # model-revision-mismatch, member-missing, command-failed,
-# harness-hook-fired. Exit 2 on usage.
+# harness-code-present. Exit 2 on usage.
 set -euo pipefail
 
 usage() {
@@ -69,6 +68,7 @@ done
 version="${BASH_REMATCH[1]}"
 repo="${VERIFY_RELEASE_REPOSITORY:-lambdasistemi/singular}"
 journey="${VERIFY_RELEASE_JOURNEY:?verify-release needs VERIFY_RELEASE_JOURNEY}"
+binary_check="${VERIFY_RELEASE_BINARY_CHECK:?verify-release needs VERIFY_RELEASE_BINARY_CHECK}"
 expected_revision="$(cat "${VERIFY_RELEASE_MODEL_REVISION:?verify-release needs VERIFY_RELEASE_MODEL_REVISION}")"
 
 refuse() {
@@ -149,7 +149,7 @@ git -C "$extracted" init -q 2>"$work/git-init.log" \
   || refuse command-failed "git init in the extracted archive: $(tail -n 3 "$work/git-init.log" | tr '\n' ' ')"
 git -C "$extracted" add -A 2>"$work/git-add.log" \
   || refuse command-failed "git add in the extracted archive: $(tail -n 3 "$work/git-add.log" | tr '\n' ' ')"
-git -C "$extracted" -c user.email=verify@local -c user.name=verify commit -qm extracted 2>"$work/git-commit.log" \
+git -C "$extracted" -c user.email=verify@local -c user.name=verify -c commit.gpgsign=false commit -qm extracted 2>"$work/git-commit.log" \
   || refuse command-failed "git commit in the extracted archive: $(tail -n 3 "$work/git-commit.log" | tr '\n' ' ')"
 
 # build
@@ -166,6 +166,15 @@ open_datum="$(nix build --quiet --no-link --print-out-paths .#open-datum 2>"$wor
 [ -x "$open_datum/bin/open-datum" ] \
   || refuse command-failed "open-datum binary missing from the archive build"
 pass build "singular and open-datum and the development node from the archive's own flakes"
+
+# The actual compiled bytes and resolved component configuration, checked
+# before any journey starts. Unset environment variables alone prove nothing.
+for binary in "$singular/bin/singular" "$open_datum/bin/open-datum"; do
+  label="$(basename "$binary")"
+  python3 "$binary_check" "$binary" >"$work/release-build-$label.jsonl" 2>&1 \
+    || refuse harness-code-present "$(tail -n 1 "$work/release-build-$label.jsonl")"
+done
+pass "release build" "stripped singular/open-datum bytes and actual flags exclude test controls"
 
 # journey
 # Every `singular` and `open-datum` process the journey starts goes through
@@ -200,25 +209,24 @@ chmod +x "$work/bin/open-datum"
 # node starts regardless of the caller's directory.
 export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
 status=0
-bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
+bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" ordinary \
   || status=$?
 [ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
 pass journey "create, insert, update, terminate and inspect as separate processes"
 
-# harness hooks: computed from the run. A hold point that fires writes
-# PATH.waiting; the holds that fired must be exactly the ones a process was
-# started with a variable for, and every process of the five open-datum
-# commands started with no harness variable at all must exist.
+# The journey uses only the ordinary extracted binaries. Recovery injection
+# and independent trie-capability diagnostics have their own required test
+# carrier; they are not evidence from these release bytes.
 for command in create insert update terminate inspect; do
   awk -F'\t' -v c="open-datum $command" 'index($1, c) == 1 && $2 == ""' "$invocations" | grep -q . \
-    || refuse harness-hook-fired "no $command process ran without a harness variable"
+    || refuse harness-code-present "no ordinary $command invocation was recorded"
 done
-plain="$(awk -F'\t' '$2 == ""' "$invocations" | wc -l)"
-requested="$(awk -F'\t' '$3 != "" { n = split($3, p, "|"); for (i = 1; i <= n; i++) print p[i] ".waiting" }' "$invocations" | LC_ALL=C sort -u)"
-[ -n "$requested" ] || refuse harness-hook-fired "the journey asked for no hold, so firing cannot be observed"
-fired="$(find "$work" -path "$work/journey*" -name '*.waiting' | LC_ALL=C sort -u)"
-[ "$fired" = "$requested" ] \
-  || refuse harness-hook-fired "holds fired: [$(echo "$fired" | paste -sd' ' -)], requested: [$(echo "$requested" | paste -sd' ' -)]"
-pass "harness hooks" "$plain processes started with none set; holds fired only where requested ($(echo "$requested" | wc -l))"
+if awk -F'\t' '$2 != "" || $3 != ""' "$invocations" | grep -q .; then
+  refuse harness-code-present "ordinary journey received a hidden test input"
+fi
+fired="$(find "$work/journey" -name '*.waiting' | LC_ALL=C sort -u)"
+[ -z "$fired" ] || refuse harness-code-present "ordinary journey left a harness hold marker"
+plain="$(wc -l <"$invocations")"
+pass "ordinary run" "$plain invocations of the actual extracted-release binaries"
 
-echo "verify-release: PASS $tag — sums, model revision $stated, members, the journey and its harness hooks, from $extracted"
+echo "verify-release: PASS $tag — sums, model revision $stated, members, compiled hook exclusion and the ordinary journey, from $extracted"

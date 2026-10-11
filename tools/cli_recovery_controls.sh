@@ -153,13 +153,13 @@ done
 # cross-wallet:<hold> token is refused before a node exists.
 cross_census() {
   local source line
-  for source in Session Fold; do
+  while IFS= read -r -d '' source; do
     while IFS= read -r line; do
       if [[ "$line" =~ harnessHoldAt[[:space:]]+\"(SINGULAR_HARNESS_HOLD_[A-Z_]+)\" ]]; then
         printf '%s\n' "${BASH_REMATCH[1]}"
       fi
-    done <"$root/offchain/cli/src/Singular/CLI/$source.hs"
-  done | sort -u
+    done <"$source"
+  done < <(find "$root/offchain/cli" -type f -name '*.hs' -print0) | sort -u
 }
 mapfile -t fold_census < <(cross_census)
 [ "${#fold_census[@]}" -gt 0 ] || setup_fail "the fold path declares no hold points"

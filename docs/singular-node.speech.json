@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
+      "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
       "pause": 400
     }
   ],
@@ -215,26 +215,28 @@
       "pause": 400
     }
   ],
+  "public-environment-configuration": [
+    {
+      "text": "Public environment configuration.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator, I can supply SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line token takes precedence. The token names the registry, and never selects a provider. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+      "pause": 400
+    }
+  ],
   "harness-appendix-test-hooks": [
     {
       "text": "Harness appendix: test hooks.",
       "pause": 500
     },
     {
-      "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-      "pause": 400
-    },
-    {
-      "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
-      "pause": 400
-    },
-    {
-      "text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
+      "text": "Released singular and open-datum binaries carry no fault-injection or hidden trie-diagnostic hooks.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "9e976251578b1f3f479e0159950c5d39f0cb853a186ee114be0cb816a82c8509"
+    "sha256": "1ff8fc580aa6aa6562689f26510c62f725acd09ea2f64910183557be20ae44db"
   }
 }

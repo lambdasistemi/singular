@@ -86,6 +86,15 @@
           inherit CHaP pkgs src;
         };
 
+        # Explicit test build: flag selection reaches the registry-cli
+        # dependency linked by both application and registry executables.
+        harnessProject = import ./nix/project.nix {
+          inherit CHaP pkgs src;
+          testHarness = true;
+        };
+        harnessOpenDatumComponents = harnessProject.project.hsPkgs.open-datum.components;
+        harnessRegistryComponents = harnessProject.project.hsPkgs.singular-registry.components;
+
         openDatumComponents = project.project.hsPkgs.open-datum.components;
         negativeComponents = project.project.hsPkgs.singular-negative.components;
         registryComponents = project.project.hsPkgs.singular-registry.components;
@@ -174,6 +183,8 @@
         packages = {
           component-build = componentBuild;
           inherit (openDatumComponents.exes) open-datum;
+          open-datum-test-harness = harnessOpenDatumComponents.exes.open-datum;
+          singular-test-harness = harnessRegistryComponents.exes.singular;
           inherit (negativeComponents.exes) singular-negative;
           inherit (registryComponents.exes) singular;
           fourmolu = fourmoluTool;

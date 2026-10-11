@@ -66,10 +66,8 @@ module Singular.CLI.Session
     , harnessHoldAt
     ) where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception
-    ( ErrorCall (..)
-    , Exception (..)
+    ( Exception (..)
     , IOException
     , SomeAsyncException
     , SomeException (..)
@@ -106,8 +104,7 @@ import Data.Text qualified as T
 import Data.Typeable (cast)
 import Data.Word (Word32, Word64)
 import Lens.Micro ((^.))
-import System.Directory (createDirectoryIfMissing, doesFileExist)
-import System.Environment (lookupEnv)
+import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
 import System.IO (SeekMode (..))
 import System.Posix.IO
@@ -142,6 +139,12 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.CLI.Command
     ( ProviderSettings (..)
     , WriteSettings (..)
+    )
+import Singular.CLI.Harness
+    ( harnessHoldAt
+    , harnessSubmission
+    , holdAfterSubmit
+    , holdBeforeLock
     )
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -316,20 +319,8 @@ withWrite
     -> (WriteContext -> IO Value)
     -> IO Value
 withWrite env dir command ws body = do
-    harnessHold
+    holdBeforeLock
     withTargetLock dir (withSession env dir command ws body)
-
-{- | __Test harness only__ (#299 journey). When
-@SINGULAR_HARNESS_HOLD_BEFORE_LOCK@ names a path, write @PATH.waiting@ and
-wait until @PATH@ exists before taking the target's lock, so a journey
-can make another process act between a command's pre-lock checks and
-its lock. Unset in ordinary use, where it does nothing.
--}
-harnessHold :: IO ()
-harnessHold =
-    lookupEnv "SINGULAR_HARNESS_HOLD_BEFORE_LOCK" >>= \case
-        Nothing -> pure ()
-        Just path -> waitAt path
 
 {- | The node and wallet without the target's lock: for a command that
 writes nothing to its target (a create preview), so the target directory
@@ -493,42 +484,6 @@ withTargetLockOr dir action busy = do
                 Left (_ :: IOException) -> busy
                 Right () -> action
         )
-
-{- | __Test harness only__ (#299, #325). When the variable names a path —
-and, for a submission step, @SINGULAR_HARNESS_HOLD_STEP@ names that step —
-write @PATH.waiting@ and wait until @PATH@ exists, so a control can
-inspect or kill the process at exactly that boundary. The points are
-@SINGULAR_HARNESS_HOLD_AFTER_SEND@ (the send made, its answer not yet
-journalled), @SINGULAR_HARNESS_HOLD_AFTER_SUBMIT@ (the node's acceptance
-journalled), @SINGULAR_HARNESS_HOLD_BEFORE_COMMIT@ (the fold confirmed,
-before fresh public replay), and @SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED@
-(the public after-state read back, before journalling its observation). Unset in ordinary use, where it does
-nothing.
--}
-harnessHoldAt :: String -> Maybe Text -> IO ()
-harnessHoldAt var step = do
-    path <- lookupEnv var
-    wanted <- lookupEnv "SINGULAR_HARNESS_HOLD_STEP"
-    let here = maybe True (\s -> fmap T.pack wanted == Just s) step
-    case path of
-        Just p | here -> waitAt p
-        _ -> pure ()
-
-{- | __Test harness only__ (#325). Whether the variable names this step:
-@SINGULAR_HARNESS_DROP_SEND@ makes the send not happen,
-@SINGULAR_HARNESS_DROP_ANSWER@ discards the node's answer to a send that
-happened; either way the command meets no answer. Unset in ordinary use.
--}
-harnessDrops :: String -> Text -> IO Bool
-harnessDrops var step = (== Just (T.unpack step)) <$> lookupEnv var
-
-waitAt :: FilePath -> IO ()
-waitAt path = do
-    writeFile (path <> ".waiting") ""
-    let waitFor = do
-            there <- doesFileExist path
-            if there then pure () else threadDelay 100_000 >> waitFor
-    waitFor
 
 {- | How long a write waits for a confirmation when the caller names no
 @--confirm-timeout@: ten minutes. Past it the submission is journalled
@@ -799,13 +754,12 @@ journalledSubmit tracer wc step ex scope unsigned = do
             , journalRootBefore = hexT <$> exRootBefore ex
             , journalRootAfter = hexT <$> exRootAfter ex
             }
-    dropSend <- harnessDrops "SINGULAR_HARNESS_DROP_SEND" step
-    tip <- tipAtSubmission (wcSource wc) tracer caps
-    let (lower, upper) = validityOf signed
-    sentAnswer <-
-        if dropSend
-            then pure (Left (toException (ErrorCall "the send was not made")))
-            else
+    answer <-
+        harnessSubmission
+            step
+            (tipAtSubmission (wcSource wc) tracer caps)
+            ( \tip -> do
+                let (lower, upper) = validityOf signed
                 Wait.tryOutcome
                     ( timedTrace
                         txs
@@ -827,12 +781,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
                         )
                         (capSubmit caps sealed)
                     )
-    harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SEND" (Just step)
-    dropAnswer <- harnessDrops "SINGULAR_HARNESS_DROP_ANSWER" step
-    let answer
-            | dropAnswer =
-                Left (toException (ErrorCall "the node's answer was lost"))
-            | otherwise = sentAnswer
+            )
     case answer of
         Left (e :: SomeException) -> do
             journal "submit-unknown" (Just (T.pack (show e)))
@@ -862,7 +811,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
                 "submission refused on the configured network"
         Right (Cage.SubmitAccepted _) -> do
             journal "submitted" Nothing
-            harnessHoldAt "SINGULAR_HARNESS_HOLD_AFTER_SUBMIT" (Just step)
+            holdAfterSubmit step
     -- Confirmation belongs to this calling thread. capConfirm must be
     -- interruptible: its deadline and caller cancellation unwind the same
     -- action, including provider cleanup. An uninterruptible capability

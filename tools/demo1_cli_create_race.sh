@@ -47,6 +47,20 @@ setup_fail() {
 }
 say() { echo "create-race: $*"; }
 
+# This controller must hold one create while another runs. It owns the
+# release marker and joins the held child, including on a setup failure.
+# shellcheck disable=SC2329 # the EXIT trap invokes this
+release_late() {
+  local code=$?
+  trap - EXIT
+  if [ -n "${late:-}" ]; then
+    kill -9 "$late" 2>/dev/null || true
+    wait "$late" 2>/dev/null || true
+  fi
+  exit "$code"
+}
+trap release_late EXIT
+
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 # preview NAME SKEY [SEED]: an identity read that writes nothing; with a
 # seed it succeeds only while that seed is an unspent output of the wallet.
@@ -115,6 +129,7 @@ preview seed-first-spent "$first_key" "$seed_first" \
 touch "$work/go"
 status=0
 wait "$late" || status=$?
+late=""
 outcome="$(jq -r .outcome "$receipts/create-late.json" 2>/dev/null || echo none)"
 reason="$(jq -r .reason "$receipts/create-late.json" 2>/dev/null || echo none)"
 expected="$(managed_partition "$target" "$(jq -r .stateToken "$receipts/create-first.json")" "$(jq -r .walletKeyHash "$receipts/create-first.json")" "$network_magic") already holds your state or its journal; create never overwrites one"

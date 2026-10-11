@@ -14,7 +14,7 @@
 #    offchain flake, extracted OUTSIDE the checkout,
 #    and the commands run as separate processes against ONE node, a booking
 #    and its fold by another wallet among them, with the archive's own
-#    blueprint, beside its process controls.
+#    blueprint. Injected process controls run in the separate explicit test carrier.
 # 3. The run page, DEMO1.md, in that extraction must number exactly the
 #    fifteen commands, each in its position: create, insert, fold, inspect,
 #    update, inspect, terminate, fold, inspect, reject, insert, fold, reclaim,

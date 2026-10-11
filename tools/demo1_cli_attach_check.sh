@@ -10,14 +10,15 @@
 #
 # The normal release archive is assembled from REPO-ROOT by the `release-artifacts`
 # app CI runs and extracted OUTSIDE the checkout. The archive carries its own
-# source, so its `singular`, `open-datum`, the development node and the controls
-# runner are
+# source, so its explicitly enabled test `singular` and `open-datum` variants,
+# the development node and the controls runner are
 # built from the extraction — Nix reads a flake from a Git tree, so the build is
 # done in a scratch copy of the extracted tree that is given a Git index, and the
 # archive itself is not touched. The blueprint is the archive's, the bound
 # statements are the archive's statement ledger, and the take is the archive's own
 # tools/demo1_cli_attach.sh, which must be the one this checkout holds. The
-# verdict sections are printed. The scratch is removed on exit.
+# variant identities and verdict sections are printed; these controls are
+# evidence from the test build, separate from ordinary release-byte evidence. The scratch is removed on exit.
 # DEMO1_KEEP_SCRATCH=1 keeps it and prints its path.
 set -euo pipefail
 
@@ -99,7 +100,7 @@ git -C "$built" add -A
 git -C "$built" -c user.name=archive -c user.email=archive@invalid -c commit.gpgsign=false commit --quiet -m archive
 build() { nix build --quiet --no-link --print-out-paths "$@"; }
 cd "$built/offchain"
-singular="$(build .#singular)/bin/singular"
+singular="$(build .#singular-test-harness)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 controls="$(build ../conformance#cli-controls)/bin/cli-controls"
 # The raw devnet reads its genesis from E2E_GENESIS_DIR, falling back to a
@@ -109,8 +110,10 @@ controls="$(build ../conformance#cli-controls)/bin/cli-controls"
 export E2E_GENESIS_DIR="$built/offchain/e2e-test/genesis"
 # `open-datum` comes from the application's flake, as the journey wires it.
 cd "$built/applications/open-datum/offchain"
-open_datum="$(build .#open-datum)/bin/open-datum"
+open_datum="$(build .#open-datum-test-harness)/bin/open-datum"
 
+echo "explicit test-build executables: singular=$singular open-datum=$open_datum"
+sha256sum "$singular" "$open_datum"
 status=0
 bash "$extracted/tools/demo1_cli_attach.sh" "$singular" "$open_datum" "$devnet" "$controls" \
   "$extracted/onchain/plutus.json" "$extracted/applications/open-datum/ledgers.json" \

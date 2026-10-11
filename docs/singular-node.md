@@ -49,8 +49,9 @@ The URL, network magic and signing key travel together on a write: naming only s
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The
-settings are read from the command line only; the one exception is the
-[test-harness hooks](#test-harness-hooks), which operators never set.
+connection settings are read from the command line only.
+[Public environment configuration](#public-environment-configuration) supplies
+the optional registry-token fallback and phase-log path.
 
 ```sh
 open-datum insert --state-dir ./work --blueprint plutus.json \
@@ -415,51 +416,17 @@ private source control, not a promise that every remote service detects all
 missing history. Missing or inconsistent registry reconstruction remains a
 refusal and must not become an empty registry.
 
+## Public environment configuration
+
+As an operator, I can supply `SINGULAR_STATE_TOKEN` when I omit
+`--state-token`; an explicit command-line token takes precedence. The token
+names the registry, and never selects a provider. `SINGULAR_LOG=PATH` appends
+phase events to a file alongside the narration sinks selected by `--trace`,
+`--trace-to` and `--trace-format`. It does not replace those sinks or change
+their command-line precedence. An empty phase-log path disables that sink.
+
 <a id="test-harness-hooks"></a>
 
 ## Harness appendix: test hooks
 
-You never set these. The released `singular` reads eleven environment
-variables whose only purpose is to let the project's own tests stop a
-command at an exact point — to inspect it there, kill it there, or make it
-meet no answer from the provider — and check what it leaves behind. When none
-is set, which is how every operator runs it, they do nothing: no hold, no
-dropped send. The retained harness controls check the ordinary path with no variable set
-and the holds at the requested points. Their local, hosted and release results
-are separate evidence; an unexecuted control establishes nothing.
-
-A hold variable names a path. When the command reaches its point it writes
-`PATH.waiting` and waits until `PATH` exists.
-
-```mermaid
-flowchart TB
-    C[Hook reached] -->|variable unset| N[Continue]
-```
-
-A requested hold writes its waiting file and continues only after the release
-file exists. A requested drop models a missing provider answer at that step.
-
-```mermaid
-flowchart TB
-    C[Requested hold] -->|writes| W[PATH.waiting]
-    W -->|PATH exists| N[Continue]
-```
-
-```mermaid
-flowchart TB
-    C[Requested drop] -->|named step| D[No provider answer]
-```
-
-| Variable | Where the command stops or what it changes |
-| --- | --- |
-| `SINGULAR_HARNESS_HOLD_BEFORE_LOCK` | a write, after its checks and before it takes your state directory's lock |
-| `SINGULAR_HARNESS_HOLD_AFTER_SEND` | a submission sent, its answer not yet journalled |
-| `SINGULAR_HARNESS_HOLD_AFTER_SUBMIT` | the provider's acceptance of a submission journalled |
-| `SINGULAR_HARNESS_HOLD_STEP` | names the submission step (for example `boot`, `fold`, `update`) at which the two holds above stop; they stop at no other step, and at none when it is unset |
-| `SINGULAR_HARNESS_HOLD_BEFORE_COMMIT` | a fold's local commit about to start |
-| `SINGULAR_HARNESS_HOLD_AFTER_MIRROR` | a fold's mirror saved, the rest of its local commit not yet |
-| `SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED` | a fold committed locally, its observation not yet journalled |
-| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND` | a rollback journalled, the mirror not yet rebuilt |
-| `SINGULAR_HARNESS_HOLD_BEFORE_REWIND_STATE` | the mirror rebuilt by a rollback, the saved state not yet following |
-| `SINGULAR_HARNESS_DROP_SEND` | names a step whose send does not happen |
-| `SINGULAR_HARNESS_DROP_ANSWER` | names a step whose provider answer is discarded after the send |
+Released `singular` and `open-datum` binaries carry no fault-injection or hidden trie-diagnostic hooks.

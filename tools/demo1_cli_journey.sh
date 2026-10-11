@@ -2,9 +2,9 @@
 # Alice's open-datum story through the packaged `singular` and `open-datum`
 # commands (#299), through the sole Koios provider. The node/indexer
 # comparison is retired with the node backend (A023); every registry and
-# recovery control remains.
+# recovery control remains in the explicitly selected test-build carrier.
 #
-# usage: demo1_cli_journey.sh SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR
+# usage: demo1_cli_journey.sh SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR [ordinary|test-harness]
 #
 # SINGULAR, OPEN_DATUM and DEVNET are executables; BLUEPRINT is the registry
 # partition's plutus.json. ONE development node is started once, funding
@@ -36,8 +36,8 @@
 # The genesis-only wallet remains an explicit coverage refusal control.
 set -euo pipefail
 
-[ "$#" -eq 5 ] || {
-  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR" >&2
+[ "$#" -ge 5 ] && [ "$#" -le 6 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR [ordinary|test-harness]" >&2
   exit 2
 }
 singular="$1"
@@ -45,10 +45,25 @@ open_datum="$2"
 devnet="$3"
 blueprint="$4"
 work="$5"
+mode="${6:-ordinary}"
+case "$mode" in
+  ordinary | test-harness) ;;
+  *)
+    echo "journey: unknown build mode $mode" >&2
+    exit 2
+    ;;
+esac
 rm -rf "$work"
 mkdir -p "$work"
 receipts="$work/receipts"
 mkdir -p "$receipts"
+# These launcher identities accompany the receipts. The release verifier
+# separately binds the compiled ordinary bytes and actual component flags.
+jq -n --arg mode "$mode" --arg singular "$singular" --arg openDatum "$open_datum" \
+  --arg singularSha256 "$(sha256sum "$singular" | cut -d' ' -f1)" \
+  --arg openDatumSha256 "$(sha256sum "$open_datum" | cut -d' ' -f1)" \
+  '{mode:$mode, singular:$singular, openDatum:$openDatum,
+    singularSha256:$singularSha256, openDatumSha256:$openDatumSha256}' >"$work/build-identity.json"
 reg="$work/registry"
 # shellcheck source=tools/managed_state.sh
 # shellcheck disable=SC1091 # resolved from this script's own directory at runtime
@@ -74,6 +89,18 @@ release_work() {
   local code=$?
   local _wait
   trap - EXIT
+  # A controller may fail before reaching its marker: retain its diagnostics
+  # and stop/join only the process this journey still owns.
+  if [ -n "${victim:-}" ]; then
+    kill -9 "$victim" 2>/dev/null || true
+    wait "$victim" 2>/dev/null || true
+    victim=""
+  fi
+  if [ -n "${holder:-}" ]; then
+    kill -9 "$holder" 2>/dev/null || true
+    wait "$holder" 2>/dev/null || true
+    holder=""
+  fi
   [ -n "${bare_pid:-}" ] && kill "$bare_pid" 2>/dev/null || true
   [ -n "${devnet_pid:-}" ] && kill "$devnet_pid" 2>/dev/null || true
   if [ -n "${work:-}" ]; then
@@ -349,7 +376,7 @@ run() {
   local SINGULAR_LOG="$receipts/$name.phases.jsonl"
   export SINGULAR_LOG
   : >"$receipts/$name.trie.jsonl"
-  if [[ " $* " == *" --preview "* ]]; then
+  if [ "$mode" = ordinary ] || [[ " $* " == *" --preview "* ]]; then
     # Keep the release's existing all-harness-variables-unset preview controls.
     env -u SINGULAR_HARNESS_TRIE_TRACE "$bin" "$@" "${narrated[@]}" \
       >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
@@ -1288,6 +1315,7 @@ refused concurrent-writer concurrent-writer -- insert --key keyC \
   --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 kill "$(cat "$work/lock.pid")" 2>/dev/null || true
 wait "$holder" 2>/dev/null || true
+holder=""
 flock --fcntl --nonblock "$alice_lock" true || setup_fail "the lock holder did not release $alice_lock"
 # The combined form: --fold books and then folds in the one process, by the
 # routine `open-datum fold` runs, and prints both transactions.
@@ -1307,52 +1335,61 @@ run terminate-preview success -- terminate --preview --key "$key" \
   "${common[@]}" "${node[@]}" --wallet-address "$alice_addr"
 preview_ok terminate-preview booking
 [ "$(tree_hash)" = "$tree_before" ] || fail "a terminate preview changed the registry directory"
-# The process is held by the marked harness point right after the node's
-# acceptance of its fold is journalled, and killed there.
-rm -f "$work/fold.go" "$work/fold.go.waiting"
-SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/fold.go" SINGULAR_HARNESS_HOLD_STEP=fold \
-  "$open_datum" terminate --fold --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}" \
-  >"$receipts/terminate-killed.json" 2>&1 &
-victim=$!
-for _ in $(seq 1 1200); do
-  [ -e "$work/fold.go.waiting" ] && break
-  kill -0 "$victim" 2>/dev/null || break
-  sleep 0.1
-done
-[ -e "$work/fold.go.waiting" ] || setup_fail "the terminate never reached its accepted fold"
-kill -9 "$victim" 2>/dev/null || true
-wait "$victim" 2>/dev/null || true
-[ "$(tail -n 1 "$alice_journal" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
-  || fail "the killed process did not stop at its accepted fold"
-say "terminate killed after the node accepted its fold"
-fold_tx="$(tail -n 1 "$alice_journal" | jq -r .journalTxId)"
-# Recovery belongs to the owning wallet: only alice's public-address inspect
-# reconciles her journal, where the killed fold is journalled. Bob's later
-# write never touches her journal; it proceeds independently. While the fold
-# is not yet on chain the inspect is refused before reading anything new,
-# naming the fold and its case; it is then run again.
-first_recovery=""
-for _ in $(seq 1 60); do
-  status=0
-  "$open_datum" inspect --key "$key" "${common[@]}" "${node[@]}" \
-    --wallet-address "$alice_addr" \
-    >"$receipts/recover-alice-inspect.json" 2>"$receipts/recover-alice-inspect.err" || status=$?
-  got="$(jq -r .outcome "$receipts/recover-alice-inspect.json")"
-  [ -n "$first_recovery" ] || first_recovery="$got/$status"
-  [ "$got/$status" = success/0 ] && break
-  [ "$got/$status" = partial/15 ] || fail "recover-alice-inspect: outcome $got (exit $status)"
-  [ "$(field recover-alice-inspect .unresolved.tx)" = "$fold_tx" ] \
-    || fail "recover-alice-inspect: the refusal does not name the killed fold"
-  [ "$(field recover-alice-inspect .unresolved.case)" = acknowledged ] \
-    || fail "recover-alice-inspect: the refusal does not name the fold's case acknowledged"
-  sleep 2
-done
-[ "$(field recover-alice-inspect .outcome)" = success ] \
-  || fail "alice's inspect never recovered the killed fold"
-[ "$first_recovery" = success/0 ] \
-  || [ "$first_recovery" = partial/15 ] \
-  || fail "alice's first recovery attempt was neither partial nor success: $first_recovery"
-say "recover-alice-inspect: success, reconciling alice's killed fold in her own journal (first attempt $first_recovery)"
+# The recovery leg needs a node and a held writer at the same time: this
+# controller owns the writer, its release marker and its joined cleanup.
+if [ "$mode" = test-harness ]; then
+  # The process is held by the marked harness point right after the node's
+  # acceptance of its fold is journalled, and killed there.
+  rm -f "$work/fold.go" "$work/fold.go.waiting"
+  SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/fold.go" SINGULAR_HARNESS_HOLD_STEP=fold \
+    "$open_datum" terminate --fold --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}" \
+    >"$receipts/terminate-killed.json" 2>&1 &
+  victim=$!
+  for _ in $(seq 1 1200); do
+    [ -e "$work/fold.go.waiting" ] && break
+    kill -0 "$victim" 2>/dev/null || break
+    sleep 0.1
+  done
+  [ -e "$work/fold.go.waiting" ] || setup_fail "the terminate never reached its accepted fold"
+  kill -9 "$victim" 2>/dev/null || true
+  wait "$victim" 2>/dev/null || true
+  victim=""
+  [ "$(tail -n 1 "$alice_journal" | jq -r '.journalStep + "/" + .journalEvent')" = fold/submitted ] \
+    || fail "the killed process did not stop at its accepted fold"
+  say "terminate killed after the node accepted its fold"
+  fold_tx="$(tail -n 1 "$alice_journal" | jq -r .journalTxId)"
+  # Recovery belongs to the owning wallet: only alice's public-address inspect
+  # reconciles her journal, where the killed fold is journalled. Bob's later
+  # write never touches her journal; it proceeds independently. While the fold
+  # is not yet on chain the inspect is refused before reading anything new,
+  # naming the fold and its case; it is then run again.
+  first_recovery=""
+  for _ in $(seq 1 60); do
+    status=0
+    "$open_datum" inspect --key "$key" "${common[@]}" "${node[@]}" \
+      --wallet-address "$alice_addr" \
+      >"$receipts/recover-alice-inspect.json" 2>"$receipts/recover-alice-inspect.err" || status=$?
+    got="$(jq -r .outcome "$receipts/recover-alice-inspect.json")"
+    [ -n "$first_recovery" ] || first_recovery="$got/$status"
+    [ "$got/$status" = success/0 ] && break
+    [ "$got/$status" = partial/15 ] || fail "recover-alice-inspect: outcome $got (exit $status)"
+    [ "$(field recover-alice-inspect .unresolved.tx)" = "$fold_tx" ] \
+      || fail "recover-alice-inspect: the refusal does not name the killed fold"
+    [ "$(field recover-alice-inspect .unresolved.case)" = acknowledged ] \
+      || fail "recover-alice-inspect: the refusal does not name the fold's case acknowledged"
+    sleep 2
+  done
+  [ "$(field recover-alice-inspect .outcome)" = success ] \
+    || fail "alice's inspect never recovered the killed fold"
+  [ "$first_recovery" = success/0 ] \
+    || [ "$first_recovery" = partial/15 ] \
+    || fail "alice's first recovery attempt was neither partial nor success: $first_recovery"
+  say "recover-alice-inspect: success, reconciling alice's killed fold in her own journal (first attempt $first_recovery)"
+else
+  run terminate-ordinary success -- terminate --fold --key "$key" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  fold_tx="$(field terminate-ordinary .fold)"
+fi
 # Bob's subsequent write proceeds independently on chain state that includes
 # the fold. It must neither touch alice's journal nor claim her fold.
 alice_kept="$(journal_count "$alice_journal")"
@@ -1373,7 +1410,11 @@ jq -e '.applicationOutput.absent' "$receipts/inspect-3.json" >/dev/null || fail 
   || fail "the killed fold was not observed exactly once in its owning journal"
 [ "$(jq -s --arg t "$fold_tx" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$alice_journal")" = 1 ] \
   || fail "the killed fold was prepared more than once"
-say "alice's inspect recovered the killed fold from the chain once; inspect reads it terminal"
+if [ "$mode" = test-harness ]; then
+  say "alice's inspect recovered the killed fold from the chain once; inspect reads it terminal"
+else
+  say "alice's inspect reads the confirmed fold terminal"
+fi
 
 # ------------------------------------------------------------------
 # 6. terminate bob normally; a write works again
@@ -1415,74 +1456,81 @@ say "every write names its actual Unbound acquisition; inspect reports its separ
 # ------------------------------------------------------------------
 # 7. create races and interruptions, on their own targets
 # ------------------------------------------------------------------
-# Two creates race for one seed: the same wallet's second boot is held
-# after its pre-lock checks while the first completes; under the lock it
-# must re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
-race="${DEMO1_CREATE_RACE:-$(dirname "$0")/demo1_cli_create_race.sh}"
-status=0
-bash "$race" "$singular" "$open_datum" "$blueprint" "$provider_url" "$time_directory" "$network_magic" "$work/alice.skey" "$work/alice.skey" "$work/race" || status=$?
-case "$status" in
-  0) ;;
-  3) setup_fail "the create race never reached its target check" ;;
-  *) fail "the create race control does not hold (exit $status)" ;;
-esac
-say "create race: the late create was refused RegistryExists; the first registry stands"
+# A race and interrupted boot require a concurrently held test process.
+# The test carrier owns, releases/kills and joins it; release evidence runs
+# the connected ordinary create separately and makes no crash-window claim.
+if [ "$mode" = test-harness ]; then
+  # Two creates race for one seed: the same wallet's second boot is held
+  # after its pre-lock checks while the first completes; under the lock it
+  # must re-check the target and refuse RegistryExists (demo1_cli_create_race.sh).
+  race="${DEMO1_CREATE_RACE:-$(dirname "$0")/demo1_cli_create_race.sh}"
+  status=0
+  bash "$race" "$singular" "$open_datum" "$blueprint" "$provider_url" "$time_directory" "$network_magic" "$work/alice.skey" "$work/alice.skey" "$work/race" || status=$?
+  case "$status" in
+    0) ;;
+    3) setup_fail "the create race never reached its target check" ;;
+    *) fail "the create race control does not hold (exit $status)" ;;
+  esac
+  say "create race: the late create was refused RegistryExists; the first registry stands"
 
-# A create killed after its first accepted submission: a new create is
-# refused, and inspect reads the incomplete create from its journal.
-inter="$work/interrupted"
-run preview-inter success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$inter" \
-  --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
-seed_i="$(field preview-inter .seed)"
-rm -f "$work/create.go" "$work/create.go.waiting"
-SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
-  "$open_datum" create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" --blueprint "$blueprint" \
-  "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
-victim=$!
-for _ in $(seq 1 1200); do
-  [ -e "$work/create.go.waiting" ] && break
-  kill -0 "$victim" 2>/dev/null || break
-  sleep 0.1
-done
-[ -e "$work/create.go.waiting" ] || setup_fail "the create never reached an accepted submission"
-kill -9 "$victim" 2>/dev/null || true
-wait "$victim" 2>/dev/null || true
-inter_token="$(field preview-inter .stateToken)"
-inter_journal="$(managed_journal "$inter" "$inter_token" "$alicekey")"
-inter_pending="$(managed_pending "$inter" "$inter_token" "$alicekey")"
-[ -f "$inter_pending" ] || setup_fail "the killed create left no managed pending identity"
-first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter_journal")"
-first_tx="${first_tx%%$'\n'*}"
-inter_lines="$(journal_lines "$inter")"
-run create-after-kill client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
-  --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
-[ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
-for _ in $(seq 1 60); do
-  run inspect-interrupted partial -- inspect --key-hex 00 --state-dir "$inter" \
-    --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}" \
+  # A create killed after its first accepted submission: a new create is
+  # refused, and inspect reads the incomplete create from its journal.
+  inter="$work/interrupted"
+  run preview-inter success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$inter" \
+    --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  seed_i="$(field preview-inter .seed)"
+  rm -f "$work/create.go" "$work/create.go.waiting"
+  SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
+    "$open_datum" create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" --blueprint "$blueprint" \
+    "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
+  victim=$!
+  for _ in $(seq 1 1200); do
+    [ -e "$work/create.go.waiting" ] && break
+    kill -0 "$victim" 2>/dev/null || break
+    sleep 0.1
+  done
+  [ -e "$work/create.go.waiting" ] || setup_fail "the create never reached an accepted submission"
+  kill -9 "$victim" 2>/dev/null || true
+  wait "$victim" 2>/dev/null || true
+  victim=""
+  inter_token="$(field preview-inter .stateToken)"
+  inter_journal="$(managed_journal "$inter" "$inter_token" "$alicekey")"
+  inter_pending="$(managed_pending "$inter" "$inter_token" "$alicekey")"
+  [ -f "$inter_pending" ] || setup_fail "the killed create left no managed pending identity"
+  first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter_journal")"
+  first_tx="${first_tx%%$'\n'*}"
+  inter_lines="$(journal_lines "$inter")"
+  run create-after-kill client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
+    --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
+  [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
+  for _ in $(seq 1 60); do
+    run inspect-interrupted partial -- inspect --key-hex 00 --state-dir "$inter" \
+      --blueprint "$blueprint" --state-token "$inter_token" "${node[@]}" \
+      --wallet-address "$alice_addr"
+    jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
+    sleep 2
+  done
+  jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
+    || fail "inspect did not read the incomplete create's identity"
+  [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
+  jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
+    "$inter_journal" >/dev/null || fail "the killed create's accepted submission was never observed"
+  # Registries cannot leak into each other: under partitioned state an inspect
+  # under another token reads that registry alone and never sees the
+  # interrupted partition. The interrupted pending identity stays intact.
+  inter_kept="$(journal_count "$inter_journal")"
+  run inspect-interrupted-other-token success -- inspect --key-hex 00 --state-dir "$inter" \
+    --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
     --wallet-address "$alice_addr"
-  jq -e --arg t "$first_tx" '.observed | index($t)' "$receipts/inspect-interrupted.json" >/dev/null && break
-  sleep 2
-done
-jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
-  || fail "inspect did not read the incomplete create's identity"
-[ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
-jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
-  "$inter_journal" >/dev/null || fail "the killed create's accepted submission was never observed"
-# Registries cannot leak into each other: under partitioned state an inspect
-# under another token reads that registry alone and never sees the
-# interrupted partition. The interrupted pending identity stays intact.
-inter_kept="$(journal_count "$inter_journal")"
-run inspect-interrupted-other-token success -- inspect --key-hex 00 --state-dir "$inter" \
-  --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" \
-  --wallet-address "$alice_addr"
-[ "$(field inspect-interrupted-other-token .leaf)" = unknown ] \
-  || fail "another token's readback showed a leaf for an absent key"
-[ -f "$inter_pending" ] \
-  || fail "another token's read disturbed the interrupted pending identity"
-[ "$(journal_count "$inter_journal")" = "$inter_kept" ] \
-  || fail "another token's read moved the interrupted journal"
-say "an interrupted create is refused a second boot and read back from its journal"
+  [ "$(field inspect-interrupted-other-token .leaf)" = unknown ] \
+    || fail "another token's readback showed a leaf for an absent key"
+  [ -f "$inter_pending" ] \
+    || fail "another token's read disturbed the interrupted pending identity"
+  [ "$(journal_count "$inter_journal")" = "$inter_kept" ] \
+    || fail "another token's read moved the interrupted journal"
+  say "an interrupted create is refused a second boot and read back from its journal"
+
+fi
 
 # A request nobody folds: alice books one more insertion and leaves it. The
 # registry's fold takes every pending request, so this is the journey's last
@@ -1897,48 +1945,54 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
 # ------------------------------------------------------------------
-jq -n '{int: 42}' >"$work/payload-2.json"
-before="$(journal_lines "$reg")"
-update_before="$(journal_count "$alice_journal")"
-rm -f "$work/update.go" "$work/update.go.waiting"
-SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/update.go" SINGULAR_HARNESS_HOLD_STEP=update \
-  "$open_datum" update --key keyC --payload "$work/payload-2.json" --confirm-timeout 30 \
-  "${common[@]}" "${node[@]}" "${alice[@]}" >"$receipts/update-node-lost.json" 2>"$receipts/update-node-lost.err" &
-victim=$!
-for _ in $(seq 1 1200); do
-  [ -e "$work/update.go.waiting" ] && break
-  kill -0 "$victim" 2>/dev/null || break
-  sleep 0.1
-done
-[ -e "$work/update.go.waiting" ] || setup_fail "the update never reached an accepted submission"
-lost_tx="$(tail -n +"$((update_before + 1))" "$alice_journal" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
-lost_tx="${lost_tx%%$'\n'*}"
-kill "$devnet_pid" 2>/dev/null || true
-pkill -f "cardano-node run --config $work/" 2>/dev/null || true
-for _ in $(seq 1 100); do
-  [ -S "$sock" ] || break
-  pgrep -f "cardano-node run --config $work/" >/dev/null || break
-  sleep 0.1
-done
-released_at=$(date +%s)
-touch "$work/update.go"
-status=0
-wait "$victim" || status=$?
-waited=$(($(date +%s) - released_at))
-# The bound holds with the node gone: the command ends within its
-# --confirm-timeout (plus teardown), attributing the submitted update —
-# partial when the wait fails, timeout when it outlives the bound.
-[ "$waited" -le 90 ] || fail "node lost after submit: the command waited ${waited}s past a 30s bound"
-outcome="$(jq -r .outcome "$receipts/update-node-lost.json")"
-case "$outcome/$status" in
-  partial/15 | timeout/13) ;;
-  *) fail "node lost after submit: outcome $outcome (exit $status), expected partial or timeout" ;;
-esac
-jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.json" >/dev/null \
-  || fail "the partial receipt does not name the submitted transaction"
-[ "$(tail -n 1 "$alice_journal" | jq -r .journalEvent)" = unconfirmed ] \
-  || fail "the journal does not keep the submitted update unresolved"
-say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
+# A held update and a dying node are concurrent only for this recovery
+# assertion. The controller joins the update before leaving this block.
+if [ "$mode" = test-harness ]; then
+  jq -n '{int: 42}' >"$work/payload-2.json"
+  before="$(journal_lines "$reg")"
+  update_before="$(journal_count "$alice_journal")"
+  rm -f "$work/update.go" "$work/update.go.waiting"
+  SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/update.go" SINGULAR_HARNESS_HOLD_STEP=update \
+    "$open_datum" update --key keyC --payload "$work/payload-2.json" --confirm-timeout 30 \
+    "${common[@]}" "${node[@]}" "${alice[@]}" >"$receipts/update-node-lost.json" 2>"$receipts/update-node-lost.err" &
+  victim=$!
+  for _ in $(seq 1 1200); do
+    [ -e "$work/update.go.waiting" ] && break
+    kill -0 "$victim" 2>/dev/null || break
+    sleep 0.1
+  done
+  [ -e "$work/update.go.waiting" ] || setup_fail "the update never reached an accepted submission"
+  lost_tx="$(tail -n +"$((update_before + 1))" "$alice_journal" | jq -r 'select(.journalEvent == "submitted") | .journalTxId')"
+  lost_tx="${lost_tx%%$'\n'*}"
+  kill "$devnet_pid" 2>/dev/null || true
+  pkill -f "cardano-node run --config $work/" 2>/dev/null || true
+  for _ in $(seq 1 100); do
+    [ -S "$sock" ] || break
+    pgrep -f "cardano-node run --config $work/" >/dev/null || break
+    sleep 0.1
+  done
+  released_at=$(date +%s)
+  touch "$work/update.go"
+  status=0
+  wait "$victim" || status=$?
+  victim=""
+  waited=$(($(date +%s) - released_at))
+  # The bound holds with the node gone: the command ends within its
+  # --confirm-timeout (plus teardown), attributing the submitted update —
+  # partial when the wait fails, timeout when it outlives the bound.
+  [ "$waited" -le 90 ] || fail "node lost after submit: the command waited ${waited}s past a 30s bound"
+  outcome="$(jq -r .outcome "$receipts/update-node-lost.json")"
+  case "$outcome/$status" in
+    partial/15 | timeout/13) ;;
+    *) fail "node lost after submit: outcome $outcome (exit $status), expected partial or timeout" ;;
+  esac
+  jq -e --arg t "$lost_tx" '.reason | contains($t)' "$receipts/update-node-lost.json" >/dev/null \
+    || fail "the partial receipt does not name the submitted transaction"
+  [ "$(tail -n 1 "$alice_journal" | jq -r .journalEvent)" = unconfirmed ] \
+    || fail "the journal does not keep the submitted update unresolved"
+  say "node lost after an accepted submission: $outcome after ${waited}s, naming $lost_tx, journal unresolved"
+
+fi
 
 mapfile -t census_journals < <(managed_find "$reg" journal.jsonl)
 for census in "${census_journals[@]}"; do jq -r '.journalEvent' "$census"; done | sort | uniq -c
@@ -1954,8 +2008,10 @@ for j in "${journals[@]}"; do
 done
 [ "$written" -gt 0 ] || fail "no prepared line in ${#journals[@]} journals"
 say "$written prepared submissions in ${#journals[@]} journals each name their actual Unbound acquisition"
-trie_extent
-say "all eight stored-registry commands have nonempty capability evidence from actual executions"
+if [ "$mode" = test-harness ]; then
+  trie_extent
+  say "test build: all eight stored-registry commands have nonempty capability evidence from actual executions"
+fi
 # Every traced command's events agreed with its receipt (checked as it ran).
 # The extent: all eight commands succeeded under narration, with mechanics.
 while IFS= read -r name; do
@@ -2010,4 +2066,4 @@ for altered in 'select(.event != "refused")' 'if .event == "refused" then (., .)
     || fail "the trace agreement accepts a refusal stream altered by: $altered"
 done
 say "every narrated command's typed events agree with its receipt; altered streams do not"
-say "JOURNEY-OK (Koios path)"
+say "JOURNEY-OK (Koios path; $mode build evidence)"

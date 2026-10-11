@@ -39,21 +39,14 @@ fails ends the run with one line naming why.
 
 ```mermaid
 flowchart TD
-    D[Download the three assets] -->|all present| S[Sums: both archives, and every file inside the on-chain archive]
-    S -->|match| M[Model revision: the archive names the commit the conformance evidence reads]
-    M -->|same commit| E[Members: run page, off-chain flake, command source, compiled blueprint]
-    E -->|present| B[Build singular, open-datum and a development node from the archive's own flake]
-    B -->|built| J[create, insert, update, terminate, inspect as separate processes on one development network]
-    J -->|every receipt agrees| H[Harness hooks: none fired that no process asked for]
-    H -->|as asked| P[PASS]
-    D -.->|missing| R1[download-failed]
-    S -.->|differ| R2[sum-mismatch]
-    M -.->|absent| R3[model-revision-missing]
-    M -.->|another commit| R4[model-revision-mismatch]
-    E -.->|absent| R5[member-missing]
-    B -.->|fails| R6[command-failed]
-    J -.->|fails| R6
-    H -.->|a hold fired unasked| R7[harness-hook-fired]
+    D[Download assets] -->|present| S[Verify all checksums]
+    S -->|match| M[Bind model revision]
+    M -->|same revision| E[Check required members]
+    E -->|present| B[Build ordinary binaries]
+    B -->|built| H[Inspect stripped bytes and flags]
+    H -->|hooks excluded| J[Run ordinary registry journey]
+    J -->|receipts agree and inputs ordinary| P[PASS]
+    H -.->|hooks or wrong flags| R[harness-code-present]
 ```
 
 The model revision is the commit of the application model, the formal
@@ -65,13 +58,17 @@ created, a key inserted, its payload updated and the key terminated, each a
 separate `singular` or `open-datum` process on one development network the verifier starts
 and stops itself, with an `inspect` after every write.
 
-The last check is computed from that same run. The released `singular` has
-test-harness hooks, environment variables that stop a command at an exact
-point for the project's own tests (see
-[Connecting singular to a node](singular-node.md#test-harness-hooks)). The
-verifier records which variables every process was started with, and checks
-that each of the five commands ran with none set and that the hold points
-that fired are exactly the ones a process asked for.
+Before starting the journey, the verifier strips and inspects the actual
+compiled `singular` and `open-datum` executables and reads their resolved
+registry CLI build flags. Both must exclude hidden test inputs and disable
+the test flag. It then records every ordinary journey invocation: all five
+commands must run without hidden harness inputs, and no hold marker may
+appear.
+
+Fault injection, crash recovery, race controls and independent trie-capability
+observations run in the [explicit test build](building.md#ordinary-binaries-and-explicit-test-builds).
+Their unchanged assertions are separate required CI evidence. They do not
+claim to have run inside these extracted release binaries.
 
 ## What a refusal means
 
@@ -86,7 +83,7 @@ exit status is 1.
 | `model-revision-mismatch` | the archive states a different model commit from the one the conformance evidence names | the release's evidence does not describe the model it claims; do not rely on it |
 | `member-missing` | a file the verification needs is absent from the archive | the archive is incomplete; do not use it |
 | `command-failed` | building `singular` from the archive, or one of the commands of the journey, failed | the detail names the step; with `--work DIR` the receipts of every command are kept there |
-| `harness-hook-fired` | a test-harness hold point fired where no process asked for it, or a command ran with no process free of harness variables | the released command would stop or misbehave on its own; do not use it |
+| `harness-code-present` | a compiled executable contains hidden test inputs, its resolved flag does not disable them, or the ordinary journey receives a hidden input or leaves a hold marker | the artifact does not meet the ordinary release boundary; do not use it |
 
 A release that passes prints its tag, both archive checksums, the model
 revision and the directory it was verified in.

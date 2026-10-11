@@ -96,6 +96,7 @@ import Singular.CLI.Command
     , neededRoles
     )
 import Singular.CLI.FoldRules
+import Singular.CLI.Harness (holdBeforeCommit, holdBeforeObserved)
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay
@@ -644,7 +645,7 @@ foldPending app at FoldSpec{..} = do
             )
     let key = plKey plan
         edge = plEdge plan
-    harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_COMMIT" Nothing
+    holdBeforeCommit
     local <- readingBack at "fold" fold ["state"] $ \v -> do
         afterFold <- attachLive v s
         context <- openTrie s
@@ -720,7 +721,7 @@ foldPending app at FoldSpec{..} = do
             failWith
                 Partial
                 "the fold's plan carries neither a datum nor a holding"
-    harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
+    holdBeforeObserved
     journalObserved wc "fold" fold detail
     report
         (wcTracer wc)
