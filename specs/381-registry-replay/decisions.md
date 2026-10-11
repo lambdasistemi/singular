@@ -139,7 +139,7 @@ ticket builds on the payload-carrying type rather than rebasing across it.
 
 ## Sequencing and staffing
 
-As this ticket's owner, I implement only against published code, and the base is main `b55053a2aec490186e552cf6f5c339e2b503189d` (history: PR 525).
+As this ticket's owner, I implement only against published code, and the base is main `f9652eb7118a085ef7190fc8e39f62dddf374497` (history: PR 525).
 The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a
 Muse source writer and a GLM auditor, no other seat, one writer at a time. The
 [mandate](mandate.md) quotes the ruling. This ticket merges in the slot the desk grants, rebased onto main (history: it was to merge immediately after [issue #485](https://github.com/lambdasistemi/singular/issues/485), not rebased onto main before the slot). If the published contract does not fit

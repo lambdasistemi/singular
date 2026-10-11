@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As the desk ordering merges, I read here every file this ticket edits, creates or deletes, and the shared surfaces it crosses, so that I can order the merge without opening the diff. The ticket is issue 381, pull request 433, rebased on main b55053a2 under the merge slot (history: stacked on PR 525). It covers the four runs of the mandate. A slice that needs a file not on this list asks before editing it.",
+      "text": "As the desk ordering merges, I read here every file this ticket edits, creates or deletes, and the shared surfaces it crosses, so that I can order the merge without opening the diff. The ticket is issue 381, pull request 433, rebased on main f9652eb7 under the merge slot (history: stacked on PR 525). It covers the four runs of the mandate. A slice that needs a file not on this list asks before editing it.",
       "pause": 400
     }
   ],
@@ -47,6 +47,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "5dae07e83321410e8f2a283de38c7a2fceafd64fec3c1795bb65cba8e37ec335"
+    "sha256": "159c9e0f210888e60041444d83ac9ee2c88d716cf9745a1752c7d0f97251182b"
   }
 }

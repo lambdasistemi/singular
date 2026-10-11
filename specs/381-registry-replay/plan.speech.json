@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a maintainer, I want one trie-state backend that rebuilds a registry's trie from its full public history at every selection, so that commands get the chain's trie without any actor's local copy. Read the stories first, then the decisions. The pure replay and command migration are merged in PRs 391 and 411. The remaining branch was stacked on PR 525, the managed-state ticket (issue #485), at 026576268e916c964426d4a4be304d35544d9816; it is now rebased on main b55053a2aec490186e552cf6f5c339e2b503189d under the merge slot. The remaining deliverable is the actual independent-user journey. The mandate fixes its content, runs and gate, and the ordered task list tracks it; an empty-user harness alone does not complete it.",
+      "text": "As a maintainer, I want one trie-state backend that rebuilds a registry's trie from its full public history at every selection, so that commands get the chain's trie without any actor's local copy. Read the stories first, then the decisions. The pure replay and command migration are merged in PRs 391 and 411. The remaining branch was stacked on PR 525, the managed-state ticket (issue #485), at 026576268e916c964426d4a4be304d35544d9816; it is now rebased on main f9652eb7118a085ef7190fc8e39f62dddf374497 under the merge slot. The remaining deliverable is the actual independent-user journey. The mandate fixes its content, runs and gate, and the ordered task list tracks it; an empty-user harness alone does not complete it.",
       "pause": 400
     }
   ],
@@ -195,6 +195,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "1a5dcb6ce0d3f688d4508f3fe4943043ce808ea04d62397c1cfac4d60d94d724"
+    "sha256": "b11aa0e4235a1fd5f1967aa35eeaf7535b41e3bdfe29e808c0a2d934e11d5aaa"
   }
 }

@@ -7,7 +7,7 @@ then the [decisions](decisions.md). The pure replay and command migration are me
 The remaining branch was stacked on PR 525, the managed-state ticket
 ([issue #485](https://github.com/lambdasistemi/singular/issues/485)), at
 `026576268e916c964426d4a4be304d35544d9816`; it is now rebased on main
-`b55053a2aec490186e552cf6f5c339e2b503189d` under the merge slot. The remaining deliverable is the actual
+`f9652eb7118a085ef7190fc8e39f62dddf374497` under the merge slot. The remaining deliverable is the actual
 independent-user journey. The [mandate](mandate.md) fixes its content, runs and
 gate, and the ordered [task list](tasks.md) tracks it; an empty-user harness alone
 does not complete it.

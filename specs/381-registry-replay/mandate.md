@@ -13,17 +13,17 @@ and reads with the [spec](spec.md), the [plan](plan.md) and the [task list](task
 
 The branch was stacked on PR 525, the managed-state ticket
 [#485](https://github.com/lambdasistemi/singular/issues/485). It is now rebased
-on main `b55053a2aec490186e552cf6f5c339e2b503189d` under the desk's merge
+on main `f9652eb7118a085ef7190fc8e39f62dddf374497` under the desk's merge
 slot; the desk owns that slot and this ticket never edits other lanes.
 
 | Fact | Value |
 | --- | --- |
 | Repository, issue, pull request | lambdasistemi/singular, issue 381, draft PR 433 |
 | Worktree and branch | `/code/singular-381-registry-replay`, `feat/381-two-terminals` |
-| Stacked on PR 525, now rebased | `feat/485-managed-state` was at `026576268e916c964426d4a4be304d35544d9816`, itself on main `e48e3098`; the branch is now rebased on main `b55053a2aec490186e552cf6f5c339e2b503189d` under the merge slot (history: the stack above) |
+| Stacked on PR 525, now rebased | `feat/485-managed-state` was at `026576268e916c964426d4a4be304d35544d9816`, itself on main `e48e3098`; the branch is now rebased on main `f9652eb7118a085ef7190fc8e39f62dddf374497` under the merge slot (history: the stack above) |
 | Commits of this ticket on top | from the reconstruction plan through run six (rebase, open-datum move, booking refusal, proof, docs close); history below names the earlier states |
 | Previous tips, kept | `archive/e371-381-before-485-stack-20261009` at `046706c4` (before the stack); `archive/e371-381-before-message-rewrite-20261009` at `53a6600075f8d42d85ac360b313819555fcde6f9` (before the nine messages were completed); the remote head `2adc3101` as `archive/e371-381-before-refresh-20261008`; `archive/e371-381-before-rebase-c6748950-20261011` at `296e1715` (before the rebase onto main) |
-| Main (rebased base under the slot) | `b55053a2aec490186e552cf6f5c339e2b503189d`; this branch is rebased onto it (history: `76bb09936f79a97adb2d359a0c5eb8806d2af5aa`, onto which it was not rebased before the slot) |
+| Main (rebased base under the slot) | `f9652eb7118a085ef7190fc8e39f62dddf374497`; this branch is rebased onto it (history: `76bb09936f79a97adb2d359a0c5eb8806d2af5aa`, onto which it was not rebased before the slot) |
 | Lean | tree `d9161edd0274b67151f331949521f34bbf18612f`, the same tree on main and here (history: `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`) |
 | Constitution | version 1.14.0, sha256 `688f4c39493b7dc0b63418f817927d10476f566fec43c8bf1cd8f629c37c69b6` |
 | Scratch and temporary files | `/code/singular-e371-381-live` (`TMPDIR`, `RUNNER_TEMP` and `REGISTRY_JOURNEY_ROOT`) |

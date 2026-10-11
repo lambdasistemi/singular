@@ -146,19 +146,21 @@ product rows remain pending on #437. This changes no executed product claim.
 
 # Final-candidate record: the two-user journey on the rebased base
 
-Base `b55053a2aec490186e552cf6f5c339e2b503189d`. Tested source tree `61238afa592b8c4117c075d174688cf0441651a8` (the last commit that changes code; the two commits above it change only `specs/` and `docs/`). Lean tree `d9161edd0274b67151f331949521f34bbf18612f`, constitution 1.14.0. The journey's registry is created by `open-datum create`, whose application value supplies the policy pin; the booking verbs and the termination fold run on `open-datum`, everything else on `singular`. Each command below ran from the repository root with the stated exit; each retained log is named with its full sha256. The journey inputs (harness, status test, apps, workflow) are byte-identical to the proven `f26551da`.
+Base `f9652eb7118a085ef7190fc8e39f62dddf374497`. Tested source tree `5321d8879cfc455d61e8943e0d76ede19ca5795b` (the last commit that changes code on the new stack; the commits above it change only `specs/` and `docs/`). Lean tree `d9161edd0274b67151f331949521f34bbf18612f`, constitution 1.14.0. The journey's registry is created by `open-datum create`, whose application value supplies the policy pin; the booking verbs and the termination fold run on `open-datum`, everything else on `singular`. Each command below ran from the repository root with the stated exit; each retained log is named with its full sha256, verified against the file. The journey, control, status-suite and lint rows were produced on the previous base (`f26551da` tree) and bind here through byte-identical journey inputs (`git diff f26551da..HEAD -- tools flake.nix .github` empty); the suite, separation, replay-fault, formatter and docs rows below are current retained logs on this base.
 
 | Command | Exit | Retained log (sha256) |
 |---|---|---|
-| `nix run --quiet .#registry-two-actors` | 0 | `evidence/run6-journey.log` `39d323f9bbf567e399f2eb8bc56bc0f2aa32489aff1b8a4079e5c0b8a4f378a8` — twelve rows passed, two page rows pending on #503 |
-| `nix run --quiet .#registry-two-actors-control` | 0 | `evidence/run6-control.log` `e6824d1caea3cb642f43bed4fce0b6254fde917a02e5838edffcafcd31ad04b1` — status suite passed, stand-ins discriminate, positive leg without guard/setup/failure, foreign-open leg exit 2 with the single guard diagnostic |
-| `nix run --quiet .#registry-two-actors-replay-fault` | 0 | `evidence/run6-replay-fault.log` `1237da1be9b948ed21f58bc79357dce201648c9eb9c5ef8c44462712daaf52af` — control PASS |
-| `python3 tools/registry_two_actors_status.test.py tools/registry_two_actors.py` | 0 | `evidence/run6-green-status.json` `a71b0b63176c61207810d6cf69c349ac930273ceeb8994c2044ce11caedd1fb9` — all cases passed |
-| `nix develop --quiet -c just lint python` | 0 | `evidence/run6-python-lint.json` `0a79c1c71415107d3df0c70ace185eedc59715942f743823f45d435bd35a88c7` |
-| `nix develop --quiet -c just lint nix` | 0 | `evidence/run6-nix-lint.json` `ddc1b3796ea8a229e79048e7deed4d9676b90a1980d28b631b5c93ec9dce88b8` |
-| `(cd offchain && nix run --quiet .#cage-tests)` | 0 | `evidence/run6-cage-tests-head.log` `5356bd7d887be047dc9d55f1270c592c68938549becb29e547d0021d5074cd19` — 645 examples, 0 failures |
-| `(cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests)` | 0 | `evidence/run6-open-datum-tests.log` `173968ef009ddb0bac24ae79f35e9a321f952faa289f902bc1c2b1a97ca707bf` — 518 examples, 0 failures, independent-actors group passing |
-| `nix run --quiet .#application-separation-check` | 0 | `evidence/run6-separation-check-head.log` `e8c2c9faa989f8cb6dae52ca8b0ae223f405aa2d74625331ec4f8bf6fc4ed125` — clean |
+| `nix run --quiet .#registry-two-actors` | 0 | `evidence/run6-journey.log` `39d323f9bbf567e399f2eb8bc56bc0f2aa32489aff1b8a4079e5c0b8a4f378a8` — previous base: twelve rows passed, two page rows pending on #503 |
+| `nix run --quiet .#registry-two-actors-control` | 0 | `evidence/run6-control.log` `e6824d1caea3cb642f43bed4fce0b6254fde917a02e5838edffcafcd31ad04b1` — previous base: status suite passed, stand-ins discriminate, positive leg without guard/setup/failure, foreign-open leg exit 2 with the single guard diagnostic |
+| `nix run --quiet .#registry-two-actors-replay-fault` | 0 | `evidence/run6-replay-fault.log` `a0c60f949530fc5bac884dfc1549d91a49257ef66a039e60ca88b53b1602cc3a` — control PASS |
+| `python3 tools/registry_two_actors_status.test.py tools/registry_two_actors.py` | 0 | `evidence/run6-green-status.json` `a71b0b63176c61207810d6cf69c349ac930273ceeb8994c2044ce11caedd1fb9` — previous base: all cases passed |
+| `nix develop --quiet -c just lint python` | 0 | `evidence/run6-python-lint.json` `0a79c1c71415107d3df0c70ace185eedc59715942f743823f45d435bd35a88c7` — previous base |
+| `nix develop --quiet -c just lint nix` | 0 | `evidence/run6-nix-lint.json` `ddc1b3796ea8a229e79048e7deed4d9676b90a1980d28b631b5c93ec9dce88b8` — previous base |
+| `(cd offchain && nix run --quiet .#cage-tests)` | 0 | `evidence/run6-cage-tests-head.log` `99ed85abb147307a7c1bf6e5119351f84e2025d89957b0632124010bb55de22c` — 651 examples, 0 failures |
+| `(cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests)` | 0 | `evidence/run6-open-datum-tests-head.log` `2742a80480af8e8761f1a08497e7e07add6b2795df203965041f707a7aef1596` — 518 examples, 0 failures, independent-actors group passing |
+| `nix run --quiet .#application-separation-check` | 0 | `evidence/run6-separation-check-head.log` `f9ee12c30b4362af091b3c24f6a46263758cd0fdbf08ed00fc565bb54da1e195` — clean |
+| `bash tools/format_haskell.sh check` | 0 | `evidence/run6-format-check.log` `d809cfc965ef32ff736488c554447aac31016c7986c8639c5892b5e8383b0e1f` — whole tree |
+| `nix run --quiet .#docs-check` | 0 | `evidence/run6-docs-check.log` `8c5b49a05b39582fb5d84e96adef55f7959197c343fff2beb3cf3697479f293e` |
 
 Early-refusal table, zero moved: eleven refusal expectations reviewed against the booking decision (insert needs Unknown; update and terminate need Active); every successful booking already satisfies its verb's required leaf, and every expected refusal is about the retract window, ownership, the signing controller, the access guard, or the trie. The per-expectation table is recorded in the pull request body.
 

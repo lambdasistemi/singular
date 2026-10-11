@@ -101,7 +101,7 @@
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "2ef33536748ee09a48266bf39b19de2c1a090263f0af80e12fa47eaa2b385b72"
+    "sha256": "f8dc41751af40e67b9c6540a9a323abecf8322161f5eb1f12355e6ececa2e8e8"
   },
   "final-candidate-record-the-two-user-journey-on-the-rebased-base": [
     {
@@ -109,7 +109,7 @@
       "pause": 400
     },
     {
-      "text": "Base b55053a2. The tested source tree is the last commit that changes code; the two commits above it change only specs and docs. The journey's registry is created by open-datum create. The journey exits zero with twelve rows passed and two page rows pending; the foreign-open control passes with the single guard diagnostic; the replay-fault control passes; the status suite, both lints, the registry suite at 645 examples, the application suite at 518 examples and the separation check all pass. No refusal expectation moved: every booking satisfies its verb's required leaf. Limits: the two page rows stay pending; process-query exits, thread-start and allocation failures are exercised by injection only; hosted jobs run after the push and are read from the pull request.",
+      "text": "Base f9652eb7. The tested source tree is the last commit that changes code on the new stack; the commits above it change only specs and docs. The journey's registry is created by open-datum create. The journey exits zero with twelve rows passed and two page rows pending; the foreign-open control passes with the single guard diagnostic; the replay-fault control passes; the status suite, both lints, the registry suite at 651 examples, the application suite at 518 examples, the separation check, the formatter and the docs check all pass. No refusal expectation moved: every booking satisfies its verb's required leaf. Limits: the two page rows stay pending; process-query exits, thread-start and allocation failures are exercised by injection only; hosted jobs run after the push and are read from the pull request.",
       "pause": 400
     }
   ]
