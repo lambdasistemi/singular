@@ -100,6 +100,7 @@ import Control.Exception
     )
 import Control.Monad (forM, forM_, replicateM, unless, void, when)
 import Control.Monad.Operational qualified as Operational
+import Control.Monad.Trans.State.Strict (evalState)
 import Data.Aeson
     ( Value (..)
     , eitherDecodeFileStrict
@@ -196,6 +197,7 @@ import Cardano.Node.Client.E2E.Setup (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Ledger (ConwayTx)
 
+import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import PlutusTx (fromBuiltinData)
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
@@ -219,7 +221,7 @@ import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
-import Singular.Registry.Trie.Pure (mkPureTrie)
+import Singular.Registry.Trie.Pure (stateTrie)
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
@@ -2470,17 +2472,17 @@ classifyLeaves membership observedRoot = do
             replicateM
                 (length present)
                 [leafAbsent, leafActive, leafTerminal]
-    candidates <-
-        mapM
-            ( \values -> do
-                trie <- mkPureTrie
-                mapM_
-                    (uncurry (CageTrie.insert trie))
-                    (zip present values)
-                root <- CageTrie.getRoot trie
-                pure (zip present values, unRoot root)
-            )
-            assignments
+        candidates =
+            map
+                ( \values -> flip evalState emptyMPFInMemoryDB $ do
+                    let trie = stateTrie
+                    mapM_
+                        (uncurry (CageTrie.insert trie))
+                        (zip present values)
+                    root <- CageTrie.getRoot trie
+                    pure (zip present values, unRoot root)
+                )
+                assignments
     case [leaves | (leaves, root) <- candidates, root == observedRoot] of
         [leaves] -> pure leaves
         matches ->

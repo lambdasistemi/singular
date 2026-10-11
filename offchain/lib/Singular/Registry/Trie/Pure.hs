@@ -1,11 +1,17 @@
 {- |
 Module      : Singular.Registry.Trie.Pure
-Description : Pure in-memory Trie backed by mts:mpf
+Description : Pure MPF computations and a mutable compatibility adapter
 License     : Apache-2.0
 
-In-memory implementation of the 'Trie' interface
-backed by an 'IORef' holding an 'MPFInMemoryDB'
-from the @mts:mpf@ library.
+Snapshots compute with 'rootFromDb', 'stateTrie', 'membershipFromDb' and
+'exclusionFromDb', without IO allocation. The legacy 'mkPureTrie' and
+'mkPureTrieFromRef' names refer to the in-memory backend: their 'Trie IO'
+handles are mutable compatibility adapters, not pure computations.
+
+The caller owns each adapter for one serial builder, replay or mirror
+lifetime. A shared 'IORef' requires external serialization of the whole
+session, including reads and writes; these adapters provide no locking or
+thread-safety guarantee. Speculation belongs to the manager, not this handle.
 
 All keys and values are hashed through MPF
 conventions ('mkMPFHash') so proof paths match
@@ -16,7 +22,7 @@ module Singular.Registry.Trie.Pure
       mkPureTrie
     , mkPureTrieFromRef
 
-      -- * Internals (for TrieManager)
+      -- * Pure snapshot computations
     , getRootFromDb
     , rootFromDb
     , stateTrie
@@ -236,7 +242,8 @@ mkPureTrie = do
     pure (mkPureTrieFromRef ref)
 
 {- | Build a 'Trie IO' from an existing 'IORef'.
-Allows sharing the database with a 'TrieManager'.
+The caller owns the reference and must serialize every session sharing it.
+Allows sharing the database with a 'TrieManager'; this adds no synchronization.
 -}
 mkPureTrieFromRef :: IORef MPFInMemoryDB -> Trie IO
 mkPureTrieFromRef ref =

@@ -39,18 +39,19 @@ module Conformance.ForkKeys
     ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
+import Control.Monad.Trans.State.Strict (evalState)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
+import Data.IORef (readIORef)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Word (Word8)
 import System.IO (BufferMode (..), hSetBuffering, stdout)
 
+import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import MPF.Hashes (mkMPFHash, renderMPFHash)
 import MPF.Interface (HexDigit (..), byteStringToHexKey)
-
-import Cardano.Ledger.Mary.Value (AssetName (..))
 
 import Conformance.Mirror
     ( mirrorExclusionSteps
@@ -58,11 +59,9 @@ import Conformance.Mirror
     , mirrorInsert
     , newMirror
     )
-import Singular.Registry.Ledger (Root (..), TokenId (..))
-import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.Trie qualified as CageTrie
-import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
-import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.Trie.Pure (rootFromDb, stateTrie)
 import Singular.Registry.Types (Neighbor (..), ProofStep (..))
 
 {- | Hash pipeline nibbles for a candidate key: the exact mapping the
@@ -166,15 +165,15 @@ findForkKeys = do
             "cs07-fork-C"
             5000
             (\nc -> eqPrefix 1 nc na && diffAt 1 nc na)
-    stepsC <- proofConstrsFor keyA keyB keyD keyE keyF keyG keyC
+    let stepsC = proofConstrsFor keyA keyB keyD keyE keyF keyG keyC
     require
         ("C proof lacks Fork: " <> show stepsC)
         ("Fork" `elem` stepsC)
-    stepsB <- proofConstrsOn keyA keyB
+    let stepsB = proofConstrsOn keyA keyB
     require
         ("B proof lacks Leaf: " <> show stepsB)
         ("Leaf" `elem` stepsB)
-    stepsA <- updateProofConstrsOn keyA keyB keyD keyE keyF keyG
+    let stepsA = updateProofConstrsOn keyA keyB keyD keyE keyF keyG
     require
         ("A update proof lacks Branch: " <> show stepsA)
         ("Branch" `elem` stepsA)
@@ -192,12 +191,10 @@ proofConstrsFor
     -> ByteString
     -> ByteString
     -> ByteString
-    -> IO [String]
-proofConstrsFor keyA keyB keyD keyE keyF keyG keyC = do
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    withSpeculativeTrie tm tid $ \trie -> do
+    -> [String]
+proofConstrsFor keyA keyB keyD keyE keyF keyG keyC =
+    flip evalState emptyMPFInMemoryDB $ do
+        let trie = stateTrie
         _ <- CageTrie.insert trie keyA "va"
         _ <- CageTrie.insert trie keyB "vb"
         _ <- CageTrie.insert trie keyD "vd"
@@ -213,12 +210,10 @@ proofConstrsFor keyA keyB keyD keyE keyF keyG keyC = do
 {- | @B@\'s inclusion proof over @{A,B}@ (mirrors devnet fold 2, which
 proves after inserting, exactly like the builder\'s validProofs).
 -}
-proofConstrsOn :: ByteString -> ByteString -> IO [String]
-proofConstrsOn keyA keyB = do
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    withSpeculativeTrie tm tid $ \trie -> do
+proofConstrsOn :: ByteString -> ByteString -> [String]
+proofConstrsOn keyA keyB =
+    flip evalState emptyMPFInMemoryDB $ do
+        let trie = stateTrie
         _ <- CageTrie.insert trie keyA "va"
         _ <- CageTrie.insert trie keyB "vb"
         mSteps <- CageTrie.getProofSteps trie keyB
@@ -236,12 +231,10 @@ updateProofConstrsOn
     -> ByteString
     -> ByteString
     -> ByteString
-    -> IO [String]
-updateProofConstrsOn keyA keyB keyD keyE keyF keyG = do
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    withSpeculativeTrie tm tid $ \trie -> do
+    -> [String]
+updateProofConstrsOn keyA keyB keyD keyE keyF keyG =
+    flip evalState emptyMPFInMemoryDB $ do
+        let trie = stateTrie
         _ <- CageTrie.insert trie keyA "va"
         _ <- CageTrie.insert trie keyB "vb"
         _ <- CageTrie.insert trie keyD "vd"
@@ -278,17 +271,15 @@ skip, neighbor nibble, neighbor prefix, neighbor root.
 -}
 runShowDProof :: IO ()
 runShowDProof = do
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    strs <- withSpeculativeTrie tm tid $ \trie -> do
-        _ <- CageTrie.insert trie "cs07-fork-A" "va"
-        _ <- CageTrie.insert trie "cs07-fork-B1294" "vb"
-        _ <- CageTrie.insert trie "cs07-fork-D127" "vd"
-        mSteps <- CageTrie.getProofSteps trie "cs07-fork-D127"
-        pure $ case mSteps of
-            Nothing -> ["none"]
-            Just steps -> map showStep steps
+    let strs = flip evalState emptyMPFInMemoryDB $ do
+            let trie = stateTrie
+            _ <- CageTrie.insert trie "cs07-fork-A" "va"
+            _ <- CageTrie.insert trie "cs07-fork-B1294" "vb"
+            _ <- CageTrie.insert trie "cs07-fork-D127" "vd"
+            mSteps <- CageTrie.getProofSteps trie "cs07-fork-D127"
+            pure $ case mSteps of
+                Nothing -> ["none"]
+                Just steps -> map showStep steps
     mapM_ (emit "d-step") strs
   where
     showStep (Branch sk nb) = "Branch skip=" <> show sk <> " neighbors=" <> show (BS.length nb)
@@ -320,19 +311,17 @@ runShowAllProofs = do
             , ("g", keyG, "vg")
             , ("c", keyC, "vc")
             ]
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    strs <- withSpeculativeTrie tm tid $ \trie -> do
-        mapM_ (\(_, k, v) -> CageTrie.insert trie k v) keys
-        mapM
-            ( \(tag, k, _) -> do
-                mSteps <- CageTrie.getProofSteps trie k
-                pure $ case mSteps of
-                    Nothing -> tag <> ": none"
-                    Just steps -> tag <> ": " <> show (map constrName steps)
-            )
-            keys
+    let strs = flip evalState emptyMPFInMemoryDB $ do
+            let trie = stateTrie
+            mapM_ (\(_, k, v) -> CageTrie.insert trie k v) keys
+            mapM
+                ( \(tag, k, _) -> do
+                    mSteps <- CageTrie.getProofSteps trie k
+                    pure $ case mSteps of
+                        Nothing -> tag <> ": none"
+                        Just steps -> tag <> ": " <> show (map constrName steps)
+                )
+                keys
     mapM_ (emit "present-proof") strs
 
 {- | Offline verdict on the refused shape: cage/mirror backend root agreement
@@ -344,12 +333,10 @@ cannot verify the shape its sibling API generates.
 @kvs@ (inserted in order). Present targets mirror update folds;
 targets inserted last mirror insert folds. No node.
 -}
-shapeOf :: [(ByteString, ByteString)] -> ByteString -> IO [String]
-shapeOf kvs target = do
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "t81-probe-token")
-    createTrie tm tid
-    withSpeculativeTrie tm tid $ \trie -> do
+shapeOf :: [(ByteString, ByteString)] -> ByteString -> [String]
+shapeOf kvs target =
+    flip evalState emptyMPFInMemoryDB $ do
+        let trie = stateTrie
         mapM_ (uncurry (CageTrie.insert trie)) kvs
         mSteps <- CageTrie.getProofSteps trie target
         pure $ case mSteps of
@@ -376,17 +363,17 @@ findPresentForkKeys = do
             "t81-q"
             50000
             (\nq -> eqPrefix 2 nq np1 && diffAt 2 nq np1)
-    stepsP <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp")] keyP
+    let stepsP = shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp")] keyP
     require
         ("P proof unexpected: " <> show stepsP)
         ("Leaf" `elem` stepsP && "Fork" `notElem` stepsP)
-    stepsQ <-
-        shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyQ
+    let stepsQ =
+            shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyQ
     require
         ("Q proof unexpected: " <> show stepsQ)
         ("Fork" `notElem` stepsQ)
-    stepsK <-
-        shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyK
+    let stepsK =
+            shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyK
     require
         ("K1 proof lacks Fork: " <> show stepsK)
         ("Fork" `elem` stepsK)
@@ -407,15 +394,13 @@ runCheckForkExclusion = do
     mirror <- newMirror
     mirrorInsert mirror "cs07-fork-A" "va"
     mirrorInsert mirror "cs07-fork-B1294" "vb"
-    mirrorRoot <- unRoot <$> CageTrie.getRoot (mkPureTrieFromRef mirror)
-    tm <- mkPureTrieManager
-    let tid = TokenId (AssetName "cs07-fork-token")
-    createTrie tm tid
-    cageRoot <-
-        withSpeculativeTrie tm tid $ \trie -> do
-            _ <- CageTrie.insert trie "cs07-fork-A" "va"
-            _ <- CageTrie.insert trie "cs07-fork-B1294" "vb"
-            unRoot <$> CageTrie.getRoot trie
+    mirrorRoot <- unRoot . rootFromDb <$> readIORef mirror
+    let cageRoot =
+            flip evalState emptyMPFInMemoryDB $ do
+                let trie = stateTrie
+                _ <- CageTrie.insert trie "cs07-fork-A" "va"
+                _ <- CageTrie.insert trie "cs07-fork-B1294" "vb"
+                unRoot <$> CageTrie.getRoot trie
     emit "mirror-root" (hexBytes mirrorRoot)
     emit "cage-root" (hexBytes cageRoot)
     require

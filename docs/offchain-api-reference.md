@@ -132,6 +132,84 @@ are described module by module in the
 the registry wire's five owners behind the `Types` facade in
 [Who owns the registry wire](offchain-wire-types.md).
 
+## Snapshot computations and mutable compatibility
+
+As a library consumer, you can compute a root, membership or exclusion proof,
+or an authenticated leaf from an MPF database value without allocating a
+mutable manager. The computation uses the existing MPF core and never treats
+the uncommitted key index as evidence for a leaf. A foreign observed root
+refuses authentication; inconsistent nodes prove no leaf. Malformed node
+decoding can still raise an exception, so the caller owns its evaluation and
+exception boundary.
+
+| Interface | Computation and failure contract |
+| --- | --- |
+| `Singular.Registry.Trie.Pure.rootFromDb` | Pure snapshot root, including the existing all-zero empty-tree root. |
+| `stateTrie` | Existing insertion, deletion and ordered proof steps in `State MPFInMemoryDB`. |
+| `membershipFromDb`, `exclusionFromDb` | Pure proofs from authenticated nodes; `Nothing` when no proof can be produced. |
+| `provesMember`, `provesAbsent`, `verifyExclusion` | Pure verification against the caller's trusted root. |
+| `Singular.CLI.Proof.rootOfDbPure`, `authenticatedLeafPure` | Pure root bytes and `Either AuthError Leaf`; explicit root mismatch or inconsistent-proof refusal. These receive a concrete snapshot, so there is no missing or hidden registry lookup. |
+| `rootOfDb`, `authenticatedLeaf` | Retained IO compatibility exports, with no manager allocation. The root wrapper forces the snapshot constructor inside IO while leaving the computed root lazy. The leaf wrapper still compares roots during the IO action; decode failures remain inside a caller's handler at that stage. Neither catches exceptions or forces the later leaf result. |
+| `Conformance.Cli.Proof.provenLeaf` | Independent observed-leaf computation using the same MPF primitives, with its own `try`/`evaluate` boundary: synchronous decode damage refuses an answer and asynchronous exceptions propagate. It does not call the builder's expected-leaf function. |
+
+The legacy names `mkPureTrie`, `mkPureTrieFromRef`, `mkPureTrieManager` and
+`mkPureTrieManagerFrom` identify the in-memory backend. Their IO adapters
+remain **mutable**. A caller owns the adapter and any dump action for the
+entire serial builder, replay or mirror lifetime. There is no locking or
+thread-safety guarantee. Sharing requires external serialization of complete
+sessions, including reads, writes, speculative snapshots, visibility changes and
+dumps. A dump includes hidden tries and is not an atomic concurrent snapshot.
+Missing and hidden manager lookups retain their existing exceptions,
+`Trie not found: ` and `Trie is hidden: ` followed by the shown token.
+Speculative sessions execute the existing pure `stateTrie` over a snapshot and
+discard the resulting database, without allocating a mutable copy. Action and
+mutation failures still occur during the IO callback; the returned value stays
+lazy, as it did with the mutable callback.
+
+Ordinary registry and open-datum commands already authenticate through
+`TrieState`; the direct executable callers of the older `CLI.Proof` snapshot
+functions are the preservation tests. Removing their allocation alone is
+therefore a library computation improvement, not a claim that command
+session ownership changed.
+
+### Appendix: discovered adapter consumers
+
+This source inventory explains ownership, not ledger coverage. Each retained
+owner below uses serial access for the stated lifetime. Test producers stay
+independent of the pure computation being compared. No public interface or
+retained journey is removed.
+
+| Source module or executable | Disposition, owner and lifetime |
+| --- | --- |
+| `Singular.CLI.Proof` | Snapshot computation migrated to the pure API; old IO exports remain allocation-free wrappers. |
+| `Conformance.Cli.Proof` | Snapshot observation migrated; the caller owns evaluation and cancellation. |
+| `Conformance.ForkKeys` | Offline proof-shape computations migrated to local `State`; its separate evolving mirror is owned by `runCheckForkExclusion` for that call. |
+| `Conformance.Run.Live.classifyLeaves` | Disposable assignment-root computations migrated to local `State`; the observation still selects against the chain-read root. |
+| `Singular.Registry.Trie.Pure` | Retains public mutable single-trie adapters for caller-owned evolving databases; pure snapshot operations allocate none. |
+| `Singular.Registry.Trie.PureManager` | Retains public mutable per-registry adapter and dump action for the owning serial run; speculative computation uses local `State` over its snapshot without a mutable copy. |
+| `Conformance.Cli.FoldHistory` | `publicFoldTrie`/`materializeFoldTrie` owns reconstruction; the returned mutable manager belongs to the one adversarial fold-builder call. Authenticated leaves and root agreement precede building. |
+| `Conformance.Mirror` | The conformance environment owns an evolving chain-operation mirror for its run; each insertion updates that mirror. |
+| `Conformance.Run` | The environment callback owns a manager for the run's boot/fold actions, separately from its proof mirror. |
+| `Conformance.Run.CsRows` | Each constructor-witness runner owns its boot/fold manager for that one row execution. |
+| `Conformance.Run.ForkProbe` | The probe session owns its manager for the connected boot/fold sequence. |
+| `InsertActive.Steps` | The bounded tool session owns its boot/fold manager until the tool run ends. |
+| `UpdateTerminal.Registry` | `openSession` transfers its evolving manager to the one retirement session; that session owns it until the run ends. |
+| `Journey.Proofs` | The journey owns the shared mirror reference; `stepVerifyPresent` advances it before verifying against chain readback. |
+| `Journey.Scenario` | The `withRunner` callback owns the evolving registry manager for the whole bounded journey. |
+| `journey/register/Main` | The runner owns its loaded mirror manager and independent fresh-control manager; the second-registry control owns its separate manager for that control. Dumped values persist between runs, not IO handles. |
+| `journey/recovery/Main` | The runner owns the loaded mirror manager for the recovery journey and dumps values for the next run. |
+| `journey/retirement/Main` | The runner owns the loaded mirror manager for the retirement journey and dumps values for the next run. |
+| `journey/repair/Main` | The runner owns separate evolving and fresh-control managers for the repair run. |
+| `E2E.CageSpec` | `withE2ETimed` owns its builder manager for one devnet fixture. |
+| `E2E.Fork81Spec` | One test owns an independent evolving proof fixture until its chain-root comparison ends. |
+| `E2E.ReplaySpec` | One replay test owns its evolving reference; exclusion controls own a disposable copied reference for their speculative proof. |
+| `Registry.TrieStateSpec` | Each example owns the unchanged IO producer and speculative manager; the frozen old leaf wrapper owns its short-lived reference only as a compatibility oracle. Computation assertions use the pure API. |
+| `Conformance.Support.CliProof` | `savedTrie` owns the independent evolving producer until it yields database/root values for observation tests. |
+| `Conformance.Support.FoldHistory` | Each example owns independent producer and reconstructed builder managers until their root/proof comparisons end. |
+| `Conformance.Support.RunReplay` | Each example owns a builder-control manager; speculative callbacks discard their changes. |
+| `OpenDatum.BurnSourceSpec` | Each fold-builder example owns its evolving fixture manager for the tested builder invocation. |
+| `OpenDatum.CLISpec` | `walked` owns the independent lifecycle producer until it returns the saved snapshot and root. |
+
 ## How the reference stays honest
 
 The reference cannot drift from the code it claims to document. The site
