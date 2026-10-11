@@ -147,7 +147,7 @@ main = do
             Nothing
         )
         (\previous -> void (installHandler sigTERM previous Nothing))
-        (\_ -> dispatch)
+        (const dispatch)
 
 dispatch :: IO ()
 dispatch = do
