@@ -450,15 +450,25 @@ if part over-allowance; then
   stop_indexer
   [ "$status" -ne 0 ] || fail_control "a take over its collateral allowance did not stop"
   [ -s "$work/stopped/stopped.txt" ] || fail_control "the stopped take recorded no reason"
-  grep -qF "fold-unevaluated ended client-error" "$work/stopped/stopped.txt" \
-    || fail_control "the take stopped, but not at the refusal over its allowance: $(cat "$work/stopped/stopped.txt")"
+  grep -qF "craft update-by-stranger ended client-error" "$work/stopped/stopped.txt" \
+    || fail_control "the take stopped, but not at the crafted refusal: $(cat "$work/stopped/stopped.txt")"
+  grep -qF "the transaction states a total collateral of" "$work/stopped/stopped.txt" \
+    || fail_control "the stop does not state the collateral: $(cat "$work/stopped/stopped.txt")"
   grep -qF "over the bound of 1" "$work/stopped/stopped.txt" \
     || fail_control "the stop does not say the collateral was over the bound"
   last="$(last_receipt stopped)"
-  [ "$(jq -r .action "$last")" = fold-unevaluated ] \
+  [ "$(jq -r .action "$last")" = "craft update-by-stranger" ] \
     || fail_control "the take went on past its stop: its last receipt is $(jq -r .action "$last")"
+  [ "$(jq -r .outcome "$last")" = client-error ] \
+    || fail_control "the stopping craft was judged, not refused by the client: $(jq -r .outcome "$last")"
+  [ "$(jq -c .submissions "$last")" = "[]" ] \
+    || fail_control "the stopping craft submitted something: $(jq -c .submissions "$last")"
+  [ "$(jq -r .bodyFile "$last")" = null ] \
+    || fail_control "the stopping craft kept a signed body: $(jq -r .bodyFile "$last")"
   [ "$(jq -r .txId "$last")" = null ] || fail_control "something was signed for the refusal over the allowance"
-  [ "$(actions_of stopped | grep -cE '^(reclaim|craft |run terminate|read-indexer)' || true)" -eq 0 ] \
+  [ "$(actions_of stopped | grep -c '^craft ' || true)" -eq 1 ] \
+    || fail_control "the stopped take ran no crafted refusal or more than one"
+  [ "$(actions_of stopped | grep -cE '^(reclaim|run terminate|read-indexer)' || true)" -eq 0 ] \
     || fail_control "an action ran after the take had to stop"
   say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
 
