@@ -1,0 +1,204 @@
+{
+  "what-singular-negative-shows": [
+    {
+      "text": "What singular-negative shows.",
+      "pause": 500
+    },
+    {
+      "text": "You are evaluating Singular, and this repository is all you have. It claims rules: only a key's controller may update that key, a key the registry already holds cannot be taken again, a holding is released only inside a fold. This page shows where those rules are enforced — on the chain, by scripts — and how you can watch each refusal happen from the release archive, with no trust in the client that ships with the repository.",
+      "pause": 400
+    }
+  ],
+  "who-this-is-for": [
+    {
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "You are a person deciding whether to build on Singular. The ordinary client is polite to its user: several of the registry's rules it enforces itself, before your transaction ever leaves the machine. A refusal from the client proves nothing about the chain, so politeness is exactly what an evaluator must be able to switch off.",
+      "pause": 400
+    },
+    {
+      "text": "singular-negative is that switch. It is its own executable in the release archive, built from the same command-line and registry sources as the ordinary executables, with the safeguards taken out: it builds the transaction you asked for, signs with whatever key file you name, skips every local check and every local script evaluation, and submits. The node takes the transaction or refuses it, and when it refuses, the verdict names the script that refused.",
+      "pause": 400
+    },
+    {
+      "text": "Two people make it concrete. Alice has registered the key alice-1 and is its controller; Bob is anyone else. Bob types the same move to both executables.",
+      "pause": 400
+    },
+    {
+      "text": "To the ordinary client:",
+      "pause": 400
+    },
+    {
+      "text": "The client reads the key's envelope, sees that its controller is not the key that would sign, and refuses: the envelope's controller is 0x… but this command signs as 0x…. Nothing is submitted. The node never sees the move.",
+      "pause": 400
+    },
+    {
+      "text": "To the negative host, the same move:",
+      "pause": 400
+    },
+    {
+      "text": "The host builds the update, signs it as Bob, and submits it unevaluated. The application's spending contract refuses it, the node's verdict names that script, and a fresh read shows the registry, the key's holding and the wallets exactly as they were.",
+      "pause": 400
+    },
+    {
+      "text": "Beside every forbidden move its accepting control runs too: the same command with the one forbidden difference removed, from the same registry state, signed by the same signer. A refusal only means something when the same machinery succeeds on the next line.",
+      "pause": 400
+    }
+  ],
+  "who-refuses-what": [
+    {
+      "text": "Who refuses what.",
+      "pause": 500
+    },
+    {
+      "text": "One move, two clients. The ordinary client answers from its own local policy; the negative host sends the move to the node and the chain's scripts answer.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram follows one move through the two clients. The ordinary client answers from its own reading of the key's envelope — it names a controller, and this signer is not it — and submits nothing. The negative host builds the transaction, signs with whatever key file was named, submits with no local check and no local script evaluation, and the chain's scripts answer: the application's spending contract for a spend of a holding, the registry's state validator for a fold. The refusal comes back with the failing script's hash and its role in the registry the command opened — application-spending, application-at-fold or state-validator — and a fresh read confirms nothing moved. Nothing is typed in: the expected script is read from the registry's own pins, so a pass never comes from a literal someone wrote down.",
+      "pause": 400
+    }
+  ],
+  "the-short-fold-of-a-booked-termination": [
+    {
+      "text": "The short fold of a booked termination.",
+      "pause": 500
+    },
+    {
+      "text": "One sequence carries the most rules at once, over one request. Alice has registered alice-2 and is its controller. She books its termination and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, then tries to settle it for less than owed, and finally settles it honestly.",
+      "pause": 400
+    },
+    {
+      "text": "The sequence is connected over one pending request. Alice, the controller of alice-2, books its termination with the ordinary command and stops at the pending request; the termination is not done until a fold settles it. Bob, who is nobody in particular, first settles it for one lovelace less than owed, through the host: the application's script at the fold refuses, the request stays pending, the deposit stays held. Bob then folds the same request honestly, through the same host and from the same state: the honest fold burns the key's token, leaves the key terminal and pays the controller exactly what the booking owes. The one difference between the two folds is the payment, and that difference alone moves the verdict from refusal to acceptance.",
+      "pause": 400
+    }
+  ],
+  "every-forbidden-move-and-what-refuses-it": [
+    {
+      "text": "Every forbidden move, and what refuses it.",
+      "pause": 500
+    },
+    {
+      "text": "The scenario set is thirteen pairs in nine stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind each refusal are on the ticket's data model page.",
+      "pause": 400
+    },
+    {
+      "text": "After the command-line split landed (lambdasistemi/singular#528), the ordinary surface is two executables: singular, with the registry's own commands — create, fold, reject, reclaim, inspect — and open-datum, with the application's — insert, update, terminate, fold, inspect. The host keeps one namespace, singular-negative registry …, with the shared flag group, so a host command reads the same today as it did before the split. The mirrors named below are the post-split ordinary spellings.",
+      "pause": 400
+    },
+    {
+      "text": "Read the four insertion rows together, because their timing is the subtle part: an insertion is only a request. Under the host, the booking of a taken key is accepted — a request is a request — and the refusal comes later, when the host folds it and the registry's state validator sees the key is already held. The ordinary client stops the same move much earlier, from its own reading of the registry's entry, which is exactly why the host exists: only it can show you the chain's own answer.",
+      "pause": 400
+    },
+    {
+      "text": "Three forms have no ordinary equivalent at all, and they are the host's own spellings:",
+      "pause": 400
+    },
+    {
+      "text": "registry withdraw spends a holding directly, with the release redeemer, outside any fold. The ordinary surface has no such command: a release exists only inside the fold of a booked termination.",
+      "pause": 300
+    },
+    {
+      "text": "registry update … --tamper FIELD rewrites one protected field of the holding's record — controller, deposit, token, address or datum. The ordinary update accepts no such flag and cannot express the move.",
+      "pause": 300
+    },
+    {
+      "text": "registry fold … --pay-short N builds the fold paying the controller that many lovelace less than owed. The ordinary fold has no flag to deviate from what is owed.",
+      "pause": 300
+    },
+    {
+      "text": "Every ordinary spelling the host accepts is handed to the shared parser unchanged, and the ordinary executables refuse these three bypass spellings as unknown commands — the release check reads the built ordinary executables to prove they contain no host module and no copy of the bypass.",
+      "pause": 400
+    }
+  ],
+  "what-each-command-prints": [
+    {
+      "text": "What each command prints.",
+      "pause": 500
+    },
+    {
+      "text": "Each host command prints one JSON receipt on standard output. For a refused move it carries: the command and its outcome class (ledger-refusal — distinct from client-refusal, encoding-failure and setup-failure, which are never counted as the chain's word), the node's own refusal text, the failed script hashes with their roles in the opened registry, the registry's application and state pins, and two reads — before and after — of the registry state root, the key's holding with its value and envelope, the wallet's outputs, the pending requests and the held deposit. A pair passes only when the after-read equals the before-read.",
+      "pause": 400
+    },
+    {
+      "text": "For an accepted command the receipt names what the chain took: the update names its transaction id, a booking names the request it created, a fold names the requests it folded. So one run shows both halves: the transaction the host really built, and the node's own verdict on it.",
+      "pause": 400
+    }
+  ],
+  "how-to-run-it": [
+    {
+      "text": "How to run it.",
+      "pause": 500
+    },
+    {
+      "text": "From a checkout of this repository — the command assembles the release archive itself, extracts it outside the checkout, and builds the host, the ordinary executables and the development node from the archive's own flakes:",
+      "pause": 400
+    },
+    {
+      "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The thirteen scenario names are the pairs of the table above.",
+      "pause": 400
+    },
+    {
+      "text": "The hosted workflow runs every pair on every push: it discovers the scenario list from the host's own table, runs each scenario as its own job from the release archive, and aggregates them under the two stable check names Negative host pairs and Negative host mutants. Those two names are what a repository can require; the jobs beneath them may grow as pairs are added, the names stay.",
+      "pause": 400
+    }
+  ],
+  "a-refused-insertion-strands-a-booking-and-its-owner-reclaims-it": [
+    {
+      "text": "A refused insertion strands a booking, and its owner reclaims it.",
+      "pause": 500
+    },
+    {
+      "text": "An insertion of a taken key is refused at its fold, not at its booking, so the booking the host made stays pending on the chain, holding its deposit. The owner takes it back with the ordinary command:",
+      "pause": 400
+    },
+    {
+      "text": "The reclaim is governed by time, and the timing matters. A booking's retract window opens only after the registry's processing window has passed — that ordering is the model's own, not a client convenience — so a reclaim submitted earlier is refused by the ordinary command before signing: it reports not-phase2 and submits nothing. The scenario run creates its registry with a processing window of 120 seconds and a retract window of 600 seconds (the other scenarios use a 30-second retract window), then waits out the two minutes of processing before submitting one reclaim. This is a timed reclaim, not an immediate one. The reclaim's receipt names the command (reclaim), its outcome (success), the request and its edge (insertActive), and the read afterwards shows the booking collected and the deposit returned to its owner.",
+      "pause": 400
+    }
+  ],
+  "what-a-run-does-not-show": [
+    {
+      "text": "What a run does not show.",
+      "pause": 500
+    },
+    {
+      "text": "A refusal shows the rule held for that transaction on that chain; the model statements and validator tests carry the general guarantee. The runs on this page are evidence about each transaction they ran, not a proof about every transaction there could be.",
+      "pause": 400
+    },
+    {
+      "text": "What is deliberately not there yet:",
+      "pause": 400
+    },
+    {
+      "text": "Rejection pairs. A folder turning a request away is not among the pairs; protected rejection is its own work (lambdasistemi/singular#498, lambdasistemi/singular#529).",
+      "pause": 300
+    },
+    {
+      "text": "Two update rules with no pair. The rule that a continuation keeps at least the protected deposit in its value, and the rule that exactly one output carries the key's token, are refused earlier by other rules in every pair here, so neither is exercised by its own pair (lambdasistemi/singular#552).",
+      "pause": 300
+    },
+    {
+      "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Seven mutants cover nine of the thirteen pairs today; the four registry pairs (the taken-key and revival insertions) have no mutant of the registry's state validator yet (lambdasistemi/singular#559).",
+      "pause": 300
+    },
+    {
+      "text": "The crafting exists twice. The conformance harness keeps its own copy of the crafted transactions; the host's copy is the one the release archive ships (lambdasistemi/singular#551).",
+      "pause": 300
+    },
+    {
+      "text": "A finished local run may leave its node behind. A part run locally can leave its development node and working directories on the machine (lambdasistemi/singular#560); hosted runners are unaffected.",
+      "pause": 300
+    },
+    {
+      "text": "The mutant table is the honest measure of the refusal evidence: each row names the one rule a validator had to lose before the chain would take the move it refuses today. Beside every mutant a control pair that a different rule refuses must stay refused, so a patch that disabled more than its named rule could not hide.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "negative-host.md",
+    "sha256": "eff46cf2819795d01986d2a7abdb4dc41eef20dbf17e043dd9c04fdf4158fcd8"
+  }
+}
