@@ -78,15 +78,8 @@ let
     sublibs = [
       "local-services"
       "koios-http"
-      # #528 slice 1: the open-datum application, built from this
-      # repository against the library and linked by `singular` and
-      # `cage-tests`; the application boundary control governs who may
-      # depend on it, not this list.
-      "open-datum-application"
-      # #528 slice 3: the registry command line as its own library
-      # (cli/src, Singular.CLI.* under unchanged names), linked by
-      # `singular` and `cage-tests`; it temporarily depends on
-      # open-datum-application for the entry commands slice 4 moves.
+      # #528 slice 4: the application lives in its own tree; the entry
+      # commands moved there and this library names no application.
       "registry-cli"
     ];
   };

@@ -33,6 +33,7 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
+      - 'applications/**'
       # The drift check also watches epic 15's live corpus.
       - 'lean/**'
       - '.github/workflows/registry.yml'

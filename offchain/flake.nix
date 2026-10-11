@@ -523,7 +523,10 @@
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
           inherit (components.exes) singular;
-          inherit (project.project.hsPkgs.singular-negative.components.exes) singular-negative;
+          # #528 slice 4: the negative host moved to the application's
+          # own tree with the application; this
+          # flake no longer builds it (see the application's flake for
+          # .#singular-negative).
           # #326 R4: a SignedTx is constructible only through signTx.
           inherit (haskellChecks) signed-tx-control;
           # #278 terminal-attestation-permanent: the pinned house formatter, for the root format

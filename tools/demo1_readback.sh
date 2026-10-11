@@ -6,7 +6,7 @@
 #          --inspect RECEIPT.json --out FILE
 #          [--credential-file PATH] [--base-url URL] [--max-lag SLOTS]
 #
-# RECEIPT.json is the ordinary `singular registry inspect` receipt for the key:
+# RECEIPT.json is the ordinary `open-datum inspect` receipt for the key:
 # its chain point, its live output and the inline datum the ledger holds. The
 # indexer is asked only for the asset. The output file records each request (the
 # method and URL, never a credential), the complete response, the exact output

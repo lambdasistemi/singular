@@ -4,29 +4,16 @@ import Naming.CompleteVerifySpec qualified
 import Naming.RecordValueSpec qualified
 import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
-import Singular.Application.OpenDatum.BuildSpec qualified
-import Singular.Application.OpenDatum.BuildersSpec qualified
-import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.CLI.CommandRunSpec qualified
-import Singular.CLI.FoldSpec qualified
-import Singular.CLI.InsertEnvelopeSpec qualified
-import Singular.CLI.ManagedStateSpec qualified
-import Singular.CLI.OutlaySpec qualified
 import Singular.CLI.ReclaimSpec qualified
-import Singular.CLI.RecoverySpec qualified
 import Singular.CLI.RejectSpec qualified
-import Singular.CLI.StateTokenSpec qualified
-import Singular.CLI.TraceSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
-import Singular.CLI.WriteSpec qualified
-import Singular.CLISpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
 import Singular.Provider.Koios.HttpSpec qualified
 import Singular.Provider.Koios.ProviderSpec qualified
 import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Provider.Koios.ReferenceScriptsSpec qualified
-import Singular.Registry.ApplicationSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
@@ -36,18 +23,15 @@ import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
 import Singular.Registry.LocalServicesCallerSpec qualified
 import Singular.Registry.NetworkTimeSpec qualified
-import Singular.Registry.NeutralValueSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
-import Singular.Registry.StateTokenSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
-import Singular.Registry.TxBuilder.BurnSourceSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
@@ -80,9 +64,6 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
-    describe
-        (tagged "Singular.Registry.TxBuilder.BurnSource" [Builders])
-        Singular.Registry.TxBuilder.BurnSourceSpec.spec
     describe
         ( tagged
             "Singular.Registry.TxBuilder.SkipEvalUnits"
@@ -126,15 +107,6 @@ main = hspec $ do
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
-        (tagged "Singular.Registry.Application" [Application])
-        Singular.Registry.ApplicationSpec.spec
-    describe
-        (tagged "Singular.Registry.NeutralValue" [Application])
-        Singular.Registry.NeutralValueSpec.spec
-    describe
-        (tagged "Singular.Registry.StateToken" [Provider])
-        Singular.Registry.StateTokenSpec.spec
-    describe
         (tagged "Singular.Registry.Provider" [Provider])
         Singular.Registry.ProviderSpec.spec
     describe
@@ -168,55 +140,17 @@ main = hspec $ do
         (tagged "Naming.RecordValue" [Naming, Application])
         Naming.RecordValueSpec.spec
     describe
-        ( tagged
-            "Singular.Application.OpenDatum.Envelope"
-            [Application, Builders]
-        )
-        Singular.Application.OpenDatum.EnvelopeSpec.spec
-    describe
-        ( tagged
-            "Singular.Application.OpenDatum.Builders"
-            [Application, Builders]
-        )
-        Singular.Application.OpenDatum.BuildersSpec.spec
-    describe
-        (tagged "Singular.Application.OpenDatum.Build" [Application, Builders])
-        Singular.Application.OpenDatum.BuildSpec.spec
-    describe
-        (tagged "Singular.CLI.InsertEnvelope" [Cli])
-        Singular.CLI.InsertEnvelopeSpec.spec
-    describe (tagged "Singular.CLI" [Cli]) Singular.CLISpec.spec
-    describe
-        (tagged "Singular.CLI.Outlay" [Cli])
-        Singular.CLI.OutlaySpec.spec
-    describe (tagged "Singular.CLI.Fold" [Cli]) Singular.CLI.FoldSpec.spec
-    describe
-        (tagged "Singular.CLI.ManagedState" [Cli])
-        Singular.CLI.ManagedStateSpec.spec
-    describe
         (tagged "Singular.CLI.TrieRefusal" [Cli])
         Singular.CLI.TrieRefusalSpec.spec
     describe
         (tagged "Singular.CLI.Reject" [Cli])
         Singular.CLI.RejectSpec.spec
     describe
-        (tagged "Singular.CLI.StateToken" [Cli, Wallet])
-        Singular.CLI.StateTokenSpec.spec
-    describe
         (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
         Singular.CLI.ReclaimSpec.spec
     describe
-        (tagged "Singular.CLI.Recovery" [Cli, Recovery])
-        Singular.CLI.RecoverySpec.spec
-    describe
-        (tagged "Singular.CLI.Write" [Cli, Recovery])
-        Singular.CLI.WriteSpec.spec
-    describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec
-    describe
-        (tagged "Singular.CLI.Trace" [Cli])
-        Singular.CLI.TraceSpec.spec
     describe
         (tagged "Singular.Provider.Koios.Client" [Provider])
         Singular.Provider.Koios.ClientSpec.spec

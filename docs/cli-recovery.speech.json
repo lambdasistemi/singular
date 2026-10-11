@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "You run singular registry create, insert, update, terminate or inspect, and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
+      "text": "You run singular registry create, open-datum insert, open-datum update, open-datum terminate or inspect (singular registry inspect or open-datum inspect), and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
       "pause": 400
     },
     {
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "607a93ad256fae57f37b9d40337a59f34eb603dba9e3ebcb9fe972b7daaaafb2"
+    "sha256": "411b7b4ddee81a2012d1b968f27c038e0076dd9b2f7440c42a56d5d889afa457"
   }
 }

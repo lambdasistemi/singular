@@ -30,7 +30,7 @@ the outputs at the application address (refusing a foreign or duplicate
 one), release a termination (script, redeemer, recipient and amount), add
 the application's part to the fold context, and check a request's carried
 datum before an insertion is folded. The neutral value carries none of
-them; the open-datum value fills them from the envelope and release.
+them; the application value fills them from the envelope and release.
 -}
 module Singular.Registry.Application
     ( -- * The pin
@@ -262,7 +262,7 @@ datumCbor d = case Builtins.serialiseData (BuiltinData d) of
     BuiltinByteString bytes -> bytes
 
 {- | The BLAKE2b-256 of a datum's CBOR: the datum hash a request names.
-Generic: the same bytes `envelopeHash` hashes, so an open-datum datum
+Generic: the same bytes `envelopeHash` hashes, so an application datum
 hash equals its envelope hash byte for byte.
 -}
 datumHash :: PLC.Data -> ByteString

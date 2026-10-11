@@ -28,7 +28,7 @@ listed here; a constructor no run exercises fails the extent row.
 module Singular.CLI.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (bracket, throwIO)
+import Control.Exception (bracket)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -46,7 +46,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (nub, partition, sort)
+import Data.List (isInfixOf, nub, partition, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust, isNothing, listToMaybe)
 import Data.Proxy (Proxy (..))
@@ -70,7 +70,6 @@ import System.Directory
     , doesDirectoryExist
     , doesFileExist
     , listDirectory
-    , removeFile
     , removePathForcibly
     )
 import System.Exit (ExitCode (..))
@@ -79,9 +78,7 @@ import System.IO
     ( IOMode (..)
     , hClose
     , hFlush
-    , hPrint
     , openFile
-    , openTempFile
     , stderr
     , stdout
     )
@@ -102,29 +99,44 @@ import Test.Hspec
 
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (TxIx (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, mkBasicTxOut)
+import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Data.Word (Word64)
 
-import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI (runCommand)
-import Singular.CLI.Command (Command (..), parseCommand)
-import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
+import Singular.CLI.Command
+    ( CLIError (..)
+    , Command (..)
+    , parseCommand
+    , renderCLIError
+    )
+import Singular.CLI.Registry
+    ( economics
+    , loadRelease
+    , loadReleaseCodes
+    , registryConfigFor
+    )
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
-import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Application
+    ( Application (..)
+    , ApplicationPin (..)
+    , hashPinnedApplication
+    , neutralApplication
+    )
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence
     ( Evidenced (..)
     , NoWitness
     , unverifiedVerifier
     )
-import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Ledger (Coin (..), TokenId (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -139,30 +151,40 @@ import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signedTx)
 import Singular.Registry.SyntheticLedger
-    ( errorProgram
-    , unitProgram
+    ( unitProgram
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.Trace
-    ( Evaluation (..)
-    , ReadEvent (Evaluated)
-    )
+import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
+    ( cageAddrFromCfg
+    , cagePolicyIdFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , findStateUtxo
+    , requestAddrFromCfg
     , scriptHashBytes
     )
 import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
+import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.Types
-    ( edgeInsertActive
+    ( CageDatum (..)
+    , OnChainRequest (..)
+    , edgeInsertActive
     , edgeName
     , edgeUpdateTerminal
+    , stateAppPolicyBytes
     )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> readbackRows >> permanentRecognition
+spec =
+    handlerRows
+        >> setupRecut
+        >> readbackRows
+        >> permanentRecognition
+        >> applicationPolicyRows
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"
@@ -170,7 +192,7 @@ permanentRecognition = describe "Permanent contract recognition"
         "refuses a caller supplied blueprint whose script identities are unknown"
     $ withRig
     $ \rig -> do
-        loaded <- loadRelease openDatumApplication (rigBlueprint rig)
+        loaded <- loadRelease neutralApplication (rigBlueprint rig)
         case loaded of
             Left _ -> pure ()
             Right _ ->
@@ -193,21 +215,6 @@ handlerRows = describe
                   , not (null found)
                   ]
                     `shouldBe` []
-        it
-            "changes no command's outcome or exit when a sink throws or writes to a \
-            \closed handle, and the live sink still sees every run"
-            $ do
-                plain <- withRig lifecycle
-                traced <-
-                    withRigVia
-                        ( \collect -> do
-                            closed <- closedHandleSink
-                            fanOut
-                                [Tracer (\_ -> throwIO (userError "the sink broke")), closed, collect]
-                        )
-                        lifecycle
-                map summary traced `shouldBe` map summary plain
-                [runLabel r | r <- traced, null (runEvents r)] `shouldBe` []
         it
             "places each transaction, from its evaluation to its readback, in one \
             \scope, under the edge its command acts on"
@@ -241,147 +248,6 @@ handlerRows = describe
                 nub (sort [s | (_, s, _, True) <- placements, s `elem` edgeSteps])
                     `shouldBe` sort edgeSteps
                 misplaced `shouldBe` []
-        it
-            "reads in timed steps, each naming what it read, and a build reads before \
-            \it reports what it found"
-            $ withRig
-            $ \rig -> do
-                runs <- lifecycle rig
-                let fetches r = [f | Trace _ (How (Fetched f)) <- runEvents r]
-                    succeeded = [r | r <- runs, outcomeOf (runReceipt r) == Just "success"]
-                    unread = [runLabel r | r <- succeeded, null (fetches r)]
-                    unnamed =
-                        [ (runLabel r, f)
-                        | r <- runs
-                        , f <- fetches r
-                        , null (fetchWhat f) || fetchSource f /= "fixture"
-                        ]
-                    -- in each build that reports a protocol fact, its read comes first
-                    unordered =
-                        [ (runLabel r, step)
-                        | r <- runs
-                        , step <-
-                            nub [s | Trace scope _ <- runEvents r, InTransaction s <- scope]
-                        , step `elem` ["book", "fold", "update", "reject", "reclaim"]
-                        , let inStep = dropWhile (not . startsStep step) (runEvents r)
-                              beforeFact = takeWhile (not . protocolFact) (drop 1 inStep)
-                        , any protocolFact inStep
-                        , null [() | Trace _ (How (Fetched _)) <- beforeFact]
-                        ]
-                    startsStep step (Trace scope _) = InTransaction step `elem` scope
-                    protocolFact = \case
-                        Trace _ (What (RequestSeen{})) -> True
-                        Trace _ (What (EdgeStarted _)) -> True
-                        _ -> False
-                length succeeded `shouldSatisfy` (> 10)
-                (unread, unnamed, unordered) `shouldBe` ([], [], [])
-                [ l
-                  | r <- runs
-                  , Just l <- map renderText (runEvents r)
-                  , "how  read " `T.isInfixOf` l
-                  ]
-                    `shouldSatisfy` (not . null)
-        it
-            "closes a build read that fails before it decides, ahead of its refusal"
-            $ withRig
-            $ \rig -> do
-                runs <- lifecycle rig
-                case [r | r <- runs, runLabel r == "update an absent key"] of
-                    [absent] -> do
-                        let events = runEvents absent
-                            fetches = [f | Trace _ (How (Fetched f)) <- events]
-                            buildReads =
-                                [ f
-                                | f <- fetches
-                                , fetchWhat f == ["state", "key outputs"]
-                                ]
-                            refusals = [k | Trace _ (What (Refused k _)) <- events]
-                            posFetch = length (takeWhile (not . isBuildFetch) events)
-                            isBuildFetch = \case
-                                Trace _ (How (Fetched f)) ->
-                                    fetchWhat f == ["state", "key outputs"]
-                                _ -> False
-                            posRefused = length (takeWhile (not . isRefused) events)
-                            isRefused = \case
-                                Trace _ (What (Refused{})) -> True
-                                _ -> False
-                        outcomeOf (runReceipt absent) `shouldBe` Just "client-refusal"
-                        refusals `shouldBe` [ClientRefused]
-                        length buildReads `shouldBe` 1
-                        case buildReads of
-                            [f] -> do
-                                fetchSource f `shouldBe` "fixture"
-                                fetchElapsed f `shouldSatisfy` (>= 0)
-                                case fetchEnd f of
-                                    FailedWith _ -> pure ()
-                                    Done -> expectationFailure "a failed build read ends Done"
-                            _ -> expectationFailure "one build read"
-                        (posFetch < posRefused) `shouldBe` True
-                        disagreements (runKey absent) (runReceipt absent) events `shouldBe` []
-                    _ -> expectationFailure "one absent update run"
-        it
-            "refuses an inspect whose token no registry minted, naming the absence"
-            $ withRig
-            $ \rig -> do
-                runs <- lifecycle rig
-                nowhere <- case [ r | r <- runs, runLabel r == "inspect a registry that does not exist"
-                                ] of
-                    [n] -> pure n
-                    found ->
-                        fail
-                            ("expected one missing-registry inspect, found " <> show (length found))
-                emptyActor <- case [ r
-                                   | r <- runs
-                                   , runLabel r == "inspect from an empty directory with the state token"
-                                   ] of
-                    [e] -> pure e
-                    found ->
-                        fail
-                            ("expected one empty-directory inspect, found " <> show (length found))
-                outcomeOf (runReceipt nowhere) `shouldBe` Just "client-refusal"
-                case textAt "reason" (runReceipt nowhere) of
-                    Just reason ->
-                        reason `shouldSatisfy` T.isPrefixOf "state-token-not-found"
-                    Nothing -> expectationFailure "the refusal names no reason"
-                disagreements
-                    (runKey nowhere)
-                    (runReceipt nowhere)
-                    (runEvents nowhere)
-                    `shouldBe` []
-                outcomeOf (runReceipt emptyActor) `shouldBe` Just "success"
-                disagreements
-                    (runKey emptyActor)
-                    (runReceipt emptyActor)
-                    (runEvents emptyActor)
-                    `shouldBe` []
-        it
-            "reports a script that fails its local evaluation as refused there, from \
-            \the build's own session"
-            $ withRigOf failingOpenDatum pure
-            $ \rig -> do
-                seed <- fundSeed rig
-                created <- run rig "create" ["registry", "create", "--seed", seed]
-                tok <- tokenOf created
-                refused <-
-                    run
-                        rig
-                        "insert alice-1"
-                        ( [ "registry"
-                          , "insert"
-                          , "--key"
-                          , "alice-1"
-                          , "--payload"
-                          , rigDir rig </> "payload.json"
-                          ]
-                            <> tokenArgs tok
-                        )
-                let events = runEvents refused
-                ( outcomeOf (runReceipt refused)
-                    , [k | Trace _ (What (Refused k _)) <- events]
-                    , or [evalFailed e > 0 | Trace _ (How (Read (Evaluated e))) <- events]
-                    , disagreements (runKey refused) (runReceipt refused) events
-                    )
-                    `shouldBe` (Just "client-refusal", [EvaluationRefused], True, [])
         it "fails a stream that contradicts its receipt in any one fact" $
             withRig $ \rig -> do
                 runs <- lifecycle rig
@@ -427,10 +293,7 @@ commandNames =
 constructorOf :: Command -> String
 constructorOf = \case
     Help -> "Help"
-    Create _ -> "Create"
-    Insert _ -> "Insert"
-    Update _ -> "Update"
-    Terminate _ -> "Terminate"
+    Create _ _ -> "Create"
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
@@ -541,7 +404,7 @@ readbackRows =
                             (Left (Cage.BackendReadFailure "the exchange died"))
                             rig
                             "create-read-failed"
-                            ["registry", "create", "--seed", seed]
+                            (["registry", "create", "--seed", seed] <> policyArgs)
                     outcomeOf (runReceipt failed) `shouldBe` Just "partial"
                     reasonOf failed
                         `shouldSatisfy` maybe False (T.isInfixOf "BackendReadFailure")
@@ -563,7 +426,7 @@ readbackRows =
                             (Left (Cage.MissingOutput (fundOutput 1)))
                             rig
                             "create-read-refused"
-                            ["registry", "create", "--seed", seed]
+                            (["registry", "create", "--seed", seed] <> policyArgs)
                     outcomeOf (runReceipt refused) `shouldBe` Just "partial"
                     reasonOf refused
                         `shouldSatisfy` maybe False (T.isInfixOf "MissingOutput")
@@ -585,7 +448,7 @@ readbackRows =
                             (Right (Evidenced [] Nothing))
                             rig
                             "create-read-empty"
-                            ["registry", "create", "--seed", seed]
+                            (["registry", "create", "--seed", seed] <> policyArgs)
                     outcomeOf (runReceipt empty) `shouldBe` Just "partial"
                     reasonOf empty
                         `shouldSatisfy` maybe False (T.isInfixOf "is not live")
@@ -626,14 +489,14 @@ packagedWrites at flags = do
                 rig
                 "registry"
                 "create"
-                ["registry", "create", "--seed", first]
+                (["registry", "create", "--seed", first] <> policyArgs)
         second <- fundSeed2 rig
         two <-
             packaged
                 rig
                 "registry-2"
                 "create two"
-                ["registry", "create", "--seed", second]
+                (["registry", "create", "--seed", second] <> policyArgs)
         registries <-
             mapM (registryFiles . (rigDir rig </>)) ["registry", "registry-2"]
         let files = concatMap fst registries
@@ -653,7 +516,7 @@ packagedWrites at flags = do
             captured
                 ( runPackagedVia
                     (\tracer -> (envOf rig){envTracer = tracer})
-                    openDatumApplication
+                    neutralApplication
                     (pure (Just h))
                     (commandLine rig registry args <> flags)
                     []
@@ -814,15 +677,6 @@ parameters the builders apply and then the script context.
 syntheticBlueprint :: Aeson.Value
 syntheticBlueprint = blueprintOf (const unitProgram)
 
-{- | The same validators, the open datum's failing whatever it is given: an
-insertion's booking, which mints under it, fails its local evaluation.
--}
-failingOpenDatum :: Aeson.Value
-failingOpenDatum = blueprintOf $ \title arity ->
-    if title == "open_datum.open_datum"
-        then errorProgram arity
-        else unitProgram arity
-
 -- | The registry's validators, each program made from its title and arity.
 blueprintOf :: (Text -> Int -> SBS.ShortByteString) -> Aeson.Value
 blueprintOf program =
@@ -833,7 +687,7 @@ blueprintOf program =
         , "validators"
             .= [ validator "state.state" 1
                , validator "request.request" 3
-               , validator "open_datum.open_datum" 2
+               , validator "script-app.script-app" 2
                , validator "witness.witness" 3
                , validator "witness.witness" 3
                ]
@@ -948,225 +802,157 @@ tokenArgs t = ["--state-token", t]
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do
     seed <- fundSeed rig
-    create <- run rig "create" ["registry", "create", "--seed", seed]
+    create <-
+        run
+            rig
+            "create"
+            (["registry", "create", "--seed", seed] <> policyArgs)
     -- Every command after a create names its registry by the state token
     -- that create printed: there is no saved registry to attach to.
     t1 <- tokenOf create
-    insert <-
-        run
-            rig
-            "insert alice-1"
-            ( ["registry", "insert", "--key", "alice-1", "--payload", payload]
-                <> tokenArgs t1
-            )
-    fold1 <-
-        run
-            rig
-            "fold alice-1"
-            (["registry", "fold"] <> requestOf insert <> tokenArgs t1)
-    inspect <-
-        run
-            rig
-            "inspect alice-1"
-            (["registry", "inspect", "--key", "alice-1"] <> tokenArgs t1)
-    update <-
-        run
-            rig
-            "update alice-1"
-            ( ["registry", "update", "--key", "alice-1", "--payload", payload2]
-                <> tokenArgs t1
-            )
-    terminate <-
-        run
-            rig
-            "terminate alice-1"
-            (["registry", "terminate", "--key", "alice-1"] <> tokenArgs t1)
-    fold2 <-
-        run
-            rig
-            "fold alice-1 terminal"
-            (["registry", "fold"] <> requestOf terminate <> tokenArgs t1)
-    insert2 <-
-        run
-            rig
-            "insert alice-2"
-            ( ["registry", "insert", "--key", "alice-2", "--payload", payload]
-                <> tokenArgs t1
-            )
-    -- the chain moves past the processing deadline: the retract window opens
-    jumpPast rig insert2 0
+    -- A generic insertion request, no envelope: reclaim and reject act on
+    -- the request output alone, so no datum payload is needed.
+    (req2, sub2) <-
+        plantRequest rig t1 seed economics (TE.encodeUtf8 "alice-2")
+    -- The chain moves past the processing deadline: the retract window opens.
+    jumpToAfter rig (sub2 + reProcessTime economics) 0
     reclaim <-
         run
             rig
             "reclaim alice-2"
-            (["registry", "reclaim"] <> requestOrAny insert2 <> tokenArgs t1)
-    -- a second registry whose windows close at once: its request can only be rejected
+            ( ["registry", "reclaim", "--request", T.unpack (renderOutRef req2)]
+                <> tokenArgs t1
+            )
+    -- A second registry whose windows close at once: its request can only be rejected.
     seed2 <- fundSeed2 rig
     create2 <-
         runAt
             rig
             "registry-2"
             "create short windows"
-            [ "registry"
-            , "create"
-            , "--seed"
-            , seed2
-            , "--process-time"
-            , "1"
-            , "--retract-time"
-            , "1"
-            ]
-    t2 <- tokenOf create2
-    insert3 <-
-        runAt
-            rig
-            "registry-2"
-            "insert alice-3"
-            ( ["registry", "insert", "--key", "alice-3", "--payload", payload]
-                <> tokenArgs t2
+            ( [ "registry"
+              , "create"
+              , "--seed"
+              , seed2
+              , "--process-time"
+              , "1"
+              , "--retract-time"
+              , "1"
+              ]
+                <> policyArgs
             )
-    jumpPast rig insert3 2
+    t2 <- tokenOf create2
+    let shortEcon =
+            RegistryEconomics
+                { reProcessTime = 1
+                , reRetractTime = 1
+                , reTip = Coin 1_000_000
+                }
+    (_, sub3) <-
+        plantRequest rig t2 seed2 shortEcon (TE.encodeUtf8 "alice-3")
+    jumpToAfter
+        rig
+        (sub3 + reProcessTime shortEcon + reRetractTime shortEcon)
+        2
     reject <-
         runAt
             rig
             "registry-2"
             "reject"
             (["registry", "reject"] <> tokenArgs t2)
-    -- refusals, each where it happens
+    -- A fold with nothing pending: the refusal exercises Fold.
     nothingPending <-
         runAt
             rig
             "registry-2"
             "fold with nothing pending"
             (["registry", "fold"] <> tokenArgs t2)
-    overAllowance <-
-        run
-            rig
-            "insert over its allowance"
-            ( [ "registry"
-              , "insert"
-              , "--key"
-              , "alice-4"
-              , "--payload"
-              , payload
-              , "--max-outlay"
-              , "1"
-              ]
-                <> tokenArgs t1
-            )
-    absent <-
-        run
-            rig
-            "update an absent key"
-            ( ["registry", "update", "--key", "nobody", "--payload", payload2]
-                <> tokenArgs t1
-            )
-    -- refused before any transaction is built
-    existing <-
-        run
-            rig
-            "create over an existing registry"
-            ["registry", "create", "--seed", seed]
-    -- A well-formed token no registry minted: this release's state
-    -- policy with the name an unused fixture seed derives. The
-    -- fixture holds no mint record for it, so its inspect is refused
-    -- by name instead of reading another registry.
-    missingToken <- absentToken t1
-    missing <-
-        runAt
-            rig
-            "no-registry"
-            "inspect a registry that does not exist"
-            (["registry", "inspect", "--key", "alice-1"] <> tokenArgs missingToken)
+    -- An inspect from an empty directory reads the registry by its token.
     emptyDir <-
-        -- An empty actor directory with a valid existing token reads that
-        -- registry: the token names it, not the directory. This success
-        -- does not replace the missing-registry refusal above.
         runAt
             rig
             "empty-actor"
             "inspect from an empty directory with the state token"
             (["registry", "inspect", "--key", "alice-1"] <> tokenArgs t1)
-    writeIORef
-        (rigAnswer rig)
-        (Just (Cage.SubmitRefused "the ledger said no"))
-    rejected <-
-        run
-            rig
-            "insert the ledger rejects"
-            ( ["registry", "insert", "--key", "alice-5", "--payload", payload]
-                <> tokenArgs t1
-            )
-    writeIORef
-        (rigAnswer rig)
-        (Just (Cage.SubmitFailed "connection refused"))
-    unanswered <-
-        run
-            rig
-            "insert the provider drops"
-            ( ["registry", "insert", "--key", "alice-6", "--payload", payload]
-                <> tokenArgs t1
-            )
-    pure
-        [ create
-        , insert
-        , fold1
-        , inspect
-        , update
-        , terminate
-        , fold2
-        , insert2
-        , reclaim
-        , create2
-        , insert3
-        , reject
-        , nothingPending
-        , overAllowance
-        , absent
-        , existing
-        , missing
-        , emptyDir
-        , rejected
-        , unanswered
-        ]
-  where
-    payload = rigDir rig </> "payload.json"
-    payload2 = rigDir rig </> "payload-2.json"
-    requestOf r =
-        maybe
-            []
-            (\q -> ["--request", T.unpack q])
-            (textAt "request" (runReceipt r))
-    requestOrAny r =
-        [ "--request"
-        , maybe
-            (replicate 64 '0' <> "#0")
-            T.unpack
-            (textAt "request" (runReceipt r))
-        ]
+    pure [create, reclaim, create2, reject, nothingPending, emptyDir]
 
-{- | Move the chain's tip past a booking's processing deadline, by this many
-slots more, as its receipt names the deadline.
+-- | The state token's name as a 'TokenId'.
+parseTokenId :: String -> IO TokenId
+parseTokenId tokenStr = case T.splitOn "." (T.pack tokenStr) of
+    [_, nameHex] -> case B16.decode (TE.encodeUtf8 nameHex) of
+        Right bytes
+            | BS.length bytes == 32 ->
+                pure (TokenId (AssetName (SBS.toShort bytes)))
+        Right bytes ->
+            fail
+                ("parseTokenId: name is " <> show (BS.length bytes) <> " bytes, not 32")
+        Left _ -> fail "parseTokenId: name is not hex"
+    _ -> fail ("parseTokenId: no policy.name in " <> tokenStr)
+
+{- | Plant a generic insertion request for reclaim and reject: the edge alone,
+no envelope and no payload file. The request output is submitted through the
+fixture exactly as 'capabilities' submits, and its submission time is read
+from its own datum.
 -}
-jumpPast :: Rig -> Run -> Word64 -> IO ()
-jumpPast rig booking more = case deadlineSlot (runReceipt booking) of
-    Just slot -> jumpChainTo (rigChain rig) (SlotNo (slot + more + 1))
-    Nothing ->
-        fail
-            ( "no deadline slot in "
-                <> runLabel booking
-                <> ": "
-                <> show (runReceipt booking)
-            )
-  where
-    -- the fixture's slots are seconds since 1970, so a deadline the view did not
-    -- convert still names its slot
-    deadlineSlot = \case
-        Aeson.Object o
-            | Just (Aeson.Object d) <- KeyMap.lookup "foldDeadline" o
-            , Just (Aeson.Number n) <- KeyMap.lookup "posixMs" d ->
-                Just (round n `div` 1000)
-        _ -> Nothing
+plantRequest
+    :: Rig
+    -> String
+    -> String
+    -> RegistryEconomics
+    -> BS.ByteString
+    -> IO (TxIn, Integer)
+plantRequest rig tokenStr seedStr econ key = do
+    seedIn <-
+        either
+            (fail . ("plantRequest seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    let seedRef = txInToRef seedIn
+    tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel econ seedRef
+        reqAddr = requestAddrFromCfg cfg tid Testnet
+        wallet = walletAddr (rigWallet rig)
+    unsigned <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            requestEdgeImpl cfg v (Coin 1_000_000) tid key edgeInsertActive wallet
+    let txid = txIdTx unsigned
+        spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
+        made = zip [0 ..] (toList (unsigned ^. bodyTxL . outputsTxBodyL))
+        atReq =
+            [ (TxIn txid (TxIx ix), out)
+            | (ix, out) <- made
+            , out ^. addrTxOutL == reqAddr
+            ]
+    (reqIn, reqOut) <- case atReq of
+        [one] -> pure one
+        _ ->
+            fail
+                ( "plantRequest: expected one request output at "
+                    <> show reqAddr
+                    <> ", found "
+                    <> show (length atReq)
+                )
+    submitted <- case extractCageDatum reqOut of
+        Just (RequestDatum r) -> pure (requestSubmittedAt r)
+        _ -> fail "plantRequest: request output carries no request datum"
+    recordTransaction (rigChain rig) unsigned
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.union
+                    (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
+                    (foldr Map.delete (csUTxO facts) spent)
+            }
+    pure (reqIn, submitted)
+
+-- | Move the chain tip past this millisecond instant, by this many slots more.
+jumpToAfter :: Rig -> Integer -> Word64 -> IO ()
+jumpToAfter rig ms more =
+    jumpChainTo
+        (rigChain rig)
+        (SlotNo (fromInteger (ms `div` 1000) + more + 1))
 
 -- | A wallet output the create can consume as its seed.
 fundSeed :: Rig -> IO String
@@ -1182,23 +968,6 @@ fundSeed2 rig = do
         i : _ -> pure (T.unpack (renderOutRef i))
         [] -> fail "the wallet holds nothing for a second registry"
 
-{- | A well-formed token no registry minted: this release's state policy
-with the name the unused fixture seed derives. The text keeps the
-policy the create printed and swaps in that name.
--}
-absentToken :: String -> IO String
-absentToken printed = case T.splitOn "." (T.pack printed) of
-    [policy, _] ->
-        pure
-            ( T.unpack
-                ( policy
-                    <> "."
-                    <> TE.decodeUtf8
-                        (B16.encode (deriveAssetName (txInToRef (fundOutput 7))))
-                )
-            )
-    _ -> fail ("no policy in state token " <> printed)
-
 -- | One command line, parsed as the packaged command parses it and run in process.
 run :: Rig -> String -> [String] -> IO Run
 run rig = runAt rig "registry"
@@ -1211,7 +980,15 @@ runAt rig = runVia rig (envOf rig)
 one whose provider cannot answer a read.
 -}
 runVia :: Rig -> Env -> FilePath -> String -> [String] -> IO Run
-runVia rig env registry label args = do
+runVia rig env = runViaApp rig env neutralApplication
+
+{- | The same, composing the caller's application value: the neutral value
+for the switched creates (the policy comes through the parser), another
+value for the refusal rows.
+-}
+runViaApp
+    :: Rig -> Env -> Application -> FilePath -> String -> [String] -> IO Run
+runViaApp rig env app registry label args = do
     writeIORef (rigEvents rig) []
     command <-
         either
@@ -1219,7 +996,8 @@ runVia rig env registry label args = do
             pure
             (parseCommand (commandLine rig registry args))
     (code, out, _) <-
-        captured (runCommand openDatumApplication env command)
+        captured
+            (runCommand app env command)
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))
@@ -1278,6 +1056,206 @@ commandLine rig registry args =
         <> [rigKey rig | wantsKey]
   where
     wantsKey = take 2 args /= ["registry", "inspect"]
+
+-- ---------------------------------------------------------
+-- --application-policy (#528)
+-- ---------------------------------------------------------
+
+{- | The policy the switched creates pin, through the parser: 28 0x07
+bytes as hex, computed here at run time and never typed.
+-}
+policyArgs :: [String]
+policyArgs = ["--application-policy", T.unpack (hexText (BS.replicate 28 7))]
+
+-- | The refusal reason a receipt names.
+receiptReason :: Run -> Maybe Text
+receiptReason r = textAt "reason" (runReceipt r)
+
+{- | A script-pinned value, standing in for the application's value the
+registry-cli never names: the pin comes from the script.
+-}
+scriptPinned :: Application
+scriptPinned =
+    Application
+        { appName = Just "script-app"
+        , appExecutable = Just "script-app"
+        , appPin = PinByScript "script-app.script-app"
+        , appDecoder = Nothing
+        , appHolding = Nothing
+        }
+
+{- | Run a create pinning these policy bytes through the flag, and check
+the receipt's pins, the published references and the state datum on the
+chain.
+-}
+pinsPolicy :: Rig -> FilePath -> String -> BS.ByteString -> IO ()
+pinsPolicy rig registry seed policyBytes = do
+    let policyHex = T.unpack (hexText policyBytes)
+    r <-
+        runViaApp
+            rig
+            (envOf rig)
+            neutralApplication
+            registry
+            ("create pins " <> policyHex)
+            [ "registry"
+            , "create"
+            , "--seed"
+            , seed
+            , "--application-policy"
+            , policyHex
+            ]
+    outcomeOf (runReceipt r) `shouldBe` Just "success"
+    -- the receipt's pins name the hash
+    case valueAt "pins" (runReceipt r) >>= valueAt "pinApplication" of
+        Just (Aeson.String t) -> t `shouldBe` hexText policyBytes
+        _ -> expectationFailure ("no pinApplication in " <> runLabel r)
+    -- no reference output for the application is published
+    case elementsAt "references" (runReceipt r) of
+        Just refs ->
+            sort [t | Aeson.Object o <- refs, Just t <- [fieldOf "role" o]]
+                `shouldBe` [ "request"
+                           , "state"
+                           , "witness-absent"
+                           , "witness-active"
+                           , "witness-terminal"
+                           ]
+        Nothing -> expectationFailure ("no references in " <> runLabel r)
+    -- the state datum on the chain pins the hash
+    seedIn <-
+        either (fail . ("policy seed: " <>)) pure (parseOutRef (T.pack seed))
+    rel <-
+        loadReleaseCodes neutralApplication (rigBlueprint rig)
+            >>= either fail pure
+    let (cfg, _) =
+            registryConfigFor
+                (hashPinnedApplication (SBS.toShort policyBytes))
+                rel
+                economics
+                (txInToRef seedIn)
+    tid <- parseTokenId =<< tokenOf r
+    stateUtxos <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            SessionIO.outputsAt v (cageAddrFromCfg cfg Testnet)
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+        Just (_, out) -> case extractCageDatum out of
+            Just (StateDatum st) -> stateAppPolicyBytes st `shouldBe` policyBytes
+            _ -> expectationFailure ("no state datum in " <> runLabel r)
+        Nothing -> expectationFailure ("no state output in " <> runLabel r)
+
+applicationPolicyRows :: Spec
+applicationPolicyRows =
+    describe "registry create --application-policy (#528)" $
+        do
+            it
+                "pins the given hash in the state datum and publishes no application reference"
+                $ withRig
+                $ \rig -> do
+                    first <- fundSeed rig
+                    pinsPolicy rig "policy-a" first (BS.replicate 28 7)
+                    second <- fundSeed2 rig
+                    pinsPolicy rig "policy-b" second (BS.replicate 28 9)
+            it
+                "refuses a create without the flag on the neutral value before anything is built or signed"
+                $ withRig
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    r <-
+                        runViaApp
+                            rig
+                            (envOf rig)
+                            neutralApplication
+                            "registry"
+                            "create without policy"
+                            ["registry", "create", "--seed", seed]
+                    outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+                    receiptReason r
+                        `shouldSatisfy` maybe False (T.isInfixOf "--application-policy")
+                    receiptReason r
+                        `shouldSatisfy` maybe False (not . T.isInfixOf "applyPin")
+                    valueAt "transactions" (runReceipt r) `shouldBe` Nothing
+                    [() | Trace _ (How (Tx _)) <- runEvents r] `shouldBe` []
+            it "does not accept the flag for a script-pinned value" $
+                withRig $
+                    \rig -> do
+                        seed <- fundSeed rig
+                        r <-
+                            runViaApp
+                                rig
+                                (envOf rig)
+                                scriptPinned
+                                "registry"
+                                "create with policy on a script pin"
+                                (["registry", "create", "--seed", seed] <> policyArgs)
+                        outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+                        receiptReason r
+                            `shouldSatisfy` maybe False (T.isInfixOf "--application-policy")
+                        receiptReason r
+                            `shouldSatisfy` maybe False (T.isInfixOf "not accepted")
+                        valueAt "transactions" (runReceipt r) `shouldBe` Nothing
+                        [() | Trace _ (How (Tx _)) <- runEvents r] `shouldBe` []
+            it "refuses a non-hex hash with a named message" $
+                case parseCommand
+                    [ "registry"
+                    , "create"
+                    , "--seed"
+                    , replicate 64 'f' <> "#1"
+                    , "--blueprint"
+                    , "plutus.json"
+                    , "--koios-url"
+                    , "http://fixture.invalid"
+                    , "--network-magic"
+                    , "42"
+                    , "--wallet-skey"
+                    , "payment.skey"
+                    , "--application-policy"
+                    , "not hex at all"
+                    ] of
+                    Left err ->
+                        renderCLIError err
+                            `shouldSatisfy` \said ->
+                                T.isInfixOf "--application-policy" (T.pack said)
+                                    && T.isInfixOf "56" (T.pack said)
+                    Right command ->
+                        expectationFailure ("a non-hex hash parsed: " <> show command)
+            it "refuses a hash of the wrong length with a named message" $
+                case parseCommand
+                    [ "registry"
+                    , "create"
+                    , "--seed"
+                    , replicate 64 'f' <> "#1"
+                    , "--blueprint"
+                    , "plutus.json"
+                    , "--koios-url"
+                    , "http://fixture.invalid"
+                    , "--network-magic"
+                    , "42"
+                    , "--wallet-skey"
+                    , "payment.skey"
+                    , "--application-policy"
+                    , "abcd"
+                    ] of
+                    Left err ->
+                        renderCLIError err
+                            `shouldSatisfy` \said ->
+                                T.isInfixOf "--application-policy" (T.pack said)
+                                    && T.isInfixOf "56" (T.pack said)
+                    Right command ->
+                        expectationFailure ("a short hash parsed: " <> show command)
+            it "refuses the flag on commands that do not create"
+                $ forM_
+                    [ ["registry", "fold"]
+                    , ["registry", "reject"]
+                    , ["registry", "reclaim"]
+                    , ["registry", "inspect"]
+                    ]
+                $ \words' ->
+                    case parseCommand (words' <> policyArgs) of
+                        Left (BadValue "--application-policy" why)
+                            | "create" `isInfixOf` why -> pure ()
+                        other ->
+                            expectationFailure
+                                ("the policy flag survived off create: " <> show other)
 
 -- ---------------------------------------------------------
 -- The comparison
@@ -1832,18 +1810,6 @@ redirecting target path act =
         )
         (const act)
 
--- | What a run ended with: its label, outcome class and exit status.
-summary :: Run -> (String, Maybe Text, ExitCode)
-summary r = (runLabel r, outcomeOf (runReceipt r), runExit r)
-
--- | A sink writing to a handle that is already closed.
-closedHandleSink :: IO (Tracer IO Trace)
-closedHandleSink = do
-    (path, h) <- openTempFile "/tmp" "closed-sink"
-    hClose h
-    removeFile path
-    pure (Tracer (hPrint h))
-
 -- | Every fact 'alterations' plants a contradiction in.
 plantedFacts :: [String]
 plantedFacts =
@@ -1859,13 +1825,6 @@ plantedFacts =
     , "request edge"
     , "request deadline"
     , "edge started"
-    , "booked request"
-    , "booked deadline"
-    , "fold edge"
-    , "fold key"
-    , "fold output"
-    , "update key"
-    , "update output"
     , "rejected request"
     , "rejected dropped"
     , "reclaimed request"
@@ -1886,9 +1845,9 @@ plantedFacts =
     , "scope edge"
     ]
 
--- | The journal steps that act on an edge: boot, book, fold, update, reject, reclaim.
+-- | The journal steps that act on an edge: boot, reclaim, reject.
 edgeSteps :: [Text]
-edgeSteps = ["boot", "book", "fold", "update", "reject", "reclaim"]
+edgeSteps = ["boot", "reclaim", "reject"]
 
 {- | A mechanic that belongs to its transaction once its build has decided
 where it is placed: an evaluation, the build, the signing, submission,

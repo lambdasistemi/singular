@@ -3,8 +3,8 @@
 You have cloned nothing. You want to know that a Singular release is what it
 says it is before you run it: that the files you downloaded are the files
 that were published, that the release names the formal model its evidence
-was checked against, and that the `singular` command built from it actually
-runs a registry from creation to termination. One command answers all
+was checked against, and that the `singular` and `open-datum` commands built from it actually
+run a registry from creation to termination. One command answers all
 three, from the downloaded bytes alone, and either passes or refuses by name.
 
 ## What you run
@@ -42,7 +42,7 @@ flowchart TD
     D[Download the three assets] -->|all present| S[Sums: both archives, and every file inside the on-chain archive]
     S -->|match| M[Model revision: the archive names the commit the conformance evidence reads]
     M -->|same commit| E[Members: run page, off-chain flake, command source, compiled blueprint]
-    E -->|present| B[Build singular and a development node from the archive's own flake]
+    E -->|present| B[Build singular, open-datum and a development node from the archive's own flake]
     B -->|built| J[create, insert, update, terminate, inspect as separate processes on one development network]
     J -->|every receipt agrees| H[Harness hooks: none fired that no process asked for]
     H -->|as asked| P[PASS]
@@ -62,7 +62,7 @@ states it in the archive as `MODEL-REVISION`; the verifier compares it with
 the revision the conformance evidence of the same release is compiled
 against. The journey is the one on the archive's run page: a registry is
 created, a key inserted, its payload updated and the key terminated, each a
-separate `singular` process on one development network the verifier starts
+separate `singular` or `open-datum` process on one development network the verifier starts
 and stops itself, with an `inspect` after every write.
 
 The last check is computed from that same run. The released `singular` has

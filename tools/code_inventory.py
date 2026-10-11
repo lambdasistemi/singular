@@ -237,7 +237,7 @@ POLICIES: dict[str, dict] = {
         "note": "the adversarial host package lives outside the offchain "
         "checker's manifest-discovered extent by design, so its lint runs "
         "in its own app with the same pinned HLint, over every Haskell "
-        "source under offchain/negative/ with no exclusions.",
+        "source under applications/open-datum/negative/ with no exclusions.",
     },
     "fourmolu-negative-host": {
         "kind": "format",
@@ -247,7 +247,29 @@ POLICIES: dict[str, dict] = {
         "'Negative host sources: format and lint' (negative-host.yml), "
         "and the whole-tree `just format-check` inside `just ci`",
         "note": "the same committed house fourmolu.yaml, over every "
-        "Haskell source under offchain/negative/ with no exclusions.",
+        "Haskell source under applications/open-datum/negative/ with no exclusions.",
+    },
+    "hlint-open-datum": {
+        "kind": "lint",
+        "tool": "hlint",
+        "status": "enforced",
+        "carrier": "applications/open-datum/offchain `nix run .#lint` — "
+        "the application's own flake lint (fourmolu + hlint over the "
+        "manifest-discovered extent)",
+        "note": "bound to the checker's own discovered extent: every Cabal "
+        "hs-source-dirs stanza of open-datum.cabal (visited recursively, "
+        "as the checker's find does) plus test, with no exclusions.",
+    },
+    "fourmolu-open-datum": {
+        "kind": "format",
+        "tool": "fourmolu",
+        "status": "enforced",
+        "carrier": "applications/open-datum/offchain `nix run .#lint` — "
+        "and the whole-tree `just format-check` inside `just ci`",
+        "note": "the committed house fourmolu.yaml at the repository "
+        "root, over the application's manifest-discovered set — every "
+        "Cabal hs-source-dirs stanza of open-datum.cabal plus test — "
+        "with no directory exclusions.",
     },
     "aiken-fmt": {
         "kind": "format",
@@ -430,17 +452,42 @@ CODE_RULES: list[dict] = [
     },
     # The adversarial host's own sources: outside the offchain checker's
     # manifest-discovered extent by design, linted and formatted by the
-    # host's own app instead. Placed before the reject rule so the reject
-    # still fires for any other unmapped offchain Haskell file.
+    # host's own app instead. Moved to applications/open-datum/negative.
     {
         "id": "hs-negative-host",
         "family": "haskell",
-        "pattern": "offchain/negative/**/*.hs",
+        "pattern": "applications/open-datum/negative/**/*.hs",
         "lint": "hlint-negative-host",
         "format": "fourmolu-negative-host",
         "generated": False,
         "note": "the singular-negative package, linted by "
         "negative-host-lint and never by the offchain checker.",
+    },
+    # The open-datum application: restricted like offchain to the checker's
+    # own manifest-discovered extent — the Cabal hs-source-dirs of
+    # open-datum.cabal plus test, visited recursively exactly as
+    # applications/open-datum/offchain/nix/checks.nix does — so an enforced
+    # policy is never claimed for a file the checker does not visit.
+    {
+        "id": "hs-open-datum",
+        "family": "haskell",
+        "pattern": "applications/open-datum/offchain/**/*.hs",
+        "where": "haskell-checker-extent",
+        "lint": "hlint-open-datum",
+        "format": "fourmolu-open-datum",
+        "generated": False,
+        "note": VENDOR_NOTE,
+    },
+    # A reject rule: an application Haskell source NO checker-visited
+    # component directory contains is a finding, never a row.
+    {
+        "id": "hs-applications-outside-checker-extent",
+        "family": "haskell",
+        "pattern": "applications/**/*.hs",
+        "reject": "haskell source outside every checker-visited component "
+        "directory (the application lint discovers its extent from "
+        "open-datum.cabal hs-source-dirs plus test, and the negative host "
+        "from its own package; add the component to the Cabal manifest)",
     },
     # A reject rule: an offchain Haskell source NO checker-visited component
     # directory contains is a finding, never a row — the stable diagnostic
@@ -994,6 +1041,8 @@ def parse_manifests(root: Path) -> Manifests:
         "offchain/singular-registry.cabal",
         "conformance/conformance.cabal",
         "conformance/coverage/evaluation/spike.cabal",
+        "applications/open-datum/offchain/open-datum.cabal",
+        "applications/open-datum/negative/singular-negative.cabal",
     ]
     for rel in cabal_files:
         text = _read(root, rel)
@@ -1009,6 +1058,10 @@ def parse_manifests(root: Path) -> Manifests:
                         found = True
                         base = str(PurePosixPath(rel).parent)
                         full = f"{base}/{d}" if base != "." else d
+                        # Normalise parent-relative segments (the application
+                        # test suite names ../negative/src): the walk compares
+                        # plain prefixes, so an unnormalised .. would never match.
+                        full = os.path.normpath(full)
                         m.haskell_dirs.add(str(PurePosixPath(full)))
         if not found:
             raise InventoryError(

@@ -146,7 +146,7 @@ data Saved = Saved
     -- ^ The reference outputs found for the roles the command runs
     }
 
--- | The applied open-datum script of a saved registry.
+-- | The applied application script of a saved registry.
 applied :: Saved -> SBS.ShortByteString
 applied = ncApplication . savedCodes
 

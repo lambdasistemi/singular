@@ -5,9 +5,12 @@
 # and an insertion of a Terminal key, each beside its accepting control, through
 # a node the script starts and then only reads from and submits to.
 #
-# usage: demo1_cli_attach.sh SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
+# usage: demo1_cli_attach.sh SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
 #
-# The registry is created once by the ordinary `singular registry create`,
+# SINGULAR runs `registry reject` and `registry reclaim`; OPEN_DATUM runs
+# `create`, `insert`, `update`, `terminate`, `fold` and `inspect` of an
+# open-datum registry, as the Demo 1 journey dispatches them. The registry
+# is created once by the ordinary `open-datum create`,
 # as a person runs it, from a wallet holding two large ada-only outputs: the
 # seed, which stays unspent until the boot, and the output that pays the
 # first publication meanwhile (a wallet holding one output is refused before
@@ -23,16 +26,17 @@
 # never a verdict.
 set -euo pipefail
 
-[ "$#" -eq 6 ] || {
-  echo "usage: $0 SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
+[ "$#" -eq 7 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
   exit 2
 }
 singular="$1"
-devnet="$2"
-controls="$3"
-blueprint="$4"
-ledger="$5"
-work="$6"
+open_datum="$2"
+devnet="$3"
+controls="$4"
+blueprint="$5"
+ledger="$6"
+work="$7"
 [ ! -e "$work" ] || {
   echo "attach: $work exists; every run takes a fresh directory" >&2
   exit 2
@@ -139,14 +143,14 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 
 # The registry, created once by the ordinary commands.
-"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
   >"$receipts/preview.json"
 address="$(jq -r .wallet "$receipts/preview.json")"
-"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
   >"$receipts/preview-public.json"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins' \
   "$receipts/preview-public.json" >/dev/null || setup_fail "the public preview names another registry"
-"$singular" registry create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" >"$receipts/create.json"
 jq -e '.outcome == "success"' "$receipts/create.json" >/dev/null || setup_fail "the registry was not created"
 # Every later command names the registry by the state token create printed;
@@ -157,7 +161,7 @@ state_token="$(jq -r .stateToken "$receipts/create.json")"
 common+=(--state-token "$state_token")
 jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/create.json" >/dev/null \
   || setup_fail "the attach registry did not read back the short CI windows"
-"$singular" registry inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
+"$open_datum" inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
 jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/windows.json" >/dev/null \
   || setup_fail "inspect did not read the attach registry's short windows"
 say "registry $(jq -r .token "$receipts/create.json") created once, from its seed beside one funding output"
@@ -204,8 +208,8 @@ take() {
   fi
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
   grep -m3 "uncovered" "$work/$name.md" >&2 || true
-  # The key ends Terminal by the ordinary inspect, and no request is left pending.
-  "$singular" registry inspect --key "$key" \
+  # The key ends Terminal by the ordinary `open-datum inspect`, and no request is left pending.
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = terminal ] \
     || fail_control "take $name: the key is not Terminal afterwards"
@@ -364,7 +368,7 @@ indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
   [ "$(jq -r .outcome "$last")" = "$outcome" ] || fail_control "$name: the read ended $(jq -r .outcome "$last"), not $outcome"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$key" \
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"
@@ -397,7 +401,7 @@ tampered_stop() { # NAME KEY FACT NEEDLE
   [ "$(jq -r .outcome "$last")" = success ] || fail_control "$name: the tampered read did not end success, so it tests nothing"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$key" \
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"

@@ -168,52 +168,9 @@ library
     , Singular.Registry.Evidence
     , Singular.Registry.Signing
 
--- The open-datum application: the envelope, its booking approval and
--- destination, payload update, release rules, script, the application value
--- the command line composes, and the open-datum verbs' modules. Public so
--- the command line, the tests and the open-datum executable link it; the
--- registry library names none of it (see application-boundary-check).
-library open-datum-application
-  import:           warnings
-  visibility:       public
-  default-language: GHC2021
-  hs-source-dirs:   open-datum/src
-  exposed-modules:
-    Singular.Application.OpenDatum.Book
-    Singular.Application.OpenDatum.Build
-    Singular.Application.OpenDatum.Envelope
-    Singular.Application.OpenDatum.Release
-    Singular.Application.OpenDatum.Script
-    Singular.Application.OpenDatum.Update
-    Singular.Application.OpenDatum.Value
-
-  build-depends:
-    , aeson                              >=2.1  && <2.3
-    , base                               >=4.14 && <5
-    , base16-bytestring
-    , bytestring                         >=0.11 && <0.13
-    , cardano-crypto-class
-    , cardano-ledger-api
-    , cardano-ledger-conway
-    , cardano-ledger-core
-    , cardano-ledger-mary
-    , cardano-tx-tools:tx-build
-    , containers                         >=0.6  && <0.8
-    , microlens
-    , plutus-core
-    , plutus-tx
-    , singular-registry
-    , singular-registry:local-services
-    , text                               >=2.0  && <2.2
-
--- #528 slice 3: the registry command line is its own library. Every
--- Singular.CLI.* module deciding a registry rule lives here under its
--- unchanged module name; singular and cage-tests depend on it instead of
--- compiling cli/src. The entry commands (Entry, Plan, InsertEnvelope,
--- Command, and the insert/update/terminate parts of Preview) stay in this
--- source until slice 4 moves them into open-datum-application, so this
--- library temporarily depends on open-datum-application; slice 4 removes
--- that arrow (see application-boundary-check).
+-- #528 slice 4: the application lives in its own tree; the registry
+-- trees hold the registry only. The entry commands moved there; this
+-- library names no application.
 library registry-cli
   import:           warnings
   visibility:       public
@@ -224,18 +181,16 @@ library registry-cli
     Singular.CLI.Attached
     Singular.CLI.Command
     Singular.CLI.Create
-    Singular.CLI.Entry
     Singular.CLI.Finish
     Singular.CLI.Fold
     Singular.CLI.FoldRules
-    Singular.CLI.InsertEnvelope
     Singular.CLI.Inspect
+    Singular.CLI.Key
     Singular.CLI.Live
     Singular.CLI.ManagedState
     Singular.CLI.Outlay
     Singular.CLI.Permanent
     Singular.CLI.Plan
-    Singular.CLI.Preview
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
@@ -279,7 +234,6 @@ library registry-cli
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
-    , singular-registry:open-datum-application
     , text
     , time
     , unix
@@ -989,22 +943,10 @@ test-suite cage-tests
     Naming.RegisterSpec
     Naming.RetireVerifySpec
     Paths_singular_registry
-    Singular.Application.OpenDatum.BuildersSpec
-    Singular.Application.OpenDatum.BuildSpec
-    Singular.Application.OpenDatum.EnvelopeSpec
     Singular.CLI.CommandRunSpec
-    Singular.CLI.FoldSpec
-    Singular.CLI.InsertEnvelopeSpec
-    Singular.CLI.ManagedStateSpec
-    Singular.CLI.OutlaySpec
     Singular.CLI.ReclaimSpec
-    Singular.CLI.RecoverySpec
     Singular.CLI.RejectSpec
-    Singular.CLI.StateTokenSpec
-    Singular.CLI.TraceSpec
     Singular.CLI.TrieRefusalSpec
-    Singular.CLI.WriteSpec
-    Singular.CLISpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
     Singular.Provider.Koios.FakeServer
@@ -1014,8 +956,6 @@ test-suite cage-tests
     Singular.Provider.Koios.RecorderSpec
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
-    Singular.Registry.ApplicationSpec
-    Singular.Registry.NeutralValueSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.ContractMemory
@@ -1034,8 +974,6 @@ test-suite cage-tests
     Singular.Registry.ProviderSpec
     Singular.Registry.RawChainFixture
     Singular.Registry.SessionServicesSpec
-    Singular.Registry.StateTokenFixture
-    Singular.Registry.StateTokenSpec
     Singular.Registry.StubSession
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime
@@ -1044,7 +982,6 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
-    Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
@@ -1060,7 +997,6 @@ test-suite cage-tests
     , async
     , base                              >=4.14 && <5
     , base16-bytestring
-    , bech32
     , bytestring
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -1102,7 +1038,6 @@ test-suite cage-tests
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
-    , singular-registry:open-datum-application
     , singular-registry:registry-cli
     , temporary
     , text
@@ -1364,7 +1299,7 @@ executable singular
 
   build-depends:
     , base                              >=4.14 && <5
-    , singular-registry:open-datum-application
+    , singular-registry
     , singular-registry:registry-cli
 
   ghc-options:      -threaded -with-rtsopts=-N

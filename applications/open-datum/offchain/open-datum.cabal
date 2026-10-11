@@ -1,0 +1,170 @@
+cabal-version: 3.4
+name:          open-datum
+version:       0.1.0.0
+synopsis:      Open-datum application against the Singular registry library
+description:
+  The open-datum application: envelope, booking, release rules, script,
+  application value, entry commands and verbs, built against the
+  singular-registry library and registry-cli. Code moves; behaviour does
+  not change.
+
+license:       Apache-2.0
+license-file:  LICENSE
+author:        Paolo Veronelli
+maintainer:    paolo.veronelli@gmail.com
+category:      Cardano
+build-type:    Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+library
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   src
+  exposed-modules:
+    Singular.Application.OpenDatum.Book
+    Singular.Application.OpenDatum.Build
+    Singular.Application.OpenDatum.Command
+    Singular.Application.OpenDatum.Entry
+    Singular.Application.OpenDatum.Envelope
+    Singular.Application.OpenDatum.InsertEnvelope
+    Singular.Application.OpenDatum.Permanent
+    Singular.Application.OpenDatum.Plan
+    Singular.Application.OpenDatum.Preview
+    Singular.Application.OpenDatum.Release
+    Singular.Application.OpenDatum.Root
+    Singular.Application.OpenDatum.Run
+    Singular.Application.OpenDatum.Script
+    Singular.Application.OpenDatum.Update
+    Singular.Application.OpenDatum.Value
+
+  build-depends:
+    , aeson                              >=2.1  && <2.3
+    , base                               >=4.14 && <5
+    , base16-bytestring
+    , bytestring                         >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers                         >=0.6  && <0.8
+    , contra-tracer
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+    , text                               >=2.0  && <2.2
+
+executable open-datum
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:
+    , base                    >=4.14 && <5
+    , open-datum
+  ghc-options: -threaded -with-rtsopts=-N
+
+test-suite open-datum-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   test test-tags ../negative/src
+  main-is:          Main.hs
+  other-modules:
+    Negative.Parse
+    Singular.Application.OpenDatum.BuildersSpec
+    Singular.Application.OpenDatum.BuildSpec
+    Singular.Application.OpenDatum.EnvelopeSpec
+    Singular.Application.OpenDatum.CommandRunSpec
+    Singular.Application.OpenDatum.FoldSpec
+    Singular.Application.OpenDatum.InsertEnvelopeSpec
+    Singular.Application.OpenDatum.ManagedStateSpec
+    Singular.Application.OpenDatum.RecoverySpec
+    Singular.Application.OpenDatum.StateTokenSpec
+    Singular.Application.OpenDatum.TraceSpec
+    Singular.Application.OpenDatum.WriteSpec
+    Singular.Application.OpenDatum.CLISpec
+    Singular.Application.OpenDatum.ApplicationSpec
+    Singular.Application.OpenDatum.NeutralValueSpec
+    Singular.Application.OpenDatum.NegativeParseSpec
+    Singular.Application.OpenDatum.StateTokenFixture
+    Singular.Application.OpenDatum.RegistryStateTokenSpec
+    Singular.Application.OpenDatum.BurnSourceSpec
+    Singular.Application.OpenDatum.OutlaySpec
+    Singular.PhaseLogFixture
+    Singular.Provider.Koios.FakeServer
+    Singular.Provider.Koios.Scripted
+    Singular.Registry.RawChainFixture
+    Singular.Registry.StubSession
+    Singular.Registry.SyntheticLedger
+    Singular.Registry.SyntheticTime
+    Singular.Registry.TxBuilder.BookingFixture
+    Test.Tags
+
+  build-depends:
+    , aeson
+    , async
+    , base                              >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , case-insensitive
+    , containers
+    , contra-tracer
+    , crypton
+    , directory
+    , filepath
+    , hspec
+    , http-types
+    , memory
+    , microlens
+    , mtl
+    , mts:mpf-write
+    , open-datum
+    , ouroboros-consensus
+    , plutus-ledger-api
+    , plutus-core
+    , plutus-tx
+    , QuickCheck
+    , serialise
+    , singular-registry
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+    , temporary
+    , wai
+    , warp
+    , text
+    , time
+    , unix
+
+  ghc-options:      -threaded

@@ -94,6 +94,13 @@ def assemble(
             "flake.lock",
             "fourmolu.yaml",
             "applications/open-datum/ledgers.json",
+            # #528 slice 4: the release ships both executables. The
+            # application's flake and the negative-host pair's host sources
+            # ride as their own tracked partitions, so the extracted archive
+            # builds `open-datum` and `singular-negative` from the
+            # application's tree now, beside `singular` from the registry.
+            "applications/open-datum/offchain",
+            "applications/open-datum/negative",
             "specs/299-singular-cli/spec.md",
         ),
     )

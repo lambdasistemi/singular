@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "The ordinary singular registry commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.",
+      "text": "The ordinary singular registry and open-datum commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.",
       "pause": 400
     },
     {
@@ -87,6 +87,6 @@
   ],
   "_source": {
     "file": "demo1-preprod.md",
-    "sha256": "95f8b190a9880bb0ea3f796a207efbf94f5e0e4efbe85f04dad782eb1547d48d"
+    "sha256": "52f7a0599c017b7515cdce8451de61e550d8b566c7233dcf61c0ede493da9d82"
   }
 }

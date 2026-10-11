@@ -134,7 +134,7 @@ data Release = Release
     { releaseState :: SBS.ShortByteString
     , releaseRequest :: SBS.ShortByteString
     , releaseCodes :: NamingCodes
-    {- ^ @open_datum.open_datum@ unapplied and @witness.witness@, from the
+    {- ^ The application's validator unapplied and @witness.witness@, from the
     same blueprint
     -}
     }

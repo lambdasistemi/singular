@@ -223,6 +223,15 @@
         # validator set, so a validator added or removed cannot pass
         # silently, and a manifest or blueprint with zero validators is
         # a failure rather than a vacuous pass.
+        # Slice 4 split (#528): the permanent contract keeps four scripts
+        # with unchanged hashes; tools/m1_identity.py writes the three
+        # registry scripts into offchain/cli/src/Singular/CLI/Permanent.hs
+        # and the open-datum entry into
+        # applications/open-datum/offchain/src/Singular/Application/OpenDatum/Permanent.hs,
+        # both from the same onchain/permanent-contract.json. This check
+        # regenerates and compares both modules (onchain/ names the
+        # application's generated file until the Aiken slice moves the
+        # identity record).
         script-identity =
           pkgs.runCommand "mpf-script-identity-check"
             {
@@ -302,7 +311,7 @@
               fi
               echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
               python3 ${../tools/m1_identity.py} --root ${../.} --blueprint "$blueprint" --check
-              echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
+              echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned (3 registry + 1 open-datum application), manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest")); both Permanent modules fresh"
               touch $out
             '';
 

@@ -203,9 +203,9 @@
           }) (packages system)
         );
       # #299: the Demo 1 journey from the extracted release archive, run as
-      # separate `singular` processes on one development node, plus the
-      # retained insert-active and update-terminal archive controls. Run
-      # from the repository root: `nix run --quiet .#demo1-cli-check`.
+      # separate `singular` and `open-datum` processes on one development
+      # node, plus the retained insert-active and update-terminal archive
+      # controls. Run from the repository root: `nix run --quiet .#demo1-cli-check`.
       demo1 =
         system:
         let
@@ -225,7 +225,9 @@
           # development node, so CI runs the parts as parallel jobs. An empty
           # part list runs them all.
           # #300/#449: the demonstration's four refusals on one existing
-          # registry; an empty part list runs every part.
+          # registry, run as `open-datum` and `singular` processes (open verbs
+          # through `open-datum`, takes through `cli-controls` with
+          # `--singular`); an empty part list runs every part.
           attachApp = name: parts: {
             type = "app";
             program = pkgs.lib.getExe (
@@ -320,7 +322,7 @@
           # #326: verify a published release from its downloaded bytes —
           # sums, the stated model revision against the one the
           # conformance evidence is compiled against, archive members, and
-          # the Demo 1 journey built from the archive's own flake:
+          # the Demo 1 journey built from the archive's own flakes:
           # `nix run .#verify-release -- vX.Y.Z`.
           verifyRelease = pkgs.writeShellApplication {
             name = "verify-release";
@@ -390,6 +392,8 @@
                   coreutils
                   gnugrep
                   gnused
+                  gnutar
+                  gzip
                   jq
                   nix
                   # the check stops a node that outlives the journey
@@ -473,7 +477,8 @@
             );
           };
           # #300: the demonstration's four refusals on one existing registry and
-          # two fresh keys: `nix run --quiet .#demo1-cli-attach`.
+          # two fresh keys, run as `open-datum` and `singular` processes:
+          # `nix run --quiet .#demo1-cli-attach`.
           demo1-cli-attach = attachApp "demo1-cli-attach" "";
           # #449: one app per part, each with its own registry and node, so CI
           # runs the parts as parallel jobs.
@@ -482,7 +487,8 @@
           demo1-cli-attach-tampered-a = attachApp "demo1-cli-attach-tampered-a" "tampered-a";
           demo1-cli-attach-tampered-b = attachApp "demo1-cli-attach-tampered-b" "tampered-b";
           demo1-cli-attach-over-allowance = attachApp "demo1-cli-attach-over-allowance" "over-allowance";
-          # #300: the public-indexer readback against a local indexer that answers
+          # #300: the public-indexer readback (`open-datum inspect` receipts)
+          # against a local indexer that answers
           # with the shapes the public services return:
           # `nix run --quiet .#demo1-readback-check`.
           demo1-readback-check = {
@@ -503,8 +509,10 @@
               }
             );
           };
-          # #326: the flags documented for `singular` equal what its --help
-          # prints, pair by pair: `nix run --quiet .#cli-flags-check`.
+          # #326: the flags documented for `singular` and `open-datum` equal
+          # what each binary's --help prints, triple by triple, with the
+          # removed `singular registry insert | update | terminate` verbs
+          # refused: `nix run --quiet .#cli-flags-check`.
           cli-flags-check = {
             type = "app";
             program = pkgs.lib.getExe (
@@ -526,7 +534,9 @@
               }
             );
           };
-          # #325: the ordinary CLI's recovery controls — a lost
+          # #325: the ordinary CLI's recovery controls, run as `open-datum`
+          # and `singular` processes (open verbs through `open-datum`,
+          # `reject`/`reclaim` through `singular registry`) — a lost
           # acknowledgement, a local commit interrupted before and after the
           # mirror is saved, a transaction never sent, and an accepting
           # control — judged from receipts and journals:
@@ -578,6 +588,50 @@
             inherit offchain onchain system;
           })
           // (import ./nix/negative-host.nix { pkgs = import nixpkgs { inherit system; }; })
+          // (
+            let
+              pkgs = import nixpkgs { inherit system; };
+              # #528 slice 4: the registry/application separation pair.
+              # The check takes the repository root and scans the registry
+              # trees named in its own data list; the controls plant a
+              # naming, a reach, a dependency and the script hash in
+              # scratch copies and require the clean tree to pass.
+              separationCheck = pkgs.writeShellApplication {
+                name = "application-separation-check";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.findutils
+                  pkgs.gawk
+                  pkgs.gnugrep
+                  pkgs.jq
+                ];
+                text = builtins.readFile ./tools/application_separation_check.sh;
+              };
+            in
+            {
+              application-separation-check = {
+                type = "app";
+                program = pkgs.lib.getExe separationCheck;
+              };
+              application-separation-controls = {
+                type = "app";
+                program = pkgs.lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "application-separation-controls";
+                    runtimeInputs = [
+                      pkgs.coreutils
+                      pkgs.gnugrep
+                      pkgs.gnused
+                      pkgs.jq
+                    ];
+                    text =
+                      "check=${pkgs.lib.getExe separationCheck}\n"
+                      + builtins.readFile ./tools/application_separation_controls.sh;
+                  }
+                );
+              };
+            }
+          )
         )
       );
       # #278 terminal-attestation-permanent: the root development shell carries the pinned house

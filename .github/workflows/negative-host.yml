@@ -10,7 +10,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'offchain/negative/**'
+      - 'applications/open-datum/negative/**'
+      - 'applications/open-datum/offchain/cabal.project'
+      - 'applications/open-datum/offchain/flake.nix'
+      - 'applications/open-datum/offchain/flake.lock'
+      - 'applications/open-datum/offchain/nix/**'
+      - 'applications/open-datum/offchain/open-datum.cabal'
       - 'offchain/cabal.project'
       - 'offchain/flake.nix'
       - 'offchain/flake.lock'

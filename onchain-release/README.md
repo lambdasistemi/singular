@@ -60,7 +60,7 @@ back), not yet this naming lifecycle.
 | `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
 | `MODEL-REVISION` | the application model commit this release maps to: the revision of the formal model the conformance evidence reads its statements at |
 | `verify-identities.sh` | the identity check of this archive, needing only `bash` and `jq` |
-| `DEMO1.md` | the run page of the ordinary `singular registry` commands: Alice's open-datum story as separate processes on one development node |
+| `DEMO1.md` | the run page of the ordinary `singular registry` and `open-datum` commands: Alice's open-datum story as separate processes on one development node |
 | `SHA256SUMS` | the checksum manifest of every file in this archive |
 
 The pinned identities are the *unapplied* hashes — the stable,

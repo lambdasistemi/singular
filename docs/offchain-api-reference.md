@@ -201,33 +201,47 @@ generated references. The public `local-services` component also exposes
 `TimeSource`, `Trace`, `TraceRender`, `WaitTypes` and `Wallet`; their sources live under
 `offchain/local-services/Singular/Registry/`. Their generated pages are not
 in this main-library reference. The public `open-datum-application`
-component (`offchain/open-datum/`) carries the open-datum application the
-command line composes — envelope, booking approval and destination,
-payload update, release rules, script, and the application value:
+component (`applications/open-datum/offchain/`) carries the open-datum
+application the command line composes — entry commands, envelope, booking
+approval and destination, payload update, release rules, script, and the
+application value:
 `Singular.Application.OpenDatum.Book`,
 `Singular.Application.OpenDatum.Build`,
+`Singular.Application.OpenDatum.Command`,
+`Singular.Application.OpenDatum.Entry`,
 `Singular.Application.OpenDatum.Envelope`,
+`Singular.Application.OpenDatum.InsertEnvelope`,
+`Singular.Application.OpenDatum.Permanent`,
+`Singular.Application.OpenDatum.Plan`,
+`Singular.Application.OpenDatum.Preview`,
 `Singular.Application.OpenDatum.Release`,
+`Singular.Application.OpenDatum.Root`,
+`Singular.Application.OpenDatum.Run`,
 `Singular.Application.OpenDatum.Script`,
 `Singular.Application.OpenDatum.Update` and
 `Singular.Application.OpenDatum.Value`; their sources live under
-`offchain/open-datum/src/Singular/Application/OpenDatum/`.
+`applications/open-datum/offchain/src/Singular/Application/OpenDatum/`,
+and the executable's entry point lives in
+`applications/open-datum/offchain/app/`.
 The public `registry-cli` component (`offchain/cli/`) carries the registry
 command line the two binaries link — session, journal and receipts, the
 flag group, `create`, `fold`, `reject`, `reclaim`, `inspect`, reconcile,
 recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
-`Singular.CLI.Command`, `Singular.CLI.Create`, `Singular.CLI.Entry`,
+`Singular.CLI.Command`, `Singular.CLI.Create`,
 `Singular.CLI.Finish`, `Singular.CLI.Fold`, `Singular.CLI.FoldRules`,
-`Singular.CLI.InsertEnvelope`, `Singular.CLI.Inspect`, `Singular.CLI.Live`,
+`Singular.CLI.Inspect`, `Singular.CLI.Key`, `Singular.CLI.Live`,
 `Singular.CLI.ManagedState`, `Singular.CLI.Outlay`, `Singular.CLI.Permanent`,
-`Singular.CLI.Plan`, `Singular.CLI.Preview`, `Singular.CLI.Proof`,
+`Singular.CLI.Plan`, `Singular.CLI.Proof`,
 `Singular.CLI.Receipt`, `Singular.CLI.ReceiptBody`, `Singular.CLI.Reclaim`,
 `Singular.CLI.ReclaimRules`, `Singular.CLI.Reconcile`,
 `Singular.CLI.Recovery`, `Singular.CLI.Registry`, `Singular.CLI.Reject`,
 `Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
 `Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
 `Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
-under `offchain/cli/src/Singular/CLI/`.
+under `offchain/cli/src/Singular/CLI/`. The negative host lives beside the
+application in `applications/open-datum/negative/`, with its sources under
+`applications/open-datum/negative/src/Negative/` and its entry point in
+`applications/open-datum/negative/app/`.
 Their generated pages are not in this main-library reference either: only
 the main library has a generated reference. This coverage gap stays visible; wider
 generated coverage is a separate decision for the epic's owner, not a

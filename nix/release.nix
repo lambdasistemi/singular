@@ -50,6 +50,19 @@ let
       cd "$root"
       registry_bp="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
       naming_bp="$(nix build --quiet --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
+      # #528 slice 4: the release ships both executables. The assembly
+      # obtains `open-datum` (and the negative-host pair's
+      # `singular-negative`, built from the application's tree now) from
+      # the application's flake as its own steps, exactly as the blueprints
+      # above — no eval-time flake crossing, no lock edit. The archive
+      # itself carries both trees' sources (see assemble_onchain_release.py);
+      # these builds prove both flakes evaluate and both executables link.
+      open_datum_store="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/offchain#open-datum)"
+      host_store="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/offchain#singular-negative)"
+      registry_store="$(nix build --quiet --no-link --print-out-paths ./offchain#singular)"
+      [ -x "$open_datum_store/bin/open-datum" ] || { echo "assemble-onchain-release: open-datum binary missing at $open_datum_store" >&2; exit 1; }
+      [ -x "$host_store/bin/singular-negative" ] || { echo "assemble-onchain-release: singular-negative binary missing at $host_store" >&2; exit 1; }
+      [ -x "$registry_store/bin/singular" ] || { echo "assemble-onchain-release: singular binary missing at $registry_store" >&2; exit 1; }
       # Issue #91: the archive carries the commit it publishes (see
       # releaseCommit above); assemble_onchain_release.py writes it into
       # the archive root as RELEASE-COMMIT.

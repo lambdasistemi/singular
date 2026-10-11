@@ -41,7 +41,7 @@ address="addr_test1wqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
 node_slot=135000000
 
 mkdir -p "$work/fx"
-# The inspect receipt an ordinary `singular registry inspect` prints, in the
+# The inspect receipt an ordinary `open-datum inspect` prints, in the
 # fields the readback compares.
 jq -n --arg tx "$tx" --arg cbor "$cbor" --arg hash "$hash" --arg slot "$node_slot" \
   '{command: "inspect", outcome: "success", leaf: "active", observedTip: ($slot + ".aa"),

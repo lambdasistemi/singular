@@ -172,6 +172,16 @@ if onchain_present:
             # without the page that documents it.
             "DEMO1.md",
             "offchain/cli/Main.hs",
+            # #528 slice 4: the release ships both executables. Required, so
+            # the archive cannot ship `singular` without `open-datum`, nor
+            # either without its flake and entry point; the negative-host
+            # pair's host is built from the application's tree now.
+            "applications/open-datum/offchain/flake.nix",
+            "applications/open-datum/offchain/flake.lock",
+            "applications/open-datum/offchain/open-datum.cabal",
+            "applications/open-datum/offchain/app/Main.hs",
+            "applications/open-datum/negative/singular-negative.cabal",
+            "applications/open-datum/negative/app/Main.hs",
             # #300: the refusal controls and the indexer readback replay from
             # the archive: the runner, its take, the readback, the statement
             # ledger and specification it binds, and the flake inputs it reads.

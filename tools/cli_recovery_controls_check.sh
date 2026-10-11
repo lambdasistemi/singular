@@ -6,7 +6,8 @@
 #
 # usage: cli_recovery_controls_check.sh REPO-ROOT
 #
-# `singular` and the development node come from the offchain flake and
+# `singular` and the development node come from the offchain flake,
+# `open-datum` from the application's flake (as the journey wires it), and
 # the blueprint from the onchain flake. The verdict table is printed. The
 # scratch is removed on exit. DEMO1_KEEP_SCRATCH=1 keeps it and prints its
 # path; the cross-wallet collection sets that while it copies the receipts.
@@ -58,8 +59,10 @@ cd "$root/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 blueprint="$(build ../onchain#plutus-blueprint)"
+cd "$root/applications/open-datum/offchain"
+open_datum="$(build .#open-datum)/bin/open-datum"
 
 status=0
-bash "$controls_sh" "$singular" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
+bash "$controls_sh" "$singular" "$open_datum" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"
 exit "$status"

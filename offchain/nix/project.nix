@@ -45,7 +45,6 @@ let
       name = "singular-registry";
       src = ./..;
       compiler-nix-name = "ghc9123";
-      cabalProjectLocal = "packages: negative";
       shell = shell { inherit pkgs; };
       modules = [ fix-libs ];
       inputMap = {

@@ -8,9 +8,10 @@
 # usage: negative_host_part.sh REPO-ROOT PART
 #
 # For one discovered part: assemble the release archive, extract it outside
-# the checkout, build singular-negative and the development node from the
-# archive's own offchain flake, run the forbidden command and its accepting
-# control on one fresh node, judge every clause from the receipts, and scan
+# the checkout, build singular-negative and open-datum from the archive's
+# application flake and singular and the development node from its offchain
+# flake, run the forbidden command and its accepting control on one fresh
+# node, judge every clause from the receipts, and scan
 # every receipt and output for the key bytes generated. Refuses an unknown
 # part before starting a node.
 set -euo pipefail
@@ -83,18 +84,35 @@ tar -xzf "$onchain_archive" -C "$extracted" \
   || setup_fail "extraction failed"
 [ ! -e "$extracted/.git" ] || fail "the archive carries a git checkout"
 [ -f "$extracted/offchain/flake.nix" ] || setup_fail "extracted offchain flake missing"
+[ -f "$extracted/applications/open-datum/offchain/flake.nix" ] || setup_fail "extracted application flake missing"
 [ -f "$extracted/onchain/plutus.json" ] || setup_fail "extracted blueprint missing"
 blueprint="$extracted/onchain/plutus.json"
 
-# 3. Build host, ordinary and node from the archive's own offchain flake.
+# The application's flake reaches the registry via ../../../offchain, which
+# pure evaluation allows only inside a git worktree. The archive carries no
+# .git, so the extracted copy is made a temporary git worktree for the
+# builds below; the archive itself is untouched.
+git -C "$extracted" init -q || setup_fail "git init in the extracted archive failed"
+git -C "$extracted" add -A || setup_fail "git add in the extracted archive failed"
+git -C "$extracted" -c user.email=negative-host@local -c user.name=negative-host commit -qm extracted \
+  || setup_fail "git commit in the extracted archive failed"
+
+# 3. Build host and open-datum from the archive's application flake,
+# ordinary singular and node from its offchain flake.
 cd "$extracted/offchain"
 singular="$(nix build --quiet --no-link --print-out-paths .#singular)/bin/singular"
-host="$(nix build --quiet --no-link --print-out-paths .#singular-negative)/bin/singular-negative"
 devnet="$(nix build --quiet --no-link --print-out-paths .#devnet)/bin/devnet"
+cd "$extracted/applications/open-datum/offchain"
+host="$(nix build --quiet --no-link --print-out-paths .#singular-negative)/bin/singular-negative"
+open_datum="$(nix build --quiet --no-link --print-out-paths .#open-datum)/bin/open-datum"
+# The development node reads its genesis files relative to its working
+# directory, so the run below starts from the archive's offchain tree.
+cd "$extracted/offchain"
 [ -x "$singular" ] || setup_fail "archive singular missing"
 [ -x "$host" ] || fail "archive holds no singular-negative (focused RED)"
 [ -x "$devnet" ] || setup_fail "archive devnet missing"
-say "built host, ordinary and node from the archive"
+[ -x "$open_datum" ] || setup_fail "archive open-datum missing"
+say "built host and open-datum from the application flake, singular and node from the offchain flake"
 
 # The registry's own pins come from the registry the commands open, never
 # from a literal: the create receipt names them, and each host receipt
@@ -166,23 +184,23 @@ run_ok() {
 }
 
 # 5. Create, insert alice-1 as alice, fold to active.
-run_ok preview "$singular" registry create --process-time 120000 --retract-time 30000 --preview \
+run_ok preview "$open_datum" open-datum create --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create preview failed"
 seed="$(jq -er .seed "$receipts/preview.json")" || setup_fail "preview names no seed"
-run_ok create "$singular" registry create --process-time 120000 --retract-time 30000 --seed "$seed" \
+run_ok create "$open_datum" open-datum create --process-time 120000 --retract-time 30000 --seed "$seed" \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create failed"
 state_token="$(jq -er .stateToken "$receipts/create.json")" || setup_fail "create names no state token"
 pin_app="$(jq -er .pins.pinApplication "$receipts/create.json")" || setup_fail "create names no application pin"
 common=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$state_token")
-run_ok insert "$singular" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+run_ok insert "$open_datum" open-datum insert --key alice-1 --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "insert failed"
-run_ok fold "$singular" registry fold "${common[@]}" "${node[@]}" --wallet-skey "$work/bob.skey" \
+run_ok fold "$open_datum" open-datum fold "${common[@]}" "${node[@]}" --wallet-skey "$work/bob.skey" \
   || setup_fail "fold failed"
 [ "$(jq -er .leaf "$receipts/fold.json" 2>/dev/null || echo)" != "" ] || true
-run_ok inspect-active "$singular" registry inspect --key alice-1 "${common[@]}" "${node[@]}" \
+run_ok inspect-active "$open_datum" open-datum inspect --key alice-1 "${common[@]}" "${node[@]}" \
   || setup_fail "inspect failed"
 [ "$(jq -er .leaf "$receipts/inspect-active.json")" = active ] \
   || setup_fail "key is not active after fold"
@@ -235,13 +253,13 @@ case "$part" in
       --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    run_ok control-book "$singular" registry terminate --key alice-1 \
+    run_ok control-book "$open_datum" open-datum terminate --key alice-1 \
       "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
       || setup_fail "control booking failed"
-    run_ok control-fold "$singular" registry fold \
+    run_ok control-fold "$open_datum" open-datum fold \
       "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
       || setup_fail "control fold failed"
-    run_ok control-inspect "$singular" registry inspect --key alice-1 \
+    run_ok control-inspect "$open_datum" open-datum inspect --key alice-1 \
       "${common[@]}" "${node[@]}" \
       || setup_fail "control inspect failed"
     [ "$(jq -er .leaf "$receipts/control-inspect.json")" = terminal ] \

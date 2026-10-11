@@ -10,7 +10,8 @@
 #
 # The normal release archive is assembled from REPO-ROOT by the `release-artifacts`
 # app CI runs and extracted OUTSIDE the checkout. The archive carries its own
-# source, so its `singular`, the development node and the controls runner are
+# source, so its `singular`, `open-datum`, the development node and the controls
+# runner are
 # built from the extraction — Nix reads a flake from a Git tree, so the build is
 # done in a scratch copy of the extracted tree that is given a Git index, and the
 # archive itself is not touched. The blueprint is the archive's, the bound
@@ -69,7 +70,20 @@ version="$(cat "$root/version.txt")"
 extracted="$scratch/extracted"
 mkdir -p "$extracted"
 tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
-test ! -e "$extracted/.git" || fail "the archive carries a git checkout"
+# The archive itself carries no git checkout: assert on the tarball's member
+# list, not only on the extraction directory. The `$built` copy below is
+# deliberately turned into a temporary git worktree for the Nix builds; a
+# `.git` there is verifier-created working state, not archive contents. The
+# listing goes to a file first so a failed `tar` fails the check with its own
+# message instead of reading as absent, and `grep` never closes the producer
+# early (pipefail/SIGPIPE).
+members="$scratch/tar-members.txt"
+tar -tzf "$release_dir/singular-onchain-$version.tar.gz" >"$members" 2>"$scratch/tar-members.err" \
+  || fail "the archive does not list its members: $(tail -n 3 "$scratch/tar-members.err" | tr '\n' ' ')"
+if grep -qE '(^|/)\.git($|/)' "$members"; then
+  fail "the archive carries a git checkout"
+fi
+test ! -e "$extracted/.git" || fail "the extraction carries a git checkout"
 for carried in tools/demo1_cli_attach.sh tools/demo1_readback.sh tools/demo1_mock_indexer.py tools/demo1_readback_tamper.sh conformance/app-cli/Main.hs \
   applications/open-datum/ledgers.json specs/299-singular-cli/spec.md onchain/plutus.json; do
   test -f "$extracted/$carried" || fail "the archive does not carry $carried"
@@ -88,9 +102,12 @@ cd "$built/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 controls="$(build ../conformance#cli-controls)/bin/cli-controls"
+# `open-datum` comes from the application's flake, as the journey wires it.
+cd "$built/applications/open-datum/offchain"
+open_datum="$(build .#open-datum)/bin/open-datum"
 
 status=0
-bash "$extracted/tools/demo1_cli_attach.sh" "$singular" "$devnet" "$controls" \
+bash "$extracted/tools/demo1_cli_attach.sh" "$singular" "$open_datum" "$devnet" "$controls" \
   "$extracted/onchain/plutus.json" "$extracted/applications/open-datum/ledgers.json" \
   "$scratch/run" || status=$?
 cat "$scratch/run/one.md" "$scratch/run/two.md" 2>/dev/null || true

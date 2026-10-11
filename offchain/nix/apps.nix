@@ -5,8 +5,6 @@ let
       cage-tests
       record-value-tests
       cage-test-vectors
-      application-boundary-check
-      application-boundary-controls
       ;
     inherit (checks)
       cage-tests-e2e

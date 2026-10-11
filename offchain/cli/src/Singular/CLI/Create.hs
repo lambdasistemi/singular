@@ -3,12 +3,12 @@
 
 {- |
 Module      : Singular.CLI.Create
-Description : @singular registry create@: boot an open-datum registry from the caller's seed
+Description : @singular registry create@: boot a registry from the caller's seed
 License     : Apache-2.0
 
 The caller names a seed: an unspent, ada-only output of their own wallet.
 The seed decides the registry's identity — its state token name, and so
-the open-datum application applied to that identity and the three witness
+the application applied to that identity and the three witness
 policies — so every pin is derived before anything is submitted, and
 @--preview@ stops there, submitting nothing and writing nothing.
 
@@ -33,7 +33,7 @@ refusal happens under the target's lock, after selection and before any
 submission. A preview never refuses for existing state: it only reads,
 submitting nothing and writing nothing.
 -}
-module Singular.CLI.Create (runCreate, stateTokenOf) where
+module Singular.CLI.Create (createApplication, runCreate, stateTokenOf) where
 
 import Control.Exception
     ( SomeAsyncException
@@ -80,7 +80,8 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
-    ( CreateArgs (..)
+    ( ApplicationPolicy (..)
+    , CreateArgs (..)
     , EntryMode (..)
     , ProviderSettings (..)
     , WriteSettings (..)
@@ -132,6 +133,7 @@ import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
     , appPin
+    , hashPinnedApplication
     )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
@@ -191,8 +193,37 @@ import Singular.Registry.Wallet
     , loadWallet
     )
 
+{- | The application a @registry create@ runs with: the hash the flag pins
+through 'hashPinnedApplication', or the composed value. A neutral value
+without the flag, and a flag on a value that already fixes its pin, are
+refused by name before anything is built or signed.
+-}
+createApplication
+    :: Application -> Maybe ApplicationPolicy -> IO Application
+createApplication app policy = case (appPin app, policy) of
+    (PinFromState, Just (ApplicationPolicy hashed)) ->
+        pure (hashPinnedApplication hashed)
+    (PinFromState, Nothing) -> failWith ClientRefusal needsApplicationPolicy
+    (_, Just _) -> failWith ClientRefusal applicationPolicyNotAccepted
+    (_, Nothing) -> pure app
+
+-- | Why a create without the flag is refused on a neutral value.
+needsApplicationPolicy :: String
+needsApplicationPolicy =
+    "registry create needs --application-policy HEX: this application reads its pin from the state datum of a registry that does not exist yet, so give the 28-byte policy hash in hex (56 characters) to pin"
+
+-- | Why the flag is refused on a value that already fixes its pin.
+applicationPolicyNotAccepted :: String
+applicationPolicyNotAccepted =
+    "--application-policy is not accepted here: the application value already fixes its pin, so the pin comes from the application value"
+
 runCreate :: Application -> Env -> CreateArgs -> IO Value
 runCreate app env a = do
+    -- A direct caller composing the neutral value meets the same refusal
+    -- as the dispatch: at boot no state datum exists to read a pin from.
+    case appPin app of
+        PinFromState -> failWith ClientRefusal needsApplicationPolicy
+        _ -> pure ()
     rel <-
         envLoadRelease env app (createBlueprint a)
             >>= either (failWith ClientRefusal) pure

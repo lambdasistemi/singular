@@ -66,17 +66,23 @@
         # Synthesized build root (issue #63)
         # -------------------------------------------------------
         # conformance/ is self-contained but imports
-        # singular-registry without editing offchain/: the build root
-        # carries both packages, and the merged cabal.project is
+        # singular-registry and the open-datum application without editing
+        # offchain/ or applications/: the build root carries all packages,
+        # and the merged cabal.project is
         # derived from offchain's own at build time so it cannot
         # drift from it (no hand-copied index-state or pins).
         offchainSrc = ../offchain;
+        openDatumSrc = ../applications/open-datum/offchain;
+        negativeSrc = ../applications/open-datum/negative;
         src = pkgs.runCommand "conformance-src" { } ''
           mkdir -p $out
           cp -r ${offchainSrc}/. $out/offchain
           cp -r ${./.}/. $out/conformance
+          mkdir -p $out/applications/open-datum
+          cp -r ${openDatumSrc}/. $out/applications/open-datum/offchain
+          cp -r ${negativeSrc}/. $out/applications/open-datum/negative
           # derive the merged cabal.project from offchain's own, so it cannot drift
-          sed 's|^  \.$|  offchain\n  conformance|' ${offchainSrc}/cabal.project > $out/cabal.project
+          sed 's|^  \.$|  offchain\n  conformance\n  applications/open-datum/offchain\n  applications/open-datum/negative|' ${offchainSrc}/cabal.project > $out/cabal.project
         '';
 
         # -------------------------------------------------------
