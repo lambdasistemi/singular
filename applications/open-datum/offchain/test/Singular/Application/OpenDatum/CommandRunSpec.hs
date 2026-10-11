@@ -2,6 +2,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 {- |
 Module      : Singular.Application.OpenDatum.CommandRunSpec
@@ -48,7 +49,7 @@ import Data.IORef
     )
 import Data.List (nub, partition, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Maybe (isJust, isNothing, listToMaybe, mapMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -412,6 +413,42 @@ handlerRows = describe
                 -- every fact the comparison binds is planted somewhere in the lifecycle
                 sort kinds `shouldBe` sort plantedFacts
                 [(l, w) | (l, w, []) <- altered] `shouldBe` []
+        it "agrees with a fold receipt read from its settled list alone" $
+            withRig $ \rig -> do
+                runs <- lifecycle rig
+                let folds = foldSuccesses runs
+                [runLabel r | r <- folds] `shouldSatisfy` (not . null)
+                -- the post-removal shape: no top-level single-request fields,
+                -- the settled list carrying the same facts
+                [ (runLabel r, found)
+                  | r <- folds
+                  , let found = disagreements (runKey r) (readFromTheList r) (runEvents r)
+                  , not (null found)
+                  ]
+                    `shouldBe` []
+        it "fails a fold receipt whose settled list contradicts it" $
+            withRig $ \rig -> do
+                runs <- lifecycle rig
+                let folds = foldSuccesses runs
+                [runLabel r | r <- folds] `shouldSatisfy` (not . null)
+                -- every contradiction binds somewhere in the lifecycle's folds,
+                -- planted on the post-removal shape so the earlier top-level
+                -- duplicates cannot mask a contradicted settled fact
+                nub
+                    ( sort
+                        [ w
+                        | r <- folds
+                        , (w, _) <-
+                            settledAlterations (readFromTheList r)
+                        ]
+                    )
+                    `shouldBe` settledContradictions
+                [ (runLabel r, what')
+                  | r <- folds
+                  , (what', receipt') <- settledAlterations (readFromTheList r)
+                  , null (disagreements (runKey r) receipt' (runEvents r))
+                  ]
+                    `shouldBe` []
 
 -- ---------------------------------------------------------
 -- The commands, from the type
@@ -1728,7 +1765,27 @@ requestFacts receipt =
   where
     deadlineIn o = case KeyMap.lookup "foldDeadline" o of
         Just d -> integerAt "posixMs" d
-        Nothing -> integerAt "processingEnds" (Aeson.Object o)
+        Nothing -> case KeyMap.lookup "deadline" o of
+            Just d -> integerAt "posixMs" d
+            Nothing -> integerAt "processingEnds" (Aeson.Object o)
+
+-- | The first entry of the receipt's settled list, as an object.
+firstSettled :: Aeson.Value -> Maybe Aeson.Object
+firstSettled v = case elementsAt "settled" v of
+    Just (Aeson.Object o : _) -> Just o
+    _ -> Nothing
+
+-- | A settled request's own text fact, from the receipt's settled list.
+settledField :: Aeson.Key -> Aeson.Value -> Maybe Text
+settledField name v = firstSettled v >>= fieldOf name
+
+-- | A settled request's settlement text fact.
+settledSettlement :: Aeson.Key -> Aeson.Value -> Maybe Text
+settledSettlement name v = do
+    o <- firstSettled v
+    case KeyMap.lookup "settlement" o of
+        Just (Aeson.Object s) -> fieldOf name s
+        _ -> Nothing
 
 fieldOf :: Aeson.Key -> Aeson.Object -> Maybe Text
 fieldOf k o = case KeyMap.lookup k o of
@@ -1753,6 +1810,155 @@ elementsAt :: Aeson.Key -> Aeson.Value -> Maybe [Aeson.Value]
 elementsAt k v = case valueAt k v of
     Just (Aeson.Array xs) -> Just (toList xs)
     _ -> Nothing
+
+{- | The runs whose receipt is a successful fold's: the receipt whose earlier
+top-level single-request fields the next slice removes.
+-}
+foldSuccesses :: [Run] -> [Run]
+foldSuccesses =
+    filter
+        ( \r ->
+            textAt "command" (runReceipt r) == Just "fold"
+                && outcomeOf (runReceipt r) == Just "success"
+        )
+
+{- | A fold run's receipt without its earlier top-level single-request
+fields: the post-removal shape, the settled list carrying the same facts.
+-}
+readFromTheList :: Run -> Aeson.Value
+readFromTheList r =
+    withoutFields earlierSingleRequestFields (runReceipt r)
+
+{- | The earlier top-level single-request fields of a fold receipt, printed
+beside the settled list: the next slice removes them, so the events are
+compared with the settled list instead.
+-}
+earlierSingleRequestFields :: [Aeson.Key]
+earlierSingleRequestFields =
+    [ "request"
+    , "key"
+    , "edge"
+    , "liveOutput"
+    , "envelope"
+    , "released"
+    , "deposit"
+    , "datumHash"
+    , "datumCbor"
+    ]
+
+-- | The receipt without these top-level fields: the post-removal shape.
+withoutFields :: [Aeson.Key] -> Aeson.Value -> Aeson.Value
+withoutFields names = \case
+    Aeson.Object o -> Aeson.Object (foldl (flip KeyMap.delete) o names)
+    v -> v
+
+{- | Every way a fold receipt's settled list can stop agreeing with its
+events: removed, emptied, or contradicted in each fact the comparison
+binds. An alteration whose path the receipt does not carry is absent, so
+each delivery branch keeps the settlement field it prints.
+-}
+settledAlterations :: Aeson.Value -> [(String, Aeson.Value)]
+settledAlterations receipt =
+    [ ("settled removed", withoutFields ["settled"] receipt)
+    , ("settled emptied", setSettled [] receipt)
+    ]
+        <> mapMaybe
+            (\(what', f) -> (what',) <$> overFirstSettled f receipt)
+            [ ("settled request", withText "request" flipLeading)
+            , ("settled key", withText "key" flipLeading)
+            , ("settled edge", withText "edge" (<> "x"))
+            , ("settled deadline", overDeadline (withInteger "posixMs" (+ 1)))
+            ,
+                ( "settled live output"
+                , overSettlement (withText "liveOutput" flipLeading)
+                )
+            ,
+                ( "settled released output"
+                , overSettlement (withText "released" flipLeading)
+                )
+            ]
+
+{- | Every settled-list contradiction 'settledAlterations' plants; both
+delivery branches occur among the lifecycle's folds, so the extent is
+both settlement fields.
+-}
+settledContradictions :: [String]
+settledContradictions =
+    sort
+        [ "settled removed"
+        , "settled emptied"
+        , "settled request"
+        , "settled key"
+        , "settled edge"
+        , "settled deadline"
+        , "settled live output"
+        , "settled released output"
+        ]
+
+-- | The receipt with its settled list replaced by these entries.
+setSettled :: [Aeson.Value] -> Aeson.Value -> Aeson.Value
+setSettled settled = \case
+    Aeson.Object o -> Aeson.Object (KeyMap.insert "settled" (Aeson.toJSON settled) o)
+    v -> v
+
+{- | The receipt with its first settled entry edited; Nothing when there is
+no settled entry or the edit binds nothing.
+-}
+overFirstSettled
+    :: (Aeson.Object -> Maybe Aeson.Object)
+    -> Aeson.Value
+    -> Maybe Aeson.Value
+overFirstSettled f v = do
+    o <- firstSettled v
+    o' <- f o
+    let rest = maybe [] (drop 1) (elementsAt "settled" v)
+    pure (setSettled (Aeson.Object o' : rest) v)
+
+-- | Replace a text field of an object; Nothing when it holds no text there.
+withText
+    :: Aeson.Key -> (Text -> Text) -> Aeson.Object -> Maybe Aeson.Object
+withText name f o = case KeyMap.lookup name o of
+    Just (Aeson.String t) -> Just (KeyMap.insert name (Aeson.String (f t)) o)
+    _ -> Nothing
+
+-- | Replace an integer field of an object; Nothing when it holds no number.
+withInteger
+    :: Aeson.Key
+    -> (Integer -> Integer)
+    -> Aeson.Object
+    -> Maybe Aeson.Object
+withInteger name f o = case KeyMap.lookup name o of
+    Just v
+        | Aeson.Success n <- Aeson.fromJSON v ->
+            Just (KeyMap.insert name (Aeson.toJSON (f n)) o)
+    _ -> Nothing
+
+-- | Edit the entry's settlement object, when it carries one.
+overSettlement
+    :: (Aeson.Object -> Maybe Aeson.Object)
+    -> Aeson.Object
+    -> Maybe Aeson.Object
+overSettlement f o = case KeyMap.lookup "settlement" o of
+    Just (Aeson.Object s)
+        | Just s' <- f s ->
+            Just (KeyMap.insert "settlement" (Aeson.Object s') o)
+    _ -> Nothing
+
+-- | Edit the entry's deadline object, when it carries one.
+overDeadline
+    :: (Aeson.Object -> Maybe Aeson.Object)
+    -> Aeson.Object
+    -> Maybe Aeson.Object
+overDeadline f o = case KeyMap.lookup "deadline" o of
+    Just (Aeson.Object d)
+        | Just d' <- f d ->
+            Just (KeyMap.insert "deadline" (Aeson.Object d') o)
+    _ -> Nothing
+
+-- | Flip a text's first character, so a bound fact contradicts its event.
+flipLeading :: Text -> Text
+flipLeading t =
+    if T.take 1 t == "0" then "1" <> T.drop 1 t else "0" <> T.drop 1 t
 
 -- | The receipt's submissions: step, transaction id, case and whether observed.
 submissionsOf :: Aeson.Value -> [(Text, Text, Maybe Text, Bool)]
@@ -1927,7 +2133,10 @@ disagreements invokedKey receipt events =
           ]
         , [ "folded output " <> show o
           | Trace _ (What (Folded _ _ o)) <- events
-          , Just o /= (textAt "liveOutput" receipt <|> textAt "released" receipt)
+          , Just o
+                /= ( settledSettlement "liveOutput" receipt
+                        <|> settledSettlement "released" receipt
+                   )
           ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
@@ -1945,8 +2154,16 @@ disagreements invokedKey receipt events =
   where
     outcome = textAt "outcome" receipt
     command = textAt "command" receipt
-    expectedKey = textAt "key" receipt <|> invokedKey
-    receiptEdge = textAt "edge" receipt
+    -- A fold receipt's key and edge live in its settled list; the earlier
+    -- top-level fields are printed beside it until the removal slice.
+    expectedKey
+        | command == Just "fold" =
+            settledField "key" receipt <|> textAt "key" receipt <|> invokedKey
+        | otherwise = textAt "key" receipt <|> invokedKey
+    receiptEdge
+        | command == Just "fold" =
+            settledField "edge" receipt <|> textAt "edge" receipt
+        | otherwise = textAt "edge" receipt
     facts = requestFacts receipt
     subs = submissionsOf receipt
     -- a reference the command found already published: read back, not submitted
