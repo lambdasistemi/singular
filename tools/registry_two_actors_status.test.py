@@ -52,6 +52,7 @@ def bare(mod, tmp):
     }
     journey.state_token = "policy.name"
     journey.singular = "singular"
+    journey.open_datum = "open-datum"
     journey.devnet = "devnet"
     journey.blueprint = "blueprint"
     journey.keys = Path(tmp)
@@ -3354,7 +3355,9 @@ def test_journey_init_creates_worktree(mod, tmp):
     work = Path(tmp) / "fresh-work"
     journey = mod.Journey.__new__(mod.Journey)
     try:
-        mod.Journey.__init__(journey, "singular", "devnet", "blueprint", str(work))
+        mod.Journey.__init__(
+            journey, "singular", "open-datum", "devnet", "blueprint", str(work)
+        )
     except Exception as error:  # noqa: BLE001 - escape is the finding
         check(
             "journey-init-creates-worktree",
@@ -3614,6 +3617,85 @@ def _stop_calls_script(fail_index, fail_with):
     return fake_run, seen
 
 
+def _capture_argv(mod):
+    seen = []
+
+    def fake_run(argv, **kwargs):
+        seen.append(argv)
+        return subprocess.CompletedProcess(argv, 1)
+
+    return fake_run, seen
+
+
+def test_open_verbs_run_on_open_datum(mod, tmp):
+    # An insert, update or terminate argument vector starting with
+    # `singular` fails this case: those verbs run on `open-datum`.
+    journey = bare(mod, tmp)
+    update = getattr(journey, "update_command", None)
+    vectors = [
+        ("insert", journey.book("alice", "insert", "key-1", "open-verbs-insert")),
+        (
+            "update",
+            update("alice", "key-1", "open-verbs-update")
+            if update is not None
+            else ["registry", "update", "--key", "key-1"],
+        ),
+        (
+            "terminate",
+            journey.book("alice", "terminate", "key-1", "open-verbs-terminate"),
+        ),
+    ]
+    for verb, argv in vectors:
+        fake_run, seen = _capture_argv(mod)
+        with mock.patch.object(mod.subprocess, "run", fake_run):
+            try:
+                journey.run_party("alice", f"open-verbs-{verb}", argv, ())
+            except Exception:  # noqa: BLE001 - the capture is the finding
+                pass
+        # The traced argv wraps the command in strace, so the binary is
+        # found by membership, not position.
+        ran = seen[0] if seen else []
+        check(
+            f"open-verbs-run-on-open-datum-{verb}",
+            bool(ran)
+            and journey.open_datum in ran
+            and journey.singular not in ran,
+            f"{verb} ran under {ran[9:11] if len(ran) > 10 else ran}, want open-datum",
+        )
+
+
+def test_termination_fold_runs_on_open_datum(mod, tmp):
+    # The fold of a termination must go through open-datum; a plain fold
+    # stays on singular.
+    journey = bare(mod, tmp)
+    try:
+        term_argv = journey.fold_pending("alice", termination=True)
+    except TypeError:
+        check(
+            "termination-fold-runs-on-open-datum",
+            False,
+            "fold_pending has no termination route",
+        )
+        return
+    for name, argv, want in (
+        ("termination", term_argv, journey.open_datum),
+        ("plain", journey.fold_pending("alice"), journey.singular),
+    ):
+        fake_run, seen = _capture_argv(mod)
+        with mock.patch.object(mod.subprocess, "run", fake_run):
+            try:
+                journey.run_party("alice", f"termination-fold-{name}", argv, ())
+            except Exception:  # noqa: BLE001 - the capture is the finding
+                pass
+        ran = seen[0] if seen else []
+        other = journey.singular if want == journey.open_datum else journey.open_datum
+        check(
+            f"termination-fold-runs-on-open-datum-{name}",
+            bool(ran) and want in ran and other not in ran,
+            f"{name} fold ran under {ran[9:11] if len(ran) > 10 else ran}, want {want}",
+        )
+
+
 def test_first_pattern_failure_reaches_second(mod, tmp):
     # Exit 2, and separately a launch OSError, on the first pattern of
     # kill, settle and verify: the second pattern's call still runs.
@@ -3753,6 +3835,8 @@ def main():
         test_killpg_failure_is_setup_and_continues,
         test_devnet_cause_read_fallback,
         test_first_pattern_failure_reaches_second,
+        test_open_verbs_run_on_open_datum,
+        test_termination_fold_runs_on_open_datum,
         test_forwarder_relay_failure_is_502,
         test_node_wait_timeout_continues_teardown,
         test_which_missing_still_removes_runtime,

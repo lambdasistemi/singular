@@ -882,8 +882,13 @@ def run_release_steps(steps):
 
 
 class Journey:
-    def __init__(self, singular, devnet, blueprint, work):
-        self.singular, self.devnet, self.blueprint = singular, devnet, blueprint
+    def __init__(self, singular, open_datum, devnet, blueprint, work):
+        self.singular, self.open_datum, self.devnet, self.blueprint = (
+            singular,
+            open_datum,
+            devnet,
+            blueprint,
+        )
         self.work = Path(work)
         # Fresh by construction: a rerun at the same path refuses to start.
         self.work.mkdir(parents=True, exist_ok=False)
@@ -990,7 +995,13 @@ class Journey:
         ]
 
     def run_party(self, party, name, arguments, forbidden):
-        """Run one real command as PARTY; return its parsed JSON receipt."""
+        """Run one real command as PARTY; return its parsed JSON receipt.
+
+        The binary follows the verb: an argument vector starting with
+        `registry` runs on `singular`; every other verb (the open-datum
+        verbs `insert`, `update`, `terminate` and a termination `fold`)
+        runs on `open-datum`.
+        """
         trace = self.receipts / f"{name}.access"
         stdout, stderr = (
             self.receipts / f"{name}.json",
@@ -999,7 +1010,17 @@ class Journey:
         with stdout.open("w") as output, stderr.open("w") as error:
             try:
                 result = subprocess.run(
-                    self.traced(trace, [self.singular] + list(arguments)),
+                    self.traced(
+                        trace,
+                        [
+                            (
+                                self.singular
+                                if list(arguments)[:1] == ["registry"]
+                                else self.open_datum
+                            )
+                        ]
+                        + list(arguments),
+                    ),
                     env=self.environment(party),
                     cwd=self.homes[party],
                     stdout=output,
@@ -1037,13 +1058,14 @@ class Journey:
     def book(self, party, command, key, name):
         """Book one request; every booking command is assembled here alone.
 
-        `insert` and `terminate` are the commands that book a request, so
-        the command-line split moves them by changing this one place.
+        `insert` and `terminate` are the commands that book a request. They
+        run on the `open-datum` executable (no `registry` prefix), routed
+        there by `run_party`.
         """
         require(
             command in ("insert", "terminate"), "booking must be insert or terminate"
         )
-        arguments = ["registry", command, "--key", key]
+        arguments = [command, "--key", key]
         if command == "insert":
             arguments += ["--payload", str(self.payload(name))]
         arguments += [
@@ -1475,16 +1497,17 @@ class Journey:
             }
         )
 
-    def fold_pending(self, party):
+    def fold_pending(self, party, termination=False):
         """Fold the one pending request, discovering it from the chain alone.
 
         The fold names no `--request` and carries no payload file: the
         folder reads the pending request on the chain, never a file the
-        booker wrote.
+        booker wrote. A plain fold runs on `singular` (`registry fold`);
+        the fold of a termination runs on `open-datum` (`fold`), routed
+        there by `run_party`.
         """
-        return [
-            "registry",
-            "fold",
+        verb = ["fold"] if termination else ["registry", "fold"]
+        return verb + [
             "--blueprint",
             self.blueprint,
             "--state-token",
@@ -2315,7 +2338,7 @@ class Journey:
         status, fold = self.run_party(
             folder,
             f"{direction}-fold",
-            self.fold_pending(folder),
+            self.fold_pending(folder, termination=True),
             folder_others,
         )
         require(
@@ -2464,6 +2487,23 @@ class Journey:
         )
         return leg
 
+    def update_command(self, party, key, name):
+        """Assemble the one `update` attempt: runs on `open-datum`."""
+        return [
+            "update",
+            "--key",
+            key,
+            "--payload",
+            str(self.payload(name)),
+            "--blueprint",
+            self.blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+            "--wallet-skey",
+            str(self.keys / f"{party}.skey"),
+        ]
+
     def refusal_leg(self, owner, foreign, key):
         """FOREIGN's `update` and `terminate` of OWNER's key are refused.
 
@@ -2472,7 +2512,7 @@ class Journey:
         `inspect` before and after shows the root and the pending requests
         unchanged (one inspector suffices: both actors read the same chain
         root). `update` is not a booking verb, so its command is assembled
-        here, at the one place that attempts it.
+        in `update_command`, at the one place that attempts it.
         """
         direction = f"refuse-{key}-by-{foreign}"
         leg = {}
@@ -2493,21 +2533,7 @@ class Journey:
         status, refused_update = self.run_party(
             foreign,
             f"{direction}-refuse-update",
-            [
-                "registry",
-                "update",
-                "--key",
-                key,
-                "--payload",
-                str(self.payload(f"{direction}-update")),
-                "--blueprint",
-                self.blueprint,
-                "--state-token",
-                self.state_token,
-                *self.node_arguments(),
-                "--wallet-skey",
-                str(self.keys / f"{foreign}.skey"),
-            ],
+            self.update_command(foreign, key, f"{direction}-update"),
             foreign_others,
         )
         require(
@@ -3678,8 +3704,8 @@ class Journey:
 
 if __name__ == "__main__":
     require(
-        len(sys.argv) == 5,
-        "usage: registry_two_actors.py SINGULAR DEVNET BLUEPRINT WORKDIR",
+        len(sys.argv) == 6,
+        "usage: registry_two_actors.py SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR",
     )
     try:
         sys.exit(Journey(*sys.argv[1:]).execute())

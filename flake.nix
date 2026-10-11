@@ -499,6 +499,8 @@
                   pkgs.coreutils
                   pkgs.strace
                   pkgs.python3
+                  # the journey builds open-datum from its own flake at start
+                  pkgs.nix
                   # the stop path verifies no surviving node with pkill/pgrep
                   pkgs.procps
                 ];
@@ -508,11 +510,26 @@
                   work="$(mktemp -d "$base/run.XXXXXX")/journey"
                   echo "two actors: receipts in $work"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  # #528: insert, update, terminate and the termination fold
+                  # run on the open-datum executable, built here from its own
+                  # flake; without it the journey cannot start (setup).
+                  root="$PWD"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "registry-two-actors: run from the repository root" >&2
+                    exit 3
+                  }
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  [ -x "$open_datum" ] || {
+                    echo "registry-two-actors: no open-datum binary in $open_datum_out" >&2
+                    exit 3
+                  }
                   # #381: the altered journey leg inspects with the control
                   # build; without it the leg is skipped and its row pending.
                   SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
                     python3 ${./tools/registry_two_actors.py} \
                     ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                     ${onchain.packages.${system}.plutus-blueprint} "$work"
                 '';
@@ -531,6 +548,7 @@
                   bash
                   coreutils
                   gnugrep
+                  nix
                   procps
                   python3
                   strace
@@ -541,6 +559,19 @@
                   work="$(mktemp -d "$base/control.XXXXXX")"
                   echo "two-actor control: receipts in $work"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  # #528: the journey's open verbs run on the open-datum
+                  # executable, built here from its own flake (setup).
+                  root="$PWD"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "registry-two-actors-control: run from the repository root" >&2
+                    exit 3
+                  }
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  [ -x "$open_datum" ] || {
+                    echo "registry-two-actors-control: no open-datum binary in $open_datum_out" >&2
+                    exit 3
+                  }
                   # #381: the shipped harness's status taxonomy needs no
                   # development network, so it runs before anything starts one.
                   python3 ${./tools/registry_two_actors_status.test.py} ${./tools/registry_two_actors.py}
@@ -548,6 +579,7 @@
                   bash ${./tools/registry_two_actors_control.sh} "$work" \
                     python3 ${./tools/registry_two_actors.py} \
                     ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                     ${onchain.packages.${system}.plutus-blueprint}
                 '';
@@ -719,6 +751,7 @@
                       bash
                       coreutils
                       gnugrep
+                      nix
                       procps
                       python3
                       strace
@@ -729,10 +762,24 @@
                       work="$(mktemp -d "$base/replay-fault.XXXXXX")"
                       echo "replay-fault control: receipts in $work"
                       export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                      # #528: the journey's open verbs run on the open-datum
+                      # executable, built here from its own flake (setup).
+                      root="$PWD"
+                      [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                        echo "registry-two-actors-replay-fault: run from the repository root" >&2
+                        exit 3
+                      }
+                      open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                      open_datum="$open_datum_out/bin/open-datum"
+                      [ -x "$open_datum" ] || {
+                        echo "registry-two-actors-replay-fault: no open-datum binary in $open_datum_out" >&2
+                        exit 3
+                      }
                       SINGULAR_UNFAULTED=${pkgs.lib.getExe offchain.packages.${system}.singular} \
                       SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
                         python3 ${./tools/registry_two_actors.py} \
                         ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
+                        "$open_datum" \
                         ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                         ${onchain.packages.${system}.plutus-blueprint} "$work/journey"
                     '';
