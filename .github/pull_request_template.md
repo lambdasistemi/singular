@@ -29,6 +29,15 @@ this repository. Every claim must be checkable by that reader.
      A fixture seeded in the final state does not prove the preceding journey.
      For a governance-only change, explain why runtime behavior is unchanged.
 
+     Under Principle VII, map effects and mutable resources to named owners,
+     bounded lifetimes and concurrency contracts. Name explicit inputs and
+     configuration precedence, test-only controls excluded from ordinary builds,
+     adjacent compelling reasons for concurrency, interruptible awaited effects,
+     joined cleanup, and partial diagnostic/receipt evidence on failure. Explain
+     uncertain submission/confirmation without automatic retry or refusal
+     relabelling. Record existing architectural debt and its delivery owner;
+     adopting guidance does not implement a repair.
+
      List model errors, ambiguities, missing semantics or conflicting consumer
      requirements as user-story escalations with the decision and evidence.
      Affected acceptance stays blocked until the user rules and Lean is aligned
