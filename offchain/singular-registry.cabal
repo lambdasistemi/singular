@@ -986,6 +986,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.CollateralJudgement
+    Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec

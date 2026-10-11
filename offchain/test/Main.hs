@@ -36,6 +36,7 @@ import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
+import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
@@ -66,6 +67,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.SelectedFold" [Builders])
+        Singular.Registry.TxBuilder.SelectedFoldSpec.spec
     describe
         ( tagged
             "Singular.Registry.TxBuilder.SkipEvalUnits"

@@ -4,11 +4,13 @@ Description : Update token transaction — the public fold facade
 License     : Apache-2.0
 
 Builds the oracle update transaction that processes
-all pending requests for a token. Consumes the State
-UTxO and all request UTxOs, applies each operation
-speculatively through the trie to generate proofs,
-then outputs a new State UTxO with the updated root
-and per-request refund outputs.
+the pending requests for a token: every one, or a chosen
+non-empty set of them ('updateTokenSelected'). Consumes the
+State UTxO and exactly those request UTxOs, applies each
+operation speculatively through the trie to generate proofs,
+then outputs a new State UTxO with the updated root and
+per-request refund outputs; its validity upper bound is the
+earliest deadline among the requests it folds.
 
 This module is the fold's public orchestration and its compatibility
 surface: the six exports every caller imports are re-exported
@@ -29,6 +31,7 @@ module Singular.Registry.TxBuilder.Update
     ( updateTokenImpl
     , updateTokenWithDuties
     , updateTokenWithTrieState
+    , updateTokenSelected
     , emptyRegistryContext
     , RegistryDuties (..)
     , RegistryContext (..)
@@ -116,7 +119,14 @@ updateTokenWithDuties
     -> RegistryContext
     -> IO ConwayTx
 updateTokenWithDuties cfg view tm tid addr ctx0 =
-    updateTokenUsing cfg view tid addr ctx0 (const (computeProofs tm tid))
+    updateTokenUsing
+        cfg
+        view
+        tid
+        addr
+        ctx0
+        Nothing
+        (const (computeProofs tm tid))
 
 {- | The current command path obtains its consumed proof bytes and new root
 from the selected capability snapshot. Transaction duties and provider reads
@@ -130,8 +140,20 @@ updateTokenWithTrieState
     -> Addr
     -> RegistryContext
     -> IO ConwayTx
-updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
-    updateTokenUsing cfg view tid addr ctx0 $ \(stateIn, stateOut) requests -> do
+updateTokenWithTrieState = updateTokenFrom Nothing
+
+-- | The snapshot fold over the chosen pending requests, or over every one.
+updateTokenFrom
+    :: Maybe (NE.NonEmpty TxIn)
+    -> CageConfig
+    -> Session NoWitness IO
+    -> TS.TrieSnapshot IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> IO ConwayTx
+updateTokenFrom selected cfg view snap tid@(TokenId name) addr ctx0 =
+    updateTokenUsing cfg view tid addr ctx0 selected $ \(stateIn, stateOut) requests -> do
         let expected =
                 TS.RegistryIdentity
                     (TS.StatePolicyId (scriptHashBytes (cfgScriptHash cfg)))
@@ -159,20 +181,47 @@ updateTokenWithTrieState cfg view snap tid@(TokenId name) addr ctx0 =
         Just (RequestDatum request) -> Just (requestKey request, requestEdge request)
         _ -> Nothing
 
+{- | Fold the chosen pending requests and no other, from the selected
+capability snapshot; the validity upper bound is the earliest deadline among
+them.
+-}
+updateTokenSelected
+    :: CageConfig
+    -> Session NoWitness IO
+    -> TS.TrieSnapshot IO
+    -> TokenId
+    -> Addr
+    -> RegistryContext
+    -> NE.NonEmpty TxIn
+    -> IO ConwayTx
+updateTokenSelected cfg view snap tid addr ctx0 selected =
+    updateTokenFrom (Just selected) cfg view snap tid addr ctx0
+
 updateTokenUsing
     :: CageConfig
     -> Session NoWitness IO
     -> TokenId
     -> Addr
     -> RegistryContext
+    -> Maybe (NE.NonEmpty TxIn)
+    -- ^ The pending requests to fold; every one when absent
     -> ( (TxIn, TxOut ConwayEra)
          -> [(TxIn, TxOut ConwayEra)]
          -> IO ([[ProofStep]], Root)
        )
     -> IO ConwayTx
-updateTokenUsing cfg view tid addr ctx0 makeProofs = do
-    (stateUtxo, reqUtxos, feeUtxo, pp) <-
-        queryContext cfg view tid addr
+updateTokenUsing cfg view tid addr ctx0 selected makeProofs = do
+    (stateUtxo, pending, feeUtxo, pp) <-
+        queryContext selected cfg view tid addr
+    reqUtxos <- case selected of
+        Nothing -> pure pending
+        Just chosen -> case filter (`notElem` map fst pending) (NE.toList chosen) of
+            [] -> pure (filter ((`elem` NE.toList chosen) . fst) pending)
+            missing ->
+                error
+                    ( "updateToken: selected requests not pending: "
+                        <> show missing
+                    )
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         makeProofs stateUtxo reqUtxos
