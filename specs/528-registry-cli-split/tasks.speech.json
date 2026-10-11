@@ -85,43 +85,43 @@
       "pause": 500
     },
     {
-      "text": "[ ] open-datum-package-in-its-own-tree",
+      "text": "[x] open-datum-package-in-its-own-tree",
       "pause": 300
     },
     {
-      "text": "[ ] open-datum-verbs-and-executable",
+      "text": "[x] open-datum-verbs-and-executable",
       "pause": 300
     },
     {
-      "text": "[ ] known-scripts-come-from-the-application",
+      "text": "[x] known-scripts-come-from-the-application",
       "pause": 300
     },
     {
-      "text": "[ ] negative-host-moves-with-the-open-datum",
+      "text": "[x] negative-host-moves-with-the-open-datum",
       "pause": 300
     },
     {
-      "text": "[ ] singular-refuses-insert-update-terminate",
+      "text": "[x] singular-refuses-insert-update-terminate",
       "pause": 300
     },
     {
-      "text": "[ ] demo1-scripts-and-controls-use-the-new-binaries",
+      "text": "[x] demo1-scripts-and-controls-use-the-new-binaries",
       "pause": 300
     },
     {
-      "text": "[ ] release-archive-and-documented-flags",
+      "text": "[x] release-archive-and-documented-flags",
       "pause": 300
     },
     {
-      "text": "[ ] docs-name-the-new-commands",
+      "text": "[x] docs-name-the-new-commands",
       "pause": 300
     },
     {
-      "text": "[ ] separation-control-covers-the-offchain-trees",
+      "text": "[x] separation-control-covers-the-offchain-trees",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-open-datum-package-in-the-inventory",
+      "text": "[x] classify-the-open-datum-package-in-the-inventory",
       "pause": 300
     }
   ],
@@ -131,27 +131,27 @@
       "pause": 500
     },
     {
-      "text": "[ ] registry-shared-modules-move-to-the-lib-directory",
+      "text": "[x] registry-shared-modules-move-to-the-lib-directory",
       "pause": 300
     },
     {
-      "text": "[ ] open-datum-validator-moves-to-its-own-aiken-project",
+      "text": "[x] open-datum-validator-moves-to-its-own-aiken-project",
       "pause": 300
     },
     {
-      "text": "[ ] open-datum-deployment-blueprint-is-registry-plus-application",
+      "text": "[x] open-datum-deployment-blueprint-is-registry-plus-application",
       "pause": 300
     },
     {
-      "text": "[ ] script-hash-comparison-control",
+      "text": "[x] script-hash-comparison-control",
       "pause": 300
     },
     {
-      "text": "[ ] registry-onchain-names-no-application-control",
+      "text": "[x] registry-onchain-names-no-application-control",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-application-aiken-project-in-the-inventory",
+      "text": "[x] classify-the-application-aiken-project-in-the-inventory",
       "pause": 300
     }
   ],
@@ -161,15 +161,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] booking-call-in-the-library",
+      "text": "[x] booking-call-in-the-library",
       "pause": 300
     },
     {
-      "text": "[ ] early-refusal-in-preview-and-submit",
+      "text": "[x] early-refusal-in-preview-and-submit",
       "pause": 300
     },
     {
-      "text": "[ ] refusal-row-in-demo1-controls",
+      "text": "[x] refusal-row-in-demo1-controls",
       "pause": 300
     }
   ],
@@ -193,6 +193,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5ba595dea5391dd45fab1acce99610fa16a7ba6faed4a0c686b3a23c6fd7d932"
+    "sha256": "c88f253b7155853b368bd2f8a98957d3a759b178e463a481bb7b14a0bf834969"
   }
 }

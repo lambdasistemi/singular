@@ -26,31 +26,31 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## open-datum-executable
 
-- [ ] open-datum-package-in-its-own-tree
-- [ ] open-datum-verbs-and-executable
-- [ ] known-scripts-come-from-the-application
-- [ ] negative-host-moves-with-the-open-datum
-- [ ] singular-refuses-insert-update-terminate
-- [ ] demo1-scripts-and-controls-use-the-new-binaries
-- [ ] release-archive-and-documented-flags
-- [ ] docs-name-the-new-commands
-- [ ] separation-control-covers-the-offchain-trees
-- [ ] classify-the-open-datum-package-in-the-inventory
+- [x] open-datum-package-in-its-own-tree
+- [x] open-datum-verbs-and-executable
+- [x] known-scripts-come-from-the-application
+- [x] negative-host-moves-with-the-open-datum
+- [x] singular-refuses-insert-update-terminate
+- [x] demo1-scripts-and-controls-use-the-new-binaries
+- [x] release-archive-and-documented-flags
+- [x] docs-name-the-new-commands
+- [x] separation-control-covers-the-offchain-trees
+- [x] classify-the-open-datum-package-in-the-inventory
 
 ## application-onchain-tree
 
-- [ ] registry-shared-modules-move-to-the-lib-directory
-- [ ] open-datum-validator-moves-to-its-own-aiken-project
-- [ ] open-datum-deployment-blueprint-is-registry-plus-application
-- [ ] script-hash-comparison-control
-- [ ] registry-onchain-names-no-application-control
-- [ ] classify-the-application-aiken-project-in-the-inventory
+- [x] registry-shared-modules-move-to-the-lib-directory
+- [x] open-datum-validator-moves-to-its-own-aiken-project
+- [x] open-datum-deployment-blueprint-is-registry-plus-application
+- [x] script-hash-comparison-control
+- [x] registry-onchain-names-no-application-control
+- [x] classify-the-application-aiken-project-in-the-inventory
 
 ## booking-refusal
 
-- [ ] booking-call-in-the-library
-- [ ] early-refusal-in-preview-and-submit
-- [ ] refusal-row-in-demo1-controls
+- [x] booking-call-in-the-library
+- [x] early-refusal-in-preview-and-submit
+- [x] refusal-row-in-demo1-controls
 
 ## keri-stub
 
