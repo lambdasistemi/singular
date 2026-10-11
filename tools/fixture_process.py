@@ -8,18 +8,25 @@ import signal
 import time
 
 
-def observe(pid):
-    base = Path(f"/proc/{pid}")
-    fields = (base / "stat").read_text().rsplit(")", 1)[1].split()
+def identity(pid):
+    fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
     return {
         "pid": pid,
         "start_ticks": fields[19],
         "parent": int(fields[1]),
         "state": fields[0],
-        "executable": str((base / "exe").resolve(strict=True)),
-        "cwd": str((base / "cwd").resolve(strict=True)),
-        "arguments": (base / "cmdline").read_bytes().decode().rstrip("\0").split("\0"),
     }
+
+
+def observe(pid):
+    base = Path(f"/proc/{pid}")
+    record = identity(pid)
+    record.update(
+        executable=str((base / "exe").resolve(strict=True)),
+        cwd=str((base / "cwd").resolve(strict=True)),
+        arguments=(base / "cmdline").read_bytes().decode().rstrip("\0").split("\0"),
+    )
+    return record
 
 
 def descendant(pid, parent):
@@ -58,7 +65,7 @@ def find_node(config, socket, owner):
     return matches[0]
 
 
-def stop(record, kind, seconds):
+def stop(record, kind, seconds, child_owner=None):
     pid = record["pid"]
     try:
         descriptor = os.pidfd_open(pid)
@@ -71,10 +78,20 @@ def stop(record, kind, seconds):
             return
         if fields[19] == record["start_ticks"] and fields[0] == "Z":
             return
-        current = observe(pid)
-        for field in ("start_ticks", "executable", "cwd", "arguments"):
+        current = identity(pid) if child_owner is not None else observe(pid)
+        # A direct acquiring child may exec before readiness. Its owner
+        # binds start identity immediately; all other callers bind the full
+        # frozen executable identity. The pidfd always targets that process.
+        required = (
+            ("start_ticks",)
+            if child_owner is not None
+            else ("start_ticks", "executable", "cwd", "arguments")
+        )
+        for field in required:
             if current[field] != record[field]:
                 raise RuntimeError(f"process identity changed: {pid} {field}")
+        if child_owner is not None and current["parent"] != child_owner:
+            raise RuntimeError("process is no longer the exact direct owned child")
         signal.pidfd_send_signal(descriptor, getattr(signal, "SIG" + kind))
         deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
@@ -148,7 +165,7 @@ def main():
             with args.record.open("x") as output:
                 json.dump(record, output, indent=2)
                 output.write("\n")
-        stop(record, args.signal, args.seconds)
+        stop(record, args.signal, args.seconds, child_owner=args.owner)
     elif args.command == "assert-gone":
         if not gone(json.loads(args.record.read_text())):
             raise RuntimeError(f"recorded fixture process remains live: {args.record}")

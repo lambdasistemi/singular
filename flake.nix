@@ -779,13 +779,16 @@
                 runtimeInputs = [
                   pkgs.python3
                   pkgs.coreutils
+                  pkgs.bash
+                  pkgs.nix
                 ];
                 text = ''
                   work="$(mktemp -d)/controls"
                   export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
-                  python3 ${managedScripts}/facade_lifecycle_controls.py \
+                  exec python3 ${managedScripts}/facade_lifecycle_controls.py \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
-                  --startup-controller ${self.apps.${system}.cli-recovery-rollback.program}
+                  --startup-controller ${managedScripts}/cli_recovery_controls.sh \
+                  --singular ${pkgs.lib.getExe offchain.packages.${system}.singular-test-harness} --root "$PWD"
                 '';
               }
             );

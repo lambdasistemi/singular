@@ -1339,9 +1339,18 @@ ENDPOINT
     [ "$pending_cancel" -eq 0 ] || exit "$pending_cancel"
     # This explicit private control cancels in the reproduced acquisition
     # window. It is never consulted by a product executable or ordinary run.
-    if [ "${CLI_RECOVERY_CANCEL_AT_STARTUP:-}" = 1 ]; then
+    if [ -n "${CLI_RECOVERY_CANCEL_AT_STARTUP:-}" ]; then
       printf '%s\n' "$node_pid/$node_start" >"$work/startup-cancellation-point"
-      kill -TERM "$$"
+      case "$CLI_RECOVERY_CANCEL_AT_STARTUP" in
+        1) kill -TERM "$$" ;;
+        delay)
+          # Explicit private interruption control: the caller cancels or
+          # times out while this actual owned replacement is acquiring.
+          for _ in $(seq 1 600); do sleep 0.1; done
+          setup_fail "startup interruption control was never cancelled"
+          ;;
+        *) setup_fail "unknown private startup cancellation control" ;;
+      esac
     fi
     for _ in $(seq 1 600); do
       if [ -S "$node_dir/node.sock" ]; then
