@@ -102,6 +102,11 @@ cd "$built/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 controls="$(build ../conformance#cli-controls)/bin/cli-controls"
+# The raw devnet reads its genesis from E2E_GENESIS_DIR, falling back to a
+# relative `e2e-test/genesis` that only resolves from the registry tree.
+# The build below leaves the caller in the application's tree, so point the
+# devnet at the built tree's genesis regardless of the working directory.
+export E2E_GENESIS_DIR="$built/offchain/e2e-test/genesis"
 # `open-datum` comes from the application's flake, as the journey wires it.
 cd "$built/applications/open-datum/offchain"
 open_datum="$(build .#open-datum)/bin/open-datum"

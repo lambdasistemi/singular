@@ -58,6 +58,11 @@ build() { nix build --quiet --no-link --print-out-paths "$@"; }
 cd "$root/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
+# The raw devnet reads its genesis from E2E_GENESIS_DIR, falling back to a
+# relative `e2e-test/genesis` that only resolves from the registry tree.
+# The build below leaves the caller in the application's tree, so point the
+# devnet at the registry tree's genesis regardless of the working directory.
+export E2E_GENESIS_DIR="$root/offchain/e2e-test/genesis"
 # S5.2: recovery runs open-datum alongside singular, so the blueprint is
 # the merged deployment document (application + witnesses, one build).
 blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
