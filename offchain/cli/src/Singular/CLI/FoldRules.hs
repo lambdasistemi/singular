@@ -34,6 +34,14 @@ module Singular.CLI.FoldRules
     , foldTarget
     , renderTargetRefusal
 
+      -- * Which requests take the selection (#518)
+    , FoldRequestsRefusal (..)
+    , foldRequests
+    , renderFoldRequestsRefusal
+    , SpendsRefusal (..)
+    , spendsSelection
+    , renderSpendsRefusal
+
       -- * Which edge
     , FoldKind (..)
     , foldKind
@@ -44,6 +52,7 @@ module Singular.CLI.FoldRules
     ) where
 
 import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text qualified as T
 
 import Cardano.Ledger.Address (Addr)
@@ -57,6 +66,14 @@ import Singular.Registry.Application
 
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.FoldSelection
+    ( Exclusion (..)
+    , PendingRequest (..)
+    , SelectedRequest (..)
+    , Selection (..)
+    , exclusionName
+    , exclusionSource
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
@@ -420,3 +437,191 @@ checkCarriedDatum app req = case appHolding app of
             Left
                 "the insertion's request carries no datum: its delivered output would hold none"
         Just datum -> Right datum
+
+-- ---------------------------------------------------------
+-- Which requests take the selection (#518)
+-- ---------------------------------------------------------
+
+{- | Why a fold that takes the selection has no settled request, or why a
+named request is not among them. The selection works in its own 'Int'
+references; the caller passes the pairing of output references with those
+in ledger input order, so every exclusion is named with the output
+reference the command prints. 'FoldInconsistentInput' carries the listed
+references without pairing and the paired outputs listed nowhere; it fires
+before any other refusal except on fully consistent inputs.
+-}
+data FoldRequestsRefusal
+    = FoldNothingPending
+    | FoldNamedNotPending TxIn
+    | FoldNamedExcluded TxIn Exclusion
+    | FoldNothingToFold [(TxIn, Exclusion)]
+    | FoldInconsistentInput [Int] [TxIn]
+    | FoldNamedNothingSettled TxIn (Maybe Exclusion) [(TxIn, Exclusion)]
+    deriving stock (Eq, Show)
+
+{- | The settled requests a fold takes: the optional named expectation, the
+pairing of output references with the selection's own references in ledger
+input order, and the selection. A named request that is settled returns
+exactly the settled list; a named request that is excluded or not pending
+is refused with its reason; nothing settleable lists every exclusion. When
+nothing settles and a request is named, the refusal states the named cause
+and every other exclusion ('FoldNamedNothingSettled'); with nothing pending
+it states both causes.
+
+Final signature (the authorized addition to the functions model row, which
+lists only the named request and the selection): the pairing is the second
+argument, [(TxIn, Int)] in ledger input order.
+-}
+foldRequests
+    :: Maybe TxIn
+    -> [(TxIn, Int)]
+    -> Selection
+    -> Either FoldRequestsRefusal (NonEmpty TxIn)
+foldRequests named pairing sel =
+    let intToTx = [(r, tx) | (tx, r) <- pairing]
+        lookupTx r = lookup r intToTx
+        pairedInts = map snd pairing
+        settledRefs = map selRef (selectionSettled sel)
+        excludedRefs = map (prRef . fst) (selectionExcluded sel)
+        listedRefs = settledRefs ++ excludedRefs
+        missingPairing = [r | r <- listedRefs, r `notElem` pairedInts]
+        extraPairingTxs = [tx | (tx, r) <- pairing, r `notElem` listedRefs]
+    in  if not (null missingPairing) || not (null extraPairingTxs)
+            then Left (FoldInconsistentInput missingPairing extraPairingTxs)
+            else
+                let settledTxs = [tx | ref <- settledRefs, Just tx <- [lookupTx ref]]
+                    excludedTxs =
+                        [ (tx, exc)
+                        | (q, exc) <- selectionExcluded sel
+                        , Just tx <- [lookupTx (prRef q)]
+                        ]
+                in  case settledTxs of
+                        [] -> case (pairing, named) of
+                            ([], Nothing) -> Left FoldNothingPending
+                            ([], Just r) -> Left (FoldNamedNothingSettled r Nothing [])
+                            (_, Nothing) -> Left (FoldNothingToFold excludedTxs)
+                            (_, Just r)
+                                | r `notElem` map fst pairing ->
+                                    Left (FoldNamedNothingSettled r Nothing excludedTxs)
+                                | otherwise -> case [exc | (tx, exc) <- excludedTxs, tx == r] of
+                                    (exc : _) ->
+                                        let others = [x | x@(tx, _) <- excludedTxs, tx /= r]
+                                        in  if null others
+                                                then Left (FoldNamedExcluded r exc)
+                                                else
+                                                    Left
+                                                        ( FoldNamedNothingSettled
+                                                            r
+                                                            (Just exc)
+                                                            others
+                                                        )
+                                    [] -> Left (FoldNamedNotPending r)
+                        (x : xs) -> case named of
+                            Nothing -> Right (x :| xs)
+                            Just r
+                                | r `notElem` map fst pairing -> Left (FoldNamedNotPending r)
+                                | r `elem` (x : xs) -> Right (x :| xs)
+                                | otherwise -> case [exc | (tx, exc) <- excludedTxs, tx == r] of
+                                    (exc : _) -> Left (FoldNamedExcluded r exc)
+                                    [] -> Left (FoldNamedNotPending r)
+
+-- | One line naming the refusal, plus one line per exclusion.
+renderFoldRequestsRefusal :: FoldRequestsRefusal -> String
+renderFoldRequestsRefusal = \case
+    FoldNothingPending -> "nothing is pending: there is no request to fold"
+    FoldNamedNotPending r ->
+        "the request "
+            <> txt r
+            <> " is not pending: it was folded, retracted or never booked"
+    FoldNamedExcluded r exc ->
+        "the request "
+            <> txt r
+            <> " is excluded: "
+            <> T.unpack (exclusionName exc)
+            <> " ("
+            <> T.unpack (exclusionSource exc)
+            <> "): "
+            <> T.unpack (excDetail exc)
+    FoldNothingToFold xs ->
+        "nothing to fold: every pending request is excluded"
+            <> concatMap
+                ( \(r, exc) ->
+                    "\n"
+                        <> txt r
+                        <> ": "
+                        <> T.unpack (exclusionName exc)
+                        <> " ("
+                        <> T.unpack (exclusionSource exc)
+                        <> "): "
+                        <> T.unpack (excDetail exc)
+                )
+                xs
+    FoldInconsistentInput missing extra -> case (missing, extra) of
+        ([], []) ->
+            "the fold selection does not match the pending outputs: no reference to name"
+        (_, []) ->
+            "the fold selection does not match the pending outputs: listed without pairing "
+                <> intercalate ", " (map show missing)
+        ([], _) ->
+            "the fold selection does not match the pending outputs: paired without listing "
+                <> intercalate ", " (map txt extra)
+        (_, _) ->
+            "the fold selection does not match the pending outputs: listed without pairing "
+                <> intercalate ", " (map show missing)
+                <> "; paired without listing "
+                <> intercalate ", " (map txt extra)
+    FoldNamedNothingSettled r mExc others ->
+        let cause = case mExc of
+                Just exc -> renderFoldRequestsRefusal (FoldNamedExcluded r exc)
+                Nothing -> renderFoldRequestsRefusal (FoldNamedNotPending r)
+        in  case (mExc, others) of
+                (Just _, []) -> cause
+                (_, []) -> cause <> "\n" <> renderFoldRequestsRefusal FoldNothingPending
+                (_, _) ->
+                    cause
+                        <> "\n"
+                        <> renderFoldRequestsRefusal (FoldNothingToFold others)
+  where
+    txt = T.unpack . renderOutRef
+
+-- | Why a built fold does not spend exactly the selection.
+data SpendsRefusal
+    = SpendsMissingState TxIn
+    | SpendsMissingSelected [TxIn]
+    | SpendsExtraPending [TxIn]
+    deriving stock (Eq, Show)
+
+{- | Whether a built transaction spends the state output and exactly the
+selected request outputs among those pending: the state output reference,
+the selected references, the pending references and the spent references.
+References that are not pending (funding and collateral) are free.
+-}
+spendsSelection
+    :: TxIn
+    -> [TxIn]
+    -> [TxIn]
+    -> [TxIn]
+    -> Either SpendsRefusal ()
+spendsSelection state selected pending spent
+    | state `notElem` spent = Left (SpendsMissingState state)
+    | not (null missingSel) = Left (SpendsMissingSelected missingSel)
+    | not (null extra) = Left (SpendsExtraPending extra)
+    | otherwise = Right ()
+  where
+    missingSel = [r | r <- selected, r `notElem` spent]
+    others = [p | p <- pending, p `notElem` selected]
+    extra = [p | p <- others, p `elem` spent]
+
+-- | One line naming the offending references.
+renderSpendsRefusal :: SpendsRefusal -> String
+renderSpendsRefusal = \case
+    SpendsMissingState s ->
+        "the built fold does not spend the registry state output " <> txt s
+    SpendsMissingSelected ms ->
+        "the built fold does not spend the selected requests: "
+            <> intercalate ", " (map txt ms)
+    SpendsExtraPending es ->
+        "the built fold spends pending requests it was not given: "
+            <> intercalate ", " (map txt es)
+  where
+    txt = T.unpack . renderOutRef

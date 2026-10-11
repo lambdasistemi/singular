@@ -946,6 +946,7 @@ test-suite cage-tests
     Paths_singular_registry
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
+    Singular.CLI.FoldRulesSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.TrieRefusalSpec

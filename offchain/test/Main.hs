@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
+import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -160,6 +161,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.BookingRefusal" [Cli])
         Singular.CLI.BookingRefusalSpec.spec
+    describe
+        (tagged "Singular.CLI.FoldRules" [Cli])
+        Singular.CLI.FoldRulesSpec.spec
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec
