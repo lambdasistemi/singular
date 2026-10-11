@@ -44,7 +44,6 @@ import Cardano.Ledger.Mary.Value
     , MaryValue (..)
     , MultiAsset (..)
     )
-import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Data qualified as PLC
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
@@ -73,7 +72,7 @@ import Singular.Registry.Application
     , neutralApplication
     )
 import Singular.Registry.Config.Application (configForApplication)
-import Singular.Registry.Deployment (parseOutRef, renderOutRef)
+import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.SessionIO (outputsAt)
 import Singular.Registry.StateToken (Release (..))
 import Singular.Registry.StubSession
@@ -101,7 +100,6 @@ spec = describe "registry fold" $ do
     postBuild
     postBuildDecisions
     boundTimes
-    target
     kinds
     funding
     carried
@@ -293,41 +291,6 @@ postBuild = describe "the built fold's validity bound" $ do
             runIdentity (boundStartMs slotOf 1_000 4_000 50) `shouldBe` Nothing
             runIdentity (boundStartMs (const (Identity Nothing)) 1_000 4_000 50)
                 `shouldBe` Nothing
-
--- ---------------------------------------------------------
--- Which request
--- ---------------------------------------------------------
-
-request :: Char -> TxIn
-request c = either error id (parseOutRef (T.pack (replicate 64 c <> "#0")))
-
-target :: Spec
-target = describe "the request a fold takes" $ do
-    let a = request 'a'
-        b = request 'b'
-        c = request 'c'
-    it "is the one pending request, named or not" $ do
-        foldTarget Nothing [a] `shouldBe` Right a
-        foldTarget (Just a) [a] `shouldBe` Right a
-    it
-        "refuses a fold with nothing pending, even one that names a request"
-        $ do
-            foldTarget Nothing [] `shouldBe` Left NothingPending
-            foldTarget (Just a) [] `shouldBe` Left NothingPending
-    it "refuses a named request that is not the one pending" $
-        foldTarget (Just b) [a] `shouldBe` Left (NotPending b)
-    it "refuses more than one pending request, naming every one" $ do
-        foldTarget Nothing [a, b, c]
-            `shouldBe` Left (SeveralPending [a, b, c])
-        foldTarget (Just a) [a, b] `shouldBe` Left (SeveralPending [a, b])
-    it "words each refusal with what it names" $ do
-        renderTargetRefusal NothingPending
-            `shouldSatisfy` isInfixOf "nothing is pending"
-        renderTargetRefusal (NotPending b)
-            `shouldSatisfy` isInfixOf (T.unpack (renderOutRef b))
-        forM_ [a, b, c] $ \r ->
-            renderTargetRefusal (SeveralPending [a, b, c])
-                `shouldSatisfy` isInfixOf (T.unpack (renderOutRef r))
 
 -- ---------------------------------------------------------
 -- Which edge

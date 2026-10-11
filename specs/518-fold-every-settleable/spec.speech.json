@@ -1,0 +1,148 @@
+{
+  "one-fold-settles-every-settleable-pending-request": [
+    {
+      "text": "One fold settles every settleable pending request.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry processor, I run singular registry fold (or insert --fold, or terminate --fold) and one transaction settles every settleable pending request, whoever booked it. Its receipt names each request it settled and gives the reason for each one it left out. Two users who booked at the same moment do not block each other.",
+      "pause": 400
+    }
+  ],
+  "stories": [
+    {
+      "text": "Stories.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice and as Bob, each booking from my own terminal and directory, I am not blocked by the other's booking: one registry fold, run by either of us or by anyone, settles both requests in one transaction, and each payout reaches its own owner.",
+      "pause": 400
+    }
+  ],
+  "what-is-wrong-today": [
+    {
+      "text": "What is wrong today.",
+      "pause": 500
+    },
+    {
+      "text": "registry fold builds a fold only while exactly one request is pending (foldTarget in Singular.CLI.FoldRules) and otherwise refuses concurrent-writer before judging any request. Its journal, reconciliation and rollback bind one key, one edge and one root pair to a fold. The 2026-10-07 preprod rehearsal met this refusal (#489). The protocol already batches: the fold redeemer is Modify(List<RequestAction>), the validator folds any subset of pending requests, and the model's Singular.foldBatch folds a list.",
+      "pause": 400
+    }
+  ],
+  "two-pull-requests": [
+    {
+      "text": "Two pull requests.",
+      "pause": 500
+    },
+    {
+      "text": "The slice is cut into two pull requests, each shippable on its own, each carrying the pages for what it ships. No page describes behaviour that is not on main.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "Quoted here so no reader needs another page to know them.",
+      "pause": 400
+    }
+  ],
+  "selection": [
+    {
+      "text": "Selection.",
+      "pause": 500
+    },
+    {
+      "text": "Each pending request is judged against the live registry state alone, never against what other pending requests would leave behind. The first check a request fails names its reason; a request that passes all of them is included.",
+      "pause": 400
+    }
+  ],
+  "the-two-vocabularies": [
+    {
+      "text": "The two vocabularies.",
+      "pause": 500
+    },
+    {
+      "text": "A selection reason is never labelled as a refusal of the model, in the receipt or in the pages. Until #519 the model carries no processing-window admission, so window-closed is a selection reason.",
+      "pause": 400
+    }
+  ],
+  "the-four-request-example": [
+    {
+      "text": "The four-request example.",
+      "pause": 500
+    },
+    {
+      "text": "Registry state: key 7 unknown; key 9 active with its holding live. Pending, in ledger input order: r1 = insert key 7 (Alice); r2 = terminate key 9 (Bob); r3 = insert key 7 (Carol); r4 = insert key 11 (Dana), whose processing window closes in 10 seconds.",
+      "pause": 400
+    }
+  ],
+  "capacity": [
+    {
+      "text": "Capacity.",
+      "pause": 500
+    },
+    {
+      "text": "Pull request 1 folds one request per fold: the bound is 1, and its provenance says that the journal binds one transition until the multi-request journal ships. Pull request 2 raises it to 9 requests, counted. Provenance of 9: the operator's estimate for preprod's execution budget of 14 million memory units, bound by trie-proof verification. It is not measured under preprod parameters; measuring and raising it is #530. A fold the network still cannot build or evaluate within its limits is a refusal that submits nothing.",
+      "pause": 400
+    }
+  ],
+  "what-the-receipt-says": [
+    {
+      "text": "What the receipt says.",
+      "pause": 500
+    },
+    {
+      "text": "One receipt shape for one request or many. Per settled request: the request, its key, its edge, its owner and its settlement (the live output and application datum it delivered, or the holding it released and the deposit paid back). Per excluded request: the request, the reason, and its source (model-refusal or selection-policy). For the transaction: its id, the folder, the root before and after, the validity bound and the post-build decision, the capacity bound with its provenance. The requests left for the next fold are the excluded ones named capacity.",
+      "pause": 400
+    }
+  ],
+  "journal-recovery-and-rollback-pull-request-2": [
+    {
+      "text": "Journal, recovery and rollback (pull request 2).",
+      "pause": 500
+    },
+    {
+      "text": "A fold's journal line lists, in batch order, each request's key, edge, expected leaf and root pair; the pairs chain from the transaction's root before to its root after. A line written before this change reads as a batch of one. Observation proves each key the batch touches against the leaf its last transition expects, and the state output's root equal to the batch's last root after. Rollback returns every included request to pending and restores the root before. A fold whose state output was spent by another fold is refused stale-state and its journal closed; a rerun folds what is still pending. In pull request 1 these stay as they are today, for one request.",
+      "pause": 400
+    }
+  ],
+  "commands": [
+    {
+      "text": "Commands.",
+      "pause": 500
+    }
+  ],
+  "acceptance": [
+    {
+      "text": "Acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "Each line names the check of the gate that proves it, in italics at the end of the line. Lines marked 1 belong to pull request 1, lines marked 2 to pull request 2, lines marked 1+2 to both.",
+      "pause": 400
+    }
+  ],
+  "out-of-scope": [
+    {
+      "text": "Out of scope.",
+      "pause": 500
+    },
+    {
+      "text": "By number: #519 processing-window admission (the model's foldAdmission; slice 2); #486 booking-time leaf check (delivered by #528); #487 mixed-action fold with rejection (delivered by #498); #498 and #508 the rejection rule; #528 the command-line split; #529 the request tag; #530 capacity measurement; #489 closed into the epic.",
+      "pause": 400
+    }
+  ],
+  "limits-and-residuals": [
+    {
+      "text": "Limits and residuals.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "a8df01a5e16d4fad79b467e355ea70e9317acdef0cc865e4e7bf3df8d3a04748"
+  }
+}

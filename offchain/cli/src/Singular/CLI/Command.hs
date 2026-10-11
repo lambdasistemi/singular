@@ -11,7 +11,7 @@ below happens before anything is read or submitted.
 
 * @registry create@ boots one registry from a seed the caller chose in
   their own wallet, or previews its identity with @--preview@;
-* @registry fold@ folds the one pending request, signed and funded by
+* @registry fold@ takes the selection and folds its first included request, signed and funded by
   the wallet that runs it;
 * @registry reclaim@ takes back the wallet's named pending insertion or
   terminal-witness request inside its retract window;

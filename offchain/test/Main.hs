@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
+import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -19,6 +20,7 @@ import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
+import Singular.Registry.FoldSelectionSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.LineageSpec qualified
 import Singular.Registry.LocalEvaluationSpec qualified
@@ -35,6 +37,7 @@ import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
+import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
@@ -66,6 +69,9 @@ main = hspec $ do
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
     describe
+        (tagged "Singular.Registry.TxBuilder.SelectedFold" [Builders])
+        Singular.Registry.TxBuilder.SelectedFoldSpec.spec
+    describe
         ( tagged
             "Singular.Registry.TxBuilder.SkipEvalUnits"
             [Builders, Evaluation]
@@ -86,6 +92,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.FailureMatch" [Provider])
         Singular.Registry.FailureMatchSpec.spec
+    describe
+        (tagged "Singular.Registry.FoldSelection" [Builders])
+        Singular.Registry.FoldSelectionSpec.spec
     describe
         (tagged "Singular.Registry.NetworkTime" [Time, Provider])
         Singular.Registry.NetworkTimeSpec.spec
@@ -152,6 +161,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.BookingRefusal" [Cli])
         Singular.CLI.BookingRefusalSpec.spec
+    describe
+        (tagged "Singular.CLI.FoldRules" [Cli])
+        Singular.CLI.FoldRulesSpec.spec
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec

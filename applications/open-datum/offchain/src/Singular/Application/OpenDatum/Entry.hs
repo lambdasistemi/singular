@@ -48,7 +48,7 @@ module Singular.Application.OpenDatum.Entry
     ) where
 
 import Control.Monad (unless, when)
-import Data.Aeson (Value, toJSON)
+import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -99,6 +99,10 @@ import Singular.CLI.Fold
     , deadlineJson
     , deadlineOf
     , foldPending
+    )
+import Singular.CLI.FoldRules
+    ( SettledForReceipt (..)
+    , foldReceiptLists
     )
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
@@ -333,6 +337,22 @@ runInsert env a = case entryMode a of
                                                , ("envelope", envelopeToJson seen)
                                                , ("root", toJSON (hexT (fdRoot folded)))
                                                ]
+                                            <> foldReceiptLists
+                                                [ SettledForReceipt
+                                                    (fdRequest folded)
+                                                    (hexT (fdKey folded))
+                                                    (T.pack (edgeName (fdEdge folded)))
+                                                    (fdOwnerHex folded)
+                                                    ( object
+                                                        [ "liveOutput" .= txInText liveIn
+                                                        , "envelope" .= dhDatumJson holding
+                                                        ]
+                                                    )
+                                                    (deadlineJson (fdDeadline folded))
+                                                ]
+                                                (fdExcluded folded)
+                                                (fdCapacityBound folded)
+                                                (fdCapacityProvenance folded)
                                         )
                                 Left why -> error ("Entry: folded holding is not an envelope: " <> why)
                             DeliveredDatum{} -> receipt "insert" Success []
@@ -523,6 +543,22 @@ runTerminate env a = case entryMode a of
                                            , ("deposit", toJSON deposit)
                                            , ("root", toJSON (hexT (fdRoot folded)))
                                            ]
+                                        <> foldReceiptLists
+                                            [ SettledForReceipt
+                                                (fdRequest folded)
+                                                (hexT (fdKey folded))
+                                                (T.pack (edgeName (fdEdge folded)))
+                                                (fdOwnerHex folded)
+                                                ( object
+                                                    [ "released" .= txInText released
+                                                    , "deposit" .= deposit
+                                                    ]
+                                                )
+                                                (deadlineJson (fdDeadline folded))
+                                            ]
+                                            (fdExcluded folded)
+                                            (fdCapacityBound folded)
+                                            (fdCapacityProvenance folded)
                                     )
                             Delivered{} -> receipt "terminate" Success []
                             DeliveredDatum{} -> receipt "terminate" Success []
