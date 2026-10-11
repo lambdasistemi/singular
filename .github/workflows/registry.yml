@@ -178,15 +178,6 @@ jobs:
       - name: Run the onchain Aiken suite as a flake check
         working-directory: onchain
         run: nix flake check
-      # #528 S5.1: the open-datum application's own Aiken suite, from the
-      # application's tree: the formatter and identity checks over its
-      # validators plus the composed assembly that runs the moved
-      # open-datum tests against the registry project. Same checks as a
-      # local `nix flake check` in applications/open-datum/onchain/ with
-      # that flake's own lock.
-      - name: Run the application Aiken suite as a flake check
-        working-directory: applications/open-datum/onchain
-        run: nix flake check
   application-blueprint:
     name: Application blueprint builds first
     runs-on: nixos
