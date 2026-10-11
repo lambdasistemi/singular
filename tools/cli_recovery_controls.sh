@@ -210,18 +210,46 @@ harness_started=$(date +%s)
 # shellcheck disable=SC2329 # the EXIT trap below invokes this
 finish() {
   local code=$?
-  local _wait
   trap - EXIT
-  kill "${devnet_pid:-}" 2>/dev/null || true
-  if command -v pkill >/dev/null 2>&1; then
-    pkill -f "cardano-node run --config $work/" >/dev/null 2>&1 || true
-  fi
-  for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
-    if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config $work/" >/dev/null 2>&1; then
-      break
+  # The shell owns replacement nodes; join them before the outer fixture can
+  # remove its temporary node directory. Preserve an original failed result.
+  if [ -n "${node_pid:-}" ]; then
+    if [ -f "$node_record" ]; then
+      if ! python3 "$process_control" stop "$node_record" --signal INT --seconds 30; then
+        python3 "$process_control" stop "$node_record" --signal KILL --seconds 5 || { [ "$code" -ne 0 ] || code=1; }
+      fi
+    elif [ -n "${node_start:-}" ]; then
+      if ! python3 "$process_control" stop-child "$node_record" --pid "$node_pid" --start-ticks "$node_start" --owner "$$" --signal INT --seconds 30; then
+        python3 "$process_control" stop-child "$node_record" --pid "$node_pid" --start-ticks "$node_start" --owner "$$" --signal KILL --seconds 5 || { [ "$code" -ne 0 ] || code=1; }
+      fi
     fi
-    sleep 0.1
-  done
+    if [ -f "$node_record" ] && ! python3 "$process_control" assert-gone "$node_record"; then
+      # Do not wait indefinitely or remove a directory under a live child.
+      printf 'replacement cleanup incomplete; retained %s\n' "$work" >&2
+      [ "$code" -ne 0 ] || code=1
+      exit "$code"
+    fi
+    wait "$node_pid" 2>/dev/null || true
+    printf 'replacement-joined\n' >>"$work/cleanup-order"
+
+  fi
+  if [ -n "${devnet_pid:-}" ]; then
+    if [ ! -f "$work/devnet-process.json" ]; then
+      python3 "$process_control" bind "$work/devnet-process.json" --pid "$devnet_pid" >/dev/null || true
+    fi
+    if [ -f "$work/devnet-process.json" ]; then
+      if ! python3 "$process_control" stop "$work/devnet-process.json" --signal TERM --seconds 30; then
+        python3 "$process_control" stop "$work/devnet-process.json" --signal KILL --seconds 5 || { [ "$code" -ne 0 ] || code=1; }
+      fi
+    fi
+    if [ -f "$work/devnet-process.json" ] && ! python3 "$process_control" assert-gone "$work/devnet-process.json"; then
+      printf 'fixture cleanup incomplete; retained %s\n' "$work" >&2
+      [ "$code" -ne 0 ] || code=1
+      exit "$code"
+    fi
+    wait "$devnet_pid" 2>/dev/null || true
+    printf 'fixture-joined\n' >>"$work/cleanup-order"
+  fi
   printf '{"part":"%s","elapsed_seconds":%d,"exit_code":%d}\n' \
     "${CLI_RECOVERY_PARTS:-all}" "$(($(date +%s) - harness_started))" "$code" \
     >"$work/node-execution-time.json" 2>/dev/null || true
@@ -242,8 +270,15 @@ finish() {
   fi
   exit "$code"
 }
+process_control="$(dirname "$0")/fixture_process.py"
 trap finish EXIT
-"$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
+trap 'exit 143' TERM
+trap 'exit 130' INT
+restart_args=()
+if [ -z "${CLI_RECOVERY_PARTS:-}" ] || [[ " ${CLI_RECOVERY_PARTS:-} " == *" rollback "* ]]; then
+  restart_args=(--restart-control-dir "$work/facade-control")
+fi
+"$devnet" "${restart_args[@]}" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 sock=""
@@ -251,7 +286,7 @@ provider_url=""
 time_directory=""
 network_magic=""
 for _ in $(seq 1 900); do
-  settings="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
+  settings="$(tail -n1 "$work/devnet.out" 2>/dev/null || true)"
   sock="$(jq -er '.privateProbeSocket' <<<"$settings" 2>/dev/null || true)"
   provider_url="$(jq -er '.providerUrl' <<<"$settings" 2>/dev/null || true)"
   time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings" 2>/dev/null || true)"
@@ -264,6 +299,7 @@ if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [
   tail -40 "$work/devnet.err" >&2 || true
   setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
+python3 "$process_control" bind "$work/devnet-process.json" --pid "$devnet_pid" >/dev/null
 say "one private development source at $provider_url"
 
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
@@ -289,6 +325,25 @@ say_run() {
     say "$name: no parsable receipt (exit $status); stderr: $(head -n 1 "$receipts/$name.err" 2>/dev/null || echo none)"
   fi
 }
+# Record the exact explicit identity supplied to this invocation. Inspect's
+# receipt deliberately carries no identity; its observed selection must still
+# belong to the requested token, never an identity invented by this checker.
+record_identity() {
+  local name="$1" arg take=0
+  shift
+  : >"$receipts/$name.state-token"
+  for arg in "$@"; do
+    if [ "$take" -eq 1 ]; then
+      printf '%s\n' "$arg" >>"$receipts/$name.state-token"
+      take=0
+    elif [ "$arg" = --state-token ]; then
+      take=1
+    elif [[ "$arg" == --state-token=* ]]; then
+      printf '%s\n' "${arg#--state-token=}" >>"$receipts/$name.state-token"
+    fi
+  done
+}
+
 # run NAME ARGS...: one ordinary process; its receipt and exit status kept.
 # A `registry` first word runs through `singular`; a bare verb
 # (`create`, `insert`, `update`, `terminate`, `fold`, `inspect`) runs through
@@ -299,9 +354,11 @@ run() {
   local status=0
   local bin="$open_datum"
   [ "${1:-}" = registry ] && bin="$singular"
+  record_identity "$name" "$@"
+  : >"$receipts/$name.trace.jsonl"
   : >"$receipts/$name.trie.jsonl"
   SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
-    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+    "$bin" "$@" --trace how --trace-to "file:$receipts/$name.trace.jsonl" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
   say_run "$name" "$status"
@@ -316,10 +373,12 @@ held() {
   [ "${1:-}" = registry ] && bin="$singular"
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
+  record_identity "$name" "$@"
+  : >"$receipts/$name.trace.jsonl"
   : >"$receipts/$name.trie.jsonl"
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
-    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+    "$bin" "$@" --trace how --trace-to "file:$receipts/$name.trace.jsonl" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -351,10 +410,12 @@ paused() {
   [ "${1:-}" = registry ] && bin="$singular"
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
+  record_identity "$name" "$@"
+  : >"$receipts/$name.trace.jsonl"
   : >"$receipts/$name.trie.jsonl"
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
-    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+    "$bin" "$@" --trace how --trace-to "file:$receipts/$name.trace.jsonl" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -381,37 +442,23 @@ exit_is() { [ "$(cat "$receipts/$1.exit")" = "$2" ]; }
 # folds. Held/killed processes keep their raw operation traces alongside
 # the existing hold-point evidence; no synthetic receipt is supplied.
 trie_extent() {
-  local name receipt trace
+  local name receipt
   : >"$work/trie-command-extent.jsonl"
   while IFS= read -r name; do
     receipt="$receipts/$name.json"
-    trace="$receipts/$name.trie.jsonl"
     if jq -e '.outcome == "success" and .preview != true' "$receipt" >/dev/null 2>&1; then
-      jq -s -e --slurpfile r "$receipt" '
-        $r[0] as $r
-        | [.[] | select(.operation == "select" or .operation == "create")] as $selected
-        | ($selected | length > 0)
-          and ($selected | all(
-            (.identity.policy | test("^[0-9a-f]{56}$"))
-            and (.identity.name | test("^[0-9a-f]+$"))
-            and (.output | test("^[0-9a-f]{64}#[0-9]+$"))
-            and (.root | test("^[0-9a-f]{64}$"))))
-          and (if $r.command == "inspect" then
-            any(.[]; .operation == "leafAt" and .key == $r.key
-              and .root == $r.root and .leaf == $r.leaf)
-          elif $r.fold? != null then
-            any(.[]; .operation == "accept" and .rootAfter == $r.root
-              and .output == ($r.fold + "#0"))
-            and any(.[]; .operation == "speculateEdges" and .rootAfter == $r.root
-              and .proofCount > 0 and (.proofs | type == "string"))
-          elif $r.root? != null then any($selected[]; .root == $r.root)
-          else true end)' "$trace" >/dev/null || return 1
-      jq -c --slurpfile trace "$trace" \
-        '{command, key, root, operations: ($trace | map(.operation)), executions: ($trace | length)}' \
-        "$receipt" >>"$work/trie-command-extent.jsonl"
+      # PR411 retired mirror creation/acceptance. Check actual public boot
+      # events separately, and actual authenticated lineage operations for
+      # every stored-registry command. Unknown successful verbs are refused.
+      python3 "$(dirname "$0")/check_recovery_trie.py" "$receipt" \
+        "$receipts/$name.trie.jsonl" "$receipts/$name.trace.jsonl" \
+        --identity-file "$receipts/$name.state-token" --controls \
+        >>"$work/trie-command-extent.jsonl" || return 1
     fi
   done <"$work/trie-command-invocations"
   jq -s -e 'length > 1 and all(.executions > 0)
+    and any(.source == "boot-command-trace")
+    and any(.source == "public-lineage-capability")
     and (map(.command) | unique | length > 1)' "$work/trie-command-extent.jsonl" >/dev/null
 }
 
@@ -1216,33 +1263,103 @@ if part rollback; then
     tail -n +"$(($1 + 1))" "$nlog" | grep -F '"ns":"Forge.Loop.AdoptedBlock"' \
       | jq -c --arg t "$2" 'select(any(.data.txIds[]; contains($t)))' | wc -l
   }
-  # Stop the node with PID and wait until it is gone or a zombie.
-  stop_node() {
-    kill -INT "$1" 2>/dev/null || return 1
-    for _ in $(seq 1 600); do
-      case "$(awk '{print $3}' "/proc/$1/stat" 2>/dev/null || echo gone)" in
-        Z | gone) return 0 ;;
-      esac
-      sleep 0.05
-    done
-    return 1
-  }
-  start_node() {
-    rm -f "$node_dir/node.sock"
-    "$node_exe" "${node_args[@]}" >>"$nlog" 2>&1 </dev/null &
-    node_pid=$!
-    for _ in $(seq 1 600); do
-      [ -S "$node_dir/node.sock" ] && return 0
-      kill -0 "$node_pid" 2>/dev/null || return 1
+  # The private controller is sequential: quiesce and join the current
+  # facade before stopping the exact node, then obtain fresh real settings.
+  facade_generation=0
+  await_marker() {
+    local marker="$1"
+    for _ in $(seq 1 1200); do
+      [ -f "$work/facade-control/$marker" ] && return 0
+      kill -0 "$devnet_pid" 2>/dev/null || return 1
       sleep 0.1
     done
     return 1
   }
+  request_facade() {
+    (
+      set -C
+      : >"$work/facade-control/$1"
+    )
+  }
+  endpoint_refuses() {
+    python3 - "$1" <<'ENDPOINT'
+import sys
+import urllib.error
+import urllib.request
+try:
+    urllib.request.urlopen(sys.argv[1] + "/tip", timeout=2).close()
+except urllib.error.HTTPError:
+    sys.exit(1)
+except urllib.error.URLError as error:
+    sys.exit(0 if isinstance(error.reason, ConnectionRefusedError) else 1)
+sys.exit(1)
+ENDPOINT
+  }
+  pause_facade() {
+    facade_generation=$((facade_generation + 1))
+    request_facade "pause.$facade_generation" || setup_fail "duplicate facade pause request"
+    await_marker "paused.$facade_generation" || setup_fail "the facade did not close and join its session"
+    clause "the paused facade endpoint refuses requests" endpoint_refuses "$provider_url"
+    [ "$failed" -eq 0 ] || setup_fail "the paused facade returned an answer"
+  }
+  resume_facade() {
+    request_facade "resume.$facade_generation" || setup_fail "duplicate facade resume request"
+    await_marker "ready.$facade_generation" || setup_fail "the facade did not acquire and replay the restarted node"
+    settings="$(tail -n1 "$work/devnet.out")"
+    sock="$(jq -er '.privateProbeSocket' <<<"$settings")"
+    provider_url="$(jq -er '.providerUrl' <<<"$settings")"
+    time_directory="$(jq -er '.networkTimeDirectory' <<<"$settings")"
+    network_magic="$(jq -er '.networkMagic' <<<"$settings")"
+    [ "$network_magic" = 42 ] && [ -S "$sock" ] && [ -r "$time_directory/time-manifest.json" ] || setup_fail "the resumed facade printed unusable actual settings"
+    node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
+    printf '%s\n' "$settings" >"$work/facade-settings-$facade_generation.json"
+  }
+  stop_node() {
+    python3 "$process_control" stop "$1" --signal INT --seconds 30
+  }
+  start_node() {
+    rm -f "$node_dir/node.sock"
+    # Defer cancellation only across fork/start-tick acquisition, using shell
+    # builtins. Cleanup then owns this exact child even before socket readiness
+    # or a complete executable identity record; no unrelated PID is selected.
+    pending_cancel=0
+    trap 'pending_cancel=143' TERM
+    trap 'pending_cancel=130' INT
+    "$node_exe" "${node_args[@]}" >>"$nlog" 2>&1 </dev/null &
+    node_pid=$!
+    node_start=""
+    if IFS= read -r node_stat <"/proc/$node_pid/stat"; then
+      node_stat="${node_stat##*) }"
+      read -r -a node_fields <<<"$node_stat"
+      node_start="${node_fields[19]}"
+    fi
+    node_record="$work/replacement-node-$facade_generation.json"
+    trap 'exit 143' TERM
+    trap 'exit 130' INT
+    [ "$pending_cancel" -eq 0 ] || exit "$pending_cancel"
+    # This explicit private control cancels in the reproduced acquisition
+    # window. It is never consulted by a product executable or ordinary run.
+    if [ "${CLI_RECOVERY_CANCEL_AT_STARTUP:-}" = 1 ]; then
+      printf '%s\n' "$node_pid/$node_start" >"$work/startup-cancellation-point"
+      kill -TERM "$$"
+    fi
+    for _ in $(seq 1 600); do
+      if [ -S "$node_dir/node.sock" ]; then
+        python3 "$process_control" bind "$node_record" --pid "$node_pid" >/dev/null
+        return 0
+      fi
+      kill -0 "$node_pid" 2>/dev/null || return 1
+      sleep 0.1
+    done
+    # It remains our child and must still be bound for cleanup on failure.
+    python3 "$process_control" bind "$node_record" --pid "$node_pid" >/dev/null || true
+    return 1
+  }
 
-  orig_pid="$(pgrep -f "cardano-node run --config $node_dir/node-config.json" | head -1)" \
-    || setup_fail "the development node's process was not found"
-  node_exe="$(readlink "/proc/$orig_pid/exe")"
-  mapfile -d '' -t node_argv <"/proc/$orig_pid/cmdline"
+  orig_record="$work/original-node.json"
+  python3 "$process_control" bind "$orig_record" --config "$node_dir/node-config.json" --socket "$sock" --owner "$devnet_pid" >"$work/original-node.pid" || setup_fail "the exact owned development node was not found"
+  node_exe="$(jq -r .executable "$orig_record")"
+  mapfile -t node_argv < <(jq -r '.arguments[]' "$orig_record")
   # The same command line, with a configuration that also writes each
   # adopted block's hash, slot and transaction ids as JSON.
   jq '.TraceOptions["Forge.Loop.AdoptedBlock"] = {detail: "DDetailed", backends: ["Stdout MachineFormat"]}' \
@@ -1272,9 +1389,11 @@ if part rollback; then
   # The snapshot: stopped, copied, restarted on the same database.
   mark="$(wc -l <"$nlog")"
   snap_mark="$mark"
-  stop_node "$orig_pid" || setup_fail "the development node did not stop"
+  pause_facade
+  stop_node "$orig_record" || setup_fail "the development node did not stop"
   cp -a "$node_dir/db" "$work/node-db-snapshot"
   start_node || setup_fail "the development node did not restart after the snapshot"
+  resume_facade
   snap_tip="$(opened_tip_after "$mark")"
   [ -n "$snap_tip" ] || setup_fail "the restarted node reported no tip it opened"
   forging=1
@@ -1317,11 +1436,13 @@ if part rollback; then
 
   # The restore: stopped, the copy put back, restarted.
   mark="$(wc -l <"$nlog")"
-  stop_node "$node_pid" || setup_fail "the development node did not stop for the restore"
+  pause_facade
+  stop_node "$node_record" || setup_fail "the development node did not stop for the restore"
   wait "$node_pid" 2>/dev/null || true
   mv "$node_dir/db" "$work/node-db-forked"
   cp -a "$work/node-db-snapshot" "$node_dir/db"
   start_node || setup_fail "the development node did not restart on the restored database"
+  resume_facade
   restored_tip="$(opened_tip_after "$mark")"
   [ -n "$restored_tip" ] || setup_fail "the restored node reported no tip it opened"
   post="$(probe_ins "${book_ins_a[@]}" "${fold_ins_a[@]}" "$rb_book#0" "$rb_fold#0")" \
@@ -1342,6 +1463,23 @@ if part rollback; then
     jq -n -e --argjson p "$post" --arg i "$fold_ins_before" '($i | split("\n") | map(select(. != ""))) as $w | ($w | length) > 0 and ($w - $p.live == [])'
   clause "neither the booking's nor the fold's first output exists" \
     jq -n -e --argjson p "$post" --arg b "$rb_book#0" --arg f "$rb_fold#0" '($p.spent | index($b)) != null and ($p.spent | index($f)) != null'
+
+  # Query the rebuilt full-block archive itself before the product receipt:
+  # the removed fork must not survive in a fresh public-history response.
+  restored_archive_omits() {
+    python3 - "$provider_url" "$rb_book" "$rb_fold" <<'ARCHIVE'
+import json
+import sys
+import urllib.request
+request = urllib.request.Request(sys.argv[1] + "/tx_info",
+    data=json.dumps({"_tx_hashes": sys.argv[2:]}).encode(),
+    headers={"Content-Type": "application/json"})
+with urllib.request.urlopen(request, timeout=10) as response:
+    rows = json.load(response)
+sys.exit(0 if rows == [] else 1)
+ARCHIVE
+  }
+  clause "the rebuilt facade archive omits both removed transactions" restored_archive_omits
 
   run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
   clause "the first inspect journals both rollbacks" \
@@ -1396,7 +1534,7 @@ fi
 
 if part trie-capability; then
   control="trie capability"
-  clause "completed real recovery commands have nonempty trie evidence bound to their key, leaf and root" trie_extent
+  clause "completed create has observed boot evidence and real recovery commands have authenticated lineage evidence bound to their identity, output, key, leaf and root" trie_extent
 fi
 
 for ran in "${!part_clauses[@]}"; do

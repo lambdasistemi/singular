@@ -968,6 +968,12 @@ jobs:
       # refuses partial, and the verdict table fails.
       - name: Run the recovery controls for a process killed at its hold points
         run: nix run --quiet .#cli-recovery-killed
+      - name: Check the private facade's joined lifecycle and fatal failure controls
+        run: nix run --quiet .#facade-lifecycle-controls
+      - name: Check complete history recovery and actual trie observations
+        run: nix run --quiet .#cli-recovery-history
+      - name: Check restored DevNet rollback and actual trie observations
+        run: nix run --quiet .#cli-recovery-rollback
   # #451 re-cut R2: the cross-wallet case matrix is discovered from the
   # fold path's own sources — no node — and every discovered case runs as
   # its own hosted job on its own node and registry.

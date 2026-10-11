@@ -27,17 +27,18 @@ scratch="$(mktemp -d "${RUNNER_TEMP:-/tmp}/cli-recovery.XXXXXX")"
 # shellcheck disable=SC2329 # the EXIT trap below invokes this
 release_scratch() {
   local code=$?
-  local _wait
+  local record
   trap - EXIT
   if [ -n "${scratch:-}" ] && [ -e "$scratch" ]; then
-    if command -v pkill >/dev/null 2>&1; then
-      pkill -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1 || true
-    fi
-    for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
-      if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1; then
-        break
+    # The controller joins its children; this wrapper checks exact retained
+    # identities before removing evidence. A broad pkill cannot prove cleanup.
+    for record in "$scratch"/run/original-node.json "$scratch"/run/replacement-node-*.json "$scratch"/run/devnet-process.json; do
+      [ -f "$record" ] || continue
+      if ! python3 "$(dirname "$controls_sh")/fixture_process.py" assert-gone "$record"; then
+        echo "cleanup incomplete; retained $scratch" >&2
+        [ "$code" -ne 0 ] || code=1
+        exit "$code"
       fi
-      sleep 0.1
     done
     if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
       echo "kept scratch: $scratch" >&2

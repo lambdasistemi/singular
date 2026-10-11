@@ -276,6 +276,9 @@
           managedScripts = pkgs.runCommand "managed-scripts" { } ''
             mkdir -p $out
             cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
+            cp ${./tools/check_recovery_trie.py} $out/check_recovery_trie.py
+            cp ${./tools/fixture_process.py} $out/fixture_process.py
+            cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
             cp ${./tools/managed_state.sh} $out/managed_state.sh
             cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
@@ -768,6 +771,27 @@
           # mirror is saved, a transaction never sent, and an accepting
           # control — judged from receipts and journals:
           # `nix run --quiet .#cli-recovery-controls`.
+          facade-lifecycle-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "facade-lifecycle-controls";
+                runtimeInputs = [
+                  pkgs.python3
+                  pkgs.coreutils
+                ];
+                text = ''
+                  work="$(mktemp -d)/controls"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  python3 ${managedScripts}/facade_lifecycle_controls.py \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
+                  --startup-controller ${self.apps.${system}.cli-recovery-rollback.program}
+                '';
+              }
+            );
+          };
+          cli-recovery-history = recoveryApp "cli-recovery-history" "accepting lost-answer killed never-sent whole-journal trie-capability";
+          cli-recovery-rollback = recoveryApp "cli-recovery-rollback" "rollback trie-capability";
           cli-recovery-controls = recoveryApp "cli-recovery-controls" "";
           # #449: the parts seen passing on main since #411, one CI job each.
           cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";
