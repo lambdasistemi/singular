@@ -354,7 +354,8 @@ requireTreeClean = do
 {- | Isolate this run's node under the executable's explicit environment
 owner. The pinned node helper deletes @$TMPDIR\/cardano-e2e@, so the
 root must be exclusively created before it starts. 'withTmpDir' restores
-the environment and cleans the root even if logging or the action throws.
+the environment and attempts cleanup even if logging or the action throws;
+failed removal retains both errors and the root path.
 -}
 bracketTmpDir :: TmpDirOwner -> IO a -> IO a
 bracketTmpDir owner action =

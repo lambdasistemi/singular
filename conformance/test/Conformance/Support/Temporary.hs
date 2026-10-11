@@ -4,7 +4,8 @@ These are harness checks, not registry or ledger evidence.
 module Conformance.Support.Temporary (spec) where
 
 import Conformance.Run.Temporary
-    ( TmpDirOwner
+    ( TmpDirCleanupFailure (..)
+    , TmpDirOwner
     , newTmpDirOwner
     , withTmpDir
     )
@@ -22,8 +23,10 @@ import Control.Concurrent.MVar
     )
 import Control.Exception
     ( ErrorCall (..)
+    , IOException
     , SomeException
     , bracket
+    , finally
     , fromException
     , throwIO
     , try
@@ -38,9 +41,10 @@ import System.Directory
     , getTemporaryDirectory
     )
 import System.Environment (lookupEnv, setEnv, unsetEnv)
-import System.FilePath ((</>))
-import System.IO.Error (isDoesNotExistError)
+import System.FilePath (takeDirectory, (</>))
+import System.IO.Error (isDoesNotExistError, isPermissionError)
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Files (setFileMode)
 import System.Timeout (timeout)
 import Test.Hspec
     ( Spec
@@ -54,8 +58,9 @@ import Test.Hspec
 
 spec :: Spec
 spec =
-    describe "A conformance session owns its temporary root" $
+    describe "A conformance session owns its temporary root" $ do
         mapM_ environmentCases [False, True]
+        mapM_ cleanupFailureCase [False, True]
   where
     environmentCases originallySet =
         describe
@@ -200,6 +205,52 @@ spec =
                             pure dir
                         length (nub roots) `shouldBe` length roots
                         readFile (other </> "sentinel") `shouldReturn` "another run"
+
+cleanupFailureCase :: Bool -> Spec
+cleanupFailureCase actionFails =
+    it
+        ( if actionFails
+            then "retains the action and cleanup failures together"
+            else "refuses success when its root could not be removed"
+        ) $
+        withEnvironment True $ \owner original other -> do
+            let parent = takeDirectory other
+            seen <- newIORef Nothing
+            result <-
+                ( try @SomeException $ withTmpDir owner $ \root -> do
+                    writeIORef seen (Just root)
+                    writeFile (root </> "owned") "this run"
+                    setFileMode parent 0o500
+                    if actionFails
+                        then throwIO (ErrorCall "original action failed")
+                        else pure ()
+                )
+                    `finally` setFileMode parent 0o700
+            root <-
+                readIORef seen
+                    >>= maybe (fail "the helper never admitted its action") pure
+            doesDirectoryExist root `shouldReturn` True
+            lookupEnv "TMPDIR" `shouldReturn` original
+            readFile (other </> "sentinel") `shouldReturn` "another run"
+            case result of
+                Right () -> fail "cleanup failed but the helper returned success"
+                Left err -> case fromException err of
+                    Nothing -> fail ("cleanup failure was not retained: " <> show err)
+                    Just failure -> do
+                        tmpDirRoot failure `shouldBe` root
+                        case fromException (tmpDirCleanupException failure) :: Maybe IOException of
+                            Nothing -> fail "the underlying filesystem exception was lost"
+                            Just cause -> cause `shouldSatisfy` isPermissionError
+                        case tmpDirActionFailure failure of
+                            Nothing -> actionFails `shouldBe` False
+                            Just cause -> do
+                                actionFails `shouldBe` True
+                                (show <$> (fromException cause :: Maybe ErrorCall))
+                                    `shouldBe` Just "original action failed"
+            next <- withTmpDir owner pure
+            next `shouldSatisfy` (/= root)
+            doesDirectoryExist next `shouldReturn` False
+            lookupEnv "TMPDIR" `shouldReturn` original
 
 alreadyActive :: ErrorCall -> Bool
 alreadyActive (ErrorCall message) = "TMPDIR owner already active" `isInfixOf` message
