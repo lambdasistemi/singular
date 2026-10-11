@@ -95,6 +95,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec
     Singular.Application.OpenDatum.CommandRunSpec
+    Singular.Application.OpenDatum.FlagGroupExtentSpec
     Singular.Application.OpenDatum.FoldSpec
     Singular.Application.OpenDatum.IndependentActorsSpec
     Singular.Application.OpenDatum.InsertEnvelopeSpec

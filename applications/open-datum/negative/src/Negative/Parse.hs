@@ -27,8 +27,8 @@ import Singular.Application.OpenDatum.Command
     , FoldArgs (..)
     , OpenDatumCommand (..)
     , parseOpenDatumCommandWithEnvironment
-    , valuedFlags
     )
+import Singular.CLI.FlagGroup (commonFlagGroup)
 
 {- | One protected field a tampered update rewrites. The five names are
 the closed set the host accepts; anything else is refused as a bad
@@ -170,7 +170,7 @@ parseNegativeInvocation env args =
                 in  case inline of
                         '=' : _ -> go (i + 1) toks
                         _
-                            | flagName `elem` valuedFlags -> case toks of
+                            | flagName `elem` commonFlagGroup -> case toks of
                                 [] -> []
                                 _ : more -> go (i + 2) more
                             | otherwise -> go (i + 1) toks

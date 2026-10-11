@@ -47,13 +47,13 @@ module Singular.CLI.Command
     , parseCommand
     , parseCommandWithEnvironment
     , parseInvocation
+    , parseWithGroup
     , renderCLIError
     , usage
     , maxKeyBytes
     , keyFlags
     ) where
 
-import Control.Applicative ((<|>))
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
@@ -65,9 +65,7 @@ import Data.Char
     , generalCategory
     , isDigit
     )
-import Data.List (isPrefixOf)
-import Data.Maybe (isJust, isNothing)
-import Data.Maybe qualified
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -76,6 +74,13 @@ import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
+import Singular.CLI.FlagGroup
+    ( commonFlagGroup
+    , parseFlagGroup
+    , readProviderSettings
+    , splitTracingFor
+    , tokenizeWith
+    )
 import Singular.CLI.Key
     ( KeyEncoding (..)
     , KeyRefusal (..)
@@ -84,13 +89,7 @@ import Singular.CLI.Key
     , readKey
     )
 import Singular.CLI.Registry (economics)
-import Singular.CLI.Trace
-    ( TraceFormat (..)
-    , TraceLevel (..)
-    , TraceRequest (..)
-    , TraceSink (..)
-    , noTraceRequest
-    )
+import Singular.CLI.Trace (TraceRequest (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
@@ -305,8 +304,16 @@ parseCommand = parseWith []
 
 -- | Parse a command line with its environment.
 parseWith :: [(String, String)] -> [String] -> Either CLIError Command
-parseWith environment args = do
-    (words', flags) <- tokens args
+parseWith = parseWithGroup (commonFlagGroup <> extraValuedFlags)
+
+{- | Parse a command line with its environment over an explicit flag group:
+the tokenizer reads exactly these valued flags. The exported parser applies
+this to the common group plus this binary's extras.
+-}
+parseWithGroup
+    :: [String] -> [(String, String)] -> [String] -> Either CLIError Command
+parseWithGroup group environment args = do
+    (words', flags) <- tokenizeWith RemovedSetting BadValue group args
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
         else
@@ -408,7 +415,14 @@ parseWith environment args = do
         mode <-
             if publicPreview
                 then previewMode flags
-                else Submit <$> writeSettings flags
+                else
+                    Submit
+                        <$> parseFlagGroup
+                            MissingFlag
+                            BadValue
+                            UnsafeSettings
+                            WriteSettings
+                            flags
         seed <- case lookup "--seed" flags of
             Just (Just s) -> case parseOutRef (T.pack s) of
                 Right _ -> Right (Just s)
@@ -464,7 +478,13 @@ parseWith environment args = do
                         )
         when (isJust (lookup "--wallet-address" flags)) $
             Left addressNeedsPreview
-        settings <- writeSettings flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
         request <- case optional "--request" flags of
             Nothing -> Right Nothing
             Just s -> case parseOutRef (T.pack s) of
@@ -501,7 +521,13 @@ parseWith environment args = do
                         )
         when (isJust (lookup "--wallet-address" flags)) $
             Left addressNeedsPreview
-        settings <- writeSettings flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
         access <- registryAccess env flags
@@ -529,7 +555,13 @@ parseWith environment args = do
                         )
         when (isJust (lookup "--wallet-address" flags)) $
             Left addressNeedsPreview
-        settings <- writeSettings flags
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
         named <- required "--request" flags
         request <- first (BadValue "--request") (parseOutRef (T.pack named))
         fund <- fundFrom flags
@@ -575,7 +607,7 @@ parseWith environment args = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
-        settings <- providerSettings flags
+        settings <- readProviderSettings MissingFlag BadValue flags
         access <- registryAccess env flags
         pure
             InspectArgs
@@ -597,61 +629,9 @@ parseWith environment args = do
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
-        settings <- providerSettings flags
+        settings <- readProviderSettings MissingFlag BadValue flags
         addr <- required "--wallet-address" flags
         pure (Preview settings addr)
-    providerSettings flags = do
-        url <- required "--koios-url" flags
-        when (null url) (Left (BadValue "--koios-url" "is empty"))
-        magicText <- required "--network-magic" flags
-        magic <-
-            maybe
-                (Left (BadValue "--network-magic" "not a number"))
-                Right
-                (readMaybe magicText)
-        pure
-            ProviderSettings
-                { providerUrl = url
-                , providerMagic = magic
-                , providerTokenFile = optional "--koios-token-file" flags
-                , providerTimeDirectory = optional "--network-time" flags
-                }
-    -- The caller names the service, network and signing key together.
-    -- Parsing precedes token-file reads, acquisition and key access.
-    writeSettings flags = do
-        forM_ ["--koios-url", "--network-magic", "--wallet-skey"] $ \name ->
-            when (isNothing (optional name flags)) $
-                Left
-                    ( UnsafeSettings
-                        ( "partially configured write: missing "
-                            <> name
-                            <> "; a write needs --koios-url, --network-magic and --wallet-skey"
-                        )
-                    )
-        settings <- case providerSettings flags of
-            Left (BadValue "--network-magic" _) ->
-                Left
-                    ( UnsafeSettings
-                        ( "network magic is not a number: "
-                            <> Data.Maybe.fromMaybe "" (optional "--network-magic" flags)
-                        )
-                    )
-            other -> other
-        when (providerMagic settings == 764824073) $
-            Left (UnsafeSettings "mainnet is not supported")
-        skey <- required "--wallet-skey" flags
-        confirmationTimeout <- case optional "--confirm-timeout" flags of
-            Nothing -> Right Nothing
-            Just value -> case readMaybe value of
-                Just n | n >= 0 -> Right (Just n)
-                _ ->
-                    Left (BadValue "--confirm-timeout" "is not a whole number of seconds")
-        pure
-            WriteSettings
-                { writeProvider = settings
-                , writeWalletKey = skey
-                , writeConfirmTimeout = confirmationTimeout
-                }
     -- --key is the text of the key and --key-hex its base16: one of the two,
     -- read by the library, so no command keeps a decoder of its own.
     keyFrom flags = case [ (encoding, argument)
@@ -697,114 +677,17 @@ parseInvocation
     -> [String]
     -> Either CLIError (Command, TraceRequest)
 parseInvocation environment args = do
-    (rest, request) <- tracingFlags args
+    (rest, request) <- splitTracingFor BadValue extraValuedFlags args
     command <- parseCommandWithEnvironment environment rest
     pure (command, request)
 
-{- | Take the tracing flags out of a command line, each value read and
-refused at parse: @--trace@ and @--trace-format@ once (the first occurrence
-wins, as for every flag), @--trace-to@ once per sink, in order. A value flag
-keeps its value, so a value spelled like a tracing flag stays a value.
+{- | The tokenizing, tracing and settings readers live in the shared flag
+group, called with the extras below; this parser keeps none of its own.
+The one valued flag this binary owns beyond the common group: create
+pins an application policy, and no other command reads it.
 -}
-tracingFlags :: [String] -> Either CLIError ([String], TraceRequest)
-tracingFlags = go [] noTraceRequest
-  where
-    go kept asked = \case
-        [] ->
-            Right
-                (reverse kept, asked{requestSinks = reverse (requestSinks asked)})
-        a : rest
-            | name `elem` ["--trace", "--trace-to", "--trace-format"] ->
-                case (inline, rest) of
-                    ('=' : v, _) -> withValue name v asked >>= \r -> go kept r rest
-                    (_, v : rest') -> withValue name v asked >>= \r -> go kept r rest'
-                    (_, []) -> Left (BadValue name "needs a value")
-            | name `elem` valuedFlags
-            , null inline
-            , v : rest' <- rest ->
-                go (v : a : kept) asked rest'
-            | otherwise -> go (a : kept) asked rest
-          where
-            (name, inline) = break (== '=') a
-    withValue name v asked = case name of
-        "--trace" -> case v of
-            "off" -> level TraceOff
-            "what" -> level TraceWhat
-            "how" -> level TraceHow
-            _ -> Left (BadValue name "is off, what or how")
-        "--trace-to" -> case v of
-            "stderr" -> sink ToStderr
-            'f' : 'i' : 'l' : 'e' : ':' : path@(_ : _) -> sink (ToFile path)
-            _ -> Left (BadValue name "is stderr or file:PATH")
-        _ -> case v of
-            "text" -> format TextFormat
-            "json" -> format JsonFormat
-            _ -> Left (BadValue name "is text or json")
-      where
-        level l = Right asked{requestLevel = requestLevel asked <|> Just l}
-        sink s = Right asked{requestSinks = s : requestSinks asked}
-        format f = Right asked{requestFormat = requestFormat asked <|> Just f}
-
-{- | Split a command line into its words and its flags, the first
-occurrence of a flag winning. A value flag takes the next token or its
-@=value@ spelling; a switch takes nothing.
--}
-tokens
-    :: [String] -> Either CLIError ([String], [(String, Maybe String)])
-tokens = go [] []
-  where
-    go ws fs [] = Right (reverse ws, reverse fs)
-    go ws fs (a : rest)
-        | "--" `isPrefixOf` a || a == "-h" =
-            let (name, inline) = break (== '=') a
-            in  if name == "--registry"
-                    then Left (BadValue "--registry" "was renamed to --state-dir")
-                    else
-                        if name `elem` ["--backend", "--node-socket"]
-                            then Left (RemovedSetting name)
-                            else
-                                if name `elem` switches
-                                    then go ws ((name, Nothing) : fs) rest
-                                    else
-                                        if name `elem` valuedFlags
-                                            then case (inline, rest) of
-                                                ('=' : v, _) -> go ws (keep name v fs) rest
-                                                (_, v : rest') -> go ws (keep name v fs) rest'
-                                                (_, []) -> Left (BadValue name "needs a value")
-                                            else Left (BadValue name "is not a flag singular reads")
-        | otherwise = go (a : ws) fs rest
-    keep name v fs
-        | isJust (lookup name fs) = fs
-        | otherwise = (name, Just v) : fs
-    switches = ["--help", "-h", "--preview", "--fold"]
-
--- | The flags that take a value: the next token, or their @=value@ spelling.
-valuedFlags :: [String]
-valuedFlags =
-    [ "--state-dir"
-    , "--blueprint"
-    , "--koios-url"
-    , "--koios-token-file"
-    , "--network-time"
-    , "--network-magic"
-    , "--wallet-skey"
-    , "--seed"
-    , "--application-policy"
-    , "--process-time"
-    , "--retract-time"
-    , "--key"
-    , "--key-hex"
-    , "--receipt"
-    , "--confirm-timeout"
-    , "--wallet-address"
-    , "--outputs-at"
-    , "--fund-input"
-    , "--max-outlay"
-    , "--deposit"
-    , "--payload"
-    , "--request"
-    , "--state-token"
-    ]
+extraValuedFlags :: [String]
+extraValuedFlags = ["--application-policy"]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
