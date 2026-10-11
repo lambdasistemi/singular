@@ -101,11 +101,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] mutants-first: the way a changed application validator reaches a generated node from the archive's own sources, one mutant, a hosted job per mutant, and one aggregate check name for the pair jobs.",
+      "text": "[x] mutants-first: the way a changed application validator reaches a generated node from the archive's own sources, one mutant, a hosted job per mutant, and one aggregate check name for the pair jobs.",
       "pause": 300
     },
     {
-      "text": "[ ] mutants-application-rest: one mutant for each remaining application rule, each failing exactly its pairs and no other pair.",
+      "text": "[x] mutants-application-rest: one mutant for each remaining application rule, each failing exactly its pairs and no other pair.",
       "pause": 300
     },
     {
@@ -133,6 +133,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "10cadf3ebeff498bbf1c6c25c2679a58cc7b8f59649d8a69075d0478b2a5ce70"
+    "sha256": "7dbd0bd3752a2205594e8c3b4dafb382591dc81a3974b995deb94acff7e0a3d1"
   }
 }

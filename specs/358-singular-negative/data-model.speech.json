@@ -79,7 +79,7 @@
       "pause": 500
     },
     {
-      "text": "For each refusing rule one mutant validator removes exactly that rule. The mutation is a source patch that changes only that rule, applied in a scratch copy of the checkout; the identity manifest that the release check compares against is then regenerated in that copy by the repository's own recipe from the mutant's own build, so the release identity check still runs and passes on the mutant archive.",
+      "text": "For each refusing rule one mutant validator removes exactly that rule. The mutation is a source patch that changes only that rule, applied in a scratch copy of the checkout; the application's own identity manifest (applications/open-datum/onchain/script-identity.json), which the release check compares against, is then regenerated in that copy from the mutant's own build by the recipe the runner carries (the application project has no committed recipe; its shape is the registry's script-identity-regen over the application's own plutus blueprint), so the release identity check still runs and passes on the mutant archive.",
       "pause": 400
     },
     {
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "1ed1fed1da7a9dc3040f7eac5676d19504dad41e2f797567b6f47ead6f4ba9a4"
+    "sha256": "11896e91109141393e9750ae97a8b9ab6cd127ed6b1763829bec080dbb81b972"
   }
 }
