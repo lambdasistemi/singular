@@ -3657,9 +3657,7 @@ def test_open_verbs_run_on_open_datum(mod, tmp):
         ran = seen[0] if seen else []
         check(
             f"open-verbs-run-on-open-datum-{verb}",
-            bool(ran)
-            and journey.open_datum in ran
-            and journey.singular not in ran,
+            bool(ran) and journey.open_datum in ran and journey.singular not in ran,
             f"{verb} ran under {ran[9:11] if len(ran) > 10 else ran}, want open-datum",
         )
 
