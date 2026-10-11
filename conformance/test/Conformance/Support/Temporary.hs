@@ -31,7 +31,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (replicateM)
+import Control.Monad (replicateM, when)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, nub)
 import Data.Maybe (isJust)
@@ -222,9 +222,7 @@ cleanupFailureCase actionFails =
                     writeIORef seen (Just root)
                     writeFile (root </> "owned") "this run"
                     setFileMode parent 0o500
-                    if actionFails
-                        then throwIO (ErrorCall "original action failed")
-                        else pure ()
+                    when actionFails $ throwIO (ErrorCall "original action failed")
                 )
                     `finally` setFileMode parent 0o700
             root <-
