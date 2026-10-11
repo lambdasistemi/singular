@@ -182,16 +182,34 @@ regen_manifest_ok() {
 # condition line above it). Anything else is a setup failure, never a flip.
 # The live run calls it before any scratch copy; the self-check drives it
 # on good and fabricated patches. Each fabricated patch fails exactly one
-# guard, so deleting that guard's check makes it pass. (The labels
-# app-owner and app-controller-signature occur twice in the file; this
-# function fails closed unless each named label occurs exactly once, which holds
-# for the four single-rule mutants and for update-escape/update-control today.)
+# guard, so deleting that guard's check makes it pass. Labels that occur once
+# (the four single-rule mutants, update-escape/update-control, release-additive)
+# take the unanchored path, byte-identical to before. Labels that occur twice
+# (app-owner and app-controller-signature, in bookInsert and bookTerminate) take
+# the anchored path: the entry names one anchor string occurring exactly once in
+# the source, the function derives the scope from the anchor line to the next
+# top-level fn/const line (never typed), builds the allowed branch lines as the
+# union over all occurrences so the old line check passes at either site, and one
+# occurrence guard binds the hunk to the actual source: header numbers alone are
+# not trusted, because a later git apply can relocate a hunk by its context. For
+# every hunk the guard computes its PREIMAGE (context and removed lines in order,
+# without the added lines) and requires it to equal the source lines exactly at
+# the claimed position and NOWHERE else, then applies the whole patch to a scratch
+# copy of the source and requires the ACTUAL changed lines to lie inside the
+# anchored scope. Text alone cannot tell the two controller-signature sites apart
+# (identical condition and label); the bound preimage plus the applied result are
+# the discriminator. All of this is ONE guard with ONE decision line, so deleting
+# that line disables the whole occurrence check (the deletion matrix proves it).
 # The second argument is a comma-separated rule list: single-rule callers pass one
-# name (behaviour unchanged); set-valued callers pass "a,b". Still one function.
+# name (behaviour unchanged); set-valued callers pass "a,b". The fifth argument is
+# the optional anchor (empty keeps the old behaviour). Still one function.
 patch_hygiene_ok() {
-  local patch="$1" rules_csv="$2" expected="$3" source="$4"
+  local patch="$1" rules_csv="$2" expected="$3" source="$4" anchor="${5:-}"
   local touched="" count="" at="" line="" stripped="" b1="" b2="" s1="" s2=""
-  local rule="" allowed_list=""
+  local rule="" allowed_list="" occ_all=""
+  local scope_start="" scope_end="" hunk="" hstart="" hcount="" total=""
+  local hverdict="" htmp="" hheaders="" hline="" hbody_end="" pre_n="" matches=""
+  local actual="" ahunk="" astart="" acount="" next_h="" last_line=""
   [ -f "$patch" ] || return 1
   [ -f "$source" ] || return 1
   [ -n "$rules_csv" ] || return 1
@@ -199,26 +217,108 @@ patch_hygiene_ok() {
   [ "$count" = 1 ] || return 1
   touched="$(grep '^diff --git ' "$patch" | awk '{print $4}' | sed 's|^b/||')" || return 1
   [ "$touched" = "$expected" ] || return 1
+  if [ -n "$anchor" ]; then
+    count="$(grep -c -F -- "$anchor" "$source" || true)"
+    [ "$count" = 1 ] || return 1
+    scope_start="$(grep -n -F -- "$anchor" "$source" | cut -d: -f1)" || return 1
+    scope_end="$(awk -v a="$scope_start" 'NR>a && (/^fn / || /^const /) {print NR; exit}' "$source")" || return 1
+    if [ -z "$scope_end" ]; then
+      total="$(wc -l <"$source")" || return 1
+      scope_end=$((total + 1)) || return 1
+    fi
+  fi
   allowed_list=""
   IFS=',' read -ra HYGIENE_RULES <<<"$rules_csv" || return 1
   [ "${#HYGIENE_RULES[@]}" -ge 1 ] || return 1
   for rule in "${HYGIENE_RULES[@]}"; do
     [ -n "$rule" ] || return 1
-    count="$(grep -c -F "@\"$rule\"" "$source" || true)"
-    [ "$count" = 1 ] || return 1
-    at="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1)" || return 1
-    [ "$at" -ge 2 ] || return 1
-    grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
-    b1="$(sed -n "$((at - 1))p" "$source")" || return 1
-    b2="$(sed -n "${at}p" "$source")" || return 1
-    s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
-    s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
-    allowed_list+="${s1}"$'\n'"${s2}"$'\n'
+    if [ -n "$anchor" ]; then
+      occ_all="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1 || true)"
+      [ -n "$occ_all" ] || return 1
+      while IFS= read -r at; do
+        [ -n "$at" ] || continue
+        [ "$at" -ge 2 ] || return 1
+        b1="$(sed -n "$((at - 1))p" "$source")" || return 1
+        b2="$(sed -n "${at}p" "$source")" || return 1
+        s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+        s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+        allowed_list+="${s1}"$'\n'"${s2}"$'\n'
+      done <<<"$occ_all"
+      grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
+    else
+      count="$(grep -c -F "@\"$rule\"" "$source" || true)"
+      [ "$count" = 1 ] || return 1
+      at="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1)" || return 1
+      [ "$at" -ge 2 ] || return 1
+      grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
+      b1="$(sed -n "$((at - 1))p" "$source")" || return 1
+      b2="$(sed -n "${at}p" "$source")" || return 1
+      s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+      s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+      allowed_list+="${s1}"$'\n'"${s2}"$'\n'
+    fi
   done
   while IFS= read -r line; do # GUARD-hlines
     stripped="$(printf '%s' "${line#-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
     printf '%s' "$allowed_list" | grep -qxF -- "$stripped" || return 1
   done < <(grep '^-[^-]' "$patch" || true)
+  if [ -n "$anchor" ]; then
+    hverdict=0
+    htmp="$(mktemp -d)" || hverdict=1
+    if [ "$hverdict" = 0 ]; then
+      mkdir -p "$htmp/apply/onchain/validators" || hverdict=1
+      cp "$source" "$htmp/apply/onchain/validators/open_datum.ak" || hverdict=1
+    fi
+    hheaders="$(grep -n '^@@ ' "$patch" | cut -d: -f1 || true)"
+    [ -n "$hheaders" ] || hverdict=1
+    last_line="$(wc -l <"$patch")" || hverdict=1
+    for hline in $hheaders; do
+      hunk="$(sed -n "${hline}p" "$patch")" || hverdict=1
+      hstart="$(printf '%s' "$hunk" | sed -n 's/^@@ -\([0-9][0-9]*\)\(,\([0-9][0-9]*\)\)\?.*/\1/p')" || hverdict=1
+      hcount="$(printf '%s' "$hunk" | sed -n 's/^@@ -[0-9][0-9]*,\([0-9][0-9]*\).*/\1/p')" || hverdict=1
+      [ -n "$hstart" ] || hverdict=1
+      [ -n "$hcount" ] || hcount=1
+      [ "$hcount" -ge 1 ] || hverdict=1
+      if [ "$hverdict" = 0 ]; then
+        { [ "$hstart" -ge "$scope_start" ] && [ $((hstart + hcount)) -le "$scope_end" ]; } || hverdict=1
+      fi
+      next_h="$(printf '%s' "$hheaders" | awk -v cur="$hline" '$1 > cur {print $1; exit}')" || hverdict=1
+      if [ -n "$next_h" ]; then
+        hbody_end=$((next_h - 1)) || hverdict=1
+      else
+        hbody_end="$last_line" || hverdict=1
+      fi
+      if [ "$hverdict" = 0 ]; then
+        sed -n "$((hline + 1)),${hbody_end}p" "$patch" | sed -n 's/^[ -]//p' >"$htmp/pre-$hline" || hverdict=1
+        pre_n="$(wc -l <"$htmp/pre-$hline")" || hverdict=1
+        [ "$pre_n" -eq "$hcount" ] || hverdict=1
+      fi
+      if [ "$hverdict" = 0 ]; then
+        sed -n "${hstart},$((hstart + hcount - 1))p" "$source" | diff - "$htmp/pre-$hline" >/dev/null 2>&1 || hverdict=1
+      fi
+      if [ "$hverdict" = 0 ]; then
+        matches="$(awk -v pre="$htmp/pre-$hline" 'BEGIN { n=0; while ((getline L < pre) > 0) { n++; P[n]=L } } { nr++; B[nr % n]=$0 } nr >= n { ok=1; for (i=1;i<=n;i++) { if (B[(nr-n+i) % n] != P[i]) { ok=0; break } } ; if (ok) c++ } END { print c+0 }' "$source")" || hverdict=1
+        [ "$matches" = 1 ] || hverdict=1
+      fi
+    done
+    if [ "$hverdict" = 0 ]; then
+      (cd "$htmp/apply" && git apply "$patch" >/dev/null 2>&1) || hverdict=1
+    fi
+    if [ "$hverdict" = 0 ]; then
+      actual="$(git diff --no-index -U0 "$source" "$htmp/apply/onchain/validators/open_datum.ak" 2>/dev/null | grep '^@@ ' || true)"
+      [ -n "$actual" ] || hverdict=1
+      while IFS= read -r ahunk; do
+        [ -n "$ahunk" ] || continue
+        astart="$(printf '%s' "$ahunk" | sed -n 's/^@@ -\([0-9][0-9]*\)\(,\([0-9][0-9]*\)\)\?.*/\1/p')" || hverdict=1
+        acount="$(printf '%s' "$ahunk" | sed -n 's/^@@ -[0-9][0-9]*,\([0-9][0-9]*\).*/\1/p')" || hverdict=1
+        [ -n "$astart" ] || hverdict=1
+        [ -n "$acount" ] || acount=1
+        { [ "$astart" -ge "$scope_start" ] && [ $((astart + acount)) -le "$scope_end" ]; } || hverdict=1
+      done <<<"$actual"
+    fi
+    rm -rf "$htmp" || true
+    [ "$hverdict" = 0 ] || return 1 # GUARD-hanchor
+  fi
 }
 # the patch and the rules are read from the checkout itself) and commit it,
 # so the flakes and the release assembler see tracked files.
@@ -410,7 +510,8 @@ patch_hygiene_controls() {
     patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
     rules_csv="$(mutant_rules_csv "$name")" || return 1
     file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
-    patch_hygiene_ok "$patch" "$rules_csv" "$file" "$source" && st=0 || st=$?
+    anchor="$(mutant_anchor "$name")" || return 1
+    patch_hygiene_ok "$patch" "$rules_csv" "$file" "$source" "$anchor" && st=0 || st=$?
     [ "$st" -eq 0 ] || {
       echo "negative-host-mutants: hygiene control good-$name rejected" >&2
       return 1
@@ -514,6 +615,41 @@ EOF
     return 1
   }
   echo "negative-host-mutants: hygiene control joint-only-one: rejected (as expected)"
+  cat >"$work/insert-booking.patch" <<'EOF'
+diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
+--- a/onchain/validators/open_datum.ak
++++ b/onchain/validators/open_datum.ak
+@@ -214,9 +214,9 @@ fn bookInsert(
+   } else if control.key != key {
+     traceFalse(@"app-key")
+   } else if control.controller != owner {
+-    traceFalse(@"app-owner")
++    True
+   } else if !list.has(tx.extra_signatories, control.controller) {
+-    traceFalse(@"app-controller-signature")
++    True
+   } else if decodeAddress(address) != Some(
+     Address { payment_credential: Script(policy_id), stake_credential: None },
+   ) {
+EOF
+  (cd "$work/check" && git apply --check "$work/insert-booking.patch") || {
+    echo "negative-host-mutants: hygiene control insert-booking does not apply" >&2
+    return 1
+  }
+  patch_hygiene_ok "$work/insert-booking.patch" "app-owner,app-controller-signature" "onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control insert-booking passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control insert-booking: rejected (as expected)"
+  sed 's/^@@ -214,9 +214,9 @@ fn bookInsert(/@@ -284,9 +284,9 @@ fn bookTerminate(/' "$work/insert-booking.patch" >"$work/misleading-header.patch" || return 1
+  grep -q '^@@ -284,9 +284,9 @@ fn bookTerminate(' "$work/misleading-header.patch" || return 1
+  patch_hygiene_ok "$work/misleading-header.patch" "app-owner,app-controller-signature" "onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control misleading-header passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control misleading-header: rejected (as expected)"
 }
 
 mutant_field() {
@@ -524,6 +660,11 @@ mutant_field() {
 mutant_rules_csv() {
   local name="$1"
   jq -er --arg n "$name" '.mutants[] | select(.name == $n) | if has("rules") then (.rules | join(",")) else .rule end' "$rules" || return 1
+}
+
+mutant_anchor() {
+  local name="$1"
+  jq -r --arg n "$name" '.mutants[] | select(.name == $n) | .anchor // empty' "$rules" || return 1
 }
 
 mutant_side_flips() {
@@ -710,14 +851,15 @@ release_kept() {
 # mutated copy, the declared control pair must pass there. Prints one verdict line per pair.
 run_one_mutant() {
   local name="$1"
-  local patch flips side_flips control rules_csv file copy
+  local patch flips side_flips control rules_csv file copy anchor
   patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
   flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || return 1
   side_flips="$(mutant_side_flips "$name")" || return 1
   control="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .control' "$rules")" || return 1
   rules_csv="$(mutant_rules_csv "$name")" || return 1
   file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
-  patch_hygiene_ok "$patch" "$rules_csv" "$file" "$root/$file" || {
+  anchor="$(mutant_anchor "$name")" || return 1
+  patch_hygiene_ok "$patch" "$rules_csv" "$file" "$root/$file" "$anchor" || {
     echo "negative-host-mutants [$name]: classified SETUP (patch hygiene)" >&2
     return 1
   }

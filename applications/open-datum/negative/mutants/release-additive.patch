@@ -1,0 +1,12 @@
+diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
+--- a/onchain/validators/open_datum.ak
++++ b/onchain/validators/open_datum.ak
+@@ -673,7 +673,7 @@ fn validRelease(
+                         },
+                       )
+                     if paid < owed + releasedTo(script, control.controller, tx) {
+-                      traceFalse(@"release-additive")
++                      True
+                     } else {
+                       True
+                     }

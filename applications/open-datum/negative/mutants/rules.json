@@ -40,6 +40,23 @@
       "flip": [{"pair": "controller-tamper-token", "command": "update"}],
       "side_flips": [{"pair": "controller-tamper-address", "command": "update"}, {"pair": "controller-tamper-controller", "command": "update"}, {"pair": "controller-tamper-datum", "command": "update"}, {"pair": "controller-tamper-deposit", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
+    },
+    {
+      "name": "termination-booking-controller-checks",
+      "patch": "termination-booking-controller-checks.patch",
+      "rules": ["app-owner", "app-controller-signature"],
+      "anchor": "fn bookTerminate(",
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "stranger-terminates-the-key", "command": "terminate"}],
+      "control": "stranger-updates-the-key"
+    },
+    {
+      "name": "release-additive",
+      "patch": "release-additive.patch",
+      "rule": "release-additive",
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "short-fold-of-a-booked-termination", "command": "fold"}],
+      "control": "stranger-updates-the-key"
     }
   ]
 }
