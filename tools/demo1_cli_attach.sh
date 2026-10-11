@@ -18,9 +18,10 @@
 # registry with two fresh keys: `cli-controls attach` creates no registry and
 # never stops or resets the node, runs the ordinary commands itself, and
 # judges every clause from the receipts it leaves. The second take can only
-# succeed if the first left its registry usable: the first take's refused
-# insertions leave pending requests that it must retract, or the second take's
-# fold would take them with it. Two continuation controls follow: a take with no
+# succeed if the first left its registry usable. The second insertion of an
+# Active key is refused by the client before signing and leaves no pending
+# request; the chain's own refusal of such a booking is exercised by the Demo 1
+# refusal controls and the negative host. Two continuation controls follow: a take with no
 # collateral allowance is refused before it writes, and a take over its allowance
 # stops at that refusal with nothing after it run. Setup failures exit 3 and are
 # never a verdict.
@@ -197,13 +198,13 @@ take() {
   stop_indexer
   tail -1 "$work/$name.md"
   if [ "$name" = one ]; then
-    jq -se '
-      [.[] | select(.step == 4 and .action == "fold-unevaluated")]
-      | length == 1 and .[0].outcome == "ledger-refused"
+    jq -se --arg key "$key" '
+      [.[] | select(.step == 3 and .action == "run insert")]
+      | length == 1 and (.[0].outcome + "/" + .[0].reason) == ("client-refusal/" + $key + " is already registered (client policy)")
     ' "$work/$name/receipts"/*.json >/dev/null || {
-      jq -s '[.[] | select(.step == 4 and .action == "fold-unevaluated") | {step, action, outcome, reason}]' \
+      jq -s '[.[] | select(.step == 3 and .action == "run insert") | {step, action, outcome, reason}]' \
         "$work/$name/receipts"/*.json >&2
-      fail_control "take one step 4 must reach the ledger's refusal after command-produced state"
+      fail_control "take one step 3 must refuse the second insertion at booking after command-produced state"
     }
   fi
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
