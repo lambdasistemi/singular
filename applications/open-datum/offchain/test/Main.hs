@@ -8,6 +8,7 @@ import Singular.Application.OpenDatum.CLISpec qualified
 import Singular.Application.OpenDatum.CommandRunSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.Application.OpenDatum.FoldSpec qualified
+import Singular.Application.OpenDatum.IndependentActorsSpec qualified
 import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
 import Singular.Application.OpenDatum.NegativeParseSpec qualified
@@ -62,6 +63,12 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec
+    describe
+        ( tagged
+            "Singular.Application.OpenDatum.IndependentActors"
+            [Cli, Provider, History, Trie]
+        )
+        Singular.Application.OpenDatum.IndependentActorsSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.ManagedState" [Cli])
         Singular.Application.OpenDatum.ManagedStateSpec.spec

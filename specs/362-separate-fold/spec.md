@@ -30,7 +30,7 @@ Every refusal names its reason. The node is never asked to judge something the c
   - nothing is pending;
   - the named request is not pending;
   - more than one request is pending, named in full;
-  - the envelope for an insertion is missing, or does not hash to what the request names;
+  - an insertion's request carries no envelope, or the carried datum is not a valid envelope;
   - the request's edge is not supported;
   - the funding output is not the wallet's;
   - the outlay is past `--max-outlay`;
@@ -46,9 +46,9 @@ Every refusal names its reason. The node is never asked to judge something the c
 
 ## Guarantees
 
-- A booking-only command submits exactly one transaction and never moves the mirror, the root or the saved state.
+- A booking-only command submits exactly one transaction and leaves the live registry root unchanged. The ordinary CLI reconstructs proof state from public history rather than persisting a mirror or saved root.
 - There is one fold routine. `registry fold` and the combined form both run it.
-- An insertion's fold delivers exactly the envelope whose hash the request names. A missing or altered envelope is refused before any build.
+- An insertion's fold delivers exactly the envelope carried by its public request. A missing or invalid carried envelope is refused before any build.
 - A fold spends exactly the request it names, or the single pending one. Any other request input is refused before signing.
 - **Deadline guard.** A fold is never signed if it could land at or after the request's deadline, which is the request's submission time plus the registry's processing time.
   - A fast guard refuses when less than thirty seconds remain on the host clock.
@@ -65,7 +65,7 @@ Every refusal names its reason. The node is never asked to judge something the c
 ## Limits
 
 - **One request per fold.** A fold takes one pending request. A second pending request is refused by name. A fold of several requests in one transaction is a separate change.
-- **Shared registry directory.** The folder finds an insertion's envelope only when it shares the requester's registry directory. A folder elsewhere would need `fold --envelope FILE`, which is a separate change.
+- **Independent folders.** A folder uses its own public replay to fold another actor's termination, without that actor's directory or journal. Under merged #419, an insertion's request carries its envelope publicly, so an insertion folder also needs no booker's file. The full token-only joined-user journey remains to be executed under #381 after #437 supplies joining.
 - **Post-build check on the development network.** That network cannot build a fold near its deadline at all, because the library's fallback times fall past the node's conversion horizon (#370). There, the journey shows the fast guard's refusal. The post-build check is proved by unit tests over a built bound with a controlled clock and converter.
 - **Converted-deadline equality.** On the development network the deadline lies beyond the node's conversion horizon, so its slot is reported as unavailable. That the built bound equals the converted deadline is still to be shown, on the authorized preprod run. No run has shown it yet, and CI does not claim it.
 - **Preparation speed.** It is not solved here. This change reports and enforces the deadline. The persistent indexer (epic #371) is what addresses preparation time.
