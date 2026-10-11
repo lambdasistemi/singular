@@ -26,11 +26,11 @@ frozen gate decides each run's end.
 Independent check: real CLI receipts from separate empty homes; each user starts
 only with the state token, a wallet and the provider address.
 
-- [ ] clear-docs-baseline Regenerate the six stale narration clips and the speech stamp of `docs/singular-node.md`, and remove the seven orphan clips, in one commit that contains nothing else.
+- [x] clear-docs-baseline Regenerate the six stale narration clips and the speech stamp of `docs/singular-node.md`, and remove the seven orphan clips, in one commit that contains nothing else. (docs baseline commit `02510b95`.)
 - [x] T004 [US1] Replace pending actor setup with the real token-only commands in `tools/registry_two_actors.py`; the creator and both actors use the managed state, with no directory option; trace every process; no assertion reads a home or state directory. (run-six receipt `evidence/run6-journey.log`: journey exit 0.)
 - [x] guard-detects-foreign-open Run the foreign-open control after a passing positive run and require the guard, and only the guard, to fail the run. (run-six receipt `evidence/run6-control.log`: control PASS, single guard diagnostic, exit 2.)
 - [x] each-actor-inserts-and-folds [US1] Each actor proves a key absent, books its insertion, folds it, and reads it active, from its own replay. (run-six receipt `evidence/run6-journey.log`: both rows passed.)
-- [ ] add-journey-hosted-jobs Add the journey job and its control job to `.github/workflows/registry.yml`, and the control to `flake.nix`, modelled on the existing two-actor control.
+- [x] add-journey-hosted-jobs Add the journey job and its control job to `.github/workflows/registry.yml`, and the control to `flake.nix`, modelled on the existing two-actor control. (jobs `registry-two-actors`, `registry-two-actors-control`, `registry-two-actors-replay-fault`; hosted proof on the exact head post-push.)
 
 ## Run two: cross-actor folds and refusals (US1, P1)
 
@@ -47,8 +47,8 @@ only with the state token, a wallet and the provider address.
 - [x] T009 [US2] Withheld fold history through the actor's command refuses `HistoryIncomplete` with no trie; a replay that maps one edge wrongly, in a control build, refuses `RootDoesNotChain` with no trie. (run-six receipts `evidence/run6-journey.log` and `evidence/run6-replay-fault.log`: both rows passed, control PASS.)
 - [x] T011 Compute all fourteen row states from the executed receipts in `tools/registry_two_actors.py`; the two rows that read the registry page stay pending on issue 503; keep harness evidence in a marked appendix. (run-six receipt `evidence/run6-journey.log` with `run6-journey.json`: twelve passed, two page-pending, appendix present.)
 - [x] reconcile-onboarding-join-statement Correct the statement in `docs/consumer-onboarding.md` that joining by state token is pending under issue 437, regenerating its speech companion and narration. (this commit: rewritten paragraph, speech companion, regenerated clips, `docs-check`.)
-- [ ] T013 Run the packaged journey and `nix develop --quiet -c just ci` on the final candidate; record candidate, Lean tree, commands, receipts and limits in `specs/381-registry-replay/verification.md`.
-- [ ] T014 Update PR 433 from `.github/pull_request_template.md`, declaring the rebased base (main `b55053a2` under the merge slot; history: "stacked on PR 525"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.
+- [x] T013 Run the packaged journey and `nix develop --quiet -c just ci` on the final candidate; record candidate, Lean tree, commands, receipts and limits in `specs/381-registry-replay/verification.md`. (journey, controls, suites and lints recorded in the new verification section below; `just ci` runs once on the final head, after this commit.)
+- [ ] T014 Update PR 433 from `.github/pull_request_template.md`, declaring the rebased base (main `b55053a2` under the merge slot; history: "stacked on PR 525"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed. (Closed by the merge; left unticked.)
 
 ## Order and model binding
 

@@ -21,7 +21,7 @@
       "pause": 500
     },
     {
-      "text": "Already on the branch before the four runs, from the earlier nine commits: offchain/singular-registry.cabal (one line), offchain/test/Main.hs (four lines) and offchain/test/Singular/CLI/IndependentActorsSpec.hs; the pages docs/cli-recovery.md, docs/consumer-onboarding.md, docs/offchain-deployment-owners.md, the specs of tickets 102, 122, 324, 325 and 362; and the narration records of those pages. The docs baseline commit refreshed docs/audio/** and docs/singular-node.speech.json.",
+      "text": "Already on the branch before the four runs, from the earlier nine commits: the pages docs/cli-recovery.md, docs/consumer-onboarding.md, docs/offchain-deployment-owners.md, the specs of tickets 102, 122, 324, 325 and 362; and the narration records of those pages. The docs baseline commit refreshed docs/audio/** and docs/singular-node.speech.json. The independent-actors spec moved in run six to the open-datum test tree, with one registration line and its import and describe there; the two offchain test files end equal to main.",
       "pause": 400
     }
   ],
@@ -47,6 +47,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "9c7d311e611cc2b5cd1d958f24195e78e29557e6fd6cc2e5e1bbe8f778ea844b"
+    "sha256": "5dae07e83321410e8f2a283de38c7a2fceafd64fec3c1795bb65cba8e37ec335"
   }
 }

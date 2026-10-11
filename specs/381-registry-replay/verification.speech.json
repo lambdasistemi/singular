@@ -101,6 +101,16 @@
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "e4e70eed2637914c0289aa0c67410d84f255fa1701ab7f9ffbde0a1c4bd8a6ca"
-  }
+    "sha256": "07ad9e9ec3bd7ba8dbe234c28d42394b8fbacbfc344408c1ee5d03e055d88070"
+  },
+  "final-candidate-record-the-two-user-journey-on-the-rebased-base": [
+    {
+      "text": "Final-candidate record: the two-user journey on the rebased base.",
+      "pause": 400
+    },
+    {
+      "text": "Base b55053a2. The tested source tree is the last commit that changes code; the two commits above it change only specs and docs. The journey's registry is created by open-datum create. The journey exits zero with twelve rows passed and two page rows pending; the foreign-open control passes with the single guard diagnostic; the replay-fault control passes; the status suite, both lints, the registry suite at 645 examples, the application suite at 518 examples and the separation check all pass. No refusal expectation moved: every booking satisfies its verb's required leaf. Limits: the two page rows stay pending; process-query exits, thread-start and allocation failures are exercised by injection only; hosted jobs run after the push and are read from the pull request.",
+      "pause": 400
+    }
+  ]
 }

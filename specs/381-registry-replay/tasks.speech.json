@@ -67,7 +67,7 @@
       "pause": 400
     },
     {
-      "text": "[ ] clear-docs-baseline Regenerate the six stale narration clips and the speech stamp of docs/singular-node.md, and remove the seven orphan clips, in one commit that contains nothing else.",
+      "text": "[x] clear-docs-baseline Regenerate the six stale narration clips and the speech stamp of docs/singular-node.md, and remove the seven orphan clips, in one commit that contains nothing else. (docs baseline commit 02510b95.)",
       "pause": 300
     },
     {
@@ -83,7 +83,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] add-journey-hosted-jobs Add the journey job and its control job to .github/workflows/registry.yml, and the control to flake.nix, modelled on the existing two-actor control.",
+      "text": "[x] add-journey-hosted-jobs Add the journey job and its control job to .github/workflows/registry.yml, and the control to flake.nix, modelled on the existing two-actor control. (jobs registry-two-actors, registry-two-actors-control, registry-two-actors-replay-fault; hosted proof on the exact head post-push.)",
       "pause": 300
     }
   ],
@@ -133,11 +133,11 @@
       "pause": 300
     },
     {
-      "text": "[ ] T013 Run the packaged journey and nix develop --quiet -c just ci on the final candidate; record candidate, Lean tree, commands, receipts and limits in specs/381-registry-replay/verification.md.",
+      "text": "[x] T013 Run the packaged journey and nix develop --quiet -c just ci on the final candidate; record candidate, Lean tree, commands, receipts and limits in specs/381-registry-replay/verification.md. (journey, controls, suites and lints recorded in the new verification section below; just ci runs once on the final head, after this commit.)",
       "pause": 300
     },
     {
-      "text": "[ ] T014 Update PR 433 from .github/pull_request_template.md, declaring the rebased base (main b55053a2 under the merge slot; history: \"stacked on PR 525\"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.",
+      "text": "[ ] T014 Update PR 433 from .github/pull_request_template.md, declaring the rebased base (main b55053a2 under the merge slot; history: \"stacked on PR 525\"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed. (Closed by the merge; left unticked.)",
       "pause": 300
     }
   ],
@@ -153,6 +153,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "97865e7dc2a8ffe9d76fc0962f10698f2290cd2f06bc7a4cb8457c2d8eb10956"
+    "sha256": "ca6891033a7019eb91095695d907c93a97603723fa677ac90b02f9ccc758988a"
   }
 }
