@@ -229,7 +229,10 @@
               name = "singular-registry-replay-fault";
               src = patchedSrc;
               compiler-nix-name = "ghc9123";
-              cabalProjectLocal = "packages: negative";
+              # No extra packages: the negative host moved to the
+              # application's own tree, and the fault build needs only
+              # the registry executable (main's offchain project lists
+              # no cabalProjectLocal either).
               modules = [ fix-libs ];
               inputMap = {
                 "https://chap.intersectmbo.org/" = offchain.inputs.CHaP;
@@ -524,6 +527,15 @@
                     echo "registry-two-actors: no open-datum binary in $open_datum_out" >&2
                     exit 3
                   }
+                  # The deployment blueprint unions the application and the
+                  # witnesses in one build (the document both CLIs get as
+                  # --blueprint); the registry-only blueprint carries no
+                  # open_datum validator.
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "registry-two-actors: no deployment blueprint" >&2
+                    exit 3
+                  }
                   # #381: the altered journey leg inspects with the control
                   # build; without it the leg is skipped and its row pending.
                   SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
@@ -531,7 +543,7 @@
                     ${pkgs.lib.getExe offchain.packages.${system}.singular} \
                     "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                    ${onchain.packages.${system}.plutus-blueprint} "$work"
+                    "$deployment_bp" "$work"
                 '';
               }
             );
@@ -572,6 +584,14 @@
                     echo "registry-two-actors-control: no open-datum binary in $open_datum_out" >&2
                     exit 3
                   }
+                  # The deployment blueprint unions the application and the
+                  # witnesses in one build (the document both CLIs get as
+                  # --blueprint).
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "registry-two-actors-control: no deployment blueprint" >&2
+                    exit 3
+                  }
                   # #381: the shipped harness's status taxonomy needs no
                   # development network, so it runs before anything starts one.
                   python3 ${./tools/registry_two_actors_status.test.py} ${./tools/registry_two_actors.py}
@@ -581,7 +601,7 @@
                     ${pkgs.lib.getExe offchain.packages.${system}.singular} \
                     "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                    ${onchain.packages.${system}.plutus-blueprint}
+                    "$deployment_bp"
                 '';
               }
             );
@@ -775,13 +795,21 @@
                         echo "registry-two-actors-replay-fault: no open-datum binary in $open_datum_out" >&2
                         exit 3
                       }
+                      # The deployment blueprint unions the application and the
+                      # witnesses in one build (the document both CLIs get as
+                      # --blueprint).
+                      deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                      [ -f "$deployment_bp" ] || {
+                        echo "registry-two-actors-replay-fault: no deployment blueprint" >&2
+                        exit 3
+                      }
                       SINGULAR_UNFAULTED=${pkgs.lib.getExe offchain.packages.${system}.singular} \
                       SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
                         python3 ${./tools/registry_two_actors.py} \
                         ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
                         "$open_datum" \
                         ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
-                        ${onchain.packages.${system}.plutus-blueprint} "$work/journey"
+                        "$deployment_bp" "$work/journey"
                     '';
                   }
                 );
