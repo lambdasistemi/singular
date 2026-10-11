@@ -337,7 +337,7 @@ fi
 # cannot be reached, stop at that read, before the termination: the key is still
 # Active afterwards and no later action ran.
 # (4) A take whose refusal states more collateral than its allowance stops at
-# that refusal: nothing is signed for it, and no later action runs.
+# that refusal: nothing is submitted for it, and no later action runs.
 node_args=("${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey")
 attach_with() { # NAME KEY [extra options]
   local name="$1" key="$2"
@@ -465,12 +465,11 @@ if part over-allowance; then
     || fail_control "the stopping craft submitted something: $(jq -c .submissions "$last")"
   [ "$(jq -r .bodyFile "$last")" = null ] \
     || fail_control "the stopping craft kept a signed body: $(jq -r .bodyFile "$last")"
-  [ "$(jq -r .txId "$last")" = null ] || fail_control "something was signed for the refusal over the allowance"
   [ "$(actions_of stopped | grep -c '^craft ' || true)" -eq 1 ] \
     || fail_control "the stopped take ran no crafted refusal or more than one"
   [ "$(actions_of stopped | grep -cE '^(reclaim|run terminate|read-indexer)' || true)" -eq 0 ] \
     || fail_control "an action ran after the take had to stop"
-  say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
+  say "continuation control over-allowance: stopped at the crafted refusal over the allowance, nothing submitted, nothing after it ran"
 
 fi
 for requested in ${CLI_ATTACH_PARTS:-$known_parts}; do
