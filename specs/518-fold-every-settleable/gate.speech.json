@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "The acceptance of #518 is the repository's own CI: each acceptance line of the spec is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v1, frozen before any code is written (amended once before dispatch, after the plan review, to add the pull request each line belongs to; amended a second time at the stacked base for workflow line numbers and one open row below; amended a third time as v1.2 after the base moved to 58335316, for workflow line numbers again and the rows under \"Gate additions at 58335316\"; v1.3 maps one more acceptance line to an existing row and widens when it runs, at the auditor's addition during the builder run; no settled check changed); changes after the freeze are a new version with the settled rows unchanged.",
+      "text": "The acceptance of #518 is the repository's own CI: each acceptance line of the spec is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v1, frozen before any code is written (amended once before dispatch, after the plan review, to add the pull request each line belongs to; amended a second time at the stacked base for workflow line numbers and one open row below; amended a third time as v1.2 after the base moved to 58335316, for workflow line numbers again and the rows under \"Gate additions at 58335316\"; v1.3 maps one more acceptance line to an existing row and widens when it runs, at the auditor's addition during the builder run; v1.4 re-reads every workflow line at 9d5f4c7a for pull request 2 and adds its acceptance lines under \"Pull request 2 at 9d5f4c7a\"; no settled check changed); changes after the freeze are a new version with the settled rows unchanged.",
       "pause": 400
     }
   ],
@@ -67,6 +67,24 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "405686b36035337d30e9db720f414cbab3d110e405fc6cd40306adc94f1f643c"
-  }
+    "sha256": "5f8729e23dc50f4ea149adf847910f94f6ce114b66ae2ce2d372edc26b2f6455"
+  },
+  "pull-request-2-at-9d5f4c7a": [
+    {
+      "text": "Pull request 2 at 9d5f4c7a.",
+      "pause": 500
+    },
+    {
+      "text": "Pull request 1 merged as 9d5f4c7a. No command or check changed. The workflow lines of the rows above were read again at this head; the lines that moved, for every row that a pull request 2 line below cites, are in the table.",
+      "pause": 400
+    },
+    {
+      "text": "Acceptance lines of pull request 2, each bound to existing rows:",
+      "pause": 400
+    },
+    {
+      "text": "The candidate gate keeps its budget of 40 minutes: the focused off-chain suite narrowed to the receipt rows and the command-run specs, the conformance unit suite, the off-chain lint, the off-chain component build, the conformance format and lint checks, the application separation check, and the rendered documentation check on a documentation candidate; the open-datum tests with the open-datum build and lint on a candidate that edits the open-datum package. The journey script is exercised only by the Demo 1 jobs: the run that edits it may run the Demo 1 command-line check once locally, in a box of its own, the gate run time, named apart from the writer minutes; a failure of that one run is one repair, never a campaign. Each run takes its temporary folders from its own fresh directory under the lane scratch folder, removed when the run ends. The full repository gate runs once on the final candidate.",
+      "pause": 400
+    }
+  ]
 }

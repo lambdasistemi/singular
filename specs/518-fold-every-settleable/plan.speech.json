@@ -13,6 +13,10 @@
     {
       "text": "Where the work stands.",
       "pause": 500
+    },
+    {
+      "text": "Pull request 1 is merged, as 9d5f4c7a. Pull request 2 is on the branch feat/518-receipt-readers from that head; the bullets below describe the ticket as planned for pull request 1.",
+      "pause": 400
     }
   ],
   "strategy": [
@@ -51,7 +55,31 @@
       "pause": 500
     },
     {
-      "text": "Runnable outcome: the conformance command-line controls, the recovery controls, the Demo 1 control check and the pages read and state the list receipt; the top-level single-request fields are gone. Started from the approved head that #528 pushes at its pre-push checkpoint (the desk's ruling), so the files #528 still changes (the conformance controls, the control check, the audio index and manifest) are edited once.",
+      "text": "Runnable outcome: every reader of a fold receipt reads the list receipt, the top-level single-request fields are gone from the fold receipt and from the combined forms, and the pages state it. Started from main at 9d5f4c7a: pull request 1 merged, and the command-line split merged, so the base is main, by the desk release of 2026-10-11. Behaviour does not change: the bound is still 1; only the shape of the receipt and its readers move.",
+      "pause": 400
+    },
+    {
+      "text": "What goes: the single-request fields request, key, edge, live output, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, from the receipt of registry fold; the four fold-derived duplicates live output, envelope, released and deposit from the receipts of insert with fold and terminate with fold. What stays at the top level, being facts of the transaction and not of one request: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock, the time remaining, the booking of a combined form and the key fields of a booking, and the three lists. A reader takes a settled request, its key, edge, owner, settlement and deadline from the first entry of the settled list.",
+      "pause": 400
+    },
+    {
+      "text": "Readers on main, found by reading the code and the scripts: the conformance command-line controls and their unit fixtures; the Demo 1 journey script; the command-run specs of the registry and of the open-datum package; the rows of the fold rules spec that pin the earlier fields. The recovery controls script and the control check script read none of the removed fields and are not edited. No page shows the removed fields as a receipt example; the node guide states that they are kept, which stops being true.",
+      "pause": 400
+    },
+    {
+      "text": "Slices, one patch each, in this order so that main stays green at each. The lists exist since pull request 1, so a reader can move before the fields go.",
+      "pause": 400
+    },
+    {
+      "text": "Pull request body: names each removed field and each reader moved, under the template interface section, and carries the Principle VII paragraph.",
+      "pause": 400
+    },
+    {
+      "text": "Allowance: 3 hours of writer time, by the desk ruling, with base-forced rebases apart; a race box names writer time and the gate run time separately. Estimate with the observed ratio of 1.4 over a plain estimate: slice 1 about 70 minutes, slice 2 about 50, slice 3 about 45, 165 in all. Writers are one-task runs alternating the two families, with a fresh Codex auditor.",
+      "pause": 400
+    },
+    {
+      "text": "Cut point, named in the plan at the epic owner request: the slice that leaves pull request 2 if the forecast passes the allowance is the other pages, meaning the preprod page, the fold responsibilities page and the rehearsal document, with their speech companions and narration. The owner is the ticket owner of 518, in a docs-only pull request from main after pull request 2 merges, or in the documentation slice of pull request 3 if that starts first. The trigger is mechanical: after each accepted slice the forecast is the writer minutes spent plus the remaining estimates, and if it passes 180 the cut is executed without a question. The slices that stay are the readers, the removal and the node guide sentence, because readers and removal cannot be separated and the guide must say the fields are gone. The three pages state behaviour that has been stale since pull request 1 and does not depend on the removal, so leaving them strands no reader; the body of pull request 2 then names them as a recorded limit. If the forecast still passes 180 with the readers, the removal and the guide alone, that is a question for a longer allowance.",
       "pause": 400
     }
   ],
@@ -103,6 +131,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "3cfd7c2b6d5410a070c084c33a79c4d8f882cb9a48e91c32698f4873f8140161"
+    "sha256": "e976344bbc463831f7d61466a6fd9d805193ae2274ced0593055d1e3de107985"
   }
 }

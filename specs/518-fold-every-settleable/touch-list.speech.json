@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Every file this ticket edits, creates or deletes, so the merge order can be decided from what each pull request touches. Read the plan for the two pull requests. Base: main at 8a99415d; the command-line split (#528) merged as c6748950 before this branch's first push. Paths below are the paths at that base. A file not on this list that the work later needs is a question to the epic owner, forwarded to the desk, before it is edited.",
+      "text": "Every file this ticket edits, creates or deletes, so the merge order can be decided from what each pull request touches. Read the plan for the pull requests. Base of pull request 1: main at 8a99415d; the command-line split (#528) merged as c6748950 before that branch first push. Pull request 1 merged as 9d5f4c7a, the base of pull request 2; the rows marked 2 and 3 use the paths at that head. Paths below are the paths at that base. A file not on this list that the work later needs is a question to the epic owner, forwarded to the desk, before it is edited.",
       "pause": 400
     }
   ],
@@ -49,6 +49,10 @@
       "pause": 500
     },
     {
+      "text": "Checked at the second amendment and not edited by pull request 2: the recovery controls script reads only the root of a combined insert and the request of a booking receipt, none of the removed fields, and it gains rows in pull request 3; the control check script reads no fold receipt, and the controls it runs are in the conformance controls module. If a writer finds a reader of a removed field in either, that is a question before the edit.",
+      "pause": 400
+    },
+    {
       "text": "No file is deleted. No file outside this table is edited.",
       "pause": 400
     }
@@ -61,6 +65,10 @@
     {
       "text": "The command-line split merged as c6748950 and its later branches were part of main by 8a99415d; no overlap with unmerged work remains. The files that main changed after this branch's first base and that this branch also edits (the API reference page and its speech companion, offchain/singular-registry.cabal, the audio index and manifest) were resolved by the rebases, the narration being regenerated from the merged pages and never merged by hand.",
       "pause": 400
+    },
+    {
+      "text": "Pull request 2 against the open pull requests at 9d5f4c7a: none of its files is among the ten files of the common-flags change, which edits the flag reader, the two command files, the two cabal files and the two test main files; pull request 2 adds no spec module and edits none of them. The audio index and manifest are shared with the Lean model change: regenerated after the last rebase, never merged by hand. Checked by listing the files of every open pull request against the files of this one.",
+      "pause": 400
     }
   ],
   "shared-surfaces": [
@@ -71,6 +79,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "331e5508213efc62b45fac487cd9a91f7f2eb4dffd9eabe29028ee599f1be916"
+    "sha256": "a0818175b821eb8a4275e2d12c218658480b10d35bd421d0022954c8e310dcf6"
   }
 }

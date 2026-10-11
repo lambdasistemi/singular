@@ -45,16 +45,14 @@
       "pause": 500
     }
   ],
-  "receipt-readers": [
-    {
-      "text": "receipt-readers.",
-      "pause": 500
-    }
-  ],
   "docs-of-the-other-pages": [
     {
       "text": "docs-of-the-other-pages.",
       "pause": 500
+    },
+    {
+      "text": "The cut point of this pull request: if the forecast passes the allowance, the preprod page, the fold responsibilities page and the rehearsal document leave for a docs-only pull request; the node guide sentence stays.",
+      "pause": 400
     }
   ],
   "pull-request-3-many-per-fold": [
@@ -95,6 +93,18 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "49f07facfab0e7b7ba77a20ac0200629a51e0dbd2d57fd6358621cc23b6c24de"
-  }
+    "sha256": "d60bee2154a8c2197d5d9b5ce84ac9d4f92f79022e16735e86daf7ee9d185738"
+  },
+  "readers-move-to-the-list": [
+    {
+      "text": "readers-move-to-the-list.",
+      "pause": 500
+    }
+  ],
+  "duplicates-removed": [
+    {
+      "text": "duplicates-removed.",
+      "pause": 500
+    }
+  ]
 }
