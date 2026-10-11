@@ -21,8 +21,7 @@ The fixture SHA256 is
 The verification page, task marks and their speech companions follow execution;
 they are not part of this tested source tree. No commit was created by this worker.
 
-Lean revision is `d9161edd0274b67151f331949521f34bbf18612f` (history:
-`bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713`), binding
+Lean revision is `bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713`, binding
 `Singular.step`, `exitStep`, `foldActions`, `buildFold` and the public-fold-input
 statements. Replay calls `walkEdge`; rejected actions leave the trie unchanged.
 A mixed fold's oracle is the compiled state validator accepting its submitted

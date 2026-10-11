@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "Lean revision is d9161edd0274b67151f331949521f34bbf18612f (history: bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713), binding Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. Replay calls walkEdge; rejected actions leave the trie unchanged. A mixed fold's oracle is the compiled state validator accepting its submitted transaction on the devnet. No whole-transaction Lean correspondence is claimed for a mixture of applied and rejected requests.",
+      "text": "Lean revision is bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713, binding Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. Replay calls walkEdge; rejected actions leave the trie unchanged. A mixed fold's oracle is the compiled state validator accepting its submitted transaction on the devnet. No whole-transaction Lean correspondence is claimed for a mixture of applied and rejected requests.",
       "pause": 400
     }
   ],
@@ -101,7 +101,7 @@
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "07ad9e9ec3bd7ba8dbe234c28d42394b8fbacbfc344408c1ee5d03e055d88070"
+    "sha256": "2ef33536748ee09a48266bf39b19de2c1a090263f0af80e12fa47eaa2b385b72"
   },
   "final-candidate-record-the-two-user-journey-on-the-rebased-base": [
     {
