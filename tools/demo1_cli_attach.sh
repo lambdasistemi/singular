@@ -112,6 +112,7 @@ release_work() {
 }
 
 export TMPDIR="$work"
+devnet_started="$SECONDS"
 "$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" \
   --fund-outputs 80 --fund-lovelace 5000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -136,6 +137,24 @@ if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [
   setup_fail "the private devnet never printed usable provider/time and independent probe settings"
 fi
 say "one private development source at $provider_url"
+
+# The lag tamper needs a recorded tip beyond the 600-slot lag bound, and the
+# faster story reads its first take young: age the chain before the first take
+# of any part that runs one, so the recorded tip clears the bound whatever the
+# story's speed. Over-allowance stops before any read and tampers nothing, so
+# it skips the wait.
+needs_aged_chain=0
+if [ -z "${CLI_ATTACH_PARTS:-}" ]; then
+  needs_aged_chain=1
+else
+  for aged_part in takes indexer-reads tampered-a tampered-b; do
+    if [[ " $CLI_ATTACH_PARTS " == *" $aged_part "* ]]; then needs_aged_chain=1; fi
+  done
+fi
+if [ "$needs_aged_chain" -eq 1 ]; then
+  while [ "$((SECONDS - devnet_started))" -lt 90 ]; do sleep 1; done
+  say "the chain is aged so a take's recorded tip is beyond the 600-slot lag bound"
+fi
 
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 registry="$work/registry"
